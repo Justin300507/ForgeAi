@@ -1,38 +1,20 @@
 from fastapi import FastAPI
 from pydantic import BaseModel
-from google import genai
+from app.services.architect_service import generate_architecture
+
+from app.services.planner_service import generate_plan
 
 app = FastAPI()
-client = genai.Client(
-    api_key="AQ.Ab8RN6IIS4CGBRYgzHs_UVN4cFxDUE-zrm1xi9JrudCx5meFbw"
-)
 
 class ProjectIdea(BaseModel):
     idea: str
-
-@app.get("/")
-def home():
-    return {"message": "ForgeAI Running"}
+class ArchitectureRequest(BaseModel):
+    project_plan: dict
 
 @app.post("/generate")
 def generate(project: ProjectIdea):
 
-    response = client.models.generate_content(
-        model="gemini-2.5-flash",
-        contents=f"""
-        Create a software project plan.
-
-        Idea:
-        {project.idea}
-
-        Include:
-        - Project Name
-        - Features
-        - Tech Stack
-        - Roadmap
-        """
-    )
-
-    return {
-        "idea": project.idea,
-        "plan": response.text}
+    return generate_plan(project.idea)
+@app.post("/architect")
+def architect(request: ArchitectureRequest):
+    return generate_architecture(request.project_plan)
