@@ -1,52 +1,112 @@
 def build_planner_prompt(idea):
-    return f"""
+  return f"""
 You are a senior software product manager.
 
-Return ONLY valid JSON.
+Given this idea:
 
-Idea:
 {idea}
+
+Return ONLY valid JSON.
 
 Format:
 
 {{
-  "project_name": "",
-  "description": "",
-  "target_users": [],
-  "core_features": [],
-  "future_features": [],
-  "tech_stack": [],
-  "database_entities": [],
-  "api_modules": [],
-  "roadmap": []
+"project_name": "",
+"description": "",
+
+"target_users": [],
+
+"core_features": [],
+
+"future_features": [],
+
+"tech_stack": [],
+
+"database_entities": [
+{{
+"name": "",
+"fields": []
 }}
-IMPORTANT:
+],
+
+"api_modules": [
+{{
+"name": "",
+"endpoints": []
+}}
+],
+
+"roadmap": [
+{{
+"phase": "",
+"milestones": []
+}}
+]
+}}
+
+STRICT RULES:
+
+database_entities MUST be objects.
+
+Example:
+
+[
+{{
+"name": "User",
+"fields": [
+"id",
+"email",
+"password_hash"
+]
+}}
+]
+
+api_modules MUST be objects.
+
+Example:
+
+[
+{{
+"name": "Authentication",
+"endpoints": [
+"/login",
+"/register",
+"/logout"
+]
+}}
+]
+
 roadmap MUST be an array of objects.
-Each object must contain:
-- phase (string)
-- milestones (array of strings)
 
-Do NOT return roadmap as plain text.
-Do not return markdown.
-Do not use code blocks.
-Return valid JSON only.
-IMPORTANT:
+Example:
 
-Return ONLY valid JSON.
+[
+{{
+"phase": "Phase 1",
+"milestones": [
+"Setup project",
+"Create database"
+]
+}}
+]
 
-Do NOT return markdown.
-Do NOT return explanations.
-Do NOT return headings.
-Do NOT return code fences.
+LIMITS:
 
-The response MUST start with:
+* Maximum 5 core_features
+* Maximum 3 future_features
+* Maximum 3 database_entities
+* Maximum 3 api_modules
+* Maximum 3 roadmap phases
 
- and end with curly bracket and end with curly bracket
-IMPORTANT:
-Maximum:
-- 5 core_features
-- 3 future_features
-- 3 database_entities
-- 3 api_modules
-- 3 roadmap phases
+JSON RULES:
+
+* Return valid JSON only
+* No markdown
+* No code fences
+* No explanations
+* No headings
+* No comments
+
+The response MUST start with {{
+and end with }}
 """

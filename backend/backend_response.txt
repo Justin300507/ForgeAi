@@ -3,11 +3,11 @@
   "files": [
     {
       "path": "app/main.py",
-      "content": "from fastapi import FastAPI\nfrom fastapi.middleware.cors import CORSMiddleware\nfrom app.routes import router\n\napp = FastAPI()\n\napp.add_middleware(\n    CORSMiddleware,\n    allow_origins=[\"*\"],\n    allow_methods=[\"*\"],\n    allow_headers=[\"*\"],\n)\n\napp.include_router(router)"
+      "content": "from fastapi import FastAPI\nfrom .routes import task_router\n\napp = FastAPI()\napp.include_router(task_router, prefix=\"/api/tasks\")"
     },
     {
       "path": "app/routes.py",
-      "content": "from fastapi import APIRouter, Depends, HTTPException\nfrom fastapi.security import OAuth2PasswordRequestForm\n\nrouter = APIRouter()\n\n@router.post(\"/api/auth/login\")\nasync def login(form_data: OAuth2PasswordRequestForm = Depends()):\n    return {\"access_token\": \"sample_token\", \"token_type\": \"bearer\"}\n\n@router.get(\"/api/books\")\nasync def get_books():\n    return [{\"title\": \"Sample Book\", \"author\": \"Author Name\"}]\n\n@router.post(\"/api/transactions/checkout\")\nasync def checkout_book():\n    return {\"message\": \"Checkout successful\"}"
+      "content": "from fastapi import APIRouter, HTTPException\nfrom uuid import UUID\nfrom typing import Optional\nfrom datetime import datetime\nfrom pydantic import BaseModel\n\nrouter = APIRouter()\n\nclass Task(BaseModel):\n    id: UUID\n    title: str\n    description: Optional[str] = None\n    dueDate: Optional[datetime] = None\n    isCompleted: bool\n    categoryId: Optional[UUID] = None\n\n@router.post(\"/\")\nasync def create_task(task: Task):\n    return task\n\n@router.get(\"/{task_id}\")\nasync def get_task(task_id: UUID):\n    return {\"id\": task_id}\n\n@router.put(\"/{task_id}\")\nasync def update_task(task_id: UUID, task: Task):\n    return task"
     }
   ]
 }

@@ -3,11 +3,11 @@
   "files": [
     {
       "path": "src/App.jsx",
-      "content": "import React from 'react';\nimport { BrowserRouter, Routes, Route } from 'react-router-dom';\nimport Home from './pages/Home';\n\nexport default function App() {\n  return (\n    <BrowserRouter>\n      <Routes>\n        <Route path=\"/\" element={<Home />} />\n      </Routes>\n    </BrowserRouter>\n  );\n}"
+      "content": "import React from 'react';\nimport { BrowserRouter as Router, Routes, Route } from 'react-router-dom';\nimport Home from './pages/Home';\n\nexport default function App() {\n  return (\n    <Router>\n      <Routes>\n        <Route path=\"/\" element={<Home />} />\n      </Routes>\n    </Router>\n  );\n}"
     },
     {
       "path": "src/pages/Home.jsx",
-      "content": "import React, { useState, useEffect } from 'react';\nimport axios from 'axios';\n\nexport default function Home() {\n  const [books, setBooks] = useState([]);\n\n  useEffect(() => {\n    axios.get('/api/books')\n      .then(res => setBooks(res.data))\n      .catch(err => console.error(err));\n  }, []);\n\n  return (\n    <div>\n      <h1>Book Inventory</h1>\n      {books.map(book => (\n        <div key={book.id}>{book.title} by {book.author}</div>\n      ))}\n    </div>\n  );\n}"
+      "content": "import React, { useState, useEffect } from 'react';\nimport api from '../api';\n\nexport default function Home() {\n  const [tasks, setTasks] = useState([]);\n\n  useEffect(() => {\n    api.get('/tasks').then(res => setTasks(res.data));\n  }, []);\n\n  return (\n    <div>\n      {tasks.map(task => (\n        <div key={task.id}>{task.title}</div>\n      ))}\n    </div>\n  );\n}"
     }
   ]
 }

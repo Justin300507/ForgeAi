@@ -1,19 +1,30 @@
 from pydantic import BaseModel
-from typing import List
+
+
+class DatabaseEntity(BaseModel):
+    name: str
+    fields: list[str]
+
+
+class ApiModule(BaseModel):
+    name: str
+    endpoints: list[str]
 
 
 class RoadmapPhase(BaseModel):
     phase: str
-    milestones: List[str]
+    milestones: list[str]
 
 
 class ProjectPlan(BaseModel):
     project_name: str
     description: str
-    target_users: List[str]
-    core_features: List[str]
-    future_features: List[str]
-    tech_stack: List[str]
-    database_entities: List[str]
-    api_modules: List[str]
-    roadmap: List[RoadmapPhase]
+    target_users: list[str]
+    core_features: list[str]
+    future_features: list[str]
+    tech_stack: list[str]
+
+    database_entities: list[DatabaseEntity]
+    api_modules: list[ApiModule]
+
+    roadmap: list[RoadmapPhase]
