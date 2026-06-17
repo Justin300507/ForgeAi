@@ -7,7 +7,7 @@
     },
     {
       "path": "src/pages/Home.jsx",
-      "content": "import React from 'react';\n\nexport default function Home() {\n  return (\n    <div>\n      <h1>Fitness App</h1>\n      <p>Track your workouts and nutrition</p>\n    </div>\n  );\n}"
+      "content": "import React from 'react';\n\nexport default function Home() {\n  return (\n    <div>\n      <h1>Video Platform</h1>\n      <p>Welcome to our video sharing platform</p>\n    </div>\n  );\n}"
     }
   ]
 }
