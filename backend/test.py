@@ -1,12 +1,3 @@
-from google import genai
+from app.providers.ai_provider import generate_content
 
-client = genai.Client(api_key="AQ.Ab8RN6IIS4CGBRYgzHs_UVN4cFxDUE-zrm1xi9JrudCx5meFbw")
-
-response = client.models.generate_content(
-    model="gemini-2.5-flash",
-    contents="Create a project plan for a gym tracking app"
-)
-
-print(response.text)
-
-
+print(generate_content("Say hello in one sentence"))

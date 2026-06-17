@@ -1,0 +1,14 @@
+```json
+{
+  "files": [
+    {
+      "path": "app/main.py",
+      "content": "from fastapi import FastAPI\nfrom fastapi.middleware.cors import CORSMiddleware\nfrom app.routes import router\n\napp = FastAPI()\n\napp.add_middleware(\n    CORSMiddleware,\n    allow_origins=[\"*\"],\n    allow_methods=[\"*\"],\n    allow_headers=[\"*\"],\n)\n\napp.include_router(router)"
+    },
+    {
+      "path": "app/routes.py",
+      "content": "from fastapi import APIRouter, Depends, HTTPException\nfrom fastapi.security import OAuth2PasswordRequestForm\n\nrouter = APIRouter()\n\n@router.post(\"/api/auth/login\")\nasync def login(form_data: OAuth2PasswordRequestForm = Depends()):\n    return {\"access_token\": \"sample_token\", \"token_type\": \"bearer\"}\n\n@router.get(\"/api/books\")\nasync def get_books():\n    return [{\"title\": \"Sample Book\", \"author\": \"Author Name\"}]\n\n@router.post(\"/api/transactions/checkout\")\nasync def checkout_book():\n    return {\"message\": \"Checkout successful\"}"
+    }
+  ]
+}
+```

@@ -3,36 +3,27 @@ import time
 
 from fastapi import HTTPException
 
-from app.services.gemini_service import client
 from app.prompts.planner_prompt import build_planner_prompt
 from app.models.project_models import ProjectPlan
+from app.providers.ai_provider import generate_content
 
 
 def generate_plan(idea):
 
-    prompt = build_planner_prompt(idea)
-
     try:
 
-        for attempt in range(3):
+        print("\n=== START PLANNER ===")
 
-            try:
+        start = time.time()
 
-                response = client.models.generate_content(
-                    model="gemini-2.5-flash",
-                    contents=prompt
-                )
+        prompt = build_planner_prompt(idea)
 
-                break
+        text = generate_content(prompt)
 
-            except Exception:
+        print(f"Planner Response Length: {len(text)}")
+        print(f"Planner Time: {time.time() - start:.2f}s")
 
-                if attempt == 2:
-                    raise
-
-                time.sleep(2)
-
-        clean_text = response.text
+        clean_text = text
         clean_text = clean_text.replace("```json", "")
         clean_text = clean_text.replace("```", "")
         clean_text = clean_text.strip()
@@ -41,9 +32,13 @@ def generate_plan(idea):
 
         validated = ProjectPlan(**data)
 
+        print("=== END PLANNER ===")
+
         return validated.model_dump()
 
     except Exception as e:
+
+        print("PLANNER ERROR:", e)
 
         raise HTTPException(
             status_code=500,

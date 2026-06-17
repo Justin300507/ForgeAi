@@ -45,6 +45,14 @@ Rules:
 - No code blocks
 - No explanations
 
+IMPORTANT:
+Generate EXACTLY:
+
+- 3 API endpoints
+- 2 database tables
+- 5 backend folders
+
+Do not generate anything else.
 API Rules:
 - Generate realistic REST API endpoints
 - Include CRUD operations where appropriate
@@ -70,4 +78,9 @@ Folder Structure Rules:
   - validators
 
 Think like a senior software architect designing a scalable SaaS application.
+IMPORTANT:
+Generate a maximum of:
+- 5 API endpoints
+- 3 database tables
+- 8 backend folders
 """
