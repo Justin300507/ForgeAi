@@ -7,9 +7,10 @@ from app.prompts.planner_prompt import build_planner_prompt
 from app.models.project_models import ProjectPlan
 from app.providers.ai_provider import generate_content
 
-
-def generate_plan(idea):
-
+def generate_plan(
+    idea,
+    provider="auto"
+):
     try:
 
         print("\n=== START PLANNER ===")
@@ -18,7 +19,10 @@ def generate_plan(idea):
 
         prompt = build_planner_prompt(idea)
 
-        text = generate_content(prompt)
+        text = generate_content(
+    prompt,
+    provider
+)
 
         print(f"Planner Response Length: {len(text)}")
         print(f"Planner Time: {time.time() - start:.2f}s")

@@ -6,7 +6,10 @@ from app.models.backend_models import BackendPlan
 from app.providers.ai_provider import generate_content
 
 
-def generate_backend(architecture):
+def generate_backend(
+    architecture,
+    provider="auto"
+):
 
     print("\n=== START BACKEND ===")
 
@@ -14,7 +17,10 @@ def generate_backend(architecture):
 
     prompt = build_backend_prompt(architecture)
 
-    text = generate_content(prompt)
+    text = generate_content(
+    prompt,
+    provider
+)
 
     print(f"Backend Response Length: {len(text)}")
     print(f"Backend Time: {time.time() - start:.2f}s")

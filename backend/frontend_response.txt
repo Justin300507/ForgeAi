@@ -7,7 +7,7 @@
     },
     {
       "path": "src/pages/Home.jsx",
-      "content": "import React, { useState, useEffect } from 'react';\nimport api from '../api';\n\nexport default function Home() {\n  const [tasks, setTasks] = useState([]);\n\n  useEffect(() => {\n    api.get('/tasks').then(res => setTasks(res.data));\n  }, []);\n\n  return (\n    <div>\n      {tasks.map(task => (\n        <div key={task.id}>{task.title}</div>\n      ))}\n    </div>\n  );\n}"
+      "content": "import React from 'react';\n\nexport default function Home() {\n  return (\n    <div>\n      <h1>Fitness App</h1>\n      <p>Track your workouts and nutrition</p>\n    </div>\n  );\n}"
     }
   ]
 }

@@ -1,30 +1,34 @@
 from app.providers.gemini_provider import generate as gemini_generate
 from app.providers.openrouter_provider import generate as openrouter_generate
 
-USE_GEMINI = False
 
+def generate_content(
+    prompt,
+    provider="auto"
+):
 
-def generate_content(prompt):
+    if provider == "gemini":
 
-    if USE_GEMINI:
-        try:
-            print("Using Gemini")
-            return gemini_generate(prompt)
+        print("Using Gemini")
 
-        except Exception as e:
-            print("Gemini failed:", e)
+        return gemini_generate(prompt)
 
-    print("Using OpenRouter")
+    if provider == "openrouter":
+
+        print("Using OpenRouter")
+
+        return openrouter_generate(prompt)
 
     try:
-        response = openrouter_generate(prompt)
 
-        print("OpenRouter Success")
+        print("Using Gemini")
 
-        return response
+        return gemini_generate(prompt)
 
     except Exception as e:
 
-        print("OpenRouter failed:", e)
+        print("Gemini failed:", e)
 
-        raise Exception("All providers failed")
+        print("Using OpenRouter")
+
+        return openrouter_generate(prompt)

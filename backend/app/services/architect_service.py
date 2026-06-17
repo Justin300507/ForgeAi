@@ -6,7 +6,10 @@ from app.models.architecture_models import ArchitecturePlan
 from app.providers.ai_provider import generate_content
 
 
-def generate_architecture(project_plan):
+def generate_architecture(
+    project_plan,
+    provider="auto"
+):
 
     print("\n=== START ARCHITECT ===")
 
@@ -14,7 +17,10 @@ def generate_architecture(project_plan):
 
     prompt = build_architect_prompt(project_plan)
 
-    text = generate_content(prompt)
+    text = generate_content(
+    prompt,
+    provider
+)
 
     print(f"Architect Response Length: {len(text)}")
     print(f"Architect Time: {time.time() - start:.2f}s")

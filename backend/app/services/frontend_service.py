@@ -6,11 +6,17 @@ from app.providers.ai_provider import generate_content
 import time
 
 
-def generate_frontend(architecture):
+def generate_frontend(
+    architecture,
+    provider="auto"
+):
 
     prompt = build_frontend_prompt(architecture)
     start = time.time()
-    text = generate_content(prompt)
+    text = generate_content(
+    prompt,
+    provider
+)
     print(f"Frontend Time: {time.time() - start:.2f}s")
 
     # Save raw AI response

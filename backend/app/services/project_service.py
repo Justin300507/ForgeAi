@@ -8,17 +8,32 @@ from app.services.file_writer_service import write_files
 from app.services.zip_service import create_zip
 
 
-def generate_project(idea):
+def generate_project(
+    idea,
+    provider="auto"
+):
 
     start = time.time()
 
-    plan = generate_plan(idea)
+    plan = generate_plan(
+    idea,
+    provider
+)
 
-    architecture = generate_architecture(plan)
+    architecture = generate_architecture(
+    plan,
+    provider
+)
 
-    backend = generate_backend(architecture)
+    backend = generate_backend(
+    architecture,
+    provider
+)
 
-    frontend = generate_frontend(architecture)
+    frontend = generate_frontend(
+    architecture,
+    provider
+)
     all_files = []
     all_files.extend(backend["files"])
     all_files.extend(frontend["files"])
