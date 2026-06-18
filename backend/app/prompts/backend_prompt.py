@@ -32,14 +32,49 @@ Format:
   ]
 }}
 
-Rules:
+CRITICAL RULES:
 
 - Return JSON only
 - No markdown
 - No explanations
 - No code fences
+
 - Maximum 8 files
-- Generate runnable code
-- Imports must match generated paths
-- Keep files concise
+
+- Generate runnable FastAPI code
+
+- Every imported file MUST exist
+- Do NOT import files that are not generated
+- All imports must match generated paths
+
+- Use only generated models
+- Use only generated services
+- Use only generated routes
+
+- Avoid placeholder imports
+
+- main.py must successfully import all route files
+
+- Keep code concise
+- Keep files under 50 lines where possible
+
+EXAMPLE:
+
+If you generate:
+
+app/routes/user_routes.py
+
+Then imports like:
+
+from routes.user_routes import user_router
+
+are allowed.
+
+Do NOT generate:
+
+from routes.auth_routes import auth_router
+
+unless auth_routes.py is also generated.
+
+Generate production-style but minimal runnable code.
 """

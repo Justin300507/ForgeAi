@@ -34,14 +34,46 @@ Format:
   ]
 }}
 
-Rules:
+CRITICAL RULES:
 
 - Return JSON only
 - No markdown
 - No explanations
 - No code fences
+
 - Maximum 8 files
+
 - Generate runnable React code
-- Imports must match generated paths
+
+- Every imported page MUST exist
+- Every imported component MUST exist
+
+- Do NOT import files that are not generated
+
+- All import paths must match generated files
+
+- App.jsx must only import generated pages and components
+
+- Components must only import generated components
+
+- Avoid placeholder imports
+
 - Keep files concise
+- Keep files under 50 lines where possible
+
+EXAMPLE:
+
+If App.jsx contains:
+
+import Home from './pages/Home'
+
+Then Home.jsx MUST be generated.
+
+If Home.jsx contains:
+
+import ProductCard from '../components/ProductCard'
+
+Then ProductCard.jsx MUST be generated.
+
+Generate production-style but minimal runnable code.
 """

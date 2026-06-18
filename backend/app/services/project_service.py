@@ -7,6 +7,7 @@ from app.services.frontend_service import generate_frontend
 from app.services.file_writer_service import write_files
 from app.services.zip_service import create_zip
 from app.services.metadata_service import save_metadata
+from app.services.validator_service import validate_project
 
 
 def generate_project(
@@ -56,6 +57,9 @@ def generate_project(
         provider,
         total_time
     )
+    validation = validate_project(
+    project_path
+)
 
     # Then zip everything (including metadata.json)
     zip_path = create_zip(project_path)
@@ -68,5 +72,6 @@ def generate_project(
         "project_path": project_path,
         "zip_path": zip_path,
         "metadata_path": metadata_path,
+        "validation": validation,
         "generation_time_seconds": total_time
     }

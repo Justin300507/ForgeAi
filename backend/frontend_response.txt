@@ -3,35 +3,35 @@
   "files": [
     {
       "path": "src/App.jsx",
-      "content": "import React from 'react';\nimport { BrowserRouter as Router, Routes, Route } from 'react-router-dom';\nimport Home from './pages/Home';\nimport ProductListing from './pages/ProductListing';\nimport ProductDetail from './pages/ProductDetail';\nimport Cart from './pages/Cart';\nimport Checkout from './pages/Checkout';\nimport Header from './components/Header';\nimport Footer from './components/Footer';\n\nfunction App() {\n  return (\n    <Router>\n      <Header />\n      <Routes>\n        <Route path=\"/\" element={<Home />} />\n        <Route path=\"/products\" element={<ProductListing />} />\n        <Route path=\"/products/:id\" element={<ProductDetail />} />\n        <Route path=\"/cart\" element={<Cart />} />\n        <Route path=\"/checkout\" element={<Checkout />} />\n      </Routes>\n      <Footer />\n    </Router>\n  );\n}\n\nexport default App;"
+      "content": "import { BrowserRouter, Routes, Route } from 'react-router-dom';\nimport Login from './pages/Login';\nimport Signup from './pages/Signup';\nimport Chat from './pages/Chat';\nimport GroupChat from './pages/GroupChat';\nimport Settings from './pages/Settings';\n\nexport default function App() {\n  return (\n    <BrowserRouter>\n      <Routes>\n        <Route path=\"/login\" element={<Login />} />\n        <Route path=\"/signup\" element={<Signup />} />\n        <Route path=\"/chat\" element={<Chat />} />\n        <Route path=\"/group-chat\" element={<GroupChat />} />\n        <Route path=\"/settings\" element={<Settings />} />\n      </Routes>\n    </BrowserRouter>\n  );\n}"
     },
     {
-      "path": "src/pages/Home.jsx",
-      "content": "import React from 'react';\nimport ProductCard from '../components/ProductCard';\n\nfunction Home() {\n  return (\n    <div>\n      <h1>Welcome to our Store</h1>\n      <div className=\"featured-products\">\n        <ProductCard />\n      </div>\n    </div>\n  );\n}\n\nexport default Home;"
+      "path": "src/pages/Login.jsx",
+      "content": "import { useState } from 'react';\nimport { useNavigate } from 'react-router-dom';\n\nexport default function Login() {\n  const [email, setEmail] = useState('');\n  const [password, setPassword] = useState('');\n  const navigate = useNavigate();\n\n  const handleSubmit = (e) => {\n    e.preventDefault();\n    navigate('/chat');\n  };\n\n  return (\n    <div>\n      <h1>Login</h1>\n      <form onSubmit={handleSubmit}>\n        <input\n          type=\"email\"\n          value={email}\n          onChange={(e) => setEmail(e.target.value)}\n          placeholder=\"Email\"\n          required\n        />\n        <input\n          type=\"password\"\n          value={password}\n          onChange={(e) => setPassword(e.target.value)}\n          placeholder=\"Password\"\n          required\n        />\n        <button type=\"submit\">Login</button>\n      </form>\n    </div>\n  );\n}"
     },
     {
-      "path": "src/pages/ProductListing.jsx",
-      "content": "import React from 'react';\nimport ProductCard from '../components/ProductCard';\n\nfunction ProductListing() {\n  return (\n    <div>\n      <h1>All Products</h1>\n      <div className=\"product-grid\">\n        {[...Array(6)].map((_, i) => (\n          <ProductCard key={i} />\n        ))}\n      </div>\n    </div>\n  );\n}\n\nexport default ProductListing;"
+      "path": "src/pages/Signup.jsx",
+      "content": "import { useState } from 'react';\nimport { useNavigate } from 'react-router-dom';\n\nexport default function Signup() {\n  const [username, setUsername] = useState('');\n  const [email, setEmail] = useState('');\n  const [password, setPassword] = useState('');\n  const navigate = useNavigate();\n\n  const handleSubmit = (e) => {\n    e.preventDefault();\n    navigate('/login');\n  };\n\n  return (\n    <div>\n      <h1>Sign Up</h1>\n      <form onSubmit={handleSubmit}>\n        <input\n          type=\"text\"\n          value={username}\n          onChange={(e) => setUsername(e.target.value)}\n          placeholder=\"Username\"\n          required\n        />\n        <input\n          type=\"email\"\n          value={email}\n          onChange={(e) => setEmail(e.target.value)}\n          placeholder=\"Email\"\n          required\n        />\n        <input\n          type=\"password\"\n          value={password}\n          onChange={(e) => setPassword(e.target.value)}\n          placeholder=\"Password\"\n          required\n        />\n        <button type=\"submit\">Sign Up</button>\n      </form>\n    </div>\n  );\n}"
     },
     {
-      "path": "src/pages/ProductDetail.jsx",
-      "content": "import React from 'react';\n\nfunction ProductDetail() {\n  return (\n    <div>\n      <h1>Product Details</h1>\n      <div className=\"product-detail\">\n        <img src=\"\" alt=\"Product\" />\n        <h2>Product Name</h2>\n        <p>Price: $0.00</p>\n        <p>Description: Lorem ipsum</p>\n        <button>Add to Cart</button>\n      </div>\n    </div>\n  );\n}\n\nexport default ProductDetail;"
+      "path": "src/pages/Chat.jsx",
+      "content": "import { useState } from 'react';\nimport MessageList from '../components/MessageList';\nimport InputBox from '../components/InputBox';\nimport UserList from '../components/UserList';\n\nexport default function Chat() {\n  const [messages, setMessages] = useState([]);\n\n  const handleSend = (message) => {\n    setMessages([...messages, message]);\n  };\n\n  return (\n    <div>\n      <h1>Chat</h1>\n      <UserList />\n      <MessageList messages={messages} />\n      <InputBox onSend={handleSend} />\n    </div>\n  );\n}"
     },
     {
-      "path": "src/pages/Cart.jsx",
-      "content": "import React from 'react';\nimport CartItem from '../components/CartItem';\n\nfunction Cart() {\n  return (\n    <div>\n      <h1>Your Cart</h1>\n      <div className=\"cart-items\">\n        <CartItem />\n      </div>\n      <button>Proceed to Checkout</button>\n    </div>\n  );\n}\n\nexport default Cart;"
+      "path": "src/pages/GroupChat.jsx",
+      "content": "import { useState } from 'react';\nimport MessageList from '../components/MessageList';\nimport InputBox from '../components/InputBox';\nimport GroupList from '../components/GroupList';\n\nexport default function GroupChat() {\n  const [messages, setMessages] = useState([]);\n\n  const handleSend = (message) => {\n    setMessages([...messages, message]);\n  };\n\n  return (\n    <div>\n      <h1>Group Chat</h1>\n      <GroupList />\n      <MessageList messages={messages} />\n      <InputBox onSend={handleSend} />\n    </div>\n  );\n}"
     },
     {
-      "path": "src/pages/Checkout.jsx",
-      "content": "import React from 'react';\nimport CheckoutForm from '../components/CheckoutForm';\n\nfunction Checkout() {\n  return (\n    <div>\n      <h1>Checkout</h1>\n      <CheckoutForm />\n    </div>\n  );\n}\n\nexport default Checkout;"
+      "path": "src/components/MessageList.jsx",
+      "content": "export default function MessageList({ messages = [] }) {\n  return (\n    <div>\n      {messages.map((msg, index) => (\n        <div key={index}>{msg}</div>\n      ))}\n    </div>\n  );\n}"
     },
     {
-      "path": "src/components/Header.jsx",
-      "content": "import React from 'react';\nimport { Link } from 'react-router-dom';\n\nfunction Header() {\n  return (\n    <header>\n      <nav>\n        <Link to=\"/\">Home</Link>\n        <Link to=\"/products\">Products</Link>\n        <Link to=\"/cart\">Cart</Link>\n      </nav>\n    </header>\n  );\n}\n\nexport default Header;"
+      "path": "src/components/InputBox.jsx",
+      "content": "import { useState } from 'react';\n\nexport default function InputBox({ onSend }) {\n  const [message, setMessage] = useState('');\n\n  const handleSubmit = (e) => {\n    e.preventDefault();\n    if (message.trim()) {\n      onSend(message);\n      setMessage('');\n    }\n  };\n\n  return (\n    <form onSubmit={handleSubmit}>\n      <input\n        type=\"text\"\n        value={message}\n        onChange={(e) => setMessage(e.target.value)}\n        placeholder=\"Type a message\"\n      />\n      <button type=\"submit\">Send</button>\n    </form>\n  );\n}"
     },
     {
-      "path": "src/components/ProductCard.jsx",
-      "content": "import React from 'react';\nimport { Link } from 'react-router-dom';\n\nfunction ProductCard() {\n  return (\n    <div className=\"product-card\">\n      <Link to=\"/products/1\">\n        <img src=\"\" alt=\"Product\" />\n        <h3>Product Name</h3>\n        <p>$0.00</p>\n      </Link>\n      <button>Add to Cart</button>\n    </div>\n  );\n}\n\nexport default ProductCard;"
+      "path": "src/components/UserList.jsx",
+      "content": "export default function UserList() {\n  return (\n    <div>\n      <h3>Users</h3>\n      <ul>\n        <li>User 1</li>\n        <li>User 2</li>\n      </ul>\n    </div>\n  );\n}"
     }
   ]
 }

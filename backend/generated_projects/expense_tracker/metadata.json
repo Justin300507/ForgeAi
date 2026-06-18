@@ -1,0 +1,8 @@
+{
+    "project_name": "Expense Tracker",
+    "description": "A web and mobile application to track personal and business expenses, categorize spending, and generate financial reports.",
+    "provider": "openrouter",
+    "generated_at": "2026-06-18T16:06:06.296500",
+    "generation_time_seconds": 106.66,
+    "version": "0.9"
+}

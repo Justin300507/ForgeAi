@@ -3,35 +3,35 @@
   "files": [
     {
       "path": "app/main.py",
-      "content": "from fastapi import FastAPI\nfrom fastapi.middleware.cors import CORSMiddleware\nfrom routes.user_routes import user_router\nfrom routes.product_routes import product_router\nfrom routes.order_routes import order_router\n\napp = FastAPI()\n\napp.add_middleware(\n    CORSMiddleware,\n    allow_origins=[\"*\"],\n    allow_credentials=True,\n    allow_methods=[\"*\"],\n    allow_headers=[\"*\"],\n)\n\napp.include_router(user_router, prefix=\"/api/users\")\napp.include_router(product_router, prefix=\"/api/products\")\napp.include_router(order_router, prefix=\"/api/orders\")"
+      "content": "from fastapi import FastAPI\nfrom fastapi.middleware.cors import CORSMiddleware\n\nfrom routes.auth_routes import auth_router\nfrom routes.message_routes import message_router\nfrom routes.group_routes import group_router\n\napp = FastAPI()\n\napp.add_middleware(\n    CORSMiddleware,\n    allow_origins=[\"*\"],\n    allow_credentials=True,\n    allow_methods=[\"*\"],\n    allow_headers=[\"*\"],\n)\n\napp.include_router(auth_router, prefix=\"/auth\")\napp.include_router(message_router, prefix=\"/messages\")\napp.include_router(group_router, prefix=\"/groups\")"
     },
     {
       "path": "app/requirements.txt",
-      "content": "fastapi\nuvicorn\npython-dotenv\nsqlalchemy\npsycopg2-binary\npasslib[bcrypt]\npython-jose[cryptography]\npython-multipart"
+      "content": "fastapi==0.95.2\nuvicorn==0.22.0\npython-multipart==0.0.6\npython-jose==3.3.0\npasslib==1.7.4\npydantic==1.10.7\nsqlalchemy==2.0.15\npsycopg2-binary==2.9.6"
     },
     {
-      "path": "app/routes/user_routes.py",
-      "content": "from fastapi import APIRouter, Depends, HTTPException\nfrom services.user_service import UserService\nfrom models.user import UserCreate, UserLogin\n\nuser_router = APIRouter()\n\n@user_router.post(\"/register\")\nasync def register(user: UserCreate):\n    return await UserService.register_user(user)\n\n@user_router.post(\"/login\")\nasync def login(user: UserLogin):\n    return await UserService.authenticate_user(user)"
+      "path": "app/routes/auth_routes.py",
+      "content": "from fastapi import APIRouter, Depends, HTTPException\nfrom fastapi.security import OAuth2PasswordRequestForm\n\nfrom services.auth_service import AuthService\nfrom models.user import UserCreate, UserLogin\n\nauth_router = APIRouter()\n\n@auth_router.post(\"/register\")\nasync def register(user: UserCreate):\n    return await AuthService.register_user(user)\n\n@auth_router.post(\"/login\")\nasync def login(form_data: OAuth2PasswordRequestForm = Depends()):\n    return await AuthService.login_user(form_data.username, form_data.password)"
     },
     {
-      "path": "app/routes/product_routes.py",
-      "content": "from fastapi import APIRouter\nfrom services.product_service import ProductService\n\nproduct_router = APIRouter()\n\n@product_router.get(\"/\")\nasync def get_products():\n    return await ProductService.get_all_products()"
+      "path": "app/routes/message_routes.py",
+      "content": "from fastapi import APIRouter, Depends, HTTPException\nfrom fastapi.security import HTTPBearer\n\nfrom services.message_service import MessageService\nfrom models.message import MessageCreate\n\nmessage_router = APIRouter()\nsecurity = HTTPBearer()\n\n@message_router.post(\"/send\")\nasync def send_message(message: MessageCreate, token: str = Depends(security)):\n    return await MessageService.send_message(message, token)\n\n@message_router.get(\"/get\")\nasync def get_messages(token: str = Depends(security)):\n    return await MessageService.get_messages(token)"
     },
     {
-      "path": "app/routes/order_routes.py",
-      "content": "from fastapi import APIRouter\nfrom services.order_service import OrderService\n\norder_router = APIRouter()\n\n@order_router.post(\"/\")\nasync def create_order():\n    return await OrderService.create_order()\n\n@order_router.get(\"/{user_id}\")\nasync def get_user_orders(user_id: str):\n    return await OrderService.get_user_orders(user_id)"
+      "path": "app/routes/group_routes.py",
+      "content": "from fastapi import APIRouter, Depends, HTTPException\nfrom fastapi.security import HTTPBearer\n\nfrom services.group_service import GroupService\nfrom models.group import GroupCreate\n\ngroup_router = APIRouter()\nsecurity = HTTPBearer()\n\n@group_router.post(\"/create\")\nasync def create_group(group: GroupCreate, token: str = Depends(security)):\n    return await GroupService.create_group(group, token)"
     },
     {
       "path": "app/models/user.py",
-      "content": "from pydantic import BaseModel, EmailStr\n\nclass UserCreate(BaseModel):\n    name: str\n    email: EmailStr\n    password: str\n    address: str | None = None\n\nclass UserLogin(BaseModel):\n    email: EmailStr\n    password: str"
+      "content": "from pydantic import BaseModel, EmailStr\n\nclass UserBase(BaseModel):\n    username: str\n    email: EmailStr\n\nclass UserCreate(UserBase):\n    password: str\n\nclass UserLogin(BaseModel):\n    username: str\n    password: str\n\nclass User(UserBase):\n    id: str\n    profile_picture: str | None = None\n    status: str | None = None\n\n    class Config:\n        orm_mode = True"
     },
     {
-      "path": "app/models/product.py",
-      "content": "from pydantic import BaseModel\n\nclass Product(BaseModel):\n    name: str\n    price: float\n    description: str | None = None\n    category: str\n    stock: int"
+      "path": "app/models/message.py",
+      "content": "from pydantic import BaseModel\nfrom datetime import datetime\n\nclass MessageCreate(BaseModel):\n    receiver_id: str\n    content: str\n\nclass Message(BaseModel):\n    id: str\n    sender_id: str\n    receiver_id: str\n    content: str\n    timestamp: datetime\n    is_read: bool\n\n    class Config:\n        orm_mode = True"
     },
     {
-      "path": "app/models/order.py",
-      "content": "from pydantic import BaseModel\nfrom datetime import datetime\n\nclass OrderCreate(BaseModel):\n    user_id: str\n    total: float\n    status: str\n\nclass Order(BaseModel):\n    id: str\n    user_id: str\n    total: float\n    status: str\n    date: datetime"
+      "path": "app/models/group.py",
+      "content": "from pydantic import BaseModel\nfrom datetime import datetime\n\nclass GroupCreate(BaseModel):\n    name: str\n    members: list[str]\n\nclass Group(BaseModel):\n    id: str\n    name: str\n    creator_id: str\n    members: list[str]\n    created_at: datetime\n\n    class Config:\n        orm_mode = True"
     }
   ]
 }

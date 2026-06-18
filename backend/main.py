@@ -5,6 +5,7 @@ from app.services.architect_service import generate_architecture
 from app.services.backend_service import generate_backend
 from app.services.frontend_service import generate_frontend
 from app.services.project_service import generate_project
+from app.services.planner_service import generate_plan
 
 app = FastAPI()
 
@@ -28,7 +29,7 @@ class FrontendRequest(BaseModel):
 
 @app.post("/generate")
 def generate(project: ProjectIdea):
-    return generate_project(
+    return generate_plan(
         project.idea,
         project.provider
     )
