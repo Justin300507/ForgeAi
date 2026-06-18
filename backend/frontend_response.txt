@@ -3,11 +3,35 @@
   "files": [
     {
       "path": "src/App.jsx",
-      "content": "import React from 'react';\nimport { BrowserRouter as Router, Routes, Route } from 'react-router-dom';\nimport Home from './pages/Home';\n\nexport default function App() {\n  return (\n    <Router>\n      <Routes>\n        <Route path=\"/\" element={<Home />} />\n      </Routes>\n    </Router>\n  );\n}"
+      "content": "import React from 'react';\nimport { BrowserRouter as Router, Routes, Route } from 'react-router-dom';\nimport Home from './pages/Home';\nimport ProductListing from './pages/ProductListing';\nimport ProductDetail from './pages/ProductDetail';\nimport Cart from './pages/Cart';\nimport Checkout from './pages/Checkout';\nimport Header from './components/Header';\nimport Footer from './components/Footer';\n\nfunction App() {\n  return (\n    <Router>\n      <Header />\n      <Routes>\n        <Route path=\"/\" element={<Home />} />\n        <Route path=\"/products\" element={<ProductListing />} />\n        <Route path=\"/products/:id\" element={<ProductDetail />} />\n        <Route path=\"/cart\" element={<Cart />} />\n        <Route path=\"/checkout\" element={<Checkout />} />\n      </Routes>\n      <Footer />\n    </Router>\n  );\n}\n\nexport default App;"
     },
     {
       "path": "src/pages/Home.jsx",
-      "content": "import React from 'react';\n\nexport default function Home() {\n  return (\n    <div>\n      <h1>Video Platform</h1>\n      <p>Welcome to our video sharing platform</p>\n    </div>\n  );\n}"
+      "content": "import React from 'react';\nimport ProductCard from '../components/ProductCard';\n\nfunction Home() {\n  return (\n    <div>\n      <h1>Welcome to our Store</h1>\n      <div className=\"featured-products\">\n        <ProductCard />\n      </div>\n    </div>\n  );\n}\n\nexport default Home;"
+    },
+    {
+      "path": "src/pages/ProductListing.jsx",
+      "content": "import React from 'react';\nimport ProductCard from '../components/ProductCard';\n\nfunction ProductListing() {\n  return (\n    <div>\n      <h1>All Products</h1>\n      <div className=\"product-grid\">\n        {[...Array(6)].map((_, i) => (\n          <ProductCard key={i} />\n        ))}\n      </div>\n    </div>\n  );\n}\n\nexport default ProductListing;"
+    },
+    {
+      "path": "src/pages/ProductDetail.jsx",
+      "content": "import React from 'react';\n\nfunction ProductDetail() {\n  return (\n    <div>\n      <h1>Product Details</h1>\n      <div className=\"product-detail\">\n        <img src=\"\" alt=\"Product\" />\n        <h2>Product Name</h2>\n        <p>Price: $0.00</p>\n        <p>Description: Lorem ipsum</p>\n        <button>Add to Cart</button>\n      </div>\n    </div>\n  );\n}\n\nexport default ProductDetail;"
+    },
+    {
+      "path": "src/pages/Cart.jsx",
+      "content": "import React from 'react';\nimport CartItem from '../components/CartItem';\n\nfunction Cart() {\n  return (\n    <div>\n      <h1>Your Cart</h1>\n      <div className=\"cart-items\">\n        <CartItem />\n      </div>\n      <button>Proceed to Checkout</button>\n    </div>\n  );\n}\n\nexport default Cart;"
+    },
+    {
+      "path": "src/pages/Checkout.jsx",
+      "content": "import React from 'react';\nimport CheckoutForm from '../components/CheckoutForm';\n\nfunction Checkout() {\n  return (\n    <div>\n      <h1>Checkout</h1>\n      <CheckoutForm />\n    </div>\n  );\n}\n\nexport default Checkout;"
+    },
+    {
+      "path": "src/components/Header.jsx",
+      "content": "import React from 'react';\nimport { Link } from 'react-router-dom';\n\nfunction Header() {\n  return (\n    <header>\n      <nav>\n        <Link to=\"/\">Home</Link>\n        <Link to=\"/products\">Products</Link>\n        <Link to=\"/cart\">Cart</Link>\n      </nav>\n    </header>\n  );\n}\n\nexport default Header;"
+    },
+    {
+      "path": "src/components/ProductCard.jsx",
+      "content": "import React from 'react';\nimport { Link } from 'react-router-dom';\n\nfunction ProductCard() {\n  return (\n    <div className=\"product-card\">\n      <Link to=\"/products/1\">\n        <img src=\"\" alt=\"Product\" />\n        <h3>Product Name</h3>\n        <p>$0.00</p>\n      </Link>\n      <button>Add to Cart</button>\n    </div>\n  );\n}\n\nexport default ProductCard;"
     }
   ]
 }

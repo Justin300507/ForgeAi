@@ -22,8 +22,15 @@ class DatabaseTable(BaseModel):
 class FolderStructure(BaseModel):
     backend: List[str]
 
+class FrontendStructure(BaseModel):
+    pages: list[str]
+    components: list[str]
 
 class ArchitecturePlan(BaseModel):
-    api_endpoints: List[ApiEndpoint]
-    database_schema: List[DatabaseTable]
+    api_endpoints: list[ApiEndpoint]
+
+    database_schema: list[DatabaseTable]
+
     folder_structure: FolderStructure
+
+    frontend_structure: FrontendStructure

@@ -35,6 +35,11 @@ Format:
 
   "folder_structure": {{
     "backend": []
+  }},
+
+  "frontend_structure": {{
+    "pages": [],
+    "components": []
   }}
 }}
 
@@ -46,41 +51,37 @@ Rules:
 - No explanations
 
 IMPORTANT:
-Generate EXACTLY:
 
-- 3 API endpoints
-- 2 database tables
-- 5 backend folders
+Generate:
 
-Do not generate anything else.
+- Maximum 5 API endpoints
+- Maximum 3 database tables
+- Maximum 8 backend folders
+- Maximum 5 frontend pages
+- Maximum 5 frontend components
+
 API Rules:
+
 - Generate realistic REST API endpoints
 - Include CRUD operations where appropriate
 - Use industry-standard endpoint naming
 
 Database Rules:
+
 - Every table must have a primary key
 - Primary keys must not be nullable
 - Include realistic column types
 - Add foreign key columns when relationships exist
 
-Folder Structure Rules:
-- Generate a production-ready backend structure
-- Use common backend folders
-- Include:
-  - routes
-  - controllers
-  - services
-  - models
-  - middleware
-  - config
-  - utils
-  - validators
+Frontend Structure Rules:
 
-Think like a senior software architect designing a scalable SaaS application.
-IMPORTANT:
-Generate a maximum of:
-- 5 API endpoints
-- 3 database tables
-- 8 backend folders
+- Generate pages based on project requirements
+- Generate reusable components
+- Use realistic component names
+
+Folder Structure Rules:
+
+- Generate production-ready backend folders
+
+Return JSON only.
 """

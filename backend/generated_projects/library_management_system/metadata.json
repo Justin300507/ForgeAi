@@ -1,0 +1,8 @@
+{
+    "project_name": "Library Management System",
+    "description": "A digital system to manage library operations including book lending, returns, and member management.",
+    "provider": "openrouter",
+    "generated_at": "2026-06-18T15:52:47.047607",
+    "generation_time_seconds": 95.27,
+    "version": "0.9"
+}

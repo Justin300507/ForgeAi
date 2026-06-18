@@ -19,12 +19,21 @@ class RoadmapPhase(BaseModel):
 class ProjectPlan(BaseModel):
     project_name: str
     description: str
+
     target_users: list[str]
+
     core_features: list[str]
+
     future_features: list[str]
+
     tech_stack: list[str]
 
     database_entities: list[DatabaseEntity]
+
     api_modules: list[ApiModule]
+
+    pages: list[str]
+
+    backend_modules: list[str]
 
     roadmap: list[RoadmapPhase]

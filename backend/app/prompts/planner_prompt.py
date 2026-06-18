@@ -1,5 +1,5 @@
 def build_planner_prompt(idea):
-  return f"""
+    return f"""
 You are a senior software product manager.
 
 Given this idea:
@@ -36,6 +36,10 @@ Format:
 }}
 ],
 
+"pages": [],
+
+"backend_modules": [],
+
 "roadmap": [
 {{
 "phase": "",
@@ -48,64 +52,32 @@ STRICT RULES:
 
 database_entities MUST be objects.
 
-Example:
-
-[
-{{
-"name": "User",
-"fields": [
-"id",
-"email",
-"password_hash"
-]
-}}
-]
-
 api_modules MUST be objects.
 
-Example:
+pages MUST be an array of strings.
 
-[
-{{
-"name": "Authentication",
-"endpoints": [
-"/login",
-"/register",
-"/logout"
-]
-}}
-]
+backend_modules MUST be an array of strings.
 
 roadmap MUST be an array of objects.
 
-Example:
-
-[
-{{
-"phase": "Phase 1",
-"milestones": [
-"Setup project",
-"Create database"
-]
-}}
-]
-
 LIMITS:
 
-* Maximum 5 core_features
-* Maximum 3 future_features
-* Maximum 3 database_entities
-* Maximum 3 api_modules
-* Maximum 3 roadmap phases
+- Maximum 5 core_features
+- Maximum 3 future_features
+- Maximum 3 database_entities
+- Maximum 3 api_modules
+- Maximum 5 pages
+- Maximum 5 backend_modules
+- Maximum 3 roadmap phases
 
 JSON RULES:
 
-* Return valid JSON only
-* No markdown
-* No code fences
-* No explanations
-* No headings
-* No comments
+- Return valid JSON only
+- No markdown
+- No code fences
+- No explanations
+- No headings
+- No comments
 
 The response MUST start with {{
 and end with }}

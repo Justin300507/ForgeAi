@@ -9,28 +9,39 @@ Given this architecture:
 
 Return ONLY valid JSON.
 
-Generate ONLY 2 frontend files.
+Generate a runnable React frontend.
+
+Required files:
+
+- src/App.jsx
+
+For each page generate:
+
+- pages/<Page>.jsx
+
+For each component generate:
+
+- components/<Component>.jsx
 
 Format:
 
 {{
   "files": [
     {{
-      "path": "src/App.jsx",
-      "content": "// React placeholder"
-    }},
-    {{
-      "path": "src/pages/Home.jsx",
-      "content": "// Home page placeholder"
+      "path": "",
+      "content": ""
     }}
   ]
 }}
 
 Rules:
+
 - Return JSON only
 - No markdown
 - No explanations
 - No code fences
-- Maximum 2 files
-- Keep content under 20 lines per file
+- Maximum 8 files
+- Generate runnable React code
+- Imports must match generated paths
+- Keep files concise
 """

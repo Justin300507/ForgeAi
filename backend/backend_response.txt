@@ -1,12 +1,38 @@
+```json
 {
   "files": [
     {
       "path": "app/main.py",
-      "content": "from fastapi import FastAPI\nfrom .routes import router\n\napp = FastAPI()\napp.include_router(router)\n\n@app.get(\"/\")\ndef read_root():\n    return {\"message\": \"Welcome to the video platform API\"}"
+      "content": "from fastapi import FastAPI\nfrom fastapi.middleware.cors import CORSMiddleware\nfrom routes.user_routes import user_router\nfrom routes.product_routes import product_router\nfrom routes.order_routes import order_router\n\napp = FastAPI()\n\napp.add_middleware(\n    CORSMiddleware,\n    allow_origins=[\"*\"],\n    allow_credentials=True,\n    allow_methods=[\"*\"],\n    allow_headers=[\"*\"],\n)\n\napp.include_router(user_router, prefix=\"/api/users\")\napp.include_router(product_router, prefix=\"/api/products\")\napp.include_router(order_router, prefix=\"/api/orders\")"
     },
     {
-      "path": "app/routes/auth.py",
-      "content": "from fastapi import APIRouter, Depends, HTTPException\nfrom fastapi.security import OAuth2PasswordRequestForm\n\nrouter = APIRouter(prefix=\"/api/v1\")\n\n@router.post(\"/login\")\nasync def login(form_data: OAuth2PasswordRequestForm = Depends()):\n    # Authentication logic here\n    return {\"access_token\": \"sample_token\", \"token_type\": \"bearer\"}"
+      "path": "app/requirements.txt",
+      "content": "fastapi\nuvicorn\npython-dotenv\nsqlalchemy\npsycopg2-binary\npasslib[bcrypt]\npython-jose[cryptography]\npython-multipart"
+    },
+    {
+      "path": "app/routes/user_routes.py",
+      "content": "from fastapi import APIRouter, Depends, HTTPException\nfrom services.user_service import UserService\nfrom models.user import UserCreate, UserLogin\n\nuser_router = APIRouter()\n\n@user_router.post(\"/register\")\nasync def register(user: UserCreate):\n    return await UserService.register_user(user)\n\n@user_router.post(\"/login\")\nasync def login(user: UserLogin):\n    return await UserService.authenticate_user(user)"
+    },
+    {
+      "path": "app/routes/product_routes.py",
+      "content": "from fastapi import APIRouter\nfrom services.product_service import ProductService\n\nproduct_router = APIRouter()\n\n@product_router.get(\"/\")\nasync def get_products():\n    return await ProductService.get_all_products()"
+    },
+    {
+      "path": "app/routes/order_routes.py",
+      "content": "from fastapi import APIRouter\nfrom services.order_service import OrderService\n\norder_router = APIRouter()\n\n@order_router.post(\"/\")\nasync def create_order():\n    return await OrderService.create_order()\n\n@order_router.get(\"/{user_id}\")\nasync def get_user_orders(user_id: str):\n    return await OrderService.get_user_orders(user_id)"
+    },
+    {
+      "path": "app/models/user.py",
+      "content": "from pydantic import BaseModel, EmailStr\n\nclass UserCreate(BaseModel):\n    name: str\n    email: EmailStr\n    password: str\n    address: str | None = None\n\nclass UserLogin(BaseModel):\n    email: EmailStr\n    password: str"
+    },
+    {
+      "path": "app/models/product.py",
+      "content": "from pydantic import BaseModel\n\nclass Product(BaseModel):\n    name: str\n    price: float\n    description: str | None = None\n    category: str\n    stock: int"
+    },
+    {
+      "path": "app/models/order.py",
+      "content": "from pydantic import BaseModel\nfrom datetime import datetime\n\nclass OrderCreate(BaseModel):\n    user_id: str\n    total: float\n    status: str\n\nclass Order(BaseModel):\n    id: str\n    user_id: str\n    total: float\n    status: str\n    date: datetime"
     }
   ]
 }
+```
