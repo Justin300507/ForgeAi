@@ -1,15 +1,21 @@
-import json
-
-from app.providers.ai_provider import generate_content
 from app.prompts.fixer_prompt import build_fixer_prompt
-
-
+from app.providers.ai_provider import generate_content
+import json
 def generate_fix(
-    error,
+    file_path,
+    file_content,
+    errors,
     provider="auto"
 ):
 
-    prompt = build_fixer_prompt(error)
+    if len(file_content) > 15000:
+        file_content = file_content[:15000]
+
+    prompt = build_fixer_prompt(
+        file_path,
+        file_content,
+        errors
+    )
 
     text = generate_content(
         prompt,
@@ -21,7 +27,6 @@ def generate_fix(
     text = text.strip()
 
     try:
-
         return json.loads(text)
 
     except Exception as e:

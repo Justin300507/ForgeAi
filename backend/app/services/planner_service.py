@@ -7,9 +7,11 @@ from app.prompts.planner_prompt import build_planner_prompt
 from app.models.project_models import ProjectPlan
 from app.providers.ai_provider import generate_content
 
+
 def generate_plan(
     idea,
-    provider="auto"
+    provider="auto",
+    max_tokens=1500
 ):
     try:
 
@@ -17,34 +19,97 @@ def generate_plan(
 
         start = time.time()
 
-        prompt = build_planner_prompt(idea)
+        prompt = build_planner_prompt(
+            idea
+        )
 
         text = generate_content(
-    prompt,
-    provider
-)
+            prompt,
+            provider
+        )
 
-        print(f"Planner Response Length: {len(text)}")
-        print(f"Planner Time: {time.time() - start:.2f}s")
+        print(
+            f"Planner Response Length: {len(text)}"
+        )
+
+        print(
+            f"Planner Time: {time.time() - start:.2f}s"
+        )
 
         clean_text = text
-        clean_text = clean_text.replace("```json", "")
-        clean_text = clean_text.replace("```", "")
+
+        clean_text = clean_text.replace(
+            "```json",
+            ""
+        )
+
+        clean_text = clean_text.replace(
+            "```",
+            ""
+        )
+
         clean_text = clean_text.strip()
 
-        data = json.loads(clean_text)
+        data = json.loads(
+            clean_text
+        )
 
-        validated = ProjectPlan(**data)
+        # Detect LLM error responses
 
-        print("=== END PLANNER ===")
+        if "error" in data:
+
+            raise Exception(
+                f"Planner returned error object: {data['error']}"
+            )
+
+        # Required schema validation
+
+        required_fields = [
+            "project_name",
+            "description",
+            "target_users",
+            "core_features",
+            "future_features",
+            "tech_stack",
+            "database_entities",
+            "api_modules",
+            "pages",
+            "backend_modules",
+            "roadmap"
+        ]
+
+        missing = [
+            field
+            for field in required_fields
+            if field not in data
+        ]
+
+        if missing:
+
+            raise Exception(
+                f"Planner missing fields: {missing}"
+            )
+
+        validated = ProjectPlan(
+            **data
+        )
+
+        print(
+            "=== END PLANNER ==="
+        )
 
         return validated.model_dump()
 
     except Exception as e:
 
-        print("PLANNER ERROR:", e)
+        print(
+            "PLANNER ERROR:",
+            e
+        )
 
         raise HTTPException(
             status_code=500,
-            detail=f"ForgeAI generation failed: {str(e)}"
+            detail=(
+                f"ForgeAI generation failed: {str(e)}"
+            )
         )

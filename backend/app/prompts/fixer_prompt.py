@@ -1,80 +1,184 @@
-def build_fixer_prompt(error):
+def build_fixer_prompt(
+file_path,
+file_content,
+errors
+):
+    error_text = "\n".join(
+    f"- {e}"
+    for e in errors
+)
+
     return f"""
-```
 
-You are a senior software engineer.
+You are ForgeAI Fix Agent.
 
-Fix this validation error:
+File Path:
 
-{error}
+{file_path}
 
-Return ONLY valid JSON.
+Current File Content:
 
-Format:
+{file_content}
 
-{{
-"path": "",
-"content": ""
-}}
+Validation Errors:
 
-STRICT RULES:
+{error_text}
 
-* Generate ONLY the missing file
-* Generate a minimal working implementation
-* Keep file under 30 lines
-* Return valid JSON only
-* No markdown
-* No explanations
-* No code fences
-* Escape all quotes correctly
-* Escape all backslashes correctly
-* The response must start with {{
-* The response must end with }}
+Your task:
 
-PATH RULES:
+Generate a COMPLETE corrected version of this file.
 
-Frontend files MUST be placed inside src/
+REPAIR RULES
 
-Examples:
+* Fix ALL validation errors together.
+* Return the ENTIRE corrected file.
+* Do not return patches.
+* Do not return individual functions.
+* Do not omit existing working code.
+* Preserve imports when possible.
+* Keep existing working code unless it conflicts with a validation error.
 
-Missing frontend import target: ./pages/Login.jsx
-→ src/pages/Login.jsx
+SYMBOL REPAIR RULES
 
-Missing frontend import target: ./pages/TaskDetail.jsx
-→ src/pages/TaskDetail.jsx
+If validation error contains:
 
-Missing frontend import target: ./components/UserAvatar.jsx
-→ src/components/UserAvatar.jsx
+Missing symbol 'user_router'
 
-Missing frontend import target: ./PriorityBadge.jsx
-→ src/components/PriorityBadge.jsx
+Then the repaired file MUST export:
 
-Backend files MUST be placed inside app/
+user_router
 
-Examples:
+Valid:
 
-Missing backend import target: services/auth_service.py
-→ app/services/auth_service.py
+user_router = APIRouter()
 
-Missing backend import target: services/chat_service.py
-→ app/services/chat_service.py
+Invalid:
 
-Missing backend import target: models/user.py
-→ app/models/user.py
+router = APIRouter()
 
-Missing backend import target: routes/auth_routes.py
-→ app/routes/auth_routes.py
+If validation error contains:
 
-IMPORTANT:
+Missing symbol 'task_router'
 
-Return the FULL CORRECT project path in the path field.
+Then the repaired file MUST export:
+
+task_router
+
+Valid:
+
+task_router = APIRouter()
+
+Invalid:
+
+router = APIRouter()
+
+Always create the missing symbol exactly as requested.
+
+ROUTE QUALITY RULES
+
+If validation error contains:
+
+No endpoints found
+
+Then generate at least one valid endpoint.
 
 Example:
 
+@user_router.get("/")
+def get_users():
+return []
+
+A route file is invalid if it only contains:
+
+user_router = APIRouter()
+
+without any endpoints.
+
+If a route file is repaired:
+
+* Ensure APIRouter exists.
+* Ensure at least one endpoint exists.
+* Ensure the router variable matches the imported symbol name.
+
+DEPENDENCY REPAIR RULES
+
+If validation error contains:
+
+Unknown dependency:
+
+Replace the invalid dependency with the closest valid package.
+
+Examples:
+
+e-mail-validator -> email-validator
+eval-validator -> email-validator
+echo-validator -> email-validator
+pythonmultipart -> python-multipart
+fast-api -> fastapi
+
+Never invent package names.
+
+If repairing requirements.txt:
+
+Return the ENTIRE corrected requirements.txt content.
+
+FASTAPI RULES
+
+* Use FastAPI only.
+* Use APIRouter.
+* Never generate Flask.
+* Never generate Django.
+* Never generate Blueprint.
+* Use imports beginning with app.
+
+Valid:
+
+from app.routes.user_routes import user_router
+from app.services.user_service import create_user
+from app.models.user import User
+
+Invalid:
+
+from routes.user_routes import user_router
+from services.user_service import create_user
+from models.user import User
+
+REACT RULES
+
+* Use React functional components.
+* Export default component.
+* Generate valid JSX.
+* Do not use TypeScript.
+
+PATH RULES
+
+Frontend files must be inside src/
+
+Backend files must be inside app/
+
+Requirements file path:
+
+app/requirements.txt
+
+OUTPUT FORMAT
+
+Return ONLY valid JSON.
+
 {{
-"path": "src/pages/TaskDetail.jsx",
-"content": "..."
+"path": "{file_path}",
+"content": "FULL FILE CONTENT"
 }}
 
-Generate the missing file now.
+OUTPUT RULES
+
+* JSON only
+* No markdown
+* No explanations
+* No code fences
+* No text before JSON
+* No text after JSON
+* Escape quotes correctly
+* Escape backslashes correctly
+
+Return valid JSON only.
 """

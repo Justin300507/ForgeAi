@@ -1,27 +1,15 @@
 def build_frontend_prompt(architecture):
 
     return f"""
-You are a senior React frontend engineer.
+You are ForgeAI Frontend Generator.
 
-Given this architecture:
+Architecture:
 
 {architecture}
 
 Return ONLY valid JSON.
 
-Generate a runnable React frontend.
-
-Required files:
-
-- src/App.jsx
-
-For each page generate:
-
-- pages/<Page>.jsx
-
-For each component generate:
-
-- components/<Component>.jsx
+Generate a MINIMAL runnable React frontend.
 
 Format:
 
@@ -34,46 +22,79 @@ Format:
   ]
 }}
 
-CRITICAL RULES:
+RULES:
 
 - Return JSON only
 - No markdown
 - No explanations
 - No code fences
+- No text outside JSON
 
-- Maximum 8 files
+FILE RULES:
 
-- Generate runnable React code
+- Generate at most 5 files total
+- Generate only:
+  - src/App.jsx
+  - src/pages/*.jsx
+  - src/components/*.jsx
 
-- Every imported page MUST exist
-- Every imported component MUST exist
+- Every path must:
+  - start with src/
+  - use forward slashes
+  - contain only ASCII characters
+  - end with .jsx
 
-- Do NOT import files that are not generated
+VALID:
 
-- All import paths must match generated files
+src/App.jsx
+src/pages/Login.jsx
+src/components/Header.jsx
 
-- App.jsx must only import generated pages and components
+INVALID:
 
-- Components must only import generated components
+src\\pages\\Login.jsx
+src/pages/Login.js
+src/pages/Login.tsx
 
-- Avoid placeholder imports
+CODE RULES:
 
-- Keep files concise
-- Keep files under 50 lines where possible
+- Keep every file under 20 lines
+- Keep JSX extremely small
+- No CSS
+- No Tailwind
+- No styling
+- No external libraries except React and react-router-dom
+- No comments
+- No placeholder text blocks
 
-EXAMPLE:
+IMPORT RULES:
 
-If App.jsx contains:
+- Import only generated files
+- Every imported page must exist
+- Every imported component must exist
+- Do not import unused files
 
-import Home from './pages/Home'
+APP RULES:
 
-Then Home.jsx MUST be generated.
+- App.jsx must be generated
+- App.jsx may import up to 3 pages
+- App.jsx may import up to 2 components
+- Use BrowserRouter only if needed
 
-If Home.jsx contains:
+RELIABILITY RULES:
 
-import ProductCard from '../components/ProductCard'
+- Prioritize valid JSON over completeness
+- Prioritize short files over feature richness
+- Do not generate large JSX trees
+- Do not generate long forms
+- Do not generate sample data
 
-Then ProductCard.jsx MUST be generated.
+Before returning:
 
-Generate production-style but minimal runnable code.
+1. Verify all imports exist.
+2. Verify all paths are valid.
+3. Verify JSON is valid.
+4. Verify every quote is escaped.
+
+Return JSON only.
 """

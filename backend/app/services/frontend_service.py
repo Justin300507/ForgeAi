@@ -8,7 +8,8 @@ import time
 
 def generate_frontend(
     architecture,
-    provider="auto"
+    provider="auto",
+    max_tokens=1500
 ):
 
     prompt = build_frontend_prompt(architecture)
@@ -27,6 +28,7 @@ def generate_frontend(
     clean_text = clean_text.replace("```json", "")
     clean_text = clean_text.replace("```", "")
     clean_text = clean_text.strip()
+    clean_text = clean_text.replace("\t", " ")
 
     print(f"Frontend Response Length: {len(clean_text)}")
 

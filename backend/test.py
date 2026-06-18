@@ -1,3 +1,19 @@
-from app.providers.ai_provider import generate_content
+from groq import Groq
 
-print(generate_content("Say hello in one sentence"))
+client = Groq(
+    api_key="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"
+)
+
+response = client.chat.completions.create(
+    model="llama-3.3-70b-versatile",
+    messages=[
+        {
+            "role": "user",
+            "content": "Say hello"
+        }
+    ]
+)
+
+print(
+    response.choices[0].message.content
+)

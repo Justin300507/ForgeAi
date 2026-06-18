@@ -1,38 +1,24 @@
-```json
 {
   "files": [
     {
       "path": "src/App.jsx",
-      "content": "import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';\nimport Dashboard from './pages/Dashboard';\nimport Expenses from './pages/Expenses';\nimport Budgets from './pages/Budgets';\nimport Reports from './pages/Reports';\nimport Settings from './pages/Settings';\nimport Navbar from './components/Navbar';\n\nfunction App() {\n  return (\n    <Router>\n      <Navbar />\n      <Routes>\n        <Route path=\"/\" element={<Dashboard />} />\n        <Route path=\"/expenses\" element={<Expenses />} />\n        <Route path=\"/budgets\" element={<Budgets />} />\n        <Route path=\"/reports\" element={<Reports />} />\n        <Route path=\"/settings\" element={<Settings />} />\n      </Routes>\n    </Router>\n  );\n}\n\nexport default App;"
+      "content": "import React from 'react'; import { BrowserRouter, Route, Routes } from 'react-router-dom'; import Login from './pages/Login'; import Register from './pages/Register'; import Profile from './pages/Profile'; import Navbar from './components/Navbar'; function App() { return ( <BrowserRouter> <Navbar /> <Routes> <Route path=\"/login\" element={<Login />} /> <Route path=\"/register\" element={<Register />} /> <Route path=\"/profile\" element={<Profile />} /> </Routes> </BrowserRouter> ); } export default App;"
     },
     {
-      "path": "src/pages/Dashboard.jsx",
-      "content": "import React from 'react';\nimport BudgetCard from '../components/BudgetCard';\nimport ReportChart from '../components/ReportChart';\n\nconst Dashboard = () => {\n  return (\n    <div>\n      <h1>Dashboard</h1>\n      <BudgetCard />\n      <ReportChart />\n    </div>\n  );\n};\n\nexport default Dashboard;"
+      "path": "src/pages/Login.jsx",
+      "content": "import React from 'react'; function Login() { return <div>Login</div>; } export default Login;"
     },
     {
-      "path": "src/pages/Expenses.jsx",
-      "content": "import React from 'react';\nimport ExpenseForm from '../components/ExpenseForm';\nimport ExpenseList from '../components/ExpenseList';\n\nconst Expenses = () => {\n  return (\n    <div>\n      <h1>Expenses</h1>\n      <ExpenseForm />\n      <ExpenseList />\n    </div>\n  );\n};\n\nexport default Expenses;"
+      "path": "src/pages/Register.jsx",
+      "content": "import React from 'react'; function Register() { return <div>Register</div>; } export default Register;"
     },
     {
-      "path": "src/pages/Budgets.jsx",
-      "content": "import React from 'react';\nimport BudgetCard from '../components/BudgetCard';\n\nconst Budgets = () => {\n  return (\n    <div>\n      <h1>Budgets</h1>\n      <BudgetCard />\n    </div>\n  );\n};\n\nexport default Budgets;"
-    },
-    {
-      "path": "src/pages/Reports.jsx",
-      "content": "import React from 'react';\nimport ReportChart from '../components/ReportChart';\n\nconst Reports = () => {\n  return (\n    <div>\n      <h1>Reports</h1>\n      <ReportChart />\n    </div>\n  );\n};\n\nexport default Reports;"
-    },
-    {
-      "path": "src/pages/Settings.jsx",
-      "content": "import React from 'react';\n\nconst Settings = () => {\n  return (\n    <div>\n      <h1>Settings</h1>\n    </div>\n  );\n};\n\nexport default Settings;"
+      "path": "src/pages/Profile.jsx",
+      "content": "import React from 'react'; function Profile() { return <div>Profile</div>; } export default Profile;"
     },
     {
       "path": "src/components/Navbar.jsx",
-      "content": "import React from 'react';\nimport { Link } from 'react-router-dom';\n\nconst Navbar = () => {\n  return (\n    <nav>\n      <Link to=\"/\">Dashboard</Link>\n      <Link to=\"/expenses\">Expenses</Link>\n      <Link to=\"/budgets\">Budgets</Link>\n      <Link to=\"/reports\">Reports</Link>\n      <Link to=\"/settings\">Settings</Link>\n    </nav>\n  );\n};\n\nexport default Navbar;"
-    },
-    {
-      "path": "src/components/ExpenseForm.jsx",
-      "content": "import React, { useState } from 'react';\n\nconst ExpenseForm = () => {\n  const [amount, setAmount] = useState('');\n  const [category, setCategory] = useState('');\n\n  const handleSubmit = (e) => {\n    e.preventDefault();\n    // Submit logic here\n  };\n\n  return (\n    <form onSubmit={handleSubmit}>\n      <input\n        type=\"number\"\n        value={amount}\n        onChange={(e) => setAmount(e.target.value)}\n        placeholder=\"Amount\"\n      />\n      <input\n        type=\"text\"\n        value={category}\n        onChange={(e) => setCategory(e.target.value)}\n        placeholder=\"Category\"\n      />\n      <button type=\"submit\">Add Expense</button>\n    </form>\n  );\n};\n\nexport default ExpenseForm;"
+      "content": "import React from 'react'; function Navbar() { return <div>Navbar</div>; } export default Navbar;"
     }
   ]
 }
-```

@@ -1,0 +1,155 @@
+{
+  "api_endpoints": [
+    {
+      "method": "POST",
+      "path": "/login",
+      "description": "Login endpoint to authenticate users"
+    },
+    {
+      "method": "POST",
+      "path": "/register",
+      "description": "Registration endpoint to create new users"
+    },
+    {
+      "method": "GET",
+      "path": "/profile",
+      "description": "Endpoint to retrieve user profile information"
+    },
+    {
+      "method": "PUT",
+      "path": "/profile",
+      "description": "Endpoint to update user profile information"
+    },
+    {
+      "method": "DELETE",
+      "path": "/profile",
+      "description": "Endpoint to delete user profile"
+    }
+  ],
+  "database_schema": [
+    {
+      "table_name": "Users",
+      "columns": [
+        {
+          "name": "id",
+          "type": "integer",
+          "is_primary_key": true,
+          "is_nullable": false
+        },
+        {
+          "name": "username",
+          "type": "varchar",
+          "is_primary_key": false,
+          "is_nullable": false
+        },
+        {
+          "name": "email",
+          "type": "varchar",
+          "is_primary_key": false,
+          "is_nullable": false
+        },
+        {
+          "name": "password",
+          "type": "varchar",
+          "is_primary_key": false,
+          "is_nullable": false
+        },
+        {
+          "name": "role",
+          "type": "varchar",
+          "is_primary_key": false,
+          "is_nullable": false
+        }
+      ]
+    },
+    {
+      "table_name": "Profiles",
+      "columns": [
+        {
+          "name": "id",
+          "type": "integer",
+          "is_primary_key": true,
+          "is_nullable": false
+        },
+        {
+          "name": "user_id",
+          "type": "integer",
+          "is_primary_key": false,
+          "is_nullable": false
+        },
+        {
+          "name": "name",
+          "type": "varchar",
+          "is_primary_key": false,
+          "is_nullable": true
+        },
+        {
+          "name": "bio",
+          "type": "text",
+          "is_primary_key": false,
+          "is_nullable": true
+        },
+        {
+          "name": "avatar",
+          "type": "varchar",
+          "is_primary_key": false,
+          "is_nullable": true
+        }
+      ]
+    },
+    {
+      "table_name": "Sessions",
+      "columns": [
+        {
+          "name": "id",
+          "type": "integer",
+          "is_primary_key": true,
+          "is_nullable": false
+        },
+        {
+          "name": "user_id",
+          "type": "integer",
+          "is_primary_key": false,
+          "is_nullable": false
+        },
+        {
+          "name": "token",
+          "type": "varchar",
+          "is_primary_key": false,
+          "is_nullable": false
+        },
+        {
+          "name": "expires_at",
+          "type": "timestamp",
+          "is_primary_key": false,
+          "is_nullable": false
+        }
+      ]
+    }
+  ],
+  "folder_structure": {
+    "backend": [
+      "app",
+      "config",
+      "models",
+      "routes",
+      "utils"
+    ]
+  },
+  "frontend_structure": {
+    "pages": [
+      "Login",
+      "Register",
+      "Profile",
+      "Dashboard",
+      "Settings"
+    ],
+    "components": [
+      "Navbar",
+      "Footer",
+      "Button",
+      "InputField",
+      "ProfileCard"
+    ]
+  }
+}

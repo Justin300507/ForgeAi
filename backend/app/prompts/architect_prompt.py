@@ -1,12 +1,47 @@
+import json
+
+
 def build_architect_prompt(project_plan):
+
     return f"""
 You are a senior software architect.
 
-Given this project plan:
+Project Plan JSON:
 
-{project_plan}
+{json.dumps(project_plan, indent=2)}
+
+IMPORTANT:
+
+Do NOT generate:
+
+- plan
+- backend
+- frontend
+- validation
+- runtime
+- stats
+- project_path
+- zip_path
+- metadata_path
+
+Generate ONLY architecture data.
 
 Generate ONLY valid JSON.
+
+The response MUST start with {{ and end with }}.
+
+Your response MUST contain ONLY these top-level keys:
+
+- api_endpoints
+- database_schema
+- folder_structure
+- frontend_structure
+
+Any other key is invalid.
+
+Do not leave arrays unfinished.
+Do not leave objects unfinished.
+Do not truncate JSON.
 
 Format:
 
@@ -49,14 +84,14 @@ Rules:
 - No markdown
 - No code blocks
 - No explanations
+- No text before JSON
+- No text after JSON
 
-IMPORTANT:
-
-Generate:
+IMPORTANT LIMITS:
 
 - Maximum 5 API endpoints
 - Maximum 3 database tables
-- Maximum 8 backend folders
+- Maximum 5 backend folders
 - Maximum 5 frontend pages
 - Maximum 5 frontend components
 

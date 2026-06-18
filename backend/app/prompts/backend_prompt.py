@@ -1,80 +1,105 @@
 def build_backend_prompt(architecture):
     return f"""
-You are a senior FastAPI backend engineer.
+You are ForgeAI Backend Generator.
 
-Given this architecture:
+Architecture:
 
 {architecture}
 
+Generate a complete FastAPI backend.
+
 Return ONLY valid JSON.
-
-Generate a runnable FastAPI backend.
-
-Required files:
-
-- app/main.py
-- app/requirements.txt
-
-For each backend module generate:
-
-- routes/<module>_routes.py
-- models/<module>.py
-- services/<module>_service.py
 
 Format:
 
 {{
-  "files": [
-    {{
-      "path": "",
-      "content": ""
-    }}
-  ]
+    "files": [
+        {{
+            "path": "",
+            "content": ""
+        }}
+    ]
 }}
 
-CRITICAL RULES:
+REQUIRED FILES
 
-- Return JSON only
+app/main.py
+app/requirements.txt
+app/__init__.py
+app/routes/__init__.py
+app/models/__init__.py
+app/services/__init__.py
+
+OPTIONAL FILES
+
+app/routes/<module>_routes.py
+app/models/<module>.py
+app/services/<module>_service.py
+
+OUTPUT RULES
+
+- JSON only
 - No markdown
 - No explanations
 - No code fences
-
 - Maximum 8 files
+- Every file under 25 lines
+- Prioritize valid JSON over completeness
 
-- Generate runnable FastAPI code
+PATH RULES
 
-- Every imported file MUST exist
-- Do NOT import files that are not generated
-- All imports must match generated paths
+- Paths must start with app/
+- Paths must use forward slashes
+- Paths must contain ASCII characters only
+- Allowed extensions: .py .txt
 
-- Use only generated models
-- Use only generated services
-- Use only generated routes
+VALID IMPORTS
 
-- Avoid placeholder imports
+from app.routes.user_routes import user_router
+from app.models.user import User
+from app.services.user_service import create_user
 
-- main.py must successfully import all route files
-
-- Keep code concise
-- Keep files under 50 lines where possible
-
-EXAMPLE:
-
-If you generate:
-
-app/routes/user_routes.py
-
-Then imports like:
+INVALID IMPORTS
 
 from routes.user_routes import user_router
+from models.user import User
+from services.user_service import create_user
 
-are allowed.
+FASTAPI RULES
 
-Do NOT generate:
+- Use FastAPI
+- Use APIRouter
+- Use Pydantic
+- Use absolute imports beginning with app
+- No Flask
+- No Django
 
-from routes.auth_routes import auth_router
+DEPENDENCIES
 
-unless auth_routes.py is also generated.
+Include all required packages in requirements.txt.
 
-Generate production-style but minimal runnable code.
+Examples:
+
+fastapi
+uvicorn
+pydantic
+email-validator
+python-multipart
+
+CONSISTENCY RULES
+
+- Every imported file must exist
+- Every imported function must exist
+- Every imported class must exist
+- Every router must exist
+- No broken imports
+- No circular imports
+
+RUNTIME GOAL
+
+The backend must start successfully with:
+
+python -m uvicorn app.main:app
+
+Return JSON only.
 """
