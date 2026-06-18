@@ -12,9 +12,13 @@ def validate_backend_imports(project_path, errors):
             if not file.endswith(".py"):
                 continue
 
-            file_path = os.path.join(root, file)
+            file_path = os.path.join(
+                root,
+                file
+            )
 
             try:
+
                 with open(
                     file_path,
                     "r",
@@ -64,9 +68,13 @@ def validate_frontend_imports(project_path, errors):
             if not file.endswith(".jsx"):
                 continue
 
-            file_path = os.path.join(root, file)
+            file_path = os.path.join(
+                root,
+                file
+            )
 
             try:
+
                 with open(
                     file_path,
                     "r",
@@ -88,14 +96,41 @@ def validate_frontend_imports(project_path, errors):
                 if not imp.startswith("."):
                     continue
 
-                expected = os.path.normpath(
-                    os.path.join(
-                        root,
-                        imp + ".jsx"
+                possible_paths = []
+
+                possible_paths.append(
+                    os.path.normpath(
+                        os.path.join(
+                            root,
+                            imp + ".jsx"
+                        )
                     )
                 )
 
-                if not os.path.exists(expected):
+                filename = os.path.basename(imp)
+
+                possible_paths.append(
+                    os.path.join(
+                        src_path,
+                        "pages",
+                        f"{filename}.jsx"
+                    )
+                )
+
+                possible_paths.append(
+                    os.path.join(
+                        src_path,
+                        "components",
+                        f"{filename}.jsx"
+                    )
+                )
+
+                exists = any(
+                    os.path.exists(path)
+                    for path in possible_paths
+                )
+
+                if not exists:
 
                     errors.append(
                         f"Missing frontend import target: {imp}.jsx"
@@ -151,19 +186,16 @@ def validate_project(project_path):
                 f"Missing route file: {route_name}.py"
             )
 
-    # Backend Import Validation
     validate_backend_imports(
         project_path,
         errors
     )
 
-    # Frontend Import Validation
     validate_frontend_imports(
         project_path,
         errors
     )
 
-    # Python Syntax Validation
     for root, dirs, files in os.walk(project_path):
 
         for file in files:

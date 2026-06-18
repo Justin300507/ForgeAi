@@ -3,35 +3,35 @@
   "files": [
     {
       "path": "src/App.jsx",
-      "content": "import { BrowserRouter, Routes, Route } from 'react-router-dom';\nimport Login from './pages/Login';\nimport Signup from './pages/Signup';\nimport Chat from './pages/Chat';\nimport GroupChat from './pages/GroupChat';\nimport Settings from './pages/Settings';\n\nexport default function App() {\n  return (\n    <BrowserRouter>\n      <Routes>\n        <Route path=\"/login\" element={<Login />} />\n        <Route path=\"/signup\" element={<Signup />} />\n        <Route path=\"/chat\" element={<Chat />} />\n        <Route path=\"/group-chat\" element={<GroupChat />} />\n        <Route path=\"/settings\" element={<Settings />} />\n      </Routes>\n    </BrowserRouter>\n  );\n}"
+      "content": "import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';\nimport Dashboard from './pages/Dashboard';\nimport Expenses from './pages/Expenses';\nimport Budgets from './pages/Budgets';\nimport Reports from './pages/Reports';\nimport Settings from './pages/Settings';\nimport Navbar from './components/Navbar';\n\nfunction App() {\n  return (\n    <Router>\n      <Navbar />\n      <Routes>\n        <Route path=\"/\" element={<Dashboard />} />\n        <Route path=\"/expenses\" element={<Expenses />} />\n        <Route path=\"/budgets\" element={<Budgets />} />\n        <Route path=\"/reports\" element={<Reports />} />\n        <Route path=\"/settings\" element={<Settings />} />\n      </Routes>\n    </Router>\n  );\n}\n\nexport default App;"
     },
     {
-      "path": "src/pages/Login.jsx",
-      "content": "import { useState } from 'react';\nimport { useNavigate } from 'react-router-dom';\n\nexport default function Login() {\n  const [email, setEmail] = useState('');\n  const [password, setPassword] = useState('');\n  const navigate = useNavigate();\n\n  const handleSubmit = (e) => {\n    e.preventDefault();\n    navigate('/chat');\n  };\n\n  return (\n    <div>\n      <h1>Login</h1>\n      <form onSubmit={handleSubmit}>\n        <input\n          type=\"email\"\n          value={email}\n          onChange={(e) => setEmail(e.target.value)}\n          placeholder=\"Email\"\n          required\n        />\n        <input\n          type=\"password\"\n          value={password}\n          onChange={(e) => setPassword(e.target.value)}\n          placeholder=\"Password\"\n          required\n        />\n        <button type=\"submit\">Login</button>\n      </form>\n    </div>\n  );\n}"
+      "path": "src/pages/Dashboard.jsx",
+      "content": "import React from 'react';\nimport BudgetCard from '../components/BudgetCard';\nimport ReportChart from '../components/ReportChart';\n\nconst Dashboard = () => {\n  return (\n    <div>\n      <h1>Dashboard</h1>\n      <BudgetCard />\n      <ReportChart />\n    </div>\n  );\n};\n\nexport default Dashboard;"
     },
     {
-      "path": "src/pages/Signup.jsx",
-      "content": "import { useState } from 'react';\nimport { useNavigate } from 'react-router-dom';\n\nexport default function Signup() {\n  const [username, setUsername] = useState('');\n  const [email, setEmail] = useState('');\n  const [password, setPassword] = useState('');\n  const navigate = useNavigate();\n\n  const handleSubmit = (e) => {\n    e.preventDefault();\n    navigate('/login');\n  };\n\n  return (\n    <div>\n      <h1>Sign Up</h1>\n      <form onSubmit={handleSubmit}>\n        <input\n          type=\"text\"\n          value={username}\n          onChange={(e) => setUsername(e.target.value)}\n          placeholder=\"Username\"\n          required\n        />\n        <input\n          type=\"email\"\n          value={email}\n          onChange={(e) => setEmail(e.target.value)}\n          placeholder=\"Email\"\n          required\n        />\n        <input\n          type=\"password\"\n          value={password}\n          onChange={(e) => setPassword(e.target.value)}\n          placeholder=\"Password\"\n          required\n        />\n        <button type=\"submit\">Sign Up</button>\n      </form>\n    </div>\n  );\n}"
+      "path": "src/pages/Expenses.jsx",
+      "content": "import React from 'react';\nimport ExpenseForm from '../components/ExpenseForm';\nimport ExpenseList from '../components/ExpenseList';\n\nconst Expenses = () => {\n  return (\n    <div>\n      <h1>Expenses</h1>\n      <ExpenseForm />\n      <ExpenseList />\n    </div>\n  );\n};\n\nexport default Expenses;"
     },
     {
-      "path": "src/pages/Chat.jsx",
-      "content": "import { useState } from 'react';\nimport MessageList from '../components/MessageList';\nimport InputBox from '../components/InputBox';\nimport UserList from '../components/UserList';\n\nexport default function Chat() {\n  const [messages, setMessages] = useState([]);\n\n  const handleSend = (message) => {\n    setMessages([...messages, message]);\n  };\n\n  return (\n    <div>\n      <h1>Chat</h1>\n      <UserList />\n      <MessageList messages={messages} />\n      <InputBox onSend={handleSend} />\n    </div>\n  );\n}"
+      "path": "src/pages/Budgets.jsx",
+      "content": "import React from 'react';\nimport BudgetCard from '../components/BudgetCard';\n\nconst Budgets = () => {\n  return (\n    <div>\n      <h1>Budgets</h1>\n      <BudgetCard />\n    </div>\n  );\n};\n\nexport default Budgets;"
     },
     {
-      "path": "src/pages/GroupChat.jsx",
-      "content": "import { useState } from 'react';\nimport MessageList from '../components/MessageList';\nimport InputBox from '../components/InputBox';\nimport GroupList from '../components/GroupList';\n\nexport default function GroupChat() {\n  const [messages, setMessages] = useState([]);\n\n  const handleSend = (message) => {\n    setMessages([...messages, message]);\n  };\n\n  return (\n    <div>\n      <h1>Group Chat</h1>\n      <GroupList />\n      <MessageList messages={messages} />\n      <InputBox onSend={handleSend} />\n    </div>\n  );\n}"
+      "path": "src/pages/Reports.jsx",
+      "content": "import React from 'react';\nimport ReportChart from '../components/ReportChart';\n\nconst Reports = () => {\n  return (\n    <div>\n      <h1>Reports</h1>\n      <ReportChart />\n    </div>\n  );\n};\n\nexport default Reports;"
     },
     {
-      "path": "src/components/MessageList.jsx",
-      "content": "export default function MessageList({ messages = [] }) {\n  return (\n    <div>\n      {messages.map((msg, index) => (\n        <div key={index}>{msg}</div>\n      ))}\n    </div>\n  );\n}"
+      "path": "src/pages/Settings.jsx",
+      "content": "import React from 'react';\n\nconst Settings = () => {\n  return (\n    <div>\n      <h1>Settings</h1>\n    </div>\n  );\n};\n\nexport default Settings;"
     },
     {
-      "path": "src/components/InputBox.jsx",
-      "content": "import { useState } from 'react';\n\nexport default function InputBox({ onSend }) {\n  const [message, setMessage] = useState('');\n\n  const handleSubmit = (e) => {\n    e.preventDefault();\n    if (message.trim()) {\n      onSend(message);\n      setMessage('');\n    }\n  };\n\n  return (\n    <form onSubmit={handleSubmit}>\n      <input\n        type=\"text\"\n        value={message}\n        onChange={(e) => setMessage(e.target.value)}\n        placeholder=\"Type a message\"\n      />\n      <button type=\"submit\">Send</button>\n    </form>\n  );\n}"
+      "path": "src/components/Navbar.jsx",
+      "content": "import React from 'react';\nimport { Link } from 'react-router-dom';\n\nconst Navbar = () => {\n  return (\n    <nav>\n      <Link to=\"/\">Dashboard</Link>\n      <Link to=\"/expenses\">Expenses</Link>\n      <Link to=\"/budgets\">Budgets</Link>\n      <Link to=\"/reports\">Reports</Link>\n      <Link to=\"/settings\">Settings</Link>\n    </nav>\n  );\n};\n\nexport default Navbar;"
     },
     {
-      "path": "src/components/UserList.jsx",
-      "content": "export default function UserList() {\n  return (\n    <div>\n      <h3>Users</h3>\n      <ul>\n        <li>User 1</li>\n        <li>User 2</li>\n      </ul>\n    </div>\n  );\n}"
+      "path": "src/components/ExpenseForm.jsx",
+      "content": "import React, { useState } from 'react';\n\nconst ExpenseForm = () => {\n  const [amount, setAmount] = useState('');\n  const [category, setCategory] = useState('');\n\n  const handleSubmit = (e) => {\n    e.preventDefault();\n    // Submit logic here\n  };\n\n  return (\n    <form onSubmit={handleSubmit}>\n      <input\n        type=\"number\"\n        value={amount}\n        onChange={(e) => setAmount(e.target.value)}\n        placeholder=\"Amount\"\n      />\n      <input\n        type=\"text\"\n        value={category}\n        onChange={(e) => setCategory(e.target.value)}\n        placeholder=\"Category\"\n      />\n      <button type=\"submit\">Add Expense</button>\n    </form>\n  );\n};\n\nexport default ExpenseForm;"
     }
   ]
 }

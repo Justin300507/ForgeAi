@@ -3,35 +3,35 @@
   "files": [
     {
       "path": "app/main.py",
-      "content": "from fastapi import FastAPI\nfrom fastapi.middleware.cors import CORSMiddleware\n\nfrom routes.auth_routes import auth_router\nfrom routes.message_routes import message_router\nfrom routes.group_routes import group_router\n\napp = FastAPI()\n\napp.add_middleware(\n    CORSMiddleware,\n    allow_origins=[\"*\"],\n    allow_credentials=True,\n    allow_methods=[\"*\"],\n    allow_headers=[\"*\"],\n)\n\napp.include_router(auth_router, prefix=\"/auth\")\napp.include_router(message_router, prefix=\"/messages\")\napp.include_router(group_router, prefix=\"/groups\")"
+      "content": "from fastapi import FastAPI\nfrom routes.auth_routes import auth_router\nfrom routes.expense_routes import expense_router\nfrom routes.report_routes import report_router\n\napp = FastAPI()\n\napp.include_router(auth_router, prefix=\"/api/auth\", tags=[\"auth\"])\napp.include_router(expense_router, prefix=\"/api/expenses\", tags=[\"expenses\"])\napp.include_router(report_router, prefix=\"/api/reports\", tags=[\"reports\"])"
     },
     {
       "path": "app/requirements.txt",
-      "content": "fastapi==0.95.2\nuvicorn==0.22.0\npython-multipart==0.0.6\npython-jose==3.3.0\npasslib==1.7.4\npydantic==1.10.7\nsqlalchemy==2.0.15\npsycopg2-binary==2.9.6"
+      "content": "fastapi\nuvicorn\npython-dotenv\npython-jose[cryptography]\npasslib\npython-multipart\nsqlalchemy\npsycopg2-binary"
     },
     {
       "path": "app/routes/auth_routes.py",
-      "content": "from fastapi import APIRouter, Depends, HTTPException\nfrom fastapi.security import OAuth2PasswordRequestForm\n\nfrom services.auth_service import AuthService\nfrom models.user import UserCreate, UserLogin\n\nauth_router = APIRouter()\n\n@auth_router.post(\"/register\")\nasync def register(user: UserCreate):\n    return await AuthService.register_user(user)\n\n@auth_router.post(\"/login\")\nasync def login(form_data: OAuth2PasswordRequestForm = Depends()):\n    return await AuthService.login_user(form_data.username, form_data.password)"
+      "content": "from fastapi import APIRouter, Depends, HTTPException, status\nfrom fastapi.security import OAuth2PasswordRequestForm\nfrom services.auth_service import register_user, authenticate_user\nfrom models.user import UserCreate, UserLogin\n\nauth_router = APIRouter()\n\n@auth_router.post(\"/register\", status_code=status.HTTP_201_CREATED)\nasync def register(user_data: UserCreate):\n    return await register_user(user_data)\n\n@auth_router.post(\"/login\")\nasync def login(form_data: OAuth2PasswordRequestForm = Depends()):\n    return await authenticate_user(form_data.username, form_data.password)"
     },
     {
-      "path": "app/routes/message_routes.py",
-      "content": "from fastapi import APIRouter, Depends, HTTPException\nfrom fastapi.security import HTTPBearer\n\nfrom services.message_service import MessageService\nfrom models.message import MessageCreate\n\nmessage_router = APIRouter()\nsecurity = HTTPBearer()\n\n@message_router.post(\"/send\")\nasync def send_message(message: MessageCreate, token: str = Depends(security)):\n    return await MessageService.send_message(message, token)\n\n@message_router.get(\"/get\")\nasync def get_messages(token: str = Depends(security)):\n    return await MessageService.get_messages(token)"
+      "path": "app/routes/expense_routes.py",
+      "content": "from fastapi import APIRouter, Depends, HTTPException\nfrom typing import List\nfrom services.expense_service import create_expense, get_user_expenses\nfrom models.expense import ExpenseCreate, Expense\n\nfrom fastapi.security import HTTPBearer\n\nsecurity = HTTPBearer()\n\nexpense_router = APIRouter()\n\n@expense_router.post(\"\", status_code=201)\nasync def create_new_expense(expense: ExpenseCreate, token: str = Depends(security)):\n    return await create_expense(expense, token)\n\n@expense_router.get(\"\", response_model=List[Expense])\nasync def get_expenses(token: str = Depends(security)):\n    return await get_user_expenses(token)"
     },
     {
-      "path": "app/routes/group_routes.py",
-      "content": "from fastapi import APIRouter, Depends, HTTPException\nfrom fastapi.security import HTTPBearer\n\nfrom services.group_service import GroupService\nfrom models.group import GroupCreate\n\ngroup_router = APIRouter()\nsecurity = HTTPBearer()\n\n@group_router.post(\"/create\")\nasync def create_group(group: GroupCreate, token: str = Depends(security)):\n    return await GroupService.create_group(group, token)"
+      "path": "app/routes/report_routes.py",
+      "content": "from fastapi import APIRouter, Depends\nfrom services.report_service import get_expense_summary\nfrom fastapi.security import HTTPBearer\n\nsecurity = HTTPBearer()\n\nreport_router = APIRouter()\n\n@report_router.get(\"/summary\")\nasync def expense_summary(token: str = Depends(security)):\n    return await get_expense_summary(token)"
     },
     {
       "path": "app/models/user.py",
-      "content": "from pydantic import BaseModel, EmailStr\n\nclass UserBase(BaseModel):\n    username: str\n    email: EmailStr\n\nclass UserCreate(UserBase):\n    password: str\n\nclass UserLogin(BaseModel):\n    username: str\n    password: str\n\nclass User(UserBase):\n    id: str\n    profile_picture: str | None = None\n    status: str | None = None\n\n    class Config:\n        orm_mode = True"
+      "content": "from pydantic import BaseModel, EmailStr\nfrom typing import Optional\n\nclass UserBase(BaseModel):\n    email: EmailStr\n    name: str\n\nclass UserCreate(UserBase):\n    password: str\n\nclass UserLogin(BaseModel):\n    email: EmailStr\n    password: str\n\nclass UserInDB(UserBase):\n    id: str\n    createdAt: str"
     },
     {
-      "path": "app/models/message.py",
-      "content": "from pydantic import BaseModel\nfrom datetime import datetime\n\nclass MessageCreate(BaseModel):\n    receiver_id: str\n    content: str\n\nclass Message(BaseModel):\n    id: str\n    sender_id: str\n    receiver_id: str\n    content: str\n    timestamp: datetime\n    is_read: bool\n\n    class Config:\n        orm_mode = True"
+      "path": "app/models/expense.py",
+      "content": "from pydantic import BaseModel\nfrom typing import Optional\nfrom datetime import date\n\nclass ExpenseBase(BaseModel):\n    amount: float\n    category: str\n    date: date\n    description: Optional[str] = None\n\nclass ExpenseCreate(ExpenseBase):\n    pass\n\nclass Expense(ExpenseBase):\n    id: str\n    userId: str"
     },
     {
-      "path": "app/models/group.py",
-      "content": "from pydantic import BaseModel\nfrom datetime import datetime\n\nclass GroupCreate(BaseModel):\n    name: str\n    members: list[str]\n\nclass Group(BaseModel):\n    id: str\n    name: str\n    creator_id: str\n    members: list[str]\n    created_at: datetime\n\n    class Config:\n        orm_mode = True"
+      "path": "app/services/auth_service.py",
+      "content": "from models.user import UserCreate, UserInDB\nfrom typing import Dict\nimport uuid\nfrom datetime import datetime\n\nasync def register_user(user_data: UserCreate) -> Dict:\n    # In a real app, you would hash the password and save to DB\n    user = UserInDB(\n        id=str(uuid.uuid4()),\n        email=user_data.email,\n        name=user_data.name,\n        createdAt=datetime.utcnow().isoformat()\n    )\n    return {\"message\": \"User created successfully\", \"user\": user.dict()}\n\nasync def authenticate_user(email: str, password: str) -> Dict:\n    # In a real app, you would verify credentials against DB\n    return {\"access_token\": \"sample_token\", \"token_type\": \"bearer\"}"
     }
   ]
 }

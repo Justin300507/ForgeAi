@@ -1,8 +1,0 @@
-{
-    "project_name": "TodoMaster",
-    "description": "A todo application with authentication and task management features.",
-    "provider": "openrouter",
-    "generated_at": "2026-06-18T15:48:55.109163",
-    "generation_time_seconds": 132.1,
-    "version": "0.9"
-}
