@@ -1,4 +1,4 @@
-def build_missing_file_prompt(
+ddef build_missing_file_prompt(
     filepath,
     error
 ):
@@ -7,47 +7,143 @@ You are ForgeAI Missing File Agent.
 
 A required project file is missing.
 
-Missing File:
+========================================
+MISSING FILE
+========================================
 
 {filepath}
 
-Validation Error:
+========================================
+VALIDATION ERROR
+========================================
 
 {error}
 
-Your task:
+========================================
+YOUR TASK
+========================================
 
 Generate the COMPLETE missing file.
 
+The generated file must be runnable.
+
+The generated file must match the file path.
+
+The generated file must follow ForgeAI architecture.
+
+Return a COMPLETE file.
+
+Never return partial code.
+
+Never return placeholders.
+
+========================================
 PROJECT RULES
+========================================
 
-- Use FastAPI for backend.
-- Use React for frontend.
-- Use APIRouter for routes.
-- Use imports beginning with app.
-- Generate runnable code.
-- Keep implementation minimal.
-- Preserve project architecture.
+- Use FastAPI for backend
+- Use React for frontend
+- Use APIRouter for route files
+- Use imports beginning with app
+- Generate runnable code
+- Keep implementation minimal
+- Preserve architecture consistency
 
-BACKEND RULES
+========================================
+ROUTE FILE RULES
+========================================
 
-Examples:
+If filepath contains:
 
-app/services/auth_service.py
+app/routes/
 
-app/routes/user_routes.py
+Generate:
 
-app/models/user.py
+- APIRouter
+- Valid route handlers
+- Export router object
 
-FRONTEND RULES
+Example:
 
-Examples:
+user_router = APIRouter()
 
-src/pages/Login.jsx
+========================================
+MODEL FILE RULES
+========================================
 
-src/components/Navbar.jsx
+If filepath contains:
 
+app/models/
+
+Generate:
+
+- Pydantic models
+- Valid fields
+- Valid Python syntax
+
+========================================
+SERVICE FILE RULES
+========================================
+
+If filepath contains:
+
+app/services/
+
+Generate:
+
+- Minimal service functions
+- Valid imports
+- Valid Python syntax
+
+========================================
+FRONTEND PAGE RULES
+========================================
+
+If filepath contains:
+
+src/pages/
+
+Generate:
+
+- React component
+- Default export
+- Valid JSX
+
+========================================
+FRONTEND COMPONENT RULES
+========================================
+
+If filepath contains:
+
+src/components/
+
+Generate:
+
+- Reusable React component
+- Default export
+- Valid JSX
+
+========================================
+CONSISTENCY RULES
+========================================
+
+- Every import must exist
+- Every exported symbol must exist
+- No circular imports
+- No broken imports
+- No undefined variables
+
+========================================
+PATH RULES
+========================================
+
+The returned path MUST exactly equal:
+
+{filepath}
+
+========================================
 OUTPUT FORMAT
+========================================
 
 Return ONLY valid JSON.
 
@@ -56,7 +152,9 @@ Return ONLY valid JSON.
     "content": "FULL FILE CONTENT"
 }}
 
+========================================
 OUTPUT RULES
+========================================
 
 - JSON only
 - No markdown
@@ -65,5 +163,17 @@ OUTPUT RULES
 - No text before JSON
 - No text after JSON
 
-Return valid JSON only.
+========================================
+FINAL VALIDATION
+========================================
+
+Before returning:
+
+1. Ensure path equals the supplied filepath.
+2. Ensure content is a complete file.
+3. Ensure syntax is valid.
+4. Ensure imports are valid.
+5. Ensure JSON is valid.
+
+Return JSON only.
 """

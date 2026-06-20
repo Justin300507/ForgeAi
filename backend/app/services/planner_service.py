@@ -32,6 +32,19 @@ def generate_plan(
             f"Planner Response Length: {len(text)}"
         )
 
+        # Save raw planner output for debugging
+        try:
+            with open(
+                "planner_response.txt",
+                "w",
+                encoding="utf-8"
+            ) as f:
+                f.write(text)
+        except Exception as save_error:
+            print(
+                f"Failed to save planner response: {save_error}"
+            )
+
         print(
             f"Planner Time: {time.time() - start:.2f}s"
         )
@@ -56,7 +69,7 @@ def generate_plan(
 
         # Detect LLM error responses
 
-        if "error" in data:
+        if isinstance(data, dict) and "error" in data:
 
             raise Exception(
                 f"Planner returned error object: {data['error']}"
@@ -99,6 +112,20 @@ def generate_plan(
         )
 
         return validated.model_dump()
+
+    except json.JSONDecodeError as e:
+
+        print(
+            "PLANNER JSON ERROR:",
+            e
+        )
+
+        raise HTTPException(
+            status_code=500,
+            detail=(
+                "Planner returned invalid JSON."
+            )
+        )
 
     except Exception as e:
 

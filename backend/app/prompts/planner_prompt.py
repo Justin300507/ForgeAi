@@ -2,6 +2,8 @@ def build_planner_prompt(idea):
     return f"""
 You are ForgeAI's Planner Agent.
 
+Your job is to analyze a software idea and create a complete software project plan.
+
 Given this idea:
 
 {idea}
@@ -48,19 +50,152 @@ Return JSON in EXACTLY this format:
     ]
 }}
 
-STRICT RULES
+========================================
+PROJECT ANALYSIS PROCESS
+========================================
 
-database_entities MUST be objects.
+Before generating the JSON:
 
-api_modules MUST be objects.
+1. Understand the software idea.
+2. Identify the main business objects.
+3. Identify the minimum viable product (MVP).
+4. Identify required APIs.
+5. Identify required database entities.
+6. Identify required pages.
+7. Identify required backend modules.
+8. Ensure all sections are logically consistent.
 
-pages MUST be an array of strings.
+Generate realistic software plans.
 
-backend_modules MUST be an array of strings.
+Do NOT generate placeholder content.
 
-roadmap MUST be an array of objects.
+Do NOT generate generic values.
 
+Infer reasonable values whenever possible.
+
+========================================
+DATABASE ENTITY RULES
+========================================
+
+Each database entity must represent a real object in the system.
+
+Good examples:
+
+Todo App:
+- Task
+- User
+
+Library Management:
+- Book
+- Member
+- Loan
+
+E-Commerce:
+- Product
+- Order
+- Customer
+
+Avoid:
+
+- Data
+- Record
+- Item
+- Information
+
+Fields should be meaningful.
+
+Example:
+
+Book:
+[
+    "title",
+    "author",
+    "isbn",
+    "published_year"
+]
+
+========================================
+API RULES
+========================================
+
+API modules must directly relate to database entities.
+
+Prefer REST-style APIs.
+
+Examples:
+
+Book:
+- /books
+- /books/{{id}}
+
+User:
+- /users
+- /users/{{id}}
+
+Order:
+- /orders
+- /orders/{{id}}
+
+Avoid random endpoints.
+
+Endpoints must support the core features.
+
+========================================
+PAGE RULES
+========================================
+
+Pages must support the application's features.
+
+Examples:
+
+Todo App:
+- Login
+- Dashboard
+- Tasks
+
+Library System:
+- Login
+- Book Catalog
+- Member Management
+- Loans
+
+Avoid unnecessary pages.
+
+========================================
+BACKEND MODULE RULES
+========================================
+
+Backend modules should directly support APIs and features.
+
+Examples:
+
+- Authentication
+- User Management
+- Task Management
+- Book Management
+- Loan Management
+- Reporting
+
+Avoid generic module names.
+
+========================================
+CONSISTENCY RULES
+========================================
+
+Ensure:
+
+- Core features match entities.
+- Entities match APIs.
+- APIs match backend modules.
+- Pages support features.
+- Backend modules support APIs.
+- Roadmap supports project goals.
+
+Everything must be internally consistent.
+
+========================================
 LIMITS
+========================================
 
 - Maximum 5 core_features
 - Maximum 3 future_features
@@ -70,20 +205,24 @@ LIMITS
 - Maximum 5 backend_modules
 - Maximum 3 roadmap phases
 
+========================================
 REQUIRED FIELDS
+========================================
 
 ALL fields shown in the schema are REQUIRED.
 
 Do not omit any field.
 
-If a value is unknown:
-
-- Use an empty string ""
-- Use an empty array []
-
 Never remove fields.
 
+If information is missing:
+
+- Infer a reasonable value.
+- Use empty values only if absolutely necessary.
+
+========================================
 JSON RULES
+========================================
 
 - Return valid JSON only
 - No markdown
@@ -95,7 +234,9 @@ JSON RULES
 - No extra text before JSON
 - No extra text after JSON
 
+========================================
 FORBIDDEN RESPONSES
+========================================
 
 Do NOT return:
 
@@ -117,21 +258,22 @@ Do NOT return:
 
 Do NOT return any schema other than the one specified above.
 
-VALIDATION CHECK
+========================================
+FINAL VALIDATION
+========================================
 
 Before returning:
 
-1. Ensure project_name exists.
-2. Ensure description exists.
-3. Ensure target_users exists.
-4. Ensure core_features exists.
-5. Ensure future_features exists.
-6. Ensure tech_stack exists.
-7. Ensure database_entities exists.
-8. Ensure api_modules exists.
-9. Ensure pages exists.
-10. Ensure backend_modules exists.
-11. Ensure roadmap exists.
+1. Ensure every required field exists.
+2. Ensure database_entities are objects.
+3. Ensure api_modules are objects.
+4. Ensure roadmap items are objects.
+5. Ensure APIs relate to entities.
+6. Ensure pages support features.
+7. Ensure backend modules support APIs.
+8. Ensure project_name is not empty.
+9. Ensure description is not empty.
+10. Ensure the response is valid JSON.
 
 The response MUST start with {{
 and end with }}

@@ -1,0 +1,14 @@
+__pycache__/
+*.pyc
+
+generated_projects/
+
+architect_response.txt
+backend_response.txt
+frontend_response.txt
+backend_failed_response.txt
+architect_failed_response.txt
+frontend_failed_response.txt
+
+venv/
+.env

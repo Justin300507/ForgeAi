@@ -238,16 +238,31 @@ def validate_frontend_imports(project_path, errors):
 
                 possible_paths = []
 
-                possible_paths.append(
-                    os.path.normpath(
-                        os.path.join(
-                            root,
-                            imp + ".jsx"
+                if imp.endswith(".jsx"):
+
+                    possible_paths.append(
+                        os.path.normpath(
+                            os.path.join(
+                                root,
+                                imp
+                            )
                         )
                     )
-                )
 
-                filename = os.path.basename(imp)
+                else:
+
+                    possible_paths.append(
+                        os.path.normpath(
+                            os.path.join(
+                                root,
+                                imp + ".jsx"
+                            )
+                        )
+                    )
+
+                filename = os.path.basename(
+                    imp.replace(".jsx", "")
+                )
 
                 possible_paths.append(
                     os.path.join(
@@ -264,13 +279,14 @@ def validate_frontend_imports(project_path, errors):
                         f"{filename}.jsx"
                     )
                 )
+
                 possible_paths.append(
-                         os.path.join(
-                            src_path,
-                                filename,
-                            "index.jsx"
-                             )
-                            )
+                    os.path.join(
+                        src_path,
+                        filename,
+                        "index.jsx"
+                    )
+                )
 
                 exists = any(
                     os.path.exists(path)
@@ -280,7 +296,7 @@ def validate_frontend_imports(project_path, errors):
                 if not exists:
 
                     errors.append(
-                        f"Missing frontend import target: {imp}.jsx"
+                        f"Missing frontend import target: {imp}"
                     )
 def validate_route_quality(
     project_path,
@@ -334,7 +350,7 @@ def validate_route_quality(
 
         route_count = len(
             re.findall(
-                r"@\w+_router\.(get|post|put|patch|delete)",
+                r"@\w+\.(get|post|put|patch|delete)",
                 content
             )
         )
@@ -358,36 +374,34 @@ def validate_requirements(
     if not os.path.exists(
         requirements_file
     ):
+
+        errors.append(
+            "Missing requirements.txt"
+        )
+
         return
 
-    with open(
-        requirements_file,
-        "r",
-        encoding="utf-8"
-    ) as f:
+    try:
 
-        requirements = {
-            line.strip()
-            for line in f.readlines()
-            if line.strip()
-        }
+        with open(
+            requirements_file,
+            "r",
+            encoding="utf-8"
+        ) as f:
 
-    known_packages = {
-        "fastapi",
-        "uvicorn",
-        "pydantic",
-        "email-validator",
-        "python-multipart",
-        "requests"
-    }
+            content = f.read().strip()
 
-    for package in requirements:
-
-        if package not in known_packages:
+        if not content:
 
             errors.append(
-                f"Unknown dependency: {package}"
+                "requirements.txt is empty"
             )
+
+    except Exception as e:
+
+        errors.append(
+            f"Could not read requirements.txt: {str(e)}"
+        )
 def validate_fastapi_routes(
     project_path,
     errors
@@ -434,9 +448,8 @@ def validate_fastapi_routes(
 
         if "APIRouter" not in content:
             errors.append(
-        f"Missing APIRouter in {relative_path}"
-        )
-
+               f"Missing APIRouter in {file}"
+            )
 def validate_project(project_path):
 
     errors = []

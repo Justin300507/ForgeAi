@@ -1,5 +1,4 @@
-from pydantic import BaseModel
-from typing import List
+from pydantic import BaseModel, Field
 
 
 class ApiEndpoint(BaseModel):
@@ -17,19 +16,22 @@ class Column(BaseModel):
 
 class DatabaseTable(BaseModel):
     table_name: str
-    columns: List[Column]
+    columns: list[Column] = Field(default_factory=list)
+
 
 class FolderStructure(BaseModel):
-    backend: List[str]
+    backend: list[str] = Field(default_factory=list)
+
 
 class FrontendStructure(BaseModel):
-    pages: list[str]
-    components: list[str]
+    pages: list[str] = Field(default_factory=list)
+    components: list[str] = Field(default_factory=list)
+
 
 class ArchitecturePlan(BaseModel):
-    api_endpoints: list[ApiEndpoint]
+    api_endpoints: list[ApiEndpoint] = Field(default_factory=list)
 
-    database_schema: list[DatabaseTable]
+    database_schema: list[DatabaseTable] = Field(default_factory=list)
 
     folder_structure: FolderStructure
 

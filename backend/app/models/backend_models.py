@@ -1,9 +1,20 @@
-from pydantic import BaseModel
-from typing import List
+from pydantic import BaseModel, Field
+
 
 class GeneratedFile(BaseModel):
-    path: str
-    content: str
+    path: str = Field(
+        ...,
+        min_length=1
+    )
+
+    content: str = Field(
+        ...,
+        min_length=1
+    )
+
 
 class BackendPlan(BaseModel):
-    files: List[GeneratedFile]
+    files: list[GeneratedFile] = Field(
+        ...,
+        min_length=1
+    )
