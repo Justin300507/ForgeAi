@@ -4,6 +4,8 @@ from collections import defaultdict
 import re
 import os
 import ast
+from typing import List, Dict, Any
+
 from app.services.planner_service import generate_plan
 from app.services.architect_service import generate_architecture
 from app.services.backend_service import generate_backend
@@ -221,20 +223,36 @@ def _read_current_files(project_path, subdir):
     return files
 
 
-def generate_project(idea, provider="auto"):
+def generate_project(idea: str, provider: str = "auto") -> Dict[str, Any]:
+    """
+    Generates a single FastAPI + React project from an idea.
+    The function follows the full pipeline:
+    plan → architecture → backend → frontend → validation/fix loops → runtime validation.
+    Returns a dictionary containing all artefacts and statistics for the project.
+    """
 
     start = time.time()
 
+    # ------------------------------------------------------------------
+    # 1. Planning & Architecture
+    # ------------------------------------------------------------------
     plan = generate_plan(idea, "cerebras")
     architecture = generate_architecture(plan, "cerebras")
     print("\n=== ARCHITECTURE ===")
     print(architecture)
+
+    # ------------------------------------------------------------------
+    # 2. Code Generation
+    # ------------------------------------------------------------------
     backend = generate_backend(architecture, "cerebras")
     frontend = generate_frontend(architecture, "cerebras")
     all_files = []
     all_files.extend(backend["files"])
     all_files.extend(frontend["files"])
 
+    # ------------------------------------------------------------------
+    # 3. De‑duplicate files (same path may appear in both backend & frontend)
+    # ------------------------------------------------------------------
     unique_files = {}
     for file in all_files:
         path = file.get("path", "")
@@ -247,14 +265,21 @@ def generate_project(idea, provider="auto"):
     all_files = list(unique_files.values())
     print(f"Unique Files: {len(all_files)}")
 
+    # ------------------------------------------------------------------
+    # 4. Write files to disk and initialise a git repo
+    # ------------------------------------------------------------------
     project_path = write_files(plan["project_name"], all_files)
     initialize_git(project_path)
 
     total_time = round(time.time() - start, 2)
     metadata_path = save_metadata(project_path, plan, architecture, provider, total_time)
+
+    # ------------------------------------------------------------------
+    # 5. Validation & Fix Loop
+    # ------------------------------------------------------------------
     validation = validate_project(project_path)
 
-    max_fix_attempts = 2
+    max_fix_attempts = 4          # increased from 2 to give more chances to auto‑fix
     fix_attempts_used = 0
     runtime_result = None
 
@@ -270,6 +295,10 @@ def generate_project(idea, provider="auto"):
 
         for error in validation["errors"]:
 
+            # --------------------------------------------------------------
+            # Group errors by the file they belong to – this makes the fix
+            # agents work on a per‑file basis.
+            # --------------------------------------------------------------
             if error.startswith("Unknown dependency:"):
                 grouped_errors["app/requirements.txt"].append(error)
                 continue
@@ -292,12 +321,18 @@ def generate_project(idea, provider="auto"):
             try:
                 absolute_path = os.path.join(project_path, filepath)
 
+                # ----------------------------------------------------------
+                # Orphan file – delete it
+                # ----------------------------------------------------------
                 if any("Orphan file:" in e for e in file_errors):
                     print(f"Deleting Orphan File: {filepath}")
                     if os.path.exists(absolute_path):
                         os.remove(absolute_path)
                     continue
 
+                # ----------------------------------------------------------
+                # Missing file – generate it via the missing‑file agent
+                # ----------------------------------------------------------
                 if not os.path.exists(absolute_path):
                     print(f"Generating Missing File: {filepath}")
                     fix = generate_missing_file(
@@ -308,6 +343,9 @@ def generate_project(idea, provider="auto"):
                         save_fix_log(project_path, "Missing File", fix)
                     continue
 
+                # ----------------------------------------------------------
+                # Existing file – run the normal fix agent
+                # ----------------------------------------------------------
                 with open(absolute_path, "r", encoding="utf-8") as f:
                     file_content = f.read()
 
@@ -321,6 +359,7 @@ def generate_project(idea, provider="auto"):
                 ):
                     continue
 
+                # Autocorrect endpoint paths if required
                 required_for_this_file = _collect_required_endpoints(
                     architecture, [filepath]
                 ).get(filepath, [])
@@ -330,6 +369,7 @@ def generate_project(idea, provider="auto"):
                         fix["content"], required_for_this_file
                     )
 
+                # Autocorrect router name if required
                 required_exports_for_file = _collect_required_exports(
                     project_path, [filepath]
                 ).get(filepath, set())
@@ -349,6 +389,9 @@ def generate_project(idea, provider="auto"):
         validation = validate_project(project_path)
         print(f"\nRevalidation Result: {validation}")
 
+    # ------------------------------------------------------------------
+    # 6. Architecture‑specific repairs (if any architecture errors remain)
+    # ------------------------------------------------------------------
     architecture_errors = []
     if not validation["passed"]:
         for error in validation["errors"]:
@@ -409,10 +452,9 @@ def generate_project(idea, provider="auto"):
                 f"\nArchitecture Revalidation: {validation}"
             )
 
-    # Runtime validation now runs exactly once, after BOTH repair
-    # paths (regular fix loop and architecture repair) have had a
-    # chance to make validation pass — regardless of which one
-    # actually succeeded.
+    # ------------------------------------------------------------------
+    # 7. Runtime Validation (only after all fixes have been attempted)
+    # ------------------------------------------------------------------
     if validation["passed"]:
 
         print("\n=== RUNTIME VALIDATION ===")
@@ -451,6 +493,9 @@ def generate_project(idea, provider="auto"):
             runtime_result = {"success": False, "error": str(e)}
             print(f"Runtime Validation Failed: {e}")
 
+    # ------------------------------------------------------------------
+    # 8. Packaging (zip) if everything succeeded
+    # ------------------------------------------------------------------
     zip_path = None
     can_export = (
         validation["passed"]
@@ -461,26 +506,22 @@ def generate_project(idea, provider="auto"):
         )
     )
     if can_export:
-
         zip_path = create_zip(
             project_path
         )
-
     else:
+        print("\nExport Blocked")
+        print("Validation or Runtime Failed")
 
-        print(
-            "\nExport Blocked"
-        )
-
-        print(
-            "Validation or Runtime Failed"
-        )
-
+    # ------------------------------------------------------------------
+    # 9. Scoring & Reporting
+    # ------------------------------------------------------------------
     forge_score = calculate_forge_score(
         validation,
         runtime_result
     )
     print(f"\nForge Score: {forge_score}")
+
     endpoint_coverage = calculate_endpoint_coverage(
         architecture,
         project_path
@@ -519,3 +560,51 @@ def generate_project(idea, provider="auto"):
         "stats": validation_stats,
         "generation_time_seconds": total_time,
     }
+
+
+def generate_multiple_projects(ideas: List[str], provider: str = "auto") -> Dict[str, Any]:
+    """
+    Runs the full generation pipeline for a list of ideas (default 6).
+    For each idea a separate project folder is created under a common
+    parent directory (the folder name is the project name returned by the
+    planner).  The function returns a summary report containing the
+    forge_score, endpoint_coverage and overall success status for each
+    generated project.
+    """
+    results = {}
+    for idx, idea in enumerate(ideas, start=1):
+        print(f"\n{'=' * 20} Generating Project {idx}/{len(ideas)} {'=' * 20}")
+        try:
+            project_result = generate_project(idea, provider)
+            results[project_result["plan"]["project_name"]] = {
+                "forge_score": project_result["forge_score"],
+                "endpoint_coverage": project_result["endpoint_coverage"],
+                "validation_passed": project_result["validation"]["passed"],
+                "runtime_passed": project_result["runtime"]["success"]
+                if project_result["runtime"]
+                else False,
+                "project_path": project_result["project_path"],
+                "zip_path": project_result["zip_path"],
+            }
+        except Exception as e:
+            print(f"Error generating project for idea '{idea}': {e}")
+            traceback.print_exc()
+            results[f"idea_{idx}"] = {
+                "error": str(e)
+            }
+
+    # Final summary report
+    print("\n\n=== FINAL MULTI‑PROJECT SUMMARY ===")
+    for proj, data in results.items():
+        print(f"\nProject: {proj}")
+        if "error" in data:
+            print(f"  ❌ Generation failed: {data['error']}")
+        else:
+            print(f"  ✅ Forge Score          : {data['forge_score']}")
+            print(f"  📊 Endpoint Coverage   : {data['endpoint_coverage']}")
+            print(f"  ✅ Validation Passed   : {data['validation_passed']}")
+            print(f"  ✅ Runtime Passed      : {data['runtime_passed']}")
+            print(f"  📁 Project Path        : {data['project_path']}")
+            print(f"  📦 Zip Path            : {data['zip_path']}")
+
+    return results
