@@ -2,6 +2,45 @@ import os
 import re
 import py_compile
 import ast
+from app.services.undefined_symbol_validator import (
+    validate_undefined_symbols
+)
+from app.services.architecture_validator import (
+    validate_architecture,
+    load_metadata
+)
+from app.services.orm_validator import (
+    validate_orm_usage
+)
+from app.services.endpoint_validator import (
+    validate_endpoints,
+    validate_orphan_routes
+)
+from app.services.database_validator import (
+    validate_database
+)
+from app.services.router_export_validator import (
+    validate_router_exports
+)
+from app.services.schema_model_validator import (
+    validate_schema_model_consistency
+)
+from app.services.session_validator import (
+    validate_session_management
+)
+from app.services.self_shadow_validator import (
+    validate_self_shadowing_functions
+)
+from app.services.stub_handler_validator import validate_stub_handlers
+from app.services.global_statement_validator import validate_module_level_global
+from app.services.duplicate_class_validator import validate_duplicate_class_definitions
+
+
+def rel(project_path, file_path):
+    """Canonical relative path with forward slashes, used by every
+    validator below so error messages always reference files the
+    same way (no more app\\routes\\x.py vs routes/x.py vs x.py)."""
+    return os.path.relpath(file_path, project_path).replace(os.sep, "/")
 
 
 def validate_backend_imports(project_path, errors):
@@ -48,8 +87,9 @@ def validate_backend_imports(project_path, errors):
                 if not os.path.exists(expected):
 
                     errors.append(
-                        f"Missing backend import target: {folder}/{module}.py"
-                    )
+    f"Missing backend import target: app/{folder}/{module}.py"
+)
+
 def validate_imported_symbols(
     project_path,
     errors
@@ -113,10 +153,22 @@ def validate_imported_symbols(
                     module_path
                 )
 
-                if not os.path.exists(
-                    target_file
-                ):
-                    continue
+                is_package = False
+                package_dir = None
+
+                if not os.path.exists(target_file):
+
+                    package_dir = os.path.join(
+                        project_path,
+                        node.module.replace(".", os.sep)
+                    )
+                    package_init = os.path.join(package_dir, "__init__.py")
+
+                    if os.path.exists(package_init):
+                        target_file = package_init
+                        is_package = True
+                    else:
+                        continue
 
                 try:
 
@@ -178,19 +230,39 @@ def validate_imported_symbols(
                                     target.id
                                 )
 
+                    elif isinstance(item, ast.ImportFrom):
+
+                        for alias in item.names:
+                            symbols.add(alias.asname or alias.name)
+
+                    elif isinstance(item, ast.Import):
+
+                        for alias in item.names:
+                            symbols.add(
+                                alias.asname or alias.name.split(".")[0]
+                            )
+
                 for alias in node.names:
 
                     if alias.name == "*":
                         continue
 
-                    if (
-                        alias.name
-                        not in symbols
-                    ):
+                    if alias.name in symbols:
+                        continue
 
-                        errors.append(
-                            f"Missing symbol '{alias.name}' in {module_path}"
+                    if is_package:
+                        submodule_path = os.path.join(
+                            package_dir, f"{alias.name}.py"
                         )
+                        if os.path.exists(submodule_path):
+                            continue
+
+                    errors.append(
+                        f"Missing symbol '{alias.name}' in {rel(project_path, target_file)} "
+                        f"(imported from {rel(project_path, file_path)})"
+                    )
+
+
 def validate_frontend_imports(project_path, errors):
 
     src_path = os.path.join(
@@ -298,6 +370,47 @@ def validate_frontend_imports(project_path, errors):
                     errors.append(
                         f"Missing frontend import target: {imp}"
                     )
+
+                else:
+
+                    resolved_path = next(
+                        (p for p in possible_paths if os.path.exists(p)),
+                        None
+                    )
+
+                    if resolved_path:
+
+                        try:
+                            with open(
+                                resolved_path, "r", encoding="utf-8"
+                            ) as tf:
+                                target_content = tf.read()
+                        except Exception:
+                            target_content = ""
+
+                        has_default_export = "export default" in target_content
+
+                        specific_import_match = re.search(
+                            r'import\s+(\{[^}]*\}|\S+)\s+from\s+[\'"]'
+                            + re.escape(imp) + r'[\'"]',
+                            content
+                        )
+
+                        is_named_import_for_this_target = bool(
+                            specific_import_match
+                            and specific_import_match.group(1).startswith("{")
+                        )
+
+                        if has_default_export and is_named_import_for_this_target:
+
+                            errors.append(
+                                f"Import style mismatch: {imp} uses a default "
+                                f"export but is imported with named-import "
+                                f"syntax (curly braces) in "
+                                f"{os.path.relpath(file_path, project_path)}"
+                            )
+
+
 def validate_route_quality(
     project_path,
     errors
@@ -345,7 +458,7 @@ def validate_route_quality(
         if "APIRouter(" not in content:
 
             errors.append(
-                f"Missing APIRouter in routes/{file}"
+                f"Missing APIRouter in {rel(project_path, file_path)}"
             )
 
         route_count = len(
@@ -358,8 +471,10 @@ def validate_route_quality(
         if route_count == 0:
 
             errors.append(
-                f"No endpoints found in routes/{file}"
+                f"No endpoints found in {rel(project_path, file_path)}"
             )
+
+
 def validate_requirements(
     project_path,
     errors
@@ -370,15 +485,13 @@ def validate_requirements(
         "app",
         "requirements.txt"
     )
-
     if not os.path.exists(
         requirements_file
     ):
 
         errors.append(
-            "Missing requirements.txt"
-        )
-
+    "Missing requirements.txt (app/requirements.txt)"
+)
         return
 
     try:
@@ -394,62 +507,16 @@ def validate_requirements(
         if not content:
 
             errors.append(
-                "requirements.txt is empty"
-            )
+    "requirements.txt is empty (app/requirements.txt)"
+)
 
     except Exception as e:
 
         errors.append(
             f"Could not read requirements.txt: {str(e)}"
         )
-def validate_fastapi_routes(
-    project_path,
-    errors
-):
 
-    routes_dir = os.path.join(
-        project_path,
-        "app",
-        "routes"
-    )
 
-    if not os.path.exists(
-        routes_dir
-    ):
-        return
-
-    for file in os.listdir(
-        routes_dir
-    ):
-
-        if not file.endswith(".py"):
-            continue
-
-        file_path = os.path.join(
-            routes_dir,
-            file
-        )
-
-        try:
-
-            with open(
-                file_path,
-                "r",
-                encoding="utf-8"
-            ) as f:
-
-                content = f.read()
-
-        except Exception:
-            continue
-
-        if file == "__init__.py":
-            continue
-
-        if "APIRouter" not in content:
-            errors.append(
-               f"Missing APIRouter in {file}"
-            )
 def validate_project(project_path):
 
     errors = []
@@ -496,7 +563,7 @@ def validate_project(project_path):
         if not os.path.exists(route_file):
 
             errors.append(
-                f"Missing route file: {route_name}.py"
+                f"Missing route file: app/routes/{route_name}.py"
             )
 
     validate_backend_imports(
@@ -504,27 +571,80 @@ def validate_project(project_path):
         errors
     )
     validate_imported_symbols(
+        project_path,
+        errors
+    )
+    validate_router_exports(
+        project_path,
+        errors
+    )
+    validate_database(
+        project_path,
+        errors
+    )
+    metadata = load_metadata(
+        project_path
+    )
+    validate_architecture(
+        project_path,
+        metadata,
+        errors
+    )
+    validate_endpoints(
+        project_path,
+        metadata,
+        errors
+    )
+    validate_orphan_routes(
+        project_path,
+        metadata,
+        errors
+    )
+    validate_undefined_symbols(
+        project_path,
+        errors
+    )
+    validate_self_shadowing_functions(
     project_path,
     errors
 )
+    validate_orm_usage(
+        project_path,
+        errors
+    )
+    validate_session_management(
+        project_path,
+        errors
+    )
+    validate_schema_model_consistency(
+        project_path,
+        errors
+    )
 
     validate_frontend_imports(
         project_path,
         errors
     )
+    validate_stub_handlers(
+    project_path,
+    errors
+)
+    validate_module_level_global(
+    project_path,
+    errors
+)
+    validate_duplicate_class_definitions(
+    project_path,
+    errors
+)
     validate_route_quality(
-    project_path,
-    errors
-)
+        project_path,
+        errors
+    )
     validate_requirements(
-    project_path,
-    errors
-)
-    
-    validate_fastapi_routes(
-    project_path,
-    errors
-)
+        project_path,
+        errors
+    )
 
     for root, dirs, files in os.walk(project_path):
 
@@ -558,5 +678,5 @@ def validate_project(project_path):
 
     return {
         "passed": len(errors) == 0,
-        "errors": errors
+        "errors": list(dict.fromkeys(errors))
     }
