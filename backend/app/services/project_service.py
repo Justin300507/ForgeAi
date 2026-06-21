@@ -45,7 +45,9 @@ ARCHITECTURE_ERROR_MARKERS = (
 
 
 def resolve_endpoint_file(error: str) -> str | None:
-
+    """
+    Resolve the file that should contain a missing endpoint.
+    """
     match = re.search(r"(GET|POST|PUT|DELETE|PATCH)\s+(/\S+)", error)
     if not match:
         return None
@@ -59,14 +61,25 @@ def resolve_endpoint_file(error: str) -> str | None:
     return os.path.join("app", "routes", f"{resource}_routes.py")
 
 
-def _collect_required_exports(project_path, target_files):
+def _sanitize_path(path: str) -> str:
+    """
+    Windows does not allow characters like ?, {, }, :, *, <, >, |, ".
+    For our generated files we replace those with an underscore.
+    This also normalises any double back‑slashes that may appear.
+    """
+    # Replace illegal characters with underscore
+    safe = re.sub(r"[?{}:*<>|\"]", "_", path)
+    # Collapse any duplicate path separators
+    safe = re.sub(r"[\\/]+", os.sep, safe)
+    return safe
 
+
+def _collect_required_exports(project_path, target_files):
     all_imports = collect_imports(project_path)
 
     required = {}
 
     for target in target_files:
-
         module_dotted = (
             target.replace("/", ".").replace("\\", ".")
         )
@@ -86,7 +99,6 @@ def _collect_required_exports(project_path, target_files):
 
 
 def _collect_required_endpoints(architecture, target_files):
-
     required = {}
 
     for endpoint in architecture.get("api_endpoints", []):
@@ -100,18 +112,15 @@ def _collect_required_endpoints(architecture, target_files):
 
 
 def _collect_existing_symbols(project_path):
-
     existing = {}
 
     for subdir in ("schemas", "services"):
-
         dir_path = os.path.join(project_path, "app", subdir)
 
         if not os.path.exists(dir_path):
             continue
 
         for file in os.listdir(dir_path):
-
             if not file.endswith(".py") or file == "__init__.py":
                 continue
 
@@ -140,9 +149,7 @@ def _collect_existing_symbols(project_path):
 
 
 def _autocorrect_endpoint_paths(content, required_endpoints):
-
     for req in required_endpoints:
-
         method, full_path = req.split(" ", 1)
         method_lower = method.lower()
 
@@ -170,7 +177,6 @@ def _autocorrect_endpoint_paths(content, required_endpoints):
 
 
 def _autocorrect_router_name(content, required_exports):
-
     router_names_required = [
         s for s in required_exports if s.endswith("_router")
     ]
@@ -197,7 +203,6 @@ def _autocorrect_router_name(content, required_exports):
 
 
 def _read_current_files(project_path, subdir):
-
     files = []
     base = os.path.join(project_path, subdir)
 
@@ -206,7 +211,6 @@ def _read_current_files(project_path, subdir):
 
     for root, _, filenames in os.walk(base):
         for filename in filenames:
-
             full_path = os.path.join(root, filename)
             rel_path = os.path.relpath(
                 full_path, project_path
@@ -284,7 +288,6 @@ def generate_project(idea: str, provider: str = "auto") -> Dict[str, Any]:
     runtime_result = None
 
     for attempt in range(max_fix_attempts):
-
         if validation["passed"]:
             break
 
@@ -294,7 +297,6 @@ def generate_project(idea: str, provider: str = "auto") -> Dict[str, Any]:
         grouped_errors = defaultdict(list)
 
         for error in validation["errors"]:
-
             # --------------------------------------------------------------
             # Group errors by the file they belong to – this makes the fix
             # agents work on a per‑file basis.
@@ -319,7 +321,9 @@ def generate_project(idea: str, provider: str = "auto") -> Dict[str, Any]:
 
         for filepath, file_errors in grouped_errors.items():
             try:
-                absolute_path = os.path.join(project_path, filepath)
+                # Sanitize the path for Windows compatibility
+                safe_filepath = _sanitize_path(filepath)
+                absolute_path = os.path.join(project_path, safe_filepath)
 
                 # ----------------------------------------------------------
                 # Orphan file – delete it
@@ -339,6 +343,8 @@ def generate_project(idea: str, provider: str = "auto") -> Dict[str, Any]:
                         filepath, "\n".join(file_errors), provider
                     )
                     if fix and fix.get("content"):
+                        # Ensure the generated path is safe before writing
+                        fix["path"] = _sanitize_path(fix["path"])
                         write_fix(project_path, fix)
                         save_fix_log(project_path, "Missing File", fix)
                     continue
@@ -358,6 +364,9 @@ def generate_project(idea: str, provider: str = "auto") -> Dict[str, Any]:
                     or not fix.get("content")
                 ):
                     continue
+
+                # Sanitize the path returned by the fix agent
+                fix["path"] = _sanitize_path(fix["path"])
 
                 # Autocorrect endpoint paths if required
                 required_for_this_file = _collect_required_endpoints(
@@ -426,6 +435,8 @@ def generate_project(idea: str, provider: str = "auto") -> Dict[str, Any]:
             and architecture_fix.get("files")
         ):
             for file in architecture_fix["files"]:
+                # Sanitize the path before writing
+                file["path"] = _sanitize_path(file["path"])
 
                 req_for_file = required_endpoints.get(file.get("path"), [])
 
@@ -456,7 +467,6 @@ def generate_project(idea: str, provider: str = "auto") -> Dict[str, Any]:
     # 7. Runtime Validation (only after all fixes have been attempted)
     # ------------------------------------------------------------------
     if validation["passed"]:
-
         print("\n=== RUNTIME VALIDATION ===")
         max_runtime_fix_attempts = 2
 
@@ -484,6 +494,9 @@ def generate_project(idea: str, provider: str = "auto") -> Dict[str, Any]:
                     continue
                 if not (runtime_fix.get("path") and runtime_fix.get("content")):
                     continue
+
+                # Sanitize runtime fix path before writing
+                runtime_fix["path"] = _sanitize_path(runtime_fix["path"])
 
                 write_fix(project_path, runtime_fix)
                 save_fix_log(project_path, str(runtime_result), runtime_fix)
