@@ -65,12 +65,13 @@ def _sanitize_path(path: str) -> str:
     """
     Windows does not allow characters like ?, {, }, :, *, <, >, |, ".
     For our generated files we replace those with an underscore.
-    This also normalises any double back‑slashes that may appear.
+    This also normalises any duplicate path separators and converts
+    forward‑slashes to the OS‑specific separator.
     """
     # Replace illegal characters with underscore
     safe = re.sub(r"[?{}:*<>|\"]", "_", path)
-    # Collapse any duplicate path separators
-    safe = re.sub(r"[\\/]+", os.sep, safe)
+    # Normalise path separators (handles both / and \\ and collapses duplicates)
+    safe = os.path.normpath(safe)
     return safe
 
 
