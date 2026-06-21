@@ -53,7 +53,9 @@ def resolve_endpoint_file(error: str) -> str | None:
         return None
 
     path = match.group(2)
-    segments = [s for s in path.split("/") if s and not s.startswith("{")]
+    # Extract the path part before any query parameters
+    path_without_query = path.split('?')[0]
+    segments = [s for s in path_without_query.split("/") if s and not s.startswith("{")]
     if not segments:
         return None
 
