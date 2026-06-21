@@ -3,6 +3,7 @@ import traceback
 from collections import defaultdict
 import re
 import os
+import ast
 from app.services.planner_service import generate_plan
 from app.services.architect_service import generate_architecture
 from app.services.backend_service import generate_backend
@@ -18,17 +19,218 @@ from app.services.git_service import initialize_git
 from app.services.runtime_validator_service import validate_runtime
 from app.services.runtime_fix_service import generate_runtime_fix
 from app.services.missing_file_service import generate_missing_file
+from app.services.forge_score_service import (
+    calculate_forge_score
+)
+from app.services.architecture_fix_service import (
+    generate_architecture_fix
+)
+from app.services.endpoint_coverage_service import (
+    calculate_endpoint_coverage
+)
+from app.utils.import_graph import collect_imports
+
+
+ARCHITECTURE_ERROR_MARKERS = (
+    "Architecture violation",
+    "Missing endpoint",
+    "Router export mismatch",
+    "Missing symbol",
+    "Missing APIRouter",
+    "No endpoints found",
+    "Undefined symbol",
+)
+
+
+def resolve_endpoint_file(error: str) -> str | None:
+
+    match = re.search(r"(GET|POST|PUT|DELETE|PATCH)\s+(/\S+)", error)
+    if not match:
+        return None
+
+    path = match.group(2)
+    segments = [s for s in path.split("/") if s and not s.startswith("{")]
+    if not segments:
+        return None
+
+    resource = segments[0].rstrip("s")
+    return os.path.join("app", "routes", f"{resource}_routes.py")
+
+
+def _collect_required_exports(project_path, target_files):
+
+    all_imports = collect_imports(project_path)
+
+    required = {}
+
+    for target in target_files:
+
+        module_dotted = (
+            target.replace("/", ".").replace("\\", ".")
+        )
+        if module_dotted.endswith(".py"):
+            module_dotted = module_dotted[:-3]
+
+        symbols = {
+            entry["symbol"]
+            for entry in all_imports
+            if entry["module"] == module_dotted
+        }
+
+        if symbols:
+            required[target] = symbols
+
+    return required
+
+
+def _collect_required_endpoints(architecture, target_files):
+
+    required = {}
+
+    for endpoint in architecture.get("api_endpoints", []):
+        file = endpoint.get("file")
+        if file in target_files:
+            required.setdefault(file, []).append(
+                f"{endpoint.get('method')} {endpoint.get('path')}"
+            )
+
+    return required
+
+
+def _collect_existing_symbols(project_path):
+
+    existing = {}
+
+    for subdir in ("schemas", "services"):
+
+        dir_path = os.path.join(project_path, "app", subdir)
+
+        if not os.path.exists(dir_path):
+            continue
+
+        for file in os.listdir(dir_path):
+
+            if not file.endswith(".py") or file == "__init__.py":
+                continue
+
+            file_path = os.path.join(dir_path, file)
+            rel_path = f"app/{subdir}/{file}"
+
+            try:
+                with open(file_path, "r", encoding="utf-8") as f:
+                    content = f.read()
+                tree = ast.parse(content)
+            except Exception:
+                continue
+
+            names = []
+
+            for node in tree.body:
+                if isinstance(
+                    node, (ast.FunctionDef, ast.AsyncFunctionDef, ast.ClassDef)
+                ):
+                    names.append(node.name)
+
+            if names:
+                existing[rel_path] = names
+
+    return existing
+
+
+def _autocorrect_endpoint_paths(content, required_endpoints):
+
+    for req in required_endpoints:
+
+        method, full_path = req.split(" ", 1)
+        method_lower = method.lower()
+
+        exact_pattern = re.compile(
+            rf'@\w+\.{method_lower}\(\s*["\']'
+            + re.escape(full_path) + r'["\']'
+        )
+
+        if exact_pattern.search(content):
+            continue
+
+        suffix_pattern = re.compile(
+            rf'(@\w+\.{method_lower}\(\s*["\'])([^"\']+)(["\'])'
+        )
+
+        def repl(m):
+            existing_path = m.group(2)
+            if full_path.endswith(existing_path) and existing_path != full_path:
+                return m.group(1) + full_path + m.group(3)
+            return m.group(0)
+
+        content = suffix_pattern.sub(repl, content, count=1)
+
+    return content
+
+
+def _autocorrect_router_name(content, required_exports):
+
+    router_names_required = [
+        s for s in required_exports if s.endswith("_router")
+    ]
+
+    if not router_names_required:
+        return content
+
+    match = re.search(r'^(\w+)\s*=\s*APIRouter\(', content, re.MULTILINE)
+
+    if not match:
+        return content
+
+    actual_name = match.group(1)
+    expected_name = router_names_required[0]
+
+    if actual_name == expected_name:
+        return content
+
+    return re.sub(
+        rf'\b{re.escape(actual_name)}\b',
+        expected_name,
+        content
+    )
+
+
+def _read_current_files(project_path, subdir):
+
+    files = []
+    base = os.path.join(project_path, subdir)
+
+    if not os.path.exists(base):
+        return files
+
+    for root, _, filenames in os.walk(base):
+        for filename in filenames:
+
+            full_path = os.path.join(root, filename)
+            rel_path = os.path.relpath(
+                full_path, project_path
+            ).replace(os.sep, "/")
+
+            try:
+                with open(full_path, "r", encoding="utf-8") as f:
+                    content = f.read()
+            except Exception:
+                continue
+
+            files.append({"path": rel_path, "content": content})
+
+    return files
 
 
 def generate_project(idea, provider="auto"):
 
     start = time.time()
 
-    plan = generate_plan(idea, provider)
-    architecture = generate_architecture(plan, provider)
-    backend = generate_backend(architecture, provider)
-    frontend = generate_frontend(architecture, provider)
-
+    plan = generate_plan(idea, "cerebras")
+    architecture = generate_architecture(plan, "cerebras")
+    print("\n=== ARCHITECTURE ===")
+    print(architecture)
+    backend = generate_backend(architecture, "cerebras")
+    frontend = generate_frontend(architecture, "cerebras")
     all_files = []
     all_files.extend(backend["files"])
     all_files.extend(frontend["files"])
@@ -49,7 +251,7 @@ def generate_project(idea, provider="auto"):
     initialize_git(project_path)
 
     total_time = round(time.time() - start, 2)
-    metadata_path = save_metadata(project_path, plan, provider, total_time)
+    metadata_path = save_metadata(project_path, plan, architecture, provider, total_time)
     validation = validate_project(project_path)
 
     max_fix_attempts = 2
@@ -67,19 +269,34 @@ def generate_project(idea, provider="auto"):
         grouped_errors = defaultdict(list)
 
         for error in validation["errors"]:
+
             if error.startswith("Unknown dependency:"):
                 grouped_errors["app/requirements.txt"].append(error)
+                continue
 
-            match = re.search(r"(app[\\/].+\.(?:py|txt)|routes[\\/].+\.py)", error)
+            if "Missing endpoint" in error or "Router export mismatch" in error:
+                resolved = resolve_endpoint_file(error)
+                if resolved:
+                    grouped_errors[resolved].append(error)
+                    continue
+
+            match = re.search(
+                r"(app[\\/][^\s:]+?\.(?:py|txt))",
+                error
+            )
             if match:
                 filepath = match.group(1)
-                if filepath.startswith("routes"):
-                    filepath = os.path.join("app", filepath)
                 grouped_errors[filepath].append(error)
 
         for filepath, file_errors in grouped_errors.items():
             try:
                 absolute_path = os.path.join(project_path, filepath)
+
+                if any("Orphan file:" in e for e in file_errors):
+                    print(f"Deleting Orphan File: {filepath}")
+                    if os.path.exists(absolute_path):
+                        os.remove(absolute_path)
+                    continue
 
                 if not os.path.exists(absolute_path):
                     print(f"Generating Missing File: {filepath}")
@@ -104,6 +321,24 @@ def generate_project(idea, provider="auto"):
                 ):
                     continue
 
+                required_for_this_file = _collect_required_endpoints(
+                    architecture, [filepath]
+                ).get(filepath, [])
+
+                if required_for_this_file:
+                    fix["content"] = _autocorrect_endpoint_paths(
+                        fix["content"], required_for_this_file
+                    )
+
+                required_exports_for_file = _collect_required_exports(
+                    project_path, [filepath]
+                ).get(filepath, set())
+
+                if required_exports_for_file:
+                    fix["content"] = _autocorrect_router_name(
+                        fix["content"], required_exports_for_file
+                    )
+
                 write_fix(project_path, fix)
                 save_fix_log(project_path, "\n".join(file_errors), fix)
 
@@ -114,44 +349,142 @@ def generate_project(idea, provider="auto"):
         validation = validate_project(project_path)
         print(f"\nRevalidation Result: {validation}")
 
-        if validation["passed"]:
-            print("\n=== RUNTIME VALIDATION ===")
-            max_runtime_fix_attempts = 2
+    architecture_errors = []
+    if not validation["passed"]:
+        for error in validation["errors"]:
+            if any(marker in error for marker in ARCHITECTURE_ERROR_MARKERS):
+                architecture_errors.append(error)
 
-            try:
-                for runtime_attempt in range(max_runtime_fix_attempts + 1):
-                    runtime_result = validate_runtime(project_path)
-                    print(f"Runtime Result: {runtime_result}")
+    if architecture_errors:
+        print("\n=== ARCHITECTURE REPAIR ===")
 
-                    if runtime_result and runtime_result.get("success", False):
-                        print("\n✅ Runtime Validation Passed")
-                        break
+        target_files = sorted({
+            m.group(1)
+            for e in architecture_errors
+            for m in [re.search(r"(app[\\/][^\s:]+?\.py)", e)]
+            if m
+        })
 
-                    if runtime_attempt == max_runtime_fix_attempts:
-                        print("\n❌ Runtime Fix Attempts Exhausted")
-                        break
+        required_exports = _collect_required_exports(project_path, target_files)
+        required_endpoints = _collect_required_endpoints(architecture, target_files)
+        existing_symbols = _collect_existing_symbols(project_path)
 
-                    print(f"\n=== RUNTIME FIX ATTEMPT {runtime_attempt + 1} ===")
-                    runtime_fix = generate_runtime_fix(
-                        runtime_result, project_path, provider
+        architecture_fix = generate_architecture_fix(
+            architecture,
+            architecture_errors,
+            provider,
+            required_exports=required_exports,
+            required_endpoints=required_endpoints,
+            existing_symbols=existing_symbols
+        )
+        if (
+            architecture_fix
+            and isinstance(architecture_fix, dict)
+            and architecture_fix.get("files")
+        ):
+            for file in architecture_fix["files"]:
+
+                req_for_file = required_endpoints.get(file.get("path"), [])
+
+                if req_for_file and file.get("content"):
+                    file["content"] = _autocorrect_endpoint_paths(
+                        file["content"], req_for_file
                     )
-                    print("Generated Runtime Fix:")
-                    print(runtime_fix)
 
-                    if not (runtime_fix and isinstance(runtime_fix, dict)):
-                        continue
-                    if not (runtime_fix.get("path") and runtime_fix.get("content")):
-                        continue
+                exports_for_file = required_exports.get(file.get("path"), set())
 
-                    write_fix(project_path, runtime_fix)
-                    save_fix_log(project_path, str(runtime_result), runtime_fix)
-                    print("Runtime Fix Written")
+                if exports_for_file and file.get("content"):
+                    file["content"] = _autocorrect_router_name(
+                        file["content"], exports_for_file
+                    )
 
-            except Exception as e:
-                runtime_result = {"success": False, "error": str(e)}
-                print(f"Runtime Validation Failed: {e}")
+                write_fix(
+                    project_path,
+                    file
+                )
+            validation = validate_project(
+                project_path
+            )
+            print(
+                f"\nArchitecture Revalidation: {validation}"
+            )
 
-    zip_path = create_zip(project_path)
+    # Runtime validation now runs exactly once, after BOTH repair
+    # paths (regular fix loop and architecture repair) have had a
+    # chance to make validation pass — regardless of which one
+    # actually succeeded.
+    if validation["passed"]:
+
+        print("\n=== RUNTIME VALIDATION ===")
+        max_runtime_fix_attempts = 2
+
+        try:
+            for runtime_attempt in range(max_runtime_fix_attempts + 1):
+                runtime_result = validate_runtime(project_path, architecture=architecture)
+                print(f"Runtime Result: {runtime_result}")
+
+                if runtime_result and runtime_result.get("success", False):
+                    print("\nRuntime Validation Passed")
+                    break
+
+                if runtime_attempt == max_runtime_fix_attempts:
+                    print("\nRuntime Fix Attempts Exhausted")
+                    break
+
+                print(f"\n=== RUNTIME FIX ATTEMPT {runtime_attempt + 1} ===")
+                runtime_fix = generate_runtime_fix(
+                    runtime_result, project_path, provider
+                )
+                print("Generated Runtime Fix:")
+                print(runtime_fix)
+
+                if not (runtime_fix and isinstance(runtime_fix, dict)):
+                    continue
+                if not (runtime_fix.get("path") and runtime_fix.get("content")):
+                    continue
+
+                write_fix(project_path, runtime_fix)
+                save_fix_log(project_path, str(runtime_result), runtime_fix)
+                print("Runtime Fix Written")
+
+        except Exception as e:
+            runtime_result = {"success": False, "error": str(e)}
+            print(f"Runtime Validation Failed: {e}")
+
+    zip_path = None
+    can_export = (
+        validation["passed"]
+        and runtime_result
+        and runtime_result.get(
+            "success",
+            False
+        )
+    )
+    if can_export:
+
+        zip_path = create_zip(
+            project_path
+        )
+
+    else:
+
+        print(
+            "\nExport Blocked"
+        )
+
+        print(
+            "Validation or Runtime Failed"
+        )
+
+    forge_score = calculate_forge_score(
+        validation,
+        runtime_result
+    )
+    print(f"\nForge Score: {forge_score}")
+    endpoint_coverage = calculate_endpoint_coverage(
+        architecture,
+        project_path
+    )
 
     validation_stats = {
         "passed": validation["passed"],
@@ -168,11 +501,16 @@ def generate_project(idea, provider="auto"):
         "generation_time": total_time,
     }
 
+    final_backend_files = _read_current_files(project_path, "app")
+    final_frontend_files = _read_current_files(project_path, "src")
+
     return {
         "plan": plan,
         "architecture": architecture,
-        "backend": backend,
-        "frontend": frontend,
+        "forge_score": forge_score,
+        "endpoint_coverage": endpoint_coverage,
+        "backend": {"files": final_backend_files},
+        "frontend": {"files": final_frontend_files},
         "project_path": project_path,
         "zip_path": zip_path,
         "metadata_path": metadata_path,
