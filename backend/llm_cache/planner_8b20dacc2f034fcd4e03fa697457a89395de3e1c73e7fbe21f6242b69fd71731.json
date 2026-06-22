@@ -1,0 +1,132 @@
+{
+  "project_name": "RealtimeChat",
+  "description": "A web\u2011based real\u2011time chat application supporting public rooms, private direct messages, and live user presence indicators.",
+  "target_users": [
+    "Remote teams",
+    "Gaming communities",
+    "Interest\u2011based groups",
+    "Customer support teams"
+  ],
+  "core_features": [
+    "Instant messaging in public and private rooms",
+    "Direct private messages between two users",
+    "Live user presence (online/offline/away)",
+    "Message history with scrollback",
+    "Real\u2011time push notifications for new messages"
+  ],
+  "future_features": [
+    "File and image sharing within chats",
+    "Message reactions (emoji)",
+    "Voice and video calls"
+  ],
+  "tech_stack": [
+    "FastAPI",
+    "React",
+    "SQLite"
+  ],
+  "database_entities": [
+    {
+      "name": "User",
+      "fields": [
+        "id",
+        "username",
+        "email",
+        "password_hash",
+        "display_name",
+        "avatar_url",
+        "status",
+        "last_active_at"
+      ]
+    },
+    {
+      "name": "Room",
+      "fields": [
+        "id",
+        "name",
+        "is_private",
+        "created_at",
+        "created_by"
+      ]
+    },
+    {
+      "name": "Message",
+      "fields": [
+        "id",
+        "room_id",
+        "sender_id",
+        "content",
+        "timestamp",
+        "is_deleted"
+      ]
+    }
+  ],
+  "api_modules": [
+    {
+      "name": "User",
+      "endpoints": [
+        "/users",
+        "/users/{id}",
+        "/users/me",
+        "/users/{id}/status"
+      ]
+    },
+    {
+      "name": "Room",
+      "endpoints": [
+        "/rooms",
+        "/rooms/{id}",
+        "/rooms/{id}/join",
+        "/rooms/{id}/leave"
+      ]
+    },
+    {
+      "name": "Message",
+      "endpoints": [
+        "/rooms/{room_id}/messages",
+        "/rooms/{room_id}/messages/{id}"
+      ]
+    }
+  ],
+  "pages": [
+    "Login",
+    "Register",
+    "Chat Dashboard",
+    "Chat Room",
+    "User Profile"
+  ],
+  "backend_modules": [
+    "Authentication",
+    "User Management",
+    "Room Management",
+    "Message Handling",
+    "Presence Service"
+  ],
+  "roadmap": [
+    {
+      "phase": "MVP",
+      "milestones": [
+        "Implement user registration and JWT authentication",
+        "Create Room and Message models with SQLite persistence",
+        "Develop REST APIs for users, rooms, and messages",
+        "Build React UI for login, dashboard, and chat room",
+        "Integrate WebSocket for real\u2011time messaging and presence"
+      ]
+    },
+    {
+      "phase": "Feature Expansion",
+      "milestones": [
+        "Add direct private messaging UI and APIs",
+        "Implement user presence indicators and status updates",
+        "Introduce push notification handling in the frontend"
+      ]
+    },
+    {
+      "phase": "Advanced Capabilities",
+      "milestones": [
+        "Enable file and image sharing within chats",
+        "Add emoji reactions to messages",
+        "Integrate voice/video call functionality"
+      ]
+    }
+  ]
+}

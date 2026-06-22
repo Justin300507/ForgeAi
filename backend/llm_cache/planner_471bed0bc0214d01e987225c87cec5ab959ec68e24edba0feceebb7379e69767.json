@@ -1,0 +1,130 @@
+{
+  "project_name": "TaskMaster",
+  "description": "A web-based todo list application that lets users securely sign up, create tasks, organize them into custom categories, and view tasks filtered by category.",
+  "target_users": [
+    "Individuals looking for a simple personal productivity tool",
+    "Small teams that need a lightweight shared task manager"
+  ],
+  "core_features": [
+    "User registration, login, and JWT based authentication",
+    "Create, edit, and delete tasks",
+    "Organize tasks into user\u2011defined categories",
+    "Filter and view tasks by selected category",
+    "Mark tasks as completed/incomplete"
+  ],
+  "future_features": [
+    "Email or push notifications for upcoming due dates",
+    "Share tasks or categories with other users",
+    "Offline support with local sync when back online"
+  ],
+  "tech_stack": [
+    "FastAPI",
+    "React",
+    "SQLite",
+    "Pydantic",
+    "SQLAlchemy"
+  ],
+  "database_entities": [
+    {
+      "name": "User",
+      "fields": [
+        "id",
+        "email",
+        "hashed_password",
+        "full_name",
+        "created_at"
+      ]
+    },
+    {
+      "name": "Category",
+      "fields": [
+        "id",
+        "user_id",
+        "name",
+        "color",
+        "created_at"
+      ]
+    },
+    {
+      "name": "Task",
+      "fields": [
+        "id",
+        "user_id",
+        "category_id",
+        "title",
+        "description",
+        "due_date",
+        "completed",
+        "created_at",
+        "updated_at"
+      ]
+    }
+  ],
+  "api_modules": [
+    {
+      "name": "Auth",
+      "endpoints": [
+        "/auth/register",
+        "/auth/login",
+        "/auth/me"
+      ]
+    },
+    {
+      "name": "Task",
+      "endpoints": [
+        "/tasks",
+        "/tasks/{id}"
+      ]
+    },
+    {
+      "name": "Category",
+      "endpoints": [
+        "/categories",
+        "/categories/{id}"
+      ]
+    }
+  ],
+  "pages": [
+    "Login",
+    "Register",
+    "Dashboard (task list)",
+    "Task Detail / Edit",
+    "Category Management"
+  ],
+  "backend_modules": [
+    "Authentication",
+    "User Service",
+    "Task Service",
+    "Category Service",
+    "JWT Middleware"
+  ],
+  "roadmap": [
+    {
+      "phase": "Phase 1 \u2013 MVP",
+      "milestones": [
+        "Set up repository and CI pipeline",
+        "Design database schema and implement models",
+        "Build authentication endpoints and JWT handling",
+        "Create CRUD APIs for tasks and categories",
+        "Develop core UI pages for login, registration, and dashboard"
+      ]
+    },
+    {
+      "phase": "Phase 2 \u2013 Enhancements",
+      "milestones": [
+        "Add task filtering by category on the dashboard",
+        "Implement due date handling and UI display",
+        "Improve UI/UX with responsive design and error handling",
+        "Write unit and integration tests for all services"
+      ]
+    },
+    {
+      "phase": "Phase 3 \u2013 Future Features",
+      "milestones": [
+        "Integrate email/push notification service for reminders",
+        "Enable task sharing between users with permission controls",
+        "Add offline storage and sync mechanism using Service Workers"
+      ]
+    }
+  ]
+}

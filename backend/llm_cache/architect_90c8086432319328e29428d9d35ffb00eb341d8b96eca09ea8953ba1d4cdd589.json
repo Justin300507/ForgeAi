@@ -1,0 +1,334 @@
+{
+  "api_endpoints": [
+    {
+      "method": "POST",
+      "path": "/users",
+      "description": "Register a new user",
+      "file": "app/routes/user_routes.py"
+    },
+    {
+      "method": "POST",
+      "path": "/auth/login",
+      "description": "Authenticate user and return access token",
+      "file": "app/routes/auth_routes.py"
+    },
+    {
+      "method": "GET",
+      "path": "/users/{id}",
+      "description": "Retrieve user profile information",
+      "file": "app/routes/user_routes.py"
+    },
+    {
+      "method": "GET",
+      "path": "/users/{id}/subscriptions",
+      "description": "List all shows the user is subscribed to",
+      "file": "app/routes/subscription_routes.py"
+    },
+    {
+      "method": "POST",
+      "path": "/users/{id}/subscriptions",
+      "description": "Subscribe the user to a show",
+      "file": "app/routes/subscription_routes.py"
+    },
+    {
+      "method": "DELETE",
+      "path": "/users/{id}/subscriptions/{show_id}",
+      "description": "Unsubscribe the user from a show",
+      "file": "app/routes/subscription_routes.py"
+    },
+    {
+      "method": "GET",
+      "path": "/users/{id}/play-history",
+      "description": "Get the user's episode play history",
+      "file": "app/routes/playhistory_routes.py"
+    },
+    {
+      "method": "POST",
+      "path": "/users/{id}/play-history",
+      "description": "Add or update a play history entry for an episode",
+      "file": "app/routes/playhistory_routes.py"
+    },
+    {
+      "method": "GET",
+      "path": "/shows",
+      "description": "Discover and search podcast shows",
+      "file": "app/routes/show_routes.py"
+    },
+    {
+      "method": "GET",
+      "path": "/shows/{id}",
+      "description": "Get detailed information for a specific show",
+      "file": "app/routes/show_routes.py"
+    },
+    {
+      "method": "GET",
+      "path": "/shows/{id}/episodes",
+      "description": "List episodes belonging to a specific show",
+      "file": "app/routes/episode_routes.py"
+    },
+    {
+      "method": "GET",
+      "path": "/episodes/{id}",
+      "description": "Retrieve metadata for a single episode",
+      "file": "app/routes/episode_routes.py"
+    },
+    {
+      "method": "POST",
+      "path": "/episodes",
+      "description": "Create a new episode (admin operation)",
+      "file": "app/routes/episode_routes.py"
+    },
+    {
+      "method": "GET",
+      "path": "/search/shows",
+      "description": "Search shows by title or description",
+      "file": "app/routes/search_routes.py"
+    },
+    {
+      "method": "GET",
+      "path": "/dashboard/{user_id}",
+      "description": "Get personalized dashboard data with latest episodes from subscriptions",
+      "file": "app/routes/dashboard_routes.py"
+    }
+  ],
+  "database_schema": [
+    {
+      "table_name": "users",
+      "columns": [
+        {
+          "name": "id",
+          "type": "INTEGER",
+          "is_primary_key": true,
+          "is_nullable": false
+        },
+        {
+          "name": "username",
+          "type": "TEXT",
+          "is_primary_key": false,
+          "is_nullable": false
+        },
+        {
+          "name": "email",
+          "type": "TEXT",
+          "is_primary_key": false,
+          "is_nullable": false
+        },
+        {
+          "name": "password_hash",
+          "type": "TEXT",
+          "is_primary_key": false,
+          "is_nullable": false
+        },
+        {
+          "name": "created_at",
+          "type": "DATETIME",
+          "is_primary_key": false,
+          "is_nullable": false
+        }
+      ]
+    },
+    {
+      "table_name": "shows",
+      "columns": [
+        {
+          "name": "id",
+          "type": "INTEGER",
+          "is_primary_key": true,
+          "is_nullable": false
+        },
+        {
+          "name": "title",
+          "type": "TEXT",
+          "is_primary_key": false,
+          "is_nullable": false
+        },
+        {
+          "name": "description",
+          "type": "TEXT",
+          "is_primary_key": false,
+          "is_nullable": true
+        },
+        {
+          "name": "author",
+          "type": "TEXT",
+          "is_primary_key": false,
+          "is_nullable": true
+        },
+        {
+          "name": "rss_feed_url",
+          "type": "TEXT",
+          "is_primary_key": false,
+          "is_nullable": false
+        },
+        {
+          "name": "image_url",
+          "type": "TEXT",
+          "is_primary_key": false,
+          "is_nullable": true
+        },
+        {
+          "name": "created_at",
+          "type": "DATETIME",
+          "is_primary_key": false,
+          "is_nullable": false
+        }
+      ]
+    },
+    {
+      "table_name": "episodes",
+      "columns": [
+        {
+          "name": "id",
+          "type": "INTEGER",
+          "is_primary_key": true,
+          "is_nullable": false
+        },
+        {
+          "name": "show_id",
+          "type": "INTEGER",
+          "is_primary_key": false,
+          "is_nullable": false
+        },
+        {
+          "name": "title",
+          "type": "TEXT",
+          "is_primary_key": false,
+          "is_nullable": false
+        },
+        {
+          "name": "description",
+          "type": "TEXT",
+          "is_primary_key": false,
+          "is_nullable": true
+        },
+        {
+          "name": "audio_url",
+          "type": "TEXT",
+          "is_primary_key": false,
+          "is_nullable": false
+        },
+        {
+          "name": "duration_seconds",
+          "type": "INTEGER",
+          "is_primary_key": false,
+          "is_nullable": false
+        },
+        {
+          "name": "publish_date",
+          "type": "DATETIME",
+          "is_primary_key": false,
+          "is_nullable": false
+        },
+        {
+          "name": "episode_number",
+          "type": "INTEGER",
+          "is_primary_key": false,
+          "is_nullable": true
+        }
+      ]
+    },
+    {
+      "table_name": "subscriptions",
+      "columns": [
+        {
+          "name": "id",
+          "type": "INTEGER",
+          "is_primary_key": true,
+          "is_nullable": false
+        },
+        {
+          "name": "user_id",
+          "type": "INTEGER",
+          "is_primary_key": false,
+          "is_nullable": false
+        },
+        {
+          "name": "show_id",
+          "type": "INTEGER",
+          "is_primary_key": false,
+          "is_nullable": false
+        },
+        {
+          "name": "subscribed_at",
+          "type": "DATETIME",
+          "is_primary_key": false,
+          "is_nullable": false
+        }
+      ]
+    },
+    {
+      "table_name": "play_history",
+      "columns": [
+        {
+          "name": "id",
+          "type": "INTEGER",
+          "is_primary_key": true,
+          "is_nullable": false
+        },
+        {
+          "name": "user_id",
+          "type": "INTEGER",
+          "is_primary_key": false,
+          "is_nullable": false
+        },
+        {
+          "name": "episode_id",
+          "type": "INTEGER",
+          "is_primary_key": false,
+          "is_nullable": false
+        },
+        {
+          "name": "played_at",
+          "type": "DATETIME",
+          "is_primary_key": false,
+          "is_nullable": false
+        },
+        {
+          "name": "progress_seconds",
+          "type": "INTEGER",
+          "is_primary_key": false,
+          "is_nullable": true
+        }
+      ]
+    }
+  ],
+  "folder_structure": {
+    "backend": [
+      "app",
+      "app/models",
+      "app/schemas",
+      "app/services",
+      "app/routes",
+      "app/utils",
+      "app/config",
+      "app/dependencies",
+      "app/main.py"
+    ]
+  },
+  "frontend_structure": {
+    "pages": [
+      "Login",
+      "Dashboard",
+      "ShowDetail",
+      "EpisodePlayer",
+      "History"
+    ],
+    "components": [
+      "Header",
+      "Footer",
+      "ShowCard",
+      "EpisodeList",
+      "EpisodeCard",
+      "SearchBar",
+      "SubscriptionButton",
+      "PlayButton",
+      "ProgressBar",
+      "AudioPlayer",
+      "UserMenu",
+      "DashboardWidget",
+      "HistoryItem",
+      "LoginForm",
+      "Pagination"
+    ]
+  }
+}

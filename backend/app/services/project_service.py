@@ -27,10 +27,19 @@ from app.services.forge_score_service import (
 from app.services.architecture_fix_service import (
     generate_architecture_fix
 )
+from app.runtime.frontend_runner import FrontendRunner
+from app.services.frontend_fix_service import run_frontend_fix_loop
 from app.services.endpoint_coverage_service import (
     calculate_endpoint_coverage
 )
 from app.utils.import_graph import collect_imports
+from app.services.critic_service import run_critic
+from app.services.production_critic_service import run_production_critic, print_production_report
+from app.runtime.playwright_runner import run_playwright_tests
+from app.memory.failure_memory import record_run as record_failure_run
+from app.runtime.docker_validator import run_docker_validation
+from app.utils.cost_tracker import reset_session, flush_to_log, print_session_cost
+from app.services.architecture_tournament_service import run_architecture_tournament
 
 
 ARCHITECTURE_ERROR_MARKERS = (
@@ -47,13 +56,19 @@ ARCHITECTURE_ERROR_MARKERS = (
 def resolve_endpoint_file(error: str) -> str | None:
     """
     Resolve the file that should contain a missing endpoint.
+    Prefers the explicit path embedded in the error message by the validator.
+    Falls back to computing from the URL path only when no explicit file is present.
     """
+    # Prefer the explicit file path the validator embedded in the message
+    m = re.search(r"expected in (app[\\/][^\s]+\.py)", error)
+    if m:
+        return m.group(1).replace("\\", "/")
+
     match = re.search(r"(GET|POST|PUT|DELETE|PATCH)\s+(/\S+)", error)
     if not match:
         return None
 
     path = match.group(2)
-    # Extract the path part before any query parameters
     path_without_query = path.split('?')[0]
     segments = [s for s in path_without_query.split("/") if s and not s.startswith("{")]
     if not segments:
@@ -244,31 +259,48 @@ def _read_current_files(project_path, subdir):
     return files
 
 
-def generate_project(idea: str, provider: str = "auto") -> Dict[str, Any]:
+def generate_project(idea: str, provider: str = "auto", use_tournament: bool = False) -> Dict[str, Any]:
     """
     Generates a single FastAPI + React project from an idea.
     The function follows the full pipeline:
     plan → architecture → backend → frontend → validation/fix loops → runtime validation.
     Returns a dictionary containing all artefacts and statistics for the project.
+
+    use_tournament: if True, runs V5.4 Architecture Tournament (3 candidate architectures,
+    picks the one with the best static validation score).
     """
 
     start = time.time()
+    reset_session()  # clear cost tracker for this run
 
     # ------------------------------------------------------------------
     # 1. Planning & Architecture
     # ------------------------------------------------------------------
-    plan = generate_plan(idea, "cerebras")
-    architecture = generate_architecture(plan, "cerebras")
+    plan = generate_plan(idea, provider)
+
+    tournament_result = None
+    if use_tournament:
+        print("\n=== V5.4 ARCHITECTURE TOURNAMENT MODE ===")
+        tournament_result = run_architecture_tournament(plan, provider, n_candidates=3)
+        architecture = tournament_result.winner_architecture
+        print(f"Tournament complete: winner={tournament_result.winner_index+1}, "
+              f"scores={tournament_result.scores}, duration={tournament_result.duration}s")
+    else:
+        architecture = generate_architecture(plan, provider)
+
     # Sanitize any illegal characters in architecture file paths
     _sanitize_architecture_paths(architecture)
     print("\n=== ARCHITECTURE ===")
-    print(architecture)
+    try:
+        print(architecture)
+    except UnicodeEncodeError:
+        print(str(architecture).encode("ascii", errors="replace").decode("ascii"))
 
     # ------------------------------------------------------------------
     # 2. Code Generation
     # ------------------------------------------------------------------
-    backend = generate_backend(architecture, "cerebras")
-    frontend = generate_frontend(architecture, "cerebras")
+    backend = generate_backend(architecture, provider)
+    frontend = generate_frontend(architecture, provider)
     all_files = []
     all_files.extend(backend["files"])
     all_files.extend(frontend["files"])
@@ -343,6 +375,23 @@ def generate_project(idea: str, provider: str = "auto") -> Dict[str, Any]:
             if match:
                 filepath = match.group(1)
                 grouped_errors[filepath].append(error)
+                continue
+
+            # Frontend import errors: derive the missing .jsx file path
+            frontend_match = re.search(
+                r"Missing frontend import target:\s+(\S+)",
+                error
+            )
+            if frontend_match:
+                imp = frontend_match.group(1)
+                # Convert relative import like ../components/Footer -> src/components/Footer.jsx
+                name = os.path.basename(imp.replace(".jsx", ""))
+                for subdir in ("components", "pages"):
+                    if subdir in imp:
+                        grouped_errors[f"src/{subdir}/{name}.jsx"].append(error)
+                        break
+                else:
+                    grouped_errors[f"src/{name}.jsx"].append(error)
 
         for filepath, file_errors in grouped_errors.items():
             try:
@@ -532,7 +581,137 @@ def generate_project(idea: str, provider: str = "auto") -> Dict[str, Any]:
             print(f"Runtime Validation Failed: {e}")
 
     # ------------------------------------------------------------------
-    # 8. Packaging (zip) if everything succeeded
+    # 7b. Autonomous Regeneration (V4)
+    #     If static + runtime BOTH failed after all fix attempts,
+    #     redesign the architecture from scratch and try once more.
+    # ------------------------------------------------------------------
+    runtime_succeeded = runtime_result and runtime_result.get("success", False)
+    if not validation["passed"] or not runtime_succeeded:
+        print("\n=== AUTONOMOUS REGENERATION (V4) ===")
+        print("All fix attempts exhausted — redesigning architecture and regenerating...")
+        try:
+            from app.memory.failure_memory import build_prompt_injection
+            learned_context = build_prompt_injection()
+
+            # Re-run architect with learned context injected
+            architecture = generate_architecture(plan, provider, extra_context=learned_context)
+            print("New architecture generated")
+
+            # Full backend + frontend regeneration
+            backend_response = generate_backend(architecture, provider)
+            frontend_response = generate_frontend(architecture, provider)
+            all_files = backend_response.get("files", []) + frontend_response.get("files", [])
+            project_path = write_files(plan["project_name"], all_files)
+            print(f"Regenerated {len(all_files)} files")
+
+            # One more validation + runtime pass
+            validation = validate_project(project_path)
+            print(f"Post-regen validation: {validation}")
+
+            if validation["passed"]:
+                runtime_result = validate_runtime(project_path, architecture=architecture)
+                print(f"Post-regen runtime: {runtime_result.get('success', False) if runtime_result else False}")
+
+        except Exception as regen_err:
+            print(f"Autonomous regeneration failed: {regen_err}")
+
+    # ------------------------------------------------------------------
+    # 8. Frontend Build Validation (Vite/React)
+    # ------------------------------------------------------------------
+    frontend_build_result = None
+    if validation["passed"] and runtime_result and runtime_result.get("success", False):
+        print("\n=== FRONTEND BUILD VALIDATION ===")
+        try:
+            _frontend_runner = FrontendRunner()
+            frontend_build_result = run_frontend_fix_loop(
+                project_path, _frontend_runner, provider, max_attempts=6
+            )
+            if frontend_build_result.get("node_missing"):
+                print("Node.js not found — frontend build skipped")
+            elif frontend_build_result.get("success"):
+                print("Frontend Build Passed")
+            else:
+                print(f"Frontend Build Failed — {len(frontend_build_result.get('errors', []))} errors")
+        except Exception as e:
+            print(f"Frontend build error: {e}")
+            frontend_build_result = {"success": False, "error": str(e), "node_missing": False}
+
+    # ------------------------------------------------------------------
+    # 9a. Multi-agent Critic Review
+    # ------------------------------------------------------------------
+    critic_result = None
+    if validation["passed"]:
+        print("\n=== CRITIC REVIEW ===")
+        try:
+            critic_result = run_critic(project_path, provider)
+            print(f"Critic score: {critic_result['score']}/100 — {critic_result['summary']}")
+            if critic_result["critical_issues"]:
+                for issue in critic_result["critical_issues"]:
+                    print(f"  CRITICAL: {issue}")
+            if critic_result["warnings"]:
+                for w in critic_result["warnings"][:3]:
+                    print(f"  WARN: {w}")
+        except Exception as e:
+            print(f"Critic error: {e}")
+            critic_result = {"score": 75, "critical_issues": [], "warnings": [], "summary": "Critic unavailable."}
+
+    # ------------------------------------------------------------------
+    # 9b. Playwright Browser Automation
+    # ------------------------------------------------------------------
+    playwright_result = None
+    frontend_built = frontend_build_result and frontend_build_result.get("success", False)
+    if frontend_built:
+        print("\n=== PLAYWRIGHT BROWSER TESTS ===")
+        try:
+            playwright_result = run_playwright_tests(
+                project_path, architecture, capture_screenshots=True
+            )
+            if playwright_result.skipped:
+                print(f"Playwright skipped: {playwright_result.skip_reason}")
+            elif playwright_result.success:
+                print(f"Playwright passed — {playwright_result.pages_checked} pages checked in {playwright_result.duration}s")
+            else:
+                print(f"Playwright failed — blanks: {playwright_result.blank_pages}, errors: {playwright_result.console_errors[:3]}")
+        except Exception as e:
+            print(f"Playwright error: {e}")
+            playwright_result = None
+
+    # ------------------------------------------------------------------
+    # 9b2. Full User Journey Testing (V5.5) — API-based E2E
+    # ------------------------------------------------------------------
+    journey_result = None
+    if runtime_result and runtime_result.get("success"):
+        print("\n=== USER JOURNEY (V5.5) ===")
+        try:
+            from app.runtime.user_journey_runner import run_user_journey
+            journey_result = run_user_journey(project_path, architecture)
+        except Exception as _je:
+            print(f"User journey error: {_je}")
+
+    # ------------------------------------------------------------------
+    # 9c. Vision-Based UI Validation (V4)
+    # ------------------------------------------------------------------
+    vision_result = None
+    if frontend_built and playwright_result and not playwright_result.skipped:
+        print("\n=== VISION UI VALIDATION (V4) ===")
+        try:
+            from app.runtime.vision_validator import run_vision_validation
+            existing_shots = getattr(playwright_result, "screenshots", [])
+            vision_result = run_vision_validation(
+                project_path, architecture,
+                existing_screenshots=existing_shots if existing_shots else None,
+            )
+            if vision_result.skipped:
+                print(f"Vision skipped: {vision_result.skip_reason}")
+            else:
+                print(f"Vision score: {vision_result.ui_score}/100 ({len(vision_result.issues)} issues)")
+                for issue in vision_result.issues:
+                    print(f"  [{issue.severity}] {issue.page}: {issue.description}")
+        except Exception as e:
+            print(f"Vision validation error: {e}")
+
+    # ------------------------------------------------------------------
+    # 10. Packaging (zip) if everything succeeded
     # ------------------------------------------------------------------
     zip_path = None
     can_export = (
@@ -552,13 +731,90 @@ def generate_project(idea: str, provider: str = "auto") -> Dict[str, Any]:
         print("Validation or Runtime Failed")
 
     # ------------------------------------------------------------------
-    # 9. Scoring & Reporting
+    # 10a. Docker Deployment Validation (V5.1)
+    # ------------------------------------------------------------------
+    docker_result = None
+    if can_export:
+        print("\n=== DOCKER DEPLOYMENT VALIDATION (V5.1) ===")
+        try:
+            docker_result = run_docker_validation(project_path)
+            if docker_result.skipped:
+                print(f"Docker skipped: {docker_result.skip_reason}")
+            elif docker_result.success:
+                print(f"Docker PASS — build+run+health in {docker_result.duration}s")
+            else:
+                print(
+                    f"Docker FAIL — build:{docker_result.build_passed} "
+                    f"run:{docker_result.run_passed} health:{docker_result.health_passed} "
+                    f"({docker_result.duration}s)"
+                )
+                if docker_result.error:
+                    print(f"  Error: {docker_result.error[:200]}")
+        except Exception as _de:
+            print(f"Docker validation error: {_de}")
+
+    # ------------------------------------------------------------------
+    # 10b. Production Readiness Critic (V5.2) — separate from forge_score
+    # ------------------------------------------------------------------
+    production_result = None
+    try:
+        production_result = run_production_critic(project_path)
+        print_production_report(production_result)
+    except Exception as _prod_err:
+        print(f"Production critic error: {_prod_err}")
+
+    # ------------------------------------------------------------------
+    # 10c. Repository Intelligence — README, API docs, ER diagram (V5.6)
+    # ------------------------------------------------------------------
+    repo_docs_result = None
+    try:
+        from app.services.repo_intelligence_service import generate_repo_docs
+        repo_docs_result = generate_repo_docs(project_path, plan, architecture)
+    except Exception as _rd_err:
+        print(f"Repo docs error: {_rd_err}")
+
+    # ------------------------------------------------------------------
+    # 10. Scoring & Reporting
     # ------------------------------------------------------------------
     forge_score = calculate_forge_score(
         validation,
-        runtime_result
+        runtime_result,
+        frontend_build_result,
+        playwright_result,
+        vision_result=vision_result,
+        docker_result=docker_result,
     )
     print(f"\nForge Score: {forge_score}")
+
+    # V5.7: Print and persist cost summary
+    try:
+        print_session_cost()
+        flush_to_log(
+            project_name=plan.get("project_name", "unknown"),
+            forge_score=forge_score.get("score", 0),
+            total_wall_time_s=time.time() - start,
+        )
+    except Exception:
+        pass
+
+    # V4: Record this run in failure memory so future generations learn from it
+    try:
+        record_failure_run(
+            project_name=plan.get("project_name", "unknown"),
+            validation_errors=validation.get("errors", []),
+            runtime_error_type=(
+                runtime_result.get("parsed_error", {}).get("type")
+                if runtime_result else None
+            ),
+            frontend_build_failed=(
+                frontend_build_result is not None
+                and not frontend_build_result.get("node_missing", False)
+                and not frontend_build_result.get("success", True)
+            ),
+            score=forge_score.get("score", 0),
+        )
+    except Exception as _e:
+        pass  # never let memory recording crash the pipeline
 
     endpoint_coverage = calculate_endpoint_coverage(
         architecture,
@@ -595,6 +851,53 @@ def generate_project(idea: str, provider: str = "auto") -> Dict[str, Any]:
         "metadata_path": metadata_path,
         "validation": validation,
         "runtime": runtime_result,
+        "frontend_build": frontend_build_result,
+        "critic": critic_result,
+        "production_critic": {
+            "production_score": production_result.production_score if production_result else None,
+            "categories": production_result.categories if production_result else {},
+            "issue_count": len(production_result.issues) if production_result else 0,
+            "critical_count": sum(1 for i in production_result.issues if i.severity == "critical") if production_result else 0,
+            "skipped": production_result.skipped if production_result else True,
+        } if production_result else None,
+        "playwright": {
+            "success": playwright_result.success if playwright_result else None,
+            "pages_checked": playwright_result.pages_checked if playwright_result else 0,
+            "console_errors": playwright_result.console_errors if playwright_result else [],
+            "blank_pages": playwright_result.blank_pages if playwright_result else [],
+            "duration": playwright_result.duration if playwright_result else 0,
+        } if playwright_result else None,
+        "vision": {
+            "ui_score": vision_result.ui_score if vision_result else None,
+            "success": vision_result.success if vision_result else None,
+            "issues": [
+                {"severity": i.severity, "page": i.page, "description": i.description}
+                for i in (vision_result.issues if vision_result else [])
+            ],
+            "page_scores": vision_result.page_scores if vision_result else {},
+            "skipped": vision_result.skipped if vision_result else True,
+        } if vision_result else None,
+        "docker": {
+            "success": docker_result.success if docker_result else None,
+            "build_passed": docker_result.build_passed if docker_result else None,
+            "run_passed": docker_result.run_passed if docker_result else None,
+            "health_passed": docker_result.health_passed if docker_result else None,
+            "duration": docker_result.duration if docker_result else 0,
+            "error": docker_result.error if docker_result else None,
+            "skipped": docker_result.skipped if docker_result else True,
+        } if docker_result else None,
+        "repo_docs": {
+            "files_written": repo_docs_result.files_written if repo_docs_result else [],
+            "skipped": repo_docs_result.skipped if repo_docs_result else True,
+        } if repo_docs_result else None,
+        "journey": {
+            "success": journey_result.success if journey_result else None,
+            "steps_passed": sum(1 for s in (journey_result.steps if journey_result else []) if s.passed),
+            "steps_failed": sum(1 for s in (journey_result.steps if journey_result else []) if not s.passed),
+            "persistence_verified": journey_result.persistence_verified if journey_result else False,
+            "duration": journey_result.total_duration if journey_result else 0,
+            "skipped": journey_result.skipped if journey_result else True,
+        } if journey_result else None,
         "stats": validation_stats,
         "generation_time_seconds": total_time,
     }

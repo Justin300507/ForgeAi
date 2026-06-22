@@ -1,5 +1,3 @@
-import json
-
 from app.providers.ai_provider import (
     generate_content
 )
@@ -7,6 +5,8 @@ from app.providers.ai_provider import (
 from app.prompts.missing_file_prompt import (
     build_missing_file_prompt
 )
+from app.utils.json_cleaner import extract_json
+import json
 
 
 def generate_missing_file(
@@ -23,28 +23,14 @@ def generate_missing_file(
     text = generate_content(
         prompt,
         provider,
-        max_tokens=2000
+        max_tokens=8000
     )
-
-    text = text.replace(
-        "```json",
-        ""
-    )
-
-    text = text.replace(
-        "```",
-        ""
-    )
-
-    text = text.strip()
 
     try:
 
-        return json.loads(
-            text
-        )
+        return extract_json(text)
 
-    except Exception as e:
+    except (json.JSONDecodeError, ValueError) as e:
 
         print(
             "\n=== MISSING FILE AGENT ERROR ==="

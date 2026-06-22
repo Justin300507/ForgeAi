@@ -1,0 +1,264 @@
+{
+  "api_endpoints": [
+    {
+      "method": "GET",
+      "path": "/customers",
+      "description": "Retrieve a list of all customers (admin view)",
+      "file": "app/routes/customer_routes.py"
+    },
+    {
+      "method": "GET",
+      "path": "/customers/{id}",
+      "description": "Retrieve details of a specific customer",
+      "file": "app/routes/customer_routes.py"
+    },
+    {
+      "method": "PUT",
+      "path": "/customers/{id}",
+      "description": "Update profile information for a specific customer",
+      "file": "app/routes/customer_routes.py"
+    },
+    {
+      "method": "POST",
+      "path": "/auth/register",
+      "description": "Register a new user account",
+      "file": "app/routes/auth_routes.py"
+    },
+    {
+      "method": "POST",
+      "path": "/auth/login",
+      "description": "Authenticate a user and issue a JWT token",
+      "file": "app/routes/auth_routes.py"
+    },
+    {
+      "method": "GET",
+      "path": "/plans",
+      "description": "Retrieve a list of available subscription plans",
+      "file": "app/routes/plan_routes.py"
+    },
+    {
+      "method": "GET",
+      "path": "/plans/{id}",
+      "description": "Retrieve detailed information for a specific plan",
+      "file": "app/routes/plan_routes.py"
+    },
+    {
+      "method": "POST",
+      "path": "/plans",
+      "description": "Create a new subscription plan (admin)",
+      "file": "app/routes/plan_routes.py"
+    },
+    {
+      "method": "PUT",
+      "path": "/plans/{id}",
+      "description": "Update an existing subscription plan (admin)",
+      "file": "app/routes/plan_routes.py"
+    },
+    {
+      "method": "DELETE",
+      "path": "/plans/{id}",
+      "description": "Delete a subscription plan (admin)",
+      "file": "app/routes/plan_routes.py"
+    },
+    {
+      "method": "GET",
+      "path": "/subscriptions",
+      "description": "List all subscriptions for the authenticated user",
+      "file": "app/routes/subscription_routes.py"
+    },
+    {
+      "method": "POST",
+      "path": "/subscriptions",
+      "description": "Create a new subscription for the authenticated user",
+      "file": "app/routes/subscription_routes.py"
+    },
+    {
+      "method": "GET",
+      "path": "/subscriptions/{id}",
+      "description": "Retrieve details of a specific subscription",
+      "file": "app/routes/subscription_routes.py"
+    },
+    {
+      "method": "PUT",
+      "path": "/subscriptions/{id}",
+      "description": "Update subscription status or details",
+      "file": "app/routes/subscription_routes.py"
+    },
+    {
+      "method": "GET",
+      "path": "/subscriptions/{id}/track",
+      "description": "Get real\u2011time tracking information for a subscription's delivery",
+      "file": "app/routes/subscription_routes.py"
+    }
+  ],
+  "database_schema": [
+    {
+      "table_name": "customer",
+      "columns": [
+        {
+          "name": "id",
+          "type": "INTEGER",
+          "is_primary_key": true,
+          "is_nullable": false
+        },
+        {
+          "name": "email",
+          "type": "VARCHAR(255)",
+          "is_primary_key": false,
+          "is_nullable": false
+        },
+        {
+          "name": "password_hash",
+          "type": "VARCHAR(255)",
+          "is_primary_key": false,
+          "is_nullable": false
+        },
+        {
+          "name": "full_name",
+          "type": "VARCHAR(255)",
+          "is_primary_key": false,
+          "is_nullable": false
+        },
+        {
+          "name": "address",
+          "type": "TEXT",
+          "is_primary_key": false,
+          "is_nullable": false
+        },
+        {
+          "name": "phone",
+          "type": "VARCHAR(20)",
+          "is_primary_key": false,
+          "is_nullable": true
+        },
+        {
+          "name": "created_at",
+          "type": "DATETIME",
+          "is_primary_key": false,
+          "is_nullable": false
+        }
+      ]
+    },
+    {
+      "table_name": "plan",
+      "columns": [
+        {
+          "name": "id",
+          "type": "INTEGER",
+          "is_primary_key": true,
+          "is_nullable": false
+        },
+        {
+          "name": "name",
+          "type": "VARCHAR(150)",
+          "is_primary_key": false,
+          "is_nullable": false
+        },
+        {
+          "name": "price",
+          "type": "DECIMAL(10,2)",
+          "is_primary_key": false,
+          "is_nullable": false
+        },
+        {
+          "name": "interval",
+          "type": "VARCHAR(50)",
+          "is_primary_key": false,
+          "is_nullable": false
+        },
+        {
+          "name": "description",
+          "type": "TEXT",
+          "is_primary_key": false,
+          "is_nullable": true
+        },
+        {
+          "name": "product_list",
+          "type": "JSON",
+          "is_primary_key": false,
+          "is_nullable": true
+        }
+      ]
+    },
+    {
+      "table_name": "subscription",
+      "columns": [
+        {
+          "name": "id",
+          "type": "INTEGER",
+          "is_primary_key": true,
+          "is_nullable": false
+        },
+        {
+          "name": "customer_id",
+          "type": "INTEGER",
+          "is_primary_key": false,
+          "is_nullable": false
+        },
+        {
+          "name": "plan_id",
+          "type": "INTEGER",
+          "is_primary_key": false,
+          "is_nullable": false
+        },
+        {
+          "name": "start_date",
+          "type": "DATE",
+          "is_primary_key": false,
+          "is_nullable": false
+        },
+        {
+          "name": "next_delivery_date",
+          "type": "DATE",
+          "is_primary_key": false,
+          "is_nullable": false
+        },
+        {
+          "name": "status",
+          "type": "VARCHAR(20)",
+          "is_primary_key": false,
+          "is_nullable": false
+        },
+        {
+          "name": "tracking_number",
+          "type": "VARCHAR(100)",
+          "is_primary_key": false,
+          "is_nullable": true
+        }
+      ]
+    }
+  ],
+  "folder_structure": {
+    "backend": [
+      "app",
+      "app/models",
+      "app/schemas",
+      "app/services",
+      "app/routes",
+      "app/utils",
+      "app/config",
+      "app/dependencies"
+    ]
+  },
+  "frontend_structure": {
+    "pages": [
+      "Home",
+      "PlanCatalog",
+      "Login",
+      "Dashboard",
+      "DeliveryTracking"
+    ],
+    "components": [
+      "Navbar",
+      "Footer",
+      "PlanCard",
+      "SubscriptionCard",
+      "SubscriptionForm",
+      "LoginForm",
+      "DashboardOverview",
+      "TrackingMap",
+      "NotificationToast",
+      "ProductList"
+    ]
+  }
+}

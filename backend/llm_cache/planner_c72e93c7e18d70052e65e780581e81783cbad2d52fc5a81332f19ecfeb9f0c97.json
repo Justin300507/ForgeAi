@@ -1,0 +1,138 @@
+{
+  "project_name": "Community Forum Platform",
+  "description": "A web forum that organizes discussions into categories and threads, allows users to post replies, and supports upvote/downvote voting on posts.",
+  "target_users": [
+    "Casual internet users",
+    "Community moderators",
+    "Content creators"
+  ],
+  "core_features": [
+    "Category organization",
+    "Thread creation and listing",
+    "Posting replies within threads",
+    "User registration and login",
+    "Upvote/downvote voting on posts"
+  ],
+  "future_features": [
+    "Edit and delete posts",
+    "Thread subscription with email notifications",
+    "Moderator tools for banning and sticky threads"
+  ],
+  "tech_stack": [
+    "FastAPI",
+    "React",
+    "SQLite",
+    "Pydantic",
+    "SQLAlchemy"
+  ],
+  "database_entities": [
+    {
+      "name": "User",
+      "fields": [
+        "username",
+        "email",
+        "hashed_password",
+        "reputation",
+        "is_active",
+        "created_at"
+      ]
+    },
+    {
+      "name": "ForumNode",
+      "fields": [
+        "title",
+        "description",
+        "parent_id",
+        "node_type",
+        "created_at",
+        "updated_at"
+      ]
+    },
+    {
+      "name": "Post",
+      "fields": [
+        "thread_id",
+        "author_id",
+        "content",
+        "created_at",
+        "updated_at",
+        "upvotes",
+        "downvotes"
+      ]
+    }
+  ],
+  "api_modules": [
+    {
+      "name": "User",
+      "endpoints": [
+        "/auth/register",
+        "/auth/login",
+        "/users",
+        "/users/{id}",
+        "/users/me"
+      ]
+    },
+    {
+      "name": "ForumNode",
+      "endpoints": [
+        "/nodes",
+        "/nodes/{id}",
+        "/nodes?type=category",
+        "/nodes?type=thread"
+      ]
+    },
+    {
+      "name": "Post",
+      "endpoints": [
+        "/posts",
+        "/posts/{id}",
+        "/posts/thread/{thread_id}",
+        "/posts/{id}/vote"
+      ]
+    }
+  ],
+  "pages": [
+    "Login",
+    "Register",
+    "Home (Category List)",
+    "Thread Detail (Posts)",
+    "New Thread / Reply"
+  ],
+  "backend_modules": [
+    "Authentication",
+    "UserService",
+    "ForumService",
+    "PostService",
+    "VotingService"
+  ],
+  "roadmap": [
+    {
+      "phase": "Phase 1: MVP",
+      "milestones": [
+        "Initialize repository with FastAPI, React, and SQLite",
+        "Implement authentication and user registration",
+        "Develop ForumNode CRUD APIs",
+        "Create Post APIs with voting support",
+        "Build basic UI for categories, threads, and posting"
+      ]
+    },
+    {
+      "phase": "Phase 2: Enhancements",
+      "milestones": [
+        "Add post edit and delete functionality",
+        "Implement thread subscription and email notifications",
+        "Introduce user reputation and badge system",
+        "Improve responsive design and UI polish"
+      ]
+    },
+    {
+      "phase": "Phase 3: Moderation & Scaling",
+      "milestones": [
+        "Add moderator roles, ban and sticky thread features",
+        "Implement pagination and infinite scroll for large forums",
+        "Set up Docker deployment with CI/CD pipeline",
+        "Provide analytics dashboard for community insights"
+      ]
+    }
+  ]
+}

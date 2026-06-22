@@ -1,0 +1,131 @@
+{
+  "project_name": "TeamFlow",
+  "description": "A lightweight project management tool that lets teams create projects, assign tasks, set milestones, and collaborate in real time.",
+  "target_users": [
+    "Project managers",
+    "Team leads",
+    "Developers",
+    "Freelancers"
+  ],
+  "core_features": [
+    "Project creation and management",
+    "Task creation, assignment and tracking",
+    "Milestone definition and progress tracking",
+    "Team member assignment and role management",
+    "Dashboard with project and task overview"
+  ],
+  "future_features": [
+    "Gantt chart visualisation",
+    "Time tracking per task",
+    "Integration with external tools (e.g., Slack, GitHub)"
+  ],
+  "tech_stack": [
+    "FastAPI",
+    "React",
+    "SQLite"
+  ],
+  "database_entities": [
+    {
+      "name": "Project",
+      "fields": [
+        "id",
+        "name",
+        "description",
+        "start_date",
+        "end_date",
+        "status",
+        "team_members",
+        "milestones"
+      ]
+    },
+    {
+      "name": "Task",
+      "fields": [
+        "id",
+        "project_id",
+        "title",
+        "description",
+        "assignee_id",
+        "due_date",
+        "status",
+        "is_milestone"
+      ]
+    },
+    {
+      "name": "User",
+      "fields": [
+        "id",
+        "name",
+        "email",
+        "role",
+        "avatar_url"
+      ]
+    }
+  ],
+  "api_modules": [
+    {
+      "name": "Project",
+      "endpoints": [
+        "/projects",
+        "/projects/{id}"
+      ]
+    },
+    {
+      "name": "Task",
+      "endpoints": [
+        "/tasks",
+        "/tasks/{id}"
+      ]
+    },
+    {
+      "name": "User",
+      "endpoints": [
+        "/users",
+        "/users/{id}"
+      ]
+    }
+  ],
+  "pages": [
+    "Login",
+    "Dashboard",
+    "Project Overview",
+    "Task Board",
+    "Team Directory"
+  ],
+  "backend_modules": [
+    "Authentication",
+    "ProjectService",
+    "TaskService",
+    "UserService",
+    "NotificationService"
+  ],
+  "roadmap": [
+    {
+      "phase": "MVP Development",
+      "milestones": [
+        "Core data models & APIs",
+        "User authentication",
+        "Project CRUD UI",
+        "Task management UI",
+        "Basic team member assignment"
+      ]
+    },
+    {
+      "phase": "Collaboration Enhancements",
+      "milestones": [
+        "Milestone tracking feature",
+        "Commenting on tasks",
+        "Email notifications",
+        "Responsive design improvements"
+      ]
+    },
+    {
+      "phase": "Advanced Analytics & Integrations",
+      "milestones": [
+        "Gantt chart view",
+        "Time tracking module",
+        "Third\u2011party integrations (e.g., Slack)"
+      ]
+    }
+  ]
+}

@@ -1,0 +1,311 @@
+{
+  "api_endpoints": [
+    {
+      "method": "POST",
+      "path": "/users",
+      "description": "Register a new user",
+      "file": "app/routes/user_routes.py"
+    },
+    {
+      "method": "GET",
+      "path": "/users/{id}",
+      "description": "Retrieve user profile by ID",
+      "file": "app/routes/user_routes.py"
+    },
+    {
+      "method": "PUT",
+      "path": "/users/{id}",
+      "description": "Update user profile information",
+      "file": "app/routes/user_routes.py"
+    },
+    {
+      "method": "POST",
+      "path": "/auth/login",
+      "description": "Authenticate user and return access token",
+      "file": "app/routes/auth_routes.py"
+    },
+    {
+      "method": "GET",
+      "path": "/posts",
+      "description": "List recent posts (used for general browsing)",
+      "file": "app/routes/post_routes.py"
+    },
+    {
+      "method": "POST",
+      "path": "/posts",
+      "description": "Create a new post",
+      "file": "app/routes/post_routes.py"
+    },
+    {
+      "method": "GET",
+      "path": "/posts/{id}",
+      "description": "Retrieve a single post with details",
+      "file": "app/routes/post_routes.py"
+    },
+    {
+      "method": "PUT",
+      "path": "/posts/{id}",
+      "description": "Edit an existing post",
+      "file": "app/routes/post_routes.py"
+    },
+    {
+      "method": "DELETE",
+      "path": "/posts/{id}",
+      "description": "Delete a post",
+      "file": "app/routes/post_routes.py"
+    },
+    {
+      "method": "POST",
+      "path": "/follow",
+      "description": "Follow another user (requires follower_id and following_id in body)",
+      "file": "app/routes/follow_routes.py"
+    },
+    {
+      "method": "DELETE",
+      "path": "/follow",
+      "description": "Unfollow a user (requires follower_id and following_id in body)",
+      "file": "app/routes/follow_routes.py"
+    },
+    {
+      "method": "GET",
+      "path": "/feed",
+      "description": "Get personalized feed of posts from followed users",
+      "file": "app/routes/feed_routes.py"
+    },
+    {
+      "method": "POST",
+      "path": "/posts/{id}/like",
+      "description": "Like a post",
+      "file": "app/routes/like_routes.py"
+    },
+    {
+      "method": "DELETE",
+      "path": "/posts/{id}/like",
+      "description": "Remove like from a post",
+      "file": "app/routes/like_routes.py"
+    },
+    {
+      "method": "POST",
+      "path": "/posts/{id}/comment",
+      "description": "Add a comment to a post",
+      "file": "app/routes/comment_routes.py"
+    }
+  ],
+  "database_schema": [
+    {
+      "table_name": "users",
+      "columns": [
+        {
+          "name": "id",
+          "type": "INTEGER",
+          "is_primary_key": true,
+          "is_nullable": false
+        },
+        {
+          "name": "username",
+          "type": "VARCHAR(50)",
+          "is_primary_key": false,
+          "is_nullable": false
+        },
+        {
+          "name": "email",
+          "type": "VARCHAR(120)",
+          "is_primary_key": false,
+          "is_nullable": false
+        },
+        {
+          "name": "hashed_password",
+          "type": "VARCHAR(255)",
+          "is_primary_key": false,
+          "is_nullable": false
+        },
+        {
+          "name": "display_name",
+          "type": "VARCHAR(100)",
+          "is_primary_key": false,
+          "is_nullable": true
+        },
+        {
+          "name": "bio",
+          "type": "TEXT",
+          "is_primary_key": false,
+          "is_nullable": true
+        },
+        {
+          "name": "avatar_url",
+          "type": "VARCHAR(255)",
+          "is_primary_key": false,
+          "is_nullable": true
+        },
+        {
+          "name": "created_at",
+          "type": "DATETIME",
+          "is_primary_key": false,
+          "is_nullable": false
+        }
+      ]
+    },
+    {
+      "table_name": "posts",
+      "columns": [
+        {
+          "name": "id",
+          "type": "INTEGER",
+          "is_primary_key": true,
+          "is_nullable": false
+        },
+        {
+          "name": "user_id",
+          "type": "INTEGER",
+          "is_primary_key": false,
+          "is_nullable": false
+        },
+        {
+          "name": "content",
+          "type": "VARCHAR(280)",
+          "is_primary_key": false,
+          "is_nullable": false
+        },
+        {
+          "name": "media_url",
+          "type": "VARCHAR(255)",
+          "is_primary_key": false,
+          "is_nullable": true
+        },
+        {
+          "name": "created_at",
+          "type": "DATETIME",
+          "is_primary_key": false,
+          "is_nullable": false
+        },
+        {
+          "name": "like_count",
+          "type": "INTEGER",
+          "is_primary_key": false,
+          "is_nullable": false
+        },
+        {
+          "name": "comment_count",
+          "type": "INTEGER",
+          "is_primary_key": false,
+          "is_nullable": false
+        }
+      ]
+    },
+    {
+      "table_name": "follows",
+      "columns": [
+        {
+          "name": "follower_id",
+          "type": "INTEGER",
+          "is_primary_key": true,
+          "is_nullable": false
+        },
+        {
+          "name": "following_id",
+          "type": "INTEGER",
+          "is_primary_key": true,
+          "is_nullable": false
+        },
+        {
+          "name": "created_at",
+          "type": "DATETIME",
+          "is_primary_key": false,
+          "is_nullable": false
+        }
+      ]
+    },
+    {
+      "table_name": "likes",
+      "columns": [
+        {
+          "name": "user_id",
+          "type": "INTEGER",
+          "is_primary_key": true,
+          "is_nullable": false
+        },
+        {
+          "name": "post_id",
+          "type": "INTEGER",
+          "is_primary_key": true,
+          "is_nullable": false
+        },
+        {
+          "name": "created_at",
+          "type": "DATETIME",
+          "is_primary_key": false,
+          "is_nullable": false
+        }
+      ]
+    },
+    {
+      "table_name": "comments",
+      "columns": [
+        {
+          "name": "id",
+          "type": "INTEGER",
+          "is_primary_key": true,
+          "is_nullable": false
+        },
+        {
+          "name": "post_id",
+          "type": "INTEGER",
+          "is_primary_key": false,
+          "is_nullable": false
+        },
+        {
+          "name": "user_id",
+          "type": "INTEGER",
+          "is_primary_key": false,
+          "is_nullable": false
+        },
+        {
+          "name": "content",
+          "type": "TEXT",
+          "is_primary_key": false,
+          "is_nullable": false
+        },
+        {
+          "name": "created_at",
+          "type": "DATETIME",
+          "is_primary_key": false,
+          "is_nullable": false
+        }
+      ]
+    }
+  ],
+  "folder_structure": {
+    "backend": [
+      "app",
+      "app/models",
+      "app/schemas",
+      "app/services",
+      "app/routes",
+      "app/utils",
+      "app/config",
+      "app/dependencies",
+      "app/main.py"
+    ]
+  },
+  "frontend_structure": {
+    "pages": [
+      "LoginRegister",
+      "HomeFeed",
+      "UserProfile",
+      "PostEditor",
+      "Explore"
+    ],
+    "components": [
+      "Header",
+      "PostCard",
+      "PostForm",
+      "UserAvatar",
+      "CommentList",
+      "CommentForm",
+      "FollowButton",
+      "LikeButton",
+      "FeedList",
+      "Sidebar"
+    ]
+  }
+}

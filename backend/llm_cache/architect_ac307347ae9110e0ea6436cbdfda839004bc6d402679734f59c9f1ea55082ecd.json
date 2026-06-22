@@ -1,0 +1,347 @@
+{
+  "api_endpoints": [
+    {
+      "method": "POST",
+      "path": "/users/register",
+      "description": "Register a new user",
+      "file": "app/routes/user_routes.py"
+    },
+    {
+      "method": "POST",
+      "path": "/users/login",
+      "description": "Authenticate user and return JWT",
+      "file": "app/routes/user_routes.py"
+    },
+    {
+      "method": "GET",
+      "path": "/users/me",
+      "description": "Get profile of authenticated user",
+      "file": "app/routes/user_routes.py"
+    },
+    {
+      "method": "GET",
+      "path": "/trips",
+      "description": "List all trips for the authenticated user",
+      "file": "app/routes/trip_routes.py"
+    },
+    {
+      "method": "POST",
+      "path": "/trips",
+      "description": "Create a new trip",
+      "file": "app/routes/trip_routes.py"
+    },
+    {
+      "method": "GET",
+      "path": "/trips/{id}",
+      "description": "Retrieve details of a specific trip",
+      "file": "app/routes/trip_routes.py"
+    },
+    {
+      "method": "PUT",
+      "path": "/trips/{id}",
+      "description": "Update an existing trip",
+      "file": "app/routes/trip_routes.py"
+    },
+    {
+      "method": "DELETE",
+      "path": "/trips/{id}",
+      "description": "Delete a trip",
+      "file": "app/routes/trip_routes.py"
+    },
+    {
+      "method": "GET",
+      "path": "/trips/{id}/budget",
+      "description": "Get budget summary for a trip",
+      "file": "app/routes/trip_routes.py"
+    },
+    {
+      "method": "POST",
+      "path": "/trips/{id}/share",
+      "description": "Generate a shareable link for the itinerary",
+      "file": "app/routes/trip_routes.py"
+    },
+    {
+      "method": "GET",
+      "path": "/trips/{trip_id}/activities",
+      "description": "List activities for a specific trip",
+      "file": "app/routes/activity_routes.py"
+    },
+    {
+      "method": "POST",
+      "path": "/trips/{trip_id}/activities",
+      "description": "Create a new activity within a trip",
+      "file": "app/routes/activity_routes.py"
+    },
+    {
+      "method": "GET",
+      "path": "/activities/{id}",
+      "description": "Retrieve details of a specific activity",
+      "file": "app/routes/activity_routes.py"
+    },
+    {
+      "method": "PUT",
+      "path": "/activities/{id}",
+      "description": "Update an existing activity",
+      "file": "app/routes/activity_routes.py"
+    },
+    {
+      "method": "DELETE",
+      "path": "/activities/{id}",
+      "description": "Delete an activity",
+      "file": "app/routes/activity_routes.py"
+    }
+  ],
+  "database_schema": [
+    {
+      "table_name": "users",
+      "columns": [
+        {
+          "name": "id",
+          "type": "INTEGER",
+          "is_primary_key": true,
+          "is_nullable": false
+        },
+        {
+          "name": "email",
+          "type": "TEXT",
+          "is_primary_key": false,
+          "is_nullable": false
+        },
+        {
+          "name": "hashed_password",
+          "type": "TEXT",
+          "is_primary_key": false,
+          "is_nullable": false
+        },
+        {
+          "name": "full_name",
+          "type": "TEXT",
+          "is_primary_key": false,
+          "is_nullable": true
+        },
+        {
+          "name": "created_at",
+          "type": "DATETIME",
+          "is_primary_key": false,
+          "is_nullable": false
+        }
+      ]
+    },
+    {
+      "table_name": "trips",
+      "columns": [
+        {
+          "name": "id",
+          "type": "INTEGER",
+          "is_primary_key": true,
+          "is_nullable": false
+        },
+        {
+          "name": "user_id",
+          "type": "INTEGER",
+          "is_primary_key": false,
+          "is_nullable": false
+        },
+        {
+          "name": "name",
+          "type": "TEXT",
+          "is_primary_key": false,
+          "is_nullable": false
+        },
+        {
+          "name": "start_date",
+          "type": "DATE",
+          "is_primary_key": false,
+          "is_nullable": false
+        },
+        {
+          "name": "end_date",
+          "type": "DATE",
+          "is_primary_key": false,
+          "is_nullable": false
+        },
+        {
+          "name": "total_budget",
+          "type": "NUMERIC",
+          "is_primary_key": false,
+          "is_nullable": true
+        },
+        {
+          "name": "created_at",
+          "type": "DATETIME",
+          "is_primary_key": false,
+          "is_nullable": false
+        }
+      ]
+    },
+    {
+      "table_name": "destinations",
+      "columns": [
+        {
+          "name": "id",
+          "type": "INTEGER",
+          "is_primary_key": true,
+          "is_nullable": false
+        },
+        {
+          "name": "trip_id",
+          "type": "INTEGER",
+          "is_primary_key": false,
+          "is_nullable": false
+        },
+        {
+          "name": "name",
+          "type": "TEXT",
+          "is_primary_key": false,
+          "is_nullable": false
+        },
+        {
+          "name": "arrival_date",
+          "type": "DATE",
+          "is_primary_key": false,
+          "is_nullable": true
+        },
+        {
+          "name": "departure_date",
+          "type": "DATE",
+          "is_primary_key": false,
+          "is_nullable": true
+        },
+        {
+          "name": "created_at",
+          "type": "DATETIME",
+          "is_primary_key": false,
+          "is_nullable": false
+        }
+      ]
+    },
+    {
+      "table_name": "activities",
+      "columns": [
+        {
+          "name": "id",
+          "type": "INTEGER",
+          "is_primary_key": true,
+          "is_nullable": false
+        },
+        {
+          "name": "trip_id",
+          "type": "INTEGER",
+          "is_primary_key": false,
+          "is_nullable": false
+        },
+        {
+          "name": "name",
+          "type": "TEXT",
+          "is_primary_key": false,
+          "is_nullable": false
+        },
+        {
+          "name": "description",
+          "type": "TEXT",
+          "is_primary_key": false,
+          "is_nullable": true
+        },
+        {
+          "name": "location",
+          "type": "TEXT",
+          "is_primary_key": false,
+          "is_nullable": true
+        },
+        {
+          "name": "start_time",
+          "type": "DATETIME",
+          "is_primary_key": false,
+          "is_nullable": false
+        },
+        {
+          "name": "end_time",
+          "type": "DATETIME",
+          "is_primary_key": false,
+          "is_nullable": false
+        },
+        {
+          "name": "cost",
+          "type": "NUMERIC",
+          "is_primary_key": false,
+          "is_nullable": true
+        },
+        {
+          "name": "created_at",
+          "type": "DATETIME",
+          "is_primary_key": false,
+          "is_nullable": false
+        }
+      ]
+    },
+    {
+      "table_name": "shared_links",
+      "columns": [
+        {
+          "name": "id",
+          "type": "INTEGER",
+          "is_primary_key": true,
+          "is_nullable": false
+        },
+        {
+          "name": "trip_id",
+          "type": "INTEGER",
+          "is_primary_key": false,
+          "is_nullable": false
+        },
+        {
+          "name": "token",
+          "type": "TEXT",
+          "is_primary_key": false,
+          "is_nullable": false
+        },
+        {
+          "name": "expires_at",
+          "type": "DATETIME",
+          "is_primary_key": false,
+          "is_nullable": true
+        },
+        {
+          "name": "created_at",
+          "type": "DATETIME",
+          "is_primary_key": false,
+          "is_nullable": false
+        }
+      ]
+    }
+  ],
+  "folder_structure": {
+    "backend": [
+      "app/routes",
+      "app/models",
+      "app/services",
+      "app/schemas",
+      "app/utils",
+      "app/dependencies",
+      "app/config"
+    ]
+  },
+  "frontend_structure": {
+    "pages": [
+      "Login",
+      "Register",
+      "Dashboard",
+      "TripEditor",
+      "ActivityEditor",
+      "ItineraryView",
+      "ShareItinerary"
+    ],
+    "components": [
+      "Header",
+      "Footer",
+      "TripList",
+      "TripForm",
+      "DestinationForm",
+      "ActivityList",
+      "ActivityForm",
+      "BudgetTracker",
+      "ShareLinkModal",
+      "ItineraryTimeline"
+    ]
+  }
+}

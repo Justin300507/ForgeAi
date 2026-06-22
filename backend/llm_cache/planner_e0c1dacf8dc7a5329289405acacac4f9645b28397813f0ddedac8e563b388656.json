@@ -1,0 +1,132 @@
+{
+  "project_name": "Pomodoro Pro",
+  "description": "A focused Pomodoro timer app that lets users create tasks, run timed work/break sessions, track each session, and view productivity statistics.",
+  "target_users": [
+    "Students",
+    "Freelancers",
+    "Knowledge workers",
+    "Remote teams"
+  ],
+  "core_features": [
+    "Customizable Pomodoro timer with work and break intervals",
+    "Task creation and management linked to Pomodoro sessions",
+    "Automatic session logging and history view",
+    "Daily and weekly productivity statistics",
+    "In\u2011app notifications for session start/end"
+  ],
+  "future_features": [
+    "Calendar integration for scheduled Pomodoros",
+    "Cross\u2011device sync via cloud backup",
+    "Gamified achievements and streaks"
+  ],
+  "tech_stack": [
+    "FastAPI",
+    "React",
+    "SQLite"
+  ],
+  "database_entities": [
+    {
+      "name": "User",
+      "fields": [
+        "id",
+        "email",
+        "password_hash",
+        "created_at"
+      ]
+    },
+    {
+      "name": "Task",
+      "fields": [
+        "id",
+        "user_id",
+        "title",
+        "description",
+        "estimated_pomodoros",
+        "is_completed",
+        "created_at",
+        "updated_at"
+      ]
+    },
+    {
+      "name": "Session",
+      "fields": [
+        "id",
+        "user_id",
+        "task_id",
+        "start_time",
+        "end_time",
+        "duration_minutes",
+        "is_break",
+        "created_at"
+      ]
+    }
+  ],
+  "api_modules": [
+    {
+      "name": "User",
+      "endpoints": [
+        "/users",
+        "/users/{id}",
+        "/auth/login",
+        "/auth/logout"
+      ]
+    },
+    {
+      "name": "Task",
+      "endpoints": [
+        "/tasks",
+        "/tasks/{id}"
+      ]
+    },
+    {
+      "name": "Session",
+      "endpoints": [
+        "/sessions",
+        "/sessions/{id}"
+      ]
+    }
+  ],
+  "pages": [
+    "Login",
+    "Dashboard",
+    "Tasks",
+    "Statistics",
+    "Settings"
+  ],
+  "backend_modules": [
+    "Authentication",
+    "User Management",
+    "Task Management",
+    "Session Management",
+    "Statistics Reporting"
+  ],
+  "roadmap": [
+    {
+      "phase": "MVP",
+      "milestones": [
+        "Implement user registration and login",
+        "Build core Pomodoro timer with start/stop",
+        "Create task CRUD API and UI",
+        "Log sessions and display session history",
+        "Show basic daily productivity stats"
+      ]
+    },
+    {
+      "phase": "Enhancements",
+      "milestones": [
+        "Add customizable work/break lengths",
+        "Provide weekly statistics and charts",
+        "Implement in\u2011app notifications",
+        "Introduce task estimation and completion tracking"
+      ]
+    },
+    {
+      "phase": "Expansion",
+      "milestones": [
+        "Integrate with Google Calendar",
+        "Enable cloud backup for cross\u2011device sync",
+        "Add achievement system and streak badges"
+      ]
+    }
+  ]
+}

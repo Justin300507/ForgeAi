@@ -1,19 +1,26 @@
-from groq import Groq
+from openai import OpenAI
+from dotenv import load_dotenv
+import os
 
-client = Groq(
-    api_key="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"
+load_dotenv()
+
+client = OpenAI(
+    api_key=os.getenv("CEREBRAS_API_KEY"),
+    base_url="https://api.cerebras.ai/v1"
 )
 
 response = client.chat.completions.create(
-    model="llama-3.3-70b-versatile",
+    model="gpt-oss-120b",
     messages=[
         {
             "role": "user",
-            "content": "Say hello"
+            "content": "Write a hello world FastAPI app"
         }
     ]
 )
 
-print(
-    response.choices[0].message.content
-)
+print(response.choices[0].message.content)
+
+if hasattr(response, "usage"):
+    print("\nUsage:")
+    print(response.usage)

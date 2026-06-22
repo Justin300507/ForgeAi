@@ -1,0 +1,93 @@
+{
+  "timestamp": "20260622_1106",
+  "provider": "auto",
+  "summary": {
+    "avg_vision": null,
+    "avg_forge": 80.0,
+    "builds_passed": 1,
+    "runtime_passed": 3,
+    "goal_met": false
+  },
+  "apps": [
+    {
+      "idx": 1,
+      "idea": "A todo list app with user login, task priorities, and due dates",
+      "project_name": "taskmaster",
+      "project_path": "C:\\Users\\jerry\\onedrive\\Desktop\\forgeai\\generated_projects\\taskmaster",
+      "forge_score": 85,
+      "vision_score": null,
+      "build_passed": false,
+      "playwright_passed": false,
+      "runtime_passed": true,
+      "validation_passed": true,
+      "vision_issues": [],
+      "error": null,
+      "elapsed": 43.3,
+      "screenshot_count": 0
+    },
+    {
+      "idx": 2,
+      "idea": "A blog platform with posts, categories, comments, and author profiles",
+      "project_name": "blog_platform",
+      "project_path": "C:\\Users\\jerry\\onedrive\\Desktop\\forgeai\\generated_projects\\blog_platform",
+      "forge_score": 85,
+      "vision_score": null,
+      "build_passed": false,
+      "playwright_passed": false,
+      "runtime_passed": true,
+      "validation_passed": true,
+      "vision_issues": [],
+      "error": null,
+      "elapsed": 46.0,
+      "screenshot_count": 0
+    },
+    {
+      "idx": 3,
+      "idea": "A recipe manager with ingredients, cooking steps, and favorites",
+      "project_name": "recipe_manager",
+      "project_path": "C:\\Users\\jerry\\onedrive\\Desktop\\forgeai\\generated_projects\\recipe_manager",
+      "forge_score": 65,
+      "vision_score": null,
+      "build_passed": false,
+      "playwright_passed": false,
+      "runtime_passed": false,
+      "validation_passed": true,
+      "vision_issues": [],
+      "error": null,
+      "elapsed": 70.9,
+      "screenshot_count": 0
+    },
+    {
+      "idx": 4,
+      "idea": "An expense tracker with categories, budgets, and monthly summaries",
+      "project_name": "expense_tracker_app",
+      "project_path": "C:\\Users\\jerry\\onedrive\\Desktop\\forgeai\\generated_projects\\expense_tracker_app",
+      "forge_score": 100,
+      "vision_score": null,
+      "build_passed": true,
+      "playwright_passed": true,
+      "runtime_passed": true,
+      "validation_passed": true,
+      "vision_issues": [],
+      "error": null,
+      "elapsed": 62.3,
+      "screenshot_count": 2
+    },
+    {
+      "idx": 5,
+      "idea": "An inventory system with products, stock levels, and low-stock alerts",
+      "project_name": "inventory_system",
+      "project_path": "C:\\Users\\jerry\\onedrive\\Desktop\\forgeai\\generated_projects\\inventory_system",
+      "forge_score": 65,
+      "vision_score": null,
+      "build_passed": false,
+      "playwright_passed": false,
+      "runtime_passed": false,
+      "validation_passed": true,
+      "vision_issues": [],
+      "error": null,
+      "elapsed": 83.3,
+      "screenshot_count": 0
+    }
+  ]
+}

@@ -1,0 +1,127 @@
+{
+  "project_name": "RecipeBox",
+  "description": "A web application that lets home cooks discover, organize, and save recipes. Users can browse recipes by category, search by keywords, view detailed ingredient lists and instructions, and mark recipes as favourites.",
+  "target_users": [
+    "Home cooks",
+    "Food enthusiasts",
+    "Meal planners",
+    "Diet-conscious individuals"
+  ],
+  "core_features": [
+    "Browse and search recipes",
+    "View detailed recipe information including ingredients and steps",
+    "Organize recipes into categories",
+    "Mark recipes as favourites",
+    "Manage personal ingredient lists within recipes"
+  ],
+  "future_features": [
+    "User-submitted recipe contributions",
+    "Meal planning calendar with scheduled recipes",
+    "Automatic shopping list generation from favourite recipes"
+  ],
+  "tech_stack": [
+    "FastAPI",
+    "React",
+    "SQLite"
+  ],
+  "database_entities": [
+    {
+      "name": "Recipe",
+      "fields": [
+        "id",
+        "title",
+        "description",
+        "ingredients",
+        "instructions",
+        "category_id",
+        "image_url"
+      ]
+    },
+    {
+      "name": "Category",
+      "fields": [
+        "id",
+        "name",
+        "description"
+      ]
+    },
+    {
+      "name": "User",
+      "fields": [
+        "id",
+        "username",
+        "email",
+        "password_hash"
+      ]
+    }
+  ],
+  "api_modules": [
+    {
+      "name": "Recipe",
+      "endpoints": [
+        "/recipes",
+        "/recipes/{id}",
+        "/recipes/search"
+      ]
+    },
+    {
+      "name": "Category",
+      "endpoints": [
+        "/categories",
+        "/categories/{id}"
+      ]
+    },
+    {
+      "name": "Auth",
+      "endpoints": [
+        "/auth/register",
+        "/auth/login",
+        "/users/me",
+        "/users/favourites",
+        "/users/favourites/{recipe_id}"
+      ]
+    }
+  ],
+  "pages": [
+    "Home (recipe browse & search)",
+    "Recipe Detail",
+    "Category List",
+    "Favorites",
+    "Login / Register"
+  ],
+  "backend_modules": [
+    "Authentication",
+    "Recipe Management",
+    "Category Management",
+    "Favourite Management",
+    "Search Service"
+  ],
+  "roadmap": [
+    {
+      "phase": "MVP Launch",
+      "milestones": [
+        "Set up project scaffolding with FastAPI and React",
+        "Implement database schema for recipes, categories, and users",
+        "Develop REST APIs for recipes, categories, and authentication",
+        "Create UI for browsing, searching, and viewing recipes",
+        "Enable favourite functionality for logged-in users"
+      ]
+    },
+    {
+      "phase": "Community & Planning Features",
+      "milestones": [
+        "Add recipe submission endpoint and UI",
+        "Implement meal planning calendar page",
+        "Create shopping list generation based on favourites"
+      ]
+    },
+    {
+      "phase": "Polish & Scale",
+      "milestones": [
+        "Introduce user profile customization",
+        "Add rating and comment system",
+        "Optimize search performance and add filters"
+      ]
+    }
+  ]
+}

@@ -1,0 +1,141 @@
+{
+  "project_name": "Chirp",
+  "description": "A lightweight microblogging platform where users can post short messages, follow others, and view a personalized feed.",
+  "target_users": [
+    "Social media enthusiasts",
+    "Content creators",
+    "Tech\u2011savvy individuals",
+    "Students",
+    "Professionals"
+  ],
+  "core_features": [
+    "User sign\u2011up, login, and profile management",
+    "Create, edit, and delete short posts (up to 280 characters) with optional media",
+    "Follow and unfollow other users",
+    "Personalized feed showing posts from followed users",
+    "Like and comment on posts"
+  ],
+  "future_features": [
+    "Hashtag detection and trending topics",
+    "Direct messaging between users",
+    "Content moderation tools (report, block)"
+  ],
+  "tech_stack": [
+    "FastAPI",
+    "React",
+    "SQLite",
+    "Pydantic",
+    "SQLAlchemy"
+  ],
+  "database_entities": [
+    {
+      "name": "User",
+      "fields": [
+        "id",
+        "username",
+        "email",
+        "hashed_password",
+        "display_name",
+        "bio",
+        "avatar_url",
+        "created_at"
+      ]
+    },
+    {
+      "name": "Post",
+      "fields": [
+        "id",
+        "user_id",
+        "content",
+        "media_url",
+        "created_at",
+        "like_count",
+        "comment_count"
+      ]
+    },
+    {
+      "name": "Follow",
+      "fields": [
+        "follower_id",
+        "following_id",
+        "created_at"
+      ]
+    }
+  ],
+  "api_modules": [
+    {
+      "name": "User",
+      "endpoints": [
+        "POST /users",
+        "GET /users/{id}",
+        "PUT /users/{id}",
+        "DELETE /users/{id}",
+        "POST /auth/login"
+      ]
+    },
+    {
+      "name": "Post",
+      "endpoints": [
+        "GET /posts",
+        "POST /posts",
+        "GET /posts/{id}",
+        "PUT /posts/{id}",
+        "DELETE /posts/{id}",
+        "GET /feed"
+      ]
+    },
+    {
+      "name": "Follow",
+      "endpoints": [
+        "POST /follow",
+        "DELETE /follow",
+        "GET /users/{id}/followers",
+        "GET /users/{id}/following"
+      ]
+    }
+  ],
+  "pages": [
+    "Login / Register",
+    "Home Feed",
+    "User Profile",
+    "Create / Edit Post",
+    "Explore (hashtags & trending)"
+  ],
+  "backend_modules": [
+    "Authentication",
+    "User Management",
+    "Post Management",
+    "Follow Management",
+    "Feed Generation"
+  ],
+  "roadmap": [
+    {
+      "phase": "MVP",
+      "milestones": [
+        "Implement user registration and login",
+        "Build post CRUD API",
+        "Implement follow/unfollow functionality",
+        "Create basic personalized feed endpoint",
+        "Develop frontend pages for login, feed, profile, and post creation"
+      ]
+    },
+    {
+      "phase": "Engagement",
+      "milestones": [
+        "Add likes and comments to posts",
+        "Implement real\u2011time feed updates",
+        "Enhance profile editing UI",
+        "Introduce basic hashtag detection"
+      ]
+    },
+    {
+      "phase": "Advanced & Scaling",
+      "milestones": [
+        "Add direct messaging between users",
+        "Launch trending topics and hashtag pages",
+        "Provide content moderation tools",
+        "Set up CI/CD pipeline and production deployment"
+      ]
+    }
+  ]
+}

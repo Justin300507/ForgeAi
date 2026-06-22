@@ -1,0 +1,30 @@
+{
+  "run_id": "v7_20260622_111713_ab086f52",
+  "timestamp": "2026-06-22T11:17:46",
+  "version": "v7",
+  "idea": "A blog platform with posts, categories, comments, and author profiles",
+  "project_name": "blog_platform",
+  "provider": "auto",
+  "plan": {},
+  "architecture": {
+    "endpoint_count": 0,
+    "endpoints": [],
+    "db_schema_keys": []
+  },
+  "validation_errors": [],
+  "runtime_error": null,
+  "runtime_error_type": null,
+  "fixes_applied": [],
+  "score": 100,
+  "grade": "A",
+  "runtime_passed": true,
+  "frontend_passed": false,
+  "generation_time": 32.99,
+  "security_score": 70,
+  "performance_score": 70,
+  "maintainability_score": 65,
+  "qa_score": 42,
+  "v6_score": 70,
+  "prompt_version": "default",
+  "active_rules": []
+}

@@ -1,0 +1,340 @@
+{
+  "api_endpoints": [
+    {
+      "method": "GET",
+      "path": "/tables",
+      "description": "Retrieve list of tables",
+      "file": "app/routes/table_routes.py"
+    },
+    {
+      "method": "POST",
+      "path": "/tables",
+      "description": "Create a new table",
+      "file": "app/routes/table_routes.py"
+    },
+    {
+      "method": "GET",
+      "path": "/tables/{id}",
+      "description": "Retrieve details of a specific table",
+      "file": "app/routes/table_routes.py"
+    },
+    {
+      "method": "PUT",
+      "path": "/tables/{id}",
+      "description": "Update information of a specific table",
+      "file": "app/routes/table_routes.py"
+    },
+    {
+      "method": "DELETE",
+      "path": "/tables/{id}",
+      "description": "Delete (deactivate) a specific table",
+      "file": "app/routes/table_routes.py"
+    },
+    {
+      "method": "GET",
+      "path": "/reservations",
+      "description": "List all reservations",
+      "file": "app/routes/reservation_routes.py"
+    },
+    {
+      "method": "POST",
+      "path": "/reservations",
+      "description": "Create a new reservation and assign a table",
+      "file": "app/routes/reservation_routes.py"
+    },
+    {
+      "method": "GET",
+      "path": "/reservations/{id}",
+      "description": "Get details of a specific reservation",
+      "file": "app/routes/reservation_routes.py"
+    },
+    {
+      "method": "PUT",
+      "path": "/reservations/{id}",
+      "description": "Update reservation details (status, time, etc.)",
+      "file": "app/routes/reservation_routes.py"
+    },
+    {
+      "method": "DELETE",
+      "path": "/reservations/{id}",
+      "description": "Cancel a reservation",
+      "file": "app/routes/reservation_routes.py"
+    },
+    {
+      "method": "GET",
+      "path": "/waitlist",
+      "description": "List all waitlist entries",
+      "file": "app/routes/waitlist_routes.py"
+    },
+    {
+      "method": "POST",
+      "path": "/waitlist",
+      "description": "Add a customer to the waitlist",
+      "file": "app/routes/waitlist_routes.py"
+    },
+    {
+      "method": "GET",
+      "path": "/waitlist/{id}",
+      "description": "Retrieve details of a specific waitlist entry",
+      "file": "app/routes/waitlist_routes.py"
+    },
+    {
+      "method": "PUT",
+      "path": "/waitlist/{id}",
+      "description": "Update waitlist entry status or details",
+      "file": "app/routes/waitlist_routes.py"
+    }
+  ],
+  "database_schema": [
+    {
+      "table_name": "tables",
+      "columns": [
+        {
+          "name": "id",
+          "type": "INTEGER",
+          "is_primary_key": true,
+          "is_nullable": false
+        },
+        {
+          "name": "number",
+          "type": "INTEGER",
+          "is_primary_key": false,
+          "is_nullable": false
+        },
+        {
+          "name": "capacity",
+          "type": "INTEGER",
+          "is_primary_key": false,
+          "is_nullable": false
+        },
+        {
+          "name": "location",
+          "type": "TEXT",
+          "is_primary_key": false,
+          "is_nullable": true
+        },
+        {
+          "name": "is_active",
+          "type": "BOOLEAN",
+          "is_primary_key": false,
+          "is_nullable": false
+        }
+      ]
+    },
+    {
+      "table_name": "reservations",
+      "columns": [
+        {
+          "name": "id",
+          "type": "INTEGER",
+          "is_primary_key": true,
+          "is_nullable": false
+        },
+        {
+          "name": "table_id",
+          "type": "INTEGER",
+          "is_primary_key": false,
+          "is_nullable": false
+        },
+        {
+          "name": "customer_name",
+          "type": "TEXT",
+          "is_primary_key": false,
+          "is_nullable": false
+        },
+        {
+          "name": "customer_phone",
+          "type": "TEXT",
+          "is_primary_key": false,
+          "is_nullable": false
+        },
+        {
+          "name": "customer_email",
+          "type": "TEXT",
+          "is_primary_key": false,
+          "is_nullable": true
+        },
+        {
+          "name": "reservation_time",
+          "type": "DATETIME",
+          "is_primary_key": false,
+          "is_nullable": false
+        },
+        {
+          "name": "party_size",
+          "type": "INTEGER",
+          "is_primary_key": false,
+          "is_nullable": false
+        },
+        {
+          "name": "status",
+          "type": "TEXT",
+          "is_primary_key": false,
+          "is_nullable": false
+        },
+        {
+          "name": "notes",
+          "type": "TEXT",
+          "is_primary_key": false,
+          "is_nullable": true
+        }
+      ]
+    },
+    {
+      "table_name": "waitlist_entries",
+      "columns": [
+        {
+          "name": "id",
+          "type": "INTEGER",
+          "is_primary_key": true,
+          "is_nullable": false
+        },
+        {
+          "name": "customer_name",
+          "type": "TEXT",
+          "is_primary_key": false,
+          "is_nullable": false
+        },
+        {
+          "name": "party_size",
+          "type": "INTEGER",
+          "is_primary_key": false,
+          "is_nullable": false
+        },
+        {
+          "name": "contact_phone",
+          "type": "TEXT",
+          "is_primary_key": false,
+          "is_nullable": false
+        },
+        {
+          "name": "requested_time",
+          "type": "DATETIME",
+          "is_primary_key": false,
+          "is_nullable": false
+        },
+        {
+          "name": "status",
+          "type": "TEXT",
+          "is_primary_key": false,
+          "is_nullable": false
+        },
+        {
+          "name": "created_at",
+          "type": "DATETIME",
+          "is_primary_key": false,
+          "is_nullable": false
+        }
+      ]
+    },
+    {
+      "table_name": "customers",
+      "columns": [
+        {
+          "name": "id",
+          "type": "INTEGER",
+          "is_primary_key": true,
+          "is_nullable": false
+        },
+        {
+          "name": "name",
+          "type": "TEXT",
+          "is_primary_key": false,
+          "is_nullable": false
+        },
+        {
+          "name": "phone",
+          "type": "TEXT",
+          "is_primary_key": false,
+          "is_nullable": false
+        },
+        {
+          "name": "email",
+          "type": "TEXT",
+          "is_primary_key": false,
+          "is_nullable": true
+        },
+        {
+          "name": "created_at",
+          "type": "DATETIME",
+          "is_primary_key": false,
+          "is_nullable": false
+        }
+      ]
+    },
+    {
+      "table_name": "notifications",
+      "columns": [
+        {
+          "name": "id",
+          "type": "INTEGER",
+          "is_primary_key": true,
+          "is_nullable": false
+        },
+        {
+          "name": "reservation_id",
+          "type": "INTEGER",
+          "is_primary_key": false,
+          "is_nullable": true
+        },
+        {
+          "name": "waitlist_entry_id",
+          "type": "INTEGER",
+          "is_primary_key": false,
+          "is_nullable": true
+        },
+        {
+          "name": "channel",
+          "type": "TEXT",
+          "is_primary_key": false,
+          "is_nullable": false
+        },
+        {
+          "name": "sent_at",
+          "type": "DATETIME",
+          "is_primary_key": false,
+          "is_nullable": false
+        },
+        {
+          "name": "status",
+          "type": "TEXT",
+          "is_primary_key": false,
+          "is_nullable": false
+        }
+      ]
+    }
+  ],
+  "folder_structure": {
+    "backend": [
+      "app",
+      "app/routes",
+      "app/models",
+      "app/schemas",
+      "app/services",
+      "app/utils",
+      "app/config",
+      "app/dependencies"
+    ]
+  },
+  "frontend_structure": {
+    "pages": [
+      "Home",
+      "Table Management",
+      "Reservation Booking",
+      "Waitlist",
+      "Admin Dashboard"
+    ],
+    "components": [
+      "Header",
+      "Footer",
+      "TableList",
+      "TableForm",
+      "ReservationForm",
+      "ReservationList",
+      "WaitlistForm",
+      "WaitlistList",
+      "NotificationToast",
+      "DashboardStats"
+    ]
+  }
+}

@@ -1,0 +1,327 @@
+{
+  "api_endpoints": [
+    {
+      "method": "POST",
+      "path": "/auth/register",
+      "description": "Register a new user with email and password",
+      "file": "app/routes/auth_routes.py"
+    },
+    {
+      "method": "POST",
+      "path": "/auth/login",
+      "description": "Authenticate user and return JWT access token",
+      "file": "app/routes/auth_routes.py"
+    },
+    {
+      "method": "GET",
+      "path": "/expenses",
+      "description": "List expenses for the authenticated user with pagination, filters (date, category, amount) and full\u2011text search on description",
+      "file": "app/routes/expense_routes.py"
+    },
+    {
+      "method": "POST",
+      "path": "/expenses",
+      "description": "Create a new expense record; supports optional receipt image upload",
+      "file": "app/routes/expense_routes.py"
+    },
+    {
+      "method": "PUT",
+      "path": "/expenses/{id}",
+      "description": "Update an existing expense; can replace receipt image",
+      "file": "app/routes/expense_routes.py"
+    },
+    {
+      "method": "DELETE",
+      "path": "/expenses/{id}",
+      "description": "Delete an expense record",
+      "file": "app/routes/expense_routes.py"
+    },
+    {
+      "method": "GET",
+      "path": "/categories",
+      "description": "Retrieve list of custom categories for the authenticated user",
+      "file": "app/routes/category_routes.py"
+    },
+    {
+      "method": "POST",
+      "path": "/categories",
+      "description": "Create a new expense category with name, icon, and color",
+      "file": "app/routes/category_routes.py"
+    },
+    {
+      "method": "PUT",
+      "path": "/categories/{id}",
+      "description": "Edit name, icon, or color of an existing category; reassign expenses if needed",
+      "file": "app/routes/category_routes.py"
+    },
+    {
+      "method": "DELETE",
+      "path": "/categories/{id}",
+      "description": "Delete a category after confirming reassignment of its expenses",
+      "file": "app/routes/category_routes.py"
+    },
+    {
+      "method": "GET",
+      "path": "/budgets",
+      "description": "List monthly budgets for all categories of the authenticated user",
+      "file": "app/routes/budget_routes.py"
+    },
+    {
+      "method": "POST",
+      "path": "/budgets",
+      "description": "Set a budget limit for a specific category for a given month/year",
+      "file": "app/routes/budget_routes.py"
+    },
+    {
+      "method": "PUT",
+      "path": "/budgets/{id}",
+      "description": "Update an existing budget limit",
+      "file": "app/routes/budget_routes.py"
+    },
+    {
+      "method": "DELETE",
+      "path": "/budgets/{id}",
+      "description": "Delete a budget entry",
+      "file": "app/routes/budget_routes.py"
+    },
+    {
+      "method": "GET",
+      "path": "/summaries/{year}/{month}",
+      "description": "Get monthly spending summary with category breakdown; optional query param `export=csv` returns CSV export",
+      "file": "app/routes/summary_routes.py"
+    }
+  ],
+  "database_schema": [
+    {
+      "table_name": "users",
+      "columns": [
+        {
+          "name": "id",
+          "type": "INTEGER",
+          "is_primary_key": true,
+          "is_nullable": false
+        },
+        {
+          "name": "email",
+          "type": "VARCHAR(255)",
+          "is_primary_key": false,
+          "is_nullable": false
+        },
+        {
+          "name": "hashed_password",
+          "type": "VARCHAR(255)",
+          "is_primary_key": false,
+          "is_nullable": false
+        },
+        {
+          "name": "created_at",
+          "type": "DATETIME",
+          "is_primary_key": false,
+          "is_nullable": false
+        }
+      ]
+    },
+    {
+      "table_name": "categories",
+      "columns": [
+        {
+          "name": "id",
+          "type": "INTEGER",
+          "is_primary_key": true,
+          "is_nullable": false
+        },
+        {
+          "name": "user_id",
+          "type": "INTEGER",
+          "is_primary_key": false,
+          "is_nullable": false
+        },
+        {
+          "name": "name",
+          "type": "VARCHAR(100)",
+          "is_primary_key": false,
+          "is_nullable": false
+        },
+        {
+          "name": "icon",
+          "type": "VARCHAR(50)",
+          "is_primary_key": false,
+          "is_nullable": true
+        },
+        {
+          "name": "color",
+          "type": "VARCHAR(20)",
+          "is_primary_key": false,
+          "is_nullable": true
+        }
+      ]
+    },
+    {
+      "table_name": "expenses",
+      "columns": [
+        {
+          "name": "id",
+          "type": "INTEGER",
+          "is_primary_key": true,
+          "is_nullable": false
+        },
+        {
+          "name": "user_id",
+          "type": "INTEGER",
+          "is_primary_key": false,
+          "is_nullable": false
+        },
+        {
+          "name": "category_id",
+          "type": "INTEGER",
+          "is_primary_key": false,
+          "is_nullable": false
+        },
+        {
+          "name": "amount",
+          "type": "DECIMAL(10,2)",
+          "is_primary_key": false,
+          "is_nullable": false
+        },
+        {
+          "name": "date",
+          "type": "DATE",
+          "is_primary_key": false,
+          "is_nullable": false
+        },
+        {
+          "name": "description",
+          "type": "TEXT",
+          "is_primary_key": false,
+          "is_nullable": true
+        },
+        {
+          "name": "receipt_url",
+          "type": "VARCHAR(255)",
+          "is_primary_key": false,
+          "is_nullable": true
+        }
+      ]
+    },
+    {
+      "table_name": "budgets",
+      "columns": [
+        {
+          "name": "id",
+          "type": "INTEGER",
+          "is_primary_key": true,
+          "is_nullable": false
+        },
+        {
+          "name": "user_id",
+          "type": "INTEGER",
+          "is_primary_key": false,
+          "is_nullable": false
+        },
+        {
+          "name": "category_id",
+          "type": "INTEGER",
+          "is_primary_key": false,
+          "is_nullable": false
+        },
+        {
+          "name": "month",
+          "type": "INTEGER",
+          "is_primary_key": false,
+          "is_nullable": false
+        },
+        {
+          "name": "year",
+          "type": "INTEGER",
+          "is_primary_key": false,
+          "is_nullable": false
+        },
+        {
+          "name": "limit_amount",
+          "type": "DECIMAL(10,2)",
+          "is_primary_key": false,
+          "is_nullable": false
+        }
+      ]
+    },
+    {
+      "table_name": "monthly_summaries",
+      "columns": [
+        {
+          "name": "id",
+          "type": "INTEGER",
+          "is_primary_key": true,
+          "is_nullable": false
+        },
+        {
+          "name": "user_id",
+          "type": "INTEGER",
+          "is_primary_key": false,
+          "is_nullable": false
+        },
+        {
+          "name": "month",
+          "type": "INTEGER",
+          "is_primary_key": false,
+          "is_nullable": false
+        },
+        {
+          "name": "year",
+          "type": "INTEGER",
+          "is_primary_key": false,
+          "is_nullable": false
+        },
+        {
+          "name": "total_spent",
+          "type": "DECIMAL(12,2)",
+          "is_primary_key": false,
+          "is_nullable": false
+        },
+        {
+          "name": "category_breakdown_json",
+          "type": "JSON",
+          "is_primary_key": false,
+          "is_nullable": true
+        }
+      ]
+    }
+  ],
+  "folder_structure": {
+    "backend": [
+      "app/models",
+      "app/schemas",
+      "app/routes",
+      "app/services",
+      "app/utils",
+      "app/dependencies",
+      "app/config"
+    ]
+  },
+  "frontend_structure": {
+    "pages": [
+      "Dashboard",
+      "Expenses",
+      "Categories",
+      "Budgets",
+      "Summary"
+    ],
+    "components": [
+      "Header",
+      "Footer",
+      "ExpenseForm",
+      "ExpenseList",
+      "CategoryForm",
+      "CategoryList",
+      "BudgetForm",
+      "BudgetList",
+      "SummaryChart",
+      "ExportButton",
+      "Pagination",
+      "SearchBar",
+      "AlertBadge",
+      "Sidebar",
+      "Modal",
+      "Toast"
+    ]
+  }
+}

@@ -1,0 +1,246 @@
+{
+  "api_endpoints": [
+    {
+      "method": "POST",
+      "path": "/auth/register",
+      "description": "Register a new user and store hashed credentials",
+      "file": "app/routes/auth_routes.py"
+    },
+    {
+      "method": "POST",
+      "path": "/auth/login",
+      "description": "Authenticate user and return a JWT access token",
+      "file": "app/routes/auth_routes.py"
+    },
+    {
+      "method": "GET",
+      "path": "/auth/me",
+      "description": "Retrieve profile information of the authenticated user",
+      "file": "app/routes/auth_routes.py"
+    },
+    {
+      "method": "GET",
+      "path": "/tasks",
+      "description": "List all tasks for the authenticated user; optional query param ?category_id= to filter",
+      "file": "app/routes/task_routes.py"
+    },
+    {
+      "method": "POST",
+      "path": "/tasks",
+      "description": "Create a new task for the authenticated user",
+      "file": "app/routes/task_routes.py"
+    },
+    {
+      "method": "GET",
+      "path": "/tasks/{id}",
+      "description": "Retrieve detailed information of a specific task",
+      "file": "app/routes/task_routes.py"
+    },
+    {
+      "method": "PUT",
+      "path": "/tasks/{id}",
+      "description": "Update task fields, including marking as completed/incomplete",
+      "file": "app/routes/task_routes.py"
+    },
+    {
+      "method": "DELETE",
+      "path": "/tasks/{id}",
+      "description": "Delete a task owned by the authenticated user",
+      "file": "app/routes/task_routes.py"
+    },
+    {
+      "method": "GET",
+      "path": "/categories",
+      "description": "List all categories belonging to the authenticated user",
+      "file": "app/routes/category_routes.py"
+    },
+    {
+      "method": "POST",
+      "path": "/categories",
+      "description": "Create a new category for the authenticated user",
+      "file": "app/routes/category_routes.py"
+    },
+    {
+      "method": "GET",
+      "path": "/categories/{id}",
+      "description": "Retrieve details of a specific category",
+      "file": "app/routes/category_routes.py"
+    },
+    {
+      "method": "PUT",
+      "path": "/categories/{id}",
+      "description": "Update name or color of an existing category",
+      "file": "app/routes/category_routes.py"
+    },
+    {
+      "method": "DELETE",
+      "path": "/categories/{id}",
+      "description": "Delete a category owned by the authenticated user",
+      "file": "app/routes/category_routes.py"
+    }
+  ],
+  "database_schema": [
+    {
+      "table_name": "users",
+      "columns": [
+        {
+          "name": "id",
+          "type": "INTEGER",
+          "is_primary_key": true,
+          "is_nullable": false
+        },
+        {
+          "name": "email",
+          "type": "VARCHAR(255)",
+          "is_primary_key": false,
+          "is_nullable": false
+        },
+        {
+          "name": "hashed_password",
+          "type": "VARCHAR(255)",
+          "is_primary_key": false,
+          "is_nullable": false
+        },
+        {
+          "name": "full_name",
+          "type": "VARCHAR(255)",
+          "is_primary_key": false,
+          "is_nullable": true
+        },
+        {
+          "name": "created_at",
+          "type": "DATETIME",
+          "is_primary_key": false,
+          "is_nullable": false
+        }
+      ]
+    },
+    {
+      "table_name": "categories",
+      "columns": [
+        {
+          "name": "id",
+          "type": "INTEGER",
+          "is_primary_key": true,
+          "is_nullable": false
+        },
+        {
+          "name": "user_id",
+          "type": "INTEGER",
+          "is_primary_key": false,
+          "is_nullable": false
+        },
+        {
+          "name": "name",
+          "type": "VARCHAR(100)",
+          "is_primary_key": false,
+          "is_nullable": false
+        },
+        {
+          "name": "color",
+          "type": "VARCHAR(7)",
+          "is_primary_key": false,
+          "is_nullable": true
+        },
+        {
+          "name": "created_at",
+          "type": "DATETIME",
+          "is_primary_key": false,
+          "is_nullable": false
+        }
+      ]
+    },
+    {
+      "table_name": "tasks",
+      "columns": [
+        {
+          "name": "id",
+          "type": "INTEGER",
+          "is_primary_key": true,
+          "is_nullable": false
+        },
+        {
+          "name": "user_id",
+          "type": "INTEGER",
+          "is_primary_key": false,
+          "is_nullable": false
+        },
+        {
+          "name": "category_id",
+          "type": "INTEGER",
+          "is_primary_key": false,
+          "is_nullable": true
+        },
+        {
+          "name": "title",
+          "type": "VARCHAR(200)",
+          "is_primary_key": false,
+          "is_nullable": false
+        },
+        {
+          "name": "description",
+          "type": "TEXT",
+          "is_primary_key": false,
+          "is_nullable": true
+        },
+        {
+          "name": "due_date",
+          "type": "DATETIME",
+          "is_primary_key": false,
+          "is_nullable": true
+        },
+        {
+          "name": "completed",
+          "type": "BOOLEAN",
+          "is_primary_key": false,
+          "is_nullable": false
+        },
+        {
+          "name": "created_at",
+          "type": "DATETIME",
+          "is_primary_key": false,
+          "is_nullable": false
+        },
+        {
+          "name": "updated_at",
+          "type": "DATETIME",
+          "is_primary_key": false,
+          "is_nullable": false
+        }
+      ]
+    }
+  ],
+  "folder_structure": {
+    "backend": [
+      "app",
+      "app/models",
+      "app/schemas",
+      "app/services",
+      "app/routes",
+      "app/utils",
+      "app/dependencies",
+      "app/config"
+    ]
+  },
+  "frontend_structure": {
+    "pages": [
+      "Login",
+      "Register",
+      "Dashboard",
+      "TaskDetail",
+      "CategoryManagement"
+    ],
+    "components": [
+      "AuthForm",
+      "Header",
+      "Sidebar",
+      "TaskList",
+      "TaskItem",
+      "TaskEditor",
+      "CategoryList",
+      "CategoryItem",
+      "FilterBar",
+      "NotificationToast"
+    ]
+  }
+}

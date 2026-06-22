@@ -1,0 +1,127 @@
+{
+  "project_name": "InvoiceGen Pro",
+  "description": "A web application for small businesses and freelancers to create, manage, and track invoices with client management, line\u2011item detail, and payment status, plus PDF generation.",
+  "target_users": [
+    "Freelancers",
+    "Small business owners",
+    "Independent accountants"
+  ],
+  "core_features": [
+    "Create, edit, and delete client records",
+    "Create invoices with multiple line items",
+    "Automatic calculation of totals and tax",
+    "Track payment status (Draft, Sent, Paid, Overdue)",
+    "Generate and download PDF versions of invoices"
+  ],
+  "future_features": [
+    "Email invoices directly to clients",
+    "Support recurring invoices and subscription billing",
+    "Dashboard analytics for revenue and outstanding balances"
+  ],
+  "tech_stack": [
+    "FastAPI",
+    "React",
+    "SQLite"
+  ],
+  "database_entities": [
+    {
+      "name": "Client",
+      "fields": [
+        "name",
+        "email",
+        "address",
+        "phone",
+        "tax_id"
+      ]
+    },
+    {
+      "name": "Invoice",
+      "fields": [
+        "client_id",
+        "invoice_number",
+        "date",
+        "due_date",
+        "total_amount",
+        "status"
+      ]
+    },
+    {
+      "name": "LineItem",
+      "fields": [
+        "invoice_id",
+        "description",
+        "quantity",
+        "unit_price",
+        "line_total"
+      ]
+    }
+  ],
+  "api_modules": [
+    {
+      "name": "Client",
+      "endpoints": [
+        "/clients",
+        "/clients/{id}"
+      ]
+    },
+    {
+      "name": "Invoice",
+      "endpoints": [
+        "/invoices",
+        "/invoices/{id}"
+      ]
+    },
+    {
+      "name": "LineItem",
+      "endpoints": [
+        "/line-items",
+        "/line-items/{id}"
+      ]
+    }
+  ],
+  "pages": [
+    "Login",
+    "Dashboard",
+    "Clients",
+    "Invoices",
+    "Invoice Detail"
+  ],
+  "backend_modules": [
+    "Authentication",
+    "Client Management",
+    "Invoice Management",
+    "LineItem Management",
+    "PDF Generation"
+  ],
+  "roadmap": [
+    {
+      "phase": "Phase 1: MVP",
+      "milestones": [
+        "Initialize repository and project scaffolding",
+        "Define SQLite schema and SQLAlchemy models",
+        "Implement client CRUD API endpoints",
+        "Implement invoice and line\u2011item CRUD API endpoints",
+        "Build React pages for client and invoice management",
+        "Add PDF generation for invoices"
+      ]
+    },
+    {
+      "phase": "Phase 2: Payment Tracking & UI Polish",
+      "milestones": [
+        "Add payment status workflow (Draft, Sent, Paid, Overdue)",
+        "Integrate status updates into invoice UI",
+        "Improve PDF layout and add download button",
+        "Implement basic authentication and role handling",
+        "User testing and bug fixing"
+      ]
+    },
+    {
+      "phase": "Phase 3: Advanced Features",
+      "milestones": [
+        "Implement email sending of invoices",
+        "Add recurring invoice scheduling",
+        "Create analytics dashboard for revenue and outstanding balances"
+      ]
+    }
+  ]
+}

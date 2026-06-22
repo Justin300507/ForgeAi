@@ -1,0 +1,138 @@
+{
+  "project_name": "QuizMaster",
+  "description": "A web application that enables educators to build question banks, generate quizzes, and allows learners to take quizzes with automatic scoring and personal score tracking.",
+  "target_users": [
+    "Students",
+    "Teachers",
+    "Corporate Trainers",
+    "Quiz Enthusiasts"
+  ],
+  "core_features": [
+    "Create and manage question banks",
+    "Generate quizzes from selected question banks",
+    "Take quizzes with real\u2011time answer selection",
+    "Automatic scoring and result storage",
+    "User profile with quiz history and scores"
+  ],
+  "future_features": [
+    "Leaderboard across users",
+    "Timed quizzes with countdown timer",
+    "Import/export of question banks (CSV/JSON)"
+  ],
+  "tech_stack": [
+    "FastAPI",
+    "React",
+    "SQLite"
+  ],
+  "database_entities": [
+    {
+      "name": "User",
+      "fields": [
+        "id",
+        "username",
+        "email",
+        "hashed_password",
+        "created_at"
+      ]
+    },
+    {
+      "name": "Question",
+      "fields": [
+        "id",
+        "bank_name",
+        "text",
+        "option_a",
+        "option_b",
+        "option_c",
+        "option_d",
+        "correct_option",
+        "created_by",
+        "created_at"
+      ]
+    },
+    {
+      "name": "QuizAttempt",
+      "fields": [
+        "id",
+        "user_id",
+        "question_ids",
+        "answers",
+        "score",
+        "total_questions",
+        "taken_at"
+      ]
+    }
+  ],
+  "api_modules": [
+    {
+      "name": "User",
+      "endpoints": [
+        "/users",
+        "/users/{id}",
+        "/users/register",
+        "/users/login"
+      ]
+    },
+    {
+      "name": "Question",
+      "endpoints": [
+        "/questions",
+        "/questions/{id}",
+        "/questions/bank/{bank_name}"
+      ]
+    },
+    {
+      "name": "QuizAttempt",
+      "endpoints": [
+        "/attempts",
+        "/attempts/{id}",
+        "/attempts/start",
+        "/attempts/submit"
+      ]
+    }
+  ],
+  "pages": [
+    "Login",
+    "Register",
+    "Dashboard",
+    "Quiz",
+    "Results"
+  ],
+  "backend_modules": [
+    "Authentication",
+    "User Management",
+    "Question Management",
+    "QuizAttempt Management",
+    "Scoring Service"
+  ],
+  "roadmap": [
+    {
+      "phase": "Phase 1: MVP",
+      "milestones": [
+        "Implement user registration and login",
+        "Create CRUD for question banks",
+        "Build quiz generation and attempt endpoints",
+        "Automatic scoring and result storage",
+        "Basic UI for dashboard, quiz, and results"
+      ]
+    },
+    {
+      "phase": "Phase 2: Enhanced Features",
+      "milestones": [
+        "Add leaderboard and user ranking",
+        "Introduce timed quizzes with countdown timer",
+        "Implement import/export of question banks",
+        "Improve UI/UX and responsive design"
+      ]
+    },
+    {
+      "phase": "Phase 3: Polish & Scale",
+      "milestones": [
+        "Performance optimization and caching",
+        "Comprehensive test suite and CI pipeline",
+        "Documentation and onboarding guides",
+        "Prepare for multi\u2011tenant deployment"
+      ]
+    }
+  ]
+}

@@ -1,0 +1,430 @@
+{
+  "api_endpoints": [
+    {
+      "method": "POST",
+      "path": "/auth/login",
+      "description": "Authenticate a user and return a JWT access token.",
+      "file": "app/routes/auth_routes.py"
+    },
+    {
+      "method": "POST",
+      "path": "/auth/register",
+      "description": "Create a new user account and return a JWT token.",
+      "file": "app/routes/auth_routes.py"
+    },
+    {
+      "method": "PATCH",
+      "path": "/users/{id}",
+      "description": "Admin updates a user's role or activation status.",
+      "file": "app/routes/user_routes.py"
+    },
+    {
+      "method": "GET",
+      "path": "/profiles/me",
+      "description": "Retrieve the authenticated user's profile information.",
+      "file": "app/routes/profile_routes.py"
+    },
+    {
+      "method": "PUT",
+      "path": "/profiles/me",
+      "description": "Update the authenticated user's profile (display name, bio, avatar).",
+      "file": "app/routes/profile_routes.py"
+    },
+    {
+      "method": "GET",
+      "path": "/posts",
+      "description": "Return a paginated list of published posts ordered by newest first.",
+      "file": "app/routes/post_routes.py"
+    },
+    {
+      "method": "GET",
+      "path": "/posts/{id}",
+      "description": "Retrieve detailed information for a single post, including categories and comments.",
+      "file": "app/routes/post_routes.py"
+    },
+    {
+      "method": "POST",
+      "path": "/posts",
+      "description": "Create a new post (author, title, body, optional featured image).",
+      "file": "app/routes/post_routes.py"
+    },
+    {
+      "method": "PUT",
+      "path": "/posts/{id}",
+      "description": "Update an existing post owned by the author.",
+      "file": "app/routes/post_routes.py"
+    },
+    {
+      "method": "DELETE",
+      "path": "/posts/{id}",
+      "description": "Delete a post and cascade remove its categories and comments.",
+      "file": "app/routes/post_routes.py"
+    },
+    {
+      "method": "GET",
+      "path": "/categories",
+      "description": "List all categories in hierarchical order.",
+      "file": "app/routes/category_routes.py"
+    },
+    {
+      "method": "GET",
+      "path": "/posts/{post_id}/comments",
+      "description": "Return a paginated list of comments for a specific post.",
+      "file": "app/routes/comment_routes.py"
+    },
+    {
+      "method": "POST",
+      "path": "/posts/{post_id}/comments",
+      "description": "Add a new comment to a post (authenticated readers only).",
+      "file": "app/routes/comment_routes.py"
+    },
+    {
+      "method": "PATCH",
+      "path": "/comments/{id}",
+      "description": "Edit a comment's content or mark it as deleted.",
+      "file": "app/routes/comment_routes.py"
+    },
+    {
+      "method": "GET",
+      "path": "/search",
+      "description": "Search posts by title/body and categories by name; results are paginated.",
+      "file": "app/routes/search_routes.py"
+    }
+  ],
+  "database_schema": [
+    {
+      "table_name": "user",
+      "columns": [
+        {
+          "name": "id",
+          "type": "Integer",
+          "is_primary_key": true,
+          "is_nullable": false
+        },
+        {
+          "name": "email",
+          "type": "String",
+          "is_primary_key": false,
+          "is_nullable": false
+        },
+        {
+          "name": "hashed_password",
+          "type": "String",
+          "is_primary_key": false,
+          "is_nullable": false
+        },
+        {
+          "name": "is_active",
+          "type": "Boolean",
+          "is_primary_key": false,
+          "is_nullable": false
+        },
+        {
+          "name": "role",
+          "type": "Enum('admin','author','reader')",
+          "is_primary_key": false,
+          "is_nullable": false
+        },
+        {
+          "name": "created_at",
+          "type": "DateTime",
+          "is_primary_key": false,
+          "is_nullable": false
+        },
+        {
+          "name": "updated_at",
+          "type": "DateTime",
+          "is_primary_key": false,
+          "is_nullable": false
+        }
+      ]
+    },
+    {
+      "table_name": "profile",
+      "columns": [
+        {
+          "name": "user_id",
+          "type": "Integer",
+          "is_primary_key": true,
+          "is_nullable": false
+        },
+        {
+          "name": "display_name",
+          "type": "String",
+          "is_primary_key": false,
+          "is_nullable": true
+        },
+        {
+          "name": "bio",
+          "type": "Text",
+          "is_primary_key": false,
+          "is_nullable": true
+        },
+        {
+          "name": "avatar_url",
+          "type": "String",
+          "is_primary_key": false,
+          "is_nullable": true
+        },
+        {
+          "name": "created_at",
+          "type": "DateTime",
+          "is_primary_key": false,
+          "is_nullable": false
+        },
+        {
+          "name": "updated_at",
+          "type": "DateTime",
+          "is_primary_key": false,
+          "is_nullable": false
+        }
+      ]
+    },
+    {
+      "table_name": "post",
+      "columns": [
+        {
+          "name": "id",
+          "type": "Integer",
+          "is_primary_key": true,
+          "is_nullable": false
+        },
+        {
+          "name": "author_id",
+          "type": "Integer",
+          "is_primary_key": false,
+          "is_nullable": false
+        },
+        {
+          "name": "title",
+          "type": "String",
+          "is_primary_key": false,
+          "is_nullable": false
+        },
+        {
+          "name": "body",
+          "type": "Text",
+          "is_primary_key": false,
+          "is_nullable": false
+        },
+        {
+          "name": "featured_image_url",
+          "type": "String",
+          "is_primary_key": false,
+          "is_nullable": true
+        },
+        {
+          "name": "published_at",
+          "type": "DateTime",
+          "is_primary_key": false,
+          "is_nullable": true
+        },
+        {
+          "name": "status",
+          "type": "Enum('draft','published')",
+          "is_primary_key": false,
+          "is_nullable": false
+        },
+        {
+          "name": "created_at",
+          "type": "DateTime",
+          "is_primary_key": false,
+          "is_nullable": false
+        },
+        {
+          "name": "updated_at",
+          "type": "DateTime",
+          "is_primary_key": false,
+          "is_nullable": false
+        }
+      ]
+    },
+    {
+      "table_name": "category",
+      "columns": [
+        {
+          "name": "id",
+          "type": "Integer",
+          "is_primary_key": true,
+          "is_nullable": false
+        },
+        {
+          "name": "name",
+          "type": "String",
+          "is_primary_key": false,
+          "is_nullable": false
+        },
+        {
+          "name": "slug",
+          "type": "String",
+          "is_primary_key": false,
+          "is_nullable": false
+        },
+        {
+          "name": "parent_id",
+          "type": "Integer",
+          "is_primary_key": false,
+          "is_nullable": true
+        },
+        {
+          "name": "created_at",
+          "type": "DateTime",
+          "is_primary_key": false,
+          "is_nullable": false
+        },
+        {
+          "name": "updated_at",
+          "type": "DateTime",
+          "is_primary_key": false,
+          "is_nullable": false
+        }
+      ]
+    },
+    {
+      "table_name": "post_category",
+      "columns": [
+        {
+          "name": "post_id",
+          "type": "Integer",
+          "is_primary_key": true,
+          "is_nullable": false
+        },
+        {
+          "name": "category_id",
+          "type": "Integer",
+          "is_primary_key": true,
+          "is_nullable": false
+        }
+      ]
+    },
+    {
+      "table_name": "comment",
+      "columns": [
+        {
+          "name": "id",
+          "type": "Integer",
+          "is_primary_key": true,
+          "is_nullable": false
+        },
+        {
+          "name": "post_id",
+          "type": "Integer",
+          "is_primary_key": false,
+          "is_nullable": false
+        },
+        {
+          "name": "author_id",
+          "type": "Integer",
+          "is_primary_key": false,
+          "is_nullable": false
+        },
+        {
+          "name": "content",
+          "type": "Text",
+          "is_primary_key": false,
+          "is_nullable": false
+        },
+        {
+          "name": "created_at",
+          "type": "DateTime",
+          "is_primary_key": false,
+          "is_nullable": false
+        },
+        {
+          "name": "updated_at",
+          "type": "DateTime",
+          "is_primary_key": false,
+          "is_nullable": false
+        },
+        {
+          "name": "is_deleted",
+          "type": "Boolean",
+          "is_primary_key": false,
+          "is_nullable": false
+        }
+      ]
+    },
+    {
+      "table_name": "audit_log",
+      "columns": [
+        {
+          "name": "id",
+          "type": "Integer",
+          "is_primary_key": true,
+          "is_nullable": false
+        },
+        {
+          "name": "admin_id",
+          "type": "Integer",
+          "is_primary_key": false,
+          "is_nullable": false
+        },
+        {
+          "name": "action",
+          "type": "String",
+          "is_primary_key": false,
+          "is_nullable": false
+        },
+        {
+          "name": "target_type",
+          "type": "String",
+          "is_primary_key": false,
+          "is_nullable": false
+        },
+        {
+          "name": "target_id",
+          "type": "Integer",
+          "is_primary_key": false,
+          "is_nullable": false
+        },
+        {
+          "name": "timestamp",
+          "type": "DateTime",
+          "is_primary_key": false,
+          "is_nullable": false
+        }
+      ]
+    }
+  ],
+  "folder_structure": {
+    "backend": [
+      "app/models",
+      "app/schemas",
+      "app/routes",
+      "app/services",
+      "app/utils",
+      "app/core"
+    ]
+  },
+  "frontend_structure": {
+    "pages": [
+      "HomePage",
+      "PostDetailPage",
+      "PostFormPage",
+      "CategoryListPage",
+      "LoginPage",
+      "RegisterPage",
+      "ProfilePage",
+      "AdminUserManagementPage",
+      "SearchResultsPage"
+    ],
+    "components": [
+      "Navbar",
+      "PostCard",
+      "PostList",
+      "CommentList",
+      "CommentForm",
+      "CategoryTag",
+      "Pagination",
+      "AvatarUpload",
+      "RoleSelect",
+      "SearchBar",
+      "Footer",
+      "LoadingSpinner",
+      "ErrorAlert",
+      "Modal",
+      "Breadcrumbs",
+      "TagBadge"
+    ]
+  }
+}

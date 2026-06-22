@@ -1,0 +1,278 @@
+{
+  "api_endpoints": [
+    {
+      "method": "GET",
+      "path": "/users/{id}",
+      "description": "Retrieve public profile of a user, including seller information and listed products.",
+      "file": "app/routes/user_routes.py"
+    },
+    {
+      "method": "GET",
+      "path": "/users",
+      "description": "List all users (admin view).",
+      "file": "app/routes/user_routes.py"
+    },
+    {
+      "method": "POST",
+      "path": "/auth/register",
+      "description": "Register a new user (buyer or seller) with username, email, and password.",
+      "file": "app/routes/auth_routes.py"
+    },
+    {
+      "method": "POST",
+      "path": "/auth/login",
+      "description": "Authenticate user and return access token.",
+      "file": "app/routes/auth_routes.py"
+    },
+    {
+      "method": "GET",
+      "path": "/products",
+      "description": "Retrieve paginated list of products with optional category and price filters.",
+      "file": "app/routes/product_routes.py"
+    },
+    {
+      "method": "POST",
+      "path": "/products",
+      "description": "Create a new product listing for the authenticated seller.",
+      "file": "app/routes/product_routes.py"
+    },
+    {
+      "method": "GET",
+      "path": "/products/{id}",
+      "description": "Get detailed information of a specific product, including seller and reviews.",
+      "file": "app/routes/product_routes.py"
+    },
+    {
+      "method": "PUT",
+      "path": "/products/{id}",
+      "description": "Update an existing product listing owned by the authenticated seller.",
+      "file": "app/routes/product_routes.py"
+    },
+    {
+      "method": "DELETE",
+      "path": "/products/{id}",
+      "description": "Delete a product listing owned by the authenticated seller.",
+      "file": "app/routes/product_routes.py"
+    },
+    {
+      "method": "GET",
+      "path": "/products/{id}/reviews",
+      "description": "List all reviews for a specific product.",
+      "file": "app/routes/product_routes.py"
+    },
+    {
+      "method": "POST",
+      "path": "/reviews",
+      "description": "Submit a new review for a product by the authenticated buyer.",
+      "file": "app/routes/review_routes.py"
+    },
+    {
+      "method": "GET",
+      "path": "/reviews/{id}",
+      "description": "Retrieve a single review by its ID.",
+      "file": "app/routes/review_routes.py"
+    },
+    {
+      "method": "PUT",
+      "path": "/reviews/{id}",
+      "description": "Update a review authored by the authenticated buyer.",
+      "file": "app/routes/review_routes.py"
+    },
+    {
+      "method": "DELETE",
+      "path": "/reviews/{id}",
+      "description": "Delete a review authored by the authenticated buyer.",
+      "file": "app/routes/review_routes.py"
+    }
+  ],
+  "database_schema": [
+    {
+      "table_name": "users",
+      "columns": [
+        {
+          "name": "id",
+          "type": "INTEGER",
+          "is_primary_key": true,
+          "is_nullable": false
+        },
+        {
+          "name": "username",
+          "type": "VARCHAR(150)",
+          "is_primary_key": false,
+          "is_nullable": false
+        },
+        {
+          "name": "email",
+          "type": "VARCHAR(255)",
+          "is_primary_key": false,
+          "is_nullable": false
+        },
+        {
+          "name": "password_hash",
+          "type": "VARCHAR(255)",
+          "is_primary_key": false,
+          "is_nullable": false
+        },
+        {
+          "name": "role",
+          "type": "VARCHAR(20)",
+          "is_primary_key": false,
+          "is_nullable": false
+        },
+        {
+          "name": "created_at",
+          "type": "DATETIME",
+          "is_primary_key": false,
+          "is_nullable": false
+        }
+      ]
+    },
+    {
+      "table_name": "categories",
+      "columns": [
+        {
+          "name": "id",
+          "type": "INTEGER",
+          "is_primary_key": true,
+          "is_nullable": false
+        },
+        {
+          "name": "name",
+          "type": "VARCHAR(100)",
+          "is_primary_key": false,
+          "is_nullable": false
+        }
+      ]
+    },
+    {
+      "table_name": "products",
+      "columns": [
+        {
+          "name": "id",
+          "type": "INTEGER",
+          "is_primary_key": true,
+          "is_nullable": false
+        },
+        {
+          "name": "seller_id",
+          "type": "INTEGER",
+          "is_primary_key": false,
+          "is_nullable": false
+        },
+        {
+          "name": "title",
+          "type": "VARCHAR(200)",
+          "is_primary_key": false,
+          "is_nullable": false
+        },
+        {
+          "name": "description",
+          "type": "TEXT",
+          "is_primary_key": false,
+          "is_nullable": true
+        },
+        {
+          "name": "price",
+          "type": "NUMERIC(10,2)",
+          "is_primary_key": false,
+          "is_nullable": false
+        },
+        {
+          "name": "image_url",
+          "type": "VARCHAR(255)",
+          "is_primary_key": false,
+          "is_nullable": true
+        },
+        {
+          "name": "category_id",
+          "type": "INTEGER",
+          "is_primary_key": false,
+          "is_nullable": true
+        },
+        {
+          "name": "created_at",
+          "type": "DATETIME",
+          "is_primary_key": false,
+          "is_nullable": false
+        }
+      ]
+    },
+    {
+      "table_name": "reviews",
+      "columns": [
+        {
+          "name": "id",
+          "type": "INTEGER",
+          "is_primary_key": true,
+          "is_nullable": false
+        },
+        {
+          "name": "product_id",
+          "type": "INTEGER",
+          "is_primary_key": false,
+          "is_nullable": false
+        },
+        {
+          "name": "buyer_id",
+          "type": "INTEGER",
+          "is_primary_key": false,
+          "is_nullable": false
+        },
+        {
+          "name": "rating",
+          "type": "INTEGER",
+          "is_primary_key": false,
+          "is_nullable": false
+        },
+        {
+          "name": "comment",
+          "type": "TEXT",
+          "is_primary_key": false,
+          "is_nullable": true
+        },
+        {
+          "name": "created_at",
+          "type": "DATETIME",
+          "is_primary_key": false,
+          "is_nullable": false
+        }
+      ]
+    }
+  ],
+  "folder_structure": {
+    "backend": [
+      "app",
+      "app/models",
+      "app/schemas",
+      "app/services",
+      "app/routes",
+      "app/utils",
+      "app/config",
+      "app/dependencies",
+      "app/database",
+      "app/main.py"
+    ]
+  },
+  "frontend_structure": {
+    "pages": [
+      "Home",
+      "ProductDetail",
+      "SellerDashboard",
+      "LoginRegister",
+      "ReviewSubmission",
+      "UserProfile"
+    ],
+    "components": [
+      "Navbar",
+      "Footer",
+      "FilterBar",
+      "ProductCard",
+      "ProductList",
+      "Pagination",
+      "ReviewForm",
+      "ReviewList",
+      "SellerProductForm",
+      "RatingStars"
+    ]
+  }
+}

@@ -1,0 +1,123 @@
+{
+  "project_name": "QuickNote",
+  "description": "A lightweight note\u2011taking web app that lets users organize notes into notebooks, apply tags, and instantly search full\u2011text across all content.",
+  "target_users": [
+    "students",
+    "professionals",
+    "researchers",
+    "writers"
+  ],
+  "core_features": [
+    "Create, edit, and delete notebooks",
+    "Create, edit, and delete notes within notebooks",
+    "Tag notes with multiple tags",
+    "Full\u2011text search across notes",
+    "User authentication and personal data isolation"
+  ],
+  "future_features": [
+    "Markdown support for note formatting",
+    "Collaborative sharing of notebooks",
+    "Offline sync with local storage"
+  ],
+  "tech_stack": [
+    "FastAPI",
+    "React",
+    "SQLite"
+  ],
+  "database_entities": [
+    {
+      "name": "Notebook",
+      "fields": [
+        "id",
+        "title",
+        "user_id",
+        "created_at",
+        "updated_at"
+      ]
+    },
+    {
+      "name": "Note",
+      "fields": [
+        "id",
+        "notebook_id",
+        "title",
+        "content",
+        "created_at",
+        "updated_at"
+      ]
+    },
+    {
+      "name": "Tag",
+      "fields": [
+        "id",
+        "name"
+      ]
+    }
+  ],
+  "api_modules": [
+    {
+      "name": "Notebook",
+      "endpoints": [
+        "/notebooks",
+        "/notebooks/{id}"
+      ]
+    },
+    {
+      "name": "Note",
+      "endpoints": [
+        "/notes",
+        "/notes/{id}"
+      ]
+    },
+    {
+      "name": "Tag",
+      "endpoints": [
+        "/tags",
+        "/tags/{id}"
+      ]
+    }
+  ],
+  "pages": [
+    "Login",
+    "Notebook List",
+    "Note List",
+    "Note Editor",
+    "Search"
+  ],
+  "backend_modules": [
+    "Authentication",
+    "Notebook Management",
+    "Note Management",
+    "Tag Management",
+    "Search Service"
+  ],
+  "roadmap": [
+    {
+      "phase": "MVP",
+      "milestones": [
+        "User registration and login",
+        "Create, edit, delete notebooks",
+        "Create, edit, delete notes",
+        "Tagging notes",
+        "Basic full\u2011text search"
+      ]
+    },
+    {
+      "phase": "Enhancements",
+      "milestones": [
+        "Rich text (Markdown) editor",
+        "Advanced search filters",
+        "Tag management UI",
+        "Performance optimizations"
+      ]
+    },
+    {
+      "phase": "Growth",
+      "milestones": [
+        "Notebook sharing and collaboration",
+        "Offline support with local sync",
+        "Scalable deployment and monitoring"
+      ]
+    }
+  ]
+}

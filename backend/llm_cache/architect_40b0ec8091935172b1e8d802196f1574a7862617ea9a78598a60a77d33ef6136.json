@@ -1,0 +1,247 @@
+{
+  "api_endpoints": [
+    {
+      "method": "POST",
+      "path": "/users",
+      "description": "Register a new user",
+      "file": "app/routes/user_routes.py"
+    },
+    {
+      "method": "POST",
+      "path": "/auth/login",
+      "description": "Authenticate user and issue JWT",
+      "file": "app/routes/auth_routes.py"
+    },
+    {
+      "method": "GET",
+      "path": "/users/{id}",
+      "description": "Retrieve user profile",
+      "file": "app/routes/user_routes.py"
+    },
+    {
+      "method": "PUT",
+      "path": "/users/{id}",
+      "description": "Update user profile",
+      "file": "app/routes/user_routes.py"
+    },
+    {
+      "method": "DELETE",
+      "path": "/users/{id}",
+      "description": "Delete user account",
+      "file": "app/routes/user_routes.py"
+    },
+    {
+      "method": "GET",
+      "path": "/waterlogs",
+      "description": "List water logs for the authenticated user",
+      "file": "app/routes/waterlog_routes.py"
+    },
+    {
+      "method": "POST",
+      "path": "/waterlogs",
+      "description": "Create a new water log entry",
+      "file": "app/routes/waterlog_routes.py"
+    },
+    {
+      "method": "GET",
+      "path": "/waterlogs/{id}",
+      "description": "Retrieve a specific water log entry",
+      "file": "app/routes/waterlog_routes.py"
+    },
+    {
+      "method": "DELETE",
+      "path": "/waterlogs/{id}",
+      "description": "Delete a water log entry",
+      "file": "app/routes/waterlog_routes.py"
+    },
+    {
+      "method": "GET",
+      "path": "/goals",
+      "description": "Get the current user's active hydration goal",
+      "file": "app/routes/goal_routes.py"
+    },
+    {
+      "method": "POST",
+      "path": "/goals",
+      "description": "Create or replace the user's daily hydration goal",
+      "file": "app/routes/goal_routes.py"
+    },
+    {
+      "method": "PUT",
+      "path": "/goals/{id}",
+      "description": "Update an existing hydration goal",
+      "file": "app/routes/goal_routes.py"
+    },
+    {
+      "method": "DELETE",
+      "path": "/goals/{id}",
+      "description": "Delete a hydration goal",
+      "file": "app/routes/goal_routes.py"
+    }
+  ],
+  "database_schema": [
+    {
+      "table_name": "users",
+      "columns": [
+        {
+          "name": "id",
+          "type": "INTEGER",
+          "is_primary_key": true,
+          "is_nullable": false
+        },
+        {
+          "name": "email",
+          "type": "VARCHAR(255)",
+          "is_primary_key": false,
+          "is_nullable": false
+        },
+        {
+          "name": "password_hash",
+          "type": "VARCHAR(255)",
+          "is_primary_key": false,
+          "is_nullable": false
+        },
+        {
+          "name": "name",
+          "type": "VARCHAR(150)",
+          "is_primary_key": false,
+          "is_nullable": true
+        },
+        {
+          "name": "created_at",
+          "type": "DATETIME",
+          "is_primary_key": false,
+          "is_nullable": false
+        }
+      ]
+    },
+    {
+      "table_name": "water_logs",
+      "columns": [
+        {
+          "name": "id",
+          "type": "INTEGER",
+          "is_primary_key": true,
+          "is_nullable": false
+        },
+        {
+          "name": "user_id",
+          "type": "INTEGER",
+          "is_primary_key": false,
+          "is_nullable": false
+        },
+        {
+          "name": "amount_ml",
+          "type": "INTEGER",
+          "is_primary_key": false,
+          "is_nullable": false
+        },
+        {
+          "name": "logged_at",
+          "type": "DATETIME",
+          "is_primary_key": false,
+          "is_nullable": false
+        }
+      ]
+    },
+    {
+      "table_name": "goals",
+      "columns": [
+        {
+          "name": "id",
+          "type": "INTEGER",
+          "is_primary_key": true,
+          "is_nullable": false
+        },
+        {
+          "name": "user_id",
+          "type": "INTEGER",
+          "is_primary_key": false,
+          "is_nullable": false
+        },
+        {
+          "name": "daily_target_ml",
+          "type": "INTEGER",
+          "is_primary_key": false,
+          "is_nullable": false
+        },
+        {
+          "name": "effective_date",
+          "type": "DATE",
+          "is_primary_key": false,
+          "is_nullable": false
+        }
+      ]
+    },
+    {
+      "table_name": "reminders",
+      "columns": [
+        {
+          "name": "id",
+          "type": "INTEGER",
+          "is_primary_key": true,
+          "is_nullable": false
+        },
+        {
+          "name": "user_id",
+          "type": "INTEGER",
+          "is_primary_key": false,
+          "is_nullable": false
+        },
+        {
+          "name": "time_of_day",
+          "type": "TIME",
+          "is_primary_key": false,
+          "is_nullable": false
+        },
+        {
+          "name": "enabled",
+          "type": "BOOLEAN",
+          "is_primary_key": false,
+          "is_nullable": false
+        },
+        {
+          "name": "message",
+          "type": "VARCHAR(255)",
+          "is_primary_key": false,
+          "is_nullable": true
+        }
+      ]
+    }
+  ],
+  "folder_structure": {
+    "backend": [
+      "app",
+      "app/models",
+      "app/schemas",
+      "app/routes",
+      "app/services",
+      "app/utils",
+      "app/dependencies",
+      "app/config",
+      "app/database"
+    ]
+  },
+  "frontend_structure": {
+    "pages": [
+      "Login",
+      "Register",
+      "Dashboard",
+      "History",
+      "Settings",
+      "Reminders"
+    ],
+    "components": [
+      "Header",
+      "Footer",
+      "AuthForm",
+      "WaterLogForm",
+      "WaterLogList",
+      "ProgressBar",
+      "GoalSetter",
+      "Chart",
+      "ReminderToggle",
+      "UserProfile"
+    ]
+  }
+}

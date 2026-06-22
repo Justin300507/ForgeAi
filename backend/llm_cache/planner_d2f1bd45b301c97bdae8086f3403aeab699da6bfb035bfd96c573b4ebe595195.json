@@ -1,0 +1,140 @@
+{
+  "project_name": "RecipeMaster",
+  "description": "A web application that lets users store, organize, and plan recipes, manage ingredients, and create weekly meal plans.",
+  "target_users": [
+    "Home cooks",
+    "Meal planners",
+    "Nutrition enthusiasts"
+  ],
+  "core_features": [
+    "Create, edit, and delete recipes",
+    "Manage ingredient library",
+    "Categorize recipes by cuisine or type",
+    "Generate weekly meal plans",
+    "Search and filter recipes"
+  ],
+  "future_features": [
+    "Automatic shopping list generation",
+    "Nutrition analysis per recipe and meal plan",
+    "Social sharing of recipes and plans"
+  ],
+  "tech_stack": [
+    "FastAPI",
+    "React",
+    "SQLite"
+  ],
+  "database_entities": [
+    {
+      "name": "Recipe",
+      "fields": [
+        "id",
+        "title",
+        "description",
+        "instructions",
+        "prep_time_minutes",
+        "cook_time_minutes",
+        "servings",
+        "category",
+        "ingredients"
+      ]
+    },
+    {
+      "name": "Ingredient",
+      "fields": [
+        "id",
+        "name",
+        "unit",
+        "calories_per_unit"
+      ]
+    },
+    {
+      "name": "MealPlan",
+      "fields": [
+        "id",
+        "plan_date",
+        "breakfast_recipe_id",
+        "lunch_recipe_id",
+        "dinner_recipe_id",
+        "snack_recipe_id"
+      ]
+    }
+  ],
+  "api_modules": [
+    {
+      "name": "Recipe",
+      "endpoints": [
+        "GET /recipes",
+        "POST /recipes",
+        "GET /recipes/{id}",
+        "PUT /recipes/{id}",
+        "DELETE /recipes/{id}"
+      ]
+    },
+    {
+      "name": "Ingredient",
+      "endpoints": [
+        "GET /ingredients",
+        "POST /ingredients",
+        "GET /ingredients/{id}",
+        "PUT /ingredients/{id}",
+        "DELETE /ingredients/{id}"
+      ]
+    },
+    {
+      "name": "MealPlan",
+      "endpoints": [
+        "GET /mealplans",
+        "POST /mealplans",
+        "GET /mealplans/{id}",
+        "PUT /mealplans/{id}",
+        "DELETE /mealplans/{id}"
+      ]
+    }
+  ],
+  "pages": [
+    "Login",
+    "Recipe List",
+    "Recipe Detail / Edit",
+    "Ingredient Management",
+    "Meal Planner"
+  ],
+  "backend_modules": [
+    "Authentication",
+    "Recipe Management",
+    "Ingredient Management",
+    "MealPlan Management",
+    "Reporting"
+  ],
+  "roadmap": [
+    {
+      "phase": "Phase 1: MVP",
+      "milestones": [
+        "Set up project repository and development environment",
+        "Design SQLite schema for Recipe and Ingredient",
+        "Implement Recipe and Ingredient REST APIs",
+        "Create basic React UI for listing and editing recipes",
+        "User authentication and basic UI layout"
+      ]
+    },
+    {
+      "phase": "Phase 2: Meal Planning",
+      "milestones": [
+        "Add MealPlan entity and database migrations",
+        "Build MealPlan CRUD APIs",
+        "Develop calendar view for weekly meal planning",
+        "Integrate recipe selection into meal plan UI",
+        "Add filtering by category in recipe list"
+      ]
+    },
+    {
+      "phase": "Phase 3: Advanced Features",
+      "milestones": [
+        "Implement shopping list generation from meal plans",
+        "Add nutrition analysis calculations",
+        "Enable social sharing of recipes and plans",
+        "Performance optimizations and UI polish",
+        "Beta testing and feedback incorporation"
+      ]
+    }
+  ]
+}

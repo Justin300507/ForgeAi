@@ -1,0 +1,288 @@
+{
+  "api_endpoints": [
+    {
+      "method": "GET",
+      "path": "/users",
+      "description": "Retrieve a list of all users (admin view).",
+      "file": "app/routes/user_routes.py"
+    },
+    {
+      "method": "POST",
+      "path": "/users",
+      "description": "Register a new user.",
+      "file": "app/routes/user_routes.py"
+    },
+    {
+      "method": "GET",
+      "path": "/users/{id}",
+      "description": "Get public profile of a specific user.",
+      "file": "app/routes/user_routes.py"
+    },
+    {
+      "method": "PUT",
+      "path": "/users/{id}",
+      "description": "Update user profile information.",
+      "file": "app/routes/user_routes.py"
+    },
+    {
+      "method": "GET",
+      "path": "/users/me",
+      "description": "Retrieve the authenticated user's own profile.",
+      "file": "app/routes/user_routes.py"
+    },
+    {
+      "method": "PATCH",
+      "path": "/users/{id}/status",
+      "description": "Update a user's presence status (online, offline, away).",
+      "file": "app/routes/user_routes.py"
+    },
+    {
+      "method": "GET",
+      "path": "/rooms",
+      "description": "List available public rooms and private rooms the user belongs to.",
+      "file": "app/routes/room_routes.py"
+    },
+    {
+      "method": "POST",
+      "path": "/rooms",
+      "description": "Create a new room (public or private).",
+      "file": "app/routes/room_routes.py"
+    },
+    {
+      "method": "GET",
+      "path": "/rooms/{id}",
+      "description": "Get details of a specific room, including participants.",
+      "file": "app/routes/room_routes.py"
+    },
+    {
+      "method": "POST",
+      "path": "/rooms/{id}/join",
+      "description": "Join a room (adds membership record).",
+      "file": "app/routes/room_routes.py"
+    },
+    {
+      "method": "POST",
+      "path": "/rooms/{id}/leave",
+      "description": "Leave a room (removes membership record).",
+      "file": "app/routes/room_routes.py"
+    },
+    {
+      "method": "GET",
+      "path": "/rooms/{room_id}/messages",
+      "description": "Retrieve message history for a room with pagination support.",
+      "file": "app/routes/message_routes.py"
+    },
+    {
+      "method": "POST",
+      "path": "/rooms/{room_id}/messages",
+      "description": "Send a new message to a room.",
+      "file": "app/routes/message_routes.py"
+    },
+    {
+      "method": "DELETE",
+      "path": "/rooms/{room_id}/messages/{id}",
+      "description": "Delete a message (soft delete).",
+      "file": "app/routes/message_routes.py"
+    }
+  ],
+  "database_schema": [
+    {
+      "table_name": "user",
+      "columns": [
+        {
+          "name": "id",
+          "type": "INTEGER",
+          "is_primary_key": true,
+          "is_nullable": false
+        },
+        {
+          "name": "username",
+          "type": "TEXT",
+          "is_primary_key": false,
+          "is_nullable": false
+        },
+        {
+          "name": "email",
+          "type": "TEXT",
+          "is_primary_key": false,
+          "is_nullable": false
+        },
+        {
+          "name": "password_hash",
+          "type": "TEXT",
+          "is_primary_key": false,
+          "is_nullable": false
+        },
+        {
+          "name": "display_name",
+          "type": "TEXT",
+          "is_primary_key": false,
+          "is_nullable": true
+        },
+        {
+          "name": "avatar_url",
+          "type": "TEXT",
+          "is_primary_key": false,
+          "is_nullable": true
+        },
+        {
+          "name": "status",
+          "type": "TEXT",
+          "is_primary_key": false,
+          "is_nullable": false
+        },
+        {
+          "name": "last_active_at",
+          "type": "DATETIME",
+          "is_primary_key": false,
+          "is_nullable": true
+        }
+      ]
+    },
+    {
+      "table_name": "room",
+      "columns": [
+        {
+          "name": "id",
+          "type": "INTEGER",
+          "is_primary_key": true,
+          "is_nullable": false
+        },
+        {
+          "name": "name",
+          "type": "TEXT",
+          "is_primary_key": false,
+          "is_nullable": false
+        },
+        {
+          "name": "is_private",
+          "type": "BOOLEAN",
+          "is_primary_key": false,
+          "is_nullable": false
+        },
+        {
+          "name": "created_at",
+          "type": "DATETIME",
+          "is_primary_key": false,
+          "is_nullable": false
+        },
+        {
+          "name": "created_by",
+          "type": "INTEGER",
+          "is_primary_key": false,
+          "is_nullable": false
+        }
+      ]
+    },
+    {
+      "table_name": "message",
+      "columns": [
+        {
+          "name": "id",
+          "type": "INTEGER",
+          "is_primary_key": true,
+          "is_nullable": false
+        },
+        {
+          "name": "room_id",
+          "type": "INTEGER",
+          "is_primary_key": false,
+          "is_nullable": false
+        },
+        {
+          "name": "sender_id",
+          "type": "INTEGER",
+          "is_primary_key": false,
+          "is_nullable": false
+        },
+        {
+          "name": "content",
+          "type": "TEXT",
+          "is_primary_key": false,
+          "is_nullable": false
+        },
+        {
+          "name": "timestamp",
+          "type": "DATETIME",
+          "is_primary_key": false,
+          "is_nullable": false
+        },
+        {
+          "name": "is_deleted",
+          "type": "BOOLEAN",
+          "is_primary_key": false,
+          "is_nullable": false
+        }
+      ]
+    },
+    {
+      "table_name": "membership",
+      "columns": [
+        {
+          "name": "id",
+          "type": "INTEGER",
+          "is_primary_key": true,
+          "is_nullable": false
+        },
+        {
+          "name": "user_id",
+          "type": "INTEGER",
+          "is_primary_key": false,
+          "is_nullable": false
+        },
+        {
+          "name": "room_id",
+          "type": "INTEGER",
+          "is_primary_key": false,
+          "is_nullable": false
+        },
+        {
+          "name": "joined_at",
+          "type": "DATETIME",
+          "is_primary_key": false,
+          "is_nullable": false
+        }
+      ]
+    }
+  ],
+  "folder_structure": {
+    "backend": [
+      "app",
+      "app/models",
+      "app/routes",
+      "app/services",
+      "app/schemas",
+      "app/utils",
+      "app/dependencies",
+      "app/config",
+      "app/middleware",
+      "app/main.py"
+    ]
+  },
+  "frontend_structure": {
+    "pages": [
+      "Login",
+      "Register",
+      "ChatDashboard",
+      "ChatRoom",
+      "UserProfile"
+    ],
+    "components": [
+      "Header",
+      "Footer",
+      "RoomList",
+      "MessageList",
+      "MessageInput",
+      "UserAvatar",
+      "PresenceIndicator",
+      "ChatRoomHeader",
+      "LoginForm",
+      "RegisterForm",
+      "UserProfileForm",
+      "NotificationToast",
+      "Sidebar",
+      "SearchBar",
+      "StatusBadge"
+    ]
+  }
+}

@@ -1,0 +1,131 @@
+{
+  "project_name": "Library Service",
+  "description": "An online library management platform that lets patrons browse the book catalog, register, authenticate, search for books, borrow and return items, and manage reservations.",
+  "target_users": [
+    "Library patrons",
+    "Librarians",
+    "Library administrators"
+  ],
+  "core_features": [
+    "Browse book catalog",
+    "Member registration & authentication",
+    "Search books by title, author, or ISBN",
+    "Borrow and return books",
+    "Manage reservations"
+  ],
+  "future_features": [
+    "Personalized book recommendations",
+    "Automated overdue fine calculation",
+    "Mobile app integration"
+  ],
+  "tech_stack": [
+    "FastAPI",
+    "React",
+    "SQLite",
+    "Pydantic",
+    "SQLAlchemy"
+  ],
+  "database_entities": [
+    {
+      "name": "Book",
+      "fields": [
+        "title",
+        "author",
+        "isbn",
+        "published_year",
+        "genre",
+        "available_copies"
+      ]
+    },
+    {
+      "name": "Member",
+      "fields": [
+        "first_name",
+        "last_name",
+        "email",
+        "password_hash",
+        "membership_date",
+        "is_active"
+      ]
+    },
+    {
+      "name": "Loan",
+      "fields": [
+        "member_id",
+        "book_id",
+        "borrow_date",
+        "due_date",
+        "return_date",
+        "status"
+      ]
+    }
+  ],
+  "api_modules": [
+    {
+      "name": "Book",
+      "endpoints": [
+        "/books",
+        "/books/{id}"
+      ]
+    },
+    {
+      "name": "Member",
+      "endpoints": [
+        "/members",
+        "/members/{id}"
+      ]
+    },
+    {
+      "name": "Loan",
+      "endpoints": [
+        "/loans",
+        "/loans/{id}",
+        "/loans/borrow",
+        "/loans/return"
+      ]
+    }
+  ],
+  "pages": [
+    "Login",
+    "Book Catalog",
+    "Member Dashboard",
+    "Loan History",
+    "Reservation"
+  ],
+  "backend_modules": [
+    "Authentication",
+    "Book Management",
+    "Member Management",
+    "Loan Management",
+    "Reservation Management"
+  ],
+  "roadmap": [
+    {
+      "phase": "MVP Launch",
+      "milestones": [
+        "Implement core data models",
+        "Develop authentication and member APIs",
+        "Create book catalog browsing UI",
+        "Enable borrowing and returning functionality",
+        "Deploy basic React frontend"
+      ]
+    },
+    {
+      "phase": "Feature Expansion",
+      "milestones": [
+        "Add reservation system",
+        "Improve search filters and sorting",
+        "Implement admin dashboard for inventory",
+        "Add email notification service"
+      ]
+    },
+    {
+      "phase": "Advanced Services",
+      "milestones": [
+        "Build personalized recommendation engine",
+        "Integrate automated overdue fine calculation",
+        "Develop mobile-friendly responsive UI"
+      ]
+    }
+  ]
+}

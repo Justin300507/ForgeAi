@@ -1,0 +1,127 @@
+{
+  "project_name": "Library Lending Management System",
+  "description": "A web application for managing library operations, including book catalog, member records, loan processing, overdue tracking, and basic reporting.",
+  "target_users": [
+    "Librarians",
+    "Library Administrators"
+  ],
+  "core_features": [
+    "Browse and search book catalog",
+    "Manage member records (add, edit, deactivate)",
+    "Process book loans and returns",
+    "Automatic overdue detection and fine calculation",
+    "Generate basic reports (overdue books, active loans)"
+  ],
+  "future_features": [
+    "Reservation and hold system",
+    "Email notifications for due dates and overdue alerts",
+    "Advanced analytics dashboard"
+  ],
+  "tech_stack": [
+    "FastAPI",
+    "React",
+    "SQLite",
+    "Pydantic",
+    "SQLAlchemy"
+  ],
+  "database_entities": [
+    {
+      "name": "Book",
+      "fields": [
+        "title",
+        "author",
+        "isbn",
+        "published_year",
+        "copies_total",
+        "copies_available"
+      ]
+    },
+    {
+      "name": "Member",
+      "fields": [
+        "first_name",
+        "last_name",
+        "email",
+        "membership_number",
+        "join_date",
+        "active_status"
+      ]
+    },
+    {
+      "name": "Loan",
+      "fields": [
+        "book_id",
+        "member_id",
+        "loan_date",
+        "due_date",
+        "return_date",
+        "status"
+      ]
+    }
+  ],
+  "api_modules": [
+    {
+      "name": "Book",
+      "endpoints": [
+        "/books",
+        "/books/{id}"
+      ]
+    },
+    {
+      "name": "Member",
+      "endpoints": [
+        "/members",
+        "/members/{id}"
+      ]
+    },
+    {
+      "name": "Loan",
+      "endpoints": [
+        "/loans",
+        "/loans/{id}",
+        "/loans/overdue"
+      ]
+    }
+  ],
+  "pages": [
+    "Login",
+    "Book Catalog",
+    "Member Management",
+    "Loan Management",
+    "Reports"
+  ],
+  "backend_modules": [
+    "Authentication",
+    "Book Management",
+    "Member Management",
+    "Loan Management",
+    "Reporting"
+  ],
+  "roadmap": [
+    {
+      "phase": "Phase 1: MVP",
+      "milestones": [
+        "Implement book catalog CRUD",
+        "Implement member CRUD",
+        "Implement loan processing and return",
+        "Automatic overdue detection"
+      ]
+    },
+    {
+      "phase": "Phase 2: Reporting & Admin UI",
+      "milestones": [
+        "Develop reports page for overdue and active loans",
+        "Add admin dashboard with key metrics",
+        "Refine UI/UX for librarian workflows"
+      ]
+    },
+    {
+      "phase": "Phase 3: Advanced Features",
+      "milestones": [
+        "Add reservation/hold functionality",
+        "Integrate email notification service",
+        "Build analytics dashboard with usage statistics"
+      ]
+    }
+  ]
+}

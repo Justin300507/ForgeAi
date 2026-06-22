@@ -1,0 +1,299 @@
+{
+  "api_endpoints": [
+    {
+      "method": "GET",
+      "path": "/venues",
+      "description": "Retrieve a list of all venues",
+      "file": "app/routes/venue_routes.py"
+    },
+    {
+      "method": "GET",
+      "path": "/venues/{id}",
+      "description": "Retrieve details of a specific venue",
+      "file": "app/routes/venue_routes.py"
+    },
+    {
+      "method": "POST",
+      "path": "/venues",
+      "description": "Create a new venue (admin only)",
+      "file": "app/routes/venue_routes.py"
+    },
+    {
+      "method": "GET",
+      "path": "/shows",
+      "description": "Retrieve a list of upcoming shows",
+      "file": "app/routes/show_routes.py"
+    },
+    {
+      "method": "GET",
+      "path": "/shows/{id}",
+      "description": "Retrieve details of a specific show",
+      "file": "app/routes/show_routes.py"
+    },
+    {
+      "method": "POST",
+      "path": "/shows",
+      "description": "Create a new show (admin only)",
+      "file": "app/routes/show_routes.py"
+    },
+    {
+      "method": "GET",
+      "path": "/shows/{id}/seats",
+      "description": "Retrieve seat map and availability for a show",
+      "file": "app/routes/show_routes.py"
+    },
+    {
+      "method": "POST",
+      "path": "/tickets/purchase",
+      "description": "Purchase a ticket for a selected seat",
+      "file": "app/routes/ticket_routes.py"
+    },
+    {
+      "method": "GET",
+      "path": "/tickets/{id}",
+      "description": "Retrieve details of a specific ticket (owner only)",
+      "file": "app/routes/ticket_routes.py"
+    },
+    {
+      "method": "GET",
+      "path": "/tickets/mine",
+      "description": "List all tickets purchased by the authenticated user",
+      "file": "app/routes/ticket_routes.py"
+    },
+    {
+      "method": "POST",
+      "path": "/auth/login",
+      "description": "Authenticate user and return access token",
+      "file": "app/routes/auth_routes.py"
+    },
+    {
+      "method": "POST",
+      "path": "/auth/register",
+      "description": "Register a new user account",
+      "file": "app/routes/auth_routes.py"
+    }
+  ],
+  "database_schema": [
+    {
+      "table_name": "users",
+      "columns": [
+        {
+          "name": "id",
+          "type": "INTEGER",
+          "is_primary_key": true,
+          "is_nullable": false
+        },
+        {
+          "name": "email",
+          "type": "TEXT",
+          "is_primary_key": false,
+          "is_nullable": false
+        },
+        {
+          "name": "password_hash",
+          "type": "TEXT",
+          "is_primary_key": false,
+          "is_nullable": false
+        },
+        {
+          "name": "full_name",
+          "type": "TEXT",
+          "is_primary_key": false,
+          "is_nullable": true
+        },
+        {
+          "name": "is_admin",
+          "type": "BOOLEAN",
+          "is_primary_key": false,
+          "is_nullable": false
+        },
+        {
+          "name": "created_at",
+          "type": "DATETIME",
+          "is_primary_key": false,
+          "is_nullable": false
+        }
+      ]
+    },
+    {
+      "table_name": "venues",
+      "columns": [
+        {
+          "name": "id",
+          "type": "INTEGER",
+          "is_primary_key": true,
+          "is_nullable": false
+        },
+        {
+          "name": "name",
+          "type": "TEXT",
+          "is_primary_key": false,
+          "is_nullable": false
+        },
+        {
+          "name": "address",
+          "type": "TEXT",
+          "is_primary_key": false,
+          "is_nullable": false
+        },
+        {
+          "name": "capacity",
+          "type": "INTEGER",
+          "is_primary_key": false,
+          "is_nullable": false
+        }
+      ]
+    },
+    {
+      "table_name": "shows",
+      "columns": [
+        {
+          "name": "id",
+          "type": "INTEGER",
+          "is_primary_key": true,
+          "is_nullable": false
+        },
+        {
+          "name": "venue_id",
+          "type": "INTEGER",
+          "is_primary_key": false,
+          "is_nullable": false
+        },
+        {
+          "name": "name",
+          "type": "TEXT",
+          "is_primary_key": false,
+          "is_nullable": false
+        },
+        {
+          "name": "date_time",
+          "type": "DATETIME",
+          "is_primary_key": false,
+          "is_nullable": false
+        },
+        {
+          "name": "description",
+          "type": "TEXT",
+          "is_primary_key": false,
+          "is_nullable": true
+        }
+      ]
+    },
+    {
+      "table_name": "seats",
+      "columns": [
+        {
+          "name": "id",
+          "type": "INTEGER",
+          "is_primary_key": true,
+          "is_nullable": false
+        },
+        {
+          "name": "show_id",
+          "type": "INTEGER",
+          "is_primary_key": false,
+          "is_nullable": false
+        },
+        {
+          "name": "seat_number",
+          "type": "TEXT",
+          "is_primary_key": false,
+          "is_nullable": false
+        },
+        {
+          "name": "price",
+          "type": "REAL",
+          "is_primary_key": false,
+          "is_nullable": false
+        },
+        {
+          "name": "is_reserved",
+          "type": "BOOLEAN",
+          "is_primary_key": false,
+          "is_nullable": false
+        }
+      ]
+    },
+    {
+      "table_name": "tickets",
+      "columns": [
+        {
+          "name": "id",
+          "type": "INTEGER",
+          "is_primary_key": true,
+          "is_nullable": false
+        },
+        {
+          "name": "show_id",
+          "type": "INTEGER",
+          "is_primary_key": false,
+          "is_nullable": false
+        },
+        {
+          "name": "seat_id",
+          "type": "INTEGER",
+          "is_primary_key": false,
+          "is_nullable": false
+        },
+        {
+          "name": "purchaser_id",
+          "type": "INTEGER",
+          "is_primary_key": false,
+          "is_nullable": false
+        },
+        {
+          "name": "price",
+          "type": "REAL",
+          "is_primary_key": false,
+          "is_nullable": false
+        },
+        {
+          "name": "purchase_time",
+          "type": "DATETIME",
+          "is_primary_key": false,
+          "is_nullable": false
+        }
+      ]
+    }
+  ],
+  "folder_structure": {
+    "backend": [
+      "app",
+      "app/models",
+      "app/schemas",
+      "app/services",
+      "app/routes",
+      "app/utils",
+      "app/dependencies",
+      "app/config",
+      "app/database",
+      "app/auth"
+    ]
+  },
+  "frontend_structure": {
+    "pages": [
+      "Home",
+      "ShowDetails",
+      "MyTickets",
+      "AdminDashboard",
+      "Login",
+      "Register"
+    ],
+    "components": [
+      "Navbar",
+      "VenueList",
+      "ShowList",
+      "ShowCard",
+      "SeatMap",
+      "Seat",
+      "TicketCard",
+      "LoginForm",
+      "RegisterForm",
+      "AdminVenueForm",
+      "AdminShowForm",
+      "Footer",
+      "LoadingSpinner",
+      "ErrorAlert"
+    ]
+  }
+}

@@ -6,169 +6,185 @@ from pathlib import Path
 import requests
 
 from app.runtime.runtime_models import RuntimeResult
+from app.services.endpoint_smoke_test_service import run_endpoint_smoke_tests
+
 
 class BackendRunner:
+    def run(self, backend_path: str, architecture: dict | None = None) -> RuntimeResult:
 
-```
-def run(self, backend_path: str) -> RuntimeResult:
+        backend_dir = Path(backend_path)
 
-    backend_dir = Path(backend_path)
+        if not backend_dir.exists():
 
-    if not backend_dir.exists():
+            raise Exception(
+                f"Project path does not exist: {backend_path}"
+            )
 
-        raise Exception(
-            f"Project path does not exist: {backend_path}"
-        )
-
-    start_time = time.time()
-
-    print(
-        f"Running runtime validation in: {backend_dir}"
-    )
-
-    print(
-        f"Using Python: {sys.executable}"
-    )
-
-    requirements_file = (
-        backend_dir / "app" / "requirements.txt"
-    )
-
-    if requirements_file.exists():
+        start_time = time.time()
 
         print(
-            f"Installing requirements from: {requirements_file}"
+            f"Running runtime validation in: {backend_dir}"
         )
 
-        install_result = subprocess.run(
+        print(
+            f"Using Python: {sys.executable}"
+        )
+
+        requirements_file = (
+            backend_dir / "app" / "requirements.txt"
+        )
+
+        if requirements_file.exists():
+
+            print(
+                f"Installing requirements from: {requirements_file}"
+            )
+
+            install_result = subprocess.run(
+                [
+                    sys.executable,
+                    "-m",
+                    "pip",
+                    "install",
+                    "-r",
+                    str(requirements_file)
+                ],
+                cwd=backend_dir,
+                capture_output=True,
+                text=True
+            )
+
+            if install_result.returncode != 0:
+
+                return RuntimeResult(
+                    success=False,
+                    exit_code=install_result.returncode,
+                    stdout=install_result.stdout,
+                    stderr=install_result.stderr,
+                    startup_time=time.time() - start_time
+                )
+
+            print(
+                "Requirements installation complete"
+            )
+
+        process = subprocess.Popen(
             [
                 sys.executable,
                 "-m",
-                "pip",
-                "install",
-                "-r",
-                str(requirements_file)
+                "uvicorn",
+                "app.main:app",
+                "--host",
+                "127.0.0.1",
+                "--port",
+                "8001"
             ],
             cwd=backend_dir,
-            capture_output=True,
+            stdout=subprocess.PIPE,
+            stderr=subprocess.PIPE,
             text=True
         )
 
-        if install_result.returncode != 0:
+        max_wait = 10
+        healthy = False
 
-            return RuntimeResult(
-                success=False,
-                exit_code=install_result.returncode,
-                stdout=install_result.stdout,
-                stderr=install_result.stderr,
-                startup_time=time.time() - start_time
-            )
+        for _ in range(max_wait):
 
-        print(
-            "Requirements installation complete"
-        )
-
-    process = subprocess.Popen(
-        [
-            sys.executable,
-            "-m",
-            "uvicorn",
-            "app.main:app",
-            "--host",
-            "127.0.0.1",
-            "--port",
-            "8001"
-        ],
-        cwd=backend_dir,
-        stdout=subprocess.PIPE,
-        stderr=subprocess.PIPE,
-        text=True
-    )
-
-    max_wait = 10
-    healthy = False
-
-    for _ in range(max_wait):
-
-        if process.poll() is not None:
-            break
-
-        try:
-
-            response = requests.get(
-                "http://127.0.0.1:8001/docs",
-                timeout=2
-            )
-
-            if response.status_code == 200:
-
-                healthy = True
-
-                print(
-                    f"Health Check Status: {response.status_code}"
-                )
-
+            if process.poll() is not None:
                 break
 
-        except Exception:
-            pass
+            try:
 
-        time.sleep(1)
+                response = requests.get(
+                    "http://127.0.0.1:8001/docs",
+                    timeout=2
+                )
 
-    if process.poll() is None:
+                if response.status_code == 200:
 
-        try:
+                    healthy = True
 
-            process.terminate()
+                    print(
+                        f"Health Check Status: {response.status_code}"
+                    )
 
-            stdout, stderr = process.communicate(
-                timeout=5
-            )
+                    break
 
-        except subprocess.TimeoutExpired:
+            except Exception:
+                pass
 
-            process.kill()
+            time.sleep(1)
 
-            stdout, stderr = process.communicate()
+        behavioral_issues = []
 
-        if not healthy:
+        if healthy and architecture:
+
+            print("\n=== ENDPOINT SMOKE TESTS ===")
+            behavioral_issues = run_endpoint_smoke_tests(architecture)
+
+            for issue in behavioral_issues:
+                print(f"  {issue['method']} {issue['path']} -> {issue['issue']}")
+
+            if not behavioral_issues:
+                print("  No 500-level errors found.")
+
+        if process.poll() is None:
+
+            try:
+
+                process.terminate()
+
+                stdout, stderr = process.communicate(
+                    timeout=8
+                )
+
+            except subprocess.TimeoutExpired:
+
+                process.kill()
+
+                stdout, stderr = process.communicate()
+
+            # Give Windows a moment to release file handles (e.g. test.db)
+            time.sleep(1)
+
+            if not healthy:
+
+                return RuntimeResult(
+                    success=False,
+                    exit_code=1,
+                    stdout=stdout,
+                    stderr=(
+                        stderr
+                        + "\nHealth Check Failed"
+                    ),
+                    startup_time=time.time() - start_time
+                )
+
+            if "Traceback" in stderr:
+
+                return RuntimeResult(
+                    success=False,
+                    exit_code=1,
+                    stdout=stdout,
+                    stderr=stderr,
+                    startup_time=time.time() - start_time
+                )
 
             return RuntimeResult(
-                success=False,
-                exit_code=1,
-                stdout=stdout,
-                stderr=(
-                    stderr
-                    + "\nHealth Check Failed"
-                ),
-                startup_time=time.time() - start_time
-            )
-
-        if "Traceback" in stderr:
-
-            return RuntimeResult(
-                success=False,
-                exit_code=1,
+                success=True,
+                exit_code=0,
                 stdout=stdout,
                 stderr=stderr,
-                startup_time=time.time() - start_time
+                startup_time=time.time() - start_time,
+                behavioral_issues=behavioral_issues
             )
 
+        stdout, stderr = process.communicate()
+
         return RuntimeResult(
-            success=True,
-            exit_code=0,
+            success=False,
+            exit_code=process.returncode,
             stdout=stdout,
             stderr=stderr,
             startup_time=time.time() - start_time
         )
-
-    stdout, stderr = process.communicate()
-
-    return RuntimeResult(
-        success=False,
-        exit_code=process.returncode,
-        stdout=stdout,
-        stderr=stderr,
-        startup_time=time.time() - start_time
-    )
-```

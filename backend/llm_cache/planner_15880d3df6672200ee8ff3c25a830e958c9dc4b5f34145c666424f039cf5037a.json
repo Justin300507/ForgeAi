@@ -1,0 +1,127 @@
+{
+  "project_name": "Mindful Journal",
+  "description": "A personal mental health journaling web app that lets users record daily mood entries, tag them, and view weekly summaries of mood trends.",
+  "target_users": [
+    "Individuals tracking their mental well\u2011being",
+    "Therapists recommending self\u2011monitoring tools",
+    "Well\u2011being enthusiasts"
+  ],
+  "core_features": [
+    "Daily mood entry with rating and notes",
+    "Tagging system for entries",
+    "Weekly mood summary with charts",
+    "User authentication and profile management",
+    "Data visualization of mood trends"
+  ],
+  "future_features": [
+    "AI\u2011generated insights and coping suggestions",
+    "Export journal and summaries to PDF/CSV",
+    "Community feed for sharing anonymized entries"
+  ],
+  "tech_stack": [
+    "FastAPI",
+    "React",
+    "SQLite"
+  ],
+  "database_entities": [
+    {
+      "name": "User",
+      "fields": [
+        "id",
+        "email",
+        "hashed_password",
+        "created_at"
+      ]
+    },
+    {
+      "name": "JournalEntry",
+      "fields": [
+        "id",
+        "user_id",
+        "date",
+        "mood_rating",
+        "content",
+        "created_at"
+      ]
+    },
+    {
+      "name": "Tag",
+      "fields": [
+        "id",
+        "name"
+      ]
+    }
+  ],
+  "api_modules": [
+    {
+      "name": "User",
+      "endpoints": [
+        "/users (POST) - register new user",
+        "/users/{id} (GET) - retrieve user profile",
+        "/auth/login (POST) - obtain authentication token"
+      ]
+    },
+    {
+      "name": "JournalEntry",
+      "endpoints": [
+        "/entries (GET) - list entries for authenticated user",
+        "/entries (POST) - create new entry",
+        "/entries/{id} (GET) - retrieve specific entry",
+        "/entries/{id} (PUT) - update entry",
+        "/entries/{id} (DELETE) - delete entry"
+      ]
+    },
+    {
+      "name": "Tag",
+      "endpoints": [
+        "/tags (GET) - list all tags",
+        "/tags (POST) - create a new tag",
+        "/tags/{id} (GET) - retrieve tag details"
+      ]
+    }
+  ],
+  "pages": [
+    "Login",
+    "Register",
+    "Dashboard",
+    "Entry Editor",
+    "Weekly Summary"
+  ],
+  "backend_modules": [
+    "Authentication",
+    "User Management",
+    "Entry Management",
+    "Tag Management",
+    "Summary Reporting"
+  ],
+  "roadmap": [
+    {
+      "phase": "MVP Launch",
+      "milestones": [
+        "Implement user authentication",
+        "Create journal entry CRUD with tag association",
+        "Develop weekly summary calculations",
+        "Build React UI for core pages",
+        "Integrate SQLite database"
+      ]
+    },
+    {
+      "phase": "Feature Expansion",
+      "milestones": [
+        "Add AI insights module",
+        "Implement PDF/CSV export functionality",
+        "Introduce optional community feed",
+        "Enhance data visualizations"
+      ]
+    },
+    {
+      "phase": "Growth & Optimization",
+      "milestones": [
+        "Performance tuning and caching",
+        "Add multi\u2011device synchronization",
+        "Provide admin analytics dashboard",
+        "Prepare mobile app wrapper"
+      ]
+    }
+  ]
+}

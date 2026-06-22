@@ -1,0 +1,133 @@
+{
+  "project_name": "HotelBooking Platform",
+  "description": "A web platform that allows guests to browse hotel rooms, create accounts, and make reservations online, with admin tools for managing room inventory.",
+  "target_users": [
+    "Travelers",
+    "Business Guests",
+    "Hotel Administrators"
+  ],
+  "core_features": [
+    "Room search and detail view",
+    "Guest account registration and login",
+    "Reservation creation",
+    "Reservation management (view/cancel)",
+    "Email confirmation of bookings"
+  ],
+  "future_features": [
+    "Online payment integration",
+    "Loyalty rewards program",
+    "Dynamic pricing based on demand"
+  ],
+  "tech_stack": [
+    "FastAPI",
+    "React",
+    "SQLite"
+  ],
+  "database_entities": [
+    {
+      "name": "Room",
+      "fields": [
+        "id",
+        "number",
+        "type",
+        "description",
+        "price_per_night",
+        "capacity",
+        "amenities",
+        "is_active"
+      ]
+    },
+    {
+      "name": "Reservation",
+      "fields": [
+        "id",
+        "guest_id",
+        "room_id",
+        "check_in_date",
+        "check_out_date",
+        "total_price",
+        "status",
+        "created_at",
+        "updated_at"
+      ]
+    },
+    {
+      "name": "Guest",
+      "fields": [
+        "id",
+        "first_name",
+        "last_name",
+        "email",
+        "phone",
+        "password_hash",
+        "created_at"
+      ]
+    }
+  ],
+  "api_modules": [
+    {
+      "name": "Room",
+      "endpoints": [
+        "/rooms",
+        "/rooms/{id}"
+      ]
+    },
+    {
+      "name": "Reservation",
+      "endpoints": [
+        "/reservations",
+        "/reservations/{id}"
+      ]
+    },
+    {
+      "name": "Guest",
+      "endpoints": [
+        "/guests",
+        "/guests/{id}",
+        "/auth/login"
+      ]
+    }
+  ],
+  "pages": [
+    "Home (Room Catalog)",
+    "Room Details",
+    "Booking Form",
+    "Guest Dashboard",
+    "Guest Profile (Login/Register)"
+  ],
+  "backend_modules": [
+    "Authentication",
+    "Guest Management",
+    "Room Management",
+    "Reservation Management",
+    "Email Notification"
+  ],
+  "roadmap": [
+    {
+      "phase": "MVP Launch",
+      "milestones": [
+        "Implement database schema",
+        "Develop REST APIs for rooms, reservations, and guests",
+        "Create React UI for browsing rooms and booking",
+        "Integrate email confirmation",
+        "User authentication and profile management"
+      ]
+    },
+    {
+      "phase": "Feature Expansion",
+      "milestones": [
+        "Add online payment gateway",
+        "Implement loyalty rewards system",
+        "Introduce admin dashboard for room inventory"
+      ]
+    },
+    {
+      "phase": "Scalability & Optimization",
+      "milestones": [
+        "Add analytics and reporting",
+        "Optimize performance for high traffic",
+        "Develop mobile-responsive design"
+      ]
+    }
+  ]
+}

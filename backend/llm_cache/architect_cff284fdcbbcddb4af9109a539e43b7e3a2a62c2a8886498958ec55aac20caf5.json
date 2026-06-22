@@ -1,0 +1,186 @@
+{
+  "api_endpoints": [
+    {
+      "method": "GET",
+      "path": "/users",
+      "description": "Retrieve a list of all users",
+      "file": "app/routes/user_routes.py"
+    },
+    {
+      "method": "POST",
+      "path": "/users",
+      "description": "Register a new user",
+      "file": "app/routes/user_routes.py"
+    },
+    {
+      "method": "GET",
+      "path": "/users/{id}",
+      "description": "Get details of a specific user",
+      "file": "app/routes/user_routes.py"
+    },
+    {
+      "method": "PUT",
+      "path": "/users/{id}",
+      "description": "Update user information",
+      "file": "app/routes/user_routes.py"
+    },
+    {
+      "method": "DELETE",
+      "path": "/users/{id}",
+      "description": "Delete a user account",
+      "file": "app/routes/user_routes.py"
+    },
+    {
+      "method": "GET",
+      "path": "/tasks",
+      "description": "Retrieve tasks for the authenticated user, with optional sorting and filtering by priority or due date",
+      "file": "app/routes/task_routes.py"
+    },
+    {
+      "method": "POST",
+      "path": "/tasks",
+      "description": "Create a new task",
+      "file": "app/routes/task_routes.py"
+    },
+    {
+      "method": "GET",
+      "path": "/tasks/{id}",
+      "description": "Get details of a specific task",
+      "file": "app/routes/task_routes.py"
+    },
+    {
+      "method": "PUT",
+      "path": "/tasks/{id}",
+      "description": "Update task fields (title, description, priority, due date, completed status)",
+      "file": "app/routes/task_routes.py"
+    },
+    {
+      "method": "DELETE",
+      "path": "/tasks/{id}",
+      "description": "Delete a task",
+      "file": "app/routes/task_routes.py"
+    }
+  ],
+  "database_schema": [
+    {
+      "table_name": "users",
+      "columns": [
+        {
+          "name": "id",
+          "type": "INTEGER",
+          "is_primary_key": true,
+          "is_nullable": false
+        },
+        {
+          "name": "email",
+          "type": "VARCHAR(255)",
+          "is_primary_key": false,
+          "is_nullable": false
+        },
+        {
+          "name": "hashed_password",
+          "type": "VARCHAR(255)",
+          "is_primary_key": false,
+          "is_nullable": false
+        },
+        {
+          "name": "created_at",
+          "type": "DATETIME",
+          "is_primary_key": false,
+          "is_nullable": false
+        }
+      ]
+    },
+    {
+      "table_name": "tasks",
+      "columns": [
+        {
+          "name": "id",
+          "type": "INTEGER",
+          "is_primary_key": true,
+          "is_nullable": false
+        },
+        {
+          "name": "user_id",
+          "type": "INTEGER",
+          "is_primary_key": false,
+          "is_nullable": false
+        },
+        {
+          "name": "title",
+          "type": "VARCHAR(255)",
+          "is_primary_key": false,
+          "is_nullable": false
+        },
+        {
+          "name": "description",
+          "type": "TEXT",
+          "is_primary_key": false,
+          "is_nullable": true
+        },
+        {
+          "name": "priority",
+          "type": "VARCHAR(10)",
+          "is_primary_key": false,
+          "is_nullable": false
+        },
+        {
+          "name": "due_date",
+          "type": "DATETIME",
+          "is_primary_key": false,
+          "is_nullable": true
+        },
+        {
+          "name": "completed",
+          "type": "BOOLEAN",
+          "is_primary_key": false,
+          "is_nullable": false
+        },
+        {
+          "name": "created_at",
+          "type": "DATETIME",
+          "is_primary_key": false,
+          "is_nullable": false
+        },
+        {
+          "name": "updated_at",
+          "type": "DATETIME",
+          "is_primary_key": false,
+          "is_nullable": false
+        }
+      ]
+    }
+  ],
+  "folder_structure": {
+    "backend": [
+      "app",
+      "app/models",
+      "app/schemas",
+      "app/services",
+      "app/routes",
+      "app/utils",
+      "app/config",
+      "app/dependencies"
+    ]
+  },
+  "frontend_structure": {
+    "pages": [
+      "Login",
+      "Register",
+      "Task List",
+      "Task Form"
+    ],
+    "components": [
+      "Header",
+      "Footer",
+      "TaskItem",
+      "TaskList",
+      "TaskForm",
+      "PriorityBadge",
+      "DatePicker",
+      "FilterBar",
+      "AuthForm",
+      "Modal"
+    ]
+  }
+}

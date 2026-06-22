@@ -1,0 +1,129 @@
+{
+  "project_name": "TaskMaster",
+  "description": "A lightweight, cross\u2011platform todo application that lets users create, organize, and track personal tasks with due dates, priorities, and tags.",
+  "target_users": [
+    "individual professionals",
+    "students",
+    "freelancers"
+  ],
+  "core_features": [
+    "User registration and secure login",
+    "Create, read, update, and delete tasks",
+    "Assign tags to tasks for categorization",
+    "Set due dates and priority levels",
+    "Mark tasks as completed and view progress"
+  ],
+  "future_features": [
+    "Shared task lists for team collaboration",
+    "Calendar view integration",
+    "AI\u2011driven task suggestions"
+  ],
+  "tech_stack": [
+    "FastAPI",
+    "React",
+    "SQLite"
+  ],
+  "database_entities": [
+    {
+      "name": "User",
+      "fields": [
+        "id",
+        "email",
+        "hashed_password",
+        "full_name",
+        "created_at"
+      ]
+    },
+    {
+      "name": "Task",
+      "fields": [
+        "id",
+        "user_id",
+        "title",
+        "description",
+        "due_date",
+        "priority",
+        "completed",
+        "tag_id",
+        "created_at"
+      ]
+    },
+    {
+      "name": "Tag",
+      "fields": [
+        "id",
+        "user_id",
+        "name",
+        "color"
+      ]
+    }
+  ],
+  "api_modules": [
+    {
+      "name": "User",
+      "endpoints": [
+        "/users",
+        "/users/{id}",
+        "/users/me"
+      ]
+    },
+    {
+      "name": "Task",
+      "endpoints": [
+        "/tasks",
+        "/tasks/{id}",
+        "/tasks?tag={tag_id}"
+      ]
+    },
+    {
+      "name": "Tag",
+      "endpoints": [
+        "/tags",
+        "/tags/{id}"
+      ]
+    }
+  ],
+  "pages": [
+    "Login",
+    "Register",
+    "Dashboard",
+    "Task Detail / Edit",
+    "Tag Management"
+  ],
+  "backend_modules": [
+    "Authentication",
+    "User Management",
+    "Task Management",
+    "Tag Management",
+    "Notification Service"
+  ],
+  "roadmap": [
+    {
+      "phase": "MVP",
+      "milestones": [
+        "Implement user authentication",
+        "Build task CRUD API",
+        "Create tag CRUD API",
+        "Develop React UI for dashboard and task editing",
+        "Integrate SQLite persistence"
+      ]
+    },
+    {
+      "phase": "Feature Expansion",
+      "milestones": [
+        "Add priority sorting and due\u2011date reminders",
+        "Implement tag color customization",
+        "Introduce shared task lists (future feature)",
+        "Add calendar view integration"
+      ]
+    },
+    {
+      "phase": "Scaling & AI",
+      "milestones": [
+        "Optimize database queries and indexing",
+        "Deploy AI\u2011driven task suggestion engine",
+        "Add offline sync and mobile PWA support"
+      ]
+    }
+  ]
+}

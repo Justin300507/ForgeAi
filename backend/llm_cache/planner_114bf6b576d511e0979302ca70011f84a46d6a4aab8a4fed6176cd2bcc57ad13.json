@@ -1,0 +1,128 @@
+{
+  "project_name": "Personal Finance Tracker",
+  "description": "A web application that lets users manage multiple financial accounts, record transactions, categorize expenses, and view budget insights through a clean dashboard.",
+  "target_users": [
+    "Individuals managing personal finances",
+    "Young professionals",
+    "Families tracking household expenses"
+  ],
+  "core_features": [
+    "Account management",
+    "Transaction recording",
+    "Budget categorization",
+    "Dashboard overview",
+    "Expense reports"
+  ],
+  "future_features": [
+    "Bill payment reminders",
+    "Multi-currency support",
+    "AI-powered expense classification"
+  ],
+  "tech_stack": [
+    "FastAPI",
+    "React",
+    "SQLite"
+  ],
+  "database_entities": [
+    {
+      "name": "User",
+      "fields": [
+        "id",
+        "email",
+        "password_hash",
+        "full_name",
+        "created_at"
+      ]
+    },
+    {
+      "name": "Account",
+      "fields": [
+        "id",
+        "user_id",
+        "name",
+        "type",
+        "balance",
+        "created_at"
+      ]
+    },
+    {
+      "name": "Transaction",
+      "fields": [
+        "id",
+        "account_id",
+        "date",
+        "amount",
+        "description",
+        "category",
+        "transaction_type",
+        "created_at"
+      ]
+    }
+  ],
+  "api_modules": [
+    {
+      "name": "User",
+      "endpoints": [
+        "/users",
+        "/users/{id}"
+      ]
+    },
+    {
+      "name": "Account",
+      "endpoints": [
+        "/accounts",
+        "/accounts/{id}"
+      ]
+    },
+    {
+      "name": "Transaction",
+      "endpoints": [
+        "/transactions",
+        "/transactions/{id}"
+      ]
+    }
+  ],
+  "pages": [
+    "Login",
+    "Dashboard",
+    "Accounts",
+    "Transactions",
+    "Budget"
+  ],
+  "backend_modules": [
+    "Authentication",
+    "User Management",
+    "Account Management",
+    "Transaction Management",
+    "Reporting"
+  ],
+  "roadmap": [
+    {
+      "phase": "MVP",
+      "milestones": [
+        "User registration and login",
+        "Create and view accounts",
+        "Record and list transactions",
+        "Basic budget categories per transaction",
+        "Dashboard with balance summary"
+      ]
+    },
+    {
+      "phase": "Feature Expansion",
+      "milestones": [
+        "Editable budget categories and monthly limits",
+        "Expense reports with filters",
+        "Export data to CSV",
+        "Responsive UI improvements"
+      ]
+    },
+    {
+      "phase": "Future Enhancements",
+      "milestones": [
+        "Bill reminder notifications",
+        "Multi-currency handling",
+        "AI-driven expense classification"
+      ]
+    }
+  ]
+}

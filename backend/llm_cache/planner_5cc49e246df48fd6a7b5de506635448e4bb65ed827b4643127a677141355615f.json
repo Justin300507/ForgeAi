@@ -1,0 +1,136 @@
+{
+  "project_name": "LinguaBoost",
+  "description": "A mobile-friendly web app that helps language learners build and practice vocabulary through customizable sets, interactive exercises, and streak tracking to encourage daily study.",
+  "target_users": [
+    "Beginner language learners",
+    "Intermediate learners seeking structured practice",
+    "Casual learners who enjoy gamified study"
+  ],
+  "core_features": [
+    "Create and browse vocabulary sets",
+    "Interactive exercises (multiple\u2011choice, fill\u2011in\u2011the\u2011blank, matching)",
+    "Daily streak tracking with visual rewards",
+    "Push/email reminders for daily practice",
+    "User profile with language preferences and progress stats"
+  ],
+  "future_features": [
+    "Speech recognition for pronunciation feedback",
+    "Social sharing of streaks and achievements",
+    "AI\u2011driven personalized word recommendations"
+  ],
+  "tech_stack": [
+    "FastAPI",
+    "React",
+    "SQLite"
+  ],
+  "database_entities": [
+    {
+      "name": "User",
+      "fields": [
+        "id",
+        "email",
+        "password_hash",
+        "display_name",
+        "native_language",
+        "target_language",
+        "streak_count",
+        "last_practice_date",
+        "created_at"
+      ]
+    },
+    {
+      "name": "VocabularySet",
+      "fields": [
+        "id",
+        "name",
+        "language",
+        "level",
+        "description",
+        "owner_id",
+        "created_at"
+      ]
+    },
+    {
+      "name": "Exercise",
+      "fields": [
+        "id",
+        "set_id",
+        "type",
+        "question",
+        "answer",
+        "options",
+        "created_at"
+      ]
+    }
+  ],
+  "api_modules": [
+    {
+      "name": "User",
+      "endpoints": [
+        "/users",
+        "/users/{id}",
+        "/users/me",
+        "/users/{id}/streak"
+      ]
+    },
+    {
+      "name": "VocabularySet",
+      "endpoints": [
+        "/sets",
+        "/sets/{id}",
+        "/sets/{id}/exercises"
+      ]
+    },
+    {
+      "name": "Exercise",
+      "endpoints": [
+        "/exercises",
+        "/exercises/{id}",
+        "/exercises/{id}/submit"
+      ]
+    }
+  ],
+  "pages": [
+    "Login",
+    "Register",
+    "Dashboard",
+    "Vocabulary Sets",
+    "Exercise Session"
+  ],
+  "backend_modules": [
+    "Authentication",
+    "User Management",
+    "Vocabulary Management",
+    "Exercise Management",
+    "Streak Tracking"
+  ],
+  "roadmap": [
+    {
+      "phase": "Phase 1 \u2013 MVP",
+      "milestones": [
+        "Implement user registration & login",
+        "Create vocabulary set CRUD",
+        "Build basic exercise engine",
+        "Add streak calculation and display",
+        "Deploy initial React frontend"
+      ]
+    },
+    {
+      "phase": "Phase 2 \u2013 Engagement",
+      "milestones": [
+        "Introduce daily reminder notifications",
+        "Add progress analytics on dashboard",
+        "Enable set sharing between users",
+        "Implement offline support with service workers"
+      ]
+    },
+    {
+      "phase": "Phase 3 \u2013 Advanced AI",
+      "milestones": [
+        "Integrate speech recognition for pronunciation",
+        "Develop AI\u2011driven word recommendation engine",
+        "Launch social sharing of achievements"
+      ]
+    }
+  ]
+}

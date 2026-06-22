@@ -1,0 +1,126 @@
+{
+  "project_name": "Warehouse Management System",
+  "description": "A web application to manage warehouse locations, bins, and pick\u2011and\u2011pack orders, providing inventory visibility and streamlined fulfillment.",
+  "target_users": [
+    "Warehouse staff",
+    "Inventory managers",
+    "Fulfillment supervisors"
+  ],
+  "core_features": [
+    "Create, edit, and view warehouse locations",
+    "Define and manage bins within each location",
+    "Track inventory quantity per bin",
+    "Create and process pick\u2011and\u2011pack orders",
+    "Generate pick lists for order fulfillment"
+  ],
+  "future_features": [
+    "Integration with barcode scanners for fast picking",
+    "Real\u2011time inventory updates via WebSocket",
+    "Analytics dashboard showing order throughput and bin utilization"
+  ],
+  "tech_stack": [
+    "FastAPI",
+    "React",
+    "SQLite"
+  ],
+  "database_entities": [
+    {
+      "name": "Location",
+      "fields": [
+        "id",
+        "name",
+        "address",
+        "city",
+        "state",
+        "zip_code"
+      ]
+    },
+    {
+      "name": "Bin",
+      "fields": [
+        "id",
+        "location_id",
+        "code",
+        "capacity",
+        "current_quantity"
+      ]
+    },
+    {
+      "name": "Order",
+      "fields": [
+        "id",
+        "order_number",
+        "status",
+        "created_at",
+        "updated_at",
+        "order_items"
+      ]
+    }
+  ],
+  "api_modules": [
+    {
+      "name": "Location",
+      "endpoints": [
+        "/locations",
+        "/locations/{id}"
+      ]
+    },
+    {
+      "name": "Bin",
+      "endpoints": [
+        "/bins",
+        "/bins/{id}"
+      ]
+    },
+    {
+      "name": "Order",
+      "endpoints": [
+        "/orders",
+        "/orders/{id}"
+      ]
+    }
+  ],
+  "pages": [
+    "Login",
+    "Dashboard",
+    "Locations Management",
+    "Bins Management",
+    "Orders (Pick & Pack)"
+  ],
+  "backend_modules": [
+    "Authentication",
+    "Location Management",
+    "Bin Management",
+    "Order Management",
+    "Reporting"
+  ],
+  "roadmap": [
+    {
+      "phase": "Phase 1: MVP Development",
+      "milestones": [
+        "Initialize repository and project scaffolding",
+        "Implement user authentication",
+        "Develop Location CRUD API and UI",
+        "Develop Bin CRUD API and UI",
+        "Develop Order CRUD API and UI",
+        "Basic pick list generation for orders"
+      ]
+    },
+    {
+      "phase": "Phase 2: Enhanced Functionality",
+      "milestones": [
+        "Add inventory level tracking per bin",
+        "Implement order status workflow (pending, picking, packed, shipped)",
+        "Create reporting module for order and inventory summaries"
+      ]
+    },
+    {
+      "phase": "Phase 3: Future Enhancements",
+      "milestones": [
+        "Integrate barcode scanner support",
+        "Enable real\u2011time inventory updates via WebSocket",
+        "Build advanced analytics dashboard"
+      ]
+    }
+  ]
+}

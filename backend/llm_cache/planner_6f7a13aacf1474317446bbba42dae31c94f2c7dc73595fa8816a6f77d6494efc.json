@@ -1,0 +1,132 @@
+{
+  "project_name": "Event Booking Platform",
+  "description": "A web application that enables organizers to list events and attendees to browse, register, and manage their tickets.",
+  "target_users": [
+    "Event Organizers",
+    "Attendees",
+    "System Administrators"
+  ],
+  "core_features": [
+    "Organizer can create, edit, and publish events",
+    "Attendees can browse events and register",
+    "Ticket purchase and personal ticket management",
+    "User authentication with role-based access",
+    "Organizer dashboard showing registration statistics"
+  ],
+  "future_features": [
+    "Integration with payment gateways for online payments",
+    "Waitlist functionality with automatic notifications",
+    "Advanced analytics and reporting for organizers"
+  ],
+  "tech_stack": [
+    "FastAPI",
+    "React",
+    "SQLite"
+  ],
+  "database_entities": [
+    {
+      "name": "User",
+      "fields": [
+        "id",
+        "name",
+        "email",
+        "password_hash",
+        "role",
+        "created_at"
+      ]
+    },
+    {
+      "name": "Event",
+      "fields": [
+        "id",
+        "title",
+        "description",
+        "location",
+        "start_time",
+        "end_time",
+        "capacity",
+        "organizer_id",
+        "created_at",
+        "updated_at"
+      ]
+    },
+    {
+      "name": "Ticket",
+      "fields": [
+        "id",
+        "event_id",
+        "user_id",
+        "status",
+        "purchased_at",
+        "ticket_code"
+      ]
+    }
+  ],
+  "api_modules": [
+    {
+      "name": "User",
+      "endpoints": [
+        "/users",
+        "/users/{id}"
+      ]
+    },
+    {
+      "name": "Event",
+      "endpoints": [
+        "/events",
+        "/events/{id}"
+      ]
+    },
+    {
+      "name": "Ticket",
+      "endpoints": [
+        "/tickets",
+        "/tickets/{id}"
+      ]
+    }
+  ],
+  "pages": [
+    "Login",
+    "Organizer Dashboard",
+    "Event Catalog",
+    "Event Detail",
+    "Ticket Management"
+  ],
+  "backend_modules": [
+    "Authentication",
+    "User Management",
+    "Event Management",
+    "Ticket Management",
+    "Dashboard Reporting"
+  ],
+  "roadmap": [
+    {
+      "phase": "MVP Launch",
+      "milestones": [
+        "Set up project repository and CI",
+        "Implement authentication and user roles",
+        "Develop event CRUD APIs",
+        "Create ticket registration flow",
+        "Build core frontend pages"
+      ]
+    },
+    {
+      "phase": "Payment & Waitlist",
+      "milestones": [
+        "Integrate Stripe payment gateway",
+        "Add waitlist feature for full events",
+        "Implement email notifications",
+        "Enhance organizer dashboard with revenue data"
+      ]
+    },
+    {
+      "phase": "Analytics & Scaling",
+      "milestones": [
+        "Develop advanced analytics reports",
+        "Add export of registration data",
+        "Implement role-based admin panel",
+        "Optimize performance and add load testing"
+      ]
+    }
+  ]
+}

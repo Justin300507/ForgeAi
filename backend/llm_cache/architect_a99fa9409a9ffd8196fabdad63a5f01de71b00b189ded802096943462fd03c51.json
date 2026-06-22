@@ -1,0 +1,383 @@
+{
+  "api_endpoints": [
+    {
+      "method": "GET",
+      "path": "/merchants",
+      "description": "Retrieve list of all merchants",
+      "file": "app/routes/merchant_routes.py"
+    },
+    {
+      "method": "GET",
+      "path": "/merchants/{id}",
+      "description": "Retrieve details of a specific merchant",
+      "file": "app/routes/merchant_routes.py"
+    },
+    {
+      "method": "POST",
+      "path": "/merchants",
+      "description": "Create a new merchant (admin)",
+      "file": "app/routes/merchant_routes.py"
+    },
+    {
+      "method": "PUT",
+      "path": "/merchants/{id}",
+      "description": "Update an existing merchant (admin)",
+      "file": "app/routes/merchant_routes.py"
+    },
+    {
+      "method": "GET",
+      "path": "/deals",
+      "description": "Retrieve list of deals with optional filters (category, location, discount range, active status)",
+      "file": "app/routes/deal_routes.py"
+    },
+    {
+      "method": "GET",
+      "path": "/deals/{id}",
+      "description": "Retrieve detailed information for a specific deal",
+      "file": "app/routes/deal_routes.py"
+    },
+    {
+      "method": "POST",
+      "path": "/deals",
+      "description": "Create a new deal (admin)",
+      "file": "app/routes/deal_routes.py"
+    },
+    {
+      "method": "PUT",
+      "path": "/deals/{id}",
+      "description": "Update an existing deal (admin)",
+      "file": "app/routes/deal_routes.py"
+    },
+    {
+      "method": "GET",
+      "path": "/categories",
+      "description": "Retrieve list of deal categories",
+      "file": "app/routes/category_routes.py"
+    },
+    {
+      "method": "POST",
+      "path": "/categories",
+      "description": "Create a new category (admin)",
+      "file": "app/routes/category_routes.py"
+    },
+    {
+      "method": "PUT",
+      "path": "/categories/{id}",
+      "description": "Update an existing category (admin)",
+      "file": "app/routes/category_routes.py"
+    },
+    {
+      "method": "POST",
+      "path": "/auth",
+      "description": "User login or registration based on payload",
+      "file": "app/routes/auth_routes.py"
+    },
+    {
+      "method": "GET",
+      "path": "/users/me/favorites",
+      "description": "Get list of deals saved by the authenticated user",
+      "file": "app/routes/favorite_routes.py"
+    },
+    {
+      "method": "POST",
+      "path": "/users/me/favorites",
+      "description": "Add a deal to the authenticated user's favorites",
+      "file": "app/routes/favorite_routes.py"
+    },
+    {
+      "method": "DELETE",
+      "path": "/users/me/favorites/{deal_id}",
+      "description": "Remove a deal from the authenticated user's favorites",
+      "file": "app/routes/favorite_routes.py"
+    }
+  ],
+  "database_schema": [
+    {
+      "table_name": "merchants",
+      "columns": [
+        {
+          "name": "id",
+          "type": "INTEGER",
+          "is_primary_key": true,
+          "is_nullable": false
+        },
+        {
+          "name": "name",
+          "type": "TEXT",
+          "is_primary_key": false,
+          "is_nullable": false
+        },
+        {
+          "name": "website_url",
+          "type": "TEXT",
+          "is_primary_key": false,
+          "is_nullable": true
+        },
+        {
+          "name": "logo_url",
+          "type": "TEXT",
+          "is_primary_key": false,
+          "is_nullable": true
+        },
+        {
+          "name": "description",
+          "type": "TEXT",
+          "is_primary_key": false,
+          "is_nullable": true
+        },
+        {
+          "name": "location",
+          "type": "TEXT",
+          "is_primary_key": false,
+          "is_nullable": true
+        },
+        {
+          "name": "created_at",
+          "type": "DATETIME",
+          "is_primary_key": false,
+          "is_nullable": false
+        },
+        {
+          "name": "updated_at",
+          "type": "DATETIME",
+          "is_primary_key": false,
+          "is_nullable": false
+        }
+      ]
+    },
+    {
+      "table_name": "categories",
+      "columns": [
+        {
+          "name": "id",
+          "type": "INTEGER",
+          "is_primary_key": true,
+          "is_nullable": false
+        },
+        {
+          "name": "name",
+          "type": "TEXT",
+          "is_primary_key": false,
+          "is_nullable": false
+        },
+        {
+          "name": "description",
+          "type": "TEXT",
+          "is_primary_key": false,
+          "is_nullable": true
+        },
+        {
+          "name": "created_at",
+          "type": "DATETIME",
+          "is_primary_key": false,
+          "is_nullable": false
+        },
+        {
+          "name": "updated_at",
+          "type": "DATETIME",
+          "is_primary_key": false,
+          "is_nullable": false
+        }
+      ]
+    },
+    {
+      "table_name": "deals",
+      "columns": [
+        {
+          "name": "id",
+          "type": "INTEGER",
+          "is_primary_key": true,
+          "is_nullable": false
+        },
+        {
+          "name": "title",
+          "type": "TEXT",
+          "is_primary_key": false,
+          "is_nullable": false
+        },
+        {
+          "name": "description",
+          "type": "TEXT",
+          "is_primary_key": false,
+          "is_nullable": true
+        },
+        {
+          "name": "discount_percent",
+          "type": "REAL",
+          "is_primary_key": false,
+          "is_nullable": true
+        },
+        {
+          "name": "coupon_code",
+          "type": "TEXT",
+          "is_primary_key": false,
+          "is_nullable": true
+        },
+        {
+          "name": "expiry_date",
+          "type": "DATE",
+          "is_primary_key": false,
+          "is_nullable": true
+        },
+        {
+          "name": "url",
+          "type": "TEXT",
+          "is_primary_key": false,
+          "is_nullable": false
+        },
+        {
+          "name": "is_active",
+          "type": "BOOLEAN",
+          "is_primary_key": false,
+          "is_nullable": false
+        },
+        {
+          "name": "merchant_id",
+          "type": "INTEGER",
+          "is_primary_key": false,
+          "is_nullable": false
+        },
+        {
+          "name": "category_id",
+          "type": "INTEGER",
+          "is_primary_key": false,
+          "is_nullable": false
+        },
+        {
+          "name": "created_at",
+          "type": "DATETIME",
+          "is_primary_key": false,
+          "is_nullable": false
+        },
+        {
+          "name": "updated_at",
+          "type": "DATETIME",
+          "is_primary_key": false,
+          "is_nullable": false
+        }
+      ]
+    },
+    {
+      "table_name": "users",
+      "columns": [
+        {
+          "name": "id",
+          "type": "INTEGER",
+          "is_primary_key": true,
+          "is_nullable": false
+        },
+        {
+          "name": "email",
+          "type": "TEXT",
+          "is_primary_key": false,
+          "is_nullable": false
+        },
+        {
+          "name": "hashed_password",
+          "type": "TEXT",
+          "is_primary_key": false,
+          "is_nullable": false
+        },
+        {
+          "name": "full_name",
+          "type": "TEXT",
+          "is_primary_key": false,
+          "is_nullable": true
+        },
+        {
+          "name": "is_active",
+          "type": "BOOLEAN",
+          "is_primary_key": false,
+          "is_nullable": false
+        },
+        {
+          "name": "is_admin",
+          "type": "BOOLEAN",
+          "is_primary_key": false,
+          "is_nullable": false
+        },
+        {
+          "name": "created_at",
+          "type": "DATETIME",
+          "is_primary_key": false,
+          "is_nullable": false
+        },
+        {
+          "name": "updated_at",
+          "type": "DATETIME",
+          "is_primary_key": false,
+          "is_nullable": false
+        }
+      ]
+    },
+    {
+      "table_name": "favorites",
+      "columns": [
+        {
+          "name": "id",
+          "type": "INTEGER",
+          "is_primary_key": true,
+          "is_nullable": false
+        },
+        {
+          "name": "user_id",
+          "type": "INTEGER",
+          "is_primary_key": false,
+          "is_nullable": false
+        },
+        {
+          "name": "deal_id",
+          "type": "INTEGER",
+          "is_primary_key": false,
+          "is_nullable": false
+        },
+        {
+          "name": "created_at",
+          "type": "DATETIME",
+          "is_primary_key": false,
+          "is_nullable": false
+        }
+      ]
+    }
+  ],
+  "folder_structure": {
+    "backend": [
+      "app",
+      "app/models",
+      "app/schemas",
+      "app/routes",
+      "app/services",
+      "app/utils",
+      "app/config",
+      "app/dependencies",
+      "tests"
+    ]
+  },
+  "frontend_structure": {
+    "pages": [
+      "Home",
+      "DealDetail",
+      "CategoryView",
+      "MerchantProfile",
+      "AdminDashboard",
+      "AuthPage"
+    ],
+    "components": [
+      "Navbar",
+      "Footer",
+      "DealCard",
+      "DealList",
+      "SearchBar",
+      "CategoryFilter",
+      "CouponCopyButton",
+      "FavoriteButton",
+      "Pagination",
+      "AdminDealForm",
+      "AdminMerchantForm",
+      "AdminCategoryForm",
+      "UserProfile",
+      "LoadingSpinner",
+      "ErrorAlert"
+    ]
+  }
+}

@@ -1,0 +1,132 @@
+{
+  "project_name": "Marketplace Hub",
+  "description": "A web marketplace where sellers can list products and buyers can browse listings, purchase items, and leave reviews.",
+  "target_users": [
+    "Individual Buyers",
+    "Independent Sellers",
+    "Marketplace Administrators"
+  ],
+  "core_features": [
+    "User registration and authentication",
+    "Seller product listing creation and management",
+    "Product catalog browsing with category filters",
+    "Buyer review submission and rating for products",
+    "Seller profile pages displaying their listings"
+  ],
+  "future_features": [
+    "Integrated order and payment processing",
+    "In-app messaging between buyers and sellers",
+    "Admin dashboard for moderation and analytics"
+  ],
+  "tech_stack": [
+    "FastAPI",
+    "React",
+    "SQLite"
+  ],
+  "database_entities": [
+    {
+      "name": "User",
+      "fields": [
+        "id",
+        "username",
+        "email",
+        "password_hash",
+        "role",
+        "created_at"
+      ]
+    },
+    {
+      "name": "Product",
+      "fields": [
+        "id",
+        "seller_id",
+        "title",
+        "description",
+        "price",
+        "image_url",
+        "category",
+        "created_at"
+      ]
+    },
+    {
+      "name": "Review",
+      "fields": [
+        "id",
+        "product_id",
+        "buyer_id",
+        "rating",
+        "comment",
+        "created_at"
+      ]
+    }
+  ],
+  "api_modules": [
+    {
+      "name": "User",
+      "endpoints": [
+        "/users",
+        "/users/{id}",
+        "/auth/login",
+        "/auth/register"
+      ]
+    },
+    {
+      "name": "Product",
+      "endpoints": [
+        "/products",
+        "/products/{id}",
+        "/products/{id}/reviews"
+      ]
+    },
+    {
+      "name": "Review",
+      "endpoints": [
+        "/reviews",
+        "/reviews/{id}"
+      ]
+    }
+  ],
+  "pages": [
+    "Home (Product Catalog)",
+    "Product Detail",
+    "Seller Dashboard",
+    "Login / Register",
+    "Review Submission"
+  ],
+  "backend_modules": [
+    "Authentication",
+    "User Management",
+    "Product Management",
+    "Review Management",
+    "Search & Filtering"
+  ],
+  "roadmap": [
+    {
+      "phase": "MVP Development",
+      "milestones": [
+        "Project scaffolding with FastAPI and React",
+        "Implement authentication (login/register)",
+        "Create product CRUD APIs",
+        "Create review APIs",
+        "Build core UI pages (home, product detail, login)"
+      ]
+    },
+    {
+      "phase": "Feature Enhancement",
+      "milestones": [
+        "Add category and price filters to product catalog",
+        "Develop seller dashboard for listing management",
+        "Integrate review display on product pages",
+        "Improve UI/UX and responsive design"
+      ]
+    },
+    {
+      "phase": "Future Expansion",
+      "milestones": [
+        "Implement order and payment workflow",
+        "Add messaging system between buyers and sellers",
+        "Develop admin moderation dashboard"
+      ]
+    }
+  ]
+}

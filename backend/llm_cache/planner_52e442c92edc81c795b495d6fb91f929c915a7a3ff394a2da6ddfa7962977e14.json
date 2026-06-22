@@ -1,0 +1,140 @@
+{
+  "project_name": "MeetSync Scheduler",
+  "description": "A web-based meeting scheduler that lets participants propose and vote on time slots, integrates with external calendars, and streamlines meeting coordination.",
+  "target_users": [
+    "Remote teams",
+    "Project managers",
+    "Small businesses",
+    "Freelancers"
+  ],
+  "core_features": [
+    "User registration and secure login",
+    "Create, edit, and cancel meetings",
+    "Invite participants and collect availability",
+    "Automatic detection of common free time slots",
+    "Two-way sync with Google Calendar and Outlook"
+  ],
+  "future_features": [
+    "Recurring meeting patterns",
+    "AI-powered meeting time suggestions",
+    "Mobile push notifications for reminders"
+  ],
+  "tech_stack": [
+    "FastAPI",
+    "React",
+    "SQLite"
+  ],
+  "database_entities": [
+    {
+      "name": "User",
+      "fields": [
+        "id",
+        "email",
+        "name",
+        "password_hash",
+        "timezone",
+        "created_at"
+      ]
+    },
+    {
+      "name": "Meeting",
+      "fields": [
+        "id",
+        "title",
+        "description",
+        "organizer_id",
+        "start_time",
+        "end_time",
+        "location",
+        "status",
+        "created_at"
+      ]
+    },
+    {
+      "name": "CalendarIntegration",
+      "fields": [
+        "id",
+        "user_id",
+        "provider",
+        "access_token",
+        "refresh_token",
+        "token_expiry",
+        "created_at"
+      ]
+    }
+  ],
+  "api_modules": [
+    {
+      "name": "User",
+      "endpoints": [
+        "/users",
+        "/users/{id}",
+        "/users/me",
+        "/users/{id}/meetings"
+      ]
+    },
+    {
+      "name": "Meeting",
+      "endpoints": [
+        "/meetings",
+        "/meetings/{id}",
+        "/meetings/{id}/participants",
+        "/meetings/{id}/availability"
+      ]
+    },
+    {
+      "name": "CalendarIntegration",
+      "endpoints": [
+        "/integrations",
+        "/integrations/{id}",
+        "/integrations/{id}/sync"
+      ]
+    }
+  ],
+  "pages": [
+    "Login",
+    "Dashboard",
+    "Schedule Meeting",
+    "Meeting Details",
+    "Calendar Settings"
+  ],
+  "backend_modules": [
+    "Authentication",
+    "User Management",
+    "Meeting Management",
+    "Calendar Integration",
+    "Notification Service"
+  ],
+  "roadmap": [
+    {
+      "phase": "MVP Development",
+      "milestones": [
+        "Project scaffolding with FastAPI and React",
+        "Implement JWT-based authentication",
+        "Develop Meeting CRUD API",
+        "Integrate Google Calendar sync",
+        "Build basic UI for login and dashboard"
+      ]
+    },
+    {
+      "phase": "Availability & Collaboration",
+      "milestones": [
+        "Create Participant and availability endpoints",
+        "Implement time slot voting algorithm",
+        "Add email invitation and reminder service",
+        "Enhance UI for meeting creation with participant selection",
+        "Support Outlook calendar sync"
+      ]
+    },
+    {
+      "phase": "Advanced Features & Polish",
+      "milestones": [
+        "Add recurring meeting support",
+        "Integrate AI suggestion engine for optimal times",
+        "Implement mobile push notification service",
+        "Responsive redesign for mobile devices",
+        "Deploy to production and monitor"
+      ]
+    }
+  ]
+}

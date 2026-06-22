@@ -1,0 +1,273 @@
+{
+  "api_endpoints": [
+    {
+      "method": "POST",
+      "path": "/auth/login",
+      "description": "Authenticate user and return JWT token",
+      "file": "app/routes/auth_routes.py"
+    },
+    {
+      "method": "POST",
+      "path": "/auth/register",
+      "description": "Register a new user with role assignment",
+      "file": "app/routes/auth_routes.py"
+    },
+    {
+      "method": "GET",
+      "path": "/users",
+      "description": "Retrieve list of all users (admin view)",
+      "file": "app/routes/user_routes.py"
+    },
+    {
+      "method": "GET",
+      "path": "/users/{id}",
+      "description": "Retrieve details of a specific user",
+      "file": "app/routes/user_routes.py"
+    },
+    {
+      "method": "GET",
+      "path": "/events",
+      "description": "List all upcoming events for browsing",
+      "file": "app/routes/event_routes.py"
+    },
+    {
+      "method": "GET",
+      "path": "/events/{id}",
+      "description": "Get detailed information of a specific event",
+      "file": "app/routes/event_routes.py"
+    },
+    {
+      "method": "POST",
+      "path": "/events",
+      "description": "Create a new event (organizer only)",
+      "file": "app/routes/event_routes.py"
+    },
+    {
+      "method": "PUT",
+      "path": "/events/{id}",
+      "description": "Update an existing event (organizer only)",
+      "file": "app/routes/event_routes.py"
+    },
+    {
+      "method": "DELETE",
+      "path": "/events/{id}",
+      "description": "Delete an event (organizer only)",
+      "file": "app/routes/event_routes.py"
+    },
+    {
+      "method": "POST",
+      "path": "/events/{id}/register",
+      "description": "Register the authenticated attendee for the event and issue a ticket",
+      "file": "app/routes/event_routes.py"
+    },
+    {
+      "method": "GET",
+      "path": "/tickets",
+      "description": "List tickets belonging to the authenticated user",
+      "file": "app/routes/ticket_routes.py"
+    },
+    {
+      "method": "GET",
+      "path": "/tickets/{id}",
+      "description": "Retrieve details of a specific ticket",
+      "file": "app/routes/ticket_routes.py"
+    },
+    {
+      "method": "DELETE",
+      "path": "/tickets/{id}",
+      "description": "Cancel a ticket (if allowed by event policy)",
+      "file": "app/routes/ticket_routes.py"
+    },
+    {
+      "method": "GET",
+      "path": "/dashboard/organizer",
+      "description": "Provide registration statistics for events owned by the organizer",
+      "file": "app/routes/dashboard_routes.py"
+    }
+  ],
+  "database_schema": [
+    {
+      "table_name": "users",
+      "columns": [
+        {
+          "name": "id",
+          "type": "INTEGER",
+          "is_primary_key": true,
+          "is_nullable": false
+        },
+        {
+          "name": "name",
+          "type": "TEXT",
+          "is_primary_key": false,
+          "is_nullable": false
+        },
+        {
+          "name": "email",
+          "type": "TEXT",
+          "is_primary_key": false,
+          "is_nullable": false
+        },
+        {
+          "name": "password_hash",
+          "type": "TEXT",
+          "is_primary_key": false,
+          "is_nullable": false
+        },
+        {
+          "name": "role",
+          "type": "TEXT",
+          "is_primary_key": false,
+          "is_nullable": false
+        },
+        {
+          "name": "created_at",
+          "type": "DATETIME",
+          "is_primary_key": false,
+          "is_nullable": false
+        }
+      ]
+    },
+    {
+      "table_name": "events",
+      "columns": [
+        {
+          "name": "id",
+          "type": "INTEGER",
+          "is_primary_key": true,
+          "is_nullable": false
+        },
+        {
+          "name": "title",
+          "type": "TEXT",
+          "is_primary_key": false,
+          "is_nullable": false
+        },
+        {
+          "name": "description",
+          "type": "TEXT",
+          "is_primary_key": false,
+          "is_nullable": true
+        },
+        {
+          "name": "location",
+          "type": "TEXT",
+          "is_primary_key": false,
+          "is_nullable": false
+        },
+        {
+          "name": "start_time",
+          "type": "DATETIME",
+          "is_primary_key": false,
+          "is_nullable": false
+        },
+        {
+          "name": "end_time",
+          "type": "DATETIME",
+          "is_primary_key": false,
+          "is_nullable": false
+        },
+        {
+          "name": "capacity",
+          "type": "INTEGER",
+          "is_primary_key": false,
+          "is_nullable": false
+        },
+        {
+          "name": "organizer_id",
+          "type": "INTEGER",
+          "is_primary_key": false,
+          "is_nullable": false
+        },
+        {
+          "name": "created_at",
+          "type": "DATETIME",
+          "is_primary_key": false,
+          "is_nullable": false
+        },
+        {
+          "name": "updated_at",
+          "type": "DATETIME",
+          "is_primary_key": false,
+          "is_nullable": false
+        }
+      ]
+    },
+    {
+      "table_name": "tickets",
+      "columns": [
+        {
+          "name": "id",
+          "type": "INTEGER",
+          "is_primary_key": true,
+          "is_nullable": false
+        },
+        {
+          "name": "event_id",
+          "type": "INTEGER",
+          "is_primary_key": false,
+          "is_nullable": false
+        },
+        {
+          "name": "user_id",
+          "type": "INTEGER",
+          "is_primary_key": false,
+          "is_nullable": false
+        },
+        {
+          "name": "status",
+          "type": "TEXT",
+          "is_primary_key": false,
+          "is_nullable": false
+        },
+        {
+          "name": "purchased_at",
+          "type": "DATETIME",
+          "is_primary_key": false,
+          "is_nullable": false
+        },
+        {
+          "name": "ticket_code",
+          "type": "TEXT",
+          "is_primary_key": false,
+          "is_nullable": false
+        }
+      ]
+    }
+  ],
+  "folder_structure": {
+    "backend": [
+      "app/models",
+      "app/schemas",
+      "app/services",
+      "app/routes",
+      "app/utils",
+      "app/config"
+    ]
+  },
+  "frontend_structure": {
+    "pages": [
+      "Login",
+      "Organizer Dashboard",
+      "Event Catalog",
+      "Event Detail",
+      "Ticket Management"
+    ],
+    "components": [
+      "Header",
+      "Footer",
+      "EventCard",
+      "EventList",
+      "EventForm",
+      "TicketList",
+      "TicketItem",
+      "LoginForm",
+      "DashboardStats",
+      "Pagination",
+      "SearchBar",
+      "UserMenu",
+      "Modal",
+      "Notification",
+      "LoadingSpinner"
+    ]
+  }
+}

@@ -1,0 +1,135 @@
+{
+  "project_name": "EventPulse",
+  "description": "A web-based event management platform that enables organizers to create events, sell tickets, track attendees, and perform on-site check\u2011in via QR codes.",
+  "target_users": [
+    "Event Organizers",
+    "Attendees",
+    "Venue Staff"
+  ],
+  "core_features": [
+    "Create, edit, and delete events",
+    "Define multiple ticket types per event",
+    "Online ticket purchase and attendee registration",
+    "QR code based check\u2011in for attendees",
+    "Dashboard showing ticket sales and attendance statistics"
+  ],
+  "future_features": [
+    "Waitlist management for sold\u2011out events",
+    "Dynamic pricing based on demand",
+    "Integration with external calendar services"
+  ],
+  "tech_stack": [
+    "FastAPI",
+    "React",
+    "SQLite",
+    "Pydantic",
+    "SQLAlchemy"
+  ],
+  "database_entities": [
+    {
+      "name": "Event",
+      "fields": [
+        "id",
+        "name",
+        "description",
+        "location",
+        "start_time",
+        "end_time",
+        "capacity"
+      ]
+    },
+    {
+      "name": "Ticket",
+      "fields": [
+        "id",
+        "event_id",
+        "type",
+        "price",
+        "quantity_available",
+        "sold_quantity"
+      ]
+    },
+    {
+      "name": "Attendee",
+      "fields": [
+        "id",
+        "ticket_id",
+        "name",
+        "email",
+        "check_in_status",
+        "check_in_time"
+      ]
+    }
+  ],
+  "api_modules": [
+    {
+      "name": "Event",
+      "endpoints": [
+        "/events",
+        "/events/{event_id}",
+        "/events/{event_id}/tickets"
+      ]
+    },
+    {
+      "name": "Ticket",
+      "endpoints": [
+        "/tickets",
+        "/tickets/{ticket_id}",
+        "/events/{event_id}/tickets"
+      ]
+    },
+    {
+      "name": "Attendee",
+      "endpoints": [
+        "/attendees",
+        "/attendees/{attendee_id}",
+        "/tickets/{ticket_id}/attendees",
+        "/checkin/{attendee_id}"
+      ]
+    }
+  ],
+  "pages": [
+    "Login",
+    "Organizer Dashboard",
+    "Event Detail & Ticket Purchase",
+    "Attendee Check\u2011In",
+    "Admin Panel"
+  ],
+  "backend_modules": [
+    "Authentication",
+    "Event Management",
+    "Ticket Management",
+    "Attendee Management",
+    "Check\u2011In Service"
+  ],
+  "roadmap": [
+    {
+      "phase": "MVP Launch",
+      "milestones": [
+        "Implement user authentication",
+        "Event CRUD operations",
+        "Ticket CRUD operations",
+        "Attendee registration and ticket purchase",
+        "QR code generation and check\u2011in workflow"
+      ]
+    },
+    {
+      "phase": "Feature Expansion",
+      "milestones": [
+        "Add waitlist functionality",
+        "Introduce dynamic pricing engine",
+        "Email confirmation and reminder notifications",
+        "Enhanced reporting dashboards for sales and attendance"
+      ]
+    },
+    {
+      "phase": "Scalability & Integrations",
+      "milestones": [
+        "Sync events with external calendar services",
+        "Develop mobile app support for check\u2011in",
+        "Performance optimization and load testing",
+        "Multi\u2011venue and multi\u2011event management features"
+      ]
+    }
+  ]
+}

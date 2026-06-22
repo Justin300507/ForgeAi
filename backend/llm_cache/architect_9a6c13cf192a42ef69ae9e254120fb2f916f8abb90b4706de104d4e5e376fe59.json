@@ -1,0 +1,293 @@
+{
+  "api_endpoints": [
+    {
+      "method": "POST",
+      "path": "/auth/register",
+      "description": "Register a new user with username, email, and password",
+      "file": "app/routes/auth_routes.py"
+    },
+    {
+      "method": "POST",
+      "path": "/auth/login",
+      "description": "Authenticate user and return JWT token",
+      "file": "app/routes/auth_routes.py"
+    },
+    {
+      "method": "GET",
+      "path": "/users",
+      "description": "List all users (admin only)",
+      "file": "app/routes/user_routes.py"
+    },
+    {
+      "method": "GET",
+      "path": "/users/{id}",
+      "description": "Retrieve user details by ID",
+      "file": "app/routes/user_routes.py"
+    },
+    {
+      "method": "PUT",
+      "path": "/users/{id}",
+      "description": "Update user information (admin or self)",
+      "file": "app/routes/user_routes.py"
+    },
+    {
+      "method": "DELETE",
+      "path": "/users/{id}",
+      "description": "Delete a user (admin only)",
+      "file": "app/routes/user_routes.py"
+    },
+    {
+      "method": "GET",
+      "path": "/posts",
+      "description": "Get paginated list of published posts, optional tag filter via query param",
+      "file": "app/routes/post_routes.py"
+    },
+    {
+      "method": "GET",
+      "path": "/posts/{id}",
+      "description": "Retrieve a single post with its tags and author info",
+      "file": "app/routes/post_routes.py"
+    },
+    {
+      "method": "POST",
+      "path": "/posts",
+      "description": "Create a new post (author role) with optional tags",
+      "file": "app/routes/post_routes.py"
+    },
+    {
+      "method": "PUT",
+      "path": "/posts/{id}",
+      "description": "Update post content, status, or tags (author or admin)",
+      "file": "app/routes/post_routes.py"
+    },
+    {
+      "method": "DELETE",
+      "path": "/posts/{id}",
+      "description": "Delete a post (author or admin)",
+      "file": "app/routes/post_routes.py"
+    },
+    {
+      "method": "GET",
+      "path": "/posts/search",
+      "description": "Search posts by title/content and/or tags",
+      "file": "app/routes/post_routes.py"
+    },
+    {
+      "method": "POST",
+      "path": "/posts/{id}/tags",
+      "description": "Add or replace tags for a post",
+      "file": "app/routes/post_routes.py"
+    },
+    {
+      "method": "GET",
+      "path": "/posts/{post_id}/comments",
+      "description": "List comments for a specific post",
+      "file": "app/routes/comment_routes.py"
+    },
+    {
+      "method": "POST",
+      "path": "/posts/{post_id}/comments",
+      "description": "Create a comment on a post (reader role)",
+      "file": "app/routes/comment_routes.py"
+    }
+  ],
+  "database_schema": [
+    {
+      "table_name": "users",
+      "columns": [
+        {
+          "name": "id",
+          "type": "INTEGER",
+          "is_primary_key": true,
+          "is_nullable": false
+        },
+        {
+          "name": "username",
+          "type": "VARCHAR(150)",
+          "is_primary_key": false,
+          "is_nullable": false
+        },
+        {
+          "name": "email",
+          "type": "VARCHAR(255)",
+          "is_primary_key": false,
+          "is_nullable": false
+        },
+        {
+          "name": "password_hash",
+          "type": "VARCHAR(255)",
+          "is_primary_key": false,
+          "is_nullable": false
+        },
+        {
+          "name": "role",
+          "type": "VARCHAR(20)",
+          "is_primary_key": false,
+          "is_nullable": false
+        },
+        {
+          "name": "created_at",
+          "type": "DATETIME",
+          "is_primary_key": false,
+          "is_nullable": false
+        }
+      ]
+    },
+    {
+      "table_name": "posts",
+      "columns": [
+        {
+          "name": "id",
+          "type": "INTEGER",
+          "is_primary_key": true,
+          "is_nullable": false
+        },
+        {
+          "name": "title",
+          "type": "VARCHAR(200)",
+          "is_primary_key": false,
+          "is_nullable": false
+        },
+        {
+          "name": "content",
+          "type": "TEXT",
+          "is_primary_key": false,
+          "is_nullable": false
+        },
+        {
+          "name": "author_id",
+          "type": "INTEGER",
+          "is_primary_key": false,
+          "is_nullable": false
+        },
+        {
+          "name": "status",
+          "type": "VARCHAR(20)",
+          "is_primary_key": false,
+          "is_nullable": false
+        },
+        {
+          "name": "created_at",
+          "type": "DATETIME",
+          "is_primary_key": false,
+          "is_nullable": false
+        },
+        {
+          "name": "updated_at",
+          "type": "DATETIME",
+          "is_primary_key": false,
+          "is_nullable": false
+        }
+      ]
+    },
+    {
+      "table_name": "tags",
+      "columns": [
+        {
+          "name": "id",
+          "type": "INTEGER",
+          "is_primary_key": true,
+          "is_nullable": false
+        },
+        {
+          "name": "name",
+          "type": "VARCHAR(100)",
+          "is_primary_key": false,
+          "is_nullable": false
+        }
+      ]
+    },
+    {
+      "table_name": "post_tags",
+      "columns": [
+        {
+          "name": "post_id",
+          "type": "INTEGER",
+          "is_primary_key": true,
+          "is_nullable": false
+        },
+        {
+          "name": "tag_id",
+          "type": "INTEGER",
+          "is_primary_key": true,
+          "is_nullable": false
+        }
+      ]
+    },
+    {
+      "table_name": "comments",
+      "columns": [
+        {
+          "name": "id",
+          "type": "INTEGER",
+          "is_primary_key": true,
+          "is_nullable": false
+        },
+        {
+          "name": "post_id",
+          "type": "INTEGER",
+          "is_primary_key": false,
+          "is_nullable": false
+        },
+        {
+          "name": "author_id",
+          "type": "INTEGER",
+          "is_primary_key": false,
+          "is_nullable": false
+        },
+        {
+          "name": "content",
+          "type": "TEXT",
+          "is_primary_key": false,
+          "is_nullable": false
+        },
+        {
+          "name": "created_at",
+          "type": "DATETIME",
+          "is_primary_key": false,
+          "is_nullable": false
+        },
+        {
+          "name": "approved",
+          "type": "BOOLEAN",
+          "is_primary_key": false,
+          "is_nullable": false
+        }
+      ]
+    }
+  ],
+  "folder_structure": {
+    "backend": [
+      "app",
+      "app/models",
+      "app/schemas",
+      "app/services",
+      "app/routes",
+      "app/utils",
+      "app/dependencies",
+      "app/config",
+      "app/main.py"
+    ]
+  },
+  "frontend_structure": {
+    "pages": [
+      "HomePage",
+      "PostDetailPage",
+      "AuthorDashboardPage",
+      "AdminDashboardPage",
+      "AuthPage"
+    ],
+    "components": [
+      "Navbar",
+      "PostList",
+      "PostCard",
+      "TagFilter",
+      "PostForm",
+      "CommentList",
+      "CommentForm",
+      "AdminUserTable",
+      "AdminPostTable",
+      "Footer"
+    ]
+  }
+}

@@ -1,0 +1,343 @@
+{
+  "api_endpoints": [
+    {
+      "method": "GET",
+      "path": "/clients",
+      "description": "Retrieve a list of all clients",
+      "file": "app/routes/client_routes.py"
+    },
+    {
+      "method": "POST",
+      "path": "/clients",
+      "description": "Create a new client record",
+      "file": "app/routes/client_routes.py"
+    },
+    {
+      "method": "GET",
+      "path": "/clients/{id}",
+      "description": "Retrieve details of a specific client",
+      "file": "app/routes/client_routes.py"
+    },
+    {
+      "method": "PUT",
+      "path": "/clients/{id}",
+      "description": "Update an existing client record",
+      "file": "app/routes/client_routes.py"
+    },
+    {
+      "method": "DELETE",
+      "path": "/clients/{id}",
+      "description": "Delete a client record",
+      "file": "app/routes/client_routes.py"
+    },
+    {
+      "method": "GET",
+      "path": "/invoices",
+      "description": "Retrieve a list of all invoices",
+      "file": "app/routes/invoice_routes.py"
+    },
+    {
+      "method": "POST",
+      "path": "/invoices",
+      "description": "Create a new invoice with line items",
+      "file": "app/routes/invoice_routes.py"
+    },
+    {
+      "method": "GET",
+      "path": "/invoices/{id}",
+      "description": "Retrieve details of a specific invoice, including line items",
+      "file": "app/routes/invoice_routes.py"
+    },
+    {
+      "method": "PUT",
+      "path": "/invoices/{id}",
+      "description": "Update an existing invoice and its line items",
+      "file": "app/routes/invoice_routes.py"
+    },
+    {
+      "method": "DELETE",
+      "path": "/invoices/{id}",
+      "description": "Delete an invoice and its associated line items",
+      "file": "app/routes/invoice_routes.py"
+    },
+    {
+      "method": "GET",
+      "path": "/invoices/{id}/pdf",
+      "description": "Generate and download a PDF version of the invoice",
+      "file": "app/routes/invoice_routes.py"
+    },
+    {
+      "method": "POST",
+      "path": "/auth/login",
+      "description": "Authenticate a user and return an access token",
+      "file": "app/routes/auth_routes.py"
+    },
+    {
+      "method": "GET",
+      "path": "/line-items/{id}",
+      "description": "Retrieve a specific line item",
+      "file": "app/routes/line_item_routes.py"
+    },
+    {
+      "method": "PUT",
+      "path": "/line-items/{id}",
+      "description": "Update a specific line item",
+      "file": "app/routes/line_item_routes.py"
+    },
+    {
+      "method": "DELETE",
+      "path": "/line-items/{id}",
+      "description": "Delete a specific line item",
+      "file": "app/routes/line_item_routes.py"
+    }
+  ],
+  "database_schema": [
+    {
+      "table_name": "users",
+      "columns": [
+        {
+          "name": "id",
+          "type": "INTEGER",
+          "is_primary_key": true,
+          "is_nullable": false
+        },
+        {
+          "name": "username",
+          "type": "TEXT",
+          "is_primary_key": false,
+          "is_nullable": false
+        },
+        {
+          "name": "email",
+          "type": "TEXT",
+          "is_primary_key": false,
+          "is_nullable": false
+        },
+        {
+          "name": "hashed_password",
+          "type": "TEXT",
+          "is_primary_key": false,
+          "is_nullable": false
+        },
+        {
+          "name": "role",
+          "type": "TEXT",
+          "is_primary_key": false,
+          "is_nullable": false
+        },
+        {
+          "name": "created_at",
+          "type": "DATETIME",
+          "is_primary_key": false,
+          "is_nullable": false
+        },
+        {
+          "name": "updated_at",
+          "type": "DATETIME",
+          "is_primary_key": false,
+          "is_nullable": false
+        }
+      ]
+    },
+    {
+      "table_name": "clients",
+      "columns": [
+        {
+          "name": "id",
+          "type": "INTEGER",
+          "is_primary_key": true,
+          "is_nullable": false
+        },
+        {
+          "name": "name",
+          "type": "TEXT",
+          "is_primary_key": false,
+          "is_nullable": false
+        },
+        {
+          "name": "email",
+          "type": "TEXT",
+          "is_primary_key": false,
+          "is_nullable": false
+        },
+        {
+          "name": "address",
+          "type": "TEXT",
+          "is_primary_key": false,
+          "is_nullable": true
+        },
+        {
+          "name": "phone",
+          "type": "TEXT",
+          "is_primary_key": false,
+          "is_nullable": true
+        },
+        {
+          "name": "tax_id",
+          "type": "TEXT",
+          "is_primary_key": false,
+          "is_nullable": true
+        },
+        {
+          "name": "created_at",
+          "type": "DATETIME",
+          "is_primary_key": false,
+          "is_nullable": false
+        },
+        {
+          "name": "updated_at",
+          "type": "DATETIME",
+          "is_primary_key": false,
+          "is_nullable": false
+        }
+      ]
+    },
+    {
+      "table_name": "invoices",
+      "columns": [
+        {
+          "name": "id",
+          "type": "INTEGER",
+          "is_primary_key": true,
+          "is_nullable": false
+        },
+        {
+          "name": "client_id",
+          "type": "INTEGER",
+          "is_primary_key": false,
+          "is_nullable": false
+        },
+        {
+          "name": "invoice_number",
+          "type": "TEXT",
+          "is_primary_key": false,
+          "is_nullable": false
+        },
+        {
+          "name": "date",
+          "type": "DATE",
+          "is_primary_key": false,
+          "is_nullable": false
+        },
+        {
+          "name": "due_date",
+          "type": "DATE",
+          "is_primary_key": false,
+          "is_nullable": false
+        },
+        {
+          "name": "total_amount",
+          "type": "NUMERIC",
+          "is_primary_key": false,
+          "is_nullable": false
+        },
+        {
+          "name": "status",
+          "type": "TEXT",
+          "is_primary_key": false,
+          "is_nullable": false
+        },
+        {
+          "name": "created_at",
+          "type": "DATETIME",
+          "is_primary_key": false,
+          "is_nullable": false
+        },
+        {
+          "name": "updated_at",
+          "type": "DATETIME",
+          "is_primary_key": false,
+          "is_nullable": false
+        }
+      ]
+    },
+    {
+      "table_name": "line_items",
+      "columns": [
+        {
+          "name": "id",
+          "type": "INTEGER",
+          "is_primary_key": true,
+          "is_nullable": false
+        },
+        {
+          "name": "invoice_id",
+          "type": "INTEGER",
+          "is_primary_key": false,
+          "is_nullable": false
+        },
+        {
+          "name": "description",
+          "type": "TEXT",
+          "is_primary_key": false,
+          "is_nullable": false
+        },
+        {
+          "name": "quantity",
+          "type": "INTEGER",
+          "is_primary_key": false,
+          "is_nullable": false
+        },
+        {
+          "name": "unit_price",
+          "type": "NUMERIC",
+          "is_primary_key": false,
+          "is_nullable": false
+        },
+        {
+          "name": "line_total",
+          "type": "NUMERIC",
+          "is_primary_key": false,
+          "is_nullable": false
+        },
+        {
+          "name": "created_at",
+          "type": "DATETIME",
+          "is_primary_key": false,
+          "is_nullable": false
+        },
+        {
+          "name": "updated_at",
+          "type": "DATETIME",
+          "is_primary_key": false,
+          "is_nullable": false
+        }
+      ]
+    }
+  ],
+  "folder_structure": {
+    "backend": [
+      "app",
+      "app/models",
+      "app/schemas",
+      "app/services",
+      "app/routes",
+      "app/utils",
+      "app/dependencies",
+      "app/config"
+    ]
+  },
+  "frontend_structure": {
+    "pages": [
+      "Login",
+      "Dashboard",
+      "Clients",
+      "Invoices",
+      "InvoiceDetail"
+    ],
+    "components": [
+      "Header",
+      "Sidebar",
+      "ClientForm",
+      "ClientList",
+      "InvoiceForm",
+      "InvoiceList",
+      "LineItemRow",
+      "InvoicePDFViewer",
+      "StatusBadge",
+      "Pagination",
+      "Footer",
+      "Notification"
+    ]
+  }
+}

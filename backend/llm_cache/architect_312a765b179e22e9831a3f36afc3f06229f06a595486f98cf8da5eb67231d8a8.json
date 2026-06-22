@@ -1,0 +1,201 @@
+{
+  "api_endpoints": [
+    {
+      "method": "POST",
+      "path": "/auth/signup",
+      "description": "Register a new user with email and password; sends verification email",
+      "file": "app/routes/auth_routes.py"
+    },
+    {
+      "method": "GET",
+      "path": "/auth/verify-email",
+      "description": "Verify a user's email using a one\u2011time token",
+      "file": "app/routes/auth_routes.py"
+    },
+    {
+      "method": "POST",
+      "path": "/auth/login",
+      "description": "Authenticate user credentials and return a JWT",
+      "file": "app/routes/auth_routes.py"
+    },
+    {
+      "method": "POST",
+      "path": "/auth/logout",
+      "description": "Invalidate the current JWT (client\u2011side token removal)",
+      "file": "app/routes/auth_routes.py"
+    },
+    {
+      "method": "GET",
+      "path": "/health",
+      "description": "Health check endpoint, no authentication required",
+      "file": "app/routes/health_routes.py"
+    },
+    {
+      "method": "POST",
+      "path": "/tasks",
+      "description": "Create a new task for the authenticated user",
+      "file": "app/routes/task_routes.py"
+    },
+    {
+      "method": "GET",
+      "path": "/tasks",
+      "description": "List tasks of the authenticated user with pagination, search (q), and filters (priority, due_before)",
+      "file": "app/routes/task_routes.py"
+    },
+    {
+      "method": "GET",
+      "path": "/tasks/{id}",
+      "description": "Retrieve a single task belonging to the authenticated user",
+      "file": "app/routes/task_routes.py"
+    },
+    {
+      "method": "PUT",
+      "path": "/tasks/{id}",
+      "description": "Update fields of an existing task; validates due date and priority",
+      "file": "app/routes/task_routes.py"
+    },
+    {
+      "method": "DELETE",
+      "path": "/tasks/{id}",
+      "description": "Delete a task after user confirmation",
+      "file": "app/routes/task_routes.py"
+    },
+    {
+      "method": "GET",
+      "path": "/users/me",
+      "description": "Return profile information of the authenticated user",
+      "file": "app/routes/user_routes.py"
+    }
+  ],
+  "database_schema": [
+    {
+      "table_name": "users",
+      "columns": [
+        {
+          "name": "id",
+          "type": "INTEGER",
+          "is_primary_key": true,
+          "is_nullable": false
+        },
+        {
+          "name": "email",
+          "type": "VARCHAR(255)",
+          "is_primary_key": false,
+          "is_nullable": false
+        },
+        {
+          "name": "hashed_password",
+          "type": "VARCHAR(255)",
+          "is_primary_key": false,
+          "is_nullable": false
+        },
+        {
+          "name": "is_verified",
+          "type": "BOOLEAN",
+          "is_primary_key": false,
+          "is_nullable": false
+        },
+        {
+          "name": "created_at",
+          "type": "DATETIME",
+          "is_primary_key": false,
+          "is_nullable": false
+        }
+      ]
+    },
+    {
+      "table_name": "tasks",
+      "columns": [
+        {
+          "name": "id",
+          "type": "INTEGER",
+          "is_primary_key": true,
+          "is_nullable": false
+        },
+        {
+          "name": "user_id",
+          "type": "INTEGER",
+          "is_primary_key": false,
+          "is_nullable": false
+        },
+        {
+          "name": "title",
+          "type": "VARCHAR(200)",
+          "is_primary_key": false,
+          "is_nullable": false
+        },
+        {
+          "name": "description",
+          "type": "TEXT",
+          "is_primary_key": false,
+          "is_nullable": true
+        },
+        {
+          "name": "priority",
+          "type": "VARCHAR(10)",
+          "is_primary_key": false,
+          "is_nullable": false
+        },
+        {
+          "name": "due_date",
+          "type": "DATE",
+          "is_primary_key": false,
+          "is_nullable": false
+        },
+        {
+          "name": "completed",
+          "type": "BOOLEAN",
+          "is_primary_key": false,
+          "is_nullable": false
+        },
+        {
+          "name": "created_at",
+          "type": "DATETIME",
+          "is_primary_key": false,
+          "is_nullable": false
+        },
+        {
+          "name": "updated_at",
+          "type": "DATETIME",
+          "is_primary_key": false,
+          "is_nullable": false
+        }
+      ]
+    }
+  ],
+  "folder_structure": {
+    "backend": [
+      "app",
+      "app/models",
+      "app/schemas",
+      "app/routes",
+      "app/services",
+      "app/utils",
+      "app/dependencies",
+      "app/config"
+    ]
+  },
+  "frontend_structure": {
+    "pages": [
+      "LoginPage",
+      "SignupPage",
+      "VerifyEmailPage",
+      "DashboardPage",
+      "TaskCreatePage",
+      "TaskEditPage",
+      "TaskDetailPage"
+    ],
+    "components": [
+      "Header",
+      "Footer",
+      "TaskList",
+      "TaskItem",
+      "TaskForm",
+      "PaginationControls",
+      "SearchBar",
+      "FilterBar",
+      "Modal",
+      "NotificationToast"
+    ]
+  }
+}

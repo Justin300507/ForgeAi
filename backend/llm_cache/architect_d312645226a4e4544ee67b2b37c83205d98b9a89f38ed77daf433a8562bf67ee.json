@@ -1,0 +1,264 @@
+{
+  "api_endpoints": [
+    {
+      "method": "GET",
+      "path": "/products",
+      "description": "Retrieve a list of all products, optionally filtered by query parameters",
+      "file": "app/routes/product_routes.py"
+    },
+    {
+      "method": "POST",
+      "path": "/products",
+      "description": "Create a new product record",
+      "file": "app/routes/product_routes.py"
+    },
+    {
+      "method": "GET",
+      "path": "/products/{id}",
+      "description": "Retrieve details of a specific product by its ID",
+      "file": "app/routes/product_routes.py"
+    },
+    {
+      "method": "PUT",
+      "path": "/products/{id}",
+      "description": "Update an existing product's information",
+      "file": "app/routes/product_routes.py"
+    },
+    {
+      "method": "DELETE",
+      "path": "/products/{id}",
+      "description": "Delete a product from the catalog",
+      "file": "app/routes/product_routes.py"
+    },
+    {
+      "method": "GET",
+      "path": "/suppliers",
+      "description": "Retrieve a list of all suppliers",
+      "file": "app/routes/supplier_routes.py"
+    },
+    {
+      "method": "POST",
+      "path": "/suppliers",
+      "description": "Create a new supplier record",
+      "file": "app/routes/supplier_routes.py"
+    },
+    {
+      "method": "GET",
+      "path": "/suppliers/{id}",
+      "description": "Retrieve details of a specific supplier by its ID",
+      "file": "app/routes/supplier_routes.py"
+    },
+    {
+      "method": "PUT",
+      "path": "/suppliers/{id}",
+      "description": "Update an existing supplier's information",
+      "file": "app/routes/supplier_routes.py"
+    },
+    {
+      "method": "DELETE",
+      "path": "/suppliers/{id}",
+      "description": "Delete a supplier from the system",
+      "file": "app/routes/supplier_routes.py"
+    },
+    {
+      "method": "GET",
+      "path": "/stock_movements",
+      "description": "Retrieve stock movement records, optionally filtered by date range or product",
+      "file": "app/routes/stockmovement_routes.py"
+    },
+    {
+      "method": "POST",
+      "path": "/stock_movements",
+      "description": "Record a new inbound or outbound stock movement",
+      "file": "app/routes/stockmovement_routes.py"
+    },
+    {
+      "method": "GET",
+      "path": "/stock_movements/{id}",
+      "description": "Retrieve details of a specific stock movement by its ID",
+      "file": "app/routes/stockmovement_routes.py"
+    },
+    {
+      "method": "PUT",
+      "path": "/stock_movements/{id}",
+      "description": "Update an existing stock movement record",
+      "file": "app/routes/stockmovement_routes.py"
+    },
+    {
+      "method": "DELETE",
+      "path": "/stock_movements/{id}",
+      "description": "Delete a stock movement entry",
+      "file": "app/routes/stockmovement_routes.py"
+    }
+  ],
+  "database_schema": [
+    {
+      "table_name": "product",
+      "columns": [
+        {
+          "name": "id",
+          "type": "INTEGER",
+          "is_primary_key": true,
+          "is_nullable": false
+        },
+        {
+          "name": "name",
+          "type": "TEXT",
+          "is_primary_key": false,
+          "is_nullable": false
+        },
+        {
+          "name": "sku",
+          "type": "TEXT",
+          "is_primary_key": false,
+          "is_nullable": false
+        },
+        {
+          "name": "description",
+          "type": "TEXT",
+          "is_primary_key": false,
+          "is_nullable": true
+        },
+        {
+          "name": "price",
+          "type": "REAL",
+          "is_primary_key": false,
+          "is_nullable": false
+        },
+        {
+          "name": "quantity_on_hand",
+          "type": "INTEGER",
+          "is_primary_key": false,
+          "is_nullable": false
+        },
+        {
+          "name": "supplier_id",
+          "type": "INTEGER",
+          "is_primary_key": false,
+          "is_nullable": true
+        }
+      ]
+    },
+    {
+      "table_name": "supplier",
+      "columns": [
+        {
+          "name": "id",
+          "type": "INTEGER",
+          "is_primary_key": true,
+          "is_nullable": false
+        },
+        {
+          "name": "name",
+          "type": "TEXT",
+          "is_primary_key": false,
+          "is_nullable": false
+        },
+        {
+          "name": "contact_name",
+          "type": "TEXT",
+          "is_primary_key": false,
+          "is_nullable": true
+        },
+        {
+          "name": "phone",
+          "type": "TEXT",
+          "is_primary_key": false,
+          "is_nullable": true
+        },
+        {
+          "name": "email",
+          "type": "TEXT",
+          "is_primary_key": false,
+          "is_nullable": true
+        },
+        {
+          "name": "address",
+          "type": "TEXT",
+          "is_primary_key": false,
+          "is_nullable": true
+        }
+      ]
+    },
+    {
+      "table_name": "stock_movement",
+      "columns": [
+        {
+          "name": "id",
+          "type": "INTEGER",
+          "is_primary_key": true,
+          "is_nullable": false
+        },
+        {
+          "name": "product_id",
+          "type": "INTEGER",
+          "is_primary_key": false,
+          "is_nullable": false
+        },
+        {
+          "name": "quantity",
+          "type": "INTEGER",
+          "is_primary_key": false,
+          "is_nullable": false
+        },
+        {
+          "name": "movement_type",
+          "type": "TEXT",
+          "is_primary_key": false,
+          "is_nullable": false
+        },
+        {
+          "name": "timestamp",
+          "type": "DATETIME",
+          "is_primary_key": false,
+          "is_nullable": false
+        },
+        {
+          "name": "reference",
+          "type": "TEXT",
+          "is_primary_key": false,
+          "is_nullable": true
+        },
+        {
+          "name": "notes",
+          "type": "TEXT",
+          "is_primary_key": false,
+          "is_nullable": true
+        }
+      ]
+    }
+  ],
+  "folder_structure": {
+    "backend": [
+      "app",
+      "app/models",
+      "app/schemas",
+      "app/services",
+      "app/routes",
+      "app/utils",
+      "app/config",
+      "app/dependencies"
+    ]
+  },
+  "frontend_structure": {
+    "pages": [
+      "Login",
+      "Dashboard",
+      "Products",
+      "Suppliers",
+      "StockMovements"
+    ],
+    "components": [
+      "Header",
+      "Sidebar",
+      "ProductForm",
+      "ProductTable",
+      "SupplierForm",
+      "SupplierTable",
+      "StockMovementForm",
+      "StockMovementTable",
+      "ReportFilter",
+      "InventoryCard"
+    ]
+  }
+}

@@ -1,0 +1,30 @@
+{
+  "run_id": "v7_20260622_111912_d37f3fb7",
+  "timestamp": "2026-06-22T11:23:56",
+  "version": "v7",
+  "idea": "An expense tracker with categories, budgets, and monthly summaries",
+  "project_name": "expense_tracker_app",
+  "provider": "auto",
+  "plan": {},
+  "architecture": {
+    "endpoint_count": 0,
+    "endpoints": [],
+    "db_schema_keys": []
+  },
+  "validation_errors": [],
+  "runtime_error": null,
+  "runtime_error_type": "TimestampNotNullError",
+  "fixes_applied": [],
+  "score": 80,
+  "grade": "B",
+  "runtime_passed": false,
+  "frontend_passed": false,
+  "generation_time": 283.79,
+  "security_score": 70,
+  "performance_score": 68,
+  "maintainability_score": 70,
+  "qa_score": 45,
+  "v6_score": 51,
+  "prompt_version": "default",
+  "active_rules": []
+}

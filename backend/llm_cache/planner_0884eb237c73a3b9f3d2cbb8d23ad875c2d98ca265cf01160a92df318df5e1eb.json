@@ -1,0 +1,143 @@
+{
+  "project_name": "DineReserve",
+  "description": "A web-based restaurant reservation system that lets customers book tables, join a waitlist, and enables restaurant staff to manage tables, bookings, and waitlist efficiently.",
+  "target_users": [
+    "Restaurant owners/managers",
+    "Restaurant staff",
+    "Customers"
+  ],
+  "core_features": [
+    "Table management",
+    "Reservation booking",
+    "Waitlist handling",
+    "Customer profile (basic contact info)",
+    "Email/SMS notifications"
+  ],
+  "future_features": [
+    "Table layout visualizer",
+    "Loyalty program",
+    "Analytics dashboard"
+  ],
+  "tech_stack": [
+    "FastAPI",
+    "React",
+    "SQLite"
+  ],
+  "database_entities": [
+    {
+      "name": "Table",
+      "fields": [
+        "id",
+        "number",
+        "capacity",
+        "location",
+        "is_active"
+      ]
+    },
+    {
+      "name": "Reservation",
+      "fields": [
+        "id",
+        "table_id",
+        "customer_name",
+        "customer_phone",
+        "customer_email",
+        "reservation_time",
+        "party_size",
+        "status",
+        "notes"
+      ]
+    },
+    {
+      "name": "WaitlistEntry",
+      "fields": [
+        "id",
+        "customer_name",
+        "party_size",
+        "contact_phone",
+        "requested_time",
+        "status",
+        "created_at"
+      ]
+    }
+  ],
+  "api_modules": [
+    {
+      "name": "Table",
+      "endpoints": [
+        "GET /tables",
+        "POST /tables",
+        "GET /tables/{id}",
+        "PUT /tables/{id}",
+        "DELETE /tables/{id}"
+      ]
+    },
+    {
+      "name": "Reservation",
+      "endpoints": [
+        "GET /reservations",
+        "POST /reservations",
+        "GET /reservations/{id}",
+        "PUT /reservations/{id}",
+        "DELETE /reservations/{id}"
+      ]
+    },
+    {
+      "name": "Waitlist",
+      "endpoints": [
+        "GET /waitlist",
+        "POST /waitlist",
+        "GET /waitlist/{id}",
+        "PUT /waitlist/{id}",
+        "DELETE /waitlist/{id}"
+      ]
+    }
+  ],
+  "pages": [
+    "Home",
+    "Table Management",
+    "Reservation Booking",
+    "Waitlist",
+    "Admin Dashboard"
+  ],
+  "backend_modules": [
+    "Authentication",
+    "Table Management",
+    "Reservation Management",
+    "Waitlist Management",
+    "Notification Service"
+  ],
+  "roadmap": [
+    {
+      "phase": "MVP Launch",
+      "milestones": [
+        "Set up project scaffolding",
+        "Implement Table CRUD API",
+        "Implement Reservation booking flow",
+        "Implement Waitlist functionality",
+        "Basic UI for customers and staff",
+        "Deploy initial version"
+      ]
+    },
+    {
+      "phase": "Feature Expansion",
+      "milestones": [
+        "Add email/SMS notification system",
+        "Implement admin dashboard with overview",
+        "Introduce table status visualization",
+        "User authentication and role management",
+        "Improve UI/UX"
+      ]
+    },
+    {
+      "phase": "Growth & Analytics",
+      "milestones": [
+        "Develop loyalty program integration",
+        "Add analytics and reporting",
+        "Implement table layout visualizer",
+        "Performance optimization and scaling",
+        "Support multi-restaurant deployment"
+      ]
+    }
+  ]
+}

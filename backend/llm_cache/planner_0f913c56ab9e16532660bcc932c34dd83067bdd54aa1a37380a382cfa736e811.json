@@ -1,0 +1,125 @@
+{
+  "project_name": "Inventory Management System",
+  "description": "A web application to track stock levels, manage suppliers, and handle purchase orders, providing real-time visibility and alerts for inventory managers.",
+  "target_users": [
+    "Warehouse staff",
+    "Inventory managers",
+    "Purchasing agents"
+  ],
+  "core_features": [
+    "Real-time stock level tracking",
+    "Supplier directory and contact management",
+    "Purchase order creation, approval, and tracking",
+    "Low stock alerts and reorder point notifications",
+    "Dashboard with inventory performance reports"
+  ],
+  "future_features": [
+    "Barcode scanning integration",
+    "Multi\u2011warehouse support",
+    "Automated reorder suggestions based on demand forecasting"
+  ],
+  "tech_stack": [
+    "FastAPI",
+    "React",
+    "SQLite"
+  ],
+  "database_entities": [
+    {
+      "name": "Product",
+      "fields": [
+        "name",
+        "sku",
+        "description",
+        "quantity_on_hand",
+        "reorder_point",
+        "unit_price"
+      ]
+    },
+    {
+      "name": "Supplier",
+      "fields": [
+        "name",
+        "contact_name",
+        "phone",
+        "email",
+        "address"
+      ]
+    },
+    {
+      "name": "PurchaseOrder",
+      "fields": [
+        "order_number",
+        "supplier_id",
+        "order_date",
+        "expected_delivery_date",
+        "status",
+        "total_amount"
+      ]
+    }
+  ],
+  "api_modules": [
+    {
+      "name": "Product",
+      "endpoints": [
+        "/products",
+        "/products/{id}"
+      ]
+    },
+    {
+      "name": "Supplier",
+      "endpoints": [
+        "/suppliers",
+        "/suppliers/{id}"
+      ]
+    },
+    {
+      "name": "PurchaseOrder",
+      "endpoints": [
+        "/purchase_orders",
+        "/purchase_orders/{id}"
+      ]
+    }
+  ],
+  "pages": [
+    "Login",
+    "Dashboard",
+    "Products",
+    "Suppliers",
+    "Purchase Orders"
+  ],
+  "backend_modules": [
+    "Authentication",
+    "Product Management",
+    "Supplier Management",
+    "Purchase Order Management",
+    "Reporting"
+  ],
+  "roadmap": [
+    {
+      "phase": "Phase 1: MVP",
+      "milestones": [
+        "Implement core data models and SQLite schema",
+        "Develop REST APIs for products, suppliers, and purchase orders",
+        "Create authentication and basic UI with React",
+        "Enable stock tracking, supplier CRUD, and PO workflow"
+      ]
+    },
+    {
+      "phase": "Phase 2: Enhancements",
+      "milestones": [
+        "Add low\u2011stock alert notifications",
+        "Build dashboard visualizations and reports",
+        "Introduce role\u2011based access control",
+        "Perform user acceptance testing and bug fixing"
+      ]
+    },
+    {
+      "phase": "Phase 3: Advanced Features",
+      "milestones": [
+        "Integrate barcode scanning support",
+        "Implement multi\u2011warehouse inventory handling",
+        "Develop automated reorder suggestion engine"
+      ]
+    }
+  ]
+}

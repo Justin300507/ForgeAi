@@ -1,0 +1,271 @@
+{
+  "api_endpoints": [
+    {
+      "method": "POST",
+      "path": "/auth/register",
+      "description": "Create a new user account",
+      "file": "app/routes/user_routes.py"
+    },
+    {
+      "method": "POST",
+      "path": "/auth/login",
+      "description": "Authenticate user and return access token",
+      "file": "app/routes/user_routes.py"
+    },
+    {
+      "method": "GET",
+      "path": "/users/me",
+      "description": "Retrieve profile of the authenticated user",
+      "file": "app/routes/user_routes.py"
+    },
+    {
+      "method": "GET",
+      "path": "/decks",
+      "description": "List all decks belonging to the authenticated user",
+      "file": "app/routes/deck_routes.py"
+    },
+    {
+      "method": "POST",
+      "path": "/decks",
+      "description": "Create a new deck for the authenticated user",
+      "file": "app/routes/deck_routes.py"
+    },
+    {
+      "method": "GET",
+      "path": "/decks/{id}",
+      "description": "Get details of a specific deck",
+      "file": "app/routes/deck_routes.py"
+    },
+    {
+      "method": "PUT",
+      "path": "/decks/{id}",
+      "description": "Update title or description of a deck",
+      "file": "app/routes/deck_routes.py"
+    },
+    {
+      "method": "DELETE",
+      "path": "/decks/{id}",
+      "description": "Delete a deck and its associated cards",
+      "file": "app/routes/deck_routes.py"
+    },
+    {
+      "method": "GET",
+      "path": "/decks/{id}/cards",
+      "description": "List all cards within a specific deck",
+      "file": "app/routes/deck_routes.py"
+    },
+    {
+      "method": "POST",
+      "path": "/decks/{deck_id}/cards",
+      "description": "Create a new card inside a deck",
+      "file": "app/routes/card_routes.py"
+    },
+    {
+      "method": "GET",
+      "path": "/cards/{id}",
+      "description": "Retrieve a single card by its ID",
+      "file": "app/routes/card_routes.py"
+    },
+    {
+      "method": "PUT",
+      "path": "/cards/{id}",
+      "description": "Update front or back text of a card",
+      "file": "app/routes/card_routes.py"
+    },
+    {
+      "method": "DELETE",
+      "path": "/cards/{id}",
+      "description": "Delete a card",
+      "file": "app/routes/card_routes.py"
+    },
+    {
+      "method": "POST",
+      "path": "/cards/{id}/review",
+      "description": "Submit a review rating for a card and update spaced\u2011repetition schedule",
+      "file": "app/routes/card_routes.py"
+    }
+  ],
+  "database_schema": [
+    {
+      "table_name": "users",
+      "columns": [
+        {
+          "name": "id",
+          "type": "INTEGER",
+          "is_primary_key": true,
+          "is_nullable": false
+        },
+        {
+          "name": "email",
+          "type": "TEXT",
+          "is_primary_key": false,
+          "is_nullable": false
+        },
+        {
+          "name": "hashed_password",
+          "type": "TEXT",
+          "is_primary_key": false,
+          "is_nullable": false
+        },
+        {
+          "name": "full_name",
+          "type": "TEXT",
+          "is_primary_key": false,
+          "is_nullable": true
+        },
+        {
+          "name": "created_at",
+          "type": "DATETIME",
+          "is_primary_key": false,
+          "is_nullable": false
+        }
+      ]
+    },
+    {
+      "table_name": "decks",
+      "columns": [
+        {
+          "name": "id",
+          "type": "INTEGER",
+          "is_primary_key": true,
+          "is_nullable": false
+        },
+        {
+          "name": "user_id",
+          "type": "INTEGER",
+          "is_primary_key": false,
+          "is_nullable": false
+        },
+        {
+          "name": "title",
+          "type": "TEXT",
+          "is_primary_key": false,
+          "is_nullable": false
+        },
+        {
+          "name": "description",
+          "type": "TEXT",
+          "is_primary_key": false,
+          "is_nullable": true
+        },
+        {
+          "name": "created_at",
+          "type": "DATETIME",
+          "is_primary_key": false,
+          "is_nullable": false
+        },
+        {
+          "name": "updated_at",
+          "type": "DATETIME",
+          "is_primary_key": false,
+          "is_nullable": false
+        }
+      ]
+    },
+    {
+      "table_name": "cards",
+      "columns": [
+        {
+          "name": "id",
+          "type": "INTEGER",
+          "is_primary_key": true,
+          "is_nullable": false
+        },
+        {
+          "name": "deck_id",
+          "type": "INTEGER",
+          "is_primary_key": false,
+          "is_nullable": false
+        },
+        {
+          "name": "front_text",
+          "type": "TEXT",
+          "is_primary_key": false,
+          "is_nullable": false
+        },
+        {
+          "name": "back_text",
+          "type": "TEXT",
+          "is_primary_key": false,
+          "is_nullable": false
+        },
+        {
+          "name": "created_at",
+          "type": "DATETIME",
+          "is_primary_key": false,
+          "is_nullable": false
+        },
+        {
+          "name": "updated_at",
+          "type": "DATETIME",
+          "is_primary_key": false,
+          "is_nullable": false
+        },
+        {
+          "name": "due_date",
+          "type": "DATETIME",
+          "is_primary_key": false,
+          "is_nullable": true
+        },
+        {
+          "name": "interval",
+          "type": "INTEGER",
+          "is_primary_key": false,
+          "is_nullable": true
+        },
+        {
+          "name": "ease_factor",
+          "type": "REAL",
+          "is_primary_key": false,
+          "is_nullable": true
+        },
+        {
+          "name": "repetition_count",
+          "type": "INTEGER",
+          "is_primary_key": false,
+          "is_nullable": true
+        }
+      ]
+    }
+  ],
+  "folder_structure": {
+    "backend": [
+      "app",
+      "app/models",
+      "app/schemas",
+      "app/routes",
+      "app/services",
+      "app/utils",
+      "app/dependencies",
+      "app/config",
+      "app/database",
+      "app/auth"
+    ]
+  },
+  "frontend_structure": {
+    "pages": [
+      "Login",
+      "Register",
+      "Dashboard",
+      "DeckDetail",
+      "StudySession"
+    ],
+    "components": [
+      "Header",
+      "Footer",
+      "NavBar",
+      "DeckList",
+      "DeckCard",
+      "CardFlip",
+      "ReviewControls",
+      "ProgressChart",
+      "AuthForm",
+      "StudyTimer",
+      "DeckForm",
+      "CardForm",
+      "RatingStars",
+      "StatisticsPanel",
+      "Modal"
+    ]
+  }
+}

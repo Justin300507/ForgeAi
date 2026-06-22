@@ -1,0 +1,143 @@
+{
+  "project_name": "SnapShare",
+  "description": "A web application that enables users to create personal photo albums, upload and view photos, and engage with others through likes and comments.",
+  "target_users": [
+    "Casual photographers",
+    "Travel enthusiasts",
+    "Social media users"
+  ],
+  "core_features": [
+    "User registration and authentication",
+    "Album creation and management",
+    "Photo upload and gallery view",
+    "Like photos",
+    "Comment on photos"
+  ],
+  "future_features": [
+    "Photo tagging",
+    "Share albums via public link",
+    "Push notifications for new likes and comments"
+  ],
+  "tech_stack": [
+    "FastAPI",
+    "React",
+    "SQLite"
+  ],
+  "database_entities": [
+    {
+      "name": "User",
+      "fields": [
+        "id",
+        "username",
+        "email",
+        "hashed_password",
+        "profile_picture_url",
+        "created_at"
+      ]
+    },
+    {
+      "name": "Album",
+      "fields": [
+        "id",
+        "user_id",
+        "title",
+        "description",
+        "cover_photo_url",
+        "created_at"
+      ]
+    },
+    {
+      "name": "Photo",
+      "fields": [
+        "id",
+        "album_id",
+        "user_id",
+        "url",
+        "caption",
+        "likes_count",
+        "comments_json",
+        "uploaded_at"
+      ]
+    }
+  ],
+  "api_modules": [
+    {
+      "name": "User",
+      "endpoints": [
+        "POST /auth/register",
+        "POST /auth/login",
+        "GET /users",
+        "GET /users/{id}",
+        "PUT /users/{id}",
+        "DELETE /users/{id}"
+      ]
+    },
+    {
+      "name": "Album",
+      "endpoints": [
+        "GET /albums",
+        "POST /albums",
+        "GET /albums/{id}",
+        "PUT /albums/{id}",
+        "DELETE /albums/{id}",
+        "GET /users/{user_id}/albums"
+      ]
+    },
+    {
+      "name": "Photo",
+      "endpoints": [
+        "GET /photos",
+        "POST /photos",
+        "GET /photos/{id}",
+        "PUT /photos/{id}",
+        "DELETE /photos/{id}",
+        "GET /albums/{album_id}/photos",
+        "POST /photos/{id}/like",
+        "POST /photos/{id}/comment"
+      ]
+    }
+  ],
+  "pages": [
+    "Login",
+    "Register",
+    "Album List",
+    "Album Detail",
+    "Photo Detail"
+  ],
+  "backend_modules": [
+    "Authentication",
+    "User Management",
+    "Album Management",
+    "Photo Management",
+    "Interaction Management"
+  ],
+  "roadmap": [
+    {
+      "phase": "Phase 1: MVP",
+      "milestones": [
+        "Implement user registration and login",
+        "Create album CRUD endpoints and UI",
+        "Enable photo upload and display",
+        "Add like and comment functionality",
+        "Basic UI for album and photo browsing"
+      ]
+    },
+    {
+      "phase": "Phase 2: Enhancements",
+      "milestones": [
+        "Introduce photo tagging feature",
+        "Allow sharing albums via public links",
+        "Improve UI/UX with responsive design",
+        "Add profile pages and follow system"
+      ]
+    },
+    {
+      "phase": "Phase 3: Scaling & Notifications",
+      "milestones": [
+        "Implement push notifications for likes/comments",
+        "Optimize image storage and delivery",
+        "Add analytics dashboard for user activity"
+      ]
+    }
+  ]
+}

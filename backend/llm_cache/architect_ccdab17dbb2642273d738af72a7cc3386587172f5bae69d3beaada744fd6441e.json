@@ -1,0 +1,398 @@
+{
+  "api_endpoints": [
+    {
+      "method": "POST",
+      "path": "/users/register",
+      "description": "Register a new user with email, name, password and timezone",
+      "file": "app/routes/user_routes.py"
+    },
+    {
+      "method": "POST",
+      "path": "/users/login",
+      "description": "Authenticate user and return JWT token",
+      "file": "app/routes/user_routes.py"
+    },
+    {
+      "method": "GET",
+      "path": "/users/me",
+      "description": "Retrieve profile of the authenticated user",
+      "file": "app/routes/user_routes.py"
+    },
+    {
+      "method": "GET",
+      "path": "/users/{id}/meetings",
+      "description": "List meetings organized by the specified user",
+      "file": "app/routes/user_routes.py"
+    },
+    {
+      "method": "POST",
+      "path": "/meetings",
+      "description": "Create a new meeting with title, description, time range and location",
+      "file": "app/routes/meeting_routes.py"
+    },
+    {
+      "method": "GET",
+      "path": "/meetings/{id}",
+      "description": "Get detailed information of a meeting",
+      "file": "app/routes/meeting_routes.py"
+    },
+    {
+      "method": "PUT",
+      "path": "/meetings/{id}",
+      "description": "Update meeting details such as title, time, location or status",
+      "file": "app/routes/meeting_routes.py"
+    },
+    {
+      "method": "DELETE",
+      "path": "/meetings/{id}",
+      "description": "Cancel a meeting and notify participants",
+      "file": "app/routes/meeting_routes.py"
+    },
+    {
+      "method": "POST",
+      "path": "/meetings/{id}/participants",
+      "description": "Add participants to a meeting invitation list",
+      "file": "app/routes/meeting_routes.py"
+    },
+    {
+      "method": "GET",
+      "path": "/meetings/{id}/participants",
+      "description": "Retrieve list of participants and their response status",
+      "file": "app/routes/meeting_routes.py"
+    },
+    {
+      "method": "POST",
+      "path": "/meetings/{id}/availability",
+      "description": "Submit availability time slots for a participant",
+      "file": "app/routes/meeting_routes.py"
+    },
+    {
+      "method": "GET",
+      "path": "/meetings/{id}/availability",
+      "description": "View aggregated availability and suggested common free slots",
+      "file": "app/routes/meeting_routes.py"
+    },
+    {
+      "method": "POST",
+      "path": "/integrations",
+      "description": "Create a calendar integration record for a user (Google or Outlook)",
+      "file": "app/routes/calendarintegration_routes.py"
+    },
+    {
+      "method": "GET",
+      "path": "/integrations",
+      "description": "List all calendar integrations for the authenticated user",
+      "file": "app/routes/calendarintegration_routes.py"
+    },
+    {
+      "method": "POST",
+      "path": "/integrations/{id}/sync",
+      "description": "Trigger two-way synchronization of meetings with the external calendar provider",
+      "file": "app/routes/calendarintegration_routes.py"
+    }
+  ],
+  "database_schema": [
+    {
+      "table_name": "user",
+      "columns": [
+        {
+          "name": "id",
+          "type": "INTEGER",
+          "is_primary_key": true,
+          "is_nullable": false
+        },
+        {
+          "name": "email",
+          "type": "VARCHAR(255)",
+          "is_primary_key": false,
+          "is_nullable": false
+        },
+        {
+          "name": "name",
+          "type": "VARCHAR(255)",
+          "is_primary_key": false,
+          "is_nullable": false
+        },
+        {
+          "name": "password_hash",
+          "type": "VARCHAR(255)",
+          "is_primary_key": false,
+          "is_nullable": false
+        },
+        {
+          "name": "timezone",
+          "type": "VARCHAR(50)",
+          "is_primary_key": false,
+          "is_nullable": false
+        },
+        {
+          "name": "created_at",
+          "type": "DATETIME",
+          "is_primary_key": false,
+          "is_nullable": false
+        }
+      ]
+    },
+    {
+      "table_name": "meeting",
+      "columns": [
+        {
+          "name": "id",
+          "type": "INTEGER",
+          "is_primary_key": true,
+          "is_nullable": false
+        },
+        {
+          "name": "title",
+          "type": "VARCHAR(255)",
+          "is_primary_key": false,
+          "is_nullable": false
+        },
+        {
+          "name": "description",
+          "type": "TEXT",
+          "is_primary_key": false,
+          "is_nullable": true
+        },
+        {
+          "name": "organizer_id",
+          "type": "INTEGER",
+          "is_primary_key": false,
+          "is_nullable": false
+        },
+        {
+          "name": "start_time",
+          "type": "DATETIME",
+          "is_primary_key": false,
+          "is_nullable": false
+        },
+        {
+          "name": "end_time",
+          "type": "DATETIME",
+          "is_primary_key": false,
+          "is_nullable": false
+        },
+        {
+          "name": "location",
+          "type": "VARCHAR(255)",
+          "is_primary_key": false,
+          "is_nullable": true
+        },
+        {
+          "name": "status",
+          "type": "VARCHAR(20)",
+          "is_primary_key": false,
+          "is_nullable": false
+        },
+        {
+          "name": "created_at",
+          "type": "DATETIME",
+          "is_primary_key": false,
+          "is_nullable": false
+        }
+      ]
+    },
+    {
+      "table_name": "participant",
+      "columns": [
+        {
+          "name": "id",
+          "type": "INTEGER",
+          "is_primary_key": true,
+          "is_nullable": false
+        },
+        {
+          "name": "meeting_id",
+          "type": "INTEGER",
+          "is_primary_key": false,
+          "is_nullable": false
+        },
+        {
+          "name": "user_id",
+          "type": "INTEGER",
+          "is_primary_key": false,
+          "is_nullable": false
+        },
+        {
+          "name": "status",
+          "type": "VARCHAR(20)",
+          "is_primary_key": false,
+          "is_nullable": false
+        },
+        {
+          "name": "created_at",
+          "type": "DATETIME",
+          "is_primary_key": false,
+          "is_nullable": false
+        }
+      ]
+    },
+    {
+      "table_name": "availability",
+      "columns": [
+        {
+          "name": "id",
+          "type": "INTEGER",
+          "is_primary_key": true,
+          "is_nullable": false
+        },
+        {
+          "name": "participant_id",
+          "type": "INTEGER",
+          "is_primary_key": false,
+          "is_nullable": false
+        },
+        {
+          "name": "available_start",
+          "type": "DATETIME",
+          "is_primary_key": false,
+          "is_nullable": false
+        },
+        {
+          "name": "available_end",
+          "type": "DATETIME",
+          "is_primary_key": false,
+          "is_nullable": false
+        },
+        {
+          "name": "created_at",
+          "type": "DATETIME",
+          "is_primary_key": false,
+          "is_nullable": false
+        }
+      ]
+    },
+    {
+      "table_name": "calendar_integration",
+      "columns": [
+        {
+          "name": "id",
+          "type": "INTEGER",
+          "is_primary_key": true,
+          "is_nullable": false
+        },
+        {
+          "name": "user_id",
+          "type": "INTEGER",
+          "is_primary_key": false,
+          "is_nullable": false
+        },
+        {
+          "name": "provider",
+          "type": "VARCHAR(20)",
+          "is_primary_key": false,
+          "is_nullable": false
+        },
+        {
+          "name": "access_token",
+          "type": "TEXT",
+          "is_primary_key": false,
+          "is_nullable": false
+        },
+        {
+          "name": "refresh_token",
+          "type": "TEXT",
+          "is_primary_key": false,
+          "is_nullable": false
+        },
+        {
+          "name": "token_expiry",
+          "type": "DATETIME",
+          "is_primary_key": false,
+          "is_nullable": false
+        },
+        {
+          "name": "created_at",
+          "type": "DATETIME",
+          "is_primary_key": false,
+          "is_nullable": false
+        }
+      ]
+    },
+    {
+      "table_name": "notification",
+      "columns": [
+        {
+          "name": "id",
+          "type": "INTEGER",
+          "is_primary_key": true,
+          "is_nullable": false
+        },
+        {
+          "name": "user_id",
+          "type": "INTEGER",
+          "is_primary_key": false,
+          "is_nullable": false
+        },
+        {
+          "name": "meeting_id",
+          "type": "INTEGER",
+          "is_primary_key": false,
+          "is_nullable": true
+        },
+        {
+          "name": "type",
+          "type": "VARCHAR(30)",
+          "is_primary_key": false,
+          "is_nullable": false
+        },
+        {
+          "name": "payload",
+          "type": "TEXT",
+          "is_primary_key": false,
+          "is_nullable": false
+        },
+        {
+          "name": "sent_at",
+          "type": "DATETIME",
+          "is_primary_key": false,
+          "is_nullable": false
+        },
+        {
+          "name": "read_at",
+          "type": "DATETIME",
+          "is_primary_key": false,
+          "is_nullable": true
+        }
+      ]
+    }
+  ],
+  "folder_structure": {
+    "backend": [
+      "app",
+      "app/routes",
+      "app/models",
+      "app/schemas",
+      "app/services",
+      "app/utils",
+      "app/dependencies",
+      "app/config"
+    ]
+  },
+  "frontend_structure": {
+    "pages": [
+      "Login",
+      "Dashboard",
+      "ScheduleMeeting",
+      "MeetingDetails",
+      "CalendarSettings"
+    ],
+    "components": [
+      "Header",
+      "Footer",
+      "LoginForm",
+      "DashboardOverview",
+      "MeetingForm",
+      "ParticipantList",
+      "AvailabilityGrid",
+      "CalendarSyncButton",
+      "NotificationToast",
+      "Sidebar",
+      "TimeSlotPicker",
+      "UserAvatar",
+      "MeetingCard",
+      "SettingsForm",
+      "LoadingSpinner"
+    ]
+  }
+}

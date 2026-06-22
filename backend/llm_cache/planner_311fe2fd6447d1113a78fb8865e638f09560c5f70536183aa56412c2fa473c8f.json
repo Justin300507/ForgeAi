@@ -1,0 +1,137 @@
+{
+  "project_name": "Blogify",
+  "description": "A modern blogging platform where users can register, create and edit posts, comment, like content, and manage their author profiles.",
+  "target_users": [
+    "Bloggers",
+    "Readers",
+    "Content marketers"
+  ],
+  "core_features": [
+    "User registration and authentication",
+    "Author profile management",
+    "Create, edit, and delete blog posts",
+    "Commenting on posts",
+    "Liking posts and comments"
+  ],
+  "future_features": [
+    "Tagging system for posts",
+    "Full-text search across posts and comments",
+    "Follow authors to see their latest posts"
+  ],
+  "tech_stack": [
+    "FastAPI",
+    "React",
+    "SQLite"
+  ],
+  "database_entities": [
+    {
+      "name": "User",
+      "fields": [
+        "id",
+        "username",
+        "email",
+        "password_hash",
+        "bio",
+        "avatar_url",
+        "created_at"
+      ]
+    },
+    {
+      "name": "Post",
+      "fields": [
+        "id",
+        "author_id",
+        "title",
+        "content",
+        "created_at",
+        "updated_at",
+        "like_count"
+      ]
+    },
+    {
+      "name": "Comment",
+      "fields": [
+        "id",
+        "post_id",
+        "author_id",
+        "content",
+        "created_at",
+        "like_count"
+      ]
+    }
+  ],
+  "api_modules": [
+    {
+      "name": "User",
+      "endpoints": [
+        "/users",
+        "/users/{id}",
+        "/auth/register",
+        "/auth/login",
+        "/users/{id}/profile"
+      ]
+    },
+    {
+      "name": "Post",
+      "endpoints": [
+        "/posts",
+        "/posts/{id}",
+        "/posts/{id}/comments",
+        "/posts/{id}/like",
+        "/posts/{id}/edit"
+      ]
+    },
+    {
+      "name": "Comment",
+      "endpoints": [
+        "/comments",
+        "/comments/{id}",
+        "/comments/{id}/like",
+        "/comments/{id}/edit",
+        "/comments/{id}/delete"
+      ]
+    }
+  ],
+  "pages": [
+    "Home Feed",
+    "Post Detail",
+    "Create/Edit Post",
+    "User Profile",
+    "Login / Register"
+  ],
+  "backend_modules": [
+    "Authentication",
+    "User Management",
+    "Post Management",
+    "Comment Management",
+    "Like Management"
+  ],
+  "roadmap": [
+    {
+      "phase": "MVP",
+      "milestones": [
+        "Set up project repository and development environment",
+        "Implement user registration and login",
+        "Develop post CRUD operations",
+        "Add comment functionality",
+        "Implement like counters for posts and comments"
+      ]
+    },
+    {
+      "phase": "Feature Expansion",
+      "milestones": [
+        "Introduce tagging system for posts",
+        "Add full-text search capability",
+        "Enable users to follow authors"
+      ]
+    },
+    {
+      "phase": "Scaling & Optimization",
+      "milestones": [
+        "Optimize database queries and indexes",
+        "Prepare deployment scripts for production",
+        "Integrate basic analytics dashboard"
+      ]
+    }
+  ]
+}

@@ -1,0 +1,126 @@
+{
+  "project_name": "MealPlanner Pro",
+  "description": "A web application that lets users browse, create, and manage recipes with detailed nutrition facts, and generate weekly meal plans with nutrition summaries.",
+  "target_users": [
+    "Health\u2011conscious individuals",
+    "Families planning meals",
+    "Dietitians and nutrition coaches"
+  ],
+  "core_features": [
+    "User registration, login, and profile management",
+    "Browse, search, and view recipes with nutrition facts",
+    "Create, edit, and delete personal recipes",
+    "Generate and edit weekly meal plans from selected recipes",
+    "View aggregated nutrition summary for each weekly plan"
+  ],
+  "future_features": [
+    "Automatic grocery list generation from weekly plans",
+    "Integration with external nutrition APIs for richer data",
+    "Share and collaborate on meal plans with other users"
+  ],
+  "tech_stack": [
+    "FastAPI",
+    "React",
+    "SQLite"
+  ],
+  "database_entities": [
+    {
+      "name": "User",
+      "fields": [
+        "id",
+        "email",
+        "password_hash",
+        "name",
+        "dietary_preferences",
+        "calorie_goal"
+      ]
+    },
+    {
+      "name": "Recipe",
+      "fields": [
+        "id",
+        "title",
+        "description",
+        "ingredients",
+        "instructions",
+        "nutrition",
+        "prep_time",
+        "cook_time",
+        "servings"
+      ]
+    },
+    {
+      "name": "MealPlan",
+      "fields": [
+        "id",
+        "user_id",
+        "week_start_date",
+        "plan",
+        "total_nutrition"
+      ]
+    }
+  ],
+  "api_modules": [
+    {
+      "name": "User",
+      "endpoints": [
+        "/users",
+        "/users/{id}"
+      ]
+    },
+    {
+      "name": "Recipe",
+      "endpoints": [
+        "/recipes",
+        "/recipes/{id}"
+      ]
+    },
+    {
+      "name": "MealPlan",
+      "endpoints": [
+        "/mealplans",
+        "/mealplans/{id}"
+      ]
+    }
+  ],
+  "pages": [
+    "Login",
+    "Register",
+    "Dashboard",
+    "Recipe Catalog",
+    "Recipe Detail / Edit"
+  ],
+  "backend_modules": [
+    "Authentication",
+    "User Management",
+    "Recipe Management",
+    "MealPlan Management",
+    "Nutrition Service"
+  ],
+  "roadmap": [
+    {
+      "phase": "Phase 1 \u2013 MVP",
+      "milestones": [
+        "Implement user authentication and profile CRUD",
+        "Create REST APIs for Recipe and MealPlan entities",
+        "Build basic React UI for login, registration, and recipe CRUD"
+      ]
+    },
+    {
+      "phase": "Phase 2 \u2013 Core Experience",
+      "milestones": [
+        "Add recipe search and nutrition display",
+        "Develop weekly meal\u2011plan editor with drag\u2011and\u2011drop",
+        "Show aggregated nutrition summary for weekly plans"
+      ]
+    },
+    {
+      "phase": "Phase 3 \u2013 Expansion",
+      "milestones": [
+        "Generate grocery lists from meal plans",
+        "Integrate external nutrition data source",
+        "Enable plan sharing and collaboration features"
+      ]
+    }
+  ]
+}

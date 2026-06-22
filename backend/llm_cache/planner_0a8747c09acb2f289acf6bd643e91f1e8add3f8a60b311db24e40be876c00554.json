@@ -1,0 +1,128 @@
+{
+  "project_name": "ShopEase Online Store",
+  "description": "A web\u2011based e\u2011commerce platform allowing users to browse products, manage a shopping cart, and place orders. Includes user authentication and basic order management.",
+  "target_users": [
+    "Online shoppers looking for a simple storefront",
+    "Small businesses needing a ready\u2011to\u2011use product catalog"
+  ],
+  "core_features": [
+    "Product catalog browsing with search and category filter",
+    "User registration and login",
+    "Shopping cart creation and editing",
+    "Order checkout and summary",
+    "User profile with order history"
+  ],
+  "future_features": [
+    "Payment gateway integration (e.g., Stripe)",
+    "Admin dashboard for inventory and order management",
+    "Email notifications for order confirmation and status updates"
+  ],
+  "tech_stack": [
+    "FastAPI",
+    "React",
+    "SQLite",
+    "Pydantic",
+    "SQLAlchemy"
+  ],
+  "database_entities": [
+    {
+      "name": "Product",
+      "fields": [
+        "id",
+        "name",
+        "description",
+        "price",
+        "image_url",
+        "category"
+      ]
+    },
+    {
+      "name": "Order",
+      "fields": [
+        "id",
+        "customer_id",
+        "order_date",
+        "status",
+        "total_amount",
+        "items"
+      ]
+    },
+    {
+      "name": "Customer",
+      "fields": [
+        "id",
+        "email",
+        "password_hash",
+        "full_name",
+        "address",
+        "phone"
+      ]
+    }
+  ],
+  "api_modules": [
+    {
+      "name": "Product",
+      "endpoints": [
+        "/products",
+        "/products/{id}"
+      ]
+    },
+    {
+      "name": "Order",
+      "endpoints": [
+        "/orders",
+        "/orders/{id}"
+      ]
+    },
+    {
+      "name": "Customer",
+      "endpoints": [
+        "/customers",
+        "/customers/{id}"
+      ]
+    }
+  ],
+  "pages": [
+    "Home / Product Catalog",
+    "Product Detail",
+    "Shopping Cart",
+    "Checkout",
+    "User Account (Login / Register / Order History)"
+  ],
+  "backend_modules": [
+    "Authentication",
+    "Customer Management",
+    "Product Management",
+    "Order Management",
+    "Cart Management"
+  ],
+  "roadmap": [
+    {
+      "phase": "Phase 1 \u2013 MVP",
+      "milestones": [
+        "Set up repository, FastAPI backend and React frontend",
+        "Design SQLite schema for Product, Order, Customer",
+        "Implement authentication endpoints and UI",
+        "Create product list and detail pages",
+        "Build client\u2011side cart and checkout flow"
+      ]
+    },
+    {
+      "phase": "Phase 2 \u2013 Feature Expansion",
+      "milestones": [
+        "Add category filter on product catalog",
+        "Implement order history page for customers",
+        "Develop admin product CRUD UI and APIs",
+        "Introduce basic order status management"
+      ]
+    },
+    {
+      "phase": "Phase 3 \u2013 Scaling & Integrations",
+      "milestones": [
+        "Integrate Stripe payment gateway",
+        "Send order confirmation and status emails",
+        "Add simple analytics dashboard for sales"
+      ]
+    }
+  ]
+}

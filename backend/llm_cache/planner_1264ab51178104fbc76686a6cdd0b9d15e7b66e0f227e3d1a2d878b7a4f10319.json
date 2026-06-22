@@ -1,0 +1,133 @@
+{
+  "project_name": "EduStream Online Course Platform",
+  "description": "A web platform where instructors can publish courses composed of lessons, and students can browse, enroll, and track their learning progress.",
+  "target_users": [
+    "Students",
+    "Instructors",
+    "Platform Administrators"
+  ],
+  "core_features": [
+    "User registration and authentication",
+    "Browse and search course catalog",
+    "View course details and lesson list",
+    "Enroll in courses",
+    "Track lesson completion and overall progress"
+  ],
+  "future_features": [
+    "Course ratings and reviews",
+    "Certificate generation upon completion",
+    "Instructor analytics dashboard"
+  ],
+  "tech_stack": [
+    "FastAPI",
+    "React",
+    "SQLite",
+    "Pydantic",
+    "SQLAlchemy"
+  ],
+  "database_entities": [
+    {
+      "name": "User",
+      "fields": [
+        "id",
+        "email",
+        "password_hash",
+        "full_name",
+        "role",
+        "created_at"
+      ]
+    },
+    {
+      "name": "Course",
+      "fields": [
+        "id",
+        "title",
+        "description",
+        "instructor_id",
+        "lessons",
+        "created_at"
+      ]
+    },
+    {
+      "name": "Enrollment",
+      "fields": [
+        "id",
+        "user_id",
+        "course_id",
+        "enrolled_at",
+        "completed_lessons",
+        "progress_percent",
+        "last_accessed"
+      ]
+    }
+  ],
+  "api_modules": [
+    {
+      "name": "User",
+      "endpoints": [
+        "/users",
+        "/users/{id}",
+        "/auth/register",
+        "/auth/login"
+      ]
+    },
+    {
+      "name": "Course",
+      "endpoints": [
+        "/courses",
+        "/courses/{id}"
+      ]
+    },
+    {
+      "name": "Enrollment",
+      "endpoints": [
+        "/enrollments",
+        "/enrollments/{id}",
+        "/enrollments/user/{user_id}",
+        "/enrollments/course/{course_id}"
+      ]
+    }
+  ],
+  "pages": [
+    "Login / Register",
+    "Course Catalog",
+    "Course Detail (Lesson List)",
+    "My Enrollments Dashboard",
+    "User Profile"
+  ],
+  "backend_modules": [
+    "Authentication",
+    "User Management",
+    "Course Management",
+    "Enrollment Management",
+    "Progress Tracking"
+  ],
+  "roadmap": [
+    {
+      "phase": "Phase 1: MVP",
+      "milestones": [
+        "Implement user authentication and role handling",
+        "Create course and enrollment data models",
+        "Develop REST APIs for users, courses, and enrollments",
+        "Build core React pages for catalog, course detail, and dashboard",
+        "Enable progress tracking and basic UI feedback"
+      ]
+    },
+    {
+      "phase": "Phase 2: Feature Expansion",
+      "milestones": [
+        "Add course rating and review system",
+        "Generate completion certificates",
+        "Introduce instructor analytics for course performance"
+      ]
+    },
+    {
+      "phase": "Phase 3: Scaling & Polish",
+      "milestones": [
+        "Implement search and filtering capabilities",
+        "Add admin panel for user and content moderation",
+        "Optimize database queries and add caching layer"
+      ]
+    }
+  ]
+}

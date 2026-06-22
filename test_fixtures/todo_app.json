@@ -1,0 +1,368 @@
+{
+    "project_name": "Todo Manager",
+    "description": "A todo list application that allows users to create, manage, and prioritize tasks",
+    "plan": {
+        "project_name": "Todo Manager",
+        "description": "A todo list application that allows users to create, manage, and prioritize tasks",
+        "target_users": [
+            "Individuals",
+            "Teams",
+            "Businesses"
+        ],
+        "core_features": [
+            "Task creation",
+            "Task prioritization",
+            "Task assignment",
+            "Due date setting",
+            "Task completion tracking"
+        ],
+        "future_features": [
+            "Collaboration tools",
+            "Task automation",
+            "Integrations with calendar apps"
+        ],
+        "tech_stack": [
+            "FastAPI",
+            "React",
+            "SQLite",
+            "Pydantic",
+            "SQLAlchemy"
+        ],
+        "database_entities": [
+            {
+                "name": "User",
+                "fields": [
+                    "username",
+                    "password",
+                    "email"
+                ]
+            },
+            {
+                "name": "Task",
+                "fields": [
+                    "title",
+                    "description",
+                    "priority",
+                    "due_date",
+                    "assignee",
+                    "status"
+                ]
+            },
+            {
+                "name": "Project",
+                "fields": [
+                    "name",
+                    "description",
+                    "start_date",
+                    "end_date"
+                ]
+            }
+        ],
+        "api_modules": [
+            {
+                "name": "User API",
+                "endpoints": [
+                    "/users",
+                    "/users/{id}",
+                    "/users/{id}/tasks"
+                ]
+            },
+            {
+                "name": "Task API",
+                "endpoints": [
+                    "/tasks",
+                    "/tasks/{id}",
+                    "/tasks/{id}/assign",
+                    "/tasks/{id}/complete"
+                ]
+            },
+            {
+                "name": "Project API",
+                "endpoints": [
+                    "/projects",
+                    "/projects/{id}",
+                    "/projects/{id}/tasks"
+                ]
+            }
+        ],
+        "pages": [
+            "Login",
+            "Dashboard",
+            "Task List",
+            "Task Details",
+            "Project Overview"
+        ],
+        "backend_modules": [
+            "Authentication",
+            "User Management",
+            "Task Management",
+            "Project Management",
+            "Notification System"
+        ],
+        "roadmap": [
+            {
+                "phase": "Development",
+                "milestones": [
+                    "Design database schema",
+                    "Implement user authentication",
+                    "Develop task management functionality",
+                    "Create project management feature",
+                    "Test and deploy application"
+                ]
+            },
+            {
+                "phase": "Testing and Deployment",
+                "milestones": [
+                    "Conduct unit testing and integration testing",
+                    "Deploy application to production environment",
+                    "Monitor application performance and fix bugs"
+                ]
+            },
+            {
+                "phase": "Maintenance and Updates",
+                "milestones": [
+                    "Gather user feedback and prioritize feature requests",
+                    "Implement new features and updates",
+                    "Continuously monitor application performance and security"
+                ]
+            }
+        ]
+    },
+    "architecture": {
+        "api_endpoints": [
+            {
+                "method": "GET",
+                "path": "/users",
+                "description": "Get all users",
+                "file": "app/routes/user_routes.py"
+            },
+            {
+                "method": "GET",
+                "path": "/users/{id}",
+                "description": "Get a user by id",
+                "file": "app/routes/user_routes.py"
+            },
+            {
+                "method": "POST",
+                "path": "/users",
+                "description": "Create a new user",
+                "file": "app/routes/user_routes.py"
+            },
+            {
+                "method": "PUT",
+                "path": "/users/{id}",
+                "description": "Update a user",
+                "file": "app/routes/user_routes.py"
+            },
+            {
+                "method": "DELETE",
+                "path": "/users/{id}",
+                "description": "Delete a user",
+                "file": "app/routes/user_routes.py"
+            },
+            {
+                "method": "GET",
+                "path": "/tasks",
+                "description": "Get all tasks",
+                "file": "app/routes/task_routes.py"
+            },
+            {
+                "method": "GET",
+                "path": "/tasks/{id}",
+                "description": "Get a task by id",
+                "file": "app/routes/task_routes.py"
+            },
+            {
+                "method": "POST",
+                "path": "/tasks",
+                "description": "Create a new task",
+                "file": "app/routes/task_routes.py"
+            },
+            {
+                "method": "PUT",
+                "path": "/tasks/{id}",
+                "description": "Update a task",
+                "file": "app/routes/task_routes.py"
+            },
+            {
+                "method": "DELETE",
+                "path": "/tasks/{id}",
+                "description": "Delete a task",
+                "file": "app/routes/task_routes.py"
+            },
+            {
+                "method": "GET",
+                "path": "/projects",
+                "description": "Get all projects",
+                "file": "app/routes/project_routes.py"
+            },
+            {
+                "method": "GET",
+                "path": "/projects/{id}",
+                "description": "Get a project by id",
+                "file": "app/routes/project_routes.py"
+            },
+            {
+                "method": "POST",
+                "path": "/projects",
+                "description": "Create a new project",
+                "file": "app/routes/project_routes.py"
+            },
+            {
+                "method": "PUT",
+                "path": "/projects/{id}",
+                "description": "Update a project",
+                "file": "app/routes/project_routes.py"
+            },
+            {
+                "method": "DELETE",
+                "path": "/projects/{id}",
+                "description": "Delete a project",
+                "file": "app/routes/project_routes.py"
+            }
+        ],
+        "database_schema": [
+            {
+                "table_name": "users",
+                "columns": [
+                    {
+                        "name": "id",
+                        "type": "integer",
+                        "is_primary_key": true,
+                        "is_nullable": false
+                    },
+                    {
+                        "name": "username",
+                        "type": "string",
+                        "is_primary_key": false,
+                        "is_nullable": false
+                    },
+                    {
+                        "name": "password",
+                        "type": "string",
+                        "is_primary_key": false,
+                        "is_nullable": false
+                    },
+                    {
+                        "name": "email",
+                        "type": "string",
+                        "is_primary_key": false,
+                        "is_nullable": true
+                    }
+                ]
+            },
+            {
+                "table_name": "tasks",
+                "columns": [
+                    {
+                        "name": "id",
+                        "type": "integer",
+                        "is_primary_key": true,
+                        "is_nullable": false
+                    },
+                    {
+                        "name": "title",
+                        "type": "string",
+                        "is_primary_key": false,
+                        "is_nullable": false
+                    },
+                    {
+                        "name": "description",
+                        "type": "string",
+                        "is_primary_key": false,
+                        "is_nullable": true
+                    },
+                    {
+                        "name": "priority",
+                        "type": "integer",
+                        "is_primary_key": false,
+                        "is_nullable": true
+                    },
+                    {
+                        "name": "due_date",
+                        "type": "date",
+                        "is_primary_key": false,
+                        "is_nullable": true
+                    },
+                    {
+                        "name": "assignee",
+                        "type": "integer",
+                        "is_primary_key": false,
+                        "is_nullable": true
+                    },
+                    {
+                        "name": "status",
+                        "type": "string",
+                        "is_primary_key": false,
+                        "is_nullable": true
+                    }
+                ]
+            },
+            {
+                "table_name": "projects",
+                "columns": [
+                    {
+                        "name": "id",
+                        "type": "integer",
+                        "is_primary_key": true,
+                        "is_nullable": false
+                    },
+                    {
+                        "name": "name",
+                        "type": "string",
+                        "is_primary_key": false,
+                        "is_nullable": false
+                    },
+                    {
+                        "name": "description",
+                        "type": "string",
+                        "is_primary_key": false,
+                        "is_nullable": true
+                    },
+                    {
+                        "name": "start_date",
+                        "type": "date",
+                        "is_primary_key": false,
+                        "is_nullable": true
+                    },
+                    {
+                        "name": "end_date",
+                        "type": "date",
+                        "is_primary_key": false,
+                        "is_nullable": true
+                    }
+                ]
+            }
+        ],
+        "folder_structure": {
+            "backend": [
+                "app",
+                "app/routes",
+                "app/models",
+                "app/services",
+                "app/schemas",
+                "app/utils"
+            ]
+        },
+        "frontend_structure": {
+            "pages": [
+                "Login",
+                "Dashboard",
+                "TaskList",
+                "TaskDetails",
+                "ProjectOverview"
+            ],
+            "components": [
+                "TaskCard",
+                "ProjectCard",
+                "UserCard",
+                "NavigationBar",
+                "Sidebar"
+            ]
+        }
+    },
+    "provider": "auto",
+    "generated_at": "2026-06-21T02:53:06.087237",
+    "generation_time_seconds": 9.81,
+    "version": "1.0"
+}

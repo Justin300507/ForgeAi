@@ -1,6 +1,9 @@
 from app.prompts.fixer_prompt import build_fixer_prompt
 from app.providers.ai_provider import generate_content
+from app.utils.json_cleaner import extract_json
 import json
+
+
 def generate_fix(
     file_path,
     file_content,
@@ -19,17 +22,14 @@ def generate_fix(
 
     text = generate_content(
         prompt,
-        provider
+        provider,
+        max_tokens=12000
     )
 
-    text = text.replace("```json", "")
-    text = text.replace("```", "")
-    text = text.strip()
-
     try:
-        return json.loads(text)
+        return extract_json(text)
 
-    except Exception as e:
+    except (json.JSONDecodeError, ValueError) as e:
 
         print("\n=== FIX AGENT JSON ERROR ===")
         print(e)

@@ -1,0 +1,136 @@
+{
+  "project_name": "PodTrack",
+  "description": "A web application that lets users discover podcasts, subscribe to shows, stream episodes, and keep a personal play history.",
+  "target_users": [
+    "Podcast listeners",
+    "Commuters",
+    "Students",
+    "Lifelong learners"
+  ],
+  "core_features": [
+    "Discover and search podcast shows",
+    "Subscribe/unsubscribe to shows",
+    "Stream episodes with playback controls",
+    "Automatic play history tracking",
+    "Personal dashboard with latest episodes from subscriptions"
+  ],
+  "future_features": [
+    "Download episodes for offline listening",
+    "Personalized episode recommendations",
+    "Share episodes and comment with friends"
+  ],
+  "tech_stack": [
+    "FastAPI",
+    "React",
+    "SQLite"
+  ],
+  "database_entities": [
+    {
+      "name": "User",
+      "fields": [
+        "id",
+        "username",
+        "email",
+        "password_hash",
+        "created_at"
+      ]
+    },
+    {
+      "name": "Show",
+      "fields": [
+        "id",
+        "title",
+        "description",
+        "author",
+        "rss_feed_url",
+        "image_url",
+        "created_at"
+      ]
+    },
+    {
+      "name": "Episode",
+      "fields": [
+        "id",
+        "show_id",
+        "title",
+        "description",
+        "audio_url",
+        "duration_seconds",
+        "publish_date",
+        "episode_number"
+      ]
+    }
+  ],
+  "api_modules": [
+    {
+      "name": "User",
+      "endpoints": [
+        "/users",
+        "/users/{id}",
+        "/users/{id}/subscriptions",
+        "/users/{id}/play-history"
+      ]
+    },
+    {
+      "name": "Show",
+      "endpoints": [
+        "/shows",
+        "/shows/{id}",
+        "/shows/{id}/episodes"
+      ]
+    },
+    {
+      "name": "Episode",
+      "endpoints": [
+        "/episodes",
+        "/episodes/{id}"
+      ]
+    }
+  ],
+  "pages": [
+    "Login",
+    "Dashboard",
+    "Show Detail",
+    "Episode Player",
+    "History"
+  ],
+  "backend_modules": [
+    "Authentication",
+    "User Management",
+    "Show Management",
+    "Episode Management",
+    "Subscription & PlayHistory Management"
+  ],
+  "roadmap": [
+    {
+      "phase": "MVP Launch",
+      "milestones": [
+        "Implement user authentication",
+        "Create CRUD for shows and episodes",
+        "Build subscription and play history endpoints",
+        "Design dashboard UI",
+        "Deploy initial version"
+      ]
+    },
+    {
+      "phase": "Enhanced Experience",
+      "milestones": [
+        "Add search and filtering for shows",
+        "Implement playback progress persistence",
+        "Introduce basic recommendation engine",
+        "Improve UI/UX",
+        "Add analytics for listening habits"
+      ]
+    },
+    {
+      "phase": "Offline & Social Features",
+      "milestones": [
+        "Enable episode downloads",
+        "Add sharing and commenting",
+        "Integrate push notifications",
+        "Refine recommendation algorithms",
+        "Scale infrastructure"
+      ]
+    }
+  ]
+}

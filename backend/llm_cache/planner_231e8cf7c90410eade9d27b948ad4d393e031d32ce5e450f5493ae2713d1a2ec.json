@@ -1,0 +1,138 @@
+{
+  "project_name": "BookClub Hub",
+  "description": "An online platform for book enthusiasts to discover books, create personal reading lists, write reviews, and engage in discussions with other members.",
+  "target_users": [
+    "Avid readers",
+    "Casual readers",
+    "Book club organizers",
+    "Authors seeking feedback"
+  ],
+  "core_features": [
+    "Browse and search a catalog of books",
+    "Create and manage personal reading lists",
+    "Write and read reviews for books",
+    "Participate in discussion threads for each book",
+    "Member profiles with follow capability"
+  ],
+  "future_features": [
+    "Host virtual reading events with live chat",
+    "Personalized book recommendations based on reading history",
+    "Integration with external book data sources (e.g., Google Books)"
+  ],
+  "tech_stack": [
+    "FastAPI",
+    "React",
+    "SQLite",
+    "Pydantic",
+    "SQLAlchemy"
+  ],
+  "database_entities": [
+    {
+      "name": "Book",
+      "fields": [
+        "id",
+        "title",
+        "author",
+        "isbn",
+        "published_year",
+        "description",
+        "cover_url"
+      ]
+    },
+    {
+      "name": "Member",
+      "fields": [
+        "id",
+        "username",
+        "email",
+        "hashed_password",
+        "bio",
+        "join_date"
+      ]
+    },
+    {
+      "name": "Review",
+      "fields": [
+        "id",
+        "member_id",
+        "book_id",
+        "rating",
+        "comment",
+        "created_at"
+      ]
+    }
+  ],
+  "api_modules": [
+    {
+      "name": "Book",
+      "endpoints": [
+        "/books",
+        "/books/{book_id}",
+        "/books/search",
+        "/books/{book_id}/reviews"
+      ]
+    },
+    {
+      "name": "Member",
+      "endpoints": [
+        "/members",
+        "/members/{member_id}",
+        "/members/{member_id}/reading-list",
+        "/members/{member_id}/reading-list/{book_id}",
+        "/members/{member_id}/reviews"
+      ]
+    },
+    {
+      "name": "Review",
+      "endpoints": [
+        "/reviews",
+        "/reviews/{review_id}",
+        "/books/{book_id}/reviews",
+        "/members/{member_id}/reviews"
+      ]
+    }
+  ],
+  "pages": [
+    "Login",
+    "Book Catalog",
+    "Reading List",
+    "Book Detail (with reviews and discussion)",
+    "Member Profile"
+  ],
+  "backend_modules": [
+    "Authentication",
+    "Member Service",
+    "Book Service",
+    "Review Service",
+    "ReadingList Service"
+  ],
+  "roadmap": [
+    {
+      "phase": "MVP Launch",
+      "milestones": [
+        "Set up repository, FastAPI, React, and SQLite infrastructure",
+        "Implement user authentication and registration",
+        "Develop Book catalog API and UI with search capability",
+        "Create Member profile pages and reading list management",
+        "Enable review creation, display, and rating"
+      ]
+    },
+    {
+      "phase": "Community Features",
+      "milestones": [
+        "Add discussion threads linked to each book",
+        "Implement member follow system and activity feed",
+        "Introduce sorting and filtering options for books and reviews",
+        "Enhance UI for seamless navigation between books and discussions"
+      ]
+    },
+    {
+      "phase": "Expansion & Recommendations",
+      "milestones": [
+        "Integrate external book data API for enriched metadata",
+        "Build personalized recommendation engine",
+        "Launch virtual reading events with live chat functionality"
+      ]
+    }
+  ]
+}

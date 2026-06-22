@@ -1,0 +1,141 @@
+{
+  "project_name": "TravelItinerary Planner",
+  "description": "A web application that lets users create, organize, and budget trips by adding destinations and scheduling activities, with tools to track expenses and view a complete itinerary.",
+  "target_users": [
+    "Solo travelers",
+    "Family vacation planners",
+    "Friends planning group trips",
+    "Travel agencies"
+  ],
+  "core_features": [
+    "User registration and secure login",
+    "Create, edit, and delete trips",
+    "Add destinations and set trip dates",
+    "Schedule activities with time, location, and cost",
+    "Set and track a budget for each trip"
+  ],
+  "future_features": [
+    "Share itineraries via link or email",
+    "Integrate with external maps, flight, and hotel APIs",
+    "AI\u2011powered activity and destination recommendations"
+  ],
+  "tech_stack": [
+    "FastAPI",
+    "React",
+    "SQLite"
+  ],
+  "database_entities": [
+    {
+      "name": "User",
+      "fields": [
+        "id",
+        "email",
+        "hashed_password",
+        "full_name",
+        "created_at"
+      ]
+    },
+    {
+      "name": "Trip",
+      "fields": [
+        "id",
+        "user_id",
+        "name",
+        "start_date",
+        "end_date",
+        "destinations",
+        "total_budget",
+        "created_at"
+      ]
+    },
+    {
+      "name": "Activity",
+      "fields": [
+        "id",
+        "trip_id",
+        "name",
+        "description",
+        "location",
+        "start_time",
+        "end_time",
+        "cost",
+        "created_at"
+      ]
+    }
+  ],
+  "api_modules": [
+    {
+      "name": "User",
+      "endpoints": [
+        "GET /users",
+        "POST /users",
+        "GET /users/{id}",
+        "PUT /users/{id}",
+        "DELETE /users/{id}"
+      ]
+    },
+    {
+      "name": "Trip",
+      "endpoints": [
+        "GET /trips",
+        "POST /trips",
+        "GET /trips/{id}",
+        "PUT /trips/{id}",
+        "DELETE /trips/{id}"
+      ]
+    },
+    {
+      "name": "Activity",
+      "endpoints": [
+        "GET /activities",
+        "POST /activities",
+        "GET /activities/{id}",
+        "PUT /activities/{id}",
+        "DELETE /activities/{id}"
+      ]
+    }
+  ],
+  "pages": [
+    "Login",
+    "Register",
+    "Dashboard",
+    "TripEditor",
+    "ActivityEditor"
+  ],
+  "backend_modules": [
+    "Authentication",
+    "UserManagement",
+    "TripManagement",
+    "ActivityManagement",
+    "BudgetService"
+  ],
+  "roadmap": [
+    {
+      "phase": "MVP Development",
+      "milestones": [
+        "Project setup with FastAPI, React, SQLite",
+        "Implement authentication and user registration",
+        "Create CRUD APIs for trips and activities",
+        "Build basic UI for login, dashboard, and trip creation"
+      ]
+    },
+    {
+      "phase": "Budget & Destination Enhancements",
+      "milestones": [
+        "Add destination list handling in trip entity",
+        "Implement budget calculation and tracking",
+        "Refine UI for itinerary view and activity scheduling",
+        "User testing and bug fixing"
+      ]
+    },
+    {
+      "phase": "Sharing & Integrations",
+      "milestones": [
+        "Enable itinerary sharing via unique links",
+        "Integrate with map and flight APIs for location data",
+        "Add AI recommendation engine for activities",
+        "Prepare documentation and launch"
+      ]
+    }
+  ]
+}

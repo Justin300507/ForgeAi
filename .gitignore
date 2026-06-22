@@ -12,3 +12,4 @@ frontend_failed_response.txt
 
 venv/
 .env
+.aider*

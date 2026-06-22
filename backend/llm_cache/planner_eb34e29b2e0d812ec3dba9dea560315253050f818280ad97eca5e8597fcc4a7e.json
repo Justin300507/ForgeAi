@@ -1,0 +1,145 @@
+{
+  "project_name": "Digital Products Store",
+  "description": "An online marketplace where creators can upload digital items (e.g., ebooks, music, software) and customers can purchase and instantly download them, with a personal purchase history.",
+  "target_users": [
+    "Independent creators",
+    "Digital content consumers",
+    "Small businesses selling assets"
+  ],
+  "core_features": [
+    "Browse and search digital products",
+    "Secure checkout and payment processing",
+    "Instant download of purchased items",
+    "User account with purchase history",
+    "Admin interface for product management"
+  ],
+  "future_features": [
+    "Subscription plans for recurring access",
+    "Product rating and review system",
+    "Multi\u2011currency pricing support"
+  ],
+  "tech_stack": [
+    "FastAPI",
+    "React",
+    "SQLite",
+    "Pydantic",
+    "SQLAlchemy"
+  ],
+  "database_entities": [
+    {
+      "name": "User",
+      "fields": [
+        "id",
+        "email",
+        "password_hash",
+        "full_name",
+        "is_active",
+        "created_at",
+        "updated_at"
+      ]
+    },
+    {
+      "name": "Product",
+      "fields": [
+        "id",
+        "name",
+        "description",
+        "price",
+        "file_url",
+        "file_size",
+        "created_at",
+        "updated_at"
+      ]
+    },
+    {
+      "name": "Order",
+      "fields": [
+        "id",
+        "user_id",
+        "total_amount",
+        "status",
+        "created_at",
+        "updated_at"
+      ]
+    }
+  ],
+  "api_modules": [
+    {
+      "name": "User",
+      "endpoints": [
+        "POST /users",
+        "GET /users/{id}",
+        "PUT /users/{id}",
+        "DELETE /users/{id}",
+        "POST /auth/login"
+      ]
+    },
+    {
+      "name": "Product",
+      "endpoints": [
+        "GET /products",
+        "POST /products",
+        "GET /products/{id}",
+        "PUT /products/{id}",
+        "DELETE /products/{id}"
+      ]
+    },
+    {
+      "name": "Order",
+      "endpoints": [
+        "GET /orders",
+        "POST /orders",
+        "GET /orders/{id}",
+        "PUT /orders/{id}",
+        "DELETE /orders/{id}"
+      ]
+    }
+  ],
+  "pages": [
+    "Home / Product Catalog",
+    "Product Detail & Purchase",
+    "Cart & Checkout",
+    "Login / Register",
+    "Purchase History"
+  ],
+  "backend_modules": [
+    "Authentication",
+    "User Management",
+    "Product Management",
+    "Order Management",
+    "File Storage"
+  ],
+  "roadmap": [
+    {
+      "phase": "MVP Launch",
+      "milestones": [
+        "Initialize repository and project structure",
+        "Design and implement database schema",
+        "Develop product listing and detail APIs",
+        "Implement user registration and login",
+        "Create checkout flow and order API",
+        "Build core frontend pages (catalog, product, login, cart)"
+      ]
+    },
+    {
+      "phase": "Admin & Download",
+      "milestones": [
+        "Build admin UI for product upload and editing",
+        "Integrate secure file storage for downloadable assets",
+        "Expose download endpoint for purchased items",
+        "Add purchase history page for users",
+        "Implement basic analytics dashboard"
+      ]
+    },
+    {
+      "phase": "Enhancements",
+      "milestones": [
+        "Add product rating and review functionality",
+        "Introduce subscription plans for recurring access",
+        "Support multi\u2011currency pricing",
+        "Perform performance tuning and security audit",
+        "Deploy production environment and monitoring"
+      ]
+    }
+  ]
+}

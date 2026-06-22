@@ -1,0 +1,52 @@
+[
+  {
+    "pattern_key": "NoReferencedTableError",
+    "rule": "All SQLAlchemy models must be defined before any foreign‑key references to them. Place every model class in app/models/ and import them in app/models/__init__.py so Base.metadata includes each table. WRONG: class Order(Base): user_id = Column(Integer, ForeignKey('users.id')) (User defined later). RIGHT: define User first or import User before Order. This prevents missing‑table errors.",
+    "quality_score": 7.0,
+    "old_pass_rate": 0.0,
+    "new_pass_rate": 0.0,
+    "improvement": 0.0,
+    "promoted": false,
+    "timestamp": "2026-06-22T05:42:19"
+  },
+  {
+    "pattern_key": "ModuleNotFoundError",
+    "rule": "All imports must be absolute, start with app/, and reference an existing file or package that is listed in requirements.txt. WRONG: from utils import helper (relative, missing). RIGHT: from app.utils import helper and ensure the utils package is in requirements.txt. This prevents missing‑module runtime errors.",
+    "quality_score": 6.5,
+    "old_pass_rate": 0.0,
+    "new_pass_rate": 0.0,
+    "improvement": 0.0,
+    "promoted": false,
+    "timestamp": "2026-06-22T05:42:19"
+  },
+  {
+    "pattern_key": "NoReferencedTableError",
+    "rule": "When a SQLAlchemy model defines a ForeignKey, the referenced table name must exactly match an existing model's __tablename__. WRONG: class Order(Base): user_id = Column(Integer, ForeignKey('users.id'))  # User model uses __tablename__ = 'user'. RIGHT: class Order(Base): user_id = Column(Integer, ForeignKey('user.id')). Verify the target table exists before running migrations.",
+    "quality_score": 7.8,
+    "old_pass_rate": 0.0,
+    "new_pass_rate": 0.0,
+    "improvement": 0.0,
+    "promoted": false,
+    "timestamp": "2026-06-22T05:46:00"
+  },
+  {
+    "pattern_key": "RouterExportMismatch",
+    "rule": "Each route module must define and export a variable whose name matches the resource prefix and ends with _router. WRONG: router = APIRouter() in users.py. RIGHT: users_router = APIRouter(). The variable must be imported in main.py using the exact name.",
+    "quality_score": 7.3,
+    "old_pass_rate": 0.0,
+    "new_pass_rate": 0.0,
+    "improvement": 0.0,
+    "promoted": false,
+    "timestamp": "2026-06-22T05:46:00"
+  },
+  {
+    "pattern_key": "ModuleNotFoundError",
+    "rule": "Every directory that appears in an import path must contain an __init__.py file. WRONG: app/models/user.py without app/models/__init__.py. RIGHT: add an empty __init__.py in app/models/. This ensures Python treats the folder as a package and prevents ModuleNotFoundError.",
+    "quality_score": 7.8,
+    "old_pass_rate": 0.0,
+    "new_pass_rate": 0.0,
+    "improvement": 0.0,
+    "promoted": false,
+    "timestamp": "2026-06-22T05:46:00"
+  }
+]

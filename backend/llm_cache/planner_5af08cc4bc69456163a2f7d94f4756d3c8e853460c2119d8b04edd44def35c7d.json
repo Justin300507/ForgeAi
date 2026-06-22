@@ -1,0 +1,135 @@
+{
+  "project_name": "Taggable Blog Platform",
+  "description": "A web-based blogging platform that allows authors to write and tag posts, readers to comment, and administrators to manage content.",
+  "target_users": [
+    "Authors",
+    "Readers",
+    "Site Administrators"
+  ],
+  "core_features": [
+    "User registration and authentication",
+    "Author post creation, editing, and deletion with tags",
+    "Reader commenting on posts",
+    "Tag-based post browsing and search",
+    "Admin dashboard for managing posts, comments, and users"
+  ],
+  "future_features": [
+    "Post like and reaction system",
+    "Email notifications for new comments and replies",
+    "Content analytics and reporting"
+  ],
+  "tech_stack": [
+    "FastAPI",
+    "React",
+    "SQLite",
+    "Pydantic",
+    "SQLAlchemy"
+  ],
+  "database_entities": [
+    {
+      "name": "User",
+      "fields": [
+        "id",
+        "username",
+        "email",
+        "password_hash",
+        "role",
+        "created_at"
+      ]
+    },
+    {
+      "name": "Post",
+      "fields": [
+        "id",
+        "title",
+        "content",
+        "author_id",
+        "tags",
+        "status",
+        "created_at",
+        "updated_at"
+      ]
+    },
+    {
+      "name": "Comment",
+      "fields": [
+        "id",
+        "post_id",
+        "author_id",
+        "content",
+        "created_at",
+        "approved"
+      ]
+    }
+  ],
+  "api_modules": [
+    {
+      "name": "User",
+      "endpoints": [
+        "/users",
+        "/users/{id}",
+        "/auth/register",
+        "/auth/login"
+      ]
+    },
+    {
+      "name": "Post",
+      "endpoints": [
+        "/posts",
+        "/posts/{id}",
+        "/posts/search",
+        "/posts/{id}/tags"
+      ]
+    },
+    {
+      "name": "Comment",
+      "endpoints": [
+        "/posts/{post_id}/comments",
+        "/comments/{id}"
+      ]
+    }
+  ],
+  "pages": [
+    "Home (post list with tag filters)",
+    "Post Detail (including comments)",
+    "Author Dashboard (create/edit posts)",
+    "Admin Dashboard (manage content and users)",
+    "Login / Register"
+  ],
+  "backend_modules": [
+    "Authentication",
+    "User Management",
+    "Post Management",
+    "Comment Management",
+    "Admin Management"
+  ],
+  "roadmap": [
+    {
+      "phase": "Phase 1: MVP",
+      "milestones": [
+        "Implement user registration, login, and role assignment",
+        "Create post CRUD with tag support",
+        "Enable commenting on posts",
+        "Basic admin interface for content moderation"
+      ]
+    },
+    {
+      "phase": "Phase 2: Feature Enhancements",
+      "milestones": [
+        "Add tag-based search and filtering",
+        "Introduce post status (draft/published)",
+        "Implement email notifications for new comments",
+        "Add like/reaction system for posts"
+      ]
+    },
+    {
+      "phase": "Phase 3: Scaling & Analytics",
+      "milestones": [
+        "Develop content analytics dashboard for admins",
+        "Optimize database queries and add indexing",
+        "Implement role\u2011based access controls and audit logging",
+        "Prepare deployment scripts and CI/CD pipeline"
+      ]
+    }
+  ]
+}

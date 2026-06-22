@@ -1,0 +1,128 @@
+{
+  "project_name": "Personal Finance Tracker",
+  "description": "A web application that lets users record income and expenses, organize them into budget categories, set monthly budget limits, and view financial summaries.",
+  "target_users": [
+    "Young professionals managing monthly cash flow",
+    "Freelancers tracking irregular income and expenses",
+    "Families budgeting household finances"
+  ],
+  "core_features": [
+    "Record income entries",
+    "Record expense entries",
+    "Categorize transactions into budget categories",
+    "Set and monitor monthly budget limits per category",
+    "Dashboard showing income, expenses, and budget utilization"
+  ],
+  "future_features": [
+    "Recurring transaction automation",
+    "Export financial reports (CSV/PDF)",
+    "Multi\u2011currency support"
+  ],
+  "tech_stack": [
+    "FastAPI",
+    "React",
+    "SQLite"
+  ],
+  "database_entities": [
+    {
+      "name": "User",
+      "fields": [
+        "id",
+        "email",
+        "password_hash",
+        "full_name",
+        "created_at"
+      ]
+    },
+    {
+      "name": "Transaction",
+      "fields": [
+        "id",
+        "user_id",
+        "amount",
+        "date",
+        "type",
+        "category_id",
+        "description",
+        "created_at"
+      ]
+    },
+    {
+      "name": "BudgetCategory",
+      "fields": [
+        "id",
+        "user_id",
+        "name",
+        "limit_amount",
+        "period",
+        "created_at"
+      ]
+    }
+  ],
+  "api_modules": [
+    {
+      "name": "User",
+      "endpoints": [
+        "/users",
+        "/users/{id}",
+        "/auth/login"
+      ]
+    },
+    {
+      "name": "Transaction",
+      "endpoints": [
+        "/transactions",
+        "/transactions/{id}"
+      ]
+    },
+    {
+      "name": "BudgetCategory",
+      "endpoints": [
+        "/categories",
+        "/categories/{id}"
+      ]
+    }
+  ],
+  "pages": [
+    "Login",
+    "Register",
+    "Dashboard",
+    "Transactions",
+    "Budgets"
+  ],
+  "backend_modules": [
+    "Authentication",
+    "User Management",
+    "Transaction Management",
+    "Budget Management",
+    "Reporting"
+  ],
+  "roadmap": [
+    {
+      "phase": "MVP",
+      "milestones": [
+        "Initialize repository and CI pipeline",
+        "Implement user registration and login",
+        "Create transaction CRUD API",
+        "Create budget category CRUD API",
+        "Build dashboard UI with summary charts"
+      ]
+    },
+    {
+      "phase": "Feature Expansion",
+      "milestones": [
+        "Add recurring transaction handling",
+        "Implement CSV and PDF export of reports",
+        "Introduce budget limit alerts"
+      ]
+    },
+    {
+      "phase": "Polish & Scale",
+      "milestones": [
+        "Support multiple currencies",
+        "Optimize UI for mobile devices",
+        "Add automated tests and performance monitoring"
+      ]
+    }
+  ]
+}

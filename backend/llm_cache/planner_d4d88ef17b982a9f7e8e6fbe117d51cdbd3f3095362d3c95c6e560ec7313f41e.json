@@ -1,0 +1,127 @@
+{
+  "project_name": "Crypto Portfolio Tracker",
+  "description": "A web application that lets users track their cryptocurrency holdings, record trades, and view portfolio performance with up-to-date market prices.",
+  "target_users": [
+    "Crypto enthusiasts",
+    "Retail investors",
+    "Portfolio analysts"
+  ],
+  "core_features": [
+    "Track holdings per coin",
+    "Record buy/sell trades",
+    "View portfolio summary",
+    "Real-time price updates",
+    "Export portfolio data"
+  ],
+  "future_features": [
+    "Price alerts and notifications",
+    "Tax report generation",
+    "Direct exchange integration"
+  ],
+  "tech_stack": [
+    "FastAPI",
+    "React",
+    "SQLite"
+  ],
+  "database_entities": [
+    {
+      "name": "User",
+      "fields": [
+        "id",
+        "email",
+        "password_hash",
+        "created_at"
+      ]
+    },
+    {
+      "name": "Coin",
+      "fields": [
+        "id",
+        "symbol",
+        "name",
+        "coingecko_id",
+        "logo_url"
+      ]
+    },
+    {
+      "name": "Trade",
+      "fields": [
+        "id",
+        "user_id",
+        "coin_id",
+        "type",
+        "amount",
+        "price_usd",
+        "fee_usd",
+        "timestamp",
+        "notes"
+      ]
+    }
+  ],
+  "api_modules": [
+    {
+      "name": "User",
+      "endpoints": [
+        "/users",
+        "/users/{id}",
+        "/auth/login"
+      ]
+    },
+    {
+      "name": "Coin",
+      "endpoints": [
+        "/coins",
+        "/coins/{id}"
+      ]
+    },
+    {
+      "name": "Trade",
+      "endpoints": [
+        "/trades",
+        "/trades/{id}"
+      ]
+    }
+  ],
+  "pages": [
+    "Login",
+    "Dashboard",
+    "Holdings",
+    "Trade History",
+    "Coin Detail"
+  ],
+  "backend_modules": [
+    "Authentication",
+    "User Management",
+    "Coin Service",
+    "Trade Management",
+    "Portfolio Service"
+  ],
+  "roadmap": [
+    {
+      "phase": "MVP",
+      "milestones": [
+        "Set up project repository and CI pipeline",
+        "Implement user registration and login",
+        "Integrate coin data from external API",
+        "Build trade CRUD endpoints",
+        "Display portfolio summary derived from trades"
+      ]
+    },
+    {
+      "phase": "Enhancements",
+      "milestones": [
+        "Add real-time price updates",
+        "Enable CSV export and import of portfolio data",
+        "Improve responsive UI and UX"
+      ]
+    },
+    {
+      "phase": "Future Features",
+      "milestones": [
+        "Implement price alerts and notifications",
+        "Generate tax reports based on trade history",
+        "Add direct integration with major exchanges for automatic trade sync"
+      ]
+    }
+  ]
+}

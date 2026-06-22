@@ -1,0 +1,318 @@
+{
+  "api_endpoints": [
+    {
+      "method": "POST",
+      "path": "/auth/login",
+      "description": "Authenticate user and return access token",
+      "file": "app/routes/auth_routes.py"
+    },
+    {
+      "method": "GET",
+      "path": "/products",
+      "description": "Retrieve list of all products",
+      "file": "app/routes/product_routes.py"
+    },
+    {
+      "method": "POST",
+      "path": "/products",
+      "description": "Create a new product",
+      "file": "app/routes/product_routes.py"
+    },
+    {
+      "method": "GET",
+      "path": "/products/{id}",
+      "description": "Retrieve details of a specific product",
+      "file": "app/routes/product_routes.py"
+    },
+    {
+      "method": "PUT",
+      "path": "/products/{id}",
+      "description": "Update an existing product",
+      "file": "app/routes/product_routes.py"
+    },
+    {
+      "method": "DELETE",
+      "path": "/products/{id}",
+      "description": "Delete a product",
+      "file": "app/routes/product_routes.py"
+    },
+    {
+      "method": "GET",
+      "path": "/suppliers",
+      "description": "Retrieve list of all suppliers",
+      "file": "app/routes/supplier_routes.py"
+    },
+    {
+      "method": "POST",
+      "path": "/suppliers",
+      "description": "Create a new supplier",
+      "file": "app/routes/supplier_routes.py"
+    },
+    {
+      "method": "GET",
+      "path": "/suppliers/{id}",
+      "description": "Retrieve details of a specific supplier",
+      "file": "app/routes/supplier_routes.py"
+    },
+    {
+      "method": "PUT",
+      "path": "/suppliers/{id}",
+      "description": "Update an existing supplier",
+      "file": "app/routes/supplier_routes.py"
+    },
+    {
+      "method": "DELETE",
+      "path": "/suppliers/{id}",
+      "description": "Delete a supplier",
+      "file": "app/routes/supplier_routes.py"
+    },
+    {
+      "method": "GET",
+      "path": "/transactions",
+      "description": "Retrieve list of stock in/out transactions",
+      "file": "app/routes/transaction_routes.py"
+    },
+    {
+      "method": "POST",
+      "path": "/transactions",
+      "description": "Record a stock in or out transaction",
+      "file": "app/routes/transaction_routes.py"
+    },
+    {
+      "method": "GET",
+      "path": "/reports/stock",
+      "description": "Get stock overview for dashboard",
+      "file": "app/routes/report_routes.py"
+    },
+    {
+      "method": "GET",
+      "path": "/reports/low-stock",
+      "description": "Get list of products below reorder level",
+      "file": "app/routes/report_routes.py"
+    }
+  ],
+  "database_schema": [
+    {
+      "table_name": "users",
+      "columns": [
+        {
+          "name": "id",
+          "type": "INTEGER",
+          "is_primary_key": true,
+          "is_nullable": false
+        },
+        {
+          "name": "username",
+          "type": "VARCHAR(150)",
+          "is_primary_key": false,
+          "is_nullable": false
+        },
+        {
+          "name": "hashed_password",
+          "type": "VARCHAR(255)",
+          "is_primary_key": false,
+          "is_nullable": false
+        },
+        {
+          "name": "role",
+          "type": "VARCHAR(50)",
+          "is_primary_key": false,
+          "is_nullable": false
+        },
+        {
+          "name": "created_at",
+          "type": "DATETIME",
+          "is_primary_key": false,
+          "is_nullable": false
+        }
+      ]
+    },
+    {
+      "table_name": "products",
+      "columns": [
+        {
+          "name": "id",
+          "type": "INTEGER",
+          "is_primary_key": true,
+          "is_nullable": false
+        },
+        {
+          "name": "name",
+          "type": "VARCHAR(255)",
+          "is_primary_key": false,
+          "is_nullable": false
+        },
+        {
+          "name": "sku",
+          "type": "VARCHAR(100)",
+          "is_primary_key": false,
+          "is_nullable": false
+        },
+        {
+          "name": "description",
+          "type": "TEXT",
+          "is_primary_key": false,
+          "is_nullable": true
+        },
+        {
+          "name": "price",
+          "type": "NUMERIC(10,2)",
+          "is_primary_key": false,
+          "is_nullable": false
+        },
+        {
+          "name": "quantity_in_stock",
+          "type": "INTEGER",
+          "is_primary_key": false,
+          "is_nullable": false
+        },
+        {
+          "name": "reorder_level",
+          "type": "INTEGER",
+          "is_primary_key": false,
+          "is_nullable": false
+        },
+        {
+          "name": "supplier_id",
+          "type": "INTEGER",
+          "is_primary_key": false,
+          "is_nullable": true
+        },
+        {
+          "name": "created_at",
+          "type": "DATETIME",
+          "is_primary_key": false,
+          "is_nullable": false
+        },
+        {
+          "name": "updated_at",
+          "type": "DATETIME",
+          "is_primary_key": false,
+          "is_nullable": false
+        }
+      ]
+    },
+    {
+      "table_name": "suppliers",
+      "columns": [
+        {
+          "name": "id",
+          "type": "INTEGER",
+          "is_primary_key": true,
+          "is_nullable": false
+        },
+        {
+          "name": "name",
+          "type": "VARCHAR(255)",
+          "is_primary_key": false,
+          "is_nullable": false
+        },
+        {
+          "name": "contact_name",
+          "type": "VARCHAR(255)",
+          "is_primary_key": false,
+          "is_nullable": true
+        },
+        {
+          "name": "phone",
+          "type": "VARCHAR(50)",
+          "is_primary_key": false,
+          "is_nullable": true
+        },
+        {
+          "name": "email",
+          "type": "VARCHAR(150)",
+          "is_primary_key": false,
+          "is_nullable": true
+        },
+        {
+          "name": "address",
+          "type": "TEXT",
+          "is_primary_key": false,
+          "is_nullable": true
+        },
+        {
+          "name": "created_at",
+          "type": "DATETIME",
+          "is_primary_key": false,
+          "is_nullable": false
+        }
+      ]
+    },
+    {
+      "table_name": "transactions",
+      "columns": [
+        {
+          "name": "id",
+          "type": "INTEGER",
+          "is_primary_key": true,
+          "is_nullable": false
+        },
+        {
+          "name": "product_id",
+          "type": "INTEGER",
+          "is_primary_key": false,
+          "is_nullable": false
+        },
+        {
+          "name": "quantity",
+          "type": "INTEGER",
+          "is_primary_key": false,
+          "is_nullable": false
+        },
+        {
+          "name": "transaction_type",
+          "type": "VARCHAR(10)",
+          "is_primary_key": false,
+          "is_nullable": false
+        },
+        {
+          "name": "date",
+          "type": "DATETIME",
+          "is_primary_key": false,
+          "is_nullable": false
+        },
+        {
+          "name": "notes",
+          "type": "TEXT",
+          "is_primary_key": false,
+          "is_nullable": true
+        }
+      ]
+    }
+  ],
+  "folder_structure": {
+    "backend": [
+      "app",
+      "app/models",
+      "app/schemas",
+      "app/services",
+      "app/routes",
+      "app/utils",
+      "app/config",
+      "app/dependencies"
+    ]
+  },
+  "frontend_structure": {
+    "pages": [
+      "Login",
+      "Dashboard",
+      "Products",
+      "Suppliers",
+      "Transactions"
+    ],
+    "components": [
+      "Header",
+      "Sidebar",
+      "LoginForm",
+      "ProductForm",
+      "ProductTable",
+      "SupplierForm",
+      "SupplierTable",
+      "TransactionForm",
+      "TransactionTable",
+      "StockOverviewChart",
+      "LowStockAlert"
+    ]
+  }
+}

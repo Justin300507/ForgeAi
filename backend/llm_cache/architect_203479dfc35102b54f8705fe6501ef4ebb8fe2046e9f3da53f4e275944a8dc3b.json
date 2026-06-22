@@ -1,0 +1,382 @@
+{
+  "api_endpoints": [
+    {
+      "method": "GET",
+      "path": "/projects",
+      "description": "Retrieve a list of all projects",
+      "file": "app/routes/project_routes.py"
+    },
+    {
+      "method": "POST",
+      "path": "/projects",
+      "description": "Create a new project",
+      "file": "app/routes/project_routes.py"
+    },
+    {
+      "method": "GET",
+      "path": "/projects/{id}",
+      "description": "Get detailed information of a specific project",
+      "file": "app/routes/project_routes.py"
+    },
+    {
+      "method": "PUT",
+      "path": "/projects/{id}",
+      "description": "Update an existing project's data",
+      "file": "app/routes/project_routes.py"
+    },
+    {
+      "method": "DELETE",
+      "path": "/projects/{id}",
+      "description": "Delete a project",
+      "file": "app/routes/project_routes.py"
+    },
+    {
+      "method": "GET",
+      "path": "/projects/{id}/milestones",
+      "description": "List milestones for a specific project",
+      "file": "app/routes/project_routes.py"
+    },
+    {
+      "method": "POST",
+      "path": "/projects/{id}/milestones",
+      "description": "Create a new milestone within a project",
+      "file": "app/routes/project_routes.py"
+    },
+    {
+      "method": "GET",
+      "path": "/tasks",
+      "description": "Retrieve a list of tasks (optionally filtered by project)",
+      "file": "app/routes/task_routes.py"
+    },
+    {
+      "method": "POST",
+      "path": "/tasks",
+      "description": "Create a new task",
+      "file": "app/routes/task_routes.py"
+    },
+    {
+      "method": "GET",
+      "path": "/tasks/{id}",
+      "description": "Get details of a specific task",
+      "file": "app/routes/task_routes.py"
+    },
+    {
+      "method": "PUT",
+      "path": "/tasks/{id}",
+      "description": "Update an existing task",
+      "file": "app/routes/task_routes.py"
+    },
+    {
+      "method": "DELETE",
+      "path": "/tasks/{id}",
+      "description": "Delete a task",
+      "file": "app/routes/task_routes.py"
+    },
+    {
+      "method": "GET",
+      "path": "/users",
+      "description": "Retrieve a list of all users",
+      "file": "app/routes/user_routes.py"
+    },
+    {
+      "method": "GET",
+      "path": "/users/{id}",
+      "description": "Get detailed information of a specific user",
+      "file": "app/routes/user_routes.py"
+    }
+  ],
+  "database_schema": [
+    {
+      "table_name": "users",
+      "columns": [
+        {
+          "name": "id",
+          "type": "INTEGER",
+          "is_primary_key": true,
+          "is_nullable": false
+        },
+        {
+          "name": "name",
+          "type": "TEXT",
+          "is_primary_key": false,
+          "is_nullable": false
+        },
+        {
+          "name": "email",
+          "type": "TEXT",
+          "is_primary_key": false,
+          "is_nullable": false
+        },
+        {
+          "name": "role",
+          "type": "TEXT",
+          "is_primary_key": false,
+          "is_nullable": false
+        },
+        {
+          "name": "avatar_url",
+          "type": "TEXT",
+          "is_primary_key": false,
+          "is_nullable": true
+        },
+        {
+          "name": "created_at",
+          "type": "DATETIME",
+          "is_primary_key": false,
+          "is_nullable": false
+        },
+        {
+          "name": "updated_at",
+          "type": "DATETIME",
+          "is_primary_key": false,
+          "is_nullable": false
+        }
+      ]
+    },
+    {
+      "table_name": "projects",
+      "columns": [
+        {
+          "name": "id",
+          "type": "INTEGER",
+          "is_primary_key": true,
+          "is_nullable": false
+        },
+        {
+          "name": "name",
+          "type": "TEXT",
+          "is_primary_key": false,
+          "is_nullable": false
+        },
+        {
+          "name": "description",
+          "type": "TEXT",
+          "is_primary_key": false,
+          "is_nullable": true
+        },
+        {
+          "name": "start_date",
+          "type": "DATE",
+          "is_primary_key": false,
+          "is_nullable": true
+        },
+        {
+          "name": "end_date",
+          "type": "DATE",
+          "is_primary_key": false,
+          "is_nullable": true
+        },
+        {
+          "name": "status",
+          "type": "TEXT",
+          "is_primary_key": false,
+          "is_nullable": false
+        },
+        {
+          "name": "created_at",
+          "type": "DATETIME",
+          "is_primary_key": false,
+          "is_nullable": false
+        },
+        {
+          "name": "updated_at",
+          "type": "DATETIME",
+          "is_primary_key": false,
+          "is_nullable": false
+        }
+      ]
+    },
+    {
+      "table_name": "project_members",
+      "columns": [
+        {
+          "name": "id",
+          "type": "INTEGER",
+          "is_primary_key": true,
+          "is_nullable": false
+        },
+        {
+          "name": "project_id",
+          "type": "INTEGER",
+          "is_primary_key": false,
+          "is_nullable": false
+        },
+        {
+          "name": "user_id",
+          "type": "INTEGER",
+          "is_primary_key": false,
+          "is_nullable": false
+        },
+        {
+          "name": "role",
+          "type": "TEXT",
+          "is_primary_key": false,
+          "is_nullable": false
+        },
+        {
+          "name": "joined_at",
+          "type": "DATETIME",
+          "is_primary_key": false,
+          "is_nullable": false
+        }
+      ]
+    },
+    {
+      "table_name": "tasks",
+      "columns": [
+        {
+          "name": "id",
+          "type": "INTEGER",
+          "is_primary_key": true,
+          "is_nullable": false
+        },
+        {
+          "name": "project_id",
+          "type": "INTEGER",
+          "is_primary_key": false,
+          "is_nullable": false
+        },
+        {
+          "name": "title",
+          "type": "TEXT",
+          "is_primary_key": false,
+          "is_nullable": false
+        },
+        {
+          "name": "description",
+          "type": "TEXT",
+          "is_primary_key": false,
+          "is_nullable": true
+        },
+        {
+          "name": "assignee_id",
+          "type": "INTEGER",
+          "is_primary_key": false,
+          "is_nullable": true
+        },
+        {
+          "name": "due_date",
+          "type": "DATE",
+          "is_primary_key": false,
+          "is_nullable": true
+        },
+        {
+          "name": "status",
+          "type": "TEXT",
+          "is_primary_key": false,
+          "is_nullable": false
+        },
+        {
+          "name": "is_milestone",
+          "type": "BOOLEAN",
+          "is_primary_key": false,
+          "is_nullable": false
+        },
+        {
+          "name": "created_at",
+          "type": "DATETIME",
+          "is_primary_key": false,
+          "is_nullable": false
+        },
+        {
+          "name": "updated_at",
+          "type": "DATETIME",
+          "is_primary_key": false,
+          "is_nullable": false
+        }
+      ]
+    },
+    {
+      "table_name": "milestones",
+      "columns": [
+        {
+          "name": "id",
+          "type": "INTEGER",
+          "is_primary_key": true,
+          "is_nullable": false
+        },
+        {
+          "name": "project_id",
+          "type": "INTEGER",
+          "is_primary_key": false,
+          "is_nullable": false
+        },
+        {
+          "name": "name",
+          "type": "TEXT",
+          "is_primary_key": false,
+          "is_nullable": false
+        },
+        {
+          "name": "description",
+          "type": "TEXT",
+          "is_primary_key": false,
+          "is_nullable": true
+        },
+        {
+          "name": "due_date",
+          "type": "DATE",
+          "is_primary_key": false,
+          "is_nullable": true
+        },
+        {
+          "name": "status",
+          "type": "TEXT",
+          "is_primary_key": false,
+          "is_nullable": false
+        },
+        {
+          "name": "created_at",
+          "type": "DATETIME",
+          "is_primary_key": false,
+          "is_nullable": false
+        },
+        {
+          "name": "updated_at",
+          "type": "DATETIME",
+          "is_primary_key": false,
+          "is_nullable": false
+        }
+      ]
+    }
+  ],
+  "folder_structure": {
+    "backend": [
+      "app",
+      "app/models",
+      "app/schemas",
+      "app/services",
+      "app/routes",
+      "app/utils",
+      "app/config",
+      "app/auth",
+      "app/dependencies"
+    ]
+  },
+  "frontend_structure": {
+    "pages": [
+      "Login",
+      "Dashboard",
+      "ProjectOverview",
+      "TaskBoard",
+      "TeamDirectory"
+    ],
+    "components": [
+      "Header",
+      "Sidebar",
+      "ProjectCard",
+      "TaskCard",
+      "TaskList",
+      "MilestoneList",
+      "UserAvatar",
+      "LoginForm",
+      "NotificationBell",
+      "SearchBar",
+      "Breadcrumbs",
+      "Footer",
+      "AddMemberModal",
+      "AddMilestoneForm",
+      "CommentSection"
+    ]
+  }
+}

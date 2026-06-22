@@ -1,0 +1,128 @@
+{
+  "project_name": "Inventory Management System",
+  "description": "A web application to track stock levels, manage suppliers, and handle purchase orders, providing real-time visibility and low-stock alerts for small to medium enterprises.",
+  "target_users": [
+    "Inventory Managers",
+    "Procurement Officers",
+    "Warehouse Staff"
+  ],
+  "core_features": [
+    "Create, read, update, and delete products with quantity tracking",
+    "Manage supplier records and contact information",
+    "Create and track purchase orders linked to suppliers",
+    "Automatic low\u2011stock alerts and reorder suggestions",
+    "Generate basic inventory reports (stock summary, pending orders)"
+  ],
+  "future_features": [
+    "Barcode scanning integration for fast product entry",
+    "Multi\u2011warehouse support with stock transfers",
+    "Export reports to CSV/Excel"
+  ],
+  "tech_stack": [
+    "FastAPI",
+    "React",
+    "SQLite"
+  ],
+  "database_entities": [
+    {
+      "name": "Product",
+      "fields": [
+        "id",
+        "name",
+        "sku",
+        "description",
+        "unit_price",
+        "quantity_on_hand",
+        "reorder_level",
+        "supplier_id"
+      ]
+    },
+    {
+      "name": "Supplier",
+      "fields": [
+        "id",
+        "name",
+        "contact_name",
+        "phone",
+        "email",
+        "address"
+      ]
+    },
+    {
+      "name": "PurchaseOrder",
+      "fields": [
+        "id",
+        "order_number",
+        "supplier_id",
+        "order_date",
+        "expected_date",
+        "status",
+        "total_amount"
+      ]
+    }
+  ],
+  "api_modules": [
+    {
+      "name": "Product",
+      "endpoints": [
+        "/products",
+        "/products/{id}"
+      ]
+    },
+    {
+      "name": "Supplier",
+      "endpoints": [
+        "/suppliers",
+        "/suppliers/{id}"
+      ]
+    },
+    {
+      "name": "PurchaseOrder",
+      "endpoints": [
+        "/purchase-orders",
+        "/purchase-orders/{id}"
+      ]
+    }
+  ],
+  "pages": [
+    "Login",
+    "Dashboard",
+    "Products",
+    "Suppliers",
+    "Purchase Orders"
+  ],
+  "backend_modules": [
+    "Authentication",
+    "Product Management",
+    "Supplier Management",
+    "Purchase Order Management",
+    "Reporting"
+  ],
+  "roadmap": [
+    {
+      "phase": "Phase 1: MVP",
+      "milestones": [
+        "Implement user authentication",
+        "CRUD APIs for Product, Supplier, and PurchaseOrder",
+        "Basic UI for product, supplier, and order management",
+        "Initial unit tests and documentation"
+      ]
+    },
+    {
+      "phase": "Phase 2: Alerts & Reporting",
+      "milestones": [
+        "Low\u2011stock detection and email notifications",
+        "Dashboard widgets for stock overview and pending orders",
+        "Generate PDF/HTML inventory summary reports"
+      ]
+    },
+    {
+      "phase": "Phase 3: Advanced Features",
+      "milestones": [
+        "Barcode scanning support",
+        "Multi\u2011warehouse stock transfer module",
+        "Export reports to CSV and Excel formats"
+      ]
+    }
+  ]
+}

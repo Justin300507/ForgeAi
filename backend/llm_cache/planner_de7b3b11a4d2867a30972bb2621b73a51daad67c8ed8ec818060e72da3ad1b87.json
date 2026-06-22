@@ -1,0 +1,123 @@
+{
+  "project_name": "Student Grade Tracker",
+  "description": "A web application that lets students and teachers track subjects and exam scores, view grade reports, and calculate GPA.",
+  "target_users": [
+    "Students",
+    "Teachers",
+    "Academic Administrators"
+  ],
+  "core_features": [
+    "User authentication (login/register)",
+    "Subject catalog management",
+    "Exam score entry and editing",
+    "Grade report view with GPA calculation",
+    "Export grade report as CSV"
+  ],
+  "future_features": [
+    "Teacher role with class management",
+    "Bulk import of exam scores via CSV",
+    "Analytics dashboard with performance trends"
+  ],
+  "tech_stack": [
+    "FastAPI",
+    "React",
+    "SQLite"
+  ],
+  "database_entities": [
+    {
+      "name": "Student",
+      "fields": [
+        "id",
+        "name",
+        "email",
+        "enrollment_year"
+      ]
+    },
+    {
+      "name": "Subject",
+      "fields": [
+        "id",
+        "name",
+        "code",
+        "teacher_name"
+      ]
+    },
+    {
+      "name": "ExamScore",
+      "fields": [
+        "id",
+        "student_id",
+        "subject_id",
+        "exam_name",
+        "score",
+        "date"
+      ]
+    }
+  ],
+  "api_modules": [
+    {
+      "name": "Student",
+      "endpoints": [
+        "/students",
+        "/students/{id}"
+      ]
+    },
+    {
+      "name": "Subject",
+      "endpoints": [
+        "/subjects",
+        "/subjects/{id}"
+      ]
+    },
+    {
+      "name": "ExamScore",
+      "endpoints": [
+        "/exam-scores",
+        "/exam-scores/{id}"
+      ]
+    }
+  ],
+  "pages": [
+    "Login",
+    "Dashboard",
+    "Subjects List",
+    "Student Grade Report",
+    "Exam Score Entry"
+  ],
+  "backend_modules": [
+    "Authentication",
+    "Student Management",
+    "Subject Management",
+    "ExamScore Management",
+    "Reporting"
+  ],
+  "roadmap": [
+    {
+      "phase": "MVP Development",
+      "milestones": [
+        "Project setup with FastAPI and React",
+        "Design SQLite schema for Student, Subject, ExamScore",
+        "Implement authentication endpoints",
+        "Create CRUD APIs for Student, Subject, ExamScore",
+        "Build UI pages: Login, Dashboard, Subjects List"
+      ]
+    },
+    {
+      "phase": "Grade Reporting",
+      "milestones": [
+        "Develop grade report page showing scores per subject",
+        "Implement GPA calculation logic",
+        "Add CSV export for grade reports",
+        "Integrate report page into dashboard"
+      ]
+    },
+    {
+      "phase": "Advanced Features",
+      "milestones": [
+        "Introduce Teacher role with class management",
+        "Implement bulk CSV import of exam scores",
+        "Create analytics dashboard with performance trends"
+      ]
+    }
+  ]
+}

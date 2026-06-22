@@ -1,0 +1,144 @@
+{
+  "project_name": "FleetMaster",
+  "description": "A web application for managing vehicle fleets, drivers, and maintenance activities, providing dashboards and reporting tools for fleet managers.",
+  "target_users": [
+    "Fleet Managers",
+    "Operations Supervisors",
+    "Maintenance Staff"
+  ],
+  "core_features": [
+    "Vehicle inventory management",
+    "Driver profile management",
+    "Maintenance log creation and tracking",
+    "Assignment of vehicles to drivers",
+    "Dashboard with key fleet metrics"
+  ],
+  "future_features": [
+    "Real\u2011time GPS tracking",
+    "Fuel consumption analytics",
+    "Third\u2011party integrations (e.g., insurance, telematics)"
+  ],
+  "tech_stack": [
+    "FastAPI",
+    "React",
+    "SQLite"
+  ],
+  "database_entities": [
+    {
+      "name": "Vehicle",
+      "fields": [
+        "id",
+        "license_plate",
+        "make",
+        "model",
+        "year",
+        "vin",
+        "status",
+        "mileage"
+      ]
+    },
+    {
+      "name": "Driver",
+      "fields": [
+        "id",
+        "full_name",
+        "license_number",
+        "phone",
+        "email",
+        "status"
+      ]
+    },
+    {
+      "name": "MaintenanceLog",
+      "fields": [
+        "id",
+        "vehicle_id",
+        "date",
+        "type",
+        "description",
+        "cost",
+        "odometer_reading",
+        "performed_by"
+      ]
+    }
+  ],
+  "api_modules": [
+    {
+      "name": "Vehicle",
+      "endpoints": [
+        "GET /vehicles",
+        "POST /vehicles",
+        "GET /vehicles/{id}",
+        "PUT /vehicles/{id}",
+        "DELETE /vehicles/{id}"
+      ]
+    },
+    {
+      "name": "Driver",
+      "endpoints": [
+        "GET /drivers",
+        "POST /drivers",
+        "GET /drivers/{id}",
+        "PUT /drivers/{id}",
+        "DELETE /drivers/{id}"
+      ]
+    },
+    {
+      "name": "MaintenanceLog",
+      "endpoints": [
+        "GET /maintenancelogs",
+        "POST /maintenancelogs",
+        "GET /maintenancelogs/{id}",
+        "PUT /maintenancelogs/{id}",
+        "DELETE /maintenancelogs/{id}"
+      ]
+    }
+  ],
+  "pages": [
+    "Login",
+    "Dashboard",
+    "Vehicle List",
+    "Driver List",
+    "Maintenance Log"
+  ],
+  "backend_modules": [
+    "Authentication",
+    "Vehicle Management",
+    "Driver Management",
+    "Maintenance Management",
+    "Reporting"
+  ],
+  "roadmap": [
+    {
+      "phase": "Phase 1 \u2013 MVP",
+      "milestones": [
+        "Initialize repository and CI pipeline",
+        "Implement authentication with JWT",
+        "Develop Vehicle CRUD API",
+        "Develop Driver CRUD API",
+        "Develop MaintenanceLog CRUD API",
+        "Create basic UI pages (Login, Dashboard, Lists)"
+      ]
+    },
+    {
+      "phase": "Phase 2 \u2013 Enhancements",
+      "milestones": [
+        "Add vehicle\u2011to\u2011driver assignment feature",
+        "Introduce maintenance scheduling workflow",
+        "Build reporting dashboards (utilization, upcoming service)",
+        "Implement role\u2011based access control",
+        "Refine UI/UX based on user feedback"
+      ]
+    },
+    {
+      "phase": "Phase 3 \u2013 Expansion",
+      "milestones": [
+        "Integrate real\u2011time GPS tracking",
+        "Add fuel consumption analytics module",
+        "Expose public API for third\u2011party integrations",
+        "Deploy to cloud environment with automated backups",
+        "Optimize for mobile responsiveness"
+      ]
+    }
+  ]
+}

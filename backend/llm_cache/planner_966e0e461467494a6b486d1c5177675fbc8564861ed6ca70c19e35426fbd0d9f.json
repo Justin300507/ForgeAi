@@ -1,0 +1,133 @@
+{
+  "project_name": "TrackPro",
+  "description": "A lightweight time\u2011tracking SaaS for freelancers and small agencies that lets users manage clients, projects, log work hours, and generate invoices automatically.",
+  "target_users": [
+    "Freelancers",
+    "Consultants",
+    "Small creative agencies"
+  ],
+  "core_features": [
+    "Client and project management",
+    "Time entry logging per project",
+    "Automatic invoice generation from tracked time",
+    "Dashboard with billable hours and revenue summary",
+    "User authentication and role\u2011based access"
+  ],
+  "future_features": [
+    "Export invoices as PDF",
+    "Configurable billable rates per client or project",
+    "Mobile app synchronization"
+  ],
+  "tech_stack": [
+    "FastAPI",
+    "React",
+    "SQLite"
+  ],
+  "database_entities": [
+    {
+      "name": "Client",
+      "fields": [
+        "id",
+        "name",
+        "email",
+        "phone",
+        "address",
+        "created_at"
+      ]
+    },
+    {
+      "name": "Project",
+      "fields": [
+        "id",
+        "client_id",
+        "name",
+        "description",
+        "start_date",
+        "end_date",
+        "hourly_rate",
+        "created_at"
+      ]
+    },
+    {
+      "name": "TimeEntry",
+      "fields": [
+        "id",
+        "project_id",
+        "date",
+        "hours",
+        "description",
+        "created_at"
+      ]
+    }
+  ],
+  "api_modules": [
+    {
+      "name": "Client",
+      "endpoints": [
+        "/clients",
+        "/clients/{id}"
+      ]
+    },
+    {
+      "name": "Project",
+      "endpoints": [
+        "/projects",
+        "/projects/{id}",
+        "/projects/{id}/invoice"
+      ]
+    },
+    {
+      "name": "TimeEntry",
+      "endpoints": [
+        "/time-entries",
+        "/time-entries/{id}",
+        "/projects/{id}/time-entries"
+      ]
+    }
+  ],
+  "pages": [
+    "Login",
+    "Dashboard",
+    "Clients",
+    "Projects",
+    "Time Entries"
+  ],
+  "backend_modules": [
+    "Authentication",
+    "Client Management",
+    "Project Management",
+    "TimeEntry Management",
+    "Invoicing"
+  ],
+  "roadmap": [
+    {
+      "phase": "MVP",
+      "milestones": [
+        "Initialize repository and CI pipeline",
+        "Design SQLite schema for clients, projects, and time entries",
+        "Implement authentication with JWT",
+        "Build CRUD APIs for clients, projects, and time entries",
+        "Create UI pages for login, dashboard, client list, project list, and time entry form",
+        "Generate simple HTML invoice from project time entries"
+      ]
+    },
+    {
+      "phase": "Feature Expansion",
+      "milestones": [
+        "Add reporting charts to dashboard (total hours, revenue per client)",
+        "Implement PDF invoice generation endpoint",
+        "Introduce configurable hourly rates per client/project",
+        "Add UI for exporting invoices as PDF"
+      ]
+    },
+    {
+      "phase": "Scaling & Mobile",
+      "milestones": [
+        "Introduce token\u2011based API authentication for third\u2011party sync",
+        "Develop mobile\u2011friendly API endpoints and data sync",
+        "Build responsive UI components for tablets and phones",
+        "Add advanced analytics (e.g., utilization trends)"
+      ]
+    }
+  ]
+}

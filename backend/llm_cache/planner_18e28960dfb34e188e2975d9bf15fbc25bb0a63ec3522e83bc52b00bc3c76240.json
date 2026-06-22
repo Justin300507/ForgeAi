@@ -1,0 +1,134 @@
+{
+  "project_name": "BoxBox Subscription Service",
+  "description": "A web platform that lets users subscribe to curated product boxes, manage their plans, and track deliveries in real time.",
+  "target_users": [
+    "Individual consumers looking for curated products",
+    "People purchasing gift subscriptions",
+    "Subscription enthusiasts seeking regular deliveries"
+  ],
+  "core_features": [
+    "Browse and select subscription plans",
+    "User registration and login",
+    "Create and manage subscriptions",
+    "Automatic scheduling of deliveries",
+    "Real-time delivery tracking"
+  ],
+  "future_features": [
+    "Personalized product recommendations",
+    "Gift subscriptions and sharing options",
+    "Admin portal for inventory and order management"
+  ],
+  "tech_stack": [
+    "FastAPI",
+    "React",
+    "SQLite"
+  ],
+  "database_entities": [
+    {
+      "name": "Customer",
+      "fields": [
+        "id",
+        "email",
+        "password_hash",
+        "full_name",
+        "address",
+        "phone",
+        "created_at"
+      ]
+    },
+    {
+      "name": "Plan",
+      "fields": [
+        "id",
+        "name",
+        "price",
+        "interval",
+        "description",
+        "product_list"
+      ]
+    },
+    {
+      "name": "Subscription",
+      "fields": [
+        "id",
+        "customer_id",
+        "plan_id",
+        "start_date",
+        "next_delivery_date",
+        "status",
+        "tracking_number"
+      ]
+    }
+  ],
+  "api_modules": [
+    {
+      "name": "Customer",
+      "endpoints": [
+        "/customers",
+        "/customers/{id}",
+        "/auth/register",
+        "/auth/login"
+      ]
+    },
+    {
+      "name": "Plan",
+      "endpoints": [
+        "/plans",
+        "/plans/{id}"
+      ]
+    },
+    {
+      "name": "Subscription",
+      "endpoints": [
+        "/subscriptions",
+        "/subscriptions/{id}",
+        "/subscriptions/{id}/track"
+      ]
+    }
+  ],
+  "pages": [
+    "Home",
+    "Plan Catalog",
+    "Login",
+    "Dashboard",
+    "Delivery Tracking"
+  ],
+  "backend_modules": [
+    "Authentication",
+    "Customer Management",
+    "Plan Management",
+    "Subscription Management",
+    "Delivery Tracking"
+  ],
+  "roadmap": [
+    {
+      "phase": "MVP Development",
+      "milestones": [
+        "Initialize repository and project scaffolding",
+        "Implement user authentication and registration",
+        "Create plan catalog API and UI",
+        "Enable subscription creation and basic management",
+        "Display simple delivery tracking information"
+      ]
+    },
+    {
+      "phase": "Enhanced UX & Tracking",
+      "milestones": [
+        "Build subscription management dashboard",
+        "Integrate third\u2011party shipping API for live tracking",
+        "Add email notifications for shipment updates",
+        "Refine UI/UX across all pages"
+      ]
+    },
+    {
+      "phase": "Growth & Admin Features",
+      "milestones": [
+        "Develop personalized product recommendation engine",
+        "Create admin portal for inventory and order oversight",
+        "Introduce gift subscription workflow",
+        "Deploy to production environment",
+        "Collect user feedback for continuous improvement"
+      ]
+    }
+  ]
+}

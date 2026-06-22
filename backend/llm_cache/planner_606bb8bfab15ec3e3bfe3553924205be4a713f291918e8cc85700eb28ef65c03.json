@@ -1,0 +1,129 @@
+{
+  "project_name": "Recipe Keeper",
+  "description": "A web application that lets users create, organize, and search their personal collection of recipes, categorizing them and managing ingredient lists.",
+  "target_users": [
+    "Home cooks",
+    "Food enthusiasts",
+    "Diet planners"
+  ],
+  "core_features": [
+    "User registration and login with personal recipe collections",
+    "Create, edit, and delete recipes including ingredient lists and instructions",
+    "Organize recipes into categories",
+    "Search recipes by name, ingredient, or category",
+    "View and manage personal recipe library"
+  ],
+  "future_features": [
+    "Meal planning calendar",
+    "Shopping list generation from selected recipes",
+    "Nutrition facts calculation for recipes"
+  ],
+  "tech_stack": [
+    "FastAPI",
+    "React",
+    "SQLite"
+  ],
+  "database_entities": [
+    {
+      "name": "User",
+      "fields": [
+        "id",
+        "username",
+        "email",
+        "hashed_password",
+        "created_at"
+      ]
+    },
+    {
+      "name": "Category",
+      "fields": [
+        "id",
+        "name",
+        "description"
+      ]
+    },
+    {
+      "name": "Recipe",
+      "fields": [
+        "id",
+        "user_id",
+        "title",
+        "description",
+        "ingredients",
+        "instructions",
+        "category_id",
+        "created_at",
+        "updated_at"
+      ]
+    }
+  ],
+  "api_modules": [
+    {
+      "name": "User",
+      "endpoints": [
+        "/users",
+        "/users/{id}",
+        "/auth/register",
+        "/auth/login"
+      ]
+    },
+    {
+      "name": "Category",
+      "endpoints": [
+        "/categories",
+        "/categories/{id}"
+      ]
+    },
+    {
+      "name": "Recipe",
+      "endpoints": [
+        "/recipes",
+        "/recipes/{id}",
+        "/recipes/search"
+      ]
+    }
+  ],
+  "pages": [
+    "Login",
+    "Register",
+    "Recipe List & Search",
+    "Recipe Detail / Edit",
+    "Category Management"
+  ],
+  "backend_modules": [
+    "Authentication",
+    "User Management",
+    "Recipe Management",
+    "Category Management",
+    "Search Service"
+  ],
+  "roadmap": [
+    {
+      "phase": "Phase 1: MVP",
+      "milestones": [
+        "Project scaffolding with FastAPI, React, and SQLite",
+        "Implement user registration and login",
+        "CRUD endpoints for categories",
+        "CRUD endpoints for recipes with ingredient storage",
+        "Basic search endpoint for recipes"
+      ]
+    },
+    {
+      "phase": "Phase 2: Feature Enhancement",
+      "milestones": [
+        "Add favorite/bookmark functionality for recipes",
+        "Improve UI/UX for recipe creation and browsing",
+        "Introduce ingredient inventory view per user",
+        "Refine search with filters and pagination"
+      ]
+    },
+    {
+      "phase": "Phase 3: Expansion",
+      "milestones": [
+        "Meal planning calendar integration",
+        "Automatic shopping list generation",
+        "Nutrition facts calculation using ingredient data"
+      ]
+    }
+  ]
+}

@@ -1,0 +1,140 @@
+{
+  "project_name": "Equipment Rental Tracker",
+  "description": "A web application to manage rental equipment inventory, track rentals, schedule returns, and send reminders for overdue items.",
+  "target_users": [
+    "Equipment Rental Companies",
+    "Small Business Owners",
+    "Event Planners"
+  ],
+  "core_features": [
+    "Manage equipment inventory with status tracking",
+    "Create and edit rental contracts",
+    "Schedule return dates and automatic reminders",
+    "Track rental status and overdue items",
+    "Generate basic rental and inventory reports"
+  ],
+  "future_features": [
+    "Customer self\u2011service portal",
+    "Barcode scanning for quick check\u2011in/out",
+    "Integrated payment processing"
+  ],
+  "tech_stack": [
+    "FastAPI",
+    "React",
+    "SQLite",
+    "Pydantic",
+    "SQLAlchemy"
+  ],
+  "database_entities": [
+    {
+      "name": "Equipment",
+      "fields": [
+        "id",
+        "name",
+        "description",
+        "serial_number",
+        "status",
+        "daily_rate"
+      ]
+    },
+    {
+      "name": "Rental",
+      "fields": [
+        "id",
+        "equipment_id",
+        "customer_id",
+        "start_date",
+        "end_date",
+        "due_date",
+        "returned_date",
+        "status",
+        "total_cost"
+      ]
+    },
+    {
+      "name": "Customer",
+      "fields": [
+        "id",
+        "name",
+        "email",
+        "phone",
+        "address"
+      ]
+    }
+  ],
+  "api_modules": [
+    {
+      "name": "Equipment",
+      "endpoints": [
+        "GET /equipment",
+        "POST /equipment",
+        "GET /equipment/{id}",
+        "PUT /equipment/{id}",
+        "DELETE /equipment/{id}"
+      ]
+    },
+    {
+      "name": "Rental",
+      "endpoints": [
+        "GET /rentals",
+        "POST /rentals",
+        "GET /rentals/{id}",
+        "PUT /rentals/{id}",
+        "DELETE /rentals/{id}"
+      ]
+    },
+    {
+      "name": "Customer",
+      "endpoints": [
+        "GET /customers",
+        "POST /customers",
+        "GET /customers/{id}",
+        "PUT /customers/{id}",
+        "DELETE /customers/{id}"
+      ]
+    }
+  ],
+  "pages": [
+    "Login",
+    "Dashboard",
+    "Equipment List",
+    "Rental Management",
+    "Return Scheduling"
+  ],
+  "backend_modules": [
+    "Authentication",
+    "Equipment Management",
+    "Rental Management",
+    "Customer Management",
+    "Notification"
+  ],
+  "roadmap": [
+    {
+      "phase": "Phase 1: MVP Development",
+      "milestones": [
+        "Initialize repository and project scaffolding",
+        "Design and implement database schema",
+        "Develop authentication module",
+        "Create CRUD APIs for Equipment and Rental",
+        "Build basic UI for equipment inventory and rentals"
+      ]
+    },
+    {
+      "phase": "Phase 2: Return Scheduling & Notifications",
+      "milestones": [
+        "Implement due date calculation and return scheduling",
+        "Add email/SMS reminder service for upcoming returns",
+        "Develop UI for scheduling returns and viewing overdue items",
+        "Provide reporting for overdue rentals and inventory utilization"
+      ]
+    },
+    {
+      "phase": "Phase 3: Future Enhancements",
+      "milestones": [
+        "Launch customer self\u2011service portal",
+        "Integrate barcode scanning for fast check\u2011in/out",
+        "Add payment gateway for rental fees"
+      ]
+    }
+  ]
+}

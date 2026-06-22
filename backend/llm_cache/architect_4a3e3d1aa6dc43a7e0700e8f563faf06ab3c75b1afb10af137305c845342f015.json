@@ -1,0 +1,309 @@
+{
+  "api_endpoints": [
+    {
+      "method": "POST",
+      "path": "/users/register",
+      "description": "Register a new user and store hashed password",
+      "file": "app/routes/user_routes.py"
+    },
+    {
+      "method": "POST",
+      "path": "/users/login",
+      "description": "Authenticate user and return JWT token",
+      "file": "app/routes/user_routes.py"
+    },
+    {
+      "method": "GET",
+      "path": "/users",
+      "description": "Retrieve list of all users (admin view)",
+      "file": "app/routes/user_routes.py"
+    },
+    {
+      "method": "GET",
+      "path": "/users/{id}",
+      "description": "Retrieve profile and quiz history for a specific user",
+      "file": "app/routes/user_routes.py"
+    },
+    {
+      "method": "GET",
+      "path": "/questions",
+      "description": "Get all questions with optional filters",
+      "file": "app/routes/question_routes.py"
+    },
+    {
+      "method": "GET",
+      "path": "/questions/{id}",
+      "description": "Get details of a single question",
+      "file": "app/routes/question_routes.py"
+    },
+    {
+      "method": "POST",
+      "path": "/questions",
+      "description": "Create a new question within a question bank",
+      "file": "app/routes/question_routes.py"
+    },
+    {
+      "method": "PUT",
+      "path": "/questions/{id}",
+      "description": "Update an existing question",
+      "file": "app/routes/question_routes.py"
+    },
+    {
+      "method": "DELETE",
+      "path": "/questions/{id}",
+      "description": "Delete a question",
+      "file": "app/routes/question_routes.py"
+    },
+    {
+      "method": "GET",
+      "path": "/questions/bank/{bank_name}",
+      "description": "List all questions belonging to a specific bank",
+      "file": "app/routes/question_routes.py"
+    },
+    {
+      "method": "POST",
+      "path": "/attempts/start",
+      "description": "Initialize a quiz attempt and return selected question IDs",
+      "file": "app/routes/quizattempt_routes.py"
+    },
+    {
+      "method": "POST",
+      "path": "/attempts/submit",
+      "description": "Submit answers, calculate score, and store attempt",
+      "file": "app/routes/quizattempt_routes.py"
+    },
+    {
+      "method": "GET",
+      "path": "/attempts",
+      "description": "Retrieve list of quiz attempts for the authenticated user",
+      "file": "app/routes/quizattempt_routes.py"
+    },
+    {
+      "method": "GET",
+      "path": "/attempts/{id}",
+      "description": "Retrieve detailed results of a specific quiz attempt",
+      "file": "app/routes/quizattempt_routes.py"
+    }
+  ],
+  "database_schema": [
+    {
+      "table_name": "users",
+      "columns": [
+        {
+          "name": "id",
+          "type": "INTEGER",
+          "is_primary_key": true,
+          "is_nullable": false
+        },
+        {
+          "name": "username",
+          "type": "TEXT",
+          "is_primary_key": false,
+          "is_nullable": false
+        },
+        {
+          "name": "email",
+          "type": "TEXT",
+          "is_primary_key": false,
+          "is_nullable": false
+        },
+        {
+          "name": "hashed_password",
+          "type": "TEXT",
+          "is_primary_key": false,
+          "is_nullable": false
+        },
+        {
+          "name": "created_at",
+          "type": "DATETIME",
+          "is_primary_key": false,
+          "is_nullable": false
+        }
+      ]
+    },
+    {
+      "table_name": "question_banks",
+      "columns": [
+        {
+          "name": "id",
+          "type": "INTEGER",
+          "is_primary_key": true,
+          "is_nullable": false
+        },
+        {
+          "name": "name",
+          "type": "TEXT",
+          "is_primary_key": false,
+          "is_nullable": false
+        },
+        {
+          "name": "description",
+          "type": "TEXT",
+          "is_primary_key": false,
+          "is_nullable": true
+        },
+        {
+          "name": "created_by",
+          "type": "INTEGER",
+          "is_primary_key": false,
+          "is_nullable": false
+        },
+        {
+          "name": "created_at",
+          "type": "DATETIME",
+          "is_primary_key": false,
+          "is_nullable": false
+        }
+      ]
+    },
+    {
+      "table_name": "questions",
+      "columns": [
+        {
+          "name": "id",
+          "type": "INTEGER",
+          "is_primary_key": true,
+          "is_nullable": false
+        },
+        {
+          "name": "bank_id",
+          "type": "INTEGER",
+          "is_primary_key": false,
+          "is_nullable": false
+        },
+        {
+          "name": "text",
+          "type": "TEXT",
+          "is_primary_key": false,
+          "is_nullable": false
+        },
+        {
+          "name": "option_a",
+          "type": "TEXT",
+          "is_primary_key": false,
+          "is_nullable": false
+        },
+        {
+          "name": "option_b",
+          "type": "TEXT",
+          "is_primary_key": false,
+          "is_nullable": false
+        },
+        {
+          "name": "option_c",
+          "type": "TEXT",
+          "is_primary_key": false,
+          "is_nullable": false
+        },
+        {
+          "name": "option_d",
+          "type": "TEXT",
+          "is_primary_key": false,
+          "is_nullable": false
+        },
+        {
+          "name": "correct_option",
+          "type": "TEXT",
+          "is_primary_key": false,
+          "is_nullable": false
+        },
+        {
+          "name": "created_by",
+          "type": "INTEGER",
+          "is_primary_key": false,
+          "is_nullable": false
+        },
+        {
+          "name": "created_at",
+          "type": "DATETIME",
+          "is_primary_key": false,
+          "is_nullable": false
+        }
+      ]
+    },
+    {
+      "table_name": "quiz_attempts",
+      "columns": [
+        {
+          "name": "id",
+          "type": "INTEGER",
+          "is_primary_key": true,
+          "is_nullable": false
+        },
+        {
+          "name": "user_id",
+          "type": "INTEGER",
+          "is_primary_key": false,
+          "is_nullable": false
+        },
+        {
+          "name": "question_ids",
+          "type": "TEXT",
+          "is_primary_key": false,
+          "is_nullable": false
+        },
+        {
+          "name": "answers",
+          "type": "TEXT",
+          "is_primary_key": false,
+          "is_nullable": false
+        },
+        {
+          "name": "score",
+          "type": "INTEGER",
+          "is_primary_key": false,
+          "is_nullable": false
+        },
+        {
+          "name": "total_questions",
+          "type": "INTEGER",
+          "is_primary_key": false,
+          "is_nullable": false
+        },
+        {
+          "name": "taken_at",
+          "type": "DATETIME",
+          "is_primary_key": false,
+          "is_nullable": false
+        }
+      ]
+    }
+  ],
+  "folder_structure": {
+    "backend": [
+      "app",
+      "app/models",
+      "app/routes",
+      "app/schemas",
+      "app/services",
+      "app/utils",
+      "app/config"
+    ]
+  },
+  "frontend_structure": {
+    "pages": [
+      "Login",
+      "Register",
+      "Dashboard",
+      "Quiz",
+      "Results"
+    ],
+    "components": [
+      "Navbar",
+      "LoginForm",
+      "RegisterForm",
+      "QuestionBankList",
+      "QuestionForm",
+      "QuizViewer",
+      "AnswerOption",
+      "ResultSummary",
+      "ScoreChart",
+      "ProfileCard",
+      "Timer",
+      "Leaderboard",
+      "QuizGeneratorForm",
+      "Footer",
+      "UserStats"
+    ]
+  }
+}

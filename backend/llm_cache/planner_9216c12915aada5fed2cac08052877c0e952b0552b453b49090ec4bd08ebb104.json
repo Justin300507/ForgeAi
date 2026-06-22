@@ -1,0 +1,127 @@
+{
+  "project_name": "Inventory Management System",
+  "description": "A web application to manage products, suppliers, and stock movements, providing real-time inventory visibility and basic reporting.",
+  "target_users": [
+    "Warehouse staff",
+    "Purchasing managers",
+    "Inventory administrators"
+  ],
+  "core_features": [
+    "Create, read, update, and delete products",
+    "Create, read, update, and delete suppliers",
+    "Record inbound and outbound stock movements",
+    "View current inventory levels per product",
+    "Generate stock movement reports for a selected date range"
+  ],
+  "future_features": [
+    "Low stock alert notifications",
+    "Bulk import and export of products and stock data via CSV",
+    "Support for multiple warehouse locations"
+  ],
+  "tech_stack": [
+    "FastAPI",
+    "React",
+    "SQLite"
+  ],
+  "database_entities": [
+    {
+      "name": "Product",
+      "fields": [
+        "id",
+        "name",
+        "sku",
+        "description",
+        "price",
+        "quantity_on_hand",
+        "supplier_id"
+      ]
+    },
+    {
+      "name": "Supplier",
+      "fields": [
+        "id",
+        "name",
+        "contact_name",
+        "phone",
+        "email",
+        "address"
+      ]
+    },
+    {
+      "name": "StockMovement",
+      "fields": [
+        "id",
+        "product_id",
+        "quantity",
+        "movement_type",
+        "timestamp",
+        "reference",
+        "notes"
+      ]
+    }
+  ],
+  "api_modules": [
+    {
+      "name": "Product",
+      "endpoints": [
+        "/products",
+        "/products/{id}"
+      ]
+    },
+    {
+      "name": "Supplier",
+      "endpoints": [
+        "/suppliers",
+        "/suppliers/{id}"
+      ]
+    },
+    {
+      "name": "StockMovement",
+      "endpoints": [
+        "/stock_movements",
+        "/stock_movements/{id}"
+      ]
+    }
+  ],
+  "pages": [
+    "Login",
+    "Dashboard",
+    "Products",
+    "Suppliers",
+    "Stock Movements"
+  ],
+  "backend_modules": [
+    "Authentication",
+    "Product Management",
+    "Supplier Management",
+    "StockMovement Management",
+    "Reporting"
+  ],
+  "roadmap": [
+    {
+      "phase": "Phase 1: MVP",
+      "milestones": [
+        "Implement core entities and database schema",
+        "Develop REST APIs for products, suppliers, and stock movements",
+        "Build UI for product, supplier, and stock movement CRUD operations",
+        "Create dashboard showing current inventory levels"
+      ]
+    },
+    {
+      "phase": "Phase 2: Enhancements",
+      "milestones": [
+        "Add low stock alert feature",
+        "Implement CSV import/export functionality",
+        "Introduce basic reporting filters and export options"
+      ]
+    },
+    {
+      "phase": "Phase 3: Scaling & Optimization",
+      "milestones": [
+        "Support multiple warehouse locations",
+        "Optimize queries for large inventories",
+        "Add role\u2011based access control and audit logging"
+      ]
+    }
+  ]
+}

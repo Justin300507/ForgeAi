@@ -1,0 +1,124 @@
+{
+  "project_name": "HabitPulse",
+  "description": "A web\u2011based habit tracker that lets users define daily habits, mark completions, view streaks, and explore their habit history.",
+  "target_users": [
+    "Individuals looking to build or maintain personal routines",
+    "Students who want to track study and wellness habits",
+    "Professionals aiming to improve productivity through habit metrics"
+  ],
+  "core_features": [
+    "User registration and secure authentication",
+    "Create, edit, and delete daily habits",
+    "Mark habit completion for the current day",
+    "Automatic streak calculation and display",
+    "View completion history per habit"
+  ],
+  "future_features": [
+    "Push/email reminders for scheduled habits",
+    "Social sharing of streaks and leaderboards",
+    "Export of habit data and analytics dashboards"
+  ],
+  "tech_stack": [
+    "FastAPI",
+    "React",
+    "SQLite"
+  ],
+  "database_entities": [
+    {
+      "name": "User",
+      "fields": [
+        "id",
+        "email",
+        "password_hash",
+        "created_at"
+      ]
+    },
+    {
+      "name": "Habit",
+      "fields": [
+        "id",
+        "user_id",
+        "name",
+        "description",
+        "is_active",
+        "created_at"
+      ]
+    },
+    {
+      "name": "HabitLog",
+      "fields": [
+        "id",
+        "habit_id",
+        "log_date",
+        "completed",
+        "created_at"
+      ]
+    }
+  ],
+  "api_modules": [
+    {
+      "name": "User",
+      "endpoints": [
+        "/users",
+        "/users/{id}",
+        "/auth/login",
+        "/auth/register"
+      ]
+    },
+    {
+      "name": "Habit",
+      "endpoints": [
+        "/habits",
+        "/habits/{id}"
+      ]
+    },
+    {
+      "name": "HabitLog",
+      "endpoints": [
+        "/habit-logs",
+        "/habit-logs/{id}"
+      ]
+    }
+  ],
+  "pages": [
+    "Login",
+    "Register",
+    "Dashboard",
+    "Habit Detail",
+    "Settings"
+  ],
+  "backend_modules": [
+    "Authentication",
+    "User Management",
+    "Habit Management",
+    "HabitLog Management",
+    "Streak Service"
+  ],
+  "roadmap": [
+    {
+      "phase": "Phase 1 \u2013 MVP",
+      "milestones": [
+        "Implement user authentication and registration",
+        "Create habit CRUD endpoints and UI",
+        "Add daily completion logging and streak calculation",
+        "Deploy basic dashboard with habit list and history view"
+      ]
+    },
+    {
+      "phase": "Phase 2 \u2013 Feature Expansion",
+      "milestones": [
+        "Introduce habit reminders via email/push notifications",
+        "Build habit analytics page with charts",
+        "Add user profile settings and habit toggling UI improvements"
+      ]
+    },
+    {
+      "phase": "Phase 3 \u2013 Community & Insights",
+      "milestones": [
+        "Implement social sharing and leaderboard functionality",
+        "Provide data export (CSV) and advanced reporting",
+        "Optimize performance and prepare for mobile\u2011responsive design"
+      ]
+    }
+  ]
+}

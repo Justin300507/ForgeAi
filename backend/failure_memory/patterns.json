@@ -1,0 +1,122 @@
+{
+  "patterns": {
+    "RouterExportMismatch": {
+      "count": 2,
+      "examples": [
+        {
+          "project": "test_app",
+          "error": "Router export mismatch in app/routes/task_routes.py"
+        },
+        {
+          "project": "test_app2",
+          "error": "Router export mismatch in app/routes/user_routes.py"
+        }
+      ],
+      "first_seen": "2026-06-21T20:43:34.977754",
+      "last_seen": "2026-06-21T20:43:34.978769"
+    },
+    "NoReferencedTableError": {
+      "count": 3,
+      "examples": [
+        {
+          "project": "test_app",
+          "error": "NoReferencedTableError"
+        },
+        {
+          "project": "Equipment Rental Tracker",
+          "error": "NoReferencedTableError"
+        },
+        {
+          "project": "PodTrack",
+          "error": "NoReferencedTableError"
+        }
+      ],
+      "first_seen": "2026-06-21T20:43:34.977765",
+      "last_seen": "2026-06-21T21:44:32.382189"
+    },
+    "FrontendBuildError": {
+      "count": 2,
+      "examples": [
+        {
+          "project": "test_app2",
+          "error": "vite build failed"
+        },
+        {
+          "project": "Inventory Management System",
+          "error": "vite build failed"
+        }
+      ],
+      "first_seen": "2026-06-21T20:43:34.978774",
+      "last_seen": "2026-06-21T21:31:58.284956"
+    },
+    "ModuleNotFoundError": {
+      "count": 4,
+      "examples": [
+        {
+          "project": "HydroTrack",
+          "error": "ModuleNotFoundError"
+        },
+        {
+          "project": "RecipeBox",
+          "error": "ModuleNotFoundError"
+        },
+        {
+          "project": "recipe_manager",
+          "error": "ModuleNotFoundError"
+        },
+        {
+          "project": "inventory_system",
+          "error": "ModuleNotFoundError"
+        }
+      ],
+      "first_seen": "2026-06-21T21:19:46.461599",
+      "last_seen": "2026-06-22T05:41:00.673858"
+    },
+    "SQLAlchemyError": {
+      "count": 1,
+      "examples": [
+        {
+          "project": "HR Onboarding System",
+          "error": "SQLAlchemyError"
+        }
+      ],
+      "first_seen": "2026-06-21T21:30:53.208370",
+      "last_seen": "2026-06-21T21:30:53.208395"
+    },
+    "ValidationError": {
+      "count": 1,
+      "examples": [
+        {
+          "project": "TeamFlow",
+          "error": "ValidationError"
+        }
+      ],
+      "first_seen": "2026-06-21T23:42:14.421044",
+      "last_seen": "2026-06-21T23:42:14.421054"
+    },
+    "TimestampNotNullError": {
+      "count": 1,
+      "examples": [
+        {
+          "project": "expense_tracker_app",
+          "error": "TimestampNotNullError"
+        }
+      ],
+      "first_seen": "2026-06-22T05:53:56.254135",
+      "last_seen": "2026-06-22T05:53:56.254146"
+    },
+    "ImportError": {
+      "count": 1,
+      "examples": [
+        {
+          "project": "inventory_system",
+          "error": "ImportError"
+        }
+      ],
+      "first_seen": "2026-06-22T05:55:11.076646",
+      "last_seen": "2026-06-22T05:55:11.076652"
+    }
+  },
+  "total_runs": 75,
+  "last_updated": "2026-06-22T05:57:27.771792"
+}

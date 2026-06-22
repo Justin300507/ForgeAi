@@ -1,0 +1,132 @@
+{
+  "project_name": "Savings Goal Tracker",
+  "description": "A web application that lets users set financial savings goals, record contributions, and monitor progress through milestones and visual indicators.",
+  "target_users": [
+    "Individuals saving for personal goals",
+    "Young professionals planning budgets",
+    "Financial coaches assisting clients"
+  ],
+  "core_features": [
+    "Create and customize savings goals with target amount and deadline",
+    "Record one\u2011time contributions toward a goal",
+    "View real\u2011time progress as percentage and bar chart",
+    "Define and display progress milestones within each goal",
+    "Dashboard summarizing all active goals and overall savings"
+  ],
+  "future_features": [
+    "Automated recurring contributions",
+    "Goal sharing and collaborative saving with friends",
+    "Export progress reports to CSV or PDF"
+  ],
+  "tech_stack": [
+    "FastAPI",
+    "React",
+    "SQLite"
+  ],
+  "database_entities": [
+    {
+      "name": "User",
+      "fields": [
+        "id",
+        "email",
+        "password_hash",
+        "name",
+        "created_at"
+      ]
+    },
+    {
+      "name": "Goal",
+      "fields": [
+        "id",
+        "user_id",
+        "title",
+        "target_amount",
+        "current_amount",
+        "start_date",
+        "end_date",
+        "status",
+        "description"
+      ]
+    },
+    {
+      "name": "Contribution",
+      "fields": [
+        "id",
+        "goal_id",
+        "amount",
+        "contributed_at",
+        "note"
+      ]
+    }
+  ],
+  "api_modules": [
+    {
+      "name": "User",
+      "endpoints": [
+        "/users",
+        "/users/{id}",
+        "/auth/register",
+        "/auth/login"
+      ]
+    },
+    {
+      "name": "Goal",
+      "endpoints": [
+        "/goals",
+        "/goals/{id}",
+        "/goals/{id}/milestones"
+      ]
+    },
+    {
+      "name": "Contribution",
+      "endpoints": [
+        "/contributions",
+        "/contributions/{id}",
+        "/goals/{goal_id}/contributions"
+      ]
+    }
+  ],
+  "pages": [
+    "Login",
+    "Register",
+    "Dashboard",
+    "Goal Detail",
+    "Add Contribution"
+  ],
+  "backend_modules": [
+    "Authentication",
+    "User Management",
+    "Goal Management",
+    "Contribution Management",
+    "Reporting"
+  ],
+  "roadmap": [
+    {
+      "phase": "Phase 1 \u2013 MVP",
+      "milestones": [
+        "Project setup with FastAPI, React, SQLite",
+        "Implement user registration and login",
+        "Goal CRUD endpoints and UI",
+        "Contribution recording and display",
+        "Dashboard with progress bars"
+      ]
+    },
+    {
+      "phase": "Phase 2 \u2013 Enhanced UX & Reporting",
+      "milestones": [
+        "Add milestone definition within goals",
+        "Visual progress indicators and alerts",
+        "Basic analytics page showing savings trends",
+        "Responsive design improvements"
+      ]
+    },
+    {
+      "phase": "Phase 3 \u2013 Future Features",
+      "milestones": [
+        "Recurring contribution scheduling",
+        "Goal sharing and collaborative saving",
+        "Export reports to CSV/PDF"
+      ]
+    }
+  ]
+}

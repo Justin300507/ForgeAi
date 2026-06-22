@@ -1,0 +1,30 @@
+{
+  "run_id": "v7_20260622_112656_7f3e1371",
+  "timestamp": "2026-06-22T11:27:27",
+  "version": "v7",
+  "idea": "A todo list app with user login, task priorities, and due dates",
+  "project_name": "taskmaster",
+  "provider": "auto",
+  "plan": {},
+  "architecture": {
+    "endpoint_count": 0,
+    "endpoints": [],
+    "db_schema_keys": []
+  },
+  "validation_errors": [],
+  "runtime_error": null,
+  "runtime_error_type": null,
+  "fixes_applied": [],
+  "score": 100,
+  "grade": "A",
+  "runtime_passed": true,
+  "frontend_passed": false,
+  "generation_time": 31.24,
+  "security_score": 80,
+  "performance_score": 65,
+  "maintainability_score": 70,
+  "qa_score": 55,
+  "v6_score": 77,
+  "prompt_version": "default",
+  "active_rules": []
+}

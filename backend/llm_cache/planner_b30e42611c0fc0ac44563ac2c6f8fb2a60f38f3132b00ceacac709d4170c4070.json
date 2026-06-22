@@ -1,0 +1,118 @@
+{
+  "project_name": "PriorityTodo",
+  "description": "A web-based todo list application that lets users register, log in, and manage tasks with configurable priority levels. Tasks can be created, edited, deleted, and viewed sorted by priority.",
+  "target_users": [
+    "Individuals seeking personal productivity",
+    "Students managing assignments",
+    "Professionals tracking work items"
+  ],
+  "core_features": [
+    "User registration and secure login",
+    "Create tasks with selectable priority (Low, Medium, High)",
+    "Edit existing tasks and change their priority",
+    "Delete tasks",
+    "Dashboard displaying tasks sorted by priority"
+  ],
+  "future_features": [
+    "Task categories and tags for better organization",
+    "Recurring tasks with automatic schedule generation",
+    "Sharing tasks or lists with other registered users"
+  ],
+  "tech_stack": [
+    "FastAPI",
+    "React",
+    "SQLite",
+    "Pydantic",
+    "SQLAlchemy"
+  ],
+  "database_entities": [
+    {
+      "name": "User",
+      "fields": [
+        "id",
+        "username",
+        "email",
+        "hashed_password",
+        "created_at"
+      ]
+    },
+    {
+      "name": "Task",
+      "fields": [
+        "id",
+        "user_id",
+        "title",
+        "description",
+        "priority",
+        "due_date",
+        "completed",
+        "created_at",
+        "updated_at"
+      ]
+    }
+  ],
+  "api_modules": [
+    {
+      "name": "Auth",
+      "endpoints": [
+        "/auth/register",
+        "/auth/login",
+        "/auth/logout",
+        "/auth/me"
+      ]
+    },
+    {
+      "name": "User",
+      "endpoints": [
+        "/users/me"
+      ]
+    },
+    {
+      "name": "Task",
+      "endpoints": [
+        "/tasks",
+        "/tasks/{id}"
+      ]
+    }
+  ],
+  "pages": [
+    "Login",
+    "Register",
+    "Dashboard",
+    "TaskForm",
+    "Settings"
+  ],
+  "backend_modules": [
+    "Authentication",
+    "User Management",
+    "Task Management",
+    "Priority Validation"
+  ],
+  "roadmap": [
+    {
+      "phase": "Phase 1 - MVP",
+      "milestones": [
+        "Implement user registration and login with JWT",
+        "Create Task CRUD endpoints with priority field",
+        "Build React dashboard showing tasks sorted by priority",
+        "Integrate SQLite database via SQLAlchemy"
+      ]
+    },
+    {
+      "phase": "Phase 2 - Enhanced UI & Filtering",
+      "milestones": [
+        "Add due date handling and visual indicators",
+        "Implement client\u2011side filtering and sorting by priority and due date",
+        "Introduce user settings page for profile updates"
+      ]
+    },
+    {
+      "phase": "Phase 3 - Advanced Collaboration",
+      "milestones": [
+        "Add task categories/tags and UI for tag management",
+        "Implement recurring task logic on the backend",
+        "Enable task sharing between users with permission controls"
+      ]
+    }
+  ]
+}

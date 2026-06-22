@@ -1,0 +1,357 @@
+{
+  "api_endpoints": [
+    {
+      "method": "POST",
+      "path": "/auth/login",
+      "description": "Authenticate user and return JWT token",
+      "file": "app/routes/auth_routes.py"
+    },
+    {
+      "method": "GET",
+      "path": "/products",
+      "description": "Retrieve list of all products",
+      "file": "app/routes/product_routes.py"
+    },
+    {
+      "method": "POST",
+      "path": "/products",
+      "description": "Create a new product",
+      "file": "app/routes/product_routes.py"
+    },
+    {
+      "method": "GET",
+      "path": "/products/{id}",
+      "description": "Get details of a specific product",
+      "file": "app/routes/product_routes.py"
+    },
+    {
+      "method": "PUT",
+      "path": "/products/{id}",
+      "description": "Update an existing product",
+      "file": "app/routes/product_routes.py"
+    },
+    {
+      "method": "DELETE",
+      "path": "/products/{id}",
+      "description": "Delete a product",
+      "file": "app/routes/product_routes.py"
+    },
+    {
+      "method": "GET",
+      "path": "/suppliers",
+      "description": "Retrieve list of all suppliers",
+      "file": "app/routes/supplier_routes.py"
+    },
+    {
+      "method": "POST",
+      "path": "/suppliers",
+      "description": "Create a new supplier",
+      "file": "app/routes/supplier_routes.py"
+    },
+    {
+      "method": "GET",
+      "path": "/suppliers/{id}",
+      "description": "Get details of a specific supplier",
+      "file": "app/routes/supplier_routes.py"
+    },
+    {
+      "method": "PUT",
+      "path": "/suppliers/{id}",
+      "description": "Update an existing supplier",
+      "file": "app/routes/supplier_routes.py"
+    },
+    {
+      "method": "DELETE",
+      "path": "/suppliers/{id}",
+      "description": "Delete a supplier",
+      "file": "app/routes/supplier_routes.py"
+    },
+    {
+      "method": "GET",
+      "path": "/purchase-orders",
+      "description": "Retrieve list of all purchase orders",
+      "file": "app/routes/purchaseorder_routes.py"
+    },
+    {
+      "method": "POST",
+      "path": "/purchase-orders",
+      "description": "Create a new purchase order",
+      "file": "app/routes/purchaseorder_routes.py"
+    },
+    {
+      "method": "GET",
+      "path": "/purchase-orders/{id}",
+      "description": "Get details of a specific purchase order",
+      "file": "app/routes/purchaseorder_routes.py"
+    },
+    {
+      "method": "PUT",
+      "path": "/purchase-orders/{id}",
+      "description": "Update an existing purchase order",
+      "file": "app/routes/purchaseorder_routes.py"
+    }
+  ],
+  "database_schema": [
+    {
+      "table_name": "users",
+      "columns": [
+        {
+          "name": "id",
+          "type": "INTEGER",
+          "is_primary_key": true,
+          "is_nullable": false
+        },
+        {
+          "name": "username",
+          "type": "TEXT",
+          "is_primary_key": false,
+          "is_nullable": false
+        },
+        {
+          "name": "hashed_password",
+          "type": "TEXT",
+          "is_primary_key": false,
+          "is_nullable": false
+        },
+        {
+          "name": "email",
+          "type": "TEXT",
+          "is_primary_key": false,
+          "is_nullable": false
+        },
+        {
+          "name": "is_active",
+          "type": "BOOLEAN",
+          "is_primary_key": false,
+          "is_nullable": false
+        },
+        {
+          "name": "role",
+          "type": "TEXT",
+          "is_primary_key": false,
+          "is_nullable": false
+        }
+      ]
+    },
+    {
+      "table_name": "suppliers",
+      "columns": [
+        {
+          "name": "id",
+          "type": "INTEGER",
+          "is_primary_key": true,
+          "is_nullable": false
+        },
+        {
+          "name": "name",
+          "type": "TEXT",
+          "is_primary_key": false,
+          "is_nullable": false
+        },
+        {
+          "name": "contact_name",
+          "type": "TEXT",
+          "is_primary_key": false,
+          "is_nullable": true
+        },
+        {
+          "name": "phone",
+          "type": "TEXT",
+          "is_primary_key": false,
+          "is_nullable": true
+        },
+        {
+          "name": "email",
+          "type": "TEXT",
+          "is_primary_key": false,
+          "is_nullable": true
+        },
+        {
+          "name": "address",
+          "type": "TEXT",
+          "is_primary_key": false,
+          "is_nullable": true
+        }
+      ]
+    },
+    {
+      "table_name": "products",
+      "columns": [
+        {
+          "name": "id",
+          "type": "INTEGER",
+          "is_primary_key": true,
+          "is_nullable": false
+        },
+        {
+          "name": "name",
+          "type": "TEXT",
+          "is_primary_key": false,
+          "is_nullable": false
+        },
+        {
+          "name": "sku",
+          "type": "TEXT",
+          "is_primary_key": false,
+          "is_nullable": false
+        },
+        {
+          "name": "description",
+          "type": "TEXT",
+          "is_primary_key": false,
+          "is_nullable": true
+        },
+        {
+          "name": "unit_price",
+          "type": "REAL",
+          "is_primary_key": false,
+          "is_nullable": false
+        },
+        {
+          "name": "quantity_on_hand",
+          "type": "INTEGER",
+          "is_primary_key": false,
+          "is_nullable": false
+        },
+        {
+          "name": "reorder_level",
+          "type": "INTEGER",
+          "is_primary_key": false,
+          "is_nullable": false
+        },
+        {
+          "name": "supplier_id",
+          "type": "INTEGER",
+          "is_primary_key": false,
+          "is_nullable": true
+        }
+      ]
+    },
+    {
+      "table_name": "purchase_orders",
+      "columns": [
+        {
+          "name": "id",
+          "type": "INTEGER",
+          "is_primary_key": true,
+          "is_nullable": false
+        },
+        {
+          "name": "order_number",
+          "type": "TEXT",
+          "is_primary_key": false,
+          "is_nullable": false
+        },
+        {
+          "name": "supplier_id",
+          "type": "INTEGER",
+          "is_primary_key": false,
+          "is_nullable": false
+        },
+        {
+          "name": "order_date",
+          "type": "DATE",
+          "is_primary_key": false,
+          "is_nullable": false
+        },
+        {
+          "name": "expected_date",
+          "type": "DATE",
+          "is_primary_key": false,
+          "is_nullable": true
+        },
+        {
+          "name": "status",
+          "type": "TEXT",
+          "is_primary_key": false,
+          "is_nullable": false
+        },
+        {
+          "name": "total_amount",
+          "type": "REAL",
+          "is_primary_key": false,
+          "is_nullable": false
+        }
+      ]
+    },
+    {
+      "table_name": "purchase_order_items",
+      "columns": [
+        {
+          "name": "id",
+          "type": "INTEGER",
+          "is_primary_key": true,
+          "is_nullable": false
+        },
+        {
+          "name": "purchase_order_id",
+          "type": "INTEGER",
+          "is_primary_key": false,
+          "is_nullable": false
+        },
+        {
+          "name": "product_id",
+          "type": "INTEGER",
+          "is_primary_key": false,
+          "is_nullable": false
+        },
+        {
+          "name": "quantity",
+          "type": "INTEGER",
+          "is_primary_key": false,
+          "is_nullable": false
+        },
+        {
+          "name": "unit_price",
+          "type": "REAL",
+          "is_primary_key": false,
+          "is_nullable": false
+        },
+        {
+          "name": "line_total",
+          "type": "REAL",
+          "is_primary_key": false,
+          "is_nullable": false
+        }
+      ]
+    }
+  ],
+  "folder_structure": {
+    "backend": [
+      "app",
+      "app/models",
+      "app/schemas",
+      "app/services",
+      "app/routes",
+      "app/utils",
+      "app/dependencies",
+      "app/config"
+    ]
+  },
+  "frontend_structure": {
+    "pages": [
+      "Login",
+      "Dashboard",
+      "Products",
+      "Suppliers",
+      "PurchaseOrders"
+    ],
+    "components": [
+      "Header",
+      "Sidebar",
+      "DashboardWidget",
+      "ProductTable",
+      "ProductForm",
+      "SupplierTable",
+      "SupplierForm",
+      "PurchaseOrderTable",
+      "PurchaseOrderForm",
+      "AlertBanner",
+      "SearchBar",
+      "Pagination",
+      "Modal",
+      "NotificationToast",
+      "LoadingSpinner"
+    ]
+  }
+}

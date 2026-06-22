@@ -1,0 +1,134 @@
+{
+  "project_name": "HR Onboarding System",
+  "description": "A web application that streamlines new employee onboarding by managing employee profiles, required documents, and task checklists with automated reminders and role\u2011based access.",
+  "target_users": [
+    "HR administrators",
+    "Hiring managers",
+    "New employees"
+  ],
+  "core_features": [
+    "Create and manage employee profiles",
+    "Upload, store, and track onboarding documents",
+    "Assign and monitor onboarding task checklists",
+    "Automated email reminders for pending tasks and documents",
+    "Role\u2011based access control for HR, managers, and employees"
+  ],
+  "future_features": [
+    "Integration with payroll and benefits systems",
+    "Mobile\u2011friendly interface for on\u2011the\u2011go access",
+    "Analytics dashboard for onboarding performance"
+  ],
+  "tech_stack": [
+    "FastAPI",
+    "React",
+    "SQLite"
+  ],
+  "database_entities": [
+    {
+      "name": "Employee",
+      "fields": [
+        "id",
+        "first_name",
+        "last_name",
+        "email",
+        "position",
+        "start_date",
+        "manager_id",
+        "status"
+      ]
+    },
+    {
+      "name": "Document",
+      "fields": [
+        "id",
+        "employee_id",
+        "title",
+        "file_path",
+        "uploaded_at",
+        "status"
+      ]
+    },
+    {
+      "name": "OnboardingTask",
+      "fields": [
+        "id",
+        "employee_id",
+        "title",
+        "description",
+        "due_date",
+        "completed_at",
+        "status"
+      ]
+    }
+  ],
+  "api_modules": [
+    {
+      "name": "Employee",
+      "endpoints": [
+        "/employees",
+        "/employees/{id}",
+        "/employees/{id}/documents",
+        "/employees/{id}/tasks"
+      ]
+    },
+    {
+      "name": "Document",
+      "endpoints": [
+        "/documents",
+        "/documents/{id}",
+        "/documents/{id}/download"
+      ]
+    },
+    {
+      "name": "OnboardingTask",
+      "endpoints": [
+        "/tasks",
+        "/tasks/{id}",
+        "/tasks/{id}/complete"
+      ]
+    }
+  ],
+  "pages": [
+    "Login",
+    "Dashboard",
+    "Employee List",
+    "Employee Detail (profile, documents, tasks)",
+    "Document Upload"
+  ],
+  "backend_modules": [
+    "Authentication",
+    "Employee Management",
+    "Document Management",
+    "Task Management",
+    "Notification Service"
+  ],
+  "roadmap": [
+    {
+      "phase": "Phase 1: MVP Launch",
+      "milestones": [
+        "Set up FastAPI backend with SQLite",
+        "Implement authentication and role\u2011based access",
+        "Create Employee, Document, and Task APIs",
+        "Build React UI for login, dashboard, and employee list",
+        "Enable document upload and task checklist functionality"
+      ]
+    },
+    {
+      "phase": "Phase 2: Automation & Polish",
+      "milestones": [
+        "Add automated email reminders for pending items",
+        "Implement document status tracking and approvals",
+        "Introduce task completion workflow and UI enhancements",
+        "Conduct user testing with HR staff and managers"
+      ]
+    },
+    {
+      "phase": "Phase 3: Expansion",
+      "milestones": [
+        "Integrate with payroll/benefits systems",
+        "Develop mobile\u2011responsive design",
+        "Launch analytics dashboard for onboarding metrics"
+      ]
+    }
+  ]
+}

@@ -1,28 +1,37 @@
 import json
 import time
+from app.utils.json_cleaner import extract_json
 
 from fastapi import HTTPException
 
 from app.prompts.architect_prompt import build_architect_prompt
 from app.models.architecture_models import ArchitecturePlan
 from app.providers.ai_provider import generate_content
+from app.utils.llm_cache import get_cached, set_cached
 
 
 def generate_architecture(
     project_plan,
     provider="auto",
-    max_tokens=1800
+    max_tokens=6000,
+    extra_context: str = "",
 ):
 
     try:
+
+        cached = get_cached("architect", {"plan": project_plan})
+
+        if cached:
+            print("\n=== ARCHITECT CACHE HIT — skipping LLM call ===")
+            return cached
 
         print("\n=== START ARCHITECT ===")
 
         start = time.time()
 
-        prompt = build_architect_prompt(
-            project_plan
-        )
+        prompt = build_architect_prompt(project_plan)
+        if extra_context:
+            prompt = extra_context + "\n" + prompt
 
         text = generate_content(
             prompt,
@@ -30,85 +39,49 @@ def generate_architecture(
             max_tokens=max_tokens
         )
 
-        with open(
-            "architect_response.txt",
-            "w",
-            encoding="utf-8"
-        ) as f:
+        if not text:
+            raise HTTPException(
+                status_code=500,
+                detail="Architect LLM returned empty response (token limit likely exceeded)."
+            )
 
+        with open(
+            "architect_response.txt", "w", encoding="utf-8"
+        ) as f:
             f.write(text)
 
-        print(
-            f"Architect Response Length: {len(text)}"
-        )
-
-        print(
-            f"Architect Time: {time.time() - start:.2f}s"
-        )
+        print(f"Architect Response Length: {len(text)}")
+        print(f"Architect Time: {time.time() - start:.2f}s")
 
         clean_text = text
-
-        clean_text = clean_text.replace(
-            "```json",
-            ""
-        )
-
-        clean_text = clean_text.replace(
-            "```",
-            ""
-        )
-
+        clean_text = clean_text.replace("```json", "")
+        clean_text = clean_text.replace("```", "")
         clean_text = clean_text.strip()
 
         try:
-
-            data = json.loads(
-                clean_text
-            )
+            data = extract_json(clean_text)
 
         except json.JSONDecodeError as e:
 
-            print(
-                "\n=== ARCHITECT JSON ERROR ==="
-            )
-
+            print("\n=== ARCHITECT JSON ERROR ===")
             print(e)
-
-            print(
-                "\nArchitect Response Preview:"
-            )
-
-            print(
-                clean_text[:500]
-            )
+            print("\nArchitect Response Preview:")
+            print(clean_text[:500])
 
             with open(
-                "architect_failed_response.txt",
-                "w",
-                encoding="utf-8"
+                "architect_failed_response.txt", "w", encoding="utf-8"
             ) as f:
-
-                f.write(
-                    clean_text
-                )
+                f.write(clean_text)
 
             raise HTTPException(
                 status_code=500,
-                detail=(
-                    "Architect returned invalid JSON."
-                )
+                detail="Architect returned invalid JSON."
             )
 
-        if not isinstance(
-            data,
-            dict
-        ):
-
+        if not isinstance(data, dict):
             raise HTTPException(
                 status_code=500,
-                detail=(
-                    "Architect response is not a JSON object."
-                )
+                detail="Architect response is not a JSON object."
             )
 
         allowed_keys = {
@@ -118,11 +91,7 @@ def generate_architecture(
             "frontend_structure"
         }
 
-        data = {
-            k: v
-            for k, v in data.items()
-            if k in allowed_keys
-        }
+        data = {k: v for k, v in data.items() if k in allowed_keys}
 
         required_fields = [
             "api_endpoints",
@@ -131,45 +100,31 @@ def generate_architecture(
             "frontend_structure"
         ]
 
-        missing = [
-            field
-            for field in required_fields
-            if field not in data
-        ]
+        missing = [field for field in required_fields if field not in data]
 
         if missing:
-
             raise HTTPException(
                 status_code=500,
-                detail=(
-                    f"Architect missing fields: {missing}"
-                )
+                detail=f"Architect missing fields: {missing}"
             )
 
-        validated = ArchitecturePlan(
-            **data
-        )
+        validated = ArchitecturePlan(**data)
+        result = validated.model_dump()
 
-        print(
-            "=== END ARCHITECT ==="
-        )
+        set_cached("architect", {"plan": project_plan}, result)
 
-        return validated.model_dump()
+        print("=== END ARCHITECT ===")
+
+        return result
 
     except HTTPException:
-
         raise
 
     except Exception as e:
 
-        print(
-            "ARCHITECT ERROR:",
-            e
-        )
+        print("ARCHITECT ERROR:", e)
 
         raise HTTPException(
             status_code=500,
-            detail=(
-                f"ForgeAI architecture generation failed: {str(e)}"
-            )
+            detail=f"ForgeAI architecture generation failed: {str(e)}"
         )

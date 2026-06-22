@@ -1,0 +1,113 @@
+{
+  "project_name": "SleepSense Tracker",
+  "description": "A mobile\u2011friendly web app that lets users log their sleep sessions, rate sleep quality, and view personal trends over time to improve sleep habits.",
+  "target_users": [
+    "Adults looking to monitor and improve their sleep",
+    "People with irregular sleep schedules",
+    "Health\u2011conscious individuals tracking wellness metrics"
+  ],
+  "core_features": [
+    "Log sleep sessions with start/end times",
+    "Rate sleep quality on a 1\u20115 scale",
+    "View daily and weekly sleep summaries",
+    "Trend analysis charts showing sleep duration and quality over time",
+    "Export sleep data as CSV"
+  ],
+  "future_features": [
+    "Smart alarm integration based on sleep cycles",
+    "Environmental tracking (e.g., room temperature, noise)",
+    "AI\u2011driven sleep improvement recommendations"
+  ],
+  "tech_stack": [
+    "FastAPI",
+    "React",
+    "SQLite",
+    "Pydantic",
+    "SQLAlchemy"
+  ],
+  "database_entities": [
+    {
+      "name": "User",
+      "fields": [
+        "id",
+        "email",
+        "password_hash",
+        "name",
+        "timezone",
+        "created_at"
+      ]
+    },
+    {
+      "name": "SleepSession",
+      "fields": [
+        "id",
+        "user_id",
+        "start_time",
+        "end_time",
+        "duration_minutes",
+        "quality_rating",
+        "notes",
+        "created_at"
+      ]
+    }
+  ],
+  "api_modules": [
+    {
+      "name": "User",
+      "endpoints": [
+        "/users",
+        "/users/{id}",
+        "/users/register",
+        "/users/login"
+      ]
+    },
+    {
+      "name": "SleepSession",
+      "endpoints": [
+        "/sessions",
+        "/sessions/{id}",
+        "/sessions/user/{user_id}"
+      ]
+    }
+  ],
+  "pages": [
+    "Login",
+    "Register",
+    "Dashboard",
+    "Sleep Log",
+    "Session Detail"
+  ],
+  "backend_modules": [
+    "Authentication",
+    "User Management",
+    "Sleep Session Management",
+    "Trend Analytics",
+    "Data Export"
+  ],
+  "roadmap": [
+    {
+      "phase": "Phase 1 \u2013 MVP",
+      "milestones": [
+        "User registration and login",
+        "Basic CRUD for sleep sessions",
+        "Daily/weekly summary view"
+      ]
+    },
+    {
+      "phase": "Phase 2 \u2013 Insight",
+      "milestones": [
+        "Trend analysis charts",
+        "CSV data export",
+        "Responsive UI enhancements"
+      ]
+    },
+    {
+      "phase": "Phase 3 \u2013 Advanced",
+      "milestones": [
+        "Smart alarm integration",
+        "Environmental sensor support",
+        "AI\u2011driven sleep recommendations"
+      ]
+    }
+  ]
+}

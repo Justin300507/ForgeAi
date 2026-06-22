@@ -7,10 +7,7 @@ class GeneratedFile(BaseModel):
         min_length=1
     )
 
-    content: str = Field(
-        ...,
-        min_length=1
-    )
+    content: str = ""
 
 
 class BackendPlan(BaseModel):

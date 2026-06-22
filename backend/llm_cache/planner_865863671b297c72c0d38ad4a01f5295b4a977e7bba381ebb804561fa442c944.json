@@ -1,0 +1,138 @@
+{
+  "project_name": "SplitWise",
+  "description": "A web app that lets friends, roommates, and small teams create groups, record shared expenses, automatically split costs, and track settlements.",
+  "target_users": [
+    "Friends sharing travel expenses",
+    "Roommates splitting household bills",
+    "Family members managing joint budgets",
+    "Small project teams handling shared costs"
+  ],
+  "core_features": [
+    "Create and manage expense groups",
+    "Add expenses with automatic equal split",
+    "View per\u2011user balances within a group",
+    "Suggest settlement payments to clear debts",
+    "Invite and remove group members"
+  ],
+  "future_features": [
+    "Recurring expense templates",
+    "Multi\u2011currency support with conversion rates",
+    "Receipt OCR to auto\u2011populate expense details"
+  ],
+  "tech_stack": [
+    "FastAPI",
+    "React",
+    "SQLite"
+  ],
+  "database_entities": [
+    {
+      "name": "User",
+      "fields": [
+        "id",
+        "name",
+        "email",
+        "password_hash",
+        "created_at"
+      ]
+    },
+    {
+      "name": "Group",
+      "fields": [
+        "id",
+        "name",
+        "description",
+        "created_by_user_id",
+        "created_at"
+      ]
+    },
+    {
+      "name": "Expense",
+      "fields": [
+        "id",
+        "group_id",
+        "payer_user_id",
+        "amount",
+        "description",
+        "expense_date",
+        "split_method",
+        "participants_json"
+      ]
+    }
+  ],
+  "api_modules": [
+    {
+      "name": "User",
+      "endpoints": [
+        "GET /users",
+        "POST /users",
+        "GET /users/{id}",
+        "PUT /users/{id}",
+        "DELETE /users/{id}"
+      ]
+    },
+    {
+      "name": "Group",
+      "endpoints": [
+        "GET /groups",
+        "POST /groups",
+        "GET /groups/{id}",
+        "PUT /groups/{id}",
+        "DELETE /groups/{id}",
+        "POST /groups/{id}/members",
+        "DELETE /groups/{id}/members/{user_id}"
+      ]
+    },
+    {
+      "name": "Expense",
+      "endpoints": [
+        "GET /expenses",
+        "POST /expenses",
+        "GET /expenses/{id}",
+        "PUT /expenses/{id}",
+        "DELETE /expenses/{id}",
+        "GET /groups/{group_id}/expenses"
+      ]
+    }
+  ],
+  "pages": [
+    "Login",
+    "Group List",
+    "Group Detail",
+    "Add Expense",
+    "Settlement Summary"
+  ],
+  "backend_modules": [
+    "Authentication",
+    "User Management",
+    "Group Management",
+    "Expense Management",
+    "Settlement Calculation"
+  ],
+  "roadmap": [
+    {
+      "phase": "Phase 1: MVP",
+      "milestones": [
+        "User registration and login",
+        "Group creation and member invitation",
+        "Expense entry with automatic equal split",
+        "Balance view and settlement suggestions"
+      ]
+    },
+    {
+      "phase": "Phase 2: Enhancements",
+      "milestones": [
+        "Recurring expense templates",
+        "Multi\u2011currency conversion",
+        "CSV export of group expenses"
+      ]
+    },
+    {
+      "phase": "Phase 3: Scaling",
+      "milestones": [
+        "Responsive mobile\u2011first UI",
+        "Push notifications for pending settlements",
+        "Integration with payment providers (e.g., Stripe, PayPal)"
+      ]
+    }
+  ]
+}

@@ -6,17 +6,31 @@ from datetime import datetime
 def save_metadata(
     project_path,
     plan,
+    architecture,
     provider,
     generation_time
 ):
 
     metadata = {
-        "project_name": plan["project_name"],
-        "description": plan["description"],
+        "project_name": plan.get(
+            "project_name",
+            "Unknown Project"
+        ),
+
+        "description": plan.get(
+            "description",
+            ""
+        ),
+            "plan": plan,
+        "architecture": architecture,
+
         "provider": provider,
+
         "generated_at": datetime.now().isoformat(),
+
         "generation_time_seconds": generation_time,
-        "version": "0.9"
+
+        "version": "1.0"
     }
 
     metadata_path = os.path.join(

@@ -1,4 +1,7 @@
-ddef build_missing_file_prompt(
+from app.prompts.shared_contract import FASTAPI_CONTRACT
+
+
+def build_missing_file_prompt(
     filepath,
     error
 ):
@@ -37,17 +40,7 @@ Never return partial code.
 
 Never return placeholders.
 
-========================================
-PROJECT RULES
-========================================
-
-- Use FastAPI for backend
-- Use React for frontend
-- Use APIRouter for route files
-- Use imports beginning with app
-- Generate runnable code
-- Keep implementation minimal
-- Preserve architecture consistency
+{FASTAPI_CONTRACT}
 
 ========================================
 ROUTE FILE RULES
@@ -77,9 +70,12 @@ app/models/
 
 Generate:
 
-- Pydantic models
-- Valid fields
+- SQLAlchemy models that inherit from Base (NOT Pydantic BaseModel)
+- Import Base from app.database: from app.database import Base
+- Valid SQLAlchemy column definitions
 - Valid Python syntax
+
+NEVER put Pydantic BaseModel subclasses in app/models/ — those belong in app/schemas/.
 
 ========================================
 SERVICE FILE RULES
@@ -162,6 +158,8 @@ OUTPUT RULES
 - No code fences
 - No text before JSON
 - No text after JSON
+- Only escape these characters: \\" \\\\ \\n \\t \\r
+- NEVER put a backslash before any other character
 
 ========================================
 FINAL VALIDATION

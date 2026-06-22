@@ -5,6 +5,7 @@ class ApiEndpoint(BaseModel):
     method: str
     path: str
     description: str
+    file: str = ""
 
 
 class Column(BaseModel):

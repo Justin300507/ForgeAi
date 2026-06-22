@@ -1,0 +1,274 @@
+{
+  "api_endpoints": [
+    {
+      "method": "POST",
+      "path": "/users",
+      "description": "Register a new user",
+      "file": "app/routes/user_routes.py"
+    },
+    {
+      "method": "GET",
+      "path": "/users/{id}",
+      "description": "Retrieve user profile by ID",
+      "file": "app/routes/user_routes.py"
+    },
+    {
+      "method": "POST",
+      "path": "/auth/login",
+      "description": "Authenticate user and issue JWT",
+      "file": "app/routes/auth_routes.py"
+    },
+    {
+      "method": "GET",
+      "path": "/coins",
+      "description": "List all supported cryptocurrencies",
+      "file": "app/routes/coin_routes.py"
+    },
+    {
+      "method": "GET",
+      "path": "/coins/{id}",
+      "description": "Get detailed information for a specific coin",
+      "file": "app/routes/coin_routes.py"
+    },
+    {
+      "method": "GET",
+      "path": "/coins/{id}/price",
+      "description": "Fetch the latest USD price for a specific coin",
+      "file": "app/routes/coin_routes.py"
+    },
+    {
+      "method": "GET",
+      "path": "/trades",
+      "description": "List all trades for the authenticated user",
+      "file": "app/routes/trade_routes.py"
+    },
+    {
+      "method": "POST",
+      "path": "/trades",
+      "description": "Create a new trade (buy or sell)",
+      "file": "app/routes/trade_routes.py"
+    },
+    {
+      "method": "GET",
+      "path": "/trades/{id}",
+      "description": "Retrieve a specific trade by ID",
+      "file": "app/routes/trade_routes.py"
+    },
+    {
+      "method": "PUT",
+      "path": "/trades/{id}",
+      "description": "Update an existing trade",
+      "file": "app/routes/trade_routes.py"
+    },
+    {
+      "method": "DELETE",
+      "path": "/trades/{id}",
+      "description": "Delete a trade",
+      "file": "app/routes/trade_routes.py"
+    },
+    {
+      "method": "GET",
+      "path": "/portfolio/summary",
+      "description": "Get aggregated portfolio performance for the user",
+      "file": "app/routes/portfolio_routes.py"
+    },
+    {
+      "method": "GET",
+      "path": "/portfolio/export",
+      "description": "Export user's portfolio data as CSV",
+      "file": "app/routes/portfolio_routes.py"
+    }
+  ],
+  "database_schema": [
+    {
+      "table_name": "user",
+      "columns": [
+        {
+          "name": "id",
+          "type": "INTEGER",
+          "is_primary_key": true,
+          "is_nullable": false
+        },
+        {
+          "name": "email",
+          "type": "VARCHAR(255)",
+          "is_primary_key": false,
+          "is_nullable": false
+        },
+        {
+          "name": "password_hash",
+          "type": "VARCHAR(255)",
+          "is_primary_key": false,
+          "is_nullable": false
+        },
+        {
+          "name": "created_at",
+          "type": "DATETIME",
+          "is_primary_key": false,
+          "is_nullable": false
+        }
+      ]
+    },
+    {
+      "table_name": "coin",
+      "columns": [
+        {
+          "name": "id",
+          "type": "INTEGER",
+          "is_primary_key": true,
+          "is_nullable": false
+        },
+        {
+          "name": "symbol",
+          "type": "VARCHAR(20)",
+          "is_primary_key": false,
+          "is_nullable": false
+        },
+        {
+          "name": "name",
+          "type": "VARCHAR(100)",
+          "is_primary_key": false,
+          "is_nullable": false
+        },
+        {
+          "name": "coingecko_id",
+          "type": "VARCHAR(100)",
+          "is_primary_key": false,
+          "is_nullable": false
+        },
+        {
+          "name": "logo_url",
+          "type": "VARCHAR(255)",
+          "is_primary_key": false,
+          "is_nullable": true
+        }
+      ]
+    },
+    {
+      "table_name": "trade",
+      "columns": [
+        {
+          "name": "id",
+          "type": "INTEGER",
+          "is_primary_key": true,
+          "is_nullable": false
+        },
+        {
+          "name": "user_id",
+          "type": "INTEGER",
+          "is_primary_key": false,
+          "is_nullable": false
+        },
+        {
+          "name": "coin_id",
+          "type": "INTEGER",
+          "is_primary_key": false,
+          "is_nullable": false
+        },
+        {
+          "name": "type",
+          "type": "VARCHAR(10)",
+          "is_primary_key": false,
+          "is_nullable": false
+        },
+        {
+          "name": "amount",
+          "type": "DECIMAL(20,8)",
+          "is_primary_key": false,
+          "is_nullable": false
+        },
+        {
+          "name": "price_usd",
+          "type": "DECIMAL(20,8)",
+          "is_primary_key": false,
+          "is_nullable": false
+        },
+        {
+          "name": "fee_usd",
+          "type": "DECIMAL(20,8)",
+          "is_primary_key": false,
+          "is_nullable": true
+        },
+        {
+          "name": "timestamp",
+          "type": "DATETIME",
+          "is_primary_key": false,
+          "is_nullable": false
+        },
+        {
+          "name": "notes",
+          "type": "TEXT",
+          "is_primary_key": false,
+          "is_nullable": true
+        }
+      ]
+    },
+    {
+      "table_name": "price_cache",
+      "columns": [
+        {
+          "name": "id",
+          "type": "INTEGER",
+          "is_primary_key": true,
+          "is_nullable": false
+        },
+        {
+          "name": "coin_id",
+          "type": "INTEGER",
+          "is_primary_key": false,
+          "is_nullable": false
+        },
+        {
+          "name": "price_usd",
+          "type": "DECIMAL(20,8)",
+          "is_primary_key": false,
+          "is_nullable": false
+        },
+        {
+          "name": "fetched_at",
+          "type": "DATETIME",
+          "is_primary_key": false,
+          "is_nullable": false
+        }
+      ]
+    }
+  ],
+  "folder_structure": {
+    "backend": [
+      "app",
+      "app/models",
+      "app/schemas",
+      "app/services",
+      "app/routes",
+      "app/utils",
+      "app/dependencies",
+      "app/config"
+    ]
+  },
+  "frontend_structure": {
+    "pages": [
+      "Login",
+      "Dashboard",
+      "Holdings",
+      "TradeHistory",
+      "CoinDetail"
+    ],
+    "components": [
+      "Header",
+      "Sidebar",
+      "PortfolioSummary",
+      "HoldingsTable",
+      "TradeForm",
+      "TradeTable",
+      "CoinPriceChart",
+      "ExportButton",
+      "LoginForm",
+      "UserMenu",
+      "CoinCard",
+      "NotificationToast",
+      "ResponsiveLayout",
+      "Footer",
+      "SearchBar"
+    ]
+  }
+}

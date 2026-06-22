@@ -1,0 +1,30 @@
+{
+  "run_id": "v7_20260622_110739_a025cf61",
+  "timestamp": "2026-06-22T11:08:37",
+  "version": "v7",
+  "idea": "A recipe manager with ingredients, cooking steps, and favorites",
+  "project_name": "recipe_manager",
+  "provider": "auto",
+  "plan": {},
+  "architecture": {
+    "endpoint_count": 0,
+    "endpoints": [],
+    "db_schema_keys": []
+  },
+  "validation_errors": [],
+  "runtime_error": null,
+  "runtime_error_type": "ModuleNotFoundError",
+  "fixes_applied": [],
+  "score": 80,
+  "grade": "B",
+  "runtime_passed": false,
+  "frontend_passed": false,
+  "generation_time": 58.7,
+  "security_score": 62,
+  "performance_score": 58,
+  "maintainability_score": 45,
+  "qa_score": 45,
+  "v6_score": 40,
+  "prompt_version": "default",
+  "active_rules": []
+}

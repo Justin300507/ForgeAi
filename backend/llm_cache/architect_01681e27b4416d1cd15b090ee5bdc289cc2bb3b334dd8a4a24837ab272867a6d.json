@@ -1,0 +1,349 @@
+{
+  "api_endpoints": [
+    {
+      "method": "POST",
+      "path": "/users/register",
+      "description": "Register a new user and create account",
+      "file": "app/routes/user_routes.py"
+    },
+    {
+      "method": "POST",
+      "path": "/users/login",
+      "description": "Authenticate user and return access token",
+      "file": "app/routes/user_routes.py"
+    },
+    {
+      "method": "GET",
+      "path": "/users/me",
+      "description": "Retrieve profile of the authenticated user",
+      "file": "app/routes/user_routes.py"
+    },
+    {
+      "method": "PATCH",
+      "path": "/users/me",
+      "description": "Update profile fields of the authenticated user",
+      "file": "app/routes/user_routes.py"
+    },
+    {
+      "method": "GET",
+      "path": "/users/me/streak",
+      "description": "Get current streak count and last practice date",
+      "file": "app/routes/user_routes.py"
+    },
+    {
+      "method": "GET",
+      "path": "/sets",
+      "description": "List vocabulary sets accessible to the user",
+      "file": "app/routes/set_routes.py"
+    },
+    {
+      "method": "POST",
+      "path": "/sets",
+      "description": "Create a new vocabulary set",
+      "file": "app/routes/set_routes.py"
+    },
+    {
+      "method": "GET",
+      "path": "/sets/{id}",
+      "description": "Retrieve details of a specific vocabulary set",
+      "file": "app/routes/set_routes.py"
+    },
+    {
+      "method": "PATCH",
+      "path": "/sets/{id}",
+      "description": "Update metadata of a vocabulary set",
+      "file": "app/routes/set_routes.py"
+    },
+    {
+      "method": "DELETE",
+      "path": "/sets/{id}",
+      "description": "Delete a vocabulary set owned by the user",
+      "file": "app/routes/set_routes.py"
+    },
+    {
+      "method": "GET",
+      "path": "/sets/{id}/exercises",
+      "description": "List all exercises belonging to a vocabulary set",
+      "file": "app/routes/set_routes.py"
+    },
+    {
+      "method": "POST",
+      "path": "/exercises",
+      "description": "Create a new exercise (admin/author)",
+      "file": "app/routes/exercise_routes.py"
+    },
+    {
+      "method": "GET",
+      "path": "/exercises/{id}",
+      "description": "Retrieve a specific exercise definition",
+      "file": "app/routes/exercise_routes.py"
+    },
+    {
+      "method": "POST",
+      "path": "/exercises/{id}/submit",
+      "description": "Submit user's answer for an exercise and receive result",
+      "file": "app/routes/exercise_routes.py"
+    }
+  ],
+  "database_schema": [
+    {
+      "table_name": "user",
+      "columns": [
+        {
+          "name": "id",
+          "type": "INTEGER",
+          "is_primary_key": true,
+          "is_nullable": false
+        },
+        {
+          "name": "email",
+          "type": "TEXT",
+          "is_primary_key": false,
+          "is_nullable": false
+        },
+        {
+          "name": "password_hash",
+          "type": "TEXT",
+          "is_primary_key": false,
+          "is_nullable": false
+        },
+        {
+          "name": "display_name",
+          "type": "TEXT",
+          "is_primary_key": false,
+          "is_nullable": true
+        },
+        {
+          "name": "native_language",
+          "type": "TEXT",
+          "is_primary_key": false,
+          "is_nullable": true
+        },
+        {
+          "name": "target_language",
+          "type": "TEXT",
+          "is_primary_key": false,
+          "is_nullable": true
+        },
+        {
+          "name": "streak_count",
+          "type": "INTEGER",
+          "is_primary_key": false,
+          "is_nullable": false
+        },
+        {
+          "name": "last_practice_date",
+          "type": "DATE",
+          "is_primary_key": false,
+          "is_nullable": true
+        },
+        {
+          "name": "created_at",
+          "type": "DATETIME",
+          "is_primary_key": false,
+          "is_nullable": false
+        }
+      ]
+    },
+    {
+      "table_name": "vocabulary_set",
+      "columns": [
+        {
+          "name": "id",
+          "type": "INTEGER",
+          "is_primary_key": true,
+          "is_nullable": false
+        },
+        {
+          "name": "name",
+          "type": "TEXT",
+          "is_primary_key": false,
+          "is_nullable": false
+        },
+        {
+          "name": "language",
+          "type": "TEXT",
+          "is_primary_key": false,
+          "is_nullable": false
+        },
+        {
+          "name": "level",
+          "type": "TEXT",
+          "is_primary_key": false,
+          "is_nullable": true
+        },
+        {
+          "name": "description",
+          "type": "TEXT",
+          "is_primary_key": false,
+          "is_nullable": true
+        },
+        {
+          "name": "owner_id",
+          "type": "INTEGER",
+          "is_primary_key": false,
+          "is_nullable": false
+        },
+        {
+          "name": "created_at",
+          "type": "DATETIME",
+          "is_primary_key": false,
+          "is_nullable": false
+        }
+      ]
+    },
+    {
+      "table_name": "exercise",
+      "columns": [
+        {
+          "name": "id",
+          "type": "INTEGER",
+          "is_primary_key": true,
+          "is_nullable": false
+        },
+        {
+          "name": "set_id",
+          "type": "INTEGER",
+          "is_primary_key": false,
+          "is_nullable": false
+        },
+        {
+          "name": "type",
+          "type": "TEXT",
+          "is_primary_key": false,
+          "is_nullable": false
+        },
+        {
+          "name": "question",
+          "type": "TEXT",
+          "is_primary_key": false,
+          "is_nullable": false
+        },
+        {
+          "name": "answer",
+          "type": "TEXT",
+          "is_primary_key": false,
+          "is_nullable": false
+        },
+        {
+          "name": "created_at",
+          "type": "DATETIME",
+          "is_primary_key": false,
+          "is_nullable": false
+        }
+      ]
+    },
+    {
+      "table_name": "exercise_option",
+      "columns": [
+        {
+          "name": "id",
+          "type": "INTEGER",
+          "is_primary_key": true,
+          "is_nullable": false
+        },
+        {
+          "name": "exercise_id",
+          "type": "INTEGER",
+          "is_primary_key": false,
+          "is_nullable": false
+        },
+        {
+          "name": "option_text",
+          "type": "TEXT",
+          "is_primary_key": false,
+          "is_nullable": false
+        },
+        {
+          "name": "is_correct",
+          "type": "BOOLEAN",
+          "is_primary_key": false,
+          "is_nullable": false
+        }
+      ]
+    },
+    {
+      "table_name": "exercise_attempt",
+      "columns": [
+        {
+          "name": "id",
+          "type": "INTEGER",
+          "is_primary_key": true,
+          "is_nullable": false
+        },
+        {
+          "name": "user_id",
+          "type": "INTEGER",
+          "is_primary_key": false,
+          "is_nullable": false
+        },
+        {
+          "name": "exercise_id",
+          "type": "INTEGER",
+          "is_primary_key": false,
+          "is_nullable": false
+        },
+        {
+          "name": "submitted_answer",
+          "type": "TEXT",
+          "is_primary_key": false,
+          "is_nullable": true
+        },
+        {
+          "name": "is_correct",
+          "type": "BOOLEAN",
+          "is_primary_key": false,
+          "is_nullable": true
+        },
+        {
+          "name": "attempt_date",
+          "type": "DATETIME",
+          "is_primary_key": false,
+          "is_nullable": false
+        }
+      ]
+    }
+  ],
+  "folder_structure": {
+    "backend": [
+      "app",
+      "app/models",
+      "app/schemas",
+      "app/services",
+      "app/routes",
+      "app/utils",
+      "app/dependencies",
+      "app/config"
+    ]
+  },
+  "frontend_structure": {
+    "pages": [
+      "Login",
+      "Register",
+      "Dashboard",
+      "VocabularySets",
+      "VocabularySetDetail",
+      "ExerciseSession",
+      "Profile"
+    ],
+    "components": [
+      "Header",
+      "Footer",
+      "NavBar",
+      "LoginForm",
+      "RegisterForm",
+      "SetCard",
+      "SetList",
+      "ExerciseCard",
+      "MultipleChoiceExercise",
+      "FillInBlankExercise",
+      "MatchingExercise",
+      "StreakBadge",
+      "ProgressChart",
+      "ReminderToggle",
+      "LanguageSelector",
+      "Button",
+      "InputField"
+    ]
+  }
+}

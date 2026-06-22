@@ -1,0 +1,135 @@
+{
+  "project_name": "MovieWatchlist",
+  "description": "A web application that lets users browse movies, add them to a personal watchlist, rate and review titles, and track their watch history.",
+  "target_users": [
+    "Movie enthusiasts who track what they watch",
+    "Casual viewers looking for recommendations",
+    "Film critics who write detailed reviews",
+    "Friends who share watchlists and ratings"
+  ],
+  "core_features": [
+    "User registration and secure login",
+    "Browse and search a catalog of movies",
+    "Add movies to a personal watchlist",
+    "Rate and write reviews for watched movies",
+    "View personal watch history with ratings"
+  ],
+  "future_features": [
+    "Share watchlists and reviews on social media",
+    "Personalized movie recommendations based on ratings",
+    "Import and export watchlist data via CSV"
+  ],
+  "tech_stack": [
+    "FastAPI",
+    "React",
+    "SQLite"
+  ],
+  "database_entities": [
+    {
+      "name": "User",
+      "fields": [
+        "id",
+        "username",
+        "email",
+        "hashed_password",
+        "created_at"
+      ]
+    },
+    {
+      "name": "Movie",
+      "fields": [
+        "id",
+        "title",
+        "year",
+        "genre",
+        "director",
+        "description",
+        "poster_url"
+      ]
+    },
+    {
+      "name": "Review",
+      "fields": [
+        "id",
+        "user_id",
+        "movie_id",
+        "rating",
+        "comment",
+        "watched_at",
+        "created_at"
+      ]
+    }
+  ],
+  "api_modules": [
+    {
+      "name": "User",
+      "endpoints": [
+        "/users",
+        "/users/{id}",
+        "/auth/register",
+        "/auth/login"
+      ]
+    },
+    {
+      "name": "Movie",
+      "endpoints": [
+        "/movies",
+        "/movies/{id}",
+        "/movies/search"
+      ]
+    },
+    {
+      "name": "Review",
+      "endpoints": [
+        "/reviews",
+        "/reviews/{id}",
+        "/movies/{id}/reviews"
+      ]
+    }
+  ],
+  "pages": [
+    "Login",
+    "Register",
+    "Movie Catalog",
+    "Movie Detail",
+    "Watchlist"
+  ],
+  "backend_modules": [
+    "Authentication",
+    "User Management",
+    "Movie Management",
+    "Review Management",
+    "Watchlist Management"
+  ],
+  "roadmap": [
+    {
+      "phase": "MVP",
+      "milestones": [
+        "Set up repository and development environment",
+        "Design and implement database schema",
+        "Develop authentication (register/login) endpoints",
+        "Create movie catalog CRUD endpoints",
+        "Implement watchlist add/remove endpoints",
+        "Build review create/read endpoints",
+        "Develop core UI pages (login, register, catalog, detail, watchlist)"
+      ]
+    },
+    {
+      "phase": "Feature Expansion",
+      "milestones": [
+        "Add social sharing integration for watchlists and reviews",
+        "Implement recommendation engine based on user ratings",
+        "Provide CSV import/export for watchlist data"
+      ]
+    },
+    {
+      "phase": "Polish & Deploy",
+      "milestones": [
+        "Write unit and integration tests for all modules",
+        "Set up CI/CD pipeline and automated deployments",
+        "Perform UI/UX refinements and mobile responsiveness",
+        "Monitor performance and fix any post\u2011launch issues"
+      ]
+    }
+  ]
+}

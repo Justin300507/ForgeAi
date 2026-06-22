@@ -1,0 +1,128 @@
+{
+  "project_name": "EventPulse",
+  "description": "A web-based event management platform that lets organizers create events, define ticket tiers, and enables attendees to register and purchase tickets online. Includes admin tools for managing events and tracking attendee check\u2011ins.",
+  "target_users": [
+    "Event organizers",
+    "Attendees",
+    "Venue staff"
+  ],
+  "core_features": [
+    "Create, edit, and publish events",
+    "Define multiple ticket types with pricing and inventory",
+    "Online ticket purchase and attendee registration",
+    "Admin dashboard for managing events, tickets, and registrations",
+    "Attendee check\u2011in tracking"
+  ],
+  "future_features": [
+    "Waitlist system for sold\u2011out events",
+    "Automated email notifications for confirmations and reminders",
+    "Analytics dashboard for ticket sales and attendance trends"
+  ],
+  "tech_stack": [
+    "FastAPI",
+    "React",
+    "SQLite"
+  ],
+  "database_entities": [
+    {
+      "name": "Event",
+      "fields": [
+        "id",
+        "title",
+        "description",
+        "location",
+        "start_time",
+        "end_time",
+        "organizer_name"
+      ]
+    },
+    {
+      "name": "Ticket",
+      "fields": [
+        "id",
+        "event_id",
+        "name",
+        "price",
+        "quantity_total",
+        "quantity_sold"
+      ]
+    },
+    {
+      "name": "Attendee",
+      "fields": [
+        "id",
+        "event_id",
+        "ticket_id",
+        "name",
+        "email",
+        "registration_time",
+        "checked_in"
+      ]
+    }
+  ],
+  "api_modules": [
+    {
+      "name": "Event",
+      "endpoints": [
+        "/events",
+        "/events/{id}"
+      ]
+    },
+    {
+      "name": "Ticket",
+      "endpoints": [
+        "/tickets",
+        "/tickets/{id}"
+      ]
+    },
+    {
+      "name": "Attendee",
+      "endpoints": [
+        "/attendees",
+        "/attendees/{id}"
+      ]
+    }
+  ],
+  "pages": [
+    "Home",
+    "Event Details",
+    "My Registrations",
+    "Admin Dashboard",
+    "Login"
+  ],
+  "backend_modules": [
+    "Authentication",
+    "Event Management",
+    "Ticket Management",
+    "Registration Management",
+    "Reporting"
+  ],
+  "roadmap": [
+    {
+      "phase": "MVP Launch",
+      "milestones": [
+        "Implement event CRUD operations",
+        "Implement ticket CRUD operations",
+        "Implement attendee registration and purchase flow",
+        "Build basic admin UI",
+        "Deploy initial version to production"
+      ]
+    },
+    {
+      "phase": "Feature Expansion",
+      "milestones": [
+        "Add waitlist functionality for sold\u2011out events",
+        "Integrate email notification service",
+        "Implement QR\u2011code based attendee check\u2011in"
+      ]
+    },
+    {
+      "phase": "Growth & Analytics",
+      "milestones": [
+        "Develop analytics dashboard for sales and attendance",
+        "Support multi\u2011venue event management",
+        "Introduce role\u2011based access control"
+      ]
+    }
+  ]
+}

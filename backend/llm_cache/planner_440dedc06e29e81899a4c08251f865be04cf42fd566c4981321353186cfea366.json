@@ -1,0 +1,129 @@
+{
+  "project_name": "Concert Ticketing System",
+  "description": "A web application for concert venues to list shows, display seat maps, and allow fans to purchase tickets online.",
+  "target_users": [
+    "Concert attendees",
+    "Venue managers",
+    "Event promoters"
+  ],
+  "core_features": [
+    "Browse venues and upcoming shows",
+    "View interactive seat map and select seats",
+    "Purchase tickets with secure checkout",
+    "User account with ticket purchase history",
+    "Admin dashboard to manage venues, shows, and seating"
+  ],
+  "future_features": [
+    "Dynamic pricing based on demand",
+    "QR code tickets for mobile scanning",
+    "Integration with third\u2011party payment gateways"
+  ],
+  "tech_stack": [
+    "FastAPI",
+    "React",
+    "SQLite"
+  ],
+  "database_entities": [
+    {
+      "name": "Venue",
+      "fields": [
+        "id",
+        "name",
+        "address",
+        "capacity"
+      ]
+    },
+    {
+      "name": "Show",
+      "fields": [
+        "id",
+        "venue_id",
+        "name",
+        "date_time",
+        "description"
+      ]
+    },
+    {
+      "name": "Ticket",
+      "fields": [
+        "id",
+        "show_id",
+        "seat_number",
+        "price",
+        "purchaser_email",
+        "purchase_time"
+      ]
+    }
+  ],
+  "api_modules": [
+    {
+      "name": "Venue",
+      "endpoints": [
+        "/venues",
+        "/venues/{id}"
+      ]
+    },
+    {
+      "name": "Show",
+      "endpoints": [
+        "/shows",
+        "/shows/{id}",
+        "/shows/{id}/seats"
+      ]
+    },
+    {
+      "name": "Ticket",
+      "endpoints": [
+        "/tickets",
+        "/tickets/{id}",
+        "/tickets/purchase"
+      ]
+    }
+  ],
+  "pages": [
+    "Home",
+    "Show Details",
+    "My Tickets",
+    "Admin Dashboard",
+    "Login"
+  ],
+  "backend_modules": [
+    "Authentication",
+    "User Management",
+    "Venue Management",
+    "Show Management",
+    "Ticket Management"
+  ],
+  "roadmap": [
+    {
+      "phase": "MVP Launch",
+      "milestones": [
+        "Implement venue and show CRUD APIs",
+        "Create seat selection UI",
+        "Enable ticket purchase flow",
+        "Basic user authentication",
+        "Deploy initial version"
+      ]
+    },
+    {
+      "phase": "Admin & Scaling",
+      "milestones": [
+        "Add admin dashboard for venue managers",
+        "Implement role-based access control",
+        "Integrate email notifications",
+        "Improve UI/UX for seat map",
+        "Performance testing"
+      ]
+    },
+    {
+      "phase": "Advanced Features",
+      "milestones": [
+        "Introduce dynamic pricing",
+        "Add QR code ticket generation",
+        "Support third-party payment gateways",
+        "Mobile app integration",
+        "Analytics dashboard"
+      ]
+    }
+  ]
+}

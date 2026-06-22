@@ -1,0 +1,142 @@
+{
+  "project_name": "FlashLearn",
+  "description": "A web-based flashcard app where users can create and organize decks of cards, study them using a spaced\u2011repetition algorithm, and track their learning progress.",
+  "target_users": [
+    "Students",
+    "Language learners",
+    "Professional certification candidates",
+    "Lifelong learners"
+  ],
+  "core_features": [
+    "Create, edit, and delete decks",
+    "Create, edit, and delete cards within decks",
+    "Spaced\u2011repetition study sessions using the SM\u20112 algorithm",
+    "Interactive study UI with card flipping and rating",
+    "Progress tracking and statistics per deck"
+  ],
+  "future_features": [
+    "Cross\u2011device synchronization via cloud storage",
+    "Support for images, audio, and rich media on cards",
+    "Collaborative decks with sharing and permission controls"
+  ],
+  "tech_stack": [
+    "FastAPI",
+    "React",
+    "SQLite"
+  ],
+  "database_entities": [
+    {
+      "name": "User",
+      "fields": [
+        "id",
+        "email",
+        "hashed_password",
+        "full_name",
+        "created_at"
+      ]
+    },
+    {
+      "name": "Deck",
+      "fields": [
+        "id",
+        "user_id",
+        "title",
+        "description",
+        "created_at",
+        "updated_at"
+      ]
+    },
+    {
+      "name": "Card",
+      "fields": [
+        "id",
+        "deck_id",
+        "front_text",
+        "back_text",
+        "created_at",
+        "updated_at",
+        "due_date",
+        "interval",
+        "ease_factor",
+        "repetition_count"
+      ]
+    }
+  ],
+  "api_modules": [
+    {
+      "name": "User",
+      "endpoints": [
+        "GET /users",
+        "POST /users",
+        "GET /users/{id}",
+        "PUT /users/{id}",
+        "DELETE /users/{id}"
+      ]
+    },
+    {
+      "name": "Deck",
+      "endpoints": [
+        "GET /decks",
+        "POST /decks",
+        "GET /decks/{id}",
+        "PUT /decks/{id}",
+        "DELETE /decks/{id}",
+        "GET /decks/{id}/cards"
+      ]
+    },
+    {
+      "name": "Card",
+      "endpoints": [
+        "GET /cards",
+        "POST /cards",
+        "GET /cards/{id}",
+        "PUT /cards/{id}",
+        "DELETE /cards/{id}",
+        "POST /cards/{id}/review"
+      ]
+    }
+  ],
+  "pages": [
+    "Login",
+    "Register",
+    "Dashboard",
+    "DeckDetail",
+    "StudySession"
+  ],
+  "backend_modules": [
+    "Authentication",
+    "UserManagement",
+    "DeckManagement",
+    "CardManagement",
+    "StudyScheduler"
+  ],
+  "roadmap": [
+    {
+      "phase": "MVP",
+      "milestones": [
+        "Set up repository and CI pipeline",
+        "Implement user registration and login",
+        "CRUD APIs for decks and cards",
+        "Integrate SM\u20112 spaced\u2011repetition algorithm",
+        "Basic React UI for dashboard, deck view, and study session"
+      ]
+    },
+    {
+      "phase": "Enhancement",
+      "milestones": [
+        "Add progress charts and statistics",
+        "Implement deck sharing via invitation links",
+        "Improve offline capability with service workers",
+        "Refine study session UI with rating feedback"
+      ]
+    },
+    {
+      "phase": "Future Expansion",
+      "milestones": [
+        "Enable multimedia content on cards",
+        "Develop cloud sync for cross\u2011device access",
+        "Introduce collaborative editing and version control"
+      ]
+    }
+  ]
+}

@@ -1,0 +1,128 @@
+{
+  "project_name": "Small Store Inventory Management System",
+  "description": "A web application that helps small retail stores track products, manage suppliers, record stock movements, and generate basic inventory reports.",
+  "target_users": [
+    "Store Owner",
+    "Store Staff"
+  ],
+  "core_features": [
+    "Product CRUD (create, read, update, delete)",
+    "Supplier CRUD",
+    "Stock in/out transaction logging",
+    "Low stock alert notifications",
+    "Basic inventory reporting"
+  ],
+  "future_features": [
+    "Barcode scanning integration",
+    "Mobile-friendly interface",
+    "Multi-store inventory support"
+  ],
+  "tech_stack": [
+    "FastAPI",
+    "React",
+    "SQLite"
+  ],
+  "database_entities": [
+    {
+      "name": "Product",
+      "fields": [
+        "id",
+        "name",
+        "sku",
+        "description",
+        "price",
+        "quantity_in_stock",
+        "reorder_level"
+      ]
+    },
+    {
+      "name": "Supplier",
+      "fields": [
+        "id",
+        "name",
+        "contact_name",
+        "phone",
+        "email",
+        "address"
+      ]
+    },
+    {
+      "name": "Transaction",
+      "fields": [
+        "id",
+        "product_id",
+        "quantity",
+        "transaction_type",
+        "date",
+        "notes"
+      ]
+    }
+  ],
+  "api_modules": [
+    {
+      "name": "Product Management",
+      "endpoints": [
+        "/products",
+        "/products/{id}"
+      ]
+    },
+    {
+      "name": "Supplier Management",
+      "endpoints": [
+        "/suppliers",
+        "/suppliers/{id}"
+      ]
+    },
+    {
+      "name": "Transaction Management",
+      "endpoints": [
+        "/transactions",
+        "/transactions/{id}"
+      ]
+    }
+  ],
+  "pages": [
+    "Login",
+    "Dashboard",
+    "Products",
+    "Suppliers",
+    "Transactions"
+  ],
+  "backend_modules": [
+    "Authentication",
+    "Product Management",
+    "Supplier Management",
+    "Transaction Management",
+    "Reporting"
+  ],
+  "roadmap": [
+    {
+      "phase": "Phase 1: MVP",
+      "milestones": [
+        "Initialize repository and project structure",
+        "Implement user authentication",
+        "Develop product CRUD API and UI",
+        "Develop supplier CRUD API and UI",
+        "Implement transaction logging API and UI",
+        "Create dashboard with stock overview"
+      ]
+    },
+    {
+      "phase": "Phase 2: Enhancements",
+      "milestones": [
+        "Add low\u2011stock alert notifications",
+        "Build sales and purchase reports",
+        "Improve UI/UX based on feedback",
+        "Enable CSV export of reports"
+      ]
+    },
+    {
+      "phase": "Phase 3: Scaling",
+      "milestones": [
+        "Integrate barcode scanning for product entry",
+        "Optimize layout for mobile devices",
+        "Support multiple store locations"
+      ]
+    }
+  ]
+}

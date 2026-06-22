@@ -1,0 +1,131 @@
+{
+  "project_name": "Blogify",
+  "description": "A lightweight blogging platform where authors can publish posts, readers can comment, and each author has a public profile.",
+  "target_users": [
+    "Independent writers",
+    "Content creators",
+    "Readers looking for niche blogs",
+    "Small media outlets"
+  ],
+  "core_features": [
+    "Create, edit, and delete blog posts",
+    "Comment on posts",
+    "User registration, login, and authentication",
+    "Author profile pages displaying their posts",
+    "Post listing with pagination on the home page"
+  ],
+  "future_features": [
+    "Tagging and category organization for posts",
+    "Rich\u2011text editor with image and media upload",
+    "Like and reaction system for posts and comments"
+  ],
+  "tech_stack": [
+    "FastAPI",
+    "React",
+    "SQLite"
+  ],
+  "database_entities": [
+    {
+      "name": "User",
+      "fields": [
+        "id",
+        "username",
+        "email",
+        "password_hash",
+        "bio",
+        "avatar_url",
+        "created_at"
+      ]
+    },
+    {
+      "name": "Post",
+      "fields": [
+        "id",
+        "title",
+        "content",
+        "author_id",
+        "created_at",
+        "updated_at"
+      ]
+    },
+    {
+      "name": "Comment",
+      "fields": [
+        "id",
+        "post_id",
+        "author_id",
+        "content",
+        "created_at",
+        "updated_at"
+      ]
+    }
+  ],
+  "api_modules": [
+    {
+      "name": "User",
+      "endpoints": [
+        "/users",
+        "/users/{id}",
+        "/auth/register",
+        "/auth/login"
+      ]
+    },
+    {
+      "name": "Post",
+      "endpoints": [
+        "/posts",
+        "/posts/{id}"
+      ]
+    },
+    {
+      "name": "Comment",
+      "endpoints": [
+        "/comments",
+        "/comments/{id}"
+      ]
+    }
+  ],
+  "pages": [
+    "Home (post feed with pagination)",
+    "Post Detail (post content + comments)",
+    "Author Profile (author bio and list of posts)",
+    "Login / Register",
+    "Dashboard (manage own posts)"
+  ],
+  "backend_modules": [
+    "Authentication",
+    "User Management",
+    "Post Management",
+    "Comment Management",
+    "Feed Generation"
+  ],
+  "roadmap": [
+    {
+      "phase": "Phase 1 \u2013 MVP",
+      "milestones": [
+        "Project scaffolding with FastAPI, React, SQLite",
+        "Implement user registration and login",
+        "Create CRUD endpoints for posts",
+        "Create CRUD endpoints for comments",
+        "Build core UI pages (home, post detail, login, dashboard)"
+      ]
+    },
+    {
+      "phase": "Phase 2 \u2013 Polish & Profile",
+      "milestones": [
+        "Add author profile page with list of their posts",
+        "Implement pagination on home feed",
+        "Improve UI/UX and responsive design",
+        "Write unit and integration tests for core APIs"
+      ]
+    },
+    {
+      "phase": "Phase 3 \u2013 Future Features",
+      "milestones": [
+        "Introduce tags and categories for posts",
+        "Integrate rich\u2011text editor with image upload",
+        "Add like/reaction system for posts and comments"
+      ]
+    }
+  ]
+}

@@ -1,0 +1,504 @@
+[
+  {
+    "timestamp": "2026-06-22T05:39:49",
+    "trend": "stable",
+    "trend_explanation": "The last 20 benchmark runs show a consistent distribution of failure types (e.g., 3 NoReferencedTableError, 2 RouterExportMismatch, 2 FrontendBuildError, 2 ModuleNotFoundError). No new failure categories appeared, and the overall pass rate has not changed significantly compared to the previous 20 runs.",
+    "regression_detected": false,
+    "regression_details": "",
+    "root_causes": [
+      {
+        "cause": "LLM does not consistently import all SQLAlchemy models before calling Base.metadata.create_all()",
+        "evidence": "NoReferencedTableError appears in 15% of runs (3/20) and is directly tied to missing imports.",
+        "fix_type": "prompt_rule"
+      },
+      {
+        "cause": "Inconsistent router variable naming in generated route files",
+        "evidence": "RouterExportMismatch appears in 10% of runs (2/20) and violates the required {resource}_router naming convention.",
+        "fix_type": "validator_addition"
+      },
+      {
+        "cause": "Incorrect JSX attribute quoting leading to syntax errors",
+        "evidence": "FrontendBuildError appears in 10% of runs (2/20) and is caused by backslash‑escaped quotes in JSX attributes.",
+        "fix_type": "prompt_rule"
+      },
+      {
+        "cause": "Generated import paths reference non‑existent modules",
+        "evidence": "ModuleNotFoundError appears in 10% of runs (2/20) and stems from missing files in the app/ package.",
+        "fix_type": "validator_addition"
+      }
+    ],
+    "pattern_clusters": [
+      {
+        "name": "Import failures",
+        "patterns": [
+          "NoReferencedTableError",
+          "ModuleNotFoundError",
+          "RouterExportMismatch"
+        ],
+        "frequency": 0.35,
+        "insight": "These errors co‑occur because the generation pipeline does not verify that every referenced file or model exists before finalizing main.py, leading to cascading import problems."
+      },
+      {
+        "name": "Frontend syntax errors",
+        "patterns": [
+          "FrontendBuildError"
+        ],
+        "frequency": 0.1,
+        "insight": "JSX generation rules are not enforced, causing malformed attribute quoting that breaks the build step."
+      }
+    ],
+    "top_improvements": [
+      {
+        "rank": 1,
+        "improvement": "Introduce a pre‑commit validator that parses main.py and all route files to ensure every imported module exists and every router variable follows the {resource}_router naming convention.",
+        "expected_impact": "+15% pass rate",
+        "effort": "low",
+        "type": "validator"
+      },
+      {
+        "rank": 2,
+        "improvement": "Add a prompt rule that forces the LLM to emit a dedicated import block for all SQLAlchemy models before any call to Base.metadata.create_all().",
+        "expected_impact": "+10% pass rate",
+        "effort": "low",
+        "type": "prompt_rule"
+      },
+      {
+        "rank": 3,
+        "improvement": "Implement a JSX linting step that automatically rewrites backslash‑escaped quotes to proper JSX syntax (e.g., placeholder=\"User\" without escapes).",
+        "expected_impact": "+8% pass rate",
+        "effort": "medium",
+        "type": "pipeline"
+      }
+    ],
+    "hypothesis": {
+      "statement": "Adding a static analysis validator that checks for missing imports and router naming before the generation loop will cut ModuleNotFoundError and RouterExportMismatch incidents by at least 50%.",
+      "test_method": "Run 10 benchmark projects with the validator enabled and 10 without; compare failure counts.",
+      "expected_delta": "+8% pass rate"
+    },
+    "summary": "Recent benchmark runs show a stable failure pattern dominated by import‑related errors. Root causes are missing model imports, inconsistent router naming, and JSX quoting mistakes. Introducing validators for imports and naming, plus a prompt rule for model imports, should yield the biggest gains, potentially raising the pass rate by 15%."
+  },
+  {
+    "timestamp": "2026-06-22T05:41:06",
+    "trend": "stable",
+    "trend_explanation": "Across the last 20 benchmark runs the failure rate remains around 55% (11 failures). No clear upward or downward movement is observable; the distribution of error types is similar to earlier windows, indicating a plateau rather than improvement.",
+    "regression_detected": false,
+    "regression_details": "",
+    "root_causes": [
+      {
+        "cause": "Inconsistent import ordering and missing model imports cause NoReferencedTableError and SQLAlchemyError",
+        "evidence": "NoReferencedTableError appears in 3 out of 20 runs (15%) and SQLAlchemyError in 1 run; both are tied to missing imports before Base.metadata.create_all()",
+        "fix_type": "validator_addition"
+      },
+      {
+        "cause": "LLM does not reliably follow the router naming convention required by FastAPI",
+        "evidence": "RouterExportMismatch occurs in 2 runs (10%); endpoints then fail to be discovered, leading to downstream ValidationError",
+        "fix_type": "prompt_rule"
+      },
+      {
+        "cause": "JSX generation templates allow backslash‑escaped quotes, breaking the frontend build",
+        "evidence": "FrontendBuildError appears in 2 runs (10%); the pattern is always a backslash‑escaped quote in an attribute value",
+        "fix_type": "architecture_change"
+      },
+      {
+        "cause": "Generated module paths are sometimes stale or omitted, causing ModuleNotFoundError",
+        "evidence": "ModuleNotFoundError shows up in 2 runs (10%); missing files are referenced from app.schemas.* imports",
+        "fix_type": "validator_addition"
+      }
+    ],
+    "pattern_clusters": [
+      {
+        "name": "Import failures",
+        "patterns": [
+          "NoReferencedTableError",
+          "ModuleNotFoundError",
+          "SQLAlchemyError"
+        ],
+        "frequency": 0.34,
+        "insight": "These errors co‑occur because main.py imports routes and models before they are generated; a missing file or model cascades into foreign‑key metadata failures."
+      },
+      {
+        "name": "Naming & validation mismatches",
+        "patterns": [
+          "RouterExportMismatch",
+          "ValidationError"
+        ],
+        "frequency": 0.2,
+        "insight": "When the router variable name is wrong, FastAPI cannot bind the endpoint, and the response schema no longer matches the declared response_model."
+      }
+    ],
+    "top_improvements": [
+      {
+        "rank": 1,
+        "improvement": "Introduce a pre‑generation validator that parses main.py and ensures every imported module/file exists and that all SQLAlchemy models are imported before metadata creation.",
+        "expected_impact": "+15% pass rate",
+        "effort": "low",
+        "type": "validator"
+      },
+      {
+        "rank": 2,
+        "improvement": "Add a strict prompt rule and post‑generation lint step that enforces the {resource}_router naming convention and automatically renames mismatched variables.",
+        "expected_impact": "+10% pass rate",
+        "effort": "medium",
+        "type": "prompt_rule"
+      },
+      {
+        "rank": 3,
+        "improvement": "Implement a JSX sanitizer that rewrites backslash‑escaped quotes to proper JSX string literals during code generation.",
+        "expected_impact": "+8% pass rate",
+        "effort": "medium",
+        "type": "architecture"
+      }
+    ],
+    "hypothesis": {
+      "statement": "Adding an import‑existence validator before the final generation step will cut ModuleNotFoundError and NoReferencedTableError by roughly 50%, raising overall benchmark pass rate by at least 8 points.",
+      "test_method": "Run two sets of 10 benchmark projects each – one with the validator enabled and one without – and compare failure counts.",
+      "expected_delta": "+8% pass rate"
+    },
+    "summary": "The benchmark shows a stable failure rate dominated by import‑related errors and naming mismatches. Root causes stem from missing imports, inconsistent router naming, and JSX quoting bugs. Introducing validators for imports, enforcing router naming, and sanitizing JSX are the highest‑impact, low‑effort improvements, and a focused hypothesis predicts a measurable boost in success rate."
+  },
+  {
+    "timestamp": "2026-06-22T05:41:48",
+    "trend": "declining",
+    "trend_explanation": "In the last 20 benchmark runs the failure count rose to 11 (55% failure rate). Previously the system hovered around 6-7 failures per 20 runs, indicating a regression after recent changes to the code generation pipeline.",
+    "regression_detected": true,
+    "regression_details": "The introduction of a new fast‑path template for router files removed explicit import checks, which coincided with a spike in RouterExportMismatch and ModuleNotFoundError failures.",
+    "root_causes": [
+      {
+        "cause": "LLM does not consistently follow router naming convention",
+        "evidence": "RouterExportMismatch appears in 2 of 20 runs (10%) and often co‑occurs with missing import errors.",
+        "fix_type": "prompt_rule"
+      },
+      {
+        "cause": "Missing import of dependent SQLAlchemy models before metadata creation",
+        "evidence": "NoReferencedTableError (3 occurrences) and SQLAlchemyError (1 occurrence) both stem from absent model imports.",
+        "fix_type": "validator_addition"
+      },
+      {
+        "cause": "Incorrect JSX attribute quoting leading to build failures",
+        "evidence": "FrontendBuildError shows up twice; the generated JSX uses backslash‑escaped quotes instead of proper quoting.",
+        "fix_type": "prompt_rule"
+      },
+      {
+        "cause": "File existence validation omitted in generation step",
+        "evidence": "ModuleNotFoundError appears twice, directly linked to references to non‑existent modules such as app.schemas.discussion.",
+        "fix_type": "validator_addition"
+      }
+    ],
+    "pattern_clusters": [
+      {
+        "name": "Import failures",
+        "patterns": [
+          "ModuleNotFoundError",
+          "NoReferencedTableError",
+          "SQLAlchemyError"
+        ],
+        "frequency": 0.45,
+        "insight": "These errors co‑occur because the generator creates route or model files without guaranteeing that the referenced modules are present or imported in main.py."
+      },
+      {
+        "name": "Frontend syntax errors",
+        "patterns": [
+          "FrontendBuildError"
+        ],
+        "frequency": 0.1,
+        "insight": "Generated JSX consistently mis‑quotes attribute values, suggesting a missing style guide rule for frontend code."
+      }
+    ],
+    "top_improvements": [
+      {
+        "rank": 1,
+        "improvement": "Introduce a pre‑commit validator that parses main.py to ensure every imported module exists and that all SQLAlchemy models are imported before Base.metadata.create_all() is called.",
+        "expected_impact": "+15% pass rate",
+        "effort": "low",
+        "type": "validator"
+      },
+      {
+        "rank": 2,
+        "improvement": "Add a strict naming rule to the prompt template: each router file must export a variable named <resource>_router and the file name must match the resource name.",
+        "expected_impact": "+10% pass rate",
+        "effort": "medium",
+        "type": "prompt_rule"
+      },
+      {
+        "rank": 3,
+        "improvement": "Update the JSX generation template to use double‑quoted attribute values without escape characters and run a linter check before committing.",
+        "expected_impact": "+8% pass rate",
+        "effort": "low",
+        "type": "prompt_rule"
+      }
+    ],
+    "hypothesis": {
+      "statement": "Adding an automated import‑existence validator before the final code emission will cut ModuleNotFoundError and NoReferencedTableError occurrences by at least 50%.",
+      "test_method": "Run 10 benchmark projects with the validator enabled and 10 without; compare failure counts.",
+      "expected_delta": "+8% pass rate"
+    },
+    "summary": "Recent benchmark runs show a declining success trend driven mainly by import‑related failures and inconsistent router naming. Root causes include missing import checks, lax naming conventions, and JSX quoting errors. Implementing validators for imports, enforcing router export naming, and correcting JSX templates are the highest‑impact improvements, with a hypothesis that import validation alone could raise the pass rate by ~8%."
+  },
+  {
+    "timestamp": "2026-06-22T05:42:23",
+    "trend": "stable",
+    "trend_explanation": "In the last 20 benchmark runs 11 failures were recorded (55% failure rate). The distribution of failure types is unchanged compared to the previous 20 runs (same top patterns, similar frequencies). No clear upward or downward movement in pass rate is observable.",
+    "regression_detected": false,
+    "regression_details": "",
+    "root_causes": [
+      {
+        "cause": "LLM does not consistently import all SQLAlchemy models before calling Base.metadata.create_all()",
+        "evidence": "NoReferencedTableError appears in 3 out of 20 runs (15%) and is always accompanied by missing import statements.",
+        "fix_type": "prompt_rule"
+      },
+      {
+        "cause": "Inconsistent router naming convention enforcement",
+        "evidence": "RouterExportMismatch occurs in 2 runs (10%) and correlates with missing {resource}_router variable exports.",
+        "fix_type": "validator_addition"
+      },
+      {
+        "cause": "Missing file validation at generation time",
+        "evidence": "ModuleNotFoundError shows up in 2 runs (10%) and is caused by references to modules that were never written to disk.",
+        "fix_type": "architecture_change"
+      },
+      {
+        "cause": "Improper JSX attribute quoting",
+        "evidence": "FrontendBuildError appears in 2 runs (10%) where backslash‑escaped quotes are used inside JSX attributes.",
+        "fix_type": "prompt_rule"
+      }
+    ],
+    "pattern_clusters": [
+      {
+        "name": "Import failures",
+        "patterns": [
+          "NoReferencedTableError",
+          "ModuleNotFoundError",
+          "SQLAlchemyError"
+        ],
+        "frequency": 0.35,
+        "insight": "These errors co‑occur because the generated main.py imports routes or models before they are defined, leading to missing tables or broken foreign‑key references."
+      },
+      {
+        "name": "Naming/Export mismatches",
+        "patterns": [
+          "RouterExportMismatch",
+          "FrontendBuildError"
+        ],
+        "frequency": 0.2,
+        "insight": "Both stem from the LLM not following strict naming/formatting conventions required by FastAPI and React tooling."
+      }
+    ],
+    "top_improvements": [
+      {
+        "rank": 1,
+        "improvement": "Introduce a pre‑commit validator that parses the generated project tree and verifies that every import in main.py resolves to an existing file before the generation pipeline finishes.",
+        "expected_impact": "+15% pass rate",
+        "effort": "low",
+        "type": "validator"
+      },
+      {
+        "rank": 2,
+        "improvement": "Add explicit prompt instructions and a post‑generation lint step that enforces the {resource}_router naming convention for every router file.",
+        "expected_impact": "+10% pass rate",
+        "effort": "medium",
+        "type": "prompt_rule"
+      },
+      {
+        "rank": 3,
+        "improvement": "Integrate a JSX formatter (e.g., Prettier) that rewrites attribute values to use double‑quoted strings without escape characters, eliminating FrontendBuildError.",
+        "expected_impact": "+8% pass rate",
+        "effort": "medium",
+        "type": "pipeline"
+      }
+    ],
+    "hypothesis": {
+      "statement": "Adding a pre‑generation import existence check will cut ModuleNotFoundError and related import‑related failures by at least 50%.",
+      "test_method": "Run 10 benchmark projects with the validator enabled and 10 without; compare failure counts.",
+      "expected_delta": "+8% pass rate"
+    },
+    "summary": "The benchmark shows a stable failure pattern dominated by import‑related errors and naming mismatches. Root causes are inconsistent import handling, missing file validation, and lax naming conventions. Introducing import validators, stricter naming prompts, and JSX formatting steps should collectively raise the success rate by roughly 30%."
+  },
+  {
+    "timestamp": "2026-06-22T05:46:04",
+    "trend": "improving",
+    "trend_explanation": "The most recent benchmark (2026-06-22) achieved a perfect score, pass rate, and runtime rate, whereas earlier runs showed recurring failures. The jump coincides with the rollout of version v7, which introduced stricter import validation and router naming checks, eliminating the majority of previous errors.",
+    "regression_detected": false,
+    "regression_details": "",
+    "root_causes": [
+      {
+        "cause": "Inconsistent import ordering causing missing model references",
+        "evidence": "NoReferencedTableError appeared in 3 out of 20 runs (15%) and ModuleNotFoundError in 2 runs (10%)",
+        "fix_type": "validator"
+      },
+      {
+        "cause": "Router files not exporting the expected *_router variable",
+        "evidence": "RouterExportMismatch occurred in 2 runs (10%)",
+        "fix_type": "prompt_rule"
+      },
+      {
+        "cause": "Improper JSX attribute quoting leading to build failures",
+        "evidence": "FrontEndBuildError observed in 2 runs (10%)",
+        "fix_type": "prompt_rule"
+      },
+      {
+        "cause": "Foreign‑key columns defined without importing the referenced model",
+        "evidence": "SQLAlchemyError seen in 1 run (5%)",
+        "fix_type": "architecture_change"
+      },
+      {
+        "cause": "Response models mismatching returned data structures",
+        "evidence": "ValidationError recorded in 1 run (5%)",
+        "fix_type": "validator"
+      }
+    ],
+    "pattern_clusters": [
+      {
+        "name": "Import failures",
+        "patterns": [
+          "NoReferencedTableError",
+          "ModuleNotFoundError",
+          "SQLAlchemyError"
+        ],
+        "frequency": 0.45,
+        "insight": "These errors co‑occur because main.py often imports routes or models before the files are generated, leaving dangling references."
+      },
+      {
+        "name": "Naming & export mismatches",
+        "patterns": [
+          "RouterExportMismatch"
+        ],
+        "frequency": 0.18,
+        "insight": "The LLM sometimes generates router files with generic names, breaking the convention required by FastAPI's include_router logic."
+      },
+      {
+        "name": "Frontend syntax issues",
+        "patterns": [
+          "FrontEndBuildError"
+        ],
+        "frequency": 0.18,
+        "insight": "Backslash‑escaped quotes in JSX are produced when the LLM mirrors raw string literals instead of using proper JSX quoting."
+      },
+      {
+        "name": "Schema‑response mismatches",
+        "patterns": [
+          "ValidationError"
+        ],
+        "frequency": 0.09,
+        "insight": "When response_model is declared, the generated endpoint sometimes returns a plain dict that doesn't align with the Pydantic schema."
+      }
+    ],
+    "top_improvements": [
+      {
+        "rank": 1,
+        "improvement": "Integrate a pre‑generation validator that verifies every import in main.py points to an existing file and that all referenced models are imported before Base.metadata.create_all() is called.",
+        "expected_impact": "+15% pass rate",
+        "effort": "low",
+        "type": "validator"
+      },
+      {
+        "rank": 2,
+        "improvement": "Enforce a prompt rule requiring router files to export a variable named <resource>_router and to include a comment placeholder reminding the LLM of this naming requirement.",
+        "expected_impact": "+10% pass rate",
+        "effort": "medium",
+        "type": "prompt_rule"
+      },
+      {
+        "rank": 3,
+        "improvement": "Add a post‑generation JSX linter that rewrites any backslash‑escaped quotes in attribute values to proper JSX quoting, and fail the generation if such patterns remain.",
+        "expected_impact": "+8% pass rate",
+        "effort": "medium",
+        "type": "validator"
+      }
+    ],
+    "hypothesis": {
+      "statement": "Introducing a static import‑existence check before the final code‑fix loop will cut ModuleNotFoundError and NoReferencedTableError occurrences by at least 50%.",
+      "test_method": "Run 10 benchmark projects with the new validator enabled and compare failure counts against a control batch of 10 projects without it.",
+      "expected_delta": "+8% pass rate"
+    },
+    "summary": "Recent benchmark results show a clear upward trend after version v7 introduced stricter validation steps. The dominant failure modes stem from missing imports, router naming mismatches, and JSX quoting errors, all of which are preventable with early validation. Implementing import existence checks, explicit router export rules, and a JSX linter should collectively raise the pass rate by roughly 30%. A focused experiment on import validation is expected to deliver a measurable 8% improvement in overall success."
+  },
+  {
+    "timestamp": "2026-06-22T05:49:59",
+    "trend": "stable",
+    "trend_explanation": "The most recent benchmark (2026-06-22) achieved a perfect score of 100 with 100% pass and runtime rates, indicating no degradation from previous runs. With only one data point, there is no evidence of improvement or regression.",
+    "regression_detected": false,
+    "regression_details": "",
+    "root_causes": [
+      {
+        "cause": "Missing imports for SQLAlchemy models before metadata creation",
+        "evidence": "NoReferencedTableError appeared 3 times in the last 20 runs (15% of total failures)",
+        "fix_type": "prompt_rule"
+      },
+      {
+        "cause": "Inconsistent router variable naming",
+        "evidence": "RouterExportMismatch occurred 2 times (≈18% of failure occurrences)",
+        "fix_type": "validator_addition"
+      },
+      {
+        "cause": "Improper JSX attribute quoting",
+        "evidence": "FrontendBuildError seen 2 times (≈18% of failures)",
+        "fix_type": "prompt_rule"
+      },
+      {
+        "cause": "References to non‑existent modules/files",
+        "evidence": "ModuleNotFoundError logged 2 times (≈18% of failures)",
+        "fix_type": "validator_addition"
+      },
+      {
+        "cause": "Foreign‑key columns lack imported referenced models",
+        "evidence": "SQLAlchemyError observed once (≈9% of failures)",
+        "fix_type": "architecture_change"
+      },
+      {
+        "cause": "Response models not matching returned data structures",
+        "evidence": "ValidationError recorded once (≈9% of failures)",
+        "fix_type": "prompt_rule"
+      }
+    ],
+    "pattern_clusters": [
+      {
+        "name": "Import failures",
+        "patterns": [
+          "NoReferencedTableError",
+          "ModuleNotFoundError",
+          "SQLAlchemyError"
+        ],
+        "frequency": 0.55,
+        "insight": "These errors co‑occur because the generation pipeline often emits code that references models or modules before they are imported, indicating a need for a pre‑flight import verification step."
+      },
+      {
+        "name": "Naming & UI syntax errors",
+        "patterns": [
+          "RouterExportMismatch",
+          "FrontendBuildError"
+        ],
+        "frequency": 0.36,
+        "insight": "Both stem from inconsistent naming conventions and JSX syntax rules, suggesting that a unified style guide enforced by the LLM would reduce these failures."
+      }
+    ],
+    "top_improvements": [
+      {
+        "rank": 1,
+        "improvement": "Introduce a static analysis validator that checks all imports in main.py exist and that referenced SQLAlchemy models are imported before Base.metadata.create_all()",
+        "expected_impact": "+15% pass rate",
+        "effort": "low",
+        "type": "validator"
+      },
+      {
+        "rank": 2,
+        "improvement": "Add a post‑generation linting step that enforces router variable naming (e.g., <resource>_router) and validates JSX attribute quoting",
+        "expected_impact": "+10% pass rate",
+        "effort": "medium",
+        "type": "validator"
+      },
+      {
+        "rank": 3,
+        "improvement": "Embed a template‑driven module scaffolding system that generates placeholder files for every referenced module (schemas, routers, models) before code generation begins",
+        "expected_impact": "+8% pass rate",
+        "effort": "high",
+        "type": "architecture"
+      }
+    ],
+    "hypothesis": {
+      "statement": "Adding a pre‑generation import existence check will cut ModuleNotFoundError and NoReferencedTableError occurrences by at least 50%",
+      "test_method": "Run 10 benchmark projects with the new validator enabled and compare failure counts against a control set of 10 runs without it",
+      "expected_delta": "+8% pass rate"
+    },
+    "summary": "The latest benchmark shows a perfect score, indicating stability but no clear upward trend. Failure analysis reveals that import‑related errors dominate, followed by naming and JSX syntax issues. Implementing import validation, naming enforcement, and scaffold generation are the highest‑impact actions, and a targeted hypothesis predicts a measurable boost in pass rate."
+  }
+]

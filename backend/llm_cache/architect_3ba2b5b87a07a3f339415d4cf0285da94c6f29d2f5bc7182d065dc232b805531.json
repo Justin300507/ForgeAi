@@ -1,0 +1,319 @@
+{
+  "api_endpoints": [
+    {
+      "method": "GET",
+      "path": "/vehicles",
+      "description": "Retrieve a list of all vehicles",
+      "file": "app/routes/vehicle_routes.py"
+    },
+    {
+      "method": "POST",
+      "path": "/vehicles",
+      "description": "Create a new vehicle record",
+      "file": "app/routes/vehicle_routes.py"
+    },
+    {
+      "method": "GET",
+      "path": "/vehicles/{id}",
+      "description": "Get details of a specific vehicle",
+      "file": "app/routes/vehicle_routes.py"
+    },
+    {
+      "method": "PUT",
+      "path": "/vehicles/{id}",
+      "description": "Update an existing vehicle, including driver assignment",
+      "file": "app/routes/vehicle_routes.py"
+    },
+    {
+      "method": "DELETE",
+      "path": "/vehicles/{id}",
+      "description": "Delete a vehicle record",
+      "file": "app/routes/vehicle_routes.py"
+    },
+    {
+      "method": "GET",
+      "path": "/drivers",
+      "description": "Retrieve a list of all drivers",
+      "file": "app/routes/driver_routes.py"
+    },
+    {
+      "method": "POST",
+      "path": "/drivers",
+      "description": "Create a new driver profile",
+      "file": "app/routes/driver_routes.py"
+    },
+    {
+      "method": "GET",
+      "path": "/drivers/{id}",
+      "description": "Get details of a specific driver",
+      "file": "app/routes/driver_routes.py"
+    },
+    {
+      "method": "PUT",
+      "path": "/drivers/{id}",
+      "description": "Update an existing driver profile",
+      "file": "app/routes/driver_routes.py"
+    },
+    {
+      "method": "DELETE",
+      "path": "/drivers/{id}",
+      "description": "Delete a driver profile",
+      "file": "app/routes/driver_routes.py"
+    },
+    {
+      "method": "GET",
+      "path": "/maintenancelogs",
+      "description": "Retrieve a list of maintenance logs",
+      "file": "app/routes/maintenancelog_routes.py"
+    },
+    {
+      "method": "POST",
+      "path": "/maintenancelogs",
+      "description": "Create a new maintenance log entry",
+      "file": "app/routes/maintenancelog_routes.py"
+    },
+    {
+      "method": "GET",
+      "path": "/maintenancelogs/{id}",
+      "description": "Get details of a specific maintenance log",
+      "file": "app/routes/maintenancelog_routes.py"
+    },
+    {
+      "method": "POST",
+      "path": "/auth/login",
+      "description": "Authenticate user and return JWT token",
+      "file": "app/routes/auth_routes.py"
+    },
+    {
+      "method": "GET",
+      "path": "/dashboard/metrics",
+      "description": "Provide key fleet metrics for the dashboard",
+      "file": "app/routes/dashboard_routes.py"
+    }
+  ],
+  "database_schema": [
+    {
+      "table_name": "users",
+      "columns": [
+        {
+          "name": "id",
+          "type": "INTEGER",
+          "is_primary_key": true,
+          "is_nullable": false
+        },
+        {
+          "name": "username",
+          "type": "TEXT",
+          "is_primary_key": false,
+          "is_nullable": false
+        },
+        {
+          "name": "email",
+          "type": "TEXT",
+          "is_primary_key": false,
+          "is_nullable": false
+        },
+        {
+          "name": "hashed_password",
+          "type": "TEXT",
+          "is_primary_key": false,
+          "is_nullable": false
+        },
+        {
+          "name": "role",
+          "type": "TEXT",
+          "is_primary_key": false,
+          "is_nullable": false
+        }
+      ]
+    },
+    {
+      "table_name": "vehicles",
+      "columns": [
+        {
+          "name": "id",
+          "type": "INTEGER",
+          "is_primary_key": true,
+          "is_nullable": false
+        },
+        {
+          "name": "license_plate",
+          "type": "TEXT",
+          "is_primary_key": false,
+          "is_nullable": false
+        },
+        {
+          "name": "make",
+          "type": "TEXT",
+          "is_primary_key": false,
+          "is_nullable": false
+        },
+        {
+          "name": "model",
+          "type": "TEXT",
+          "is_primary_key": false,
+          "is_nullable": false
+        },
+        {
+          "name": "year",
+          "type": "INTEGER",
+          "is_primary_key": false,
+          "is_nullable": false
+        },
+        {
+          "name": "vin",
+          "type": "TEXT",
+          "is_primary_key": false,
+          "is_nullable": false
+        },
+        {
+          "name": "status",
+          "type": "TEXT",
+          "is_primary_key": false,
+          "is_nullable": false
+        },
+        {
+          "name": "mileage",
+          "type": "INTEGER",
+          "is_primary_key": false,
+          "is_nullable": false
+        },
+        {
+          "name": "driver_id",
+          "type": "INTEGER",
+          "is_primary_key": false,
+          "is_nullable": true
+        }
+      ]
+    },
+    {
+      "table_name": "drivers",
+      "columns": [
+        {
+          "name": "id",
+          "type": "INTEGER",
+          "is_primary_key": true,
+          "is_nullable": false
+        },
+        {
+          "name": "full_name",
+          "type": "TEXT",
+          "is_primary_key": false,
+          "is_nullable": false
+        },
+        {
+          "name": "license_number",
+          "type": "TEXT",
+          "is_primary_key": false,
+          "is_nullable": false
+        },
+        {
+          "name": "phone",
+          "type": "TEXT",
+          "is_primary_key": false,
+          "is_nullable": false
+        },
+        {
+          "name": "email",
+          "type": "TEXT",
+          "is_primary_key": false,
+          "is_nullable": false
+        },
+        {
+          "name": "status",
+          "type": "TEXT",
+          "is_primary_key": false,
+          "is_nullable": false
+        }
+      ]
+    },
+    {
+      "table_name": "maintenance_logs",
+      "columns": [
+        {
+          "name": "id",
+          "type": "INTEGER",
+          "is_primary_key": true,
+          "is_nullable": false
+        },
+        {
+          "name": "vehicle_id",
+          "type": "INTEGER",
+          "is_primary_key": false,
+          "is_nullable": false
+        },
+        {
+          "name": "date",
+          "type": "DATETIME",
+          "is_primary_key": false,
+          "is_nullable": false
+        },
+        {
+          "name": "type",
+          "type": "TEXT",
+          "is_primary_key": false,
+          "is_nullable": false
+        },
+        {
+          "name": "description",
+          "type": "TEXT",
+          "is_primary_key": false,
+          "is_nullable": true
+        },
+        {
+          "name": "cost",
+          "type": "REAL",
+          "is_primary_key": false,
+          "is_nullable": true
+        },
+        {
+          "name": "odometer_reading",
+          "type": "INTEGER",
+          "is_primary_key": false,
+          "is_nullable": false
+        },
+        {
+          "name": "performed_by",
+          "type": "INTEGER",
+          "is_primary_key": false,
+          "is_nullable": true
+        }
+      ]
+    }
+  ],
+  "folder_structure": {
+    "backend": [
+      "app",
+      "app/models",
+      "app/schemas",
+      "app/services",
+      "app/routes",
+      "app/utils",
+      "tests",
+      "config",
+      "scripts",
+      "docker"
+    ]
+  },
+  "frontend_structure": {
+    "pages": [
+      "Login",
+      "Dashboard",
+      "VehicleList",
+      "DriverList",
+      "MaintenanceLogList"
+    ],
+    "components": [
+      "Navbar",
+      "Sidebar",
+      "VehicleCard",
+      "DriverCard",
+      "MaintenanceLogCard",
+      "VehicleForm",
+      "DriverForm",
+      "MaintenanceLogForm",
+      "DashboardMetrics",
+      "AuthProvider"
+    ]
+  }
+}

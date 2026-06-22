@@ -1,4 +1,5 @@
 import json
+import re
 import time
 
 from fastapi import HTTPException
@@ -6,134 +7,159 @@ from fastapi import HTTPException
 from app.prompts.frontend_prompt import build_frontend_prompt
 from app.models.frontend_models import FrontendPlan
 from app.providers.ai_provider import generate_content
+from app.utils.json_cleaner import extract_json
+
+
+def _fix_jsx_brace_errors(content: str) -> str:
+    """
+    Fix the most common LLM JSX brace bug: style={{...}}}> (3 closing braces
+    instead of 2 before a tag-close '>').  Also fixes the symmetric case with
+    a trailing space/newline after the extra brace.
+    """
+    # }}}> → }}> (extra closing brace before tag-close)
+    content = re.sub(r'\}\}\}>', '}}>', content)
+    # }}}} → }}} (double extra braces, rare but seen)
+    content = re.sub(r'\}\}\}\}>', '}}}>', content)
+    return content
+
 
 def generate_frontend(
-architecture,
-provider="auto",
-max_tokens=1500
+    architecture,
+    provider="auto",
+    max_tokens=24000
 ):
-
-````
-try:
-
-    print("\n=== START FRONTEND ===")
-
-    start = time.time()
-
-    prompt = build_frontend_prompt(
-        architecture
-    )
-
-    text = generate_content(
-        prompt,
-        provider,
-        max_tokens=max_tokens
-    )
-
-    print(
-        f"Frontend Time: {time.time() - start:.2f}s"
-    )
-
-    with open(
-        "frontend_response.txt",
-        "w",
-        encoding="utf-8"
-    ) as f:
-
-        f.write(text)
-
-    clean_text = text
-
-    clean_text = clean_text.replace(
-        "```json",
-        ""
-    )
-
-    clean_text = clean_text.replace(
-        "```",
-        ""
-    )
-
-    clean_text = clean_text.strip()
-
-    clean_text = clean_text.replace(
-        "\t",
-        " "
-    )
-
-    print(
-        f"Frontend Response Length: {len(clean_text)}"
-    )
-
     try:
 
-        data = json.loads(
-            clean_text
-        )
+        print("\n=== START FRONTEND ===")
 
-    except json.JSONDecodeError as e:
+        prompt = build_frontend_prompt(architecture)
+
+        data = None
+        for attempt in range(3):
+            start = time.time()
+            text = generate_content(prompt, provider, max_tokens=max_tokens)
+            print(f"Frontend Time: {time.time() - start:.2f}s")
+
+            if not text:
+                print(f"Frontend attempt {attempt+1}: empty response, retrying...")
+                continue
+
+            with open("frontend_response.txt", "w", encoding="utf-8") as f:
+                f.write(text)
+
+            clean_text = text.replace("```json", "").replace("```", "").strip().replace("\t", " ")
+            print(f"Frontend Response Length: {len(clean_text)}")
+
+            try:
+                data = extract_json(clean_text)
+                break
+            except json.JSONDecodeError as e:
+                print(f"\n=== FRONTEND JSON ERROR (attempt {attempt+1}) ===")
+                print(e)
+                with open("frontend_failed_response.txt", "w", encoding="utf-8") as f:
+                    f.write(clean_text)
+                if attempt < 2:
+                    print("Retrying frontend generation...")
+                    continue
+
+        if data is None:
+            raise HTTPException(
+                status_code=500,
+                detail="Frontend returned invalid JSON after 3 attempts."
+            )
+
+        if not isinstance(
+            data,
+            dict
+        ):
+
+            raise HTTPException(
+                status_code=500,
+                detail="Frontend response is not a JSON object."
+            )
+
+        if "files" not in data:
+
+            raise HTTPException(
+                status_code=500,
+                detail="Frontend response missing 'files' field."
+            )
+
+        if not isinstance(data["files"], list):
+
+            raise HTTPException(
+                status_code=500,
+                detail="'files' must be a list."
+            )
+
+        good_files = []
+
+        for file in data["files"]:
+
+            if not isinstance(file, dict):
+                print(f"Skipping invalid frontend file entry (not a dict): {file}")
+                continue
+
+            if "path" not in file or "content" not in file:
+                print(f"Skipping frontend file entry missing path/content: {file}")
+                continue
+
+            path = file["path"].strip()
+            file["path"] = path
+            content = _fix_jsx_brace_errors(file["content"])
+            file["content"] = content
+
+            if not content.strip():
+                print(f"Skipping empty generated frontend file: {path}")
+                continue
+
+            if any(ord(c) > 127 for c in path):
+                print(f"Skipping frontend file with invalid (non-ASCII) path: {path}")
+                continue
+
+            if not path.endswith(".jsx"):
+                print(f"Skipping frontend file with invalid extension: {path}")
+                continue
+
+            if not path.startswith("src/"):
+                print(f"Skipping frontend file with invalid root: {path}")
+                continue
+
+            good_files.append(file)
+
+        if not good_files:
+
+            raise HTTPException(
+                status_code=500,
+                detail="Frontend generated no valid files."
+            )
+
+        data["files"] = good_files
+
+        validated = FrontendPlan(
+            **data
+        )
 
         print(
-            "\n=== FRONTEND JSON ERROR ==="
+            "=== END FRONTEND ==="
         )
 
-        print(e)
+        return validated.model_dump()
 
-        with open(
-            "frontend_failed_response.txt",
-            "w",
-            encoding="utf-8"
-        ) as f:
+    except HTTPException:
 
-            f.write(clean_text)
+        raise
+
+    except Exception as e:
+
+        print(
+            "FRONTEND ERROR:",
+            e
+        )
 
         raise HTTPException(
             status_code=500,
-            detail="Frontend returned invalid JSON."
+            detail=(
+                f"ForgeAI frontend generation failed: {str(e)}"
+            )
         )
-
-    if not isinstance(
-        data,
-        dict
-    ):
-
-        raise HTTPException(
-            status_code=500,
-            detail="Frontend response is not a JSON object."
-        )
-
-    if "files" not in data:
-
-        raise HTTPException(
-            status_code=500,
-            detail="Frontend response missing 'files' field."
-        )
-
-    validated = FrontendPlan(
-        **data
-    )
-
-    print(
-        "=== END FRONTEND ==="
-    )
-
-    return validated.model_dump()
-
-except HTTPException:
-
-    raise
-
-except Exception as e:
-
-    print(
-        "FRONTEND ERROR:",
-        e
-    )
-
-    raise HTTPException(
-        status_code=500,
-        detail=(
-            f"ForgeAI frontend generation failed: {str(e)}"
-        )
-    )
-````

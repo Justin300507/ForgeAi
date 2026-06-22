@@ -1,0 +1,333 @@
+{
+  "api_endpoints": [
+    {
+      "method": "POST",
+      "path": "/api/auth/login",
+      "description": "Authenticate user and return JWT token",
+      "file": "app/routes/auth_routes.py"
+    },
+    {
+      "method": "POST",
+      "path": "/api/auth/register",
+      "description": "Create a new user (manager role required)",
+      "file": "app/routes/auth_routes.py"
+    },
+    {
+      "method": "GET",
+      "path": "/api/users",
+      "description": "List users with pagination (manager only)",
+      "file": "app/routes/user_routes.py"
+    },
+    {
+      "method": "GET",
+      "path": "/api/users/{id}",
+      "description": "Get user details by ID (manager only)",
+      "file": "app/routes/user_routes.py"
+    },
+    {
+      "method": "PUT",
+      "path": "/api/users/{id}",
+      "description": "Update user role or status (manager only)",
+      "file": "app/routes/user_routes.py"
+    },
+    {
+      "method": "GET",
+      "path": "/api/products",
+      "description": "Retrieve paginated list of products with optional search by name or SKU",
+      "file": "app/routes/product_routes.py"
+    },
+    {
+      "method": "GET",
+      "path": "/api/products/{id}",
+      "description": "Get detailed information for a single product",
+      "file": "app/routes/product_routes.py"
+    },
+    {
+      "method": "POST",
+      "path": "/api/products",
+      "description": "Create a new product with initial inventory quantity",
+      "file": "app/routes/product_routes.py"
+    },
+    {
+      "method": "PUT",
+      "path": "/api/products/{id}",
+      "description": "Update product fields including low\u2011stock threshold",
+      "file": "app/routes/product_routes.py"
+    },
+    {
+      "method": "DELETE",
+      "path": "/api/products/{id}",
+      "description": "Delete a product if no pending orders exist",
+      "file": "app/routes/product_routes.py"
+    },
+    {
+      "method": "PATCH",
+      "path": "/api/products/{id}/quantity",
+      "description": "Adjust the inventory quantity for a product and create an audit log entry",
+      "file": "app/routes/inventory_routes.py"
+    },
+    {
+      "method": "GET",
+      "path": "/api/alerts",
+      "description": "List low\u2011stock alerts for the authenticated user",
+      "file": "app/routes/alert_routes.py"
+    },
+    {
+      "method": "POST",
+      "path": "/api/products/import",
+      "description": "Bulk import products and initial inventory from a CSV file",
+      "file": "app/routes/import_routes.py"
+    },
+    {
+      "method": "GET",
+      "path": "/api/audit-logs",
+      "description": "Retrieve audit log entries with pagination and optional filtering by user or entity",
+      "file": "app/routes/auditlog_routes.py"
+    }
+  ],
+  "database_schema": [
+    {
+      "table_name": "product",
+      "columns": [
+        {
+          "name": "id",
+          "type": "INTEGER",
+          "is_primary_key": true,
+          "is_nullable": false
+        },
+        {
+          "name": "sku",
+          "type": "VARCHAR(64)",
+          "is_primary_key": false,
+          "is_nullable": false
+        },
+        {
+          "name": "name",
+          "type": "VARCHAR(255)",
+          "is_primary_key": false,
+          "is_nullable": false
+        },
+        {
+          "name": "description",
+          "type": "TEXT",
+          "is_primary_key": false,
+          "is_nullable": true
+        },
+        {
+          "name": "price",
+          "type": "DECIMAL(10,2)",
+          "is_primary_key": false,
+          "is_nullable": false
+        },
+        {
+          "name": "low_stock_threshold",
+          "type": "INTEGER",
+          "is_primary_key": false,
+          "is_nullable": false
+        },
+        {
+          "name": "created_at",
+          "type": "DATETIME",
+          "is_primary_key": false,
+          "is_nullable": false
+        },
+        {
+          "name": "updated_at",
+          "type": "DATETIME",
+          "is_primary_key": false,
+          "is_nullable": false
+        }
+      ]
+    },
+    {
+      "table_name": "inventory",
+      "columns": [
+        {
+          "name": "id",
+          "type": "INTEGER",
+          "is_primary_key": true,
+          "is_nullable": false
+        },
+        {
+          "name": "product_id",
+          "type": "INTEGER",
+          "is_primary_key": false,
+          "is_nullable": false
+        },
+        {
+          "name": "quantity",
+          "type": "INTEGER",
+          "is_primary_key": false,
+          "is_nullable": false
+        },
+        {
+          "name": "last_updated",
+          "type": "DATETIME",
+          "is_primary_key": false,
+          "is_nullable": false
+        }
+      ]
+    },
+    {
+      "table_name": "user",
+      "columns": [
+        {
+          "name": "id",
+          "type": "INTEGER",
+          "is_primary_key": true,
+          "is_nullable": false
+        },
+        {
+          "name": "email",
+          "type": "VARCHAR(255)",
+          "is_primary_key": false,
+          "is_nullable": false
+        },
+        {
+          "name": "hashed_password",
+          "type": "VARCHAR(255)",
+          "is_primary_key": false,
+          "is_nullable": false
+        },
+        {
+          "name": "role",
+          "type": "VARCHAR(20)",
+          "is_primary_key": false,
+          "is_nullable": false
+        },
+        {
+          "name": "is_active",
+          "type": "BOOLEAN",
+          "is_primary_key": false,
+          "is_nullable": false
+        },
+        {
+          "name": "created_at",
+          "type": "DATETIME",
+          "is_primary_key": false,
+          "is_nullable": false
+        }
+      ]
+    },
+    {
+      "table_name": "alert",
+      "columns": [
+        {
+          "name": "id",
+          "type": "INTEGER",
+          "is_primary_key": true,
+          "is_nullable": false
+        },
+        {
+          "name": "product_id",
+          "type": "INTEGER",
+          "is_primary_key": false,
+          "is_nullable": false
+        },
+        {
+          "name": "triggered_at",
+          "type": "DATETIME",
+          "is_primary_key": false,
+          "is_nullable": false
+        },
+        {
+          "name": "message",
+          "type": "VARCHAR(255)",
+          "is_primary_key": false,
+          "is_nullable": false
+        },
+        {
+          "name": "user_id",
+          "type": "INTEGER",
+          "is_primary_key": false,
+          "is_nullable": true
+        }
+      ]
+    },
+    {
+      "table_name": "audit_log",
+      "columns": [
+        {
+          "name": "id",
+          "type": "INTEGER",
+          "is_primary_key": true,
+          "is_nullable": false
+        },
+        {
+          "name": "user_id",
+          "type": "INTEGER",
+          "is_primary_key": false,
+          "is_nullable": false
+        },
+        {
+          "name": "entity_type",
+          "type": "VARCHAR(50)",
+          "is_primary_key": false,
+          "is_nullable": false
+        },
+        {
+          "name": "entity_id",
+          "type": "INTEGER",
+          "is_primary_key": false,
+          "is_nullable": false
+        },
+        {
+          "name": "action",
+          "type": "VARCHAR(20)",
+          "is_primary_key": false,
+          "is_nullable": false
+        },
+        {
+          "name": "timestamp",
+          "type": "DATETIME",
+          "is_primary_key": false,
+          "is_nullable": false
+        },
+        {
+          "name": "details",
+          "type": "TEXT",
+          "is_primary_key": false,
+          "is_nullable": true
+        }
+      ]
+    }
+  ],
+  "folder_structure": {
+    "backend": [
+      "routes",
+      "models",
+      "schemas",
+      "services",
+      "utils",
+      "dependencies",
+      "core"
+    ]
+  },
+  "frontend_structure": {
+    "pages": [
+      "Dashboard",
+      "ProductList",
+      "ProductDetail",
+      "AddProduct",
+      "ImportProducts",
+      "AlertList",
+      "Login",
+      "Register"
+    ],
+    "components": [
+      "Header",
+      "Sidebar",
+      "ProductTable",
+      "ProductForm",
+      "SearchBar",
+      "Pagination",
+      "AlertToast",
+      "QuantityAdjuster",
+      "FileUploader",
+      "AuditLogTable",
+      "UserTable",
+      "ProtectedRoute",
+      "WebSocketProvider"
+    ]
+  }
+}

@@ -1,0 +1,222 @@
+{
+  "api_endpoints": [
+    {
+      "method": "POST",
+      "path": "/users",
+      "description": "Register a new user",
+      "file": "app/routes/user_routes.py"
+    },
+    {
+      "method": "GET",
+      "path": "/users/{id}",
+      "description": "Retrieve user profile by ID",
+      "file": "app/routes/user_routes.py"
+    },
+    {
+      "method": "POST",
+      "path": "/auth/login",
+      "description": "Authenticate user and return JWT token",
+      "file": "app/routes/auth_routes.py"
+    },
+    {
+      "method": "GET",
+      "path": "/entries",
+      "description": "List all journal entries for the authenticated user",
+      "file": "app/routes/entry_routes.py"
+    },
+    {
+      "method": "POST",
+      "path": "/entries",
+      "description": "Create a new journal entry with optional tags",
+      "file": "app/routes/entry_routes.py"
+    },
+    {
+      "method": "GET",
+      "path": "/entries/{id}",
+      "description": "Retrieve a specific journal entry by ID",
+      "file": "app/routes/entry_routes.py"
+    },
+    {
+      "method": "PUT",
+      "path": "/entries/{id}",
+      "description": "Update an existing journal entry",
+      "file": "app/routes/entry_routes.py"
+    },
+    {
+      "method": "DELETE",
+      "path": "/entries/{id}",
+      "description": "Delete a journal entry",
+      "file": "app/routes/entry_routes.py"
+    },
+    {
+      "method": "GET",
+      "path": "/tags",
+      "description": "List all available tags",
+      "file": "app/routes/tag_routes.py"
+    },
+    {
+      "method": "POST",
+      "path": "/tags",
+      "description": "Create a new tag",
+      "file": "app/routes/tag_routes.py"
+    },
+    {
+      "method": "GET",
+      "path": "/tags/{id}",
+      "description": "Retrieve details of a specific tag",
+      "file": "app/routes/tag_routes.py"
+    },
+    {
+      "method": "GET",
+      "path": "/summary/weekly",
+      "description": "Get weekly mood summary and trend data for the authenticated user",
+      "file": "app/routes/summary_routes.py"
+    }
+  ],
+  "database_schema": [
+    {
+      "table_name": "users",
+      "columns": [
+        {
+          "name": "id",
+          "type": "INTEGER",
+          "is_primary_key": true,
+          "is_nullable": false
+        },
+        {
+          "name": "email",
+          "type": "TEXT",
+          "is_primary_key": false,
+          "is_nullable": false
+        },
+        {
+          "name": "hashed_password",
+          "type": "TEXT",
+          "is_primary_key": false,
+          "is_nullable": false
+        },
+        {
+          "name": "created_at",
+          "type": "DATETIME",
+          "is_primary_key": false,
+          "is_nullable": false
+        }
+      ]
+    },
+    {
+      "table_name": "journal_entries",
+      "columns": [
+        {
+          "name": "id",
+          "type": "INTEGER",
+          "is_primary_key": true,
+          "is_nullable": false
+        },
+        {
+          "name": "user_id",
+          "type": "INTEGER",
+          "is_primary_key": false,
+          "is_nullable": false
+        },
+        {
+          "name": "date",
+          "type": "DATE",
+          "is_primary_key": false,
+          "is_nullable": false
+        },
+        {
+          "name": "mood_rating",
+          "type": "INTEGER",
+          "is_primary_key": false,
+          "is_nullable": false
+        },
+        {
+          "name": "content",
+          "type": "TEXT",
+          "is_primary_key": false,
+          "is_nullable": true
+        },
+        {
+          "name": "created_at",
+          "type": "DATETIME",
+          "is_primary_key": false,
+          "is_nullable": false
+        }
+      ]
+    },
+    {
+      "table_name": "tags",
+      "columns": [
+        {
+          "name": "id",
+          "type": "INTEGER",
+          "is_primary_key": true,
+          "is_nullable": false
+        },
+        {
+          "name": "name",
+          "type": "TEXT",
+          "is_primary_key": false,
+          "is_nullable": false
+        }
+      ]
+    },
+    {
+      "table_name": "entry_tags",
+      "columns": [
+        {
+          "name": "id",
+          "type": "INTEGER",
+          "is_primary_key": true,
+          "is_nullable": false
+        },
+        {
+          "name": "entry_id",
+          "type": "INTEGER",
+          "is_primary_key": false,
+          "is_nullable": false
+        },
+        {
+          "name": "tag_id",
+          "type": "INTEGER",
+          "is_primary_key": false,
+          "is_nullable": false
+        }
+      ]
+    }
+  ],
+  "folder_structure": {
+    "backend": [
+      "app",
+      "app/models",
+      "app/schemas",
+      "app/services",
+      "app/routes",
+      "app/utils",
+      "app/config",
+      "app/dependencies",
+      "app/database"
+    ]
+  },
+  "frontend_structure": {
+    "pages": [
+      "Login",
+      "Register",
+      "Dashboard",
+      "EntryEditor",
+      "WeeklySummary"
+    ],
+    "components": [
+      "Header",
+      "Footer",
+      "MoodRating",
+      "TagSelector",
+      "EntryForm",
+      "EntryList",
+      "SummaryChart",
+      "AuthForm",
+      "ProtectedRoute",
+      "Sidebar"
+    ]
+  }
+}

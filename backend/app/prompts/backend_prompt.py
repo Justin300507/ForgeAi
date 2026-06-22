@@ -1,6 +1,13 @@
+from app.prompts.shared_contract import FASTAPI_CONTRACT
+from app.memory.failure_memory import build_prompt_injection
+
+
 def build_backend_prompt(architecture):
-return f"""
+    learned = build_prompt_injection()
+    return f"""
 You are ForgeAI Backend Generator.
+{learned}
+
 
 Architecture:
 
@@ -9,6 +16,8 @@ Architecture:
 Your task is to generate a complete FastAPI backend that IMPLEMENTS the architecture.
 
 Generate ONLY valid JSON.
+
+{FASTAPI_CONTRACT}
 
 ========================================
 OUTPUT FORMAT
@@ -62,17 +71,6 @@ app/models/<module>.py
 app/services/<module>_service.py
 
 ========================================
-FASTAPI RULES
-=============
-
-* Use FastAPI
-* Use APIRouter
-* Use Pydantic
-* Use absolute imports beginning with app
-* No Flask
-* No Django
-
-========================================
 ROUTE RULES
 ===========
 
@@ -86,7 +84,7 @@ GET /books
 
 Generated:
 
-@router.get("/books")
+@book_router.get("/books")
 
 Every architecture endpoint must exist in generated code.
 
@@ -107,22 +105,6 @@ Model:
 Book
 
 ========================================
-IMPORT RULES
-============
-
-Valid:
-
-from app.routes.user_routes import user_router
-from app.models.user import User
-from app.services.user_service import create_user
-
-Invalid:
-
-from routes.user_routes import user_router
-from models.user import User
-from services.user_service import create_user
-
-========================================
 DEPENDENCY RULES
 ================
 
@@ -137,8 +119,199 @@ email-validator
 python-multipart
 
 ========================================
-CONSISTENCY RULES
-=================
+SERVICE RULES
+=============
+
+If a route imports a service function:
+
+from app.services.user_service import create_user
+
+Then create_user MUST exist in:
+
+app/services/user_service.py
+
+Every imported function must be implemented.
+
+Do not import functions that do not exist.
+
+========================================
+SQLALCHEMY RULES
+========================================
+
+app/database.py must contain:
+
+Base = declarative_base()
+
+Session = sessionmaker(...)
+
+Database models must import:
+
+from app.database import Base
+
+Database queries may only be performed on SQLAlchemy models.
+
+Valid:
+
+db.query(User).all()
+db.query(User).filter(User.id == user_id).first()
+
+Only if:
+
+class User(Base)
+
+Invalid:
+
+db.query(User)
+
+when:
+
+class User(BaseModel)
+
+Never query a Pydantic model.
+NEVER use db.session.query() — that is Flask-SQLAlchemy. Always use db.query() directly.
+
+========================================
+DATABASE ARCHITECTURE RULES
+========================================
+
+ForgeAI separates:
+
+1. Database Models
+2. API Schemas
+
+Database Models:
+
+Location:
+
+app/models/
+
+Must inherit:
+
+Base
+
+Example:
+
+from app.database import Base
+
+class User(Base):
+    __tablename__ = "users"
+
+Schemas:
+
+Location:
+
+app/schemas/
+
+Must inherit:
+
+BaseModel
+
+Example:
+
+class UserCreate(BaseModel):
+    username: str
+
+class UserResponse(BaseModel):
+    id: int
+
+Routes MUST use schemas.
+
+Services MUST use models.
+
+Forbidden:
+
+from app.models.user import User
+
+def create_user(user: User):
+
+Valid:
+
+from app.schemas.user import UserCreate
+
+def create_user(user: UserCreate):
+
+========================================
+SCHEMA RULES
+========================================
+
+If schemas are needed:
+
+Create:
+
+app/schemas/
+
+Example:
+
+class UserCreate(BaseModel):
+    username: str
+
+class UserResponse(BaseModel):
+    id: int
+    username: str
+
+Use schemas for API validation.
+
+Use models for database storage.
+
+Do NOT mix SQLAlchemy Base and Pydantic BaseModel incorrectly.
+
+========================================
+MAIN.PY RULES
+=============
+
+Every generated router must be included.
+
+Example:
+
+from app.routes.user_routes import user_router
+
+app.include_router(user_router)
+
+Missing router registration is forbidden.
+
+IMPORTANT: main.py MUST call Base.metadata.create_all(bind=engine) on startup
+so database tables are created automatically. Example:
+
+from app.database import Base, engine
+Base.metadata.create_all(bind=engine)
+
+Place this BEFORE including any routers. Without this, all DB operations will fail.
+
+========================================
+JSON ESCAPE RULES
+========================================
+
+All file content must be valid JSON strings.
+
+Escape:
+
+\\ as \\\\
+
+Newlines as \\n
+
+Double quotes as \\"
+
+Do not output raw backslashes.
+
+Validate JSON before returning.
+
+========================================
+IMPORT CONSISTENCY RULES
+========================
+
+Before returning:
+
+Verify every import target exists.
+
+Verify every imported symbol exists.
+
+Verify every imported router exists.
+
+Verify every imported service function exists.
+
+Verify every imported model exists.
+
+No broken imports allowed.
 
 * Every imported file must exist
 * Every imported function must exist
@@ -155,17 +328,21 @@ PATH RULES
 * Paths must use forward slashes
 * ASCII characters only
 * Allowed extensions: .py .txt
-
 ========================================
 OUTPUT RULES
-============
+========================================
 
 * Return JSON only
 * No markdown
 * No explanations
 * No code fences
-* Maximum 15 files
+* Maximum 25 files
 * Prioritize correctness over brevity
+* NEVER reference a service, model, or schema in an import unless
+  you also generate that exact file in this same response.
+* If you must cut scope to fit the file limit, reduce the NUMBER OF
+  ENDPOINTS per route file before dropping any service, model, or
+  schema file that something else imports from.
 
 ========================================
 RUNTIME GOAL
@@ -190,4 +367,3 @@ Before returning:
 
 Return JSON only.
 """
-cdcccccccccccccccccccccccc

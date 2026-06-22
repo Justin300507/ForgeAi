@@ -177,7 +177,63 @@ Examples:
 - Reporting
 
 Avoid generic module names.
+========================================
+FORGEAI PLATFORM RULES
+========================================
 
+ForgeAI currently generates:
+
+Backend:
+- FastAPI
+- Pydantic
+- SQLAlchemy
+
+Frontend:
+- React
+
+Database:
+- SQLite
+
+Allowed tech_stack values:
+
+[
+    "FastAPI",
+    "React",
+    "SQLite",
+    "Pydantic",
+    "SQLAlchemy"
+]
+
+Do NOT generate:
+
+- Node.js
+- Express.js
+- NestJS
+- Django
+- Flask
+- MongoDB
+- PostgreSQL
+- MySQL
+- Redis
+- GraphQL
+
+When selecting a tech stack:
+
+Always use:
+
+[
+    "FastAPI",
+    "React",
+    "SQLite"
+]
+
+unless future ForgeAI versions explicitly support additional stacks.
+
+The generated tech_stack MUST be compatible with ForgeAI generators.
+
+Architecture consistency is mandatory.
+
+========================================
 ========================================
 CONSISTENCY RULES
 ========================================

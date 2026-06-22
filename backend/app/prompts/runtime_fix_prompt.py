@@ -1,3 +1,8 @@
+import json
+
+from app.prompts.shared_contract import FASTAPI_CONTRACT
+
+
 def build_runtime_fix_prompt(
     runtime_error,
     file_path,
@@ -12,7 +17,7 @@ A generated project failed during startup.
 RUNTIME VALIDATION RESULT
 ========================================
 
-{runtime_error}
+{json.dumps(runtime_error, indent=2, default=str)}
 
 ========================================
 TARGET FILE
@@ -30,7 +35,7 @@ Current File Content:
 PARSED ERROR
 ========================================
 
-{runtime_error.get("parsed_error", {})}
+{json.dumps(runtime_error.get("parsed_error", {}), indent=2, default=str)}
 
 ========================================
 YOUR TASK
@@ -94,7 +99,27 @@ task_router = APIRouter()
 Invalid:
 
 router = APIRouter()
+========================================
+IMPORT ERROR FILE TARGETING RULES
+========================================
 
+The file you are repairing is the file that WROTE the broken import
+statement — not the module it failed to import from.
+
+In most cases, the correct fix is to correct the import statement
+itself. Example:
+
+Wrong:
+
+from app.models import User
+
+Correct:
+
+from app.models.user import User
+
+Only add a missing symbol to a package's __init__.py if the package
+is genuinely meant to re-export from submodules. Prefer fixing the
+import line in the current file over inventing a new file elsewhere.
 ========================================
 MODULE ERROR RULES
 ========================================
@@ -131,6 +156,83 @@ If parsed_error contains:
 }}
 
 Repair missing attributes, methods, exports, or references.
+
+========================================
+WERKZEUG IMPORT ERROR RULES
+========================================
+
+If parsed_error contains:
+
+{{
+    "type": "WerkzeugImportError"
+}}
+
+werkzeug is a Flask library — NOT installed. Replace with passlib:
+
+WRONG:
+from werkzeug.security import generate_password_hash, check_password_hash
+
+CORRECT:
+from passlib.context import CryptContext
+pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
+
+def hash_password(plain: str) -> str:
+    return pwd_context.hash(plain)
+
+def verify_password(plain: str, hashed: str) -> bool:
+    return pwd_context.verify(plain, hashed)
+
+Also add passlib[bcrypt] to requirements.txt.
+
+========================================
+SCHEMAS NAMESPACE ERROR RULES
+========================================
+
+If parsed_error contains:
+
+{{
+    "type": "SchemasNamespaceError"
+}}
+
+WRONG: response_model=schemas.user.UserResponse
+CORRECT: from app.schemas.user import UserResponse (then use directly)
+
+Replace every `schemas.X.Y` reference with a direct import and bare name.
+
+========================================
+ASYNC ENGINE ERROR RULES
+========================================
+
+If parsed_error contains:
+
+{{
+    "type": "AsyncEngineError"
+}}
+
+Synchronous SQLAlchemy engines do NOT support `async with`.
+
+WRONG:
+async with engine.begin() as conn:
+    await conn.run_sync(Base.metadata.create_all)
+
+CORRECT:
+Base.metadata.create_all(bind=engine)  # module-level, before app starts
+
+========================================
+RELATIONSHIP MISSING ERROR RULES
+========================================
+
+If parsed_error contains:
+
+{{
+    "type": "RelationshipMissingError"
+}}
+
+You used joinedload() on an attribute that has no SQLAlchemy relationship().
+
+WRONG: query.options(joinedload(Note.notebook))  # if notebook isn't a relationship
+CORRECT: Remove the joinedload, or add to the model:
+    notebook = relationship("Notebook", back_populates="notes")
 
 ========================================
 CIRCULAR IMPORT RULES
@@ -194,16 +296,7 @@ Do not rename files.
 
 Do not move files.
 
-========================================
-FASTAPI RULES
-========================================
-
-- Use FastAPI only
-- Use APIRouter
-- Never generate Flask
-- Never generate Django
-- Use imports beginning with app
-- Use valid Python syntax
+{FASTAPI_CONTRACT}
 
 ========================================
 CONSISTENCY RULES
@@ -237,6 +330,8 @@ OUTPUT RULES
 - No text before JSON
 - No text after JSON
 - Return a COMPLETE file
+- Only escape these characters: \\" \\\\ \\n \\t \\r
+- NEVER put a backslash before any other character
 - Return valid JSON only
 
 ========================================

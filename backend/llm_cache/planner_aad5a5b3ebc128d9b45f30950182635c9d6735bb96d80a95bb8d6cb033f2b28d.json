@@ -1,0 +1,145 @@
+{
+  "project_name": "CareerConnect",
+  "description": "A web-based job board that connects job seekers with employers, offering company profiles, searchable job listings, and a streamlined application process.",
+  "target_users": [
+    "Job seekers",
+    "Employers",
+    "Recruiters"
+  ],
+  "core_features": [
+    "User registration, login, and profile management",
+    "Company profile creation and editing",
+    "Job posting, editing, and deactivation by employers",
+    "Searchable and filterable job listings for candidates",
+    "Application submission and status tracking for candidates"
+  ],
+  "future_features": [
+    "In-app messaging between candidates and employers",
+    "Resume parsing with automated skill matching",
+    "Employer analytics dashboard for hiring metrics"
+  ],
+  "tech_stack": [
+    "FastAPI",
+    "React",
+    "SQLite"
+  ],
+  "database_entities": [
+    {
+      "name": "User",
+      "fields": [
+        "id",
+        "email",
+        "password_hash",
+        "full_name",
+        "role",
+        "resume_url",
+        "created_at"
+      ]
+    },
+    {
+      "name": "Job",
+      "fields": [
+        "id",
+        "title",
+        "description",
+        "location",
+        "salary_range",
+        "employment_type",
+        "company_id",
+        "posted_at",
+        "is_active"
+      ]
+    },
+    {
+      "name": "Application",
+      "fields": [
+        "id",
+        "job_id",
+        "candidate_id",
+        "cover_letter",
+        "resume_url",
+        "status",
+        "applied_at"
+      ]
+    }
+  ],
+  "api_modules": [
+    {
+      "name": "User",
+      "endpoints": [
+        "POST /auth/register",
+        "POST /auth/login",
+        "GET /users",
+        "GET /users/{id}",
+        "PUT /users/{id}",
+        "DELETE /users/{id}",
+        "GET /users/me"
+      ]
+    },
+    {
+      "name": "Job",
+      "endpoints": [
+        "GET /jobs",
+        "POST /jobs",
+        "GET /jobs/{id}",
+        "PUT /jobs/{id}",
+        "DELETE /jobs/{id}",
+        "GET /jobs?search=&location=&type="
+      ]
+    },
+    {
+      "name": "Application",
+      "endpoints": [
+        "GET /applications",
+        "POST /applications",
+        "GET /applications/{id}",
+        "PUT /applications/{id}",
+        "DELETE /applications/{id}"
+      ]
+    }
+  ],
+  "pages": [
+    "Home (job listings with search & filters)",
+    "Job Detail",
+    "Company Profile",
+    "Candidate Dashboard (applications)",
+    "Employer Dashboard (manage jobs)"
+  ],
+  "backend_modules": [
+    "Authentication",
+    "User Management",
+    "Job Management",
+    "Application Management",
+    "Search Service"
+  ],
+  "roadmap": [
+    {
+      "phase": "Phase 1: MVP",
+      "milestones": [
+        "Implement user authentication and profile CRUD",
+        "Create company profile endpoints",
+        "Develop job posting and listing APIs",
+        "Build application submission flow",
+        "Launch basic React UI with core pages"
+      ]
+    },
+    {
+      "phase": "Phase 2: Feature Expansion",
+      "milestones": [
+        "Add advanced search filters and sorting",
+        "Implement application status tracking UI",
+        "Introduce employer dashboard analytics basics",
+        "Set up email notifications for application events"
+      ]
+    },
+    {
+      "phase": "Phase 3: Scaling & Extras",
+      "milestones": [
+        "Integrate resume parsing and skill matching",
+        "Enable in-app messaging between users",
+        "Optimize database indexes and add caching layer",
+        "Prepare multi-tenant deployment and monitoring"
+      ]
+    }
+  ]
+}

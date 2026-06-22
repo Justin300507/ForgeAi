@@ -1,0 +1,131 @@
+{
+  "project_name": "Gym Membership Tracker",
+  "description": "A web application for gyms to manage members, track workout logs, and handle subscription plans with dashboards and automated reminders.",
+  "target_users": [
+    "Gym owners",
+    "Trainers",
+    "Gym members"
+  ],
+  "core_features": [
+    "Member registration and profile management",
+    "Workout logging per member",
+    "Subscription plan creation and assignment",
+    "Dashboard showing member progress and upcoming renewals",
+    "Automated email reminders for subscription expiration"
+  ],
+  "future_features": [
+    "Class scheduling and booking",
+    "Trainer assignment to members",
+    "Mobile push notifications for workout reminders"
+  ],
+  "tech_stack": [
+    "FastAPI",
+    "React",
+    "SQLite"
+  ],
+  "database_entities": [
+    {
+      "name": "Member",
+      "fields": [
+        "id",
+        "first_name",
+        "last_name",
+        "email",
+        "phone",
+        "date_of_birth",
+        "join_date",
+        "status"
+      ]
+    },
+    {
+      "name": "WorkoutLog",
+      "fields": [
+        "id",
+        "member_id",
+        "date",
+        "exercise_name",
+        "sets",
+        "reps",
+        "weight",
+        "notes"
+      ]
+    },
+    {
+      "name": "SubscriptionPlan",
+      "fields": [
+        "id",
+        "name",
+        "price",
+        "duration_months",
+        "benefits",
+        "active"
+      ]
+    }
+  ],
+  "api_modules": [
+    {
+      "name": "Member",
+      "endpoints": [
+        "/members",
+        "/members/{id}"
+      ]
+    },
+    {
+      "name": "WorkoutLog",
+      "endpoints": [
+        "/workouts",
+        "/workouts/{id}"
+      ]
+    },
+    {
+      "name": "SubscriptionPlan",
+      "endpoints": [
+        "/plans",
+        "/plans/{id}"
+      ]
+    }
+  ],
+  "pages": [
+    "Login",
+    "Dashboard",
+    "Member Management",
+    "Workout Log Entry",
+    "Subscription Management"
+  ],
+  "backend_modules": [
+    "Authentication",
+    "Member Management",
+    "Workout Log Management",
+    "Subscription Management",
+    "Reporting"
+  ],
+  "roadmap": [
+    {
+      "phase": "MVP Launch",
+      "milestones": [
+        "Initialize repository and CI pipeline",
+        "Implement authentication module",
+        "Develop Member CRUD API",
+        "Develop WorkoutLog API",
+        "Develop SubscriptionPlan API",
+        "Create basic frontend pages: Login and Dashboard"
+      ]
+    },
+    {
+      "phase": "Feature Expansion",
+      "milestones": [
+        "Add progress visualization charts on Dashboard",
+        "Implement automated email reminders for expiring subscriptions",
+        "Build admin interface for managing subscription pricing"
+      ]
+    },
+    {
+      "phase": "Scaling & Future Features",
+      "milestones": [
+        "Introduce class scheduling and booking system",
+        "Add trainer assignment functionality",
+        "Integrate mobile push notifications for workout reminders"
+      ]
+    }
+  ]
+}

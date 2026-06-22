@@ -1,0 +1,136 @@
+{
+  "project_name": "ShopEase",
+  "description": "A lightweight e\u2011commerce web application that lets users browse products, manage a shopping cart, place orders, and maintain personal accounts.",
+  "target_users": [
+    "Online shoppers",
+    "Small business owners",
+    "Retail customers"
+  ],
+  "core_features": [
+    "User registration, login, and profile management",
+    "Product catalog with list and detail views",
+    "Shopping cart add/remove/update functionality",
+    "Checkout process and order creation",
+    "Order history view for customers"
+  ],
+  "future_features": [
+    "Admin dashboard for product inventory management",
+    "Payment gateway integration",
+    "Product reviews and rating system"
+  ],
+  "tech_stack": [
+    "FastAPI",
+    "React",
+    "SQLite"
+  ],
+  "database_entities": [
+    {
+      "name": "User",
+      "fields": [
+        "id",
+        "email",
+        "password_hash",
+        "full_name",
+        "address",
+        "is_active",
+        "created_at"
+      ]
+    },
+    {
+      "name": "Product",
+      "fields": [
+        "id",
+        "name",
+        "description",
+        "price",
+        "stock_quantity",
+        "image_url",
+        "created_at"
+      ]
+    },
+    {
+      "name": "Order",
+      "fields": [
+        "id",
+        "user_id",
+        "status",
+        "total_amount",
+        "items_json",
+        "created_at",
+        "updated_at"
+      ]
+    }
+  ],
+  "api_modules": [
+    {
+      "name": "User",
+      "endpoints": [
+        "/users",
+        "/users/{id}",
+        "/auth/register",
+        "/auth/login"
+      ]
+    },
+    {
+      "name": "Product",
+      "endpoints": [
+        "/products",
+        "/products/{id}"
+      ]
+    },
+    {
+      "name": "Order",
+      "endpoints": [
+        "/orders",
+        "/orders/{id}",
+        "/orders/{id}/items",
+        "/cart"
+      ]
+    }
+  ],
+  "pages": [
+    "Home",
+    "Product Detail",
+    "Cart",
+    "Checkout",
+    "User Account"
+  ],
+  "backend_modules": [
+    "Authentication",
+    "UserService",
+    "ProductService",
+    "OrderService",
+    "CartService"
+  ],
+  "roadmap": [
+    {
+      "phase": "MVP Launch",
+      "milestones": [
+        "Set up project repository and CI pipeline",
+        "Implement user authentication and registration",
+        "Create product catalog API endpoints",
+        "Develop shopping cart logic and endpoints",
+        "Build order placement flow",
+        "Deploy basic React UI with core pages"
+      ]
+    },
+    {
+      "phase": "Feature Expansion",
+      "milestones": [
+        "Add product search and filtering capabilities",
+        "Implement order history page for users",
+        "Integrate email notifications for order status",
+        "Create admin product management UI"
+      ]
+    },
+    {
+      "phase": "Scalability & Enhancements",
+      "milestones": [
+        "Integrate third\u2011party payment gateway",
+        "Enable product reviews and rating system",
+        "Add analytics dashboard for sales insights",
+        "Optimize database queries and add indexing"
+      ]
+    }
+  ]
+}

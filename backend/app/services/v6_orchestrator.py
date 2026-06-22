@@ -1,0 +1,546 @@
+"""
+V6 Autonomous Engineering Team Orchestrator
+
+Pipeline:
+  Product Manager → Architect → Tech Lead Review → Backend Team (parallel)
+  → Frontend Team → QA Review → Security Review → Code Review
+  → Performance Review → Validation Loop → Runtime → Export → V6 Score
+
+Each agent contributes its findings to an AgentCollaboration shared memory
+that subsequent agents use to make better decisions.
+"""
+import time
+import traceback
+import re
+import os
+from collections import defaultdict
+from typing import Any
+
+from app.services.product_manager_service import run_product_manager
+from app.services.tech_lead_service import run_tech_lead
+from app.services.architect_service import generate_architecture
+from app.services.frontend_service import generate_frontend
+from app.services.file_writer_service import write_files
+from app.services.validator_service import validate_project
+from app.services.fixer_service import generate_fix
+from app.services.missing_file_service import generate_missing_file
+from app.services.fix_writer_service import write_fix
+from app.services.fix_log_service import save_fix_log
+from app.services.zip_service import create_zip
+from app.services.forge_score_service import calculate_forge_score
+from app.services.security_reviewer_service import run_security_review, print_security_report
+from app.services.qa_reviewer_service import run_qa_review
+from app.services.code_review_service import run_code_review
+from app.services.performance_review_service import run_performance_review
+from app.services.agent_collaboration import AgentCollaboration
+from app.services.v6_score_service import calculate_v6_score
+from app.services.metadata_service import save_metadata
+from app.services.git_service import initialize_git
+from app.services.architecture_fix_service import generate_architecture_fix
+from app.memory.failure_memory import record_run, build_prompt_injection
+from app.utils.cost_tracker import reset_session, flush_to_log, print_session_cost
+from app.services.runtime_validator_service import validate_runtime
+
+
+ARCHITECTURE_ERROR_MARKERS = (
+    "Architecture violation",
+    "Missing endpoint",
+    "Router export mismatch",
+    "Missing symbol",
+    "Missing APIRouter",
+    "No endpoints found",
+    "Undefined symbol",
+)
+
+
+def _sanitize_path(path: str) -> str:
+    safe = re.sub(r"[?{}:*<>|\"]", "_", path)
+    safe = os.path.normpath(safe)
+    return safe
+
+
+def _sanitize_architecture_paths(architecture: dict) -> None:
+    for ep in architecture.get("api_endpoints", []):
+        if "file" in ep:
+            ep["file"] = _sanitize_path(ep["file"])
+
+
+def generate_project_v6(
+    idea: str,
+    provider: str = "auto",
+    use_parallel_backend: bool = True,
+    collab: AgentCollaboration | None = None,
+) -> dict[str, Any]:
+    """
+    Full V6 multi-agent pipeline.
+
+    Agents in order:
+    1. Product Manager  — richer spec with user stories + acceptance criteria
+    2. Architect        — generates architecture plan
+    3. Tech Lead        — reviews architecture, sets security/pagination constraints
+    4. Backend Team     — parallel file-by-file generation
+    5. Frontend Team    — React generation
+    6. QA Team          — validates against user stories
+    7. Security Team    — LLM-based security audit + static pattern checks
+    8. Code Review      — naming, architecture quality, maintainability, tech debt
+    9. Performance Review — N+1, missing indexes, large payloads, slow APIs
+    10. Validation Loop  — static analysis + fix attempts
+    11. Runtime          — uvicorn smoke tests
+    12. Export + V6 Score
+    """
+    start = time.time()
+    reset_session()
+
+    if collab is None:
+        collab = AgentCollaboration()
+
+    print(f"\n{'#'*70}")
+    print(f"# V6 AUTONOMOUS ENGINEERING TEAM")
+    print(f"# Idea: {idea[:65]}")
+    print(f"{'#'*70}")
+
+    # ------------------------------------------------------------------
+    # Stage 1: Product Manager
+    # ------------------------------------------------------------------
+    print("\n=== PRODUCT MANAGER (V6) ===")
+    product_spec = run_product_manager(idea, provider)
+    plan = product_spec.to_plan_dict()
+    collab.record_decision(
+        agent="product_manager",
+        decision="product_spec_created",
+        rationale=product_spec.tagline,
+        data={
+            "features": len(product_spec.core_features),
+            "user_stories": len(product_spec.user_stories),
+            "must_have": [f.name for f in product_spec.core_features if f.priority == "must_have"],
+        },
+    )
+
+    # ------------------------------------------------------------------
+    # Stage 2: Architect
+    # ------------------------------------------------------------------
+    print("\n=== ARCHITECT (V6) ===")
+    learned = build_prompt_injection()
+    pm_context = (
+        f"PRODUCT SPEC SUMMARY:\n"
+        f"  Tagline: {product_spec.tagline}\n"
+        f"  Users: {', '.join(product_spec.target_users[:2])}\n"
+        f"  Must-have features: {', '.join(f.description for f in product_spec.core_features if f.priority == 'must_have')[:300]}\n"
+        f"  Non-functional: {product_spec.non_functional_requirements}\n"
+        f"  User stories: {len(product_spec.user_stories)}\n"
+    )
+    extra_context = learned + "\n\n" + pm_context if learned else pm_context
+    architecture = generate_architecture(plan, provider, extra_context=extra_context)
+    _sanitize_architecture_paths(architecture)
+    collab.record_decision(
+        agent="architect",
+        decision="architecture_created",
+        rationale=f"{len(architecture.get('api_endpoints', []))} endpoints across {len(set(ep.get('file','') for ep in architecture.get('api_endpoints', [])))} files",
+        data={"endpoints": len(architecture.get("api_endpoints", []))},
+    )
+
+    # ------------------------------------------------------------------
+    # Stage 3: Tech Lead Review
+    # ------------------------------------------------------------------
+    tech_constraints = run_tech_lead(product_spec.raw if hasattr(product_spec, "raw") else plan, architecture, provider)
+    collab.record_decision(
+        agent="tech_lead",
+        decision="constraints_set",
+        rationale=tech_constraints.tech_review_summary[:150],
+        data={
+            "critical_issues": sum(1 for i in tech_constraints.architecture_issues if i.severity == "critical"),
+            "auth_endpoints": len(tech_constraints.security_requirements.get("authenticated_endpoints", [])),
+            "pagination_required": len(tech_constraints.pagination_required),
+        },
+    )
+
+    # ------------------------------------------------------------------
+    # Stage 4: Backend Team (parallel, fallback to monolithic)
+    # ------------------------------------------------------------------
+    backend_files = []
+    if use_parallel_backend:
+        try:
+            from app.services.parallel_backend_service import generate_backend_parallel
+            print("\n=== BACKEND TEAM — PARALLEL GENERATION (V6) ===")
+            parallel_result = generate_backend_parallel(
+                architecture, provider,
+                tech_constraints=tech_constraints.to_prompt_context(),
+            )
+            backend_files = [{"path": f.path, "content": f.content} for f in parallel_result.files if f.success]
+            if parallel_result.failed_files:
+                print(f"  Parallel failures: {parallel_result.failed_files}")
+            print(
+                f"  Generated {len(backend_files)} files in {parallel_result.total_duration:.1f}s "
+                f"(parallel phase: {parallel_result.parallel_duration:.1f}s)"
+            )
+        except Exception as pe:
+            print(f"  Parallel backend failed ({pe}), falling back to monolithic")
+            use_parallel_backend = False
+
+    if not use_parallel_backend or not backend_files:
+        from app.services.backend_service import generate_backend
+        print("\n=== BACKEND TEAM — MONOLITHIC (fallback) ===")
+        backend_response = generate_backend(architecture, provider)
+        backend_files = backend_response.get("files", []) if isinstance(backend_response, dict) else []
+
+    # ------------------------------------------------------------------
+    # Stage 5: Frontend Team
+    # ------------------------------------------------------------------
+    print("\n=== FRONTEND TEAM (V6) ===")
+    frontend_response = generate_frontend(architecture, provider)
+    frontend_files = frontend_response.get("files", []) if isinstance(frontend_response, dict) else []
+
+    # ------------------------------------------------------------------
+    # Stage 6: Write Files
+    # ------------------------------------------------------------------
+    all_files = []
+    for f in backend_files + frontend_files:
+        f["path"] = _sanitize_path(f.get("path", ""))
+        if f["path"]:
+            all_files.append(f)
+
+    # Deduplicate
+    seen = {}
+    for f in all_files:
+        seen[f["path"]] = f
+    all_files = list(seen.values())
+
+    project_name = plan["project_name"]
+    project_path = write_files(project_name, all_files)
+    initialize_git(project_path)
+    print(f"\n=== FILES WRITTEN: {project_path} ({len(all_files)} files) ===")
+
+    total_time_so_far = round(time.time() - start, 2)
+    metadata_path = save_metadata(project_path, plan, architecture, provider, total_time_so_far)
+
+    # ------------------------------------------------------------------
+    # Stage 7: QA Team
+    # ------------------------------------------------------------------
+    qa_report = run_qa_review(
+        project_path,
+        product_spec.raw if hasattr(product_spec, "raw") and product_spec.raw else plan,
+        architecture,
+        provider,
+    )
+    collab.record_decision(
+        agent="qa",
+        decision="qa_review_complete",
+        rationale=f"QA score: {qa_report.qa_score}/100",
+        data={
+            "score": qa_report.qa_score,
+            "blockers": qa_report.blockers,
+            "missing_features": qa_report.missing_features[:3],
+        },
+    )
+
+    # ------------------------------------------------------------------
+    # Stage 8: Security Team
+    # ------------------------------------------------------------------
+    security_report = run_security_review(project_path, provider)
+    print_security_report(security_report)
+    collab.record_decision(
+        agent="security",
+        decision="security_review_complete",
+        rationale=f"Security score: {security_report.security_score}/100 [{security_report.risk_level}]",
+        data={
+            "score": security_report.security_score,
+            "critical": security_report.critical_count,
+            "high": security_report.high_count,
+        },
+    )
+
+    # ------------------------------------------------------------------
+    # Stage 9: Code Review Agent
+    # ------------------------------------------------------------------
+    code_review_report = run_code_review(project_path, architecture, provider)
+    collab.record_decision(
+        agent="code_review",
+        decision="code_review_complete",
+        rationale=f"Maintainability: {code_review_report.maintainability_score}/100 | Tech debt: {code_review_report.tech_debt_score}/100",
+        data={
+            "naming_score": code_review_report.naming_score,
+            "architecture_score": code_review_report.architecture_score,
+            "maintainability_score": code_review_report.maintainability_score,
+            "tech_debt_score": code_review_report.tech_debt_score,
+        },
+    )
+
+    # ------------------------------------------------------------------
+    # Stage 10: Performance Review
+    # ------------------------------------------------------------------
+    performance_report = run_performance_review(project_path, architecture, provider)
+    collab.record_decision(
+        agent="performance",
+        decision="performance_review_complete",
+        rationale=f"Performance score: {performance_report.performance_score}/100",
+        data={
+            "score": performance_report.performance_score,
+            "n_plus_one_count": performance_report.n_plus_one_count,
+            "missing_indexes": performance_report.missing_indexes,
+        },
+    )
+
+    # ------------------------------------------------------------------
+    # Stage 11: Validation Loop (up to 4 fix attempts)
+    # ------------------------------------------------------------------
+    print("\n=== VALIDATION LOOP (V6) ===")
+    validation = validate_project(project_path)
+    print(f"  Validation: {'PASS' if validation['passed'] else 'FAIL'} — {len(validation['errors'])} errors")
+
+    fix_attempts_used = 0
+    for attempt in range(4):
+        if validation["passed"]:
+            break
+
+        fix_attempts_used = attempt + 1
+        print(f"\n  Fix attempt {attempt + 1}/4 ...")
+
+        errors_by_file = defaultdict(list)
+        for err in validation["errors"]:
+            if err.startswith("Unknown dependency:"):
+                errors_by_file["app/requirements.txt"].append(err)
+                continue
+
+            if "Missing endpoint" in err or "Router export mismatch" in err:
+                m = re.search(r"expected in (app[\\/][^\s]+\.py)", err)
+                if m:
+                    errors_by_file[m.group(1).replace("\\", "/")].append(err)
+                    continue
+
+            m = re.search(r"(app[\\/][^\s:]+?\.(?:py|txt))", err)
+            if m:
+                errors_by_file[m.group(1).replace("\\", "/")].append(err)
+                continue
+
+            m = re.search(r"Missing frontend import target:\s+(\S+)", err)
+            if m:
+                imp = m.group(1)
+                name = os.path.basename(imp.replace(".jsx", ""))
+                for subdir in ("components", "pages"):
+                    if subdir in imp:
+                        errors_by_file[f"src/{subdir}/{name}.jsx"].append(err)
+                        break
+                else:
+                    errors_by_file[f"src/{name}.jsx"].append(err)
+
+        for filepath, file_errors in errors_by_file.items():
+            try:
+                safe_path = _sanitize_path(filepath)
+                abs_path = os.path.join(project_path, safe_path)
+
+                if any("Orphan file:" in e for e in file_errors):
+                    if os.path.exists(abs_path):
+                        os.remove(abs_path)
+                    continue
+
+                if not os.path.exists(abs_path):
+                    fix = generate_missing_file(filepath, "\n".join(file_errors), provider)
+                    if fix and fix.get("content"):
+                        fix["path"] = _sanitize_path(fix["path"])
+                        write_fix(project_path, fix)
+                        save_fix_log(project_path, "Missing File", fix)
+                    continue
+
+                with open(abs_path, "r", encoding="utf-8") as fh:
+                    file_content = fh.read()
+
+                fix = generate_fix(filepath, file_content, file_errors, provider)
+                if not isinstance(fix, dict) or not fix.get("path") or not fix.get("content"):
+                    continue
+
+                fix["path"] = _sanitize_path(fix["path"])
+                write_fix(project_path, fix)
+                save_fix_log(project_path, "\n".join(file_errors), fix)
+
+            except Exception as e:
+                print(f"  Fix failed for {filepath}: {e}")
+
+        validation = validate_project(project_path)
+        print(f"  Post-fix {attempt + 1}: {'PASS' if validation['passed'] else 'FAIL'} — {len(validation['errors'])} errors")
+
+    # Architecture-level repair
+    architecture_errors = [
+        e for e in validation.get("errors", [])
+        if any(marker in e for marker in ARCHITECTURE_ERROR_MARKERS)
+    ]
+    if architecture_errors and not validation["passed"]:
+        print("\n=== ARCHITECTURE REPAIR (V6) ===")
+        target_files = sorted({
+            m.group(1)
+            for e in architecture_errors
+            for m in [re.search(r"(app[\\/][^\s:]+?\.py)", e)]
+            if m
+        })
+        if target_files:
+            arch_fix = generate_architecture_fix(
+                architecture, architecture_errors, provider,
+                required_exports={}, required_endpoints={}, existing_symbols={}
+            )
+            if arch_fix and isinstance(arch_fix, dict) and arch_fix.get("files"):
+                for f in arch_fix["files"]:
+                    f["path"] = _sanitize_path(f["path"])
+                    write_fix(project_path, f)
+                validation = validate_project(project_path)
+                print(f"  Post-arch-repair: {'PASS' if validation['passed'] else 'FAIL'}")
+
+    # ------------------------------------------------------------------
+    # Stage 12: Runtime Validation
+    # ------------------------------------------------------------------
+    runtime_result = None
+    if validation["passed"]:
+        print("\n=== RUNTIME VALIDATION (V6) ===")
+        max_runtime_attempts = 2
+        try:
+            from app.services.runtime_fix_service import generate_runtime_fix
+            for r_attempt in range(max_runtime_attempts + 1):
+                runtime_result = validate_runtime(project_path, architecture=architecture)
+                print(f"  Runtime: {'PASS' if runtime_result.get('success') else 'FAIL'}")
+
+                if runtime_result.get("success"):
+                    break
+                if r_attempt == max_runtime_attempts:
+                    break
+
+                rt_fix = generate_runtime_fix(runtime_result, project_path, provider)
+                if rt_fix and rt_fix.get("path") and rt_fix.get("content"):
+                    rt_fix["path"] = _sanitize_path(rt_fix["path"])
+                    write_fix(project_path, rt_fix)
+        except Exception as re_err:
+            runtime_result = {"success": False, "error": str(re_err)}
+            print(f"  Runtime validation error: {re_err}")
+
+    # ------------------------------------------------------------------
+    # Stage 13: Export
+    # ------------------------------------------------------------------
+    can_export = (
+        validation["passed"]
+        and runtime_result
+        and runtime_result.get("success", False)
+    )
+    zip_path = None
+    if can_export:
+        zip_path = create_zip(project_path)
+        print(f"\n  ZIP: {zip_path}")
+        try:
+            from app.services.repo_intelligence_service import generate_repo_docs
+            generate_repo_docs(project_path, plan, architecture)
+        except Exception:
+            pass
+
+    # ------------------------------------------------------------------
+    # Stage 14: Score
+    # ------------------------------------------------------------------
+    forge_score = calculate_forge_score(
+        validation, runtime_result,
+        frontend_build_result=None, playwright_result=None,
+        vision_result=None, docker_result=None,
+    )
+
+    v6_score = calculate_v6_score(
+        forge_score=forge_score,
+        security_report=security_report,
+        performance_report=performance_report,
+        code_review_report=code_review_report,
+        qa_report=qa_report,
+        runtime_result=runtime_result,
+    )
+
+    total_time = round(time.time() - start, 2)
+    print(f"\n=== V6 SCORE: {v6_score['total']}/100 ({v6_score['grade']}) ===")
+    print(f"    Runtime:      {v6_score['dimensions']['runtime']}/100")
+    print(f"    Security:     {v6_score['dimensions']['security']}/100")
+    print(f"    Performance:  {v6_score['dimensions']['performance']}/100")
+    print(f"    Maintainability: {v6_score['dimensions']['maintainability']}/100")
+    print(f"    Review:       {v6_score['dimensions']['review']}/100")
+
+    # Cost tracking
+    try:
+        print_session_cost()
+        flush_to_log(project_name, v6_score.get("total", 0), total_time)
+    except Exception:
+        pass
+
+    # Failure memory
+    try:
+        runtime_error_type = (
+            runtime_result.get("parsed_error", {}).get("type")
+            if runtime_result and not runtime_result.get("success")
+            else None
+        )
+        record_run(
+            project_name=project_name,
+            validation_errors=validation.get("errors", []),
+            runtime_error_type=runtime_error_type,
+            frontend_build_failed=False,
+            score=v6_score.get("total", 0),
+        )
+    except Exception:
+        pass
+
+    # Save collaboration log
+    collab.record_decision(
+        agent="orchestrator",
+        decision="pipeline_complete",
+        rationale=f"V6 score: {v6_score['total']}/100",
+        data={"total_time": total_time, "can_export": can_export},
+    )
+    collab.save(project_path)
+
+    return {
+        "pipeline": "v6",
+        "project_name": project_name,
+        "project_path": project_path,
+        "zip_path": zip_path,
+        "metadata_path": metadata_path,
+        "product_spec": {
+            "display_name": product_spec.display_name,
+            "tagline": product_spec.tagline,
+            "user_stories": len(product_spec.user_stories),
+            "must_have_features": [f.name for f in product_spec.core_features if f.priority == "must_have"],
+        },
+        "tech_lead": {
+            "summary": tech_constraints.tech_review_summary,
+            "critical_issues": sum(1 for i in tech_constraints.architecture_issues if i.severity == "critical"),
+            "warnings": sum(1 for i in tech_constraints.architecture_issues if i.severity == "warning"),
+        },
+        "backend_generation": {
+            "parallel": use_parallel_backend,
+            "files": len(backend_files),
+        },
+        "qa": {
+            "score": qa_report.qa_score,
+            "stories_covered": sum(1 for s in qa_report.user_story_coverage if s.covered),
+            "blockers": qa_report.blockers,
+            "skipped": qa_report.skipped,
+        },
+        "security": {
+            "score": security_report.security_score,
+            "risk_level": security_report.risk_level,
+            "critical_count": security_report.critical_count,
+            "high_count": security_report.high_count,
+            "skipped": security_report.skipped,
+        },
+        "code_review": {
+            "naming_score": code_review_report.naming_score,
+            "architecture_score": code_review_report.architecture_score,
+            "maintainability_score": code_review_report.maintainability_score,
+            "tech_debt_score": code_review_report.tech_debt_score,
+            "overall_score": code_review_report.overall_score,
+            "skipped": code_review_report.skipped,
+        },
+        "performance": {
+            "score": performance_report.performance_score,
+            "n_plus_one_count": performance_report.n_plus_one_count,
+            "missing_indexes": performance_report.missing_indexes,
+            "large_payload_risks": performance_report.large_payload_risks,
+            "slow_api_warnings": performance_report.slow_api_warnings,
+            "skipped": performance_report.skipped,
+        },
+        "validation": validation,
+        "runtime": runtime_result,
+        "forge_score": forge_score,
+        "v6_score": v6_score,
+        "collaboration_log": collab.get_summary(),
+        "generation_time_seconds": total_time,
+        "fix_attempts": fix_attempts_used,
+    }

@@ -1,0 +1,148 @@
+{
+  "project_name": "SalesFlow CRM",
+  "description": "A lightweight CRM system that lets sales teams manage contacts, track deals, and schedule follow-up tasks, with a dashboard overview.",
+  "target_users": [
+    "Sales representatives",
+    "Small business owners",
+    "Account managers"
+  ],
+  "core_features": [
+    "Contact and company management",
+    "Deal pipeline tracking",
+    "Follow-up task creation and assignment",
+    "Dashboard overview of upcoming tasks and deal totals",
+    "Search and filter contacts and deals"
+  ],
+  "future_features": [
+    "Email integration for logging communications",
+    "Advanced analytics and custom reporting",
+    "Responsive mobile-friendly UI"
+  ],
+  "tech_stack": [
+    "FastAPI",
+    "React",
+    "SQLite",
+    "Pydantic",
+    "SQLAlchemy"
+  ],
+  "database_entities": [
+    {
+      "name": "Contact",
+      "fields": [
+        "id",
+        "first_name",
+        "last_name",
+        "email",
+        "phone",
+        "company_name",
+        "position",
+        "created_at",
+        "updated_at"
+      ]
+    },
+    {
+      "name": "Deal",
+      "fields": [
+        "id",
+        "title",
+        "contact_id",
+        "amount",
+        "stage",
+        "close_date",
+        "created_at",
+        "updated_at"
+      ]
+    },
+    {
+      "name": "Task",
+      "fields": [
+        "id",
+        "title",
+        "due_date",
+        "status",
+        "contact_id",
+        "deal_id",
+        "created_at",
+        "updated_at"
+      ]
+    }
+  ],
+  "api_modules": [
+    {
+      "name": "Contact API",
+      "endpoints": [
+        "GET /contacts",
+        "POST /contacts",
+        "GET /contacts/{id}",
+        "PUT /contacts/{id}",
+        "DELETE /contacts/{id}"
+      ]
+    },
+    {
+      "name": "Deal API",
+      "endpoints": [
+        "GET /deals",
+        "POST /deals",
+        "GET /deals/{id}",
+        "PUT /deals/{id}",
+        "DELETE /deals/{id}"
+      ]
+    },
+    {
+      "name": "Task API",
+      "endpoints": [
+        "GET /tasks",
+        "POST /tasks",
+        "GET /tasks/{id}",
+        "PUT /tasks/{id}",
+        "DELETE /tasks/{id}"
+      ]
+    }
+  ],
+  "pages": [
+    "Login",
+    "Dashboard",
+    "Contacts",
+    "Deals",
+    "Tasks"
+  ],
+  "backend_modules": [
+    "Authentication",
+    "Contact Service",
+    "Deal Service",
+    "Task Service",
+    "Dashboard Reporting"
+  ],
+  "roadmap": [
+    {
+      "phase": "Phase 1: MVP",
+      "milestones": [
+        "Project setup with FastAPI and React",
+        "Implement JWT authentication",
+        "Develop Contact CRUD API",
+        "Develop Deal CRUD API",
+        "Develop Task CRUD API",
+        "Create UI pages for contacts, deals, tasks",
+        "Integrate basic dashboard"
+      ]
+    },
+    {
+      "phase": "Phase 2: Enhancements",
+      "milestones": [
+        "Add role-based access control",
+        "Implement email integration for logging",
+        "Build advanced dashboard widgets",
+        "Introduce search and filter functionality"
+      ]
+    },
+    {
+      "phase": "Phase 3: Scaling & Reporting",
+      "milestones": [
+        "Develop custom reporting module",
+        "Enable CSV/Excel data export",
+        "Optimize database queries",
+        "Prepare mobile-responsive UI"
+      ]
+    }
+  ]
+}

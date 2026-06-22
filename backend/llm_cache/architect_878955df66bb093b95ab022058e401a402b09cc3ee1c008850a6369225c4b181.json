@@ -1,0 +1,276 @@
+{
+  "api_endpoints": [
+    {
+      "method": "GET",
+      "path": "/rooms",
+      "description": "Retrieve a list of active rooms with optional search filters",
+      "file": "app/routes/room_routes.py"
+    },
+    {
+      "method": "GET",
+      "path": "/rooms/{id}",
+      "description": "Retrieve detailed information for a specific room",
+      "file": "app/routes/room_routes.py"
+    },
+    {
+      "method": "POST",
+      "path": "/rooms",
+      "description": "Create a new room (admin only)",
+      "file": "app/routes/room_routes.py"
+    },
+    {
+      "method": "GET",
+      "path": "/reservations",
+      "description": "List reservations for the authenticated guest",
+      "file": "app/routes/reservation_routes.py"
+    },
+    {
+      "method": "POST",
+      "path": "/reservations",
+      "description": "Create a new reservation for a room",
+      "file": "app/routes/reservation_routes.py"
+    },
+    {
+      "method": "GET",
+      "path": "/reservations/{id}",
+      "description": "Get details of a specific reservation",
+      "file": "app/routes/reservation_routes.py"
+    },
+    {
+      "method": "PUT",
+      "path": "/reservations/{id}",
+      "description": "Update reservation details (e.g., change dates or cancel)",
+      "file": "app/routes/reservation_routes.py"
+    },
+    {
+      "method": "DELETE",
+      "path": "/reservations/{id}",
+      "description": "Delete (cancel) a reservation",
+      "file": "app/routes/reservation_routes.py"
+    },
+    {
+      "method": "GET",
+      "path": "/guests",
+      "description": "List all guests (admin view)",
+      "file": "app/routes/guest_routes.py"
+    },
+    {
+      "method": "GET",
+      "path": "/guests/{id}",
+      "description": "Retrieve profile information for a specific guest",
+      "file": "app/routes/guest_routes.py"
+    },
+    {
+      "method": "POST",
+      "path": "/guests",
+      "description": "Register a new guest account",
+      "file": "app/routes/guest_routes.py"
+    },
+    {
+      "method": "POST",
+      "path": "/auth/login",
+      "description": "Authenticate guest and issue JWT token",
+      "file": "app/routes/guest_routes.py"
+    }
+  ],
+  "database_schema": [
+    {
+      "table_name": "rooms",
+      "columns": [
+        {
+          "name": "id",
+          "type": "INTEGER",
+          "is_primary_key": true,
+          "is_nullable": false
+        },
+        {
+          "name": "number",
+          "type": "TEXT",
+          "is_primary_key": false,
+          "is_nullable": false
+        },
+        {
+          "name": "type",
+          "type": "TEXT",
+          "is_primary_key": false,
+          "is_nullable": false
+        },
+        {
+          "name": "description",
+          "type": "TEXT",
+          "is_primary_key": false,
+          "is_nullable": true
+        },
+        {
+          "name": "price_per_night",
+          "type": "REAL",
+          "is_primary_key": false,
+          "is_nullable": false
+        },
+        {
+          "name": "capacity",
+          "type": "INTEGER",
+          "is_primary_key": false,
+          "is_nullable": false
+        },
+        {
+          "name": "amenities",
+          "type": "TEXT",
+          "is_primary_key": false,
+          "is_nullable": true
+        },
+        {
+          "name": "is_active",
+          "type": "BOOLEAN",
+          "is_primary_key": false,
+          "is_nullable": false
+        }
+      ]
+    },
+    {
+      "table_name": "reservations",
+      "columns": [
+        {
+          "name": "id",
+          "type": "INTEGER",
+          "is_primary_key": true,
+          "is_nullable": false
+        },
+        {
+          "name": "guest_id",
+          "type": "INTEGER",
+          "is_primary_key": false,
+          "is_nullable": false
+        },
+        {
+          "name": "room_id",
+          "type": "INTEGER",
+          "is_primary_key": false,
+          "is_nullable": false
+        },
+        {
+          "name": "check_in_date",
+          "type": "DATE",
+          "is_primary_key": false,
+          "is_nullable": false
+        },
+        {
+          "name": "check_out_date",
+          "type": "DATE",
+          "is_primary_key": false,
+          "is_nullable": false
+        },
+        {
+          "name": "total_price",
+          "type": "REAL",
+          "is_primary_key": false,
+          "is_nullable": false
+        },
+        {
+          "name": "status",
+          "type": "TEXT",
+          "is_primary_key": false,
+          "is_nullable": false
+        },
+        {
+          "name": "created_at",
+          "type": "DATETIME",
+          "is_primary_key": false,
+          "is_nullable": false
+        },
+        {
+          "name": "updated_at",
+          "type": "DATETIME",
+          "is_primary_key": false,
+          "is_nullable": false
+        }
+      ]
+    },
+    {
+      "table_name": "guests",
+      "columns": [
+        {
+          "name": "id",
+          "type": "INTEGER",
+          "is_primary_key": true,
+          "is_nullable": false
+        },
+        {
+          "name": "first_name",
+          "type": "TEXT",
+          "is_primary_key": false,
+          "is_nullable": false
+        },
+        {
+          "name": "last_name",
+          "type": "TEXT",
+          "is_primary_key": false,
+          "is_nullable": false
+        },
+        {
+          "name": "email",
+          "type": "TEXT",
+          "is_primary_key": false,
+          "is_nullable": false
+        },
+        {
+          "name": "phone",
+          "type": "TEXT",
+          "is_primary_key": false,
+          "is_nullable": true
+        },
+        {
+          "name": "password_hash",
+          "type": "TEXT",
+          "is_primary_key": false,
+          "is_nullable": false
+        },
+        {
+          "name": "created_at",
+          "type": "DATETIME",
+          "is_primary_key": false,
+          "is_nullable": false
+        }
+      ]
+    }
+  ],
+  "folder_structure": {
+    "backend": [
+      "app",
+      "app/models",
+      "app/schemas",
+      "app/services",
+      "app/routes",
+      "app/utils",
+      "app/config",
+      "app/dependencies"
+    ]
+  },
+  "frontend_structure": {
+    "pages": [
+      "Home",
+      "RoomDetails",
+      "BookingForm",
+      "GuestDashboard",
+      "Login",
+      "Register"
+    ],
+    "components": [
+      "Header",
+      "Footer",
+      "SearchBar",
+      "RoomList",
+      "RoomCard",
+      "BookingForm",
+      "ReservationList",
+      "ReservationItem",
+      "LoginForm",
+      "RegisterForm",
+      "ProfileInfo",
+      "DatePicker",
+      "PriceSummary",
+      "NotificationToast",
+      "Pagination"
+    ]
+  }
+}

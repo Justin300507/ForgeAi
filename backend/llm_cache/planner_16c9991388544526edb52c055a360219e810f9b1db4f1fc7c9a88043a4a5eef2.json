@@ -1,0 +1,139 @@
+{
+  "project_name": "DealHive",
+  "description": "A web platform that aggregates coupons and deals from multiple merchants, organized by categories, allowing users to discover, save, and use discounts while providing merchants a simple interface to publish offers.",
+  "target_users": [
+    "Online shoppers seeking discounts",
+    "Small and medium merchants wanting to promote deals",
+    "Affiliate marketers looking for deal sources"
+  ],
+  "core_features": [
+    "Unified list of deals from many merchants",
+    "Search and filter deals by category, location, and discount amount",
+    "Display coupon codes with copy\u2011to\u2011clipboard functionality",
+    "User accounts with saved favorite deals",
+    "Admin dashboard for CRUD of merchants, deals, and categories"
+  ],
+  "future_features": [
+    "Personalized deal recommendations based on user behavior",
+    "Email newsletter with curated deals",
+    "Mobile app push notifications for time\u2011limited offers"
+  ],
+  "tech_stack": [
+    "FastAPI",
+    "React",
+    "SQLite",
+    "Pydantic",
+    "SQLAlchemy"
+  ],
+  "database_entities": [
+    {
+      "name": "Merchant",
+      "fields": [
+        "id",
+        "name",
+        "website_url",
+        "logo_url",
+        "description",
+        "location"
+      ]
+    },
+    {
+      "name": "Deal",
+      "fields": [
+        "id",
+        "title",
+        "description",
+        "discount_percent",
+        "coupon_code",
+        "expiry_date",
+        "url",
+        "is_active",
+        "merchant_id",
+        "category_id"
+      ]
+    },
+    {
+      "name": "Category",
+      "fields": [
+        "id",
+        "name",
+        "description"
+      ]
+    }
+  ],
+  "api_modules": [
+    {
+      "name": "Merchant API",
+      "endpoints": [
+        "/merchants",
+        "/merchants/{id}",
+        "/merchants",
+        "/merchants/{id}",
+        "/merchants/{id}"
+      ]
+    },
+    {
+      "name": "Deal API",
+      "endpoints": [
+        "/deals",
+        "/deals/{id}",
+        "/deals",
+        "/deals/{id}",
+        "/deals/{id}"
+      ]
+    },
+    {
+      "name": "Category API",
+      "endpoints": [
+        "/categories",
+        "/categories/{id}",
+        "/categories",
+        "/categories/{id}",
+        "/categories/{id}"
+      ]
+    }
+  ],
+  "pages": [
+    "Home \u2013 browse latest deals",
+    "Deal Detail \u2013 view coupon and copy code",
+    "Category View \u2013 filter deals by category",
+    "Merchant Profile \u2013 list deals from a merchant",
+    "Admin Dashboard \u2013 manage merchants, deals, categories"
+  ],
+  "backend_modules": [
+    "Authentication",
+    "Merchant Management",
+    "Deal Management",
+    "Category Management",
+    "Search Service"
+  ],
+  "roadmap": [
+    {
+      "phase": "Phase 1 \u2013 MVP",
+      "milestones": [
+        "Set up FastAPI backend with SQLite",
+        "Implement Merchant, Deal, Category models and CRUD APIs",
+        "Create React UI for Home, Deal Detail, Category, and Merchant pages",
+        "Basic admin authentication and dashboard"
+      ]
+    },
+    {
+      "phase": "Phase 2 \u2013 Growth",
+      "milestones": [
+        "Add user registration and saved favorites feature",
+        "Implement full\u2011text search and filtering",
+        "Introduce coupon code copy functionality and deal expiration handling",
+        "Deploy initial marketing site and SEO optimization"
+      ]
+    },
+    {
+      "phase": "Phase 3 \u2013 Scale",
+      "milestones": [
+        "Build recommendation engine for personalized deals",
+        "Launch email newsletter and push notification service",
+        "Prepare mobile\u2011responsive design and PWA support",
+        "Add analytics and reporting for merchant performance"
+      ]
+    }
+  ]
+}

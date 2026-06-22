@@ -1,0 +1,137 @@
+{
+  "project_name": "RealtimeChat",
+  "description": "A web\u2011based real\u2011time chat platform offering public and private rooms, direct one\u2011to\u2011one messaging, and live user presence indicators.",
+  "target_users": [
+    "General consumers",
+    "Remote teams",
+    "Gaming communities"
+  ],
+  "core_features": [
+    "Real\u2011time chat rooms",
+    "Direct private messaging",
+    "Live user presence status (online, offline, typing)",
+    "Message history with pagination",
+    "User authentication and profile management"
+  ],
+  "future_features": [
+    "File sharing within chats",
+    "Emoji reactions to messages",
+    "Push notifications for new messages"
+  ],
+  "tech_stack": [
+    "FastAPI",
+    "React",
+    "SQLite"
+  ],
+  "database_entities": [
+    {
+      "name": "User",
+      "fields": [
+        "id",
+        "username",
+        "email",
+        "password_hash",
+        "status",
+        "avatar_url",
+        "created_at",
+        "last_active_at"
+      ]
+    },
+    {
+      "name": "ChatRoom",
+      "fields": [
+        "id",
+        "name",
+        "is_private",
+        "owner_id",
+        "created_at"
+      ]
+    },
+    {
+      "name": "Message",
+      "fields": [
+        "id",
+        "sender_id",
+        "room_id",
+        "recipient_id",
+        "content",
+        "timestamp",
+        "is_deleted"
+      ]
+    }
+  ],
+  "api_modules": [
+    {
+      "name": "User",
+      "endpoints": [
+        "/users",
+        "/users/{id}",
+        "/users/{id}/status",
+        "/auth/login",
+        "/auth/logout"
+      ]
+    },
+    {
+      "name": "ChatRoom",
+      "endpoints": [
+        "/rooms",
+        "/rooms/{id}",
+        "/rooms/{id}/join",
+        "/rooms/{id}/leave"
+      ]
+    },
+    {
+      "name": "Message",
+      "endpoints": [
+        "/messages",
+        "/rooms/{room_id}/messages",
+        "/messages/{id}",
+        "/direct/{user_id}/messages"
+      ]
+    }
+  ],
+  "pages": [
+    "Login",
+    "Register",
+    "Chat Home",
+    "Chat Room",
+    "Direct Message"
+  ],
+  "backend_modules": [
+    "Authentication",
+    "User Management",
+    "Room Management",
+    "Message Handling",
+    "Presence Service"
+  ],
+  "roadmap": [
+    {
+      "phase": "MVP",
+      "milestones": [
+        "Implement user registration and login",
+        "Create chat room CRUD operations",
+        "Enable real\u2011time messaging via WebSocket",
+        "Add direct messaging support",
+        "Display online/offline status"
+      ]
+    },
+    {
+      "phase": "Feature Expansion",
+      "milestones": [
+        "Introduce message pagination and search",
+        "Add profile editing and avatar upload",
+        "Implement typing indicators",
+        "Support private rooms"
+      ]
+    },
+    {
+      "phase": "Scaling & Enhancements",
+      "milestones": [
+        "Integrate file sharing",
+        "Add emoji reactions",
+        "Deploy push notification service",
+        "Optimize database indexing for large chat histories"
+      ]
+    }
+  ]
+}

@@ -1,12 +1,15 @@
+from app.prompts.shared_contract import FASTAPI_CONTRACT
+
+
 def build_fixer_prompt(
-file_path,
-file_content,
-errors
+    file_path,
+    file_content,
+    errors
 ):
     error_text = "\n".join(
-    f"- {e}"
-    for e in errors
-)
+        f"- {e}"
+        for e in errors
+    )
 
     return f"""
 
@@ -122,26 +125,7 @@ If repairing requirements.txt:
 
 Return the ENTIRE corrected requirements.txt content.
 
-FASTAPI RULES
-
-* Use FastAPI only.
-* Use APIRouter.
-* Never generate Flask.
-* Never generate Django.
-* Never generate Blueprint.
-* Use imports beginning with app.
-
-Valid:
-
-from app.routes.user_routes import user_router
-from app.services.user_service import create_user
-from app.models.user import User
-
-Invalid:
-
-from routes.user_routes import user_router
-from services.user_service import create_user
-from models.user import User
+{FASTAPI_CONTRACT}
 
 REACT RULES
 
@@ -177,8 +161,9 @@ OUTPUT RULES
 * No code fences
 * No text before JSON
 * No text after JSON
-* Escape quotes correctly
-* Escape backslashes correctly
+* Only escape these characters: \\" \\\\ \\n \\t \\r
+* NEVER put a backslash before any other character (e.g. @, (, ))
+* A decorator like @user_router.get(...) needs NO backslash before @
 
 Return valid JSON only.
 """

@@ -1,0 +1,113 @@
+{
+  "project_name": "SimpleTodo",
+  "description": "A lightweight web application for managing personal tasks with priority levels and due dates, allowing users to create, edit, complete, and organize their to\u2011do items efficiently.",
+  "target_users": [
+    "Busy professionals",
+    "Students",
+    "Freelancers",
+    "Individuals seeking a minimalistic task manager"
+  ],
+  "core_features": [
+    "Create, edit, and delete tasks",
+    "Mark tasks as completed",
+    "Assign priority levels (Low, Medium, High)",
+    "Set due dates and view upcoming tasks",
+    "Sort and filter tasks by priority and due date"
+  ],
+  "future_features": [
+    "Recurring tasks",
+    "Task categories and tags",
+    "Email reminders for upcoming due dates"
+  ],
+  "tech_stack": [
+    "FastAPI",
+    "React",
+    "SQLite"
+  ],
+  "database_entities": [
+    {
+      "name": "User",
+      "fields": [
+        "id",
+        "email",
+        "hashed_password",
+        "created_at"
+      ]
+    },
+    {
+      "name": "Task",
+      "fields": [
+        "id",
+        "user_id",
+        "title",
+        "description",
+        "priority",
+        "due_date",
+        "completed",
+        "created_at",
+        "updated_at"
+      ]
+    }
+  ],
+  "api_modules": [
+    {
+      "name": "users",
+      "endpoints": [
+        "GET /users",
+        "POST /users",
+        "GET /users/{id}",
+        "PUT /users/{id}",
+        "DELETE /users/{id}"
+      ]
+    },
+    {
+      "name": "tasks",
+      "endpoints": [
+        "GET /tasks",
+        "POST /tasks",
+        "GET /tasks/{id}",
+        "PUT /tasks/{id}",
+        "DELETE /tasks/{id}"
+      ]
+    }
+  ],
+  "pages": [
+    "Login",
+    "Register",
+    "Task List",
+    "Task Form (Create/Edit)"
+  ],
+  "backend_modules": [
+    "Authentication",
+    "User Management",
+    "Task Management"
+  ],
+  "roadmap": [
+    {
+      "phase": "Phase 1: MVP Development",
+      "milestones": [
+        "Initialize repository and project structure",
+        "Implement user registration and login",
+        "Develop task CRUD endpoints with priority and due date fields",
+        "Build basic UI for task list and task form",
+        "Deploy initial version to a staging environment"
+      ]
+    },
+    {
+      "phase": "Phase 2: Enhancements",
+      "milestones": [
+        "Add task completion toggle in UI and API",
+        "Implement sorting and filtering by priority and due date",
+        "Improve responsive design and user experience"
+      ]
+    },
+    {
+      "phase": "Phase 3: Future Features",
+      "milestones": [
+        "Introduce recurring task functionality",
+        "Add support for task categories and tags",
+        "Implement email reminder notifications for upcoming due dates"
+      ]
+    }
+  ]
+}

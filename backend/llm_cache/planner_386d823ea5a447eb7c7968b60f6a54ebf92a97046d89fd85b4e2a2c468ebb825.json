@@ -1,0 +1,126 @@
+{
+  "project_name": "HarmonyPlay Playlist Manager",
+  "description": "A web application that lets users organize their music collection, create and edit playlists, and explore songs by genre, artist, or album. Includes user accounts, search, and basic music library management.",
+  "target_users": [
+    "Music enthusiasts",
+    "Casual listeners",
+    "Independent artists"
+  ],
+  "core_features": [
+    "User registration, login, and profile management",
+    "Create, edit, and delete personal songs",
+    "Create and manage playlists with add/remove songs",
+    "Browse and filter songs by genre, artist, or album",
+    "Search across songs and playlists"
+  ],
+  "future_features": [
+    "Collaborative playlists with shared editing",
+    "Streaming integration to play songs from external services",
+    "Personalized recommendations based on listening history"
+  ],
+  "tech_stack": [
+    "FastAPI",
+    "React",
+    "SQLite"
+  ],
+  "database_entities": [
+    {
+      "name": "User",
+      "fields": [
+        "username",
+        "email",
+        "password_hash",
+        "created_at"
+      ]
+    },
+    {
+      "name": "Song",
+      "fields": [
+        "title",
+        "duration_seconds",
+        "artist_name",
+        "album",
+        "genre",
+        "release_year",
+        "owner_user_id"
+      ]
+    },
+    {
+      "name": "Playlist",
+      "fields": [
+        "name",
+        "description",
+        "owner_user_id",
+        "created_at"
+      ]
+    }
+  ],
+  "api_modules": [
+    {
+      "name": "User",
+      "endpoints": [
+        "/users",
+        "/users/{id}",
+        "/auth/register",
+        "/auth/login"
+      ]
+    },
+    {
+      "name": "Song",
+      "endpoints": [
+        "/songs",
+        "/songs/{id}",
+        "/songs/search"
+      ]
+    },
+    {
+      "name": "Playlist",
+      "endpoints": [
+        "/playlists",
+        "/playlists/{id}",
+        "/playlists/{id}/songs"
+      ]
+    }
+  ],
+  "pages": [
+    "Login / Register",
+    "Dashboard (song library)",
+    "Song Detail & Edit",
+    "Playlist Management",
+    "Search & Browse"
+  ],
+  "backend_modules": [
+    "Authentication",
+    "User Management",
+    "Song Management",
+    "Playlist Management",
+    "Search Service"
+  ],
+  "roadmap": [
+    {
+      "phase": "Phase 1: MVP",
+      "milestones": [
+        "Project repository setup with FastAPI, React, SQLite",
+        "Implement authentication (register, login)",
+        "CRUD APIs for Song and Playlist",
+        "Basic UI for dashboard, song detail, and playlist pages"
+      ]
+    },
+    {
+      "phase": "Phase 2: Enhanced Browsing & Search",
+      "milestones": [
+        "Add genre, artist, album filters",
+        "Implement search endpoint and UI",
+        "Improve UI/UX for browsing songs and playlists"
+      ]
+    },
+    {
+      "phase": "Phase 3: Future Features",
+      "milestones": [
+        "Collaborative playlist sharing",
+        "Integrate external streaming playback",
+        "Build recommendation engine based on user activity"
+      ]
+    }
+  ]
+}

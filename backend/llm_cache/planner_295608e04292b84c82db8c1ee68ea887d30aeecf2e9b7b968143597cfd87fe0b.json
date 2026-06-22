@@ -1,0 +1,128 @@
+{
+  "project_name": "Student Grade Tracker",
+  "description": "A web application that lets students organize their subjects and assignments, record scores, and automatically compute GPA, providing a clear academic performance dashboard.",
+  "target_users": [
+    "High school students",
+    "College students",
+    "Academic advisors"
+  ],
+  "core_features": [
+    "Subject management (add, edit, delete)",
+    "Assignment management with score entry",
+    "Per-subject grade breakdown",
+    "Automatic GPA calculation and display",
+    "Dashboard showing upcoming assignments and overall GPA"
+  ],
+  "future_features": [
+    "CSV import/export of grades",
+    "Support for multiple semesters/terms",
+    "Sharing grades with teachers or parents"
+  ],
+  "tech_stack": [
+    "FastAPI",
+    "React",
+    "SQLite"
+  ],
+  "database_entities": [
+    {
+      "name": "Student",
+      "fields": [
+        "id",
+        "name",
+        "email",
+        "enrollment_year"
+      ]
+    },
+    {
+      "name": "Subject",
+      "fields": [
+        "id",
+        "name",
+        "code",
+        "credit_hours"
+      ]
+    },
+    {
+      "name": "Assignment",
+      "fields": [
+        "id",
+        "subject_id",
+        "title",
+        "due_date",
+        "max_score",
+        "earned_score",
+        "weight"
+      ]
+    }
+  ],
+  "api_modules": [
+    {
+      "name": "Student",
+      "endpoints": [
+        "/students",
+        "/students/{id}"
+      ]
+    },
+    {
+      "name": "Subject",
+      "endpoints": [
+        "/subjects",
+        "/subjects/{id}"
+      ]
+    },
+    {
+      "name": "Assignment",
+      "endpoints": [
+        "/assignments",
+        "/assignments/{id}"
+      ]
+    }
+  ],
+  "pages": [
+    "Login",
+    "Dashboard",
+    "Subjects",
+    "Assignments",
+    "GPA Report"
+  ],
+  "backend_modules": [
+    "Authentication",
+    "Student Management",
+    "Subject Management",
+    "Assignment Management",
+    "GPA Calculation"
+  ],
+  "roadmap": [
+    {
+      "phase": "Phase 1 \u2013 MVP",
+      "milestones": [
+        "Initialize repository and CI pipeline",
+        "Design SQLite schema for Student, Subject, Assignment",
+        "Implement FastAPI endpoints with Pydantic models",
+        "Add authentication with JWT",
+        "Create React UI for login and dashboard",
+        "Implement CRUD for subjects and assignments",
+        "Integrate GPA calculation logic"
+      ]
+    },
+    {
+      "phase": "Phase 2 \u2013 Feature Expansion",
+      "milestones": [
+        "Responsive UI improvements",
+        "Add assignment reminder notifications",
+        "Implement CSV import/export for grades",
+        "Introduce semester/term selection",
+        "Refine GPA display with weighted credits"
+      ]
+    },
+    {
+      "phase": "Phase 3 \u2013 Advanced Capabilities",
+      "milestones": [
+        "Develop teacher/parent sharing portal",
+        "Add role-based access control",
+        "Create mobile-friendly progressive web app",
+        "Implement analytics for grade trends"
+      ]
+    }
+  ]
+}

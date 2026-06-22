@@ -8,3 +8,4 @@ class RuntimeResult(BaseModel):
     stdout: str = ""
     stderr: str = ""
     startup_time: float = 0.0
+    behavioral_issues: list = []

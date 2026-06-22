@@ -1,0 +1,134 @@
+{
+  "project_name": "Sportify Courts",
+  "description": "A web application that lets users browse sports courts, book time slots, and manage memberships, while providing administrators tools to control court availability and member plans.",
+  "target_users": [
+    "Sports enthusiasts",
+    "Club members",
+    "Facility administrators"
+  ],
+  "core_features": [
+    "Browse available courts and time slots",
+    "Book and cancel court reservations",
+    "View personal booking history",
+    "Manage membership details and renewals",
+    "Admin control of court schedules and availability"
+  ],
+  "future_features": [
+    "Online payment integration",
+    "Waitlist and push notification system",
+    "Analytics dashboard for usage and revenue"
+  ],
+  "tech_stack": [
+    "FastAPI",
+    "React",
+    "SQLite"
+  ],
+  "database_entities": [
+    {
+      "name": "Court",
+      "fields": [
+        "id",
+        "name",
+        "surface_type",
+        "location",
+        "hourly_rate"
+      ]
+    },
+    {
+      "name": "Member",
+      "fields": [
+        "id",
+        "full_name",
+        "email",
+        "phone_number",
+        "membership_type",
+        "membership_expiry"
+      ]
+    },
+    {
+      "name": "Booking",
+      "fields": [
+        "id",
+        "member_id",
+        "court_id",
+        "start_time",
+        "end_time",
+        "status",
+        "created_at"
+      ]
+    }
+  ],
+  "api_modules": [
+    {
+      "name": "Court",
+      "endpoints": [
+        "/courts",
+        "/courts/{id}",
+        "/courts",
+        "/courts/{id}",
+        "/courts/{id}"
+      ]
+    },
+    {
+      "name": "Member",
+      "endpoints": [
+        "/members",
+        "/members/{id}",
+        "/members",
+        "/members/{id}",
+        "/members/{id}"
+      ]
+    },
+    {
+      "name": "Booking",
+      "endpoints": [
+        "/bookings",
+        "/bookings/{id}",
+        "/bookings",
+        "/bookings/{id}",
+        "/bookings/{id}"
+      ]
+    }
+  ],
+  "pages": [
+    "Login",
+    "Dashboard",
+    "Courts Catalog",
+    "Booking Form",
+    "Membership Management"
+  ],
+  "backend_modules": [
+    "Authentication",
+    "User Management",
+    "Court Management",
+    "Booking Management",
+    "Membership Management"
+  ],
+  "roadmap": [
+    {
+      "phase": "Phase 1 \u2013 MVP",
+      "milestones": [
+        "Implement authentication and member registration",
+        "Create court catalog with availability view",
+        "Enable booking creation and cancellation",
+        "Basic admin panel for court schedule management"
+      ]
+    },
+    {
+      "phase": "Phase 2 \u2013 Feature Expansion",
+      "milestones": [
+        "Add membership renewal and plan management",
+        "Integrate email notifications for bookings",
+        "Develop admin reporting of court usage"
+      ]
+    },
+    {
+      "phase": "Phase 3 \u2013 Scaling & Monetization",
+      "milestones": [
+        "Integrate online payment gateway",
+        "Introduce waitlist and push notifications",
+        "Launch analytics dashboard for owners"
+      ]
+    }
+  ]
+}

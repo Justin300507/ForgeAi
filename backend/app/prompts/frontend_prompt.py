@@ -1,15 +1,16 @@
+import json
+
+
 def build_frontend_prompt(architecture):
 
     return f"""
-You are ForgeAI Frontend Generator.
+You are ForgeAI Frontend Generator. Generate a high-quality, visually real React frontend.
 
 Architecture:
 
-{architecture}
+{json.dumps(architecture, indent=2)}
 
 Return ONLY valid JSON.
-
-Generate a MINIMAL runnable React frontend.
 
 Format:
 
@@ -22,79 +23,145 @@ Format:
   ]
 }}
 
-RULES:
+========================================
+FILE RULES
+========================================
 
-- Return JSON only
-- No markdown
-- No explanations
-- No code fences
-- No text outside JSON
-
-FILE RULES:
-
-- Generate at most 5 files total
+- Generate every page and every component listed in frontend_structure
+- Maximum 25 files total
 - Generate only:
   - src/App.jsx
   - src/pages/*.jsx
   - src/components/*.jsx
+- NEVER import a page or component you did not also generate in this same response.
+  If you must cut scope, remove the import AND the JSX usage together.
+- Every path must: start with src/, use forward slashes, contain only ASCII, end with .jsx
 
-- Every path must:
-  - start with src/
-  - use forward slashes
-  - contain only ASCII characters
-  - end with .jsx
+VALID:   src/App.jsx  |  src/pages/Login.jsx  |  src/components/Header.jsx
+INVALID: src\\pages\\Login.jsx  |  src/pages/Login.js  |  src/pages/Login.tsx
 
-VALID:
+If frontend_structure.components is empty:
+- Do NOT create standalone reusable components
+- Pages render their own JSX directly
 
-src/App.jsx
-src/pages/Login.jsx
-src/components/Header.jsx
+========================================
+UI QUALITY RULES — MANDATORY
+========================================
 
-INVALID:
+Every generated component MUST look real and functional. No skeleton components.
+No placeholder text. No empty divs.
 
-src\\pages\\Login.jsx
-src/pages/Login.js
-src/pages/Login.tsx
+Use inline styles for all visual design. No external CSS files. No Tailwind classes.
 
-CODE RULES:
+CONTAINER PATTERN — use this wrapper on every page:
+  <div style={{{{margin:"0 auto",maxWidth:"900px",padding:"2rem",fontFamily:"sans-serif"}}}}>
 
-- Keep every file under 20 lines
-- Keep JSX extremely small
-- No CSS
-- No Tailwind
-- No styling
+LOGIN PAGE — MUST contain ALL of these:
+  - <h1> or <h2> with the app name or "Sign In"
+  - <input type="email" placeholder="Email" .../>
+  - <input type="password" placeholder="Password" .../>
+  - <button> with "Login" or "Sign In" text
+  - All inputs must have value/onChange wired to useState
+
+REGISTER PAGE — MUST contain ALL of these:
+  - <h1> or <h2> with "Create Account" or "Sign Up"
+  - <input> for name/username
+  - <input type="email"> for email
+  - <input type="password"> for password
+  - <button> with "Register" or "Create Account" text
+  - All inputs must have value/onChange wired to useState
+
+DASHBOARD / HOME PAGE — MUST contain ALL of these:
+  - A visible heading (h1 or h2) describing what the page shows
+  - At least one interactive element (button, form, or clickable card)
+  - A content area with real placeholder data (at least 2-3 items/cards)
+  - Navigation links or a header bar
+
+LIST / INDEX PAGES (TaskList, NoteList, etc.) — MUST contain:
+  - A heading
+  - A "New [Resource]" or "Add [Resource]" button
+  - At least 2 hardcoded example items rendered in a card or list style
+    (use useState with an initial array — do not leave the list empty)
+
+FORM PAGES (Create, Edit) — MUST contain:
+  - A heading
+  - All relevant <input> or <textarea> fields for that resource
+  - A submit <button>
+  - All inputs wired to useState
+
+CARD STYLE for list items (use this or similar):
+  <div style={{{{border:"1px solid #ddd",borderRadius:"8px",padding:"1rem",marginBottom:"1rem",background:"#fff"}}}}>
+
+BUTTON STYLE (use this or similar):
+  <button style={{{{background:"#4f46e5",color:"#fff",border:"none",borderRadius:"6px",padding:"0.5rem 1.2rem",cursor:"pointer"}}}}>
+
+HEADER / NAV pattern:
+  <nav style={{{{background:"#1e1b4b",color:"#fff",padding:"1rem 2rem",display:"flex",justifyContent:"space-between",alignItems:"center"}}}}>
+
+========================================
+CODE RULES
+========================================
+
+- Use React.useState for local state in every interactive component
+- Use arrow functions: const MyComponent = () => {{ ... }}
+- Keep file length reasonable: aim for 40-120 lines per file
 - No external libraries except React and react-router-dom
 - No comments
-- No placeholder text blocks
+- Import React at the top of every file: import React, {{ useState }} from 'react';
+- Use Link from react-router-dom for navigation between pages
 
-IMPORT RULES:
+========================================
+IMPORT RULES
+========================================
 
 - Import only generated files
-- Every imported page must exist
-- Every imported component must exist
-- Do not import unused files
+- Every imported page must exist in this response
+- Every imported component must exist in this response
+- Every page and component MUST use: export default ComponentName
+- Import default exports WITHOUT curly braces:
+  Valid:   import LoginPage from './pages/Login';
+  Invalid: import {{ LoginPage }} from './pages/Login';
+- NEVER mix named-import syntax with a default export
 
-APP RULES:
+========================================
+APP.JSX RULES
+========================================
 
-- App.jsx must be generated
-- App.jsx may import up to 3 pages
-- App.jsx may import up to 2 components
-- Use BrowserRouter only if needed
+- App.jsx MUST be generated
+- Use BrowserRouter + Routes + Route from react-router-dom
+- Wire every generated page to a route path
+- Include a basic nav or redirect from "/" to the most logical landing page
 
-RELIABILITY RULES:
+========================================
+JSON ESCAPE RULES
+========================================
 
-- Prioritize valid JSON over completeness
-- Prioritize short files over feature richness
-- Do not generate large JSX trees
-- Do not generate long forms
-- Do not generate sample data
+- Every file's content is a JSON string value
+- Escape newlines as \\n
+- Escape double quotes as \\"
+- Escape backslashes as \\\\
+- Only escape these characters: \\" \\\\ \\n \\t \\r
+- NEVER put a backslash before any other character
+- Do not output a raw, literal line break inside a JSON string
+
+========================================
+RELIABILITY RULES
+========================================
+
+- Prioritize valid JSON above all else
+- If you must choose between feature richness and JSON validity, choose validity
+- Test every import: if the target file is not in your response, remove the import
+- Test every string: ensure every " inside JSX content is escaped as \\"
 
 Before returning:
 
-1. Verify all imports exist.
-2. Verify all paths are valid.
-3. Verify JSON is valid.
-4. Verify every quote is escaped.
+1. Verify all imports reference files you generated in this response.
+2. Verify all paths are valid (src/*.jsx format).
+3. Verify every import matches its target's export style (default vs named).
+4. Verify JSON is valid — no raw newlines in string values.
+5. Verify every Login/Register page has real input fields.
+6. Verify every list page has at least 2 example items.
+7. Verify every page has a visible heading.
 
 Return JSON only.
 """

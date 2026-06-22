@@ -4,9 +4,7 @@ from groq import Groq
 
 
 client = Groq(
-    api_key=os.getenv(
-        "GROQ_API_KEY"
-    )
+    api_key=os.getenv("GROQ_API_KEY")
 )
 
 
@@ -26,9 +24,9 @@ def generate(
         max_tokens=max_tokens
     )
 
-    return (
-        response
-        .choices[0]
-        .message
-        .content
-    )
+    content = response.choices[0].message.content
+
+    if not content:
+        raise Exception("Groq returned empty content")
+
+    return content

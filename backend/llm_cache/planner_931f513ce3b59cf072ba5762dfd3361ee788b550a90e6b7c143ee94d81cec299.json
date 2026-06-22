@@ -1,0 +1,130 @@
+{
+  "project_name": "FitPlan",
+  "description": "A web application that lets users browse exercises, build personalized workout routines, log their sessions, and track progress over time.",
+  "target_users": [
+    "Fitness enthusiasts",
+    "Personal trainers",
+    "Beginners looking for guided workouts"
+  ],
+  "core_features": [
+    "Browse exercise catalog",
+    "Create and save workout routines",
+    "Log workout sessions",
+    "View progress charts",
+    "Personalized dashboard"
+  ],
+  "future_features": [
+    "Social sharing of workouts",
+    "AI-powered workout recommendations",
+    "Wearable device integration"
+  ],
+  "tech_stack": [
+    "FastAPI",
+    "React",
+    "SQLite",
+    "Pydantic",
+    "SQLAlchemy"
+  ],
+  "database_entities": [
+    {
+      "name": "User",
+      "fields": [
+        "id",
+        "email",
+        "hashed_password",
+        "name",
+        "created_at"
+      ]
+    },
+    {
+      "name": "Exercise",
+      "fields": [
+        "id",
+        "name",
+        "muscle_group",
+        "equipment",
+        "difficulty",
+        "description"
+      ]
+    },
+    {
+      "name": "Workout",
+      "fields": [
+        "id",
+        "user_id",
+        "name",
+        "exercises",
+        "date",
+        "notes",
+        "is_template",
+        "created_at"
+      ]
+    }
+  ],
+  "api_modules": [
+    {
+      "name": "User",
+      "endpoints": [
+        "/users",
+        "/users/{id}"
+      ]
+    },
+    {
+      "name": "Exercise",
+      "endpoints": [
+        "/exercises",
+        "/exercises/{id}"
+      ]
+    },
+    {
+      "name": "Workout",
+      "endpoints": [
+        "/workouts",
+        "/workouts/{id}"
+      ]
+    }
+  ],
+  "pages": [
+    "Login",
+    "Dashboard",
+    "Exercise Catalog",
+    "Routine Builder",
+    "Progress Dashboard"
+  ],
+  "backend_modules": [
+    "Authentication",
+    "User Management",
+    "Exercise Management",
+    "Workout Management",
+    "Progress Analytics"
+  ],
+  "roadmap": [
+    {
+      "phase": "Phase 1 - MVP",
+      "milestones": [
+        "Set up repository, CI/CD, and project scaffolding",
+        "Implement user registration and login",
+        "Create CRUD for exercise catalog",
+        "Enable routine creation and workout logging",
+        "Build initial dashboard UI"
+      ]
+    },
+    {
+      "phase": "Phase 2 - Enhancements",
+      "milestones": [
+        "Add interactive progress chart visualizations",
+        "Introduce routine editing, duplication, and template saving",
+        "Implement search and filter for exercises",
+        "Improve responsive design and mobile experience"
+      ]
+    },
+    {
+      "phase": "Phase 3 - Expansion",
+      "milestones": [
+        "Enable social sharing of routines and logs",
+        "Integrate AI-powered workout recommendation engine",
+        "Add synchronization with popular wearable devices"
+      ]
+    }
+  ]
+}

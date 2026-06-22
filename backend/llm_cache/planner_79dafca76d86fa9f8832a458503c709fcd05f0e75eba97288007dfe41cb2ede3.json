@@ -1,0 +1,131 @@
+{
+  "project_name": "Library Lending System",
+  "description": "A web application that allows librarians to manage a catalog of books, register members, and track book loans, providing a simple interface for checking out and returning books.",
+  "target_users": [
+    "Librarians",
+    "Library Members"
+  ],
+  "core_features": [
+    "Manage book catalog (add, edit, delete, view)",
+    "Manage member records (register, edit, deactivate)",
+    "Record loans (checkout and return books)",
+    "Search books by title, author, or ISBN",
+    "View member loan history"
+  ],
+  "future_features": [
+    "Automated overdue notifications",
+    "Book reservation and hold system",
+    "Reporting dashboard for circulation statistics"
+  ],
+  "tech_stack": [
+    "FastAPI",
+    "React",
+    "SQLite"
+  ],
+  "database_entities": [
+    {
+      "name": "Book",
+      "fields": [
+        "id",
+        "title",
+        "author",
+        "isbn",
+        "published_year",
+        "total_copies",
+        "available_copies"
+      ]
+    },
+    {
+      "name": "Member",
+      "fields": [
+        "id",
+        "first_name",
+        "last_name",
+        "email",
+        "membership_date",
+        "is_active"
+      ]
+    },
+    {
+      "name": "Loan",
+      "fields": [
+        "id",
+        "book_id",
+        "member_id",
+        "loan_date",
+        "due_date",
+        "return_date",
+        "status"
+      ]
+    }
+  ],
+  "api_modules": [
+    {
+      "name": "Book",
+      "endpoints": [
+        "/books",
+        "/books/{id}",
+        "/books/search"
+      ]
+    },
+    {
+      "name": "Member",
+      "endpoints": [
+        "/members",
+        "/members/{id}"
+      ]
+    },
+    {
+      "name": "Loan",
+      "endpoints": [
+        "/loans",
+        "/loans/{id}",
+        "/loans/checkout",
+        "/loans/return"
+      ]
+    }
+  ],
+  "pages": [
+    "Login",
+    "Book Catalog",
+    "Member Management",
+    "Loan Management",
+    "Dashboard"
+  ],
+  "backend_modules": [
+    "Authentication",
+    "Book Management",
+    "Member Management",
+    "Loan Management",
+    "Search Service"
+  ],
+  "roadmap": [
+    {
+      "phase": "Phase 1: MVP",
+      "milestones": [
+        "Set up FastAPI backend with SQLite",
+        "Implement authentication and user sessions",
+        "Create CRUD APIs for Book, Member, and Loan",
+        "Build React UI for login, catalog, members, and loans",
+        "Enable basic search and loan history view"
+      ]
+    },
+    {
+      "phase": "Phase 2: Enhancements",
+      "milestones": [
+        "Add overdue detection and email notification service",
+        "Implement reservation workflow for unavailable books",
+        "Develop reporting endpoints for circulation statistics"
+      ]
+    },
+    {
+      "phase": "Phase 3: Polish & Scaling",
+      "milestones": [
+        "Improve UI/UX with responsive design",
+        "Add role\u2011based access control (admin vs staff)",
+        "Write unit and integration tests",
+        "Prepare deployment scripts and documentation"
+      ]
+    }
+  ]
+}
