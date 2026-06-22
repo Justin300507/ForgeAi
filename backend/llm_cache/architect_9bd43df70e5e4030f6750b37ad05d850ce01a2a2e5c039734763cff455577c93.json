@@ -1,0 +1,462 @@
+{
+  "api_endpoints": [
+    {
+      "method": "POST",
+      "path": "/auth/login",
+      "description": "Authenticate user and return JWT token",
+      "file": "app/routes/auth_routes.py"
+    },
+    {
+      "method": "GET",
+      "path": "/leagues",
+      "description": "List leagues with pagination and optional search",
+      "file": "app/routes/league_routes.py"
+    },
+    {
+      "method": "POST",
+      "path": "/leagues",
+      "description": "Create a new league",
+      "file": "app/routes/league_routes.py"
+    },
+    {
+      "method": "GET",
+      "path": "/leagues/{id}",
+      "description": "Get league details, including teams and current standings",
+      "file": "app/routes/league_routes.py"
+    },
+    {
+      "method": "PATCH",
+      "path": "/leagues/{id}",
+      "description": "Edit league information or archive the league",
+      "file": "app/routes/league_routes.py"
+    },
+    {
+      "method": "POST",
+      "path": "/teams",
+      "description": "Create a new team within a league and assign a coach",
+      "file": "app/routes/team_routes.py"
+    },
+    {
+      "method": "GET",
+      "path": "/teams/{id}",
+      "description": "Get team details, including roster and logo",
+      "file": "app/routes/team_routes.py"
+    },
+    {
+      "method": "PATCH",
+      "path": "/teams/{id}",
+      "description": "Edit team information and upload/change logo",
+      "file": "app/routes/team_routes.py"
+    },
+    {
+      "method": "POST",
+      "path": "/players",
+      "description": "Add a player to a team roster",
+      "file": "app/routes/player_routes.py"
+    },
+    {
+      "method": "GET",
+      "path": "/players/{id}",
+      "description": "Get player details and photo",
+      "file": "app/routes/player_routes.py"
+    },
+    {
+      "method": "PATCH",
+      "path": "/players/{id}",
+      "description": "Edit player data and upload/change headshot",
+      "file": "app/routes/player_routes.py"
+    },
+    {
+      "method": "POST",
+      "path": "/matches",
+      "description": "Schedule a new match fixture",
+      "file": "app/routes/match_routes.py"
+    },
+    {
+      "method": "PATCH",
+      "path": "/matches/{id}",
+      "description": "Edit match details or change status (e.g., mark as live or completed)",
+      "file": "app/routes/match_routes.py"
+    },
+    {
+      "method": "PATCH",
+      "path": "/matches/{id}/score",
+      "description": "Update live score for an ongoing match",
+      "file": "app/routes/match_routes.py"
+    },
+    {
+      "method": "POST",
+      "path": "/media/upload",
+      "description": "Upload team logos or player headshots, returning a stored URL",
+      "file": "app/routes/media_routes.py"
+    }
+  ],
+  "database_schema": [
+    {
+      "table_name": "users",
+      "columns": [
+        {
+          "name": "id",
+          "type": "INTEGER",
+          "is_primary_key": true,
+          "is_nullable": false
+        },
+        {
+          "name": "email",
+          "type": "VARCHAR(255)",
+          "is_primary_key": false,
+          "is_nullable": false
+        },
+        {
+          "name": "hashed_password",
+          "type": "VARCHAR(255)",
+          "is_primary_key": false,
+          "is_nullable": false
+        },
+        {
+          "name": "role",
+          "type": "VARCHAR(20)",
+          "is_primary_key": false,
+          "is_nullable": false
+        },
+        {
+          "name": "created_at",
+          "type": "DATETIME",
+          "is_primary_key": false,
+          "is_nullable": false
+        }
+      ]
+    },
+    {
+      "table_name": "leagues",
+      "columns": [
+        {
+          "name": "id",
+          "type": "INTEGER",
+          "is_primary_key": true,
+          "is_nullable": false
+        },
+        {
+          "name": "name",
+          "type": "VARCHAR(150)",
+          "is_primary_key": false,
+          "is_nullable": false
+        },
+        {
+          "name": "season_year",
+          "type": "INTEGER",
+          "is_primary_key": false,
+          "is_nullable": false
+        },
+        {
+          "name": "description",
+          "type": "TEXT",
+          "is_primary_key": false,
+          "is_nullable": true
+        },
+        {
+          "name": "created_by_user_id",
+          "type": "INTEGER",
+          "is_primary_key": false,
+          "is_nullable": false
+        },
+        {
+          "name": "is_archived",
+          "type": "BOOLEAN",
+          "is_primary_key": false,
+          "is_nullable": false
+        },
+        {
+          "name": "created_at",
+          "type": "DATETIME",
+          "is_primary_key": false,
+          "is_nullable": false
+        }
+      ]
+    },
+    {
+      "table_name": "teams",
+      "columns": [
+        {
+          "name": "id",
+          "type": "INTEGER",
+          "is_primary_key": true,
+          "is_nullable": false
+        },
+        {
+          "name": "league_id",
+          "type": "INTEGER",
+          "is_primary_key": false,
+          "is_nullable": false
+        },
+        {
+          "name": "name",
+          "type": "VARCHAR(150)",
+          "is_primary_key": false,
+          "is_nullable": false
+        },
+        {
+          "name": "coach_user_id",
+          "type": "INTEGER",
+          "is_primary_key": false,
+          "is_nullable": true
+        },
+        {
+          "name": "logo_url",
+          "type": "VARCHAR(255)",
+          "is_primary_key": false,
+          "is_nullable": true
+        },
+        {
+          "name": "created_at",
+          "type": "DATETIME",
+          "is_primary_key": false,
+          "is_nullable": false
+        }
+      ]
+    },
+    {
+      "table_name": "players",
+      "columns": [
+        {
+          "name": "id",
+          "type": "INTEGER",
+          "is_primary_key": true,
+          "is_nullable": false
+        },
+        {
+          "name": "team_id",
+          "type": "INTEGER",
+          "is_primary_key": false,
+          "is_nullable": false
+        },
+        {
+          "name": "first_name",
+          "type": "VARCHAR(100)",
+          "is_primary_key": false,
+          "is_nullable": false
+        },
+        {
+          "name": "last_name",
+          "type": "VARCHAR(100)",
+          "is_primary_key": false,
+          "is_nullable": false
+        },
+        {
+          "name": "jersey_number",
+          "type": "INTEGER",
+          "is_primary_key": false,
+          "is_nullable": false
+        },
+        {
+          "name": "position",
+          "type": "VARCHAR(50)",
+          "is_primary_key": false,
+          "is_nullable": false
+        },
+        {
+          "name": "date_of_birth",
+          "type": "DATE",
+          "is_primary_key": false,
+          "is_nullable": false
+        },
+        {
+          "name": "photo_url",
+          "type": "VARCHAR(255)",
+          "is_primary_key": false,
+          "is_nullable": true
+        },
+        {
+          "name": "created_at",
+          "type": "DATETIME",
+          "is_primary_key": false,
+          "is_nullable": false
+        }
+      ]
+    },
+    {
+      "table_name": "matches",
+      "columns": [
+        {
+          "name": "id",
+          "type": "INTEGER",
+          "is_primary_key": true,
+          "is_nullable": false
+        },
+        {
+          "name": "league_id",
+          "type": "INTEGER",
+          "is_primary_key": false,
+          "is_nullable": false
+        },
+        {
+          "name": "home_team_id",
+          "type": "INTEGER",
+          "is_primary_key": false,
+          "is_nullable": false
+        },
+        {
+          "name": "away_team_id",
+          "type": "INTEGER",
+          "is_primary_key": false,
+          "is_nullable": false
+        },
+        {
+          "name": "venue",
+          "type": "VARCHAR(200)",
+          "is_primary_key": false,
+          "is_nullable": false
+        },
+        {
+          "name": "scheduled_at",
+          "type": "DATETIME",
+          "is_primary_key": false,
+          "is_nullable": false
+        },
+        {
+          "name": "status",
+          "type": "VARCHAR(20)",
+          "is_primary_key": false,
+          "is_nullable": false
+        },
+        {
+          "name": "created_at",
+          "type": "DATETIME",
+          "is_primary_key": false,
+          "is_nullable": false
+        }
+      ]
+    },
+    {
+      "table_name": "scores",
+      "columns": [
+        {
+          "name": "match_id",
+          "type": "INTEGER",
+          "is_primary_key": true,
+          "is_nullable": false
+        },
+        {
+          "name": "home_goals",
+          "type": "INTEGER",
+          "is_primary_key": false,
+          "is_nullable": false
+        },
+        {
+          "name": "away_goals",
+          "type": "INTEGER",
+          "is_primary_key": false,
+          "is_nullable": false
+        },
+        {
+          "name": "updated_at",
+          "type": "DATETIME",
+          "is_primary_key": false,
+          "is_nullable": false
+        }
+      ]
+    },
+    {
+      "table_name": "standings",
+      "columns": [
+        {
+          "name": "league_id",
+          "type": "INTEGER",
+          "is_primary_key": true,
+          "is_nullable": false
+        },
+        {
+          "name": "team_id",
+          "type": "INTEGER",
+          "is_primary_key": true,
+          "is_nullable": false
+        },
+        {
+          "name": "points",
+          "type": "INTEGER",
+          "is_primary_key": false,
+          "is_nullable": false
+        },
+        {
+          "name": "played",
+          "type": "INTEGER",
+          "is_primary_key": false,
+          "is_nullable": false
+        },
+        {
+          "name": "won",
+          "type": "INTEGER",
+          "is_primary_key": false,
+          "is_nullable": false
+        },
+        {
+          "name": "drawn",
+          "type": "INTEGER",
+          "is_primary_key": false,
+          "is_nullable": false
+        },
+        {
+          "name": "lost",
+          "type": "INTEGER",
+          "is_primary_key": false,
+          "is_nullable": false
+        },
+        {
+          "name": "goal_difference",
+          "type": "INTEGER",
+          "is_primary_key": false,
+          "is_nullable": false
+        },
+        {
+          "name": "goals_for",
+          "type": "INTEGER",
+          "is_primary_key": false,
+          "is_nullable": false
+        },
+        {
+          "name": "goals_against",
+          "type": "INTEGER",
+          "is_primary_key": false,
+          "is_nullable": false
+        }
+      ]
+    }
+  ],
+  "folder_structure": {
+    "backend": [
+      "app/models",
+      "app/schemas",
+      "app/routes",
+      "app/services",
+      "app/utils",
+      "app/dependencies",
+      "app/config",
+      "app/main.py"
+    ]
+  },
+  "frontend_structure": {
+    "pages": [
+      "LoginPage",
+      "LeagueListPage",
+      "LeagueDetailPage",
+      "TeamDetailPage",
+      "PlayerDetailPage",
+      "MatchDetailPage",
+      "MatchLiveScorePage"
+    ],
+    "components": [
+      "Navbar",
+      "SearchBar",
+      "Pagination",
+      "LeagueCard",
+      "TeamCard",
+      "PlayerForm",
+      "TeamForm",
+      "MatchForm",
+      "ScoreLiveWidget",
+      "FileUpload",
+      "ToastNotification",
+      "ReconnectionBanner"
+    ]
+  }
+}

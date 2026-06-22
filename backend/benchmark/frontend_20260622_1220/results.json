@@ -1,0 +1,325 @@
+{
+  "timestamp": "20260622_1220",
+  "provider": "auto",
+  "summary": {
+    "avg_vision": 68.6,
+    "avg_forge": 77.0,
+    "builds_passed": 8,
+    "runtime_passed": 7,
+    "goal_met": true
+  },
+  "apps": [
+    {
+      "idx": 1,
+      "idea": "A project management tool with user login, projects, tasks, deadlines, and team members",
+      "project_name": "project_hub",
+      "project_path": "C:\\Users\\jerry\\onedrive\\Desktop\\forgeai\\generated_projects\\project_hub",
+      "forge_score": 100,
+      "vision_score": null,
+      "build_passed": true,
+      "playwright_passed": true,
+      "runtime_passed": true,
+      "validation_passed": true,
+      "vision_issues": [],
+      "error": null,
+      "elapsed": 85.3,
+      "screenshot_count": 2
+    },
+    {
+      "idx": 2,
+      "idea": "A gym tracker with workouts, exercises, sets, reps, and personal records",
+      "project_name": "gym_tracker",
+      "project_path": "C:\\Users\\jerry\\onedrive\\Desktop\\forgeai\\generated_projects\\gym_tracker",
+      "forge_score": 100,
+      "vision_score": 80,
+      "build_passed": true,
+      "playwright_passed": true,
+      "runtime_passed": true,
+      "validation_passed": true,
+      "vision_issues": [
+        {
+          "severity": "warning",
+          "page": "/register",
+          "description": "Page content is missing. Only the navigation bar is present."
+        }
+      ],
+      "error": null,
+      "elapsed": 60.5,
+      "screenshot_count": 2
+    },
+    {
+      "idx": 3,
+      "idea": "An e-commerce store with products, categories, cart, orders, and user accounts",
+      "project_name": "",
+      "project_path": "",
+      "forge_score": 0,
+      "vision_score": null,
+      "build_passed": false,
+      "playwright_passed": false,
+      "runtime_passed": false,
+      "validation_passed": false,
+      "vision_issues": [],
+      "error": "500: Architect returned invalid JSON.",
+      "elapsed": 6.1,
+      "screenshot_count": 0
+    },
+    {
+      "idx": 4,
+      "idea": "A habit tracker with daily habits, streaks, reminders, and progress charts",
+      "project_name": "habit_tracker_app",
+      "project_path": "C:\\Users\\jerry\\onedrive\\Desktop\\forgeai\\generated_projects\\habit_tracker_app",
+      "forge_score": 95,
+      "vision_score": 50,
+      "build_passed": true,
+      "playwright_passed": true,
+      "runtime_passed": true,
+      "validation_passed": true,
+      "vision_issues": [
+        {
+          "severity": "info",
+          "page": "/login",
+          "description": "The 'Sign In' heading could benefit from better vertical alignment and spacing relative to the input fields."
+        },
+        {
+          "severity": "info",
+          "page": "/login",
+          "description": "The 'Don't have an account?' text and 'Create one' link could be centered or aligned consistently with the form for better visual balance."
+        },
+        {
+          "severity": "warning",
+          "page": "/login",
+          "description": "The overall layout appears a bit sparse; adding some padding or margin around the login form could improve aesthetics."
+        },
+        {
+          "severity": "critical",
+          "page": "/register",
+          "description": "The /register page is almost entirely blank, showing only the header and footer, but no registration form or content."
+        }
+      ],
+      "error": null,
+      "elapsed": 57.1,
+      "screenshot_count": 2
+    },
+    {
+      "idx": 5,
+      "idea": "A restaurant reservation system with bookings, tables, time slots, and guest management",
+      "project_name": "restaurant_reservation_system",
+      "project_path": "C:\\Users\\jerry\\onedrive\\Desktop\\forgeai\\generated_projects\\restaurant_reservation_system",
+      "forge_score": 80,
+      "vision_score": 75,
+      "build_passed": true,
+      "playwright_passed": true,
+      "runtime_passed": false,
+      "validation_passed": true,
+      "vision_issues": [
+        {
+          "severity": "critical",
+          "page": "/login",
+          "description": "This page is expected to be a login page based on the route '/login', but it displays a restaurant listing. This indicates a routing or build configuration error."
+        },
+        {
+          "severity": "critical",
+          "page": "/register",
+          "description": "This page is expected to be a register page based on the route '/register', but it displays a restaurant listing. This indicates a routing or build configuration error."
+        }
+      ],
+      "error": null,
+      "elapsed": 458.6,
+      "screenshot_count": 2
+    },
+    {
+      "idx": 6,
+      "idea": "A learning management system with courses, lessons, quizzes, and student progress",
+      "project_name": "learning_management_system",
+      "project_path": "C:\\Users\\jerry\\onedrive\\Desktop\\forgeai\\generated_projects\\learning_management_system",
+      "forge_score": 100,
+      "vision_score": 75,
+      "build_passed": true,
+      "playwright_passed": true,
+      "runtime_passed": true,
+      "validation_passed": true,
+      "vision_issues": [
+        {
+          "severity": "info",
+          "page": "/login",
+          "description": "Improve consistency in button styling; the 'Login' button is purple, but the header navigation links also act as buttons which are plain text."
+        },
+        {
+          "severity": "info",
+          "page": "/login",
+          "description": "Consider adding a 'Forgot password?' link for better user experience."
+        },
+        {
+          "severity": "info",
+          "page": "/login",
+          "description": "Align the 'Sign In' heading with the input fields for a cleaner layout."
+        },
+        {
+          "severity": "info",
+          "page": "/register",
+          "description": "Improve consistency in button styling; the 'Register' button is purple, but the header navigation links also act as buttons which are plain text."
+        },
+        {
+          "severity": "info",
+          "page": "/register",
+          "description": "Align the 'Create Account' heading with the input fields for a cleaner layout."
+        },
+        {
+          "severity": "info",
+          "page": "/register",
+          "description": "Consider adding password strength indicators or confirmation for better user experience."
+        }
+      ],
+      "error": null,
+      "elapsed": 63.9,
+      "screenshot_count": 2
+    },
+    {
+      "idx": 7,
+      "idea": "A real estate listing app with properties, search filters, favorites, and agent profiles",
+      "project_name": "real_estate_listing_app",
+      "project_path": "C:\\Users\\jerry\\onedrive\\Desktop\\forgeai\\generated_projects\\real_estate_listing_app",
+      "forge_score": 95,
+      "vision_score": 50,
+      "build_passed": true,
+      "playwright_passed": true,
+      "runtime_passed": true,
+      "validation_passed": true,
+      "vision_issues": [
+        {
+          "severity": "warning",
+          "page": "/login",
+          "description": "The 'Sign In' heading is not vertically aligned with the input fields and login button, appearing too high."
+        },
+        {
+          "severity": "info",
+          "page": "/login",
+          "description": "Consider adding a 'Forgot Password?' link below the login button to improve user experience."
+        },
+        {
+          "severity": "info",
+          "page": "/login",
+          "description": "Consider adding a link to the registration page for new users."
+        },
+        {
+          "severity": "critical",
+          "page": "/register",
+          "description": "The /register page is almost entirely blank, with only the header and footer present. It lacks a registration form or any content relevant to user registration."
+        }
+      ],
+      "error": null,
+      "elapsed": 59.0,
+      "screenshot_count": 2
+    },
+    {
+      "idx": 8,
+      "idea": "A medical appointment scheduler with patients, doctors, appointments, and health records",
+      "project_name": "med_sched",
+      "project_path": "C:\\Users\\jerry\\onedrive\\Desktop\\forgeai\\generated_projects\\med_sched",
+      "forge_score": 100,
+      "vision_score": 75,
+      "build_passed": true,
+      "playwright_passed": true,
+      "runtime_passed": true,
+      "validation_passed": true,
+      "vision_issues": [
+        {
+          "severity": "info",
+          "page": "/login",
+          "description": "The 'Sign In' heading is not vertically aligned with the input fields, creating a slightly off-center look for the form block."
+        },
+        {
+          "severity": "info",
+          "page": "/login",
+          "description": "The input fields are quite wide, which might not be ideal for all screen sizes or visual preferences. Consider a max-width for better responsiveness."
+        },
+        {
+          "severity": "info",
+          "page": "/login",
+          "description": "The login button is relatively small compared to the input fields and form width. Increasing its size could improve usability."
+        },
+        {
+          "severity": "info",
+          "page": "/register",
+          "description": "The 'Create Account' heading is not vertically aligned with the input fields, creating a slightly off-center look for the form block."
+        },
+        {
+          "severity": "info",
+          "page": "/register",
+          "description": "The input fields are quite wide, which might not be ideal for all screen sizes or visual preferences. Consider a max-width for better responsiveness."
+        },
+        {
+          "severity": "info",
+          "page": "/register",
+          "description": "The register button is relatively small compared to the input fields and form width. Increasing its size could improve usability."
+        }
+      ],
+      "error": null,
+      "elapsed": 98.5,
+      "screenshot_count": 2
+    },
+    {
+      "idx": 9,
+      "idea": "A freelance marketplace with gigs, proposals, contracts, payments, and reviews",
+      "project_name": "freelance_marketplace",
+      "project_path": "C:\\Users\\jerry\\onedrive\\Desktop\\forgeai\\generated_projects\\freelance_marketplace",
+      "forge_score": 100,
+      "vision_score": 75,
+      "build_passed": true,
+      "playwright_passed": true,
+      "runtime_passed": true,
+      "validation_passed": true,
+      "vision_issues": [
+        {
+          "severity": "info",
+          "page": "/login",
+          "description": "The 'Login' button color is slightly different from the 'Login' and 'Sign Up' buttons in the header, suggesting inconsistent theming."
+        },
+        {
+          "severity": "info",
+          "page": "/login",
+          "description": "The 'Don't have an account?' text and 'Sign Up' link could benefit from better vertical alignment with the input fields/buttons."
+        },
+        {
+          "severity": "warning",
+          "page": "/register",
+          "description": "The page is `/register` based on the URL, but the content displayed is 'Available Gigs', which is misleading."
+        },
+        {
+          "severity": "info",
+          "page": "/register",
+          "description": "The search input field and button are slightly misaligned vertically."
+        },
+        {
+          "severity": "info",
+          "page": "/register",
+          "description": "The 'Prev' and 'Next' buttons are not consistently styled with the 'Create New Gig' button; the border radius is different."
+        },
+        {
+          "severity": "info",
+          "page": "/register",
+          "description": "Spacing between gig cards could be more consistent or slightly larger for better visual separation."
+        }
+      ],
+      "error": null,
+      "elapsed": 70.4,
+      "screenshot_count": 2
+    },
+    {
+      "idx": 10,
+      "idea": "A social bookmarking app with links, tags, collections, and public/private sharing",
+      "project_name": "",
+      "project_path": "",
+      "forge_score": 0,
+      "vision_score": null,
+      "build_passed": false,
+      "playwright_passed": false,
+      "runtime_passed": false,
+      "validation_passed": false,
+      "vision_issues": [],
+      "error": "500: Backend returned invalid JSON.",
+      "elapsed": 22.6,
+      "screenshot_count": 0
+    }
+  ]
+}

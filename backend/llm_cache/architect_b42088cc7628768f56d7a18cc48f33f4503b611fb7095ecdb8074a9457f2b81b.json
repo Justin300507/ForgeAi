@@ -1,0 +1,430 @@
+{
+  "api_endpoints": [
+    {
+      "method": "POST",
+      "path": "/auth/register",
+      "description": "Register a new user with email, username, and password",
+      "file": "app/routes/auth_routes.py"
+    },
+    {
+      "method": "POST",
+      "path": "/auth/login",
+      "description": "Authenticate user and return JWT access token",
+      "file": "app/routes/auth_routes.py"
+    },
+    {
+      "method": "GET",
+      "path": "/users/me",
+      "description": "Retrieve profile of the currently authenticated user",
+      "file": "app/routes/user_routes.py"
+    },
+    {
+      "method": "GET",
+      "path": "/recipes",
+      "description": "Paginated list of recipes with optional filters (ingredient, cuisine, rating) and full\u2011text search via query parameters",
+      "file": "app/routes/recipe_routes.py"
+    },
+    {
+      "method": "GET",
+      "path": "/recipes/{id}",
+      "description": "Get detailed information for a single recipe, including ingredients, tags, average rating and photo URL",
+      "file": "app/routes/recipe_routes.py"
+    },
+    {
+      "method": "POST",
+      "path": "/recipes",
+      "description": "Create a new recipe (author must be authenticated); supports photo upload, ingredient list, steps, tags, and cuisine",
+      "file": "app/routes/recipe_routes.py"
+    },
+    {
+      "method": "PUT",
+      "path": "/recipes/{id}",
+      "description": "Update an existing recipe owned by the authenticated user; allows editing of all mutable fields",
+      "file": "app/routes/recipe_routes.py"
+    },
+    {
+      "method": "GET",
+      "path": "/ingredients",
+      "description": "List all available ingredients for filter dropdowns and ingredient selection components",
+      "file": "app/routes/ingredient_routes.py"
+    },
+    {
+      "method": "POST",
+      "path": "/recipes/{id}/ratings",
+      "description": "Create a rating (1\u20115 stars) with optional comment for a specific recipe by the authenticated user",
+      "file": "app/routes/rating_routes.py"
+    },
+    {
+      "method": "PUT",
+      "path": "/ratings/{id}",
+      "description": "Edit a rating owned by the authenticated user",
+      "file": "app/routes/rating_routes.py"
+    },
+    {
+      "method": "DELETE",
+      "path": "/ratings/{id}",
+      "description": "Delete a rating owned by the authenticated user",
+      "file": "app/routes/rating_routes.py"
+    },
+    {
+      "method": "GET",
+      "path": "/collections",
+      "description": "Retrieve paginated list of the authenticated user's collections",
+      "file": "app/routes/collection_routes.py"
+    },
+    {
+      "method": "POST",
+      "path": "/collections",
+      "description": "Create a new named collection for the authenticated user",
+      "file": "app/routes/collection_routes.py"
+    },
+    {
+      "method": "PATCH",
+      "path": "/collections/{id}",
+      "description": "Add or remove recipes from a collection (request body contains arrays of recipe IDs to add or remove)",
+      "file": "app/routes/collection_routes.py"
+    },
+    {
+      "method": "PATCH",
+      "path": "/admin/recipes/{id}/moderate",
+      "description": "Admin action to change recipe status (e.g., approved, removed) and optionally add a moderation comment",
+      "file": "app/routes/admin_routes.py"
+    }
+  ],
+  "database_schema": [
+    {
+      "table_name": "users",
+      "columns": [
+        {
+          "name": "id",
+          "type": "INTEGER",
+          "is_primary_key": true,
+          "is_nullable": false
+        },
+        {
+          "name": "email",
+          "type": "VARCHAR(255)",
+          "is_primary_key": false,
+          "is_nullable": false
+        },
+        {
+          "name": "username",
+          "type": "VARCHAR(150)",
+          "is_primary_key": false,
+          "is_nullable": false
+        },
+        {
+          "name": "hashed_password",
+          "type": "VARCHAR(255)",
+          "is_primary_key": false,
+          "is_nullable": false
+        },
+        {
+          "name": "role",
+          "type": "VARCHAR(20)",
+          "is_primary_key": false,
+          "is_nullable": false
+        },
+        {
+          "name": "created_at",
+          "type": "DATETIME",
+          "is_primary_key": false,
+          "is_nullable": false
+        }
+      ]
+    },
+    {
+      "table_name": "recipes",
+      "columns": [
+        {
+          "name": "id",
+          "type": "INTEGER",
+          "is_primary_key": true,
+          "is_nullable": false
+        },
+        {
+          "name": "author_id",
+          "type": "INTEGER",
+          "is_primary_key": false,
+          "is_nullable": false
+        },
+        {
+          "name": "title",
+          "type": "VARCHAR(200)",
+          "is_primary_key": false,
+          "is_nullable": false
+        },
+        {
+          "name": "description",
+          "type": "TEXT",
+          "is_primary_key": false,
+          "is_nullable": true
+        },
+        {
+          "name": "instructions",
+          "type": "TEXT",
+          "is_primary_key": false,
+          "is_nullable": false
+        },
+        {
+          "name": "photo_url",
+          "type": "VARCHAR(500)",
+          "is_primary_key": false,
+          "is_nullable": true
+        },
+        {
+          "name": "cuisine",
+          "type": "VARCHAR(100)",
+          "is_primary_key": false,
+          "is_nullable": true
+        },
+        {
+          "name": "created_at",
+          "type": "DATETIME",
+          "is_primary_key": false,
+          "is_nullable": false
+        },
+        {
+          "name": "status",
+          "type": "VARCHAR(20)",
+          "is_primary_key": false,
+          "is_nullable": false
+        }
+      ]
+    },
+    {
+      "table_name": "ingredients",
+      "columns": [
+        {
+          "name": "id",
+          "type": "INTEGER",
+          "is_primary_key": true,
+          "is_nullable": false
+        },
+        {
+          "name": "name",
+          "type": "VARCHAR(150)",
+          "is_primary_key": false,
+          "is_nullable": false
+        }
+      ]
+    },
+    {
+      "table_name": "recipe_ingredients",
+      "columns": [
+        {
+          "name": "id",
+          "type": "INTEGER",
+          "is_primary_key": true,
+          "is_nullable": false
+        },
+        {
+          "name": "recipe_id",
+          "type": "INTEGER",
+          "is_primary_key": false,
+          "is_nullable": false
+        },
+        {
+          "name": "ingredient_id",
+          "type": "INTEGER",
+          "is_primary_key": false,
+          "is_nullable": false
+        },
+        {
+          "name": "quantity",
+          "type": "FLOAT",
+          "is_primary_key": false,
+          "is_nullable": true
+        },
+        {
+          "name": "unit",
+          "type": "VARCHAR(50)",
+          "is_primary_key": false,
+          "is_nullable": true
+        }
+      ]
+    },
+    {
+      "table_name": "ratings",
+      "columns": [
+        {
+          "name": "id",
+          "type": "INTEGER",
+          "is_primary_key": true,
+          "is_nullable": false
+        },
+        {
+          "name": "user_id",
+          "type": "INTEGER",
+          "is_primary_key": false,
+          "is_nullable": false
+        },
+        {
+          "name": "recipe_id",
+          "type": "INTEGER",
+          "is_primary_key": false,
+          "is_nullable": false
+        },
+        {
+          "name": "stars",
+          "type": "INTEGER",
+          "is_primary_key": false,
+          "is_nullable": false
+        },
+        {
+          "name": "comment",
+          "type": "TEXT",
+          "is_primary_key": false,
+          "is_nullable": true
+        },
+        {
+          "name": "created_at",
+          "type": "DATETIME",
+          "is_primary_key": false,
+          "is_nullable": false
+        }
+      ]
+    },
+    {
+      "table_name": "collections",
+      "columns": [
+        {
+          "name": "id",
+          "type": "INTEGER",
+          "is_primary_key": true,
+          "is_nullable": false
+        },
+        {
+          "name": "user_id",
+          "type": "INTEGER",
+          "is_primary_key": false,
+          "is_nullable": false
+        },
+        {
+          "name": "name",
+          "type": "VARCHAR(150)",
+          "is_primary_key": false,
+          "is_nullable": false
+        },
+        {
+          "name": "created_at",
+          "type": "DATETIME",
+          "is_primary_key": false,
+          "is_nullable": false
+        }
+      ]
+    },
+    {
+      "table_name": "collection_recipes",
+      "columns": [
+        {
+          "name": "id",
+          "type": "INTEGER",
+          "is_primary_key": true,
+          "is_nullable": false
+        },
+        {
+          "name": "collection_id",
+          "type": "INTEGER",
+          "is_primary_key": false,
+          "is_nullable": false
+        },
+        {
+          "name": "recipe_id",
+          "type": "INTEGER",
+          "is_primary_key": false,
+          "is_nullable": false
+        },
+        {
+          "name": "added_at",
+          "type": "DATETIME",
+          "is_primary_key": false,
+          "is_nullable": false
+        }
+      ]
+    },
+    {
+      "table_name": "tags",
+      "columns": [
+        {
+          "name": "id",
+          "type": "INTEGER",
+          "is_primary_key": true,
+          "is_nullable": false
+        },
+        {
+          "name": "name",
+          "type": "VARCHAR(100)",
+          "is_primary_key": false,
+          "is_nullable": false
+        }
+      ]
+    },
+    {
+      "table_name": "recipe_tags",
+      "columns": [
+        {
+          "name": "id",
+          "type": "INTEGER",
+          "is_primary_key": true,
+          "is_nullable": false
+        },
+        {
+          "name": "recipe_id",
+          "type": "INTEGER",
+          "is_primary_key": false,
+          "is_nullable": false
+        },
+        {
+          "name": "tag_id",
+          "type": "INTEGER",
+          "is_primary_key": false,
+          "is_nullable": false
+        }
+      ]
+    }
+  ],
+  "folder_structure": {
+    "backend": [
+      "app",
+      "app/models",
+      "app/schemas",
+      "app/routes",
+      "app/services",
+      "app/utils",
+      "app/dependencies",
+      "app/config",
+      "app/main.py"
+    ]
+  },
+  "frontend_structure": {
+    "pages": [
+      "HomePage",
+      "RecipeDetailPage",
+      "RecipeFormPage",
+      "LoginPage",
+      "RegisterPage",
+      "UserProfilePage",
+      "CollectionsPage",
+      "CollectionDetailPage",
+      "AdminModerationPage"
+    ],
+    "components": [
+      "Navbar",
+      "Footer",
+      "RecipeCard",
+      "RecipeFilterBar",
+      "Pagination",
+      "RatingStars",
+      "RatingForm",
+      "CollectionCard",
+      "CollectionEditor",
+      "IngredientSelect",
+      "TagSelect",
+      "PhotoUploader",
+      "SearchBar",
+      "Modal",
+      "Alert"
+    ]
+  }
+}

@@ -1,0 +1,455 @@
+{
+  "api_endpoints": [
+    {
+      "method": "POST",
+      "path": "/auth/register",
+      "description": "Register a new user with email, password and role",
+      "file": "app/routes/auth_routes.py"
+    },
+    {
+      "method": "POST",
+      "path": "/auth/login",
+      "description": "Authenticate user and return JWT access token",
+      "file": "app/routes/auth_routes.py"
+    },
+    {
+      "method": "GET",
+      "path": "/users/me",
+      "description": "Retrieve the authenticated user's basic information",
+      "file": "app/routes/user_routes.py"
+    },
+    {
+      "method": "POST",
+      "path": "/candidates",
+      "description": "Create candidate profile with resume upload (PDF/DOCX up to 5\u202fMB)",
+      "file": "app/routes/candidate_routes.py"
+    },
+    {
+      "method": "PUT",
+      "path": "/candidates/me",
+      "description": "Update the authenticated candidate's profile fields",
+      "file": "app/routes/candidate_routes.py"
+    },
+    {
+      "method": "POST",
+      "path": "/employers",
+      "description": "Create employer profile for a user with role Employer",
+      "file": "app/routes/employer_routes.py"
+    },
+    {
+      "method": "PUT",
+      "path": "/employers/me",
+      "description": "Update the authenticated employer's profile",
+      "file": "app/routes/employer_routes.py"
+    },
+    {
+      "method": "POST",
+      "path": "/jobs",
+      "description": "Create a new job posting (title, description, location, type, salary range, tags)",
+      "file": "app/routes/job_routes.py"
+    },
+    {
+      "method": "GET",
+      "path": "/jobs",
+      "description": "List active jobs with filter parameters and pagination (20 per page)",
+      "file": "app/routes/job_routes.py"
+    },
+    {
+      "method": "PUT",
+      "path": "/jobs/{id}",
+      "description": "Update an existing job posting owned by the employer",
+      "file": "app/routes/job_routes.py"
+    },
+    {
+      "method": "DELETE",
+      "path": "/jobs/{id}",
+      "description": "Retire a job posting, setting its status to 'retired'",
+      "file": "app/routes/job_routes.py"
+    },
+    {
+      "method": "POST",
+      "path": "/applications",
+      "description": "Apply to a job using the saved candidate profile and optional cover letter",
+      "file": "app/routes/application_routes.py"
+    },
+    {
+      "method": "PATCH",
+      "path": "/applications/{id}/status",
+      "description": "Employer updates the status of an application (new, reviewed, interviewed, rejected, hired)",
+      "file": "app/routes/application_routes.py"
+    },
+    {
+      "method": "GET",
+      "path": "/search/jobs",
+      "description": "Full\u2011text search for jobs with faceted filters (keyword, location, type, salary range)",
+      "file": "app/routes/search_routes.py"
+    },
+    {
+      "method": "PATCH",
+      "path": "/admin/moderate",
+      "description": "Admin flags or approves job or candidate content (sets moderation_status)",
+      "file": "app/routes/admin_routes.py"
+    }
+  ],
+  "database_schema": [
+    {
+      "table_name": "users",
+      "columns": [
+        {
+          "name": "id",
+          "type": "Integer",
+          "is_primary_key": true,
+          "is_nullable": false
+        },
+        {
+          "name": "email",
+          "type": "String",
+          "is_primary_key": false,
+          "is_nullable": false
+        },
+        {
+          "name": "password_hash",
+          "type": "String",
+          "is_primary_key": false,
+          "is_nullable": false
+        },
+        {
+          "name": "role",
+          "type": "String",
+          "is_primary_key": false,
+          "is_nullable": false
+        },
+        {
+          "name": "created_at",
+          "type": "DateTime",
+          "is_primary_key": false,
+          "is_nullable": false
+        }
+      ]
+    },
+    {
+      "table_name": "candidate_profiles",
+      "columns": [
+        {
+          "name": "id",
+          "type": "Integer",
+          "is_primary_key": true,
+          "is_nullable": false
+        },
+        {
+          "name": "user_id",
+          "type": "Integer",
+          "is_primary_key": false,
+          "is_nullable": false
+        },
+        {
+          "name": "name",
+          "type": "String",
+          "is_primary_key": false,
+          "is_nullable": false
+        },
+        {
+          "name": "headline",
+          "type": "String",
+          "is_primary_key": false,
+          "is_nullable": false
+        },
+        {
+          "name": "location",
+          "type": "String",
+          "is_primary_key": false,
+          "is_nullable": false
+        },
+        {
+          "name": "summary",
+          "type": "Text",
+          "is_primary_key": false,
+          "is_nullable": false
+        },
+        {
+          "name": "resume_url",
+          "type": "String",
+          "is_primary_key": false,
+          "is_nullable": true
+        },
+        {
+          "name": "public",
+          "type": "Boolean",
+          "is_primary_key": false,
+          "is_nullable": false
+        },
+        {
+          "name": "created_at",
+          "type": "DateTime",
+          "is_primary_key": false,
+          "is_nullable": false
+        }
+      ]
+    },
+    {
+      "table_name": "employer_profiles",
+      "columns": [
+        {
+          "name": "id",
+          "type": "Integer",
+          "is_primary_key": true,
+          "is_nullable": false
+        },
+        {
+          "name": "user_id",
+          "type": "Integer",
+          "is_primary_key": false,
+          "is_nullable": false
+        },
+        {
+          "name": "company_name",
+          "type": "String",
+          "is_primary_key": false,
+          "is_nullable": false
+        },
+        {
+          "name": "website",
+          "type": "String",
+          "is_primary_key": false,
+          "is_nullable": true
+        },
+        {
+          "name": "description",
+          "type": "Text",
+          "is_primary_key": false,
+          "is_nullable": true
+        },
+        {
+          "name": "created_at",
+          "type": "DateTime",
+          "is_primary_key": false,
+          "is_nullable": false
+        }
+      ]
+    },
+    {
+      "table_name": "jobs",
+      "columns": [
+        {
+          "name": "id",
+          "type": "Integer",
+          "is_primary_key": true,
+          "is_nullable": false
+        },
+        {
+          "name": "employer_id",
+          "type": "Integer",
+          "is_primary_key": false,
+          "is_nullable": false
+        },
+        {
+          "name": "title",
+          "type": "String",
+          "is_primary_key": false,
+          "is_nullable": false
+        },
+        {
+          "name": "description",
+          "type": "Text",
+          "is_primary_key": false,
+          "is_nullable": false
+        },
+        {
+          "name": "location",
+          "type": "String",
+          "is_primary_key": false,
+          "is_nullable": false
+        },
+        {
+          "name": "type",
+          "type": "String",
+          "is_primary_key": false,
+          "is_nullable": false
+        },
+        {
+          "name": "salary_min",
+          "type": "Integer",
+          "is_primary_key": false,
+          "is_nullable": true
+        },
+        {
+          "name": "salary_max",
+          "type": "Integer",
+          "is_primary_key": false,
+          "is_nullable": true
+        },
+        {
+          "name": "posted_at",
+          "type": "DateTime",
+          "is_primary_key": false,
+          "is_nullable": false
+        },
+        {
+          "name": "expires_at",
+          "type": "DateTime",
+          "is_primary_key": false,
+          "is_nullable": true
+        },
+        {
+          "name": "status",
+          "type": "String",
+          "is_primary_key": false,
+          "is_nullable": false
+        }
+      ]
+    },
+    {
+      "table_name": "applications",
+      "columns": [
+        {
+          "name": "id",
+          "type": "Integer",
+          "is_primary_key": true,
+          "is_nullable": false
+        },
+        {
+          "name": "job_id",
+          "type": "Integer",
+          "is_primary_key": false,
+          "is_nullable": false
+        },
+        {
+          "name": "candidate_id",
+          "type": "Integer",
+          "is_primary_key": false,
+          "is_nullable": false
+        },
+        {
+          "name": "cover_letter",
+          "type": "Text",
+          "is_primary_key": false,
+          "is_nullable": true
+        },
+        {
+          "name": "status",
+          "type": "String",
+          "is_primary_key": false,
+          "is_nullable": false
+        },
+        {
+          "name": "applied_at",
+          "type": "DateTime",
+          "is_primary_key": false,
+          "is_nullable": false
+        }
+      ]
+    },
+    {
+      "table_name": "tags",
+      "columns": [
+        {
+          "name": "id",
+          "type": "Integer",
+          "is_primary_key": true,
+          "is_nullable": false
+        },
+        {
+          "name": "name",
+          "type": "String",
+          "is_primary_key": false,
+          "is_nullable": false
+        }
+      ]
+    },
+    {
+      "table_name": "job_tags",
+      "columns": [
+        {
+          "name": "job_id",
+          "type": "Integer",
+          "is_primary_key": true,
+          "is_nullable": false
+        },
+        {
+          "name": "tag_id",
+          "type": "Integer",
+          "is_primary_key": true,
+          "is_nullable": false
+        }
+      ]
+    },
+    {
+      "table_name": "notifications",
+      "columns": [
+        {
+          "name": "id",
+          "type": "Integer",
+          "is_primary_key": true,
+          "is_nullable": false
+        },
+        {
+          "name": "user_id",
+          "type": "Integer",
+          "is_primary_key": false,
+          "is_nullable": false
+        },
+        {
+          "name": "type",
+          "type": "String",
+          "is_primary_key": false,
+          "is_nullable": false
+        },
+        {
+          "name": "payload",
+          "type": "Text",
+          "is_primary_key": false,
+          "is_nullable": false
+        },
+        {
+          "name": "read_at",
+          "type": "DateTime",
+          "is_primary_key": false,
+          "is_nullable": true
+        },
+        {
+          "name": "created_at",
+          "type": "DateTime",
+          "is_primary_key": false,
+          "is_nullable": false
+        }
+      ]
+    }
+  ],
+  "folder_structure": {
+    "backend": [
+      "app/routes",
+      "app/models",
+      "app/schemas",
+      "app/services",
+      "app/utils",
+      "app/dependencies",
+      "app/core"
+    ]
+  },
+  "frontend_structure": {
+    "pages": [
+      "LoginPage",
+      "RegisterPage",
+      "CandidateProfilePage",
+      "EmployerProfilePage",
+      "JobListPage",
+      "JobCreatePage",
+      "ApplicationPage",
+      "SearchPage",
+      "AdminModerationPage",
+      "UserDashboardPage"
+    ],
+    "components": [
+      "Navbar",
+      "Footer",
+      "JobCard",
+      "JobForm",
+      "ProfileForm",
+      "ApplicationForm",
+      "SearchBar",
+      "Pagination",
+      "NotificationBell",
+      "Modal"
+    ]
+  }
+}

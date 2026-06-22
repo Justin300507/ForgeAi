@@ -121,6 +121,31 @@ Only add a missing symbol to a package's __init__.py if the package
 is genuinely meant to re-export from submodules. Prefer fixing the
 import line in the current file over inventing a new file elsewhere.
 ========================================
+MONOLITHIC SCHEMA ERROR RULES
+========================================
+
+If parsed_error contains:
+
+{{
+    "type": "MonolithicSchemaError",
+    "missing_module": "app.schemas.account",
+    "schema_name": "account"
+}}
+
+The route imports from `app.schemas.account` but only `app/schemas/schemas.py` exists.
+Fix the route file you are repairing by changing ALL schema imports to point to
+`app.schemas.schemas` instead of the nonexistent submodule:
+
+WRONG:
+from app.schemas.account import AccountCreate, AccountUpdate, AccountResponse
+
+CORRECT:
+from app.schemas.schemas import AccountCreate, AccountUpdate, AccountResponse
+
+Apply this fix to every broken schema import in the file. Do NOT invent a new
+app/schemas/account.py — fix the import in the route file instead.
+
+========================================
 MODULE ERROR RULES
 ========================================
 
@@ -132,6 +157,20 @@ If parsed_error contains:
 }}
 
 Repair imports or create the missing module reference.
+
+SPECIAL CASE — `No module named 'app.models.user'`:
+If `app/models/users.py` already exists (with class Users), do NOT create a new
+User class (that would cause duplicate table crash). Instead create `app/models/user.py`
+as a re-export shim:
+
+CORRECT user.py:
+from app.models.users import Users as User
+__all__ = ['User']
+
+WRONG user.py (causes duplicate table crash):
+class User(Base):
+    __tablename__ = "users"
+    ...
 
 ========================================
 SYNTAX ERROR RULES
@@ -256,7 +295,24 @@ If parsed_error contains:
     "type": "FastAPIError"
 }}
 
-Repair invalid FastAPI configuration.
+Common cause: `response_model=User` where User is a SQLAlchemy ORM model (not Pydantic).
+FastAPI requires Pydantic schemas as response_model — NEVER SQLAlchemy models.
+
+WRONG:
+from app.models.user import User
+@router.get("/me", response_model=User)
+
+CORRECT:
+from app.schemas.user import UserResponse
+@router.get("/me", response_model=UserResponse)
+
+Fix: change response_model to the Pydantic schema class (typically named XResponse or XOut).
+If no schema exists, set response_model=None and return a dict instead.
+
+Also fix: if the error mentions "Table 'X' is already defined for this MetaData instance",
+the model file is importing another model at module level. Fix main.py (or the model) so
+model files do NOT import each other. Models reference others via ForeignKey("table.id")
+string — no import needed in the model file itself.
 
 ========================================
 ASGI ERROR RULES
@@ -271,6 +327,137 @@ If parsed_error contains:
 Repair application startup configuration.
 
 ========================================
+MISSING AUTH HELPER RULES
+========================================
+
+If parsed_error contains:
+
+{{
+    "type": "MissingAuthHelperError",
+    "missing_symbol": "get_user_by_email",
+    "import_target_module": "app.services.auth"
+}}
+
+The function is imported but never defined. Fix by ADDING the missing function
+to the target module (the file you are repairing). Do NOT change the import line.
+
+Common auth helpers and where they belong:
+- app/utils/auth.py: verify_password, get_password_hash, create_access_token, get_current_user, decode_token
+- app/services/auth.py: get_user_by_email, get_user_by_username, authenticate_user
+
+Example — add to app/services/auth.py:
+
+def get_user_by_email(db: Session, email: str):
+    return db.query(User).filter(User.email == email).first()
+
+def authenticate_user(db: Session, email: str, password: str):
+    user = get_user_by_email(db, email)
+    if not user or not verify_password(password, user.hashed_password):
+        return None
+    return user
+
+========================================
+USER ID NOT INJECTED RULES
+========================================
+
+If parsed_error contains:
+
+{{
+    "type": "UserIdNotInjectedError",
+    "column": "categories.user_id",
+    "col_name": "user_id"
+}}
+
+The route creates a record that belongs to a user but doesn't inject the current user.
+Fix the route handler by adding the auth dependency and setting the FK field.
+
+WRONG:
+@router.post("/categories")
+def create_category(category_in: CategoryCreate, db: Session = Depends(get_db)):
+    category = Category(**category_in.dict())
+    db.add(category)
+    db.commit()
+    return category
+
+CORRECT:
+from app.utils.auth import get_current_user
+from app.models.user import User
+
+@router.post("/categories")
+def create_category(
+    category_in: CategoryCreate,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+):
+    category = Category(**category_in.dict())
+    category.user_id = current_user.id
+    db.add(category)
+    db.commit()
+    db.refresh(category)
+    return category
+
+Apply this fix to ALL route handlers in the file that create or update
+records in the same table (POST, PUT). GET and DELETE handlers that
+filter by ID don't need the user_id injection but should still verify
+ownership when appropriate.
+
+========================================
+RELATIONSHIP MODEL NOT IMPORTED RULES
+========================================
+
+If parsed_error contains:
+
+{{
+    "type": "RelationshipModelNotImported",
+    "missing_model": "OpeningHour"
+}}
+
+A SQLAlchemy relationship() references a model by string name but that model's
+file is never imported in main.py. SQLAlchemy cannot resolve the string.
+
+FIX: Add the missing model import to main.py (the file you are repairing):
+
+WRONG — model file never imported:
+from app.routes.restaurant_routes import restaurant_router
+Base.metadata.create_all(bind=engine)  # OpeningHour unknown here
+
+CORRECT — import the model so Base.metadata sees it:
+from app.models.opening_hour import OpeningHour  # noqa: F401
+from app.models.restaurant import Restaurant      # noqa: F401
+from app.routes.restaurant_routes import restaurant_router
+Base.metadata.create_all(bind=engine)
+
+Add a `from app.models.<name> import <Model>` line for EVERY model that has
+a relationship() referencing it, even if no route file imports it.
+
+========================================
+DUPLICATE TABLE ERROR RULES
+========================================
+
+If parsed_error contains:
+
+{{
+    "type": "DuplicateTableError",
+    "table": "users"
+}}
+
+A model file imports another model at the top level. When main.py imports both, SQLAlchemy
+registers the same table twice and crashes.
+
+WRONG — companies.py importing user.py:
+from app.models.user import User  # ← causes duplicate table crash
+class Companies(Base):
+    user_id = Column(Integer, ForeignKey("users.id"))
+
+CORRECT — no cross-model imports:
+class Companies(Base):
+    user_id = Column(Integer, ForeignKey("users.id"))  # ForeignKey string only, no User import
+
+Fix: Remove ALL `from app.models.X import Y` lines from model files.
+ForeignKey references use the TABLE NAME string ("users.id"), not the class.
+relationship() uses a string class name ("User"), not the imported class.
+
+========================================
 PYDANTIC VALIDATION RULES
 ========================================
 
@@ -281,6 +468,37 @@ If parsed_error contains:
 }}
 
 Repair invalid Pydantic model definitions.
+
+========================================
+OAUTH2 TYPO RULES
+========================================
+
+If the error mentions "auth2_scheme" or the file contains `auth2_scheme`:
+
+This is a typo. The correct name is `oauth2_scheme`.
+
+WRONG:  auth2_scheme = OAuth2PasswordBearer(tokenUrl="/auth/token")
+        token: str = Depends(auth2_scheme)
+CORRECT: oauth2_scheme = OAuth2PasswordBearer(tokenUrl="/auth/token")
+         token: str = Depends(oauth2_scheme)
+
+Search-replace EVERY occurrence of `auth2_scheme` with `oauth2_scheme` in the file.
+
+========================================
+ORM_MODE DEPRECATION RULES
+========================================
+
+If the error mentions "orm_mode" or "from_attributes":
+
+Pydantic v2 renamed orm_mode to from_attributes.
+
+WRONG:  class Config:
+            orm_mode = True
+CORRECT: model_config = ConfigDict(from_attributes=True)
+  OR:   class Config:
+            from_attributes = True
+
+Replace ALL `orm_mode = True` occurrences with `from_attributes = True`.
 
 ========================================
 PATH RULES

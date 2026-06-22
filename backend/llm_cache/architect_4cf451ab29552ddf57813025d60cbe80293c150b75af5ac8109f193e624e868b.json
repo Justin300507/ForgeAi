@@ -1,0 +1,474 @@
+{
+  "api_endpoints": [
+    {
+      "method": "POST",
+      "path": "/auth/register",
+      "description": "Register a new user (mentor or mentee) and receive initial JWT",
+      "file": "app/routes/auth_routes.py"
+    },
+    {
+      "method": "POST",
+      "path": "/auth/login",
+      "description": "Authenticate user credentials and return JWT access token",
+      "file": "app/routes/auth_routes.py"
+    },
+    {
+      "method": "GET",
+      "path": "/users/me",
+      "description": "Retrieve the authenticated user's profile and role",
+      "file": "app/routes/user_routes.py"
+    },
+    {
+      "method": "GET",
+      "path": "/mentors",
+      "description": "Search public mentor profiles with filters (skill tags, availability, experience)",
+      "file": "app/routes/mentor_routes.py"
+    },
+    {
+      "method": "GET",
+      "path": "/mentors/{id}",
+      "description": "View a public mentor profile by its identifier",
+      "file": "app/routes/mentor_routes.py"
+    },
+    {
+      "method": "POST",
+      "path": "/mentor_profiles",
+      "description": "Create a mentor profile (bio, expertise tags, availability)",
+      "file": "app/routes/mentor_routes.py"
+    },
+    {
+      "method": "PUT",
+      "path": "/mentor_profiles/{id}",
+      "description": "Edit an existing mentor profile owned by the authenticated mentor",
+      "file": "app/routes/mentor_routes.py"
+    },
+    {
+      "method": "DELETE",
+      "path": "/mentor_profiles/{id}",
+      "description": "Deactivate a mentor profile; it becomes hidden from search results",
+      "file": "app/routes/mentor_routes.py"
+    },
+    {
+      "method": "POST",
+      "path": "/sessions",
+      "description": "Mentee requests a mentorship session with agenda items and preferred time slot",
+      "file": "app/routes/session_routes.py"
+    },
+    {
+      "method": "PUT",
+      "path": "/sessions/{id}/accept",
+      "description": "Mentor accepts a pending session request and confirms start/end times",
+      "file": "app/routes/session_routes.py"
+    },
+    {
+      "method": "PUT",
+      "path": "/sessions/{id}/decline",
+      "description": "Mentor declines a pending session request",
+      "file": "app/routes/session_routes.py"
+    },
+    {
+      "method": "GET",
+      "path": "/sessions",
+      "description": "List sessions for the current user (mentor or mentee) with pagination",
+      "file": "app/routes/session_routes.py"
+    },
+    {
+      "method": "POST",
+      "path": "/goals",
+      "description": "Mentee creates a SMART learning goal and optionally links future sessions",
+      "file": "app/routes/goal_routes.py"
+    },
+    {
+      "method": "POST",
+      "path": "/feedback",
+      "description": "Mentor submits feedback for a completed session, rating the mentee and referencing goals",
+      "file": "app/routes/feedback_routes.py"
+    },
+    {
+      "method": "GET",
+      "path": "/analytics",
+      "description": "Admin retrieves aggregated analytics on sessions, goal completion, and feedback scores",
+      "file": "app/routes/analytics_routes.py"
+    }
+  ],
+  "database_schema": [
+    {
+      "table_name": "users",
+      "columns": [
+        {
+          "name": "id",
+          "type": "INTEGER",
+          "is_primary_key": true,
+          "is_nullable": false
+        },
+        {
+          "name": "email",
+          "type": "STRING",
+          "is_primary_key": false,
+          "is_nullable": false
+        },
+        {
+          "name": "password_hash",
+          "type": "STRING",
+          "is_primary_key": false,
+          "is_nullable": false
+        },
+        {
+          "name": "role",
+          "type": "STRING",
+          "is_primary_key": false,
+          "is_nullable": false
+        },
+        {
+          "name": "created_at",
+          "type": "DATETIME",
+          "is_primary_key": false,
+          "is_nullable": false
+        }
+      ]
+    },
+    {
+      "table_name": "mentor_profiles",
+      "columns": [
+        {
+          "name": "id",
+          "type": "INTEGER",
+          "is_primary_key": true,
+          "is_nullable": false
+        },
+        {
+          "name": "user_id",
+          "type": "INTEGER",
+          "is_primary_key": false,
+          "is_nullable": false
+        },
+        {
+          "name": "bio",
+          "type": "TEXT",
+          "is_primary_key": false,
+          "is_nullable": true
+        },
+        {
+          "name": "expertise_tags",
+          "type": "STRING",
+          "is_primary_key": false,
+          "is_nullable": true
+        },
+        {
+          "name": "availability",
+          "type": "STRING",
+          "is_primary_key": false,
+          "is_nullable": true
+        },
+        {
+          "name": "is_active",
+          "type": "BOOLEAN",
+          "is_primary_key": false,
+          "is_nullable": false
+        },
+        {
+          "name": "created_at",
+          "type": "DATETIME",
+          "is_primary_key": false,
+          "is_nullable": false
+        }
+      ]
+    },
+    {
+      "table_name": "mentee_profiles",
+      "columns": [
+        {
+          "name": "id",
+          "type": "INTEGER",
+          "is_primary_key": true,
+          "is_nullable": false
+        },
+        {
+          "name": "user_id",
+          "type": "INTEGER",
+          "is_primary_key": false,
+          "is_nullable": false
+        },
+        {
+          "name": "interests",
+          "type": "STRING",
+          "is_primary_key": false,
+          "is_nullable": true
+        },
+        {
+          "name": "avatar_path",
+          "type": "STRING",
+          "is_primary_key": false,
+          "is_nullable": true
+        },
+        {
+          "name": "is_active",
+          "type": "BOOLEAN",
+          "is_primary_key": false,
+          "is_nullable": false
+        },
+        {
+          "name": "created_at",
+          "type": "DATETIME",
+          "is_primary_key": false,
+          "is_nullable": false
+        }
+      ]
+    },
+    {
+      "table_name": "sessions",
+      "columns": [
+        {
+          "name": "id",
+          "type": "INTEGER",
+          "is_primary_key": true,
+          "is_nullable": false
+        },
+        {
+          "name": "mentor_profile_id",
+          "type": "INTEGER",
+          "is_primary_key": false,
+          "is_nullable": false
+        },
+        {
+          "name": "mentee_profile_id",
+          "type": "INTEGER",
+          "is_primary_key": false,
+          "is_nullable": false
+        },
+        {
+          "name": "start_time",
+          "type": "DATETIME",
+          "is_primary_key": false,
+          "is_nullable": true
+        },
+        {
+          "name": "end_time",
+          "type": "DATETIME",
+          "is_primary_key": false,
+          "is_nullable": true
+        },
+        {
+          "name": "status",
+          "type": "STRING",
+          "is_primary_key": false,
+          "is_nullable": false
+        },
+        {
+          "name": "agenda",
+          "type": "TEXT",
+          "is_primary_key": false,
+          "is_nullable": true
+        },
+        {
+          "name": "created_at",
+          "type": "DATETIME",
+          "is_primary_key": false,
+          "is_nullable": false
+        }
+      ]
+    },
+    {
+      "table_name": "session_files",
+      "columns": [
+        {
+          "name": "id",
+          "type": "INTEGER",
+          "is_primary_key": true,
+          "is_nullable": false
+        },
+        {
+          "name": "session_id",
+          "type": "INTEGER",
+          "is_primary_key": false,
+          "is_nullable": false
+        },
+        {
+          "name": "file_path",
+          "type": "STRING",
+          "is_primary_key": false,
+          "is_nullable": false
+        },
+        {
+          "name": "uploaded_at",
+          "type": "DATETIME",
+          "is_primary_key": false,
+          "is_nullable": false
+        }
+      ]
+    },
+    {
+      "table_name": "goals",
+      "columns": [
+        {
+          "name": "id",
+          "type": "INTEGER",
+          "is_primary_key": true,
+          "is_nullable": false
+        },
+        {
+          "name": "mentee_profile_id",
+          "type": "INTEGER",
+          "is_primary_key": false,
+          "is_nullable": false
+        },
+        {
+          "name": "title",
+          "type": "STRING",
+          "is_primary_key": false,
+          "is_nullable": false
+        },
+        {
+          "name": "description",
+          "type": "TEXT",
+          "is_primary_key": false,
+          "is_nullable": true
+        },
+        {
+          "name": "target_date",
+          "type": "DATE",
+          "is_primary_key": false,
+          "is_nullable": false
+        },
+        {
+          "name": "status",
+          "type": "STRING",
+          "is_primary_key": false,
+          "is_nullable": false
+        },
+        {
+          "name": "created_at",
+          "type": "DATETIME",
+          "is_primary_key": false,
+          "is_nullable": false
+        }
+      ]
+    },
+    {
+      "table_name": "feedback",
+      "columns": [
+        {
+          "name": "id",
+          "type": "INTEGER",
+          "is_primary_key": true,
+          "is_nullable": false
+        },
+        {
+          "name": "session_id",
+          "type": "INTEGER",
+          "is_primary_key": false,
+          "is_nullable": false
+        },
+        {
+          "name": "mentor_profile_id",
+          "type": "INTEGER",
+          "is_primary_key": false,
+          "is_nullable": false
+        },
+        {
+          "name": "rating",
+          "type": "INTEGER",
+          "is_primary_key": false,
+          "is_nullable": false
+        },
+        {
+          "name": "comments",
+          "type": "TEXT",
+          "is_primary_key": false,
+          "is_nullable": true
+        },
+        {
+          "name": "created_at",
+          "type": "DATETIME",
+          "is_primary_key": false,
+          "is_nullable": false
+        }
+      ]
+    },
+    {
+      "table_name": "notifications",
+      "columns": [
+        {
+          "name": "id",
+          "type": "INTEGER",
+          "is_primary_key": true,
+          "is_nullable": false
+        },
+        {
+          "name": "user_id",
+          "type": "INTEGER",
+          "is_primary_key": false,
+          "is_nullable": false
+        },
+        {
+          "name": "type",
+          "type": "STRING",
+          "is_primary_key": false,
+          "is_nullable": false
+        },
+        {
+          "name": "payload",
+          "type": "TEXT",
+          "is_primary_key": false,
+          "is_nullable": false
+        },
+        {
+          "name": "is_read",
+          "type": "BOOLEAN",
+          "is_primary_key": false,
+          "is_nullable": false
+        },
+        {
+          "name": "created_at",
+          "type": "DATETIME",
+          "is_primary_key": false,
+          "is_nullable": false
+        }
+      ]
+    }
+  ],
+  "folder_structure": {
+    "backend": [
+      "app",
+      "app/models",
+      "app/schemas",
+      "app/routes",
+      "app/services",
+      "app/utils",
+      "app/dependencies",
+      "app/config",
+      "app/main.py"
+    ]
+  },
+  "frontend_structure": {
+    "pages": [
+      "Home",
+      "MentorSearch",
+      "MentorProfileView",
+      "MentorProfileEdit",
+      "SessionRequest",
+      "SessionDetail",
+      "GoalCreate",
+      "FeedbackSubmit",
+      "AnalyticsDashboard",
+      "Notifications"
+    ],
+    "components": [
+      "Header",
+      "Footer",
+      "SearchBar",
+      "MentorCard",
+      "ProfileForm",
+      "SessionForm",
+      "GoalForm",
+      "FeedbackForm",
+      "NotificationItem",
+      "Pagination",
+      "AvatarUploader",
+      "FileUploader",
+      "RealTimeToast",
+      "Sidebar",
+      "AnalyticsChart"
+    ]
+  }
+}

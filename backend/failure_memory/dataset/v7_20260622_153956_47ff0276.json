@@ -1,0 +1,34 @@
+{
+  "run_id": "v7_20260622_153956_47ff0276",
+  "timestamp": "2026-06-22T15:40:37",
+  "version": "v7",
+  "idea": "A sports league manager with teams, players, matches, scores, and standings",
+  "project_name": "sports_league_manager",
+  "provider": "auto",
+  "plan": {},
+  "architecture": {
+    "endpoint_count": 0,
+    "endpoints": [],
+    "db_schema_keys": []
+  },
+  "validation_errors": [
+    "Duplicate class definition: 'LoginRequest' is defined in multiple files (app/routes/role_routes.py, app/routes/season_routes.py, app/routes/standing_routes.py, app/routes/team_routes.py, app/routes/user_routes.py, app/schemas/auth.py, app/schemas/health.py, app/schemas/user.py) — this creates incompatible duplicate types",
+    "Duplicate class definition: 'RegisterRequest' is defined in multiple files (app/routes/role_routes.py, app/routes/season_routes.py, app/routes/standing_routes.py, app/routes/team_routes.py, app/routes/user_routes.py, app/schemas/auth.py, app/schemas/health.py, app/schemas/user.py) — this creates incompatible duplicate types",
+    "Duplicate class definition: 'Token' is defined in multiple files (app/routes/role_routes.py, app/routes/season_routes.py, app/routes/standing_routes.py, app/routes/team_routes.py, app/routes/user_routes.py, app/schemas/auth.py, app/schemas/health.py, app/schemas/user.py) — this creates incompatible duplicate types"
+  ],
+  "runtime_error": null,
+  "runtime_error_type": null,
+  "fixes_applied": [],
+  "score": 74,
+  "grade": "C",
+  "runtime_passed": false,
+  "frontend_passed": false,
+  "generation_time": 40.87,
+  "security_score": null,
+  "performance_score": null,
+  "maintainability_score": null,
+  "qa_score": null,
+  "v6_score": 61,
+  "prompt_version": "default",
+  "active_rules": []
+}

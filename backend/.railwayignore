@@ -1,0 +1,11 @@
+venv/
+.venv/
+__pycache__/
+*.pyc
+*.pyo
+llm_cache/
+generated_projects/
+benchmark/
+*.db
+*.sqlite3
+.env

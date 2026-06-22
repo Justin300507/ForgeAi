@@ -1,0 +1,438 @@
+{
+  "api_endpoints": [
+    {
+      "method": "POST",
+      "path": "/auth/signup",
+      "description": "Register a new user (candidate, employer, or admin) and send verification email",
+      "file": "app/routes/auth_routes.py"
+    },
+    {
+      "method": "POST",
+      "path": "/auth/login",
+      "description": "Authenticate user credentials and return a JWT access token",
+      "file": "app/routes/auth_routes.py"
+    },
+    {
+      "method": "POST",
+      "path": "/auth/password-reset",
+      "description": "Request a password\u2011reset email for the given user account",
+      "file": "app/routes/auth_routes.py"
+    },
+    {
+      "method": "GET",
+      "path": "/profiles/me",
+      "description": "Retrieve the authenticated candidate's profile",
+      "file": "app/routes/profile_routes.py"
+    },
+    {
+      "method": "POST",
+      "path": "/profiles",
+      "description": "Create a new profile for the authenticated candidate",
+      "file": "app/routes/profile_routes.py"
+    },
+    {
+      "method": "PUT",
+      "path": "/profiles",
+      "description": "Update the authenticated candidate's profile information",
+      "file": "app/routes/profile_routes.py"
+    },
+    {
+      "method": "POST",
+      "path": "/companies",
+      "description": "Create a company record for the authenticated employer",
+      "file": "app/routes/company_routes.py"
+    },
+    {
+      "method": "PUT",
+      "path": "/companies/me",
+      "description": "Update the authenticated employer's company details and logo",
+      "file": "app/routes/company_routes.py"
+    },
+    {
+      "method": "GET",
+      "path": "/jobs",
+      "description": "Search and filter job listings with pagination (keyword, location, job type, remote)",
+      "file": "app/routes/job_routes.py"
+    },
+    {
+      "method": "POST",
+      "path": "/jobs",
+      "description": "Create a new job listing for the authenticated employer",
+      "file": "app/routes/job_routes.py"
+    },
+    {
+      "method": "PUT",
+      "path": "/jobs/{id}",
+      "description": "Update an existing job listing owned by the authenticated employer",
+      "file": "app/routes/job_routes.py"
+    },
+    {
+      "method": "POST",
+      "path": "/applications",
+      "description": "Submit an application (cover letter + resume) for a specific job",
+      "file": "app/routes/application_routes.py"
+    },
+    {
+      "method": "GET",
+      "path": "/applications/me",
+      "description": "List all applications submitted by the authenticated candidate",
+      "file": "app/routes/application_routes.py"
+    },
+    {
+      "method": "DELETE",
+      "path": "/admin/users/{id}",
+      "description": "Admin deletes or deactivates a user account",
+      "file": "app/routes/admin_routes.py"
+    },
+    {
+      "method": "DELETE",
+      "path": "/admin/jobs/{id}",
+      "description": "Admin removes a job listing that violates policies",
+      "file": "app/routes/admin_routes.py"
+    }
+  ],
+  "database_schema": [
+    {
+      "table_name": "users",
+      "columns": [
+        {
+          "name": "id",
+          "type": "INTEGER",
+          "is_primary_key": true,
+          "is_nullable": false
+        },
+        {
+          "name": "email",
+          "type": "STRING",
+          "is_primary_key": false,
+          "is_nullable": false
+        },
+        {
+          "name": "password_hash",
+          "type": "STRING",
+          "is_primary_key": false,
+          "is_nullable": false
+        },
+        {
+          "name": "role",
+          "type": "ENUM('candidate','employer','admin')",
+          "is_primary_key": false,
+          "is_nullable": false
+        },
+        {
+          "name": "is_active",
+          "type": "BOOLEAN",
+          "is_primary_key": false,
+          "is_nullable": false
+        },
+        {
+          "name": "created_at",
+          "type": "DATETIME",
+          "is_primary_key": false,
+          "is_nullable": false
+        }
+      ]
+    },
+    {
+      "table_name": "profiles",
+      "columns": [
+        {
+          "name": "id",
+          "type": "INTEGER",
+          "is_primary_key": true,
+          "is_nullable": false
+        },
+        {
+          "name": "user_id",
+          "type": "INTEGER",
+          "is_primary_key": false,
+          "is_nullable": false
+        },
+        {
+          "name": "full_name",
+          "type": "STRING",
+          "is_primary_key": false,
+          "is_nullable": false
+        },
+        {
+          "name": "phone",
+          "type": "STRING",
+          "is_primary_key": false,
+          "is_nullable": true
+        },
+        {
+          "name": "summary",
+          "type": "TEXT",
+          "is_primary_key": false,
+          "is_nullable": true
+        },
+        {
+          "name": "resume_url",
+          "type": "STRING",
+          "is_primary_key": false,
+          "is_nullable": false
+        },
+        {
+          "name": "visibility",
+          "type": "ENUM('public','private')",
+          "is_primary_key": false,
+          "is_nullable": false
+        },
+        {
+          "name": "created_at",
+          "type": "DATETIME",
+          "is_primary_key": false,
+          "is_nullable": false
+        },
+        {
+          "name": "updated_at",
+          "type": "DATETIME",
+          "is_primary_key": false,
+          "is_nullable": false
+        }
+      ]
+    },
+    {
+      "table_name": "companies",
+      "columns": [
+        {
+          "name": "id",
+          "type": "INTEGER",
+          "is_primary_key": true,
+          "is_nullable": false
+        },
+        {
+          "name": "user_id",
+          "type": "INTEGER",
+          "is_primary_key": false,
+          "is_nullable": false
+        },
+        {
+          "name": "name",
+          "type": "STRING",
+          "is_primary_key": false,
+          "is_nullable": false
+        },
+        {
+          "name": "website",
+          "type": "STRING",
+          "is_primary_key": false,
+          "is_nullable": true
+        },
+        {
+          "name": "logo_url",
+          "type": "STRING",
+          "is_primary_key": false,
+          "is_nullable": true
+        },
+        {
+          "name": "description",
+          "type": "TEXT",
+          "is_primary_key": false,
+          "is_nullable": true
+        },
+        {
+          "name": "created_at",
+          "type": "DATETIME",
+          "is_primary_key": false,
+          "is_nullable": false
+        },
+        {
+          "name": "updated_at",
+          "type": "DATETIME",
+          "is_primary_key": false,
+          "is_nullable": false
+        }
+      ]
+    },
+    {
+      "table_name": "job_listings",
+      "columns": [
+        {
+          "name": "id",
+          "type": "INTEGER",
+          "is_primary_key": true,
+          "is_nullable": false
+        },
+        {
+          "name": "company_id",
+          "type": "INTEGER",
+          "is_primary_key": false,
+          "is_nullable": false
+        },
+        {
+          "name": "title",
+          "type": "STRING",
+          "is_primary_key": false,
+          "is_nullable": false
+        },
+        {
+          "name": "description",
+          "type": "TEXT",
+          "is_primary_key": false,
+          "is_nullable": false
+        },
+        {
+          "name": "location",
+          "type": "STRING",
+          "is_primary_key": false,
+          "is_nullable": false
+        },
+        {
+          "name": "job_type",
+          "type": "ENUM('full-time','part-time','contract','internship')",
+          "is_primary_key": false,
+          "is_nullable": false
+        },
+        {
+          "name": "is_remote",
+          "type": "BOOLEAN",
+          "is_primary_key": false,
+          "is_nullable": false
+        },
+        {
+          "name": "created_at",
+          "type": "DATETIME",
+          "is_primary_key": false,
+          "is_nullable": false
+        },
+        {
+          "name": "is_active",
+          "type": "BOOLEAN",
+          "is_primary_key": false,
+          "is_nullable": false
+        }
+      ]
+    },
+    {
+      "table_name": "applications",
+      "columns": [
+        {
+          "name": "id",
+          "type": "INTEGER",
+          "is_primary_key": true,
+          "is_nullable": false
+        },
+        {
+          "name": "job_listing_id",
+          "type": "INTEGER",
+          "is_primary_key": false,
+          "is_nullable": false
+        },
+        {
+          "name": "candidate_user_id",
+          "type": "INTEGER",
+          "is_primary_key": false,
+          "is_nullable": false
+        },
+        {
+          "name": "cover_letter",
+          "type": "TEXT",
+          "is_primary_key": false,
+          "is_nullable": true
+        },
+        {
+          "name": "resume_url",
+          "type": "STRING",
+          "is_primary_key": false,
+          "is_nullable": false
+        },
+        {
+          "name": "status",
+          "type": "ENUM('submitted','reviewed','interview','rejected','hired')",
+          "is_primary_key": false,
+          "is_nullable": false
+        },
+        {
+          "name": "submitted_at",
+          "type": "DATETIME",
+          "is_primary_key": false,
+          "is_nullable": false
+        }
+      ]
+    },
+    {
+      "table_name": "audit_logs",
+      "columns": [
+        {
+          "name": "id",
+          "type": "INTEGER",
+          "is_primary_key": true,
+          "is_nullable": false
+        },
+        {
+          "name": "admin_user_id",
+          "type": "INTEGER",
+          "is_primary_key": false,
+          "is_nullable": false
+        },
+        {
+          "name": "action_type",
+          "type": "STRING",
+          "is_primary_key": false,
+          "is_nullable": false
+        },
+        {
+          "name": "target_entity",
+          "type": "STRING",
+          "is_primary_key": false,
+          "is_nullable": false
+        },
+        {
+          "name": "target_id",
+          "type": "INTEGER",
+          "is_primary_key": false,
+          "is_nullable": false
+        },
+        {
+          "name": "timestamp",
+          "type": "DATETIME",
+          "is_primary_key": false,
+          "is_nullable": false
+        }
+      ]
+    }
+  ],
+  "folder_structure": {
+    "backend": [
+      "app/models",
+      "app/schemas",
+      "app/routes",
+      "app/services",
+      "app/utils",
+      "app/dependencies",
+      "app/config"
+    ]
+  },
+  "frontend_structure": {
+    "pages": [
+      "SignUpPage",
+      "LoginPage",
+      "PasswordResetPage",
+      "ProfilePage",
+      "CompanyPage",
+      "JobSearchPage",
+      "JobCreateEditPage",
+      "ApplicationHistoryPage",
+      "AdminUserManagementPage",
+      "AdminJobModerationPage"
+    ],
+    "components": [
+      "Header",
+      "Footer",
+      "JobCard",
+      "JobList",
+      "Pagination",
+      "SearchBar",
+      "ProfileForm",
+      "CompanyForm",
+      "ApplicationForm",
+      "NotificationToast",
+      "ModalConfirm",
+      "FileUploader",
+      "Navbar",
+      "Sidebar",
+      "LoadingSpinner"
+    ]
+  }
+}

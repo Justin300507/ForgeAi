@@ -1,0 +1,400 @@
+{
+  "api_endpoints": [
+    {
+      "method": "POST",
+      "path": "/auth/login",
+      "description": "Authenticate user and return JWT token",
+      "file": "app/routes/auth_routes.py"
+    },
+    {
+      "method": "POST",
+      "path": "/auth/register",
+      "description": "Create a new user account",
+      "file": "app/routes/auth_routes.py"
+    },
+    {
+      "method": "GET",
+      "path": "/users/me",
+      "description": "Retrieve profile of the logged\u2011in user",
+      "file": "app/routes/user_routes.py"
+    },
+    {
+      "method": "GET",
+      "path": "/companies",
+      "description": "List companies owned by the user with pagination and optional name search",
+      "file": "app/routes/company_routes.py"
+    },
+    {
+      "method": "POST",
+      "path": "/companies",
+      "description": "Create a new company record",
+      "file": "app/routes/company_routes.py"
+    },
+    {
+      "method": "GET",
+      "path": "/companies/{id}",
+      "description": "Get details of a specific company",
+      "file": "app/routes/company_routes.py"
+    },
+    {
+      "method": "PUT",
+      "path": "/companies/{id}",
+      "description": "Update company information",
+      "file": "app/routes/company_routes.py"
+    },
+    {
+      "method": "GET",
+      "path": "/applications",
+      "description": "List applications with optional filtering by company_id and status, includes pagination",
+      "file": "app/routes/application_routes.py"
+    },
+    {
+      "method": "POST",
+      "path": "/applications",
+      "description": "Create a new application linked to a company, optionally with an initial status",
+      "file": "app/routes/application_routes.py"
+    },
+    {
+      "method": "GET",
+      "path": "/applications/{id}",
+      "description": "Retrieve detailed information for a specific application, including status and attachments",
+      "file": "app/routes/application_routes.py"
+    },
+    {
+      "method": "GET",
+      "path": "/interviews",
+      "description": "List interview events with optional filtering by application_id, ordered chronologically",
+      "file": "app/routes/interview_routes.py"
+    },
+    {
+      "method": "POST",
+      "path": "/interviews",
+      "description": "Schedule a new interview for an application",
+      "file": "app/routes/interview_routes.py"
+    },
+    {
+      "method": "GET",
+      "path": "/interviews/{id}",
+      "description": "Get details of a specific interview event",
+      "file": "app/routes/interview_routes.py"
+    },
+    {
+      "method": "POST",
+      "path": "/shared_access",
+      "description": "Generate a read\u2011only share token for a coach with an expiration time",
+      "file": "app/routes/sharedaccess_routes.py"
+    },
+    {
+      "method": "GET",
+      "path": "/shared_access/validate",
+      "description": "Validate a share token and return the associated user\u2019s read\u2011only view permissions",
+      "file": "app/routes/sharedaccess_routes.py"
+    }
+  ],
+  "database_schema": [
+    {
+      "table_name": "users",
+      "columns": [
+        {
+          "name": "id",
+          "type": "Integer",
+          "is_primary_key": true,
+          "is_nullable": false
+        },
+        {
+          "name": "email",
+          "type": "String",
+          "is_primary_key": false,
+          "is_nullable": false
+        },
+        {
+          "name": "password_hash",
+          "type": "String",
+          "is_primary_key": false,
+          "is_nullable": false
+        },
+        {
+          "name": "role",
+          "type": "String",
+          "is_primary_key": false,
+          "is_nullable": false
+        },
+        {
+          "name": "created_at",
+          "type": "DateTime",
+          "is_primary_key": false,
+          "is_nullable": false
+        }
+      ]
+    },
+    {
+      "table_name": "companies",
+      "columns": [
+        {
+          "name": "id",
+          "type": "Integer",
+          "is_primary_key": true,
+          "is_nullable": false
+        },
+        {
+          "name": "user_id",
+          "type": "Integer",
+          "is_primary_key": false,
+          "is_nullable": false
+        },
+        {
+          "name": "name",
+          "type": "String",
+          "is_primary_key": false,
+          "is_nullable": false
+        },
+        {
+          "name": "website",
+          "type": "String",
+          "is_primary_key": false,
+          "is_nullable": true
+        },
+        {
+          "name": "notes",
+          "type": "Text",
+          "is_primary_key": false,
+          "is_nullable": true
+        },
+        {
+          "name": "created_at",
+          "type": "DateTime",
+          "is_primary_key": false,
+          "is_nullable": false
+        }
+      ]
+    },
+    {
+      "table_name": "applications",
+      "columns": [
+        {
+          "name": "id",
+          "type": "Integer",
+          "is_primary_key": true,
+          "is_nullable": false
+        },
+        {
+          "name": "company_id",
+          "type": "Integer",
+          "is_primary_key": false,
+          "is_nullable": false
+        },
+        {
+          "name": "title",
+          "type": "String",
+          "is_primary_key": false,
+          "is_nullable": false
+        },
+        {
+          "name": "applied_at",
+          "type": "DateTime",
+          "is_primary_key": false,
+          "is_nullable": false
+        },
+        {
+          "name": "current_status",
+          "type": "String",
+          "is_primary_key": false,
+          "is_nullable": false
+        },
+        {
+          "name": "created_at",
+          "type": "DateTime",
+          "is_primary_key": false,
+          "is_nullable": false
+        }
+      ]
+    },
+    {
+      "table_name": "interviews",
+      "columns": [
+        {
+          "name": "id",
+          "type": "Integer",
+          "is_primary_key": true,
+          "is_nullable": false
+        },
+        {
+          "name": "application_id",
+          "type": "Integer",
+          "is_primary_key": false,
+          "is_nullable": false
+        },
+        {
+          "name": "type",
+          "type": "String",
+          "is_primary_key": false,
+          "is_nullable": false
+        },
+        {
+          "name": "scheduled_at",
+          "type": "DateTime",
+          "is_primary_key": false,
+          "is_nullable": false
+        },
+        {
+          "name": "notes",
+          "type": "Text",
+          "is_primary_key": false,
+          "is_nullable": true
+        },
+        {
+          "name": "created_at",
+          "type": "DateTime",
+          "is_primary_key": false,
+          "is_nullable": false
+        }
+      ]
+    },
+    {
+      "table_name": "status_updates",
+      "columns": [
+        {
+          "name": "id",
+          "type": "Integer",
+          "is_primary_key": true,
+          "is_nullable": false
+        },
+        {
+          "name": "application_id",
+          "type": "Integer",
+          "is_primary_key": false,
+          "is_nullable": false
+        },
+        {
+          "name": "status",
+          "type": "String",
+          "is_primary_key": false,
+          "is_nullable": false
+        },
+        {
+          "name": "comment",
+          "type": "Text",
+          "is_primary_key": false,
+          "is_nullable": true
+        },
+        {
+          "name": "updated_at",
+          "type": "DateTime",
+          "is_primary_key": false,
+          "is_nullable": false
+        }
+      ]
+    },
+    {
+      "table_name": "attachments",
+      "columns": [
+        {
+          "name": "id",
+          "type": "Integer",
+          "is_primary_key": true,
+          "is_nullable": false
+        },
+        {
+          "name": "application_id",
+          "type": "Integer",
+          "is_primary_key": false,
+          "is_nullable": false
+        },
+        {
+          "name": "file_path",
+          "type": "String",
+          "is_primary_key": false,
+          "is_nullable": false
+        },
+        {
+          "name": "file_name",
+          "type": "String",
+          "is_primary_key": false,
+          "is_nullable": false
+        },
+        {
+          "name": "uploaded_at",
+          "type": "DateTime",
+          "is_primary_key": false,
+          "is_nullable": false
+        }
+      ]
+    },
+    {
+      "table_name": "shared_access",
+      "columns": [
+        {
+          "name": "id",
+          "type": "Integer",
+          "is_primary_key": true,
+          "is_nullable": false
+        },
+        {
+          "name": "user_id",
+          "type": "Integer",
+          "is_primary_key": false,
+          "is_nullable": false
+        },
+        {
+          "name": "token",
+          "type": "String",
+          "is_primary_key": false,
+          "is_nullable": false
+        },
+        {
+          "name": "expires_at",
+          "type": "DateTime",
+          "is_primary_key": false,
+          "is_nullable": false
+        },
+        {
+          "name": "created_at",
+          "type": "DateTime",
+          "is_primary_key": false,
+          "is_nullable": false
+        }
+      ]
+    }
+  ],
+  "folder_structure": {
+    "backend": [
+      "routes",
+      "models",
+      "schemas",
+      "services",
+      "dependencies",
+      "auth",
+      "config"
+    ]
+  },
+  "frontend_structure": {
+    "pages": [
+      "LoginPage",
+      "RegisterPage",
+      "DashboardPage",
+      "CompaniesPage",
+      "CompanyDetailPage",
+      "ApplicationDetailPage",
+      "InterviewDetailPage",
+      "SharedAccessPage",
+      "SettingsPage"
+    ],
+    "components": [
+      "Navbar",
+      "CompanyForm",
+      "CompanyList",
+      "ApplicationForm",
+      "ApplicationList",
+      "InterviewForm",
+      "InterviewList",
+      "StatusBadge",
+      "FileUploader",
+      "PaginationControls",
+      "SearchBar",
+      "DashboardStats",
+      "UpcomingInterviews",
+      "ExportButton",
+      "ShareTokenModal"
+    ]
+  }
+}

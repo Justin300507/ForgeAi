@@ -1,4 +1,5 @@
 from fastapi import FastAPI
+from fastapi.responses import RedirectResponse
 from pydantic import BaseModel
 
 from app.services.architect_service import generate_architecture
@@ -7,7 +8,12 @@ from app.services.frontend_service import generate_frontend
 from app.services.project_service import generate_project
 from app.services.planner_service import generate_plan
 
-app = FastAPI(title="ForgeAI", version="7.0")
+app = FastAPI(title="ForgeAI", version="12.0")
+
+
+@app.get("/", include_in_schema=False)
+def root():
+    return RedirectResponse(url="/docs")
 
 
 class ProjectIdea(BaseModel):
@@ -62,6 +68,7 @@ class V6Request(BaseModel):
     idea: str
     provider: str = "auto"
     use_parallel_backend: bool = True
+    frontend_target: str = "web"   # "web" | "pwa"
 
 
 @app.post("/project/v6")
@@ -70,12 +77,15 @@ def project_v6(request: V6Request):
     V6 Multi-Agent Engineering Team.
     Stages: PM → Tech Lead → Architect → Backend Team (parallel)
             → Frontend → QA → Security → Validation → Runtime → Export
+
+    frontend_target: "web" (default) or "pwa" (installable Progressive Web App)
     """
     from app.services.v6_orchestrator import generate_project_v6
     return generate_project_v6(
         request.idea,
         provider=request.provider,
         use_parallel_backend=request.use_parallel_backend,
+        frontend_target=request.frontend_target,
     )
 
 
@@ -97,6 +107,7 @@ class V7Request(BaseModel):
     provider: str = "auto"
     run_improvement_cycle: bool = True
     improvement_cycle_every_n: int = 5
+    frontend_target: str = "web"   # "web" | "pwa"
 
 
 @app.post("/project/v7")
@@ -104,7 +115,8 @@ def project_v7(request: V7Request):
     """
     V7 Self-Improving AI Software Engineer.
     = V6 multi-agent pipeline + automatic improvement cycle every N runs.
-    The improvement cycle runs: Research Agent → Rule Evolution → Prompt Optimizer → Leaderboard.
+
+    frontend_target: "web" (default Tailwind+React) or "pwa" (installable PWA with offline support)
     """
     from app.services.v7_orchestrator import generate_project_v7
     return generate_project_v7(
@@ -112,6 +124,7 @@ def project_v7(request: V7Request):
         provider=request.provider,
         run_improvement_cycle=request.run_improvement_cycle,
         improvement_cycle_every_n=request.improvement_cycle_every_n,
+        frontend_target=request.frontend_target,
     )
 
 
@@ -181,6 +194,188 @@ def benchmark_comparison():
     }
 
 
+class V8Request(BaseModel):
+    idea: str
+    run_improvement_cycle: bool = False
+    skip_reviews: bool = True
+
+
+@app.post("/project/v8")
+def project_v8(request: V8Request):
+    """
+    V8 — Google Gemini Pipeline.
+    Full V7 pipeline using Google Gemini-2.5-Flash for all generation stages.
+    Useful when Cerebras credits are exhausted or for Gemini quality benchmarking.
+    Requires GEMINI_API_KEY in .env.
+    """
+    from app.services.v8_orchestrator import generate_project_v8
+    return generate_project_v8(
+        idea=request.idea,
+        run_improvement_cycle=request.run_improvement_cycle,
+        skip_reviews=request.skip_reviews,
+    )
+
+
+class V9Request(BaseModel):
+    idea: str
+    run_improvement_cycle: bool = False
+    skip_reviews: bool = True
+
+
+@app.post("/project/v9")
+def project_v9(request: V9Request):
+    """
+    V9 — OpenAI ChatGPT Pipeline.
+    Full V7 pipeline using OpenAI GPT-4o-mini (GPT-4o fallback) for all generation stages.
+    Requires OPENAI_API_KEY in .env.
+    """
+    from app.services.v9_orchestrator import generate_project_v9
+    return generate_project_v9(
+        idea=request.idea,
+        run_improvement_cycle=request.run_improvement_cycle,
+        skip_reviews=request.skip_reviews,
+    )
+
+
+class V10Request(BaseModel):
+    idea: str
+    run_improvement_cycle: bool = False
+    skip_reviews: bool = False
+
+
+@app.post("/project/v10")
+def project_v10(request: V10Request):
+    """
+    V10 — Smart Multi-Provider Pipeline.
+    Uses the best available provider for each stage with automatic fallback.
+    Provider chain: Cerebras → Groq → OpenRouter → OpenAI → Gemini → Ollama.
+    Full reviews enabled by default for maximum quality.
+    """
+    from app.services.v10_orchestrator import generate_project_v10
+    return generate_project_v10(
+        idea=request.idea,
+        run_improvement_cycle=request.run_improvement_cycle,
+        skip_reviews=request.skip_reviews,
+    )
+
+
+class V11Request(BaseModel):
+    idea: str
+    provider: str = "auto"
+    deploy_provider: str = "railway"
+    run_improvement_cycle: bool = False
+    skip_reviews: bool = True
+    skip_deploy: bool = False
+    frontend_target: str = "web"   # "web" | "pwa"
+
+
+@app.post("/project/v11")
+def project_v11(request: V11Request):
+    """
+    V11 — Autonomous Deployment Platform.
+    Generates, validates, deploys to Railway, and returns a live URL.
+
+    frontend_target: "web" (Tailwind+React) or "pwa" (installable PWA, works offline)
+
+    Requires:
+      - RAILWAY_TOKEN in backend/.env
+      - Railway CLI: npm install -g @railway/cli
+    """
+    from app.services.v11_orchestrator import generate_project_v11
+    return generate_project_v11(
+        idea=request.idea,
+        provider=request.provider,
+        deploy_provider=request.deploy_provider,
+        run_improvement_cycle=request.run_improvement_cycle,
+        skip_reviews=request.skip_reviews,
+        skip_deploy=request.skip_deploy,
+        frontend_target=request.frontend_target,
+    )
+
+
+@app.get("/deployments")
+def deployment_history():
+    """V11 — List recent deployments with URLs and health status."""
+    from app.services.deployment_service import get_deployment_history
+    return {"deployments": get_deployment_history(limit=20)}
+
+
+@app.get("/deployment/leaderboard")
+def deployment_leaderboard():
+    """
+    V11 Deployment Improvement Leaderboard.
+    7-day vs 30-day success rates, improvement velocity, best/worst fix patterns.
+    This is how you know ForgeAI is genuinely learning — not just running more generations.
+    """
+    from app.services.deployment_fix_service import get_deployment_leaderboard
+    return get_deployment_leaderboard()
+
+
+@app.get("/deployment/stats")
+def deployment_stats():
+    """
+    V11 Deployment Benchmark.
+    Returns total/successful/failed, success_rate, top errors, and per-error fix rates.
+    A generated app scores 100 only when it builds, runs, deploys, and /health is fast.
+    """
+    from app.services.deployment_fix_service import get_deployment_stats
+    return get_deployment_stats()
+
+
+@app.get("/deployment/memory")
+def deployment_memory():
+    """V11 — Raw deployment error memory (per-error seen/fixed counts)."""
+    from app.services.deployment_fix_service import get_deployment_memory_summary
+    summary = get_deployment_memory_summary()
+    errors = summary.get("errors", {})
+    # Format as readable table: { "PortError": "12 → fixed 11 (91.7%)", ... }
+    formatted = {}
+    for err_type, v in sorted(errors.items(), key=lambda x: x[1].get("seen", 0), reverse=True):
+        seen = v.get("seen", 0)
+        fixed = v.get("fixed", 0)
+        fix_rate = round(fixed / seen * 100, 1) if seen else 0.0
+        formatted[err_type] = f"{seen} seen → {fixed} fixed ({fix_rate}%)"
+    return {
+        "total_deployments": summary.get("total_deployments", 0),
+        "successful_deployments": summary.get("successful_deployments", 0),
+        "avg_health_latency_ms": round(summary.get("avg_health_latency_ms", 0)),
+        "error_fix_summary": formatted,
+    }
+
+
+class V12Request(BaseModel):
+    idea: str
+    provider: str = "auto"
+    deploy_provider: str = "railway"
+    run_improvement_cycle: bool = False
+    skip_reviews: bool = True
+    metrics_requests: int = 5
+    skip_evolution: bool = False
+
+
+@app.post("/project/v12")
+def project_v12(request: V12Request):
+    """
+    V12 — Continuous Product Evolution.
+    Generates, deploys, measures live metrics, evolves the code, and redeploys.
+
+    Pipeline: Generate → Deploy → Metrics → LLM Analysis → Regenerate → Redeploy
+    Returns: v1 URL, v2 URL (if evolved), metrics delta, evolution plan.
+
+    Requires RAILWAY_TOKEN in backend/.env and Railway CLI installed.
+    """
+    from app.services.v12_orchestrator import generate_project_v12
+    return generate_project_v12(
+        idea=request.idea,
+        provider=request.provider,
+        deploy_provider=request.deploy_provider,
+        run_improvement_cycle=request.run_improvement_cycle,
+        skip_reviews=request.skip_reviews,
+        metrics_requests=request.metrics_requests,
+        skip_evolution=request.skip_evolution,
+    )
+
+
 @app.get("/health")
 def health():
-    return {"status": "ok", "version": "7.0"}
+    return {"status": "ok", "version": "12.0"}

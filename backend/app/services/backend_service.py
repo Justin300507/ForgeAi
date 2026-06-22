@@ -56,28 +56,26 @@ def generate_backend(
         clean_text = clean_text.replace("```", "")
         clean_text = clean_text.strip()
 
-        try:
-            data = extract_json(clean_text)
-
-        except json.JSONDecodeError as e:
-
-            print("\n=== BACKEND JSON ERROR ===")
-            print(e)
-
-            print("\nBackend Response Preview:")
-            print(clean_text[:500])
-
-            with open(
-                "backend_failed_response.txt",
-                "w",
-                encoding="utf-8"
-            ) as f:
-                f.write(clean_text)
-
-            raise HTTPException(
-                status_code=500,
-                detail="Backend returned invalid JSON."
-            )
+        data = None
+        for attempt in range(3):
+            try:
+                data = extract_json(clean_text)
+                break
+            except json.JSONDecodeError as e:
+                print(f"\n=== BACKEND JSON ERROR (attempt {attempt+1}/3) ===")
+                print(e)
+                if attempt < 2:
+                    print("Retrying LLM call...")
+                    text = generate_content(prompt, provider, max_tokens=max_tokens)
+                    if not text:
+                        break
+                    clean_text = text.replace("```json", "").replace("```", "").strip()
+                else:
+                    print("\nBackend Response Preview:")
+                    print(clean_text[:500])
+                    with open("backend_failed_response.txt", "w", encoding="utf-8") as f:
+                        f.write(clean_text)
+                    raise HTTPException(status_code=500, detail="Backend returned invalid JSON after 3 attempts.")
 
         if not isinstance(data, dict):
             raise HTTPException(

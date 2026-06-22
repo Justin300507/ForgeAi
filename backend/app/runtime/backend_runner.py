@@ -94,20 +94,20 @@ class BackendRunner:
                 break
 
             try:
-
-                response = requests.get(
-                    "http://127.0.0.1:8001/docs",
-                    timeout=2
-                )
-
-                if response.status_code == 200:
-
-                    healthy = True
-
-                    print(
-                        f"Health Check Status: {response.status_code}"
-                    )
-
+                # Try /health first (deterministically injected), fall back to /docs
+                for check_path in ("/health", "/docs"):
+                    try:
+                        response = requests.get(
+                            f"http://127.0.0.1:8001{check_path}",
+                            timeout=2
+                        )
+                        if response.status_code < 500:
+                            healthy = True
+                            print(f"Health Check {check_path}: {response.status_code}")
+                            break
+                    except Exception:
+                        continue
+                if healthy:
                     break
 
             except Exception:

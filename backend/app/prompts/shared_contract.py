@@ -3,119 +3,110 @@ FASTAPI_CONTRACT = """
 PROJECT CONTRACT — DO NOT DEVIATE
 ========================================
 
-- Framework: FastAPI only. No Flask. No Django.
-- Every route file MUST use APIRouter, never Flask Blueprint.
-- Router naming convention: {resource}_router (NEVER just `router`)
-  Example: app/routes/user_routes.py defines: user_router = APIRouter()
-  Example: app/routes/task_routes.py defines: task_router = APIRouter()
-- NEVER list query-parameter variants as separate endpoints.
-  WRONG: GET /tasks?tag={tag_id}  — this is NOT a separate route
-  RIGHT: GET /tasks               — use Optional[X] = Query(None) in the handler
-- NEVER use prefix= in APIRouter(). Route decorators MUST include the full path.
-  WRONG: task_router = APIRouter(prefix="/tasks")
-         @task_router.get("/")
-  RIGHT: task_router = APIRouter()
-         @task_router.get("/tasks")
-- main.py imports and registers routers like:
-  from app.routes.user_routes import user_router
-  app.include_router(user_router)
-- Database models inherit from Base (SQLAlchemy), never BaseModel (Pydantic).
-- API schemas inherit from BaseModel, live in app/schemas/, never in app/models/.
-- All imports are absolute, starting with app.
-- Paths must start with app/ and use forward slashes only.
-- For any nullable database column, the corresponding Pydantic schema
-  field MUST be typed Optional[Type] = None, never bare Type = None.
-- NEVER import directly from a package root, e.g. `from app.models import X`
-  or `from app.schemas import X`. ALWAYS import from the specific submodule:
-  `from app.models.user import User`, `from app.schemas.user import UserCreate`.
-- NEVER use Flask-SQLAlchemy style: no `db = SQLAlchemy()`, no
-  `class X(db.Model)`, no `from app.database import db`.
-- The FastAPI DB dependency function is ALWAYS named exactly
-  `get_db`, never `db`. Database models inherit directly from
-  `Base`: `from app.database import Base` then `class X(Base):`.
-- `get_db` MUST be imported from `app.database`, NOT from `app.dependencies.database`.
-  CORRECT:  from app.database import get_db
-  WRONG:    from app.dependencies.database import get_db
-  WRONG:    from app.dependencies import get_db
-- If you ever need to suppress a type checker, it MUST be written as
-  a comment: `# type: ignore`. NEVER write `type: ignore` as a bare
-  statement — that is not a comment, it is invalid/meaningless code.
-- Every route handler MUST contain a real, working implementation —
-  never a placeholder body of just `pass` or a comment. If
-  response_model is set, the function MUST actually return a value
-  matching that shape, not None.
-- When using Path(), Query(), or Depends() as defaults, any parameter
-  WITHOUT a default must come BEFORE them in the function signature.
-  This is a Python SyntaxError if violated, not just a style issue.
-  Wrong: def update_task(task_id: int = Path(...), task_in: TaskUpdate, db: Session = Depends(get_db))
-  Right: def update_task(task_in: TaskUpdate, task_id: int = Path(...), db: Session = Depends(get_db))
-  Rule: put the parameter with NO default (like a request body) FIRST,
-  then all Path/Query/Depends parameters after it.
-  - If a function uses `await` anywhere in its body, it MUST be
-  declared `async def`, never plain `def`.
-- SQLAlchemy's synchronous Session (db.query, db.commit, db.add) is
-  NEVER used with async/await. Do not mix sync Session calls with
-  async def or await unless using an actual async ORM driver.
-- Pydantic schemas MUST use `from_attributes = True` in Config, NOT `orm_mode = True`.
-  `orm_mode` was renamed in Pydantic v2 and causes warnings/errors.
-  CORRECT:
-    class UserResponse(BaseModel):
-        id: int
-        class Config:
-            from_attributes = True
-  WRONG:
-    class UserResponse(BaseModel):
-        id: int
-        class Config:
-            orm_mode = True
-- NEVER use a bare Python built-in type (str, int, bool) as a FastAPI Depends() argument.
-  FastAPI cannot introspect built-in types and will raise ValueError at startup.
-  WRONG: def endpoint(token: str = Depends(str))
-  RIGHT: def endpoint(token: str = Depends(oauth2_scheme))
-- NEVER use werkzeug for password hashing — it is a Flask dependency and is NOT installed.
-  Use passlib instead:
-  WRONG: from werkzeug.security import generate_password_hash, check_password_hash
-  RIGHT: from passlib.context import CryptContext
-         pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
-         hashed = pwd_context.hash(plain_password)
-         valid  = pwd_context.verify(plain_password, hashed)
-  Add passlib[bcrypt] to requirements.txt.
-- NEVER access schemas as a namespace object (schemas.user.X). Always use direct imports.
-  WRONG: response_model=schemas.user.UserResponse
-         import app.schemas as schemas; schemas.user.UserResponse
-  RIGHT: from app.schemas.user import UserResponse
-         response_model=UserResponse
-- NEVER use `async with engine.begin()` with a synchronous SQLAlchemy engine.
-  Synchronous engines only support `with engine.begin()`. Using async context managers
-  on a sync engine raises TypeError at startup.
-  WRONG: async with engine.begin() as conn: ...
-  RIGHT: with engine.begin() as conn: ...
-  Or move table creation to module level: Base.metadata.create_all(bind=engine)
-- NEVER use joinedload() on an attribute that is not a declared relationship().
-  If you write joinedload(Note.notebook), then Note MUST have:
-    notebook = relationship("Notebook", back_populates="notes")
-  Otherwise use joinedload on a FK column that doesn't map to a relationship,
-  which raises AttributeError at runtime.
-- NEVER import auth schemas from a separate file (app.schemas.auth). Define
-  LoginRequest, RegisterRequest, and Token schemas directly inside auth_routes.py.
-  If you write `from app.schemas.auth import LoginRequest` but never generate
-  app/schemas/auth.py, the server crashes immediately on startup.
-  RIGHT: Define LoginRequest, RegisterRequest, Token as Pydantic BaseModel classes
-  at the TOP of app/routes/auth_routes.py.
-- EVERY file that main.py imports MUST actually be generated. If main.py has
-  `from app.routes.auth_routes import auth_router`, you MUST generate auth_routes.py.
-  If main.py has `from app.routes.user_routes import user_router`, you MUST generate
-  user_routes.py. Missing route files crash the server on startup with ModuleNotFoundError.
-- All SQLAlchemy ForeignKey references MUST use the string form and match an actual
-  table name: ForeignKey('users.id') not ForeignKey(User.id). Every table referenced
-  by a ForeignKey must have its model file imported in main.py so Base.metadata
-  can create it. Missing imports cause NoReferencedTableError on startup.
-- NEVER define `created_at` or `updated_at` as `nullable=False` without a server default.
-  Without a default, every INSERT raises IntegrityError. ALWAYS use:
-  WRONG: created_at = Column(DateTime, nullable=False)
-  RIGHT: created_at = Column(DateTime, server_default=func.now(), nullable=False)
-         updated_at = Column(DateTime, server_default=func.now(), onupdate=func.now(), nullable=False)
-  Add `from sqlalchemy.sql import func` at the top of every model file that uses timestamps.
-- NEVER use `auth2_scheme` — the correct name is `oauth2_scheme`.
-  Define it as: oauth2_scheme = OAuth2PasswordBearer(tokenUrl="token")
+MANDATORY IN EVERY main.py (non-negotiable — validator will reject missing items)
+- CORS middleware (import + add_middleware):
+    from fastapi.middleware.cors import CORSMiddleware
+    app.add_middleware(CORSMiddleware, allow_origins=["*"], allow_credentials=True, allow_methods=["*"], allow_headers=["*"])
+- Health endpoint:
+    @app.get("/health")
+    def health():
+        return {"status": "ok"}
+
+LIST ENDPOINTS (any GET that returns multiple records)
+- MUST include pagination params: `limit: int = Query(50, ge=1, le=500), offset: int = Query(0, ge=0)`
+- Apply them: `return db.query(Model).offset(offset).limit(limit).all()`
+- Import: `from fastapi import Query`
+
+SCHEMAS — required string fields
+- Use `Field(min_length=1)` on required string fields in Create schemas:
+    name: str = Field(min_length=1)
+    title: str = Field(min_length=1)
+    email: str = Field(min_length=1)
+- Import: `from pydantic import BaseModel, Field`
+
+ROUTE ERROR HANDLING
+- Return 404 Not Found when a record doesn't exist — NEVER let it crash with 500:
+    obj = db.query(Model).filter(Model.id == id).first()
+    if not obj:
+        raise HTTPException(status_code=404, detail="Not found")
+
+FRAMEWORK & ROUTING
+- FastAPI only. No Flask, no Django, no Blueprint.
+- Every route file: `{resource}_router = APIRouter()` (e.g. user_router, task_router). NEVER just `router`.
+- NEVER use prefix= in APIRouter(). Route decorators include the full path.
+  RIGHT: task_router = APIRouter(); @task_router.get("/tasks")
+- main.py: `from app.routes.user_routes import user_router; app.include_router(user_router)`
+- NEVER list query-param variants as separate endpoints. Use Optional[X] = Query(None) in one handler.
+
+IMPORTS & PATHS
+- All imports absolute, starting with `app.`. Paths start with `app/`, forward slashes only.
+- NEVER import from package root: `from app.models import X` or `from app.schemas import X`.
+  ALWAYS import from the specific submodule: `from app.models.user import User`.
+- `get_db` MUST be imported from `app.database`, not `app.dependencies.database` or `app.dependencies`.
+
+MODELS & SCHEMAS
+- SQLAlchemy models: inherit from Base, live in app/models/. Never BaseModel (Pydantic).
+- Pydantic schemas: inherit from BaseModel, live in app/schemas/. Never in app/models/.
+- Nullable DB column → schema field MUST be `Optional[Type] = None`, never `Type = None`.
+- Pydantic v2: use `from_attributes = True` in Config, NOT `orm_mode = True`.
+- NEVER generate monolithic `app/schemas/schemas.py`. ALWAYS one file per resource:
+  app/schemas/user.py, app/schemas/account.py, etc. Routes import from the specific submodule.
+- NEVER access schemas as namespace: `schemas.user.X`. Use direct imports.
+
+DATABASE
+- NEVER use Flask-SQLAlchemy: no `db = SQLAlchemy()`, `class X(db.Model)`, `from app.database import db`.
+- DB dependency always named `get_db`. Models inherit from `Base`: `from app.database import Base`.
+- ForeignKey: always string form matching actual table name: `ForeignKey('users.id')`.
+  Every FK-referenced model file MUST be imported in main.py so Base.metadata can create it.
+- SQLAlchemy relationship() MUST use string names: `relationship("OpeningHour")` NOT `relationship(OpeningHour)`.
+  Every model referenced by string in a relationship MUST be imported in main.py.
+  WRONG: main.py never imports opening_hour.py → `relationship("OpeningHour")` crashes at startup.
+  RIGHT: `from app.models.opening_hour import OpeningHour  # noqa: F401` in main.py.
+- NEVER import other model classes inside a model file. Models must NOT do `from app.models.user import User`.
+  Use ForeignKey("users.id") with the string table name — no import needed.
+  WRONG: companies.py does `from app.models.user import User` → duplicate table registration crash.
+  RIGHT: companies.py just uses `ForeignKey("users.id")` — main.py imports all models independently.
+- Timestamps: NEVER `nullable=False` without a server default.
+  RIGHT: `created_at = Column(DateTime, server_default=func.now(), nullable=False)`
+  RIGHT: `updated_at = Column(DateTime, server_default=func.now(), onupdate=func.now(), nullable=False)`
+  Add `from sqlalchemy.sql import func` in every model file using timestamps.
+- NEVER use `joinedload()` on an attribute that is not a declared `relationship()`.
+- NEVER use `async with engine.begin()` with a synchronous engine. Use `with engine.begin()`.
+- SQLAlchemy sync Session (`db.query`, `db.commit`) is NEVER used with `async def` / `await`.
+
+AUTH
+- All files main.py imports MUST be generated. Missing route files → ModuleNotFoundError on startup.
+- Define LoginRequest, RegisterRequest, Token schemas directly inside auth_routes.py.
+  NEVER `from app.schemas.auth import LoginRequest` unless you generate app/schemas/auth.py.
+- `oauth2_scheme` (not `auth2_scheme`): `oauth2_scheme = OAuth2PasswordBearer(tokenUrl="token")`
+- NEVER use a bare built-in type as Depends(): `Depends(str)` crashes. Use `Depends(oauth2_scheme)`.
+- NEVER hardcode SECRET_KEY in route files. ALWAYS import from app.utils.auth:
+    from app.utils.auth import create_access_token, verify_password, get_password_hash, get_current_user, oauth2_scheme
+  The auth utils file already exists (pre-generated). SECRET_KEY is loaded from env there.
+- NEVER define SECRET_KEY, ALGORITHM, pwd_context, or ACCESS_TOKEN_EXPIRE_MINUTES in route files.
+  These are ONLY in app/utils/auth.py — import from there, never redefine.
+- NEVER use werkzeug. Use passlib: `from passlib.context import CryptContext; pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")`
+- Routes that CREATE/UPDATE user-owned resources (model with `user_id` NOT NULL FK) MUST:
+  1. Include `current_user: User = Depends(get_current_user)` in the signature
+  2. Set `obj.user_id = current_user.id` before `db.add(obj)`
+- NEVER import a function from app.services.auth or app.utils.auth unless it is explicitly defined there:
+  • app/utils/auth.py: verify_password, get_password_hash, create_access_token, get_current_user, oauth2_scheme
+  • app/services/auth.py: get_user_by_email, get_user_by_username, authenticate_user
+- auth_routes.py must import `from app.models.user import User` inside the function body (lazy),
+  NOT at module level. Module-level model imports in route files cause duplicate table crashes
+  when main.py also imports models. Use `current_user: User = Depends(get_current_user)` only —
+  the type hint can use a string: `current_user: "User"` to avoid the module-level import.
+- NEVER use Python line-continuation backslash at end of lines in generated code.
+  Always use parentheses for multi-line expressions instead.
+- NEVER use Pydantic v1 `constr()`. Use `Field(min_length=X, pattern=r"...")` instead.
+- Regex patterns in Pydantic `Field(pattern=...)` MUST NOT use lookahead `(?=...)` or
+  lookbehind `(?<=...)` — Pydantic v2 uses Rust regex which does not support them.
+- NEVER use smart quotes (' ' " ") in Python strings or JSX. Always use ASCII ' and ".
+
+ROUTE HANDLERS
+- Every handler must have a real implementation. Never `pass` or placeholder bodies.
+- Parameter order: body params first, then `Path()`/`Query()`/`Depends()` params.
+  RIGHT: `def update_task(task_in: TaskUpdate, task_id: int = Path(...), db: Session = Depends(get_db))`
+- `async def` only if the body uses `await`. Never mix sync Session calls with async def.
+- `# type: ignore` is a comment. `type: ignore` as a bare statement is invalid code.
 """

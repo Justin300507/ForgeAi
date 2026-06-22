@@ -1,0 +1,384 @@
+{
+  "api_endpoints": [
+    {
+      "method": "POST",
+      "path": "/auth/register",
+      "description": "Register a new user and return confirmation",
+      "file": "app/routes/auth_routes.py"
+    },
+    {
+      "method": "POST",
+      "path": "/auth/login",
+      "description": "Authenticate user and issue JWT access token",
+      "file": "app/routes/auth_routes.py"
+    },
+    {
+      "method": "GET",
+      "path": "/users/me",
+      "description": "Retrieve profile of the authenticated user",
+      "file": "app/routes/user_routes.py"
+    },
+    {
+      "method": "GET",
+      "path": "/companies",
+      "description": "List companies owned by the user with pagination and optional search",
+      "file": "app/routes/company_routes.py"
+    },
+    {
+      "method": "POST",
+      "path": "/companies",
+      "description": "Create a new company record for the user",
+      "file": "app/routes/company_routes.py"
+    },
+    {
+      "method": "GET",
+      "path": "/companies/{company_id}",
+      "description": "Get detailed information of a specific company",
+      "file": "app/routes/company_routes.py"
+    },
+    {
+      "method": "PUT",
+      "path": "/companies/{company_id}",
+      "description": "Update fields of an existing company",
+      "file": "app/routes/company_routes.py"
+    },
+    {
+      "method": "DELETE",
+      "path": "/companies/{company_id}",
+      "description": "Delete a company owned by the user",
+      "file": "app/routes/company_routes.py"
+    },
+    {
+      "method": "GET",
+      "path": "/applications",
+      "description": "List applications with filters (company, status, search) and pagination",
+      "file": "app/routes/application_routes.py"
+    },
+    {
+      "method": "POST",
+      "path": "/applications",
+      "description": "Create a new application, linking to a company and uploading a resume file",
+      "file": "app/routes/application_routes.py"
+    },
+    {
+      "method": "GET",
+      "path": "/applications/{application_id}",
+      "description": "Retrieve details of a specific application",
+      "file": "app/routes/application_routes.py"
+    },
+    {
+      "method": "PUT",
+      "path": "/applications/{application_id}",
+      "description": "Update status or other mutable fields of an application",
+      "file": "app/routes/application_routes.py"
+    },
+    {
+      "method": "DELETE",
+      "path": "/applications/{application_id}",
+      "description": "Delete an application record",
+      "file": "app/routes/application_routes.py"
+    },
+    {
+      "method": "GET",
+      "path": "/applications/{application_id}/interviews",
+      "description": "List all interviews associated with a given application",
+      "file": "app/routes/interview_routes.py"
+    },
+    {
+      "method": "POST",
+      "path": "/applications/{application_id}/interviews",
+      "description": "Add a new interview event to an application",
+      "file": "app/routes/interview_routes.py"
+    }
+  ],
+  "database_schema": [
+    {
+      "table_name": "users",
+      "columns": [
+        {
+          "name": "id",
+          "type": "Integer",
+          "is_primary_key": true,
+          "is_nullable": false
+        },
+        {
+          "name": "email",
+          "type": "String",
+          "is_primary_key": false,
+          "is_nullable": false
+        },
+        {
+          "name": "hashed_password",
+          "type": "String",
+          "is_primary_key": false,
+          "is_nullable": false
+        },
+        {
+          "name": "role",
+          "type": "String",
+          "is_primary_key": false,
+          "is_nullable": false
+        },
+        {
+          "name": "created_at",
+          "type": "DateTime",
+          "is_primary_key": false,
+          "is_nullable": false
+        }
+      ]
+    },
+    {
+      "table_name": "companies",
+      "columns": [
+        {
+          "name": "id",
+          "type": "Integer",
+          "is_primary_key": true,
+          "is_nullable": false
+        },
+        {
+          "name": "user_id",
+          "type": "Integer",
+          "is_primary_key": false,
+          "is_nullable": false
+        },
+        {
+          "name": "name",
+          "type": "String",
+          "is_primary_key": false,
+          "is_nullable": false
+        },
+        {
+          "name": "website",
+          "type": "String",
+          "is_primary_key": false,
+          "is_nullable": true
+        },
+        {
+          "name": "recruiter_name",
+          "type": "String",
+          "is_primary_key": false,
+          "is_nullable": true
+        },
+        {
+          "name": "recruiter_email",
+          "type": "String",
+          "is_primary_key": false,
+          "is_nullable": true
+        },
+        {
+          "name": "notes",
+          "type": "Text",
+          "is_primary_key": false,
+          "is_nullable": true
+        },
+        {
+          "name": "created_at",
+          "type": "DateTime",
+          "is_primary_key": false,
+          "is_nullable": false
+        }
+      ]
+    },
+    {
+      "table_name": "applications",
+      "columns": [
+        {
+          "name": "id",
+          "type": "Integer",
+          "is_primary_key": true,
+          "is_nullable": false
+        },
+        {
+          "name": "company_id",
+          "type": "Integer",
+          "is_primary_key": false,
+          "is_nullable": false
+        },
+        {
+          "name": "user_id",
+          "type": "Integer",
+          "is_primary_key": false,
+          "is_nullable": false
+        },
+        {
+          "name": "role_title",
+          "type": "String",
+          "is_primary_key": false,
+          "is_nullable": false
+        },
+        {
+          "name": "applied_date",
+          "type": "Date",
+          "is_primary_key": false,
+          "is_nullable": false
+        },
+        {
+          "name": "source",
+          "type": "String",
+          "is_primary_key": false,
+          "is_nullable": true
+        },
+        {
+          "name": "status",
+          "type": "String",
+          "is_primary_key": false,
+          "is_nullable": false
+        },
+        {
+          "name": "resume_file_path",
+          "type": "String",
+          "is_primary_key": false,
+          "is_nullable": true
+        },
+        {
+          "name": "created_at",
+          "type": "DateTime",
+          "is_primary_key": false,
+          "is_nullable": false
+        }
+      ]
+    },
+    {
+      "table_name": "interviews",
+      "columns": [
+        {
+          "name": "id",
+          "type": "Integer",
+          "is_primary_key": true,
+          "is_nullable": false
+        },
+        {
+          "name": "application_id",
+          "type": "Integer",
+          "is_primary_key": false,
+          "is_nullable": false
+        },
+        {
+          "name": "date",
+          "type": "DateTime",
+          "is_primary_key": false,
+          "is_nullable": false
+        },
+        {
+          "name": "type",
+          "type": "String",
+          "is_primary_key": false,
+          "is_nullable": false
+        },
+        {
+          "name": "location",
+          "type": "String",
+          "is_primary_key": false,
+          "is_nullable": true
+        },
+        {
+          "name": "notes",
+          "type": "Text",
+          "is_primary_key": false,
+          "is_nullable": true
+        },
+        {
+          "name": "created_at",
+          "type": "DateTime",
+          "is_primary_key": false,
+          "is_nullable": false
+        }
+      ]
+    },
+    {
+      "table_name": "notifications",
+      "columns": [
+        {
+          "name": "id",
+          "type": "Integer",
+          "is_primary_key": true,
+          "is_nullable": false
+        },
+        {
+          "name": "user_id",
+          "type": "Integer",
+          "is_primary_key": false,
+          "is_nullable": false
+        },
+        {
+          "name": "application_id",
+          "type": "Integer",
+          "is_primary_key": false,
+          "is_nullable": true
+        },
+        {
+          "name": "interview_id",
+          "type": "Integer",
+          "is_primary_key": false,
+          "is_nullable": true
+        },
+        {
+          "name": "trigger_time",
+          "type": "DateTime",
+          "is_primary_key": false,
+          "is_nullable": false
+        },
+        {
+          "name": "type",
+          "type": "String",
+          "is_primary_key": false,
+          "is_nullable": false
+        },
+        {
+          "name": "delivered",
+          "type": "Boolean",
+          "is_primary_key": false,
+          "is_nullable": false
+        },
+        {
+          "name": "created_at",
+          "type": "DateTime",
+          "is_primary_key": false,
+          "is_nullable": false
+        }
+      ]
+    }
+  ],
+  "folder_structure": {
+    "backend": [
+      "app/routes",
+      "app/models",
+      "app/schemas",
+      "app/services",
+      "app/utils",
+      "app/dependencies",
+      "app/config"
+    ]
+  },
+  "frontend_structure": {
+    "pages": [
+      "LoginPage",
+      "DashboardPage",
+      "CompaniesPage",
+      "CompanyDetailPage",
+      "ApplicationFormPage",
+      "ApplicationsPage",
+      "InterviewFormPage",
+      "InterviewsPage",
+      "SettingsPage"
+    ],
+    "components": [
+      "Header",
+      "Footer",
+      "CompanyCard",
+      "CompanyForm",
+      "ApplicationCard",
+      "ApplicationForm",
+      "InterviewCard",
+      "InterviewForm",
+      "SearchBar",
+      "Pagination",
+      "NotificationBadge",
+      "Sidebar",
+      "ProfileMenu",
+      "FileUpload",
+      "StatusBadge"
+    ]
+  }
+}

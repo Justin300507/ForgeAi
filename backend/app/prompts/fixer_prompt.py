@@ -103,6 +103,27 @@ If a route file is repaired:
 * Ensure at least one endpoint exists.
 * Ensure the router variable matches the imported symbol name.
 
+PARAMETER ORDER RULES
+
+If validation error contains:
+
+"parameter without a default follows parameter with a default"
+OR "SyntaxError" in a route file
+
+FastAPI/Python requires: parameters WITHOUT defaults come BEFORE parameters WITH defaults.
+Body parameters (no default) MUST come first. Path/Query/Depends parameters (have defaults) come after.
+
+WRONG — will always crash with SyntaxError:
+def create_item(db: Session = Depends(get_db), item_in: ItemCreate):
+def update_item(id: int = Path(...), item_in: ItemUpdate, db: Session = Depends(get_db)):
+
+CORRECT:
+def create_item(item_in: ItemCreate, db: Session = Depends(get_db)):
+def update_item(item_in: ItemUpdate, id: int = Path(...), db: Session = Depends(get_db)):
+
+RULE: Scan EVERY route handler in the file. If any handler has a non-default parameter
+after a default parameter, swap the order so non-defaults come first.
+
 DEPENDENCY REPAIR RULES
 
 If validation error contains:

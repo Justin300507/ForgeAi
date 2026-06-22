@@ -1,0 +1,30 @@
+{
+  "run_id": "v7_20260622_170854_36f48279",
+  "timestamp": "2026-06-22T17:13:55",
+  "version": "v7",
+  "idea": "A job board platform with job listings, applications, employers, and candidate profiles",
+  "project_name": "job_board_platform",
+  "provider": "auto",
+  "plan": {},
+  "architecture": {
+    "endpoint_count": 0,
+    "endpoints": [],
+    "db_schema_keys": []
+  },
+  "validation_errors": [],
+  "runtime_error": null,
+  "runtime_error_type": "SQLAlchemyError",
+  "fixes_applied": [],
+  "score": 80,
+  "grade": "B",
+  "runtime_passed": false,
+  "frontend_passed": false,
+  "generation_time": 300.99,
+  "security_score": null,
+  "performance_score": null,
+  "maintainability_score": null,
+  "qa_score": null,
+  "v6_score": 61,
+  "prompt_version": "default",
+  "active_rules": []
+}

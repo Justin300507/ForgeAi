@@ -1,0 +1,30 @@
+{
+  "run_id": "v7_20260622_123542_44ef1fae",
+  "timestamp": "2026-06-22T12:36:27",
+  "version": "v7",
+  "idea": "A freelance marketplace with gigs, proposals, contracts, payments, and reviews",
+  "project_name": "freelance_marketplace",
+  "provider": "auto",
+  "plan": {},
+  "architecture": {
+    "endpoint_count": 0,
+    "endpoints": [],
+    "db_schema_keys": []
+  },
+  "validation_errors": [],
+  "runtime_error": null,
+  "runtime_error_type": null,
+  "fixes_applied": [],
+  "score": 100,
+  "grade": "A",
+  "runtime_passed": true,
+  "frontend_passed": false,
+  "generation_time": 44.99,
+  "security_score": 70,
+  "performance_score": 68,
+  "maintainability_score": 65,
+  "qa_score": 40,
+  "v6_score": 70,
+  "prompt_version": "default",
+  "active_rules": []
+}

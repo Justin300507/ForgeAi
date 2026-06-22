@@ -1,0 +1,30 @@
+{
+  "run_id": "v7_20260622_124449_d81a9eb5",
+  "timestamp": "2026-06-22T12:45:32",
+  "version": "v7",
+  "idea": "A music practice tracker with instruments, sessions, goals, and progress notes",
+  "project_name": "music_practice_tracker",
+  "provider": "auto",
+  "plan": {},
+  "architecture": {
+    "endpoint_count": 0,
+    "endpoints": [],
+    "db_schema_keys": []
+  },
+  "validation_errors": [],
+  "runtime_error": null,
+  "runtime_error_type": null,
+  "fixes_applied": [],
+  "score": 100,
+  "grade": "A",
+  "runtime_passed": true,
+  "frontend_passed": false,
+  "generation_time": 43.03,
+  "security_score": 70,
+  "performance_score": 70,
+  "maintainability_score": 65,
+  "qa_score": 42,
+  "v6_score": 73,
+  "prompt_version": "default",
+  "active_rules": []
+}

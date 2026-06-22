@@ -1,0 +1,359 @@
+{
+  "api_endpoints": [
+    {
+      "method": "POST",
+      "path": "/auth/login",
+      "description": "Authenticate a user and return a JWT token.",
+      "file": "app/routes/auth_routes.py"
+    },
+    {
+      "method": "GET",
+      "path": "/books",
+      "description": "List books with optional search (title or author) and pagination.",
+      "file": "app/routes/book_routes.py"
+    },
+    {
+      "method": "POST",
+      "path": "/books",
+      "description": "Create a new book with associated author IDs and optional cover image URL.",
+      "file": "app/routes/book_routes.py"
+    },
+    {
+      "method": "GET",
+      "path": "/books/{book_id}",
+      "description": "Retrieve detailed information for a specific book, including its authors.",
+      "file": "app/routes/book_routes.py"
+    },
+    {
+      "method": "PUT",
+      "path": "/books/{book_id}",
+      "description": "Update fields of an existing book (e.g., title, ISBN, cover image).",
+      "file": "app/routes/book_routes.py"
+    },
+    {
+      "method": "DELETE",
+      "path": "/books/{book_id}",
+      "description": "Delete a book from the catalog.",
+      "file": "app/routes/book_routes.py"
+    },
+    {
+      "method": "POST",
+      "path": "/authors",
+      "description": "Create a new author record.",
+      "file": "app/routes/author_routes.py"
+    },
+    {
+      "method": "GET",
+      "path": "/members",
+      "description": "List library members with pagination.",
+      "file": "app/routes/member_routes.py"
+    },
+    {
+      "method": "POST",
+      "path": "/members",
+      "description": "Register a new library member (creates Member and associated User with role=member).",
+      "file": "app/routes/member_routes.py"
+    },
+    {
+      "method": "PUT",
+      "path": "/members/{member_id}",
+      "description": "Update member details such as email, name, or activation status.",
+      "file": "app/routes/member_routes.py"
+    },
+    {
+      "method": "POST",
+      "path": "/members/{member_id}/avatar",
+      "description": "Upload a profile picture for a member; returns the stored avatar URL.",
+      "file": "app/routes/member_routes.py"
+    },
+    {
+      "method": "POST",
+      "path": "/borrowings",
+      "description": "Create a borrowing record for an available book; sets due_date 14 days from now.",
+      "file": "app/routes/borrowing_routes.py"
+    },
+    {
+      "method": "POST",
+      "path": "/reservations",
+      "description": "Create a reservation for a currently borrowed book; assigns queue position.",
+      "file": "app/routes/reservation_routes.py"
+    },
+    {
+      "method": "DELETE",
+      "path": "/reservations/{reservation_id}",
+      "description": "Cancel a reservation and shift subsequent queue positions.",
+      "file": "app/routes/reservation_routes.py"
+    },
+    {
+      "method": "GET",
+      "path": "/reports/overdue",
+      "description": "Return a list of overdue borrowings; supports CSV export via ?format=csv.",
+      "file": "app/routes/report_routes.py"
+    }
+  ],
+  "database_schema": [
+    {
+      "table_name": "book",
+      "columns": [
+        {
+          "name": "id",
+          "type": "INTEGER",
+          "is_primary_key": true,
+          "is_nullable": false
+        },
+        {
+          "name": "isbn",
+          "type": "VARCHAR(20)",
+          "is_primary_key": false,
+          "is_nullable": false
+        },
+        {
+          "name": "title",
+          "type": "VARCHAR(255)",
+          "is_primary_key": false,
+          "is_nullable": false
+        },
+        {
+          "name": "cover_image_url",
+          "type": "VARCHAR(255)",
+          "is_primary_key": false,
+          "is_nullable": true
+        },
+        {
+          "name": "status",
+          "type": "VARCHAR(20)",
+          "is_primary_key": false,
+          "is_nullable": false
+        }
+      ]
+    },
+    {
+      "table_name": "author",
+      "columns": [
+        {
+          "name": "id",
+          "type": "INTEGER",
+          "is_primary_key": true,
+          "is_nullable": false
+        },
+        {
+          "name": "first_name",
+          "type": "VARCHAR(100)",
+          "is_primary_key": false,
+          "is_nullable": false
+        },
+        {
+          "name": "last_name",
+          "type": "VARCHAR(100)",
+          "is_primary_key": false,
+          "is_nullable": false
+        }
+      ]
+    },
+    {
+      "table_name": "book_author",
+      "columns": [
+        {
+          "name": "book_id",
+          "type": "INTEGER",
+          "is_primary_key": true,
+          "is_nullable": false
+        },
+        {
+          "name": "author_id",
+          "type": "INTEGER",
+          "is_primary_key": true,
+          "is_nullable": false
+        }
+      ]
+    },
+    {
+      "table_name": "member",
+      "columns": [
+        {
+          "name": "id",
+          "type": "INTEGER",
+          "is_primary_key": true,
+          "is_nullable": false
+        },
+        {
+          "name": "membership_number",
+          "type": "VARCHAR(20)",
+          "is_primary_key": false,
+          "is_nullable": false
+        },
+        {
+          "name": "email",
+          "type": "VARCHAR(255)",
+          "is_primary_key": false,
+          "is_nullable": false
+        },
+        {
+          "name": "full_name",
+          "type": "VARCHAR(255)",
+          "is_primary_key": false,
+          "is_nullable": false
+        },
+        {
+          "name": "avatar_url",
+          "type": "VARCHAR(255)",
+          "is_primary_key": false,
+          "is_nullable": true
+        },
+        {
+          "name": "is_active",
+          "type": "BOOLEAN",
+          "is_primary_key": false,
+          "is_nullable": false
+        }
+      ]
+    },
+    {
+      "table_name": "user",
+      "columns": [
+        {
+          "name": "id",
+          "type": "INTEGER",
+          "is_primary_key": true,
+          "is_nullable": false
+        },
+        {
+          "name": "email",
+          "type": "VARCHAR(255)",
+          "is_primary_key": false,
+          "is_nullable": false
+        },
+        {
+          "name": "password_hash",
+          "type": "VARCHAR(255)",
+          "is_primary_key": false,
+          "is_nullable": false
+        },
+        {
+          "name": "role",
+          "type": "VARCHAR(20)",
+          "is_primary_key": false,
+          "is_nullable": false
+        },
+        {
+          "name": "member_id",
+          "type": "INTEGER",
+          "is_primary_key": false,
+          "is_nullable": true
+        }
+      ]
+    },
+    {
+      "table_name": "borrowing",
+      "columns": [
+        {
+          "name": "id",
+          "type": "INTEGER",
+          "is_primary_key": true,
+          "is_nullable": false
+        },
+        {
+          "name": "book_id",
+          "type": "INTEGER",
+          "is_primary_key": false,
+          "is_nullable": false
+        },
+        {
+          "name": "member_id",
+          "type": "INTEGER",
+          "is_primary_key": false,
+          "is_nullable": false
+        },
+        {
+          "name": "borrowed_at",
+          "type": "DATETIME",
+          "is_primary_key": false,
+          "is_nullable": false
+        },
+        {
+          "name": "due_date",
+          "type": "DATETIME",
+          "is_primary_key": false,
+          "is_nullable": false
+        },
+        {
+          "name": "returned_at",
+          "type": "DATETIME",
+          "is_primary_key": false,
+          "is_nullable": true
+        }
+      ]
+    },
+    {
+      "table_name": "reservation",
+      "columns": [
+        {
+          "name": "id",
+          "type": "INTEGER",
+          "is_primary_key": true,
+          "is_nullable": false
+        },
+        {
+          "name": "book_id",
+          "type": "INTEGER",
+          "is_primary_key": false,
+          "is_nullable": false
+        },
+        {
+          "name": "member_id",
+          "type": "INTEGER",
+          "is_primary_key": false,
+          "is_nullable": false
+        },
+        {
+          "name": "position",
+          "type": "INTEGER",
+          "is_primary_key": false,
+          "is_nullable": false
+        },
+        {
+          "name": "created_at",
+          "type": "DATETIME",
+          "is_primary_key": false,
+          "is_nullable": false
+        }
+      ]
+    }
+  ],
+  "folder_structure": {
+    "backend": [
+      "app",
+      "app/models",
+      "app/schemas",
+      "app/routes",
+      "app/services",
+      "app/utils",
+      "app/dependencies",
+      "app/config"
+    ]
+  },
+  "frontend_structure": {
+    "pages": [
+      "LoginPage",
+      "BookCatalogPage",
+      "BookDetailPage",
+      "MemberManagementPage",
+      "BorrowingPage",
+      "ReservationPage",
+      "ReportPage"
+    ],
+    "components": [
+      "Header",
+      "SearchBar",
+      "Pagination",
+      "BookCard",
+      "AuthorSelect",
+      "MemberForm",
+      "AvatarUploader",
+      "BorrowButton",
+      "ReservationButton",
+      "ReportTable",
+      "NotificationToast"
+    ]
+  }
+}

@@ -1,0 +1,32 @@
+{
+  "run_id": "v7_20260622_170240_d6fc3a41",
+  "timestamp": "2026-06-22T17:03:21",
+  "version": "v7",
+  "idea": "A book library system with books, authors, members, borrowings, and reservations",
+  "project_name": "library_management_system",
+  "provider": "auto",
+  "plan": {},
+  "architecture": {
+    "endpoint_count": 0,
+    "endpoints": [],
+    "db_schema_keys": []
+  },
+  "validation_errors": [
+    "Duplicate class definition: 'Book' is defined in multiple files (app/models/books.py, app/schemas/book.py) — this creates incompatible duplicate types"
+  ],
+  "runtime_error": null,
+  "runtime_error_type": null,
+  "fixes_applied": [],
+  "score": 78,
+  "grade": "C",
+  "runtime_passed": false,
+  "frontend_passed": false,
+  "generation_time": 40.39,
+  "security_score": null,
+  "performance_score": null,
+  "maintainability_score": null,
+  "qa_score": null,
+  "v6_score": 61,
+  "prompt_version": "default",
+  "active_rules": []
+}

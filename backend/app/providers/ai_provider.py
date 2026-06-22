@@ -5,6 +5,7 @@ from app.providers.openrouter_provider import generate as openrouter_generate
 from app.providers.groq_provider import generate as groq_generate
 from app.providers.ollama_provider import generate as ollama_generate
 from app.providers.cerebras_provider import generate as cerebras_generate
+from app.providers.openai_provider import generate as openai_generate
 
 
 def _tracked(provider_name: str, model: str, prompt: str, fn, stage: str = "unknown", **kwargs) -> str:
@@ -44,7 +45,11 @@ def generate_content(
 
     if provider == "gemini":
         print("Using Gemini")
-        return _tracked("gemini", "gemini-2.0-flash", prompt, gemini_generate, stage)
+        return _tracked("gemini", "gemini-2.5-flash", prompt, gemini_generate, stage, max_tokens=max_tokens)
+
+    if provider == "openai":
+        print("Using OpenAI")
+        return _tracked("openai", "gpt-4o-mini", prompt, openai_generate, stage, max_tokens=max_tokens)
 
     if provider == "ollama":
         print("Using Ollama")
@@ -71,8 +76,14 @@ def generate_content(
         print(f"OpenRouter failed: {e}")
 
     try:
+        print("Using OpenAI")
+        return _tracked("openai", "gpt-4o-mini", prompt, openai_generate, stage, max_tokens=max_tokens)
+    except Exception as e:
+        print(f"OpenAI failed: {e}")
+
+    try:
         print("Using Gemini")
-        return _tracked("gemini", "gemini-2.0-flash", prompt, gemini_generate, stage)
+        return _tracked("gemini", "gemini-2.5-flash", prompt, gemini_generate, stage, max_tokens=max_tokens)
     except Exception as e:
         print(f"Gemini failed: {e}")
 

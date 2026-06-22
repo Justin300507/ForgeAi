@@ -1,0 +1,32 @@
+{
+  "run_id": "v7_20260622_131236_b089067d",
+  "timestamp": "2026-06-22T13:13:04",
+  "version": "v7",
+  "idea": "A book club app with reading lists, reviews, discussions, and member progress",
+  "project_name": "book_club_app",
+  "provider": "auto",
+  "plan": {},
+  "architecture": {
+    "endpoint_count": 0,
+    "endpoints": [],
+    "db_schema_keys": []
+  },
+  "validation_errors": [
+    "Duplicate class definition: 'User' is defined in multiple files (app/models/user.py, app/models/__init__.py) — this creates incompatible duplicate types"
+  ],
+  "runtime_error": null,
+  "runtime_error_type": null,
+  "fixes_applied": [],
+  "score": 78,
+  "grade": "C",
+  "runtime_passed": false,
+  "frontend_passed": false,
+  "generation_time": 27.85,
+  "security_score": null,
+  "performance_score": null,
+  "maintainability_score": null,
+  "qa_score": null,
+  "v6_score": 61,
+  "prompt_version": "default",
+  "active_rules": []
+}

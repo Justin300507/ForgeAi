@@ -1,0 +1,403 @@
+{
+  "api_endpoints": [
+    {
+      "method": "POST",
+      "path": "/api/auth/login",
+      "description": "Authenticate user and issue JWT access and refresh tokens",
+      "file": "app/routes/auth_routes.py"
+    },
+    {
+      "method": "POST",
+      "path": "/api/auth/refresh",
+      "description": "Refresh access token using a valid refresh token",
+      "file": "app/routes/auth_routes.py"
+    },
+    {
+      "method": "GET",
+      "path": "/api/users",
+      "description": "List all users (admin only) with pagination and optional filters",
+      "file": "app/routes/user_routes.py"
+    },
+    {
+      "method": "POST",
+      "path": "/api/users",
+      "description": "Create a new user account and assign role",
+      "file": "app/routes/user_routes.py"
+    },
+    {
+      "method": "PUT",
+      "path": "/api/users/{user_id}",
+      "description": "Update user details, including role and activation status",
+      "file": "app/routes/user_routes.py"
+    },
+    {
+      "method": "DELETE",
+      "path": "/api/users/{user_id}",
+      "description": "Deactivate or permanently delete a user account",
+      "file": "app/routes/user_routes.py"
+    },
+    {
+      "method": "GET",
+      "path": "/api/projects",
+      "description": "List projects with pagination, search, and filter by manager",
+      "file": "app/routes/project_routes.py"
+    },
+    {
+      "method": "POST",
+      "path": "/api/projects",
+      "description": "Create a new project with metadata and assign creator as manager",
+      "file": "app/routes/project_routes.py"
+    },
+    {
+      "method": "GET",
+      "path": "/api/projects/{project_id}",
+      "description": "Retrieve detailed information for a specific project",
+      "file": "app/routes/project_routes.py"
+    },
+    {
+      "method": "PUT",
+      "path": "/api/projects/{project_id}",
+      "description": "Update project fields such as name, description, dates",
+      "file": "app/routes/project_routes.py"
+    },
+    {
+      "method": "POST",
+      "path": "/api/projects/{project_id}/members",
+      "description": "Add one or more users to a project with assigned role (manager/member)",
+      "file": "app/routes/project_routes.py"
+    },
+    {
+      "method": "GET",
+      "path": "/api/tasks",
+      "description": "List tasks across projects with pagination, search, and optional assignee filter",
+      "file": "app/routes/task_routes.py"
+    },
+    {
+      "method": "POST",
+      "path": "/api/tasks",
+      "description": "Create a new task within a project; body includes project_id, title, deadline, etc.",
+      "file": "app/routes/task_routes.py"
+    },
+    {
+      "method": "GET",
+      "path": "/api/tasks/{task_id}",
+      "description": "Get full details of a specific task, including attachments",
+      "file": "app/routes/task_routes.py"
+    },
+    {
+      "method": "PATCH",
+      "path": "/api/tasks/{task_id}",
+      "description": "Partial update of a task (status change, assignee reassignment, description edit)",
+      "file": "app/routes/task_routes.py"
+    }
+  ],
+  "database_schema": [
+    {
+      "table_name": "users",
+      "columns": [
+        {
+          "name": "id",
+          "type": "INTEGER",
+          "is_primary_key": true,
+          "is_nullable": false
+        },
+        {
+          "name": "email",
+          "type": "VARCHAR(255)",
+          "is_primary_key": false,
+          "is_nullable": false
+        },
+        {
+          "name": "hashed_password",
+          "type": "VARCHAR(255)",
+          "is_primary_key": false,
+          "is_nullable": false
+        },
+        {
+          "name": "role",
+          "type": "VARCHAR(20)",
+          "is_primary_key": false,
+          "is_nullable": false
+        },
+        {
+          "name": "is_active",
+          "type": "BOOLEAN",
+          "is_primary_key": false,
+          "is_nullable": false
+        },
+        {
+          "name": "created_at",
+          "type": "DATETIME",
+          "is_primary_key": false,
+          "is_nullable": false
+        }
+      ]
+    },
+    {
+      "table_name": "projects",
+      "columns": [
+        {
+          "name": "id",
+          "type": "INTEGER",
+          "is_primary_key": true,
+          "is_nullable": false
+        },
+        {
+          "name": "name",
+          "type": "VARCHAR(200)",
+          "is_primary_key": false,
+          "is_nullable": false
+        },
+        {
+          "name": "description",
+          "type": "TEXT",
+          "is_primary_key": false,
+          "is_nullable": true
+        },
+        {
+          "name": "start_date",
+          "type": "DATE",
+          "is_primary_key": false,
+          "is_nullable": true
+        },
+        {
+          "name": "end_date",
+          "type": "DATE",
+          "is_primary_key": false,
+          "is_nullable": true
+        },
+        {
+          "name": "created_by_id",
+          "type": "INTEGER",
+          "is_primary_key": false,
+          "is_nullable": false
+        },
+        {
+          "name": "created_at",
+          "type": "DATETIME",
+          "is_primary_key": false,
+          "is_nullable": false
+        }
+      ]
+    },
+    {
+      "table_name": "project_members",
+      "columns": [
+        {
+          "name": "id",
+          "type": "INTEGER",
+          "is_primary_key": true,
+          "is_nullable": false
+        },
+        {
+          "name": "project_id",
+          "type": "INTEGER",
+          "is_primary_key": false,
+          "is_nullable": false
+        },
+        {
+          "name": "user_id",
+          "type": "INTEGER",
+          "is_primary_key": false,
+          "is_nullable": false
+        },
+        {
+          "name": "role",
+          "type": "VARCHAR(20)",
+          "is_primary_key": false,
+          "is_nullable": false
+        },
+        {
+          "name": "added_at",
+          "type": "DATETIME",
+          "is_primary_key": false,
+          "is_nullable": false
+        }
+      ]
+    },
+    {
+      "table_name": "tasks",
+      "columns": [
+        {
+          "name": "id",
+          "type": "INTEGER",
+          "is_primary_key": true,
+          "is_nullable": false
+        },
+        {
+          "name": "title",
+          "type": "VARCHAR(200)",
+          "is_primary_key": false,
+          "is_nullable": false
+        },
+        {
+          "name": "description",
+          "type": "TEXT",
+          "is_primary_key": false,
+          "is_nullable": true
+        },
+        {
+          "name": "deadline",
+          "type": "DATETIME",
+          "is_primary_key": false,
+          "is_nullable": false
+        },
+        {
+          "name": "status",
+          "type": "VARCHAR(20)",
+          "is_primary_key": false,
+          "is_nullable": false
+        },
+        {
+          "name": "project_id",
+          "type": "INTEGER",
+          "is_primary_key": false,
+          "is_nullable": false
+        },
+        {
+          "name": "assignee_id",
+          "type": "INTEGER",
+          "is_primary_key": false,
+          "is_nullable": true
+        },
+        {
+          "name": "created_at",
+          "type": "DATETIME",
+          "is_primary_key": false,
+          "is_nullable": false
+        }
+      ]
+    },
+    {
+      "table_name": "attachments",
+      "columns": [
+        {
+          "name": "id",
+          "type": "INTEGER",
+          "is_primary_key": true,
+          "is_nullable": false
+        },
+        {
+          "name": "filename",
+          "type": "VARCHAR(255)",
+          "is_primary_key": false,
+          "is_nullable": false
+        },
+        {
+          "name": "file_path",
+          "type": "VARCHAR(500)",
+          "is_primary_key": false,
+          "is_nullable": false
+        },
+        {
+          "name": "task_id",
+          "type": "INTEGER",
+          "is_primary_key": false,
+          "is_nullable": false
+        },
+        {
+          "name": "uploaded_at",
+          "type": "DATETIME",
+          "is_primary_key": false,
+          "is_nullable": false
+        },
+        {
+          "name": "size_bytes",
+          "type": "INTEGER",
+          "is_primary_key": false,
+          "is_nullable": false
+        }
+      ]
+    },
+    {
+      "table_name": "audit_logs",
+      "columns": [
+        {
+          "name": "id",
+          "type": "INTEGER",
+          "is_primary_key": true,
+          "is_nullable": false
+        },
+        {
+          "name": "user_id",
+          "type": "INTEGER",
+          "is_primary_key": false,
+          "is_nullable": false
+        },
+        {
+          "name": "action",
+          "type": "VARCHAR(100)",
+          "is_primary_key": false,
+          "is_nullable": false
+        },
+        {
+          "name": "target_type",
+          "type": "VARCHAR(50)",
+          "is_primary_key": false,
+          "is_nullable": false
+        },
+        {
+          "name": "target_id",
+          "type": "INTEGER",
+          "is_primary_key": false,
+          "is_nullable": true
+        },
+        {
+          "name": "timestamp",
+          "type": "DATETIME",
+          "is_primary_key": false,
+          "is_nullable": false
+        },
+        {
+          "name": "details",
+          "type": "TEXT",
+          "is_primary_key": false,
+          "is_nullable": true
+        }
+      ]
+    }
+  ],
+  "folder_structure": {
+    "backend": [
+      "app",
+      "app/models",
+      "app/schemas",
+      "app/routes",
+      "app/services",
+      "app/utils",
+      "app/dependencies",
+      "app/config"
+    ]
+  },
+  "frontend_structure": {
+    "pages": [
+      "LoginPage",
+      "DashboardPage",
+      "ProjectListPage",
+      "ProjectDetailPage",
+      "TaskDetailPage",
+      "UserManagementPage",
+      "ProjectCreatePage",
+      "TaskCreatePage",
+      "SearchResultsPage",
+      "SettingsPage"
+    ],
+    "components": [
+      "Navbar",
+      "Footer",
+      "ProjectCard",
+      "TaskCard",
+      "UserForm",
+      "ProjectForm",
+      "TaskForm",
+      "MemberSelectModal",
+      "AttachmentUploader",
+      "SearchBar",
+      "PaginationControls",
+      "StatusDropdown",
+      "RealTimeNotification",
+      "AuditLogTable",
+      "Avatar"
+    ]
+  }
+}

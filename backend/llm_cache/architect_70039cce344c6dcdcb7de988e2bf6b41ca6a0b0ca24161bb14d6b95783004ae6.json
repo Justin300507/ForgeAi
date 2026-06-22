@@ -1,0 +1,514 @@
+{
+  "api_endpoints": [
+    {
+      "method": "POST",
+      "path": "/auth/register",
+      "description": "Create a new user account and return JWT tokens",
+      "file": "app/routes/auth_routes.py"
+    },
+    {
+      "method": "POST",
+      "path": "/auth/login",
+      "description": "Authenticate user credentials and return JWT tokens",
+      "file": "app/routes/auth_routes.py"
+    },
+    {
+      "method": "GET",
+      "path": "/users/me",
+      "description": "Retrieve the profile of the currently authenticated user",
+      "file": "app/routes/user_routes.py"
+    },
+    {
+      "method": "GET",
+      "path": "/clubs",
+      "description": "Search and paginate clubs based on genre, location, or keyword",
+      "file": "app/routes/club_routes.py"
+    },
+    {
+      "method": "POST",
+      "path": "/clubs",
+      "description": "Create a new book club with optional cover image and schedule",
+      "file": "app/routes/club_routes.py"
+    },
+    {
+      "method": "GET",
+      "path": "/clubs/{club_id}",
+      "description": "Get detailed information of a specific club, including reading schedule and members",
+      "file": "app/routes/club_routes.py"
+    },
+    {
+      "method": "PATCH",
+      "path": "/clubs/{club_id}",
+      "description": "Update club metadata or schedule; only organizer or admin can modify",
+      "file": "app/routes/club_routes.py"
+    },
+    {
+      "method": "POST",
+      "path": "/clubs/{club_id}/join",
+      "description": "Add the authenticated user as a member of the specified club",
+      "file": "app/routes/membership_routes.py"
+    },
+    {
+      "method": "DELETE",
+      "path": "/clubs/{club_id}/leave",
+      "description": "Remove the authenticated user from the club membership",
+      "file": "app/routes/membership_routes.py"
+    },
+    {
+      "method": "GET",
+      "path": "/books",
+      "description": "List books with pagination and optional search filters",
+      "file": "app/routes/book_routes.py"
+    },
+    {
+      "method": "GET",
+      "path": "/books/{book_id}",
+      "description": "Retrieve detailed information for a single book, including reviews",
+      "file": "app/routes/book_routes.py"
+    },
+    {
+      "method": "POST",
+      "path": "/reading-list/items",
+      "description": "Add a book to the user's personal reading list or to a club schedule",
+      "file": "app/routes/readinglist_routes.py"
+    },
+    {
+      "method": "PATCH",
+      "path": "/reading-list/items/{item_id}",
+      "description": "Update progress status, start/end dates, or remove the item from the list",
+      "file": "app/routes/readinglist_routes.py"
+    },
+    {
+      "method": "POST",
+      "path": "/discussions/threads",
+      "description": "Create a new discussion thread within a club",
+      "file": "app/routes/discussion_routes.py"
+    },
+    {
+      "method": "POST",
+      "path": "/discussions/threads/{thread_id}/comments",
+      "description": "Post a comment to a discussion thread; broadcast via WebSocket",
+      "file": "app/routes/comment_routes.py"
+    }
+  ],
+  "database_schema": [
+    {
+      "table_name": "users",
+      "columns": [
+        {
+          "name": "id",
+          "type": "INTEGER",
+          "is_primary_key": true,
+          "is_nullable": false
+        },
+        {
+          "name": "email",
+          "type": "VARCHAR(255)",
+          "is_primary_key": false,
+          "is_nullable": false
+        },
+        {
+          "name": "hashed_password",
+          "type": "VARCHAR(255)",
+          "is_primary_key": false,
+          "is_nullable": false
+        },
+        {
+          "name": "role",
+          "type": "VARCHAR(50)",
+          "is_primary_key": false,
+          "is_nullable": false
+        },
+        {
+          "name": "created_at",
+          "type": "DATETIME",
+          "is_primary_key": false,
+          "is_nullable": false
+        }
+      ]
+    },
+    {
+      "table_name": "clubs",
+      "columns": [
+        {
+          "name": "id",
+          "type": "INTEGER",
+          "is_primary_key": true,
+          "is_nullable": false
+        },
+        {
+          "name": "name",
+          "type": "VARCHAR(150)",
+          "is_primary_key": false,
+          "is_nullable": false
+        },
+        {
+          "name": "genre",
+          "type": "VARCHAR(100)",
+          "is_primary_key": false,
+          "is_nullable": false
+        },
+        {
+          "name": "description",
+          "type": "TEXT",
+          "is_primary_key": false,
+          "is_nullable": true
+        },
+        {
+          "name": "cover_image_url",
+          "type": "VARCHAR(255)",
+          "is_primary_key": false,
+          "is_nullable": true
+        },
+        {
+          "name": "created_by",
+          "type": "INTEGER",
+          "is_primary_key": false,
+          "is_nullable": false
+        },
+        {
+          "name": "created_at",
+          "type": "DATETIME",
+          "is_primary_key": false,
+          "is_nullable": false
+        }
+      ]
+    },
+    {
+      "table_name": "club_memberships",
+      "columns": [
+        {
+          "name": "id",
+          "type": "INTEGER",
+          "is_primary_key": true,
+          "is_nullable": false
+        },
+        {
+          "name": "user_id",
+          "type": "INTEGER",
+          "is_primary_key": false,
+          "is_nullable": false
+        },
+        {
+          "name": "club_id",
+          "type": "INTEGER",
+          "is_primary_key": false,
+          "is_nullable": false
+        },
+        {
+          "name": "role",
+          "type": "VARCHAR(50)",
+          "is_primary_key": false,
+          "is_nullable": false
+        },
+        {
+          "name": "joined_at",
+          "type": "DATETIME",
+          "is_primary_key": false,
+          "is_nullable": false
+        }
+      ]
+    },
+    {
+      "table_name": "books",
+      "columns": [
+        {
+          "name": "id",
+          "type": "INTEGER",
+          "is_primary_key": true,
+          "is_nullable": false
+        },
+        {
+          "name": "isbn",
+          "type": "VARCHAR(20)",
+          "is_primary_key": false,
+          "is_nullable": false
+        },
+        {
+          "name": "title",
+          "type": "VARCHAR(255)",
+          "is_primary_key": false,
+          "is_nullable": false
+        },
+        {
+          "name": "author",
+          "type": "VARCHAR(255)",
+          "is_primary_key": false,
+          "is_nullable": false
+        },
+        {
+          "name": "cover_image_url",
+          "type": "VARCHAR(255)",
+          "is_primary_key": false,
+          "is_nullable": true
+        },
+        {
+          "name": "description",
+          "type": "TEXT",
+          "is_primary_key": false,
+          "is_nullable": true
+        },
+        {
+          "name": "created_at",
+          "type": "DATETIME",
+          "is_primary_key": false,
+          "is_nullable": false
+        }
+      ]
+    },
+    {
+      "table_name": "reading_list_items",
+      "columns": [
+        {
+          "name": "id",
+          "type": "INTEGER",
+          "is_primary_key": true,
+          "is_nullable": false
+        },
+        {
+          "name": "book_id",
+          "type": "INTEGER",
+          "is_primary_key": false,
+          "is_nullable": false
+        },
+        {
+          "name": "club_id",
+          "type": "INTEGER",
+          "is_primary_key": false,
+          "is_nullable": true
+        },
+        {
+          "name": "user_id",
+          "type": "INTEGER",
+          "is_primary_key": false,
+          "is_nullable": true
+        },
+        {
+          "name": "start_date",
+          "type": "DATE",
+          "is_primary_key": false,
+          "is_nullable": true
+        },
+        {
+          "name": "end_date",
+          "type": "DATE",
+          "is_primary_key": false,
+          "is_nullable": true
+        },
+        {
+          "name": "status",
+          "type": "VARCHAR(50)",
+          "is_primary_key": false,
+          "is_nullable": false
+        }
+      ]
+    },
+    {
+      "table_name": "reviews",
+      "columns": [
+        {
+          "name": "id",
+          "type": "INTEGER",
+          "is_primary_key": true,
+          "is_nullable": false
+        },
+        {
+          "name": "user_id",
+          "type": "INTEGER",
+          "is_primary_key": false,
+          "is_nullable": false
+        },
+        {
+          "name": "book_id",
+          "type": "INTEGER",
+          "is_primary_key": false,
+          "is_nullable": false
+        },
+        {
+          "name": "rating",
+          "type": "INTEGER",
+          "is_primary_key": false,
+          "is_nullable": false
+        },
+        {
+          "name": "content",
+          "type": "TEXT",
+          "is_primary_key": false,
+          "is_nullable": true
+        },
+        {
+          "name": "created_at",
+          "type": "DATETIME",
+          "is_primary_key": false,
+          "is_nullable": false
+        }
+      ]
+    },
+    {
+      "table_name": "discussion_threads",
+      "columns": [
+        {
+          "name": "id",
+          "type": "INTEGER",
+          "is_primary_key": true,
+          "is_nullable": false
+        },
+        {
+          "name": "club_id",
+          "type": "INTEGER",
+          "is_primary_key": false,
+          "is_nullable": false
+        },
+        {
+          "name": "title",
+          "type": "VARCHAR(200)",
+          "is_primary_key": false,
+          "is_nullable": false
+        },
+        {
+          "name": "created_by",
+          "type": "INTEGER",
+          "is_primary_key": false,
+          "is_nullable": false
+        },
+        {
+          "name": "created_at",
+          "type": "DATETIME",
+          "is_primary_key": false,
+          "is_nullable": false
+        },
+        {
+          "name": "pinned",
+          "type": "BOOLEAN",
+          "is_primary_key": false,
+          "is_nullable": false
+        }
+      ]
+    },
+    {
+      "table_name": "comments",
+      "columns": [
+        {
+          "name": "id",
+          "type": "INTEGER",
+          "is_primary_key": true,
+          "is_nullable": false
+        },
+        {
+          "name": "thread_id",
+          "type": "INTEGER",
+          "is_primary_key": false,
+          "is_nullable": false
+        },
+        {
+          "name": "user_id",
+          "type": "INTEGER",
+          "is_primary_key": false,
+          "is_nullable": false
+        },
+        {
+          "name": "content",
+          "type": "TEXT",
+          "is_primary_key": false,
+          "is_nullable": false
+        },
+        {
+          "name": "created_at",
+          "type": "DATETIME",
+          "is_primary_key": false,
+          "is_nullable": false
+        }
+      ]
+    },
+    {
+      "table_name": "progress",
+      "columns": [
+        {
+          "name": "id",
+          "type": "INTEGER",
+          "is_primary_key": true,
+          "is_nullable": false
+        },
+        {
+          "name": "user_id",
+          "type": "INTEGER",
+          "is_primary_key": false,
+          "is_nullable": false
+        },
+        {
+          "name": "book_id",
+          "type": "INTEGER",
+          "is_primary_key": false,
+          "is_nullable": false
+        },
+        {
+          "name": "status",
+          "type": "VARCHAR(50)",
+          "is_primary_key": false,
+          "is_nullable": false
+        },
+        {
+          "name": "page_number",
+          "type": "INTEGER",
+          "is_primary_key": false,
+          "is_nullable": true
+        },
+        {
+          "name": "percentage",
+          "type": "FLOAT",
+          "is_primary_key": false,
+          "is_nullable": true
+        },
+        {
+          "name": "updated_at",
+          "type": "DATETIME",
+          "is_primary_key": false,
+          "is_nullable": false
+        }
+      ]
+    }
+  ],
+  "folder_structure": {
+    "backend": [
+      "app",
+      "app/models",
+      "app/schemas",
+      "app/routes",
+      "app/services",
+      "app/dependencies",
+      "app/config",
+      "app/auth"
+    ]
+  },
+  "frontend_structure": {
+    "pages": [
+      "HomePage",
+      "ClubListPage",
+      "ClubDetailPage",
+      "ClubFormPage",
+      "ReadingListPage",
+      "BookDetailPage",
+      "DiscussionThreadPage",
+      "AdminDashboardPage",
+      "LoginPage",
+      "RegisterPage"
+    ],
+    "components": [
+      "Navbar",
+      "ClubCard",
+      "BookCard",
+      "ReviewForm",
+      "DiscussionThreadItem",
+      "CommentItem",
+      "ProgressTracker",
+      "Pagination",
+      "FileUpload",
+      "Modal",
+      "SearchBar",
+      "UserAvatar",
+      "ToastNotification",
+      "LoadingSpinner",
+      "RoleBadge"
+    ]
+  }
+}

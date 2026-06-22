@@ -179,29 +179,27 @@ def validate_endpoints(
 # app/services/endpoint_validator.py — replace validate_orphan_routes with this
 
 def validate_orphan_routes(project_path, metadata, errors):
-
-    architecture = metadata.get("architecture", {})
-
-    expected_files = set()
-
-    for endpoint in architecture.get("api_endpoints", []):
-        file = endpoint.get("file")
-        if file:
-            expected_files.add(os.path.basename(file))
-
     routes_dir = os.path.join(project_path, "app", "routes")
-
     if not os.path.exists(routes_dir):
         return
 
-    for file in os.listdir(routes_dir):
+    # Read main.py to find which route files are actually imported
+    main_py_path = os.path.join(project_path, "app", "main.py")
+    main_content = ""
+    if os.path.exists(main_py_path):
+        try:
+            with open(main_py_path, encoding="utf-8") as f:
+                main_content = f.read()
+        except Exception:
+            pass
 
+    for file in os.listdir(routes_dir):
         if not file.endswith("_routes.py"):
             continue
 
-        if file not in expected_files:
-
+        # Only flag files that main.py never imports — those are truly dead
+        module_name = file.replace(".py", "")
+        if module_name not in main_content and file not in main_content:
             errors.append(
-                f"Orphan file: app/routes/{file} has no corresponding "
-                f"architecture endpoint and should be removed"
+                f"Orphan file: app/routes/{file} is not imported by main.py"
             )

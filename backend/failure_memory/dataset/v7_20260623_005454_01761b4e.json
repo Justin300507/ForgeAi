@@ -1,0 +1,30 @@
+{
+  "run_id": "v7_20260623_005454_01761b4e",
+  "timestamp": "2026-06-23T00:56:17",
+  "version": "v7",
+  "idea": "Personal Expense Manager: track daily expenses by category (food, transport, entertainment, bills), monthly budget limits with alerts, spending trends, and CSV export. User login with JWT.",
+  "project_name": "personal_expense_manager",
+  "provider": "auto",
+  "plan": {},
+  "architecture": {
+    "endpoint_count": 0,
+    "endpoints": [],
+    "db_schema_keys": []
+  },
+  "validation_errors": [],
+  "runtime_error": null,
+  "runtime_error_type": null,
+  "fixes_applied": [],
+  "score": 100,
+  "grade": "A",
+  "runtime_passed": true,
+  "frontend_passed": false,
+  "generation_time": 83.05,
+  "security_score": null,
+  "performance_score": null,
+  "maintainability_score": null,
+  "qa_score": null,
+  "v6_score": 79,
+  "prompt_version": "default",
+  "active_rules": []
+}

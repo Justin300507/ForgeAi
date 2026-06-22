@@ -1,0 +1,481 @@
+{
+  "api_endpoints": [
+    {
+      "method": "POST",
+      "path": "/auth/register",
+      "description": "Create a new user account and return a JWT",
+      "file": "app/routes/auth_routes.py"
+    },
+    {
+      "method": "POST",
+      "path": "/auth/login",
+      "description": "Authenticate user credentials and return a JWT",
+      "file": "app/routes/auth_routes.py"
+    },
+    {
+      "method": "GET",
+      "path": "/users/me",
+      "description": "Retrieve the profile of the authenticated user",
+      "file": "app/routes/user_routes.py"
+    },
+    {
+      "method": "GET",
+      "path": "/recipes",
+      "description": "Paginated list of recipes with optional search filters (name, ingredient, tag)",
+      "file": "app/routes/recipe_routes.py"
+    },
+    {
+      "method": "GET",
+      "path": "/recipes/{id}",
+      "description": "Get detailed information for a single recipe, including nutrition facts and ingredients",
+      "file": "app/routes/recipe_routes.py"
+    },
+    {
+      "method": "POST",
+      "path": "/recipes",
+      "description": "Create a new recipe (admin only)",
+      "file": "app/routes/recipe_routes.py"
+    },
+    {
+      "method": "PUT",
+      "path": "/recipes/{id}",
+      "description": "Update an existing recipe (admin only)",
+      "file": "app/routes/recipe_routes.py"
+    },
+    {
+      "method": "DELETE",
+      "path": "/recipes/{id}",
+      "description": "Delete a recipe (admin only)",
+      "file": "app/routes/recipe_routes.py"
+    },
+    {
+      "method": "GET",
+      "path": "/meal-plans",
+      "description": "List all meal plans belonging to the authenticated user",
+      "file": "app/routes/meal_plan_routes.py"
+    },
+    {
+      "method": "POST",
+      "path": "/meal-plans",
+      "description": "Create a new weekly meal plan for the user",
+      "file": "app/routes/meal_plan_routes.py"
+    },
+    {
+      "method": "GET",
+      "path": "/meal-plans/{id}",
+      "description": "Retrieve a specific meal plan with its assigned recipes and meal slots",
+      "file": "app/routes/meal_plan_routes.py"
+    },
+    {
+      "method": "POST",
+      "path": "/meal-plans/{id}/shopping-list",
+      "description": "Generate a consolidated shopping list for the given meal plan",
+      "file": "app/routes/meal_plan_routes.py"
+    },
+    {
+      "method": "GET",
+      "path": "/favorites",
+      "description": "List the authenticated user's favorite recipes",
+      "file": "app/routes/favorite_routes.py"
+    },
+    {
+      "method": "POST",
+      "path": "/favorites",
+      "description": "Add a recipe to the user's favorites (body: {\"recipe_id\": int})",
+      "file": "app/routes/favorite_routes.py"
+    },
+    {
+      "method": "GET",
+      "path": "/notifications",
+      "description": "List upcoming push\u2011notification reminders for the user",
+      "file": "app/routes/notification_routes.py"
+    }
+  ],
+  "database_schema": [
+    {
+      "table_name": "users",
+      "columns": [
+        {
+          "name": "id",
+          "type": "INTEGER",
+          "is_primary_key": true,
+          "is_nullable": false
+        },
+        {
+          "name": "email",
+          "type": "VARCHAR(255)",
+          "is_primary_key": false,
+          "is_nullable": false
+        },
+        {
+          "name": "hashed_password",
+          "type": "VARCHAR(255)",
+          "is_primary_key": false,
+          "is_nullable": false
+        },
+        {
+          "name": "diet_type",
+          "type": "VARCHAR(50)",
+          "is_primary_key": false,
+          "is_nullable": true
+        },
+        {
+          "name": "calorie_target",
+          "type": "INTEGER",
+          "is_primary_key": false,
+          "is_nullable": true
+        },
+        {
+          "name": "serving_size_default",
+          "type": "INTEGER",
+          "is_primary_key": false,
+          "is_nullable": true
+        },
+        {
+          "name": "is_admin",
+          "type": "BOOLEAN",
+          "is_primary_key": false,
+          "is_nullable": false
+        }
+      ]
+    },
+    {
+      "table_name": "recipes",
+      "columns": [
+        {
+          "name": "id",
+          "type": "INTEGER",
+          "is_primary_key": true,
+          "is_nullable": false
+        },
+        {
+          "name": "title",
+          "type": "VARCHAR(255)",
+          "is_primary_key": false,
+          "is_nullable": false
+        },
+        {
+          "name": "image_url",
+          "type": "VARCHAR(512)",
+          "is_primary_key": false,
+          "is_nullable": true
+        },
+        {
+          "name": "servings",
+          "type": "INTEGER",
+          "is_primary_key": false,
+          "is_nullable": false
+        },
+        {
+          "name": "source",
+          "type": "VARCHAR(255)",
+          "is_primary_key": false,
+          "is_nullable": true
+        },
+        {
+          "name": "calories",
+          "type": "FLOAT",
+          "is_primary_key": false,
+          "is_nullable": true
+        },
+        {
+          "name": "protein",
+          "type": "FLOAT",
+          "is_primary_key": false,
+          "is_nullable": true
+        },
+        {
+          "name": "carbs",
+          "type": "FLOAT",
+          "is_primary_key": false,
+          "is_nullable": true
+        },
+        {
+          "name": "fat",
+          "type": "FLOAT",
+          "is_primary_key": false,
+          "is_nullable": true
+        }
+      ]
+    },
+    {
+      "table_name": "ingredients",
+      "columns": [
+        {
+          "name": "id",
+          "type": "INTEGER",
+          "is_primary_key": true,
+          "is_nullable": false
+        },
+        {
+          "name": "name",
+          "type": "VARCHAR(255)",
+          "is_primary_key": false,
+          "is_nullable": false
+        },
+        {
+          "name": "unit",
+          "type": "VARCHAR(50)",
+          "is_primary_key": false,
+          "is_nullable": false
+        }
+      ]
+    },
+    {
+      "table_name": "recipe_ingredients",
+      "columns": [
+        {
+          "name": "id",
+          "type": "INTEGER",
+          "is_primary_key": true,
+          "is_nullable": false
+        },
+        {
+          "name": "recipe_id",
+          "type": "INTEGER",
+          "is_primary_key": false,
+          "is_nullable": false
+        },
+        {
+          "name": "ingredient_id",
+          "type": "INTEGER",
+          "is_primary_key": false,
+          "is_nullable": false
+        },
+        {
+          "name": "quantity",
+          "type": "FLOAT",
+          "is_primary_key": false,
+          "is_nullable": false
+        }
+      ]
+    },
+    {
+      "table_name": "meal_plans",
+      "columns": [
+        {
+          "name": "id",
+          "type": "INTEGER",
+          "is_primary_key": true,
+          "is_nullable": false
+        },
+        {
+          "name": "user_id",
+          "type": "INTEGER",
+          "is_primary_key": false,
+          "is_nullable": false
+        },
+        {
+          "name": "start_date",
+          "type": "DATE",
+          "is_primary_key": false,
+          "is_nullable": false
+        }
+      ]
+    },
+    {
+      "table_name": "meal_plan_items",
+      "columns": [
+        {
+          "name": "id",
+          "type": "INTEGER",
+          "is_primary_key": true,
+          "is_nullable": false
+        },
+        {
+          "name": "meal_plan_id",
+          "type": "INTEGER",
+          "is_primary_key": false,
+          "is_nullable": false
+        },
+        {
+          "name": "recipe_id",
+          "type": "INTEGER",
+          "is_primary_key": false,
+          "is_nullable": false
+        },
+        {
+          "name": "date",
+          "type": "DATE",
+          "is_primary_key": false,
+          "is_nullable": false
+        },
+        {
+          "name": "meal_type",
+          "type": "VARCHAR(20)",
+          "is_primary_key": false,
+          "is_nullable": false
+        }
+      ]
+    },
+    {
+      "table_name": "shopping_lists",
+      "columns": [
+        {
+          "name": "id",
+          "type": "INTEGER",
+          "is_primary_key": true,
+          "is_nullable": false
+        },
+        {
+          "name": "user_id",
+          "type": "INTEGER",
+          "is_primary_key": false,
+          "is_nullable": false
+        },
+        {
+          "name": "meal_plan_id",
+          "type": "INTEGER",
+          "is_primary_key": false,
+          "is_nullable": false
+        },
+        {
+          "name": "created_at",
+          "type": "DATETIME",
+          "is_primary_key": false,
+          "is_nullable": false
+        }
+      ]
+    },
+    {
+      "table_name": "shopping_list_items",
+      "columns": [
+        {
+          "name": "id",
+          "type": "INTEGER",
+          "is_primary_key": true,
+          "is_nullable": false
+        },
+        {
+          "name": "shopping_list_id",
+          "type": "INTEGER",
+          "is_primary_key": false,
+          "is_nullable": false
+        },
+        {
+          "name": "ingredient_id",
+          "type": "INTEGER",
+          "is_primary_key": false,
+          "is_nullable": false
+        },
+        {
+          "name": "total_quantity",
+          "type": "FLOAT",
+          "is_primary_key": false,
+          "is_nullable": false
+        },
+        {
+          "name": "unit",
+          "type": "VARCHAR(50)",
+          "is_primary_key": false,
+          "is_nullable": false
+        }
+      ]
+    },
+    {
+      "table_name": "favorites",
+      "columns": [
+        {
+          "name": "id",
+          "type": "INTEGER",
+          "is_primary_key": true,
+          "is_nullable": false
+        },
+        {
+          "name": "user_id",
+          "type": "INTEGER",
+          "is_primary_key": false,
+          "is_nullable": false
+        },
+        {
+          "name": "recipe_id",
+          "type": "INTEGER",
+          "is_primary_key": false,
+          "is_nullable": false
+        },
+        {
+          "name": "added_at",
+          "type": "DATETIME",
+          "is_primary_key": false,
+          "is_nullable": false
+        }
+      ]
+    },
+    {
+      "table_name": "notifications",
+      "columns": [
+        {
+          "name": "id",
+          "type": "INTEGER",
+          "is_primary_key": true,
+          "is_nullable": false
+        },
+        {
+          "name": "user_id",
+          "type": "INTEGER",
+          "is_primary_key": false,
+          "is_nullable": false
+        },
+        {
+          "name": "meal_plan_item_id",
+          "type": "INTEGER",
+          "is_primary_key": false,
+          "is_nullable": false
+        },
+        {
+          "name": "send_at",
+          "type": "DATETIME",
+          "is_primary_key": false,
+          "is_nullable": false
+        },
+        {
+          "name": "payload",
+          "type": "JSON",
+          "is_primary_key": false,
+          "is_nullable": false
+        }
+      ]
+    }
+  ],
+  "folder_structure": {
+    "backend": [
+      "routes",
+      "models",
+      "schemas",
+      "services",
+      "utils",
+      "dependencies"
+    ]
+  },
+  "frontend_structure": {
+    "pages": [
+      "LoginPage",
+      "RegisterPage",
+      "DashboardPage",
+      "RecipeCatalogPage",
+      "RecipeDetailPage",
+      "MealPlanEditorPage",
+      "ShoppingListPage",
+      "FavoritesPage",
+      "SettingsPage"
+    ],
+    "components": [
+      "Header",
+      "Footer",
+      "SearchBar",
+      "RecipeCard",
+      "RecipeList",
+      "NutritionInfo",
+      "MealPlanCalendar",
+      "MealPlanItemCard",
+      "DragDropArea",
+      "IngredientList",
+      "ShoppingListItem",
+      "FavoriteButton",
+      "NotificationItem",
+      "Pagination",
+      "ImportRecipeForm",
+      "ToggleSwitch"
+    ]
+  }
+}

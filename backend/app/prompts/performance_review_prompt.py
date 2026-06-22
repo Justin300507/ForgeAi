@@ -3,8 +3,8 @@ def build_performance_review_prompt(files: dict, architecture: dict) -> str:
         f"=== {path} ===\n{content[:2000]}"
         for path, content in list(files.items())[:20]
     )
-    db_schema = architecture.get("db_schema", {})
-    db_info = str(db_schema)[:500] if db_schema else "Not specified"
+    db_schema = architecture.get("database_schema") or architecture.get("db_schema") or {}
+    db_info = str(db_schema)[:800] if db_schema else "Not specified"
 
     return f"""You are a performance engineer reviewing AI-generated FastAPI backend code.
 Detect performance anti-patterns in this project.
@@ -23,9 +23,9 @@ Check for these specific issues:
    - Example: for user in users: db.query(Post).filter(Post.user_id == user.id).all()
 
 2. MISSING DATABASE INDEXES:
-   - Foreign key columns without Index() or index=True
-   - Columns used in WHERE clauses that lack indexes
-   - Unique constraints missing index=True
+   - Columns used in WHERE clauses or JOIN conditions that lack index=True (NOT every FK — only those used in hot query paths)
+   - Unique constraints that should have unique=True
+   - Do NOT flag every FK column as missing an index — only flag if it's used in a frequent filter
 
 3. LARGE PAYLOAD RISKS:
    - Endpoints returning entire tables without pagination (limit/offset)

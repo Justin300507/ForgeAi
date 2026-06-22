@@ -1,0 +1,32 @@
+{
+  "run_id": "v7_20260622_131107_0eb862f7",
+  "timestamp": "2026-06-22T13:11:34",
+  "version": "v7",
+  "idea": "A subscription tracker with services, billing dates, costs, and spending analytics",
+  "project_name": "subscription_tracker",
+  "provider": "auto",
+  "plan": {},
+  "architecture": {
+    "endpoint_count": 0,
+    "endpoints": [],
+    "db_schema_keys": []
+  },
+  "validation_errors": [
+    "Duplicate class definition: 'Subscription' is defined in multiple files (app/models/subscription.py, app/schemas/subscription.py) — this creates incompatible duplicate types"
+  ],
+  "runtime_error": null,
+  "runtime_error_type": null,
+  "fixes_applied": [],
+  "score": 78,
+  "grade": "C",
+  "runtime_passed": false,
+  "frontend_passed": false,
+  "generation_time": 27.14,
+  "security_score": null,
+  "performance_score": null,
+  "maintainability_score": null,
+  "qa_score": null,
+  "v6_score": 61,
+  "prompt_version": "default",
+  "active_rules": []
+}

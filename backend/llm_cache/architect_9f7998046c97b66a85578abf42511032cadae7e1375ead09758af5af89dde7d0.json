@@ -1,0 +1,428 @@
+{
+  "api_endpoints": [
+    {
+      "method": "POST",
+      "path": "/auth/signup",
+      "description": "Register a new user (candidate or employer) and create associated profile placeholder",
+      "file": "app/routes/auth_routes.py"
+    },
+    {
+      "method": "POST",
+      "path": "/auth/login",
+      "description": "Authenticate user and return JWT access and refresh tokens",
+      "file": "app/routes/auth_routes.py"
+    },
+    {
+      "method": "POST",
+      "path": "/auth/password-reset-request",
+      "description": "Send password\u2011reset email with one\u2011time token",
+      "file": "app/routes/auth_routes.py"
+    },
+    {
+      "method": "POST",
+      "path": "/auth/password-reset",
+      "description": "Reset password using token supplied in request body",
+      "file": "app/routes/auth_routes.py"
+    },
+    {
+      "method": "GET",
+      "path": "/users/me",
+      "description": "Return authenticated user details including role",
+      "file": "app/routes/user_routes.py"
+    },
+    {
+      "method": "GET",
+      "path": "/candidates/me",
+      "description": "Retrieve the candidate profile of the logged\u2011in user",
+      "file": "app/routes/candidate_routes.py"
+    },
+    {
+      "method": "PUT",
+      "path": "/candidates/me",
+      "description": "Create or update candidate profile; supports PDF resume upload (max 5\u202fMB)",
+      "file": "app/routes/candidate_routes.py"
+    },
+    {
+      "method": "GET",
+      "path": "/employers/me",
+      "description": "Retrieve the employer profile of the logged\u2011in user",
+      "file": "app/routes/employer_routes.py"
+    },
+    {
+      "method": "PUT",
+      "path": "/employers/me",
+      "description": "Create or update employer profile",
+      "file": "app/routes/employer_routes.py"
+    },
+    {
+      "method": "POST",
+      "path": "/jobs",
+      "description": "Create a new job listing (employer only)",
+      "file": "app/routes/job_routes.py"
+    },
+    {
+      "method": "GET",
+      "path": "/jobs",
+      "description": "List job listings with pagination, keyword search, location and salary filters",
+      "file": "app/routes/job_routes.py"
+    },
+    {
+      "method": "GET",
+      "path": "/jobs/{id}",
+      "description": "Get detailed information for a specific job listing",
+      "file": "app/routes/job_routes.py"
+    },
+    {
+      "method": "PUT",
+      "path": "/jobs/{id}",
+      "description": "Update job details or archive the listing (employer only)",
+      "file": "app/routes/job_routes.py"
+    },
+    {
+      "method": "POST",
+      "path": "/applications",
+      "description": "Submit an application to a job; includes cover letter and optional resume upload",
+      "file": "app/routes/application_routes.py"
+    },
+    {
+      "method": "GET",
+      "path": "/applications",
+      "description": "Employer view of applications for their jobs; supports status filter",
+      "file": "app/routes/application_routes.py"
+    },
+    {
+      "method": "GET",
+      "path": "/applications/{id}",
+      "description": "Retrieve details of a specific application (candidate or employer authorized)",
+      "file": "app/routes/application_routes.py"
+    }
+  ],
+  "database_schema": [
+    {
+      "table_name": "user",
+      "columns": [
+        {
+          "name": "id",
+          "type": "INTEGER",
+          "is_primary_key": true,
+          "is_nullable": false
+        },
+        {
+          "name": "email",
+          "type": "VARCHAR(255)",
+          "is_primary_key": false,
+          "is_nullable": false
+        },
+        {
+          "name": "password_hash",
+          "type": "VARCHAR(255)",
+          "is_primary_key": false,
+          "is_nullable": false
+        },
+        {
+          "name": "role",
+          "type": "VARCHAR(20)",
+          "is_primary_key": false,
+          "is_nullable": false
+        },
+        {
+          "name": "created_at",
+          "type": "DATETIME",
+          "is_primary_key": false,
+          "is_nullable": false
+        }
+      ]
+    },
+    {
+      "table_name": "candidate_profile",
+      "columns": [
+        {
+          "name": "id",
+          "type": "INTEGER",
+          "is_primary_key": true,
+          "is_nullable": false
+        },
+        {
+          "name": "user_id",
+          "type": "INTEGER",
+          "is_primary_key": false,
+          "is_nullable": false
+        },
+        {
+          "name": "full_name",
+          "type": "VARCHAR(150)",
+          "is_primary_key": false,
+          "is_nullable": false
+        },
+        {
+          "name": "headline",
+          "type": "VARCHAR(255)",
+          "is_primary_key": false,
+          "is_nullable": false
+        },
+        {
+          "name": "summary",
+          "type": "TEXT",
+          "is_primary_key": false,
+          "is_nullable": true
+        },
+        {
+          "name": "resume_url",
+          "type": "VARCHAR(255)",
+          "is_primary_key": false,
+          "is_nullable": true
+        },
+        {
+          "name": "skills",
+          "type": "TEXT",
+          "is_primary_key": false,
+          "is_nullable": true
+        },
+        {
+          "name": "created_at",
+          "type": "DATETIME",
+          "is_primary_key": false,
+          "is_nullable": false
+        }
+      ]
+    },
+    {
+      "table_name": "employer_profile",
+      "columns": [
+        {
+          "name": "id",
+          "type": "INTEGER",
+          "is_primary_key": true,
+          "is_nullable": false
+        },
+        {
+          "name": "user_id",
+          "type": "INTEGER",
+          "is_primary_key": false,
+          "is_nullable": false
+        },
+        {
+          "name": "company_name",
+          "type": "VARCHAR(200)",
+          "is_primary_key": false,
+          "is_nullable": false
+        },
+        {
+          "name": "website",
+          "type": "VARCHAR(255)",
+          "is_primary_key": false,
+          "is_nullable": true
+        },
+        {
+          "name": "description",
+          "type": "TEXT",
+          "is_primary_key": false,
+          "is_nullable": true
+        },
+        {
+          "name": "created_at",
+          "type": "DATETIME",
+          "is_primary_key": false,
+          "is_nullable": false
+        }
+      ]
+    },
+    {
+      "table_name": "job_listing",
+      "columns": [
+        {
+          "name": "id",
+          "type": "INTEGER",
+          "is_primary_key": true,
+          "is_nullable": false
+        },
+        {
+          "name": "employer_id",
+          "type": "INTEGER",
+          "is_primary_key": false,
+          "is_nullable": false
+        },
+        {
+          "name": "title",
+          "type": "VARCHAR(200)",
+          "is_primary_key": false,
+          "is_nullable": false
+        },
+        {
+          "name": "description",
+          "type": "TEXT",
+          "is_primary_key": false,
+          "is_nullable": false
+        },
+        {
+          "name": "location",
+          "type": "VARCHAR(150)",
+          "is_primary_key": false,
+          "is_nullable": false
+        },
+        {
+          "name": "salary_min",
+          "type": "INTEGER",
+          "is_primary_key": false,
+          "is_nullable": true
+        },
+        {
+          "name": "salary_max",
+          "type": "INTEGER",
+          "is_primary_key": false,
+          "is_nullable": true
+        },
+        {
+          "name": "required_skills",
+          "type": "TEXT",
+          "is_primary_key": false,
+          "is_nullable": true
+        },
+        {
+          "name": "posted_at",
+          "type": "DATETIME",
+          "is_primary_key": false,
+          "is_nullable": false
+        },
+        {
+          "name": "expires_at",
+          "type": "DATETIME",
+          "is_primary_key": false,
+          "is_nullable": false
+        }
+      ]
+    },
+    {
+      "table_name": "application",
+      "columns": [
+        {
+          "name": "id",
+          "type": "INTEGER",
+          "is_primary_key": true,
+          "is_nullable": false
+        },
+        {
+          "name": "job_id",
+          "type": "INTEGER",
+          "is_primary_key": false,
+          "is_nullable": false
+        },
+        {
+          "name": "candidate_id",
+          "type": "INTEGER",
+          "is_primary_key": false,
+          "is_nullable": false
+        },
+        {
+          "name": "cover_letter",
+          "type": "TEXT",
+          "is_primary_key": false,
+          "is_nullable": false
+        },
+        {
+          "name": "resume_url",
+          "type": "VARCHAR(255)",
+          "is_primary_key": false,
+          "is_nullable": true
+        },
+        {
+          "name": "status",
+          "type": "VARCHAR(20)",
+          "is_primary_key": false,
+          "is_nullable": false
+        },
+        {
+          "name": "applied_at",
+          "type": "DATETIME",
+          "is_primary_key": false,
+          "is_nullable": false
+        }
+      ]
+    },
+    {
+      "table_name": "notification",
+      "columns": [
+        {
+          "name": "id",
+          "type": "INTEGER",
+          "is_primary_key": true,
+          "is_nullable": false
+        },
+        {
+          "name": "user_id",
+          "type": "INTEGER",
+          "is_primary_key": false,
+          "is_nullable": false
+        },
+        {
+          "name": "type",
+          "type": "VARCHAR(50)",
+          "is_primary_key": false,
+          "is_nullable": false
+        },
+        {
+          "name": "payload",
+          "type": "TEXT",
+          "is_primary_key": false,
+          "is_nullable": false
+        },
+        {
+          "name": "sent_at",
+          "type": "DATETIME",
+          "is_primary_key": false,
+          "is_nullable": false
+        },
+        {
+          "name": "read_at",
+          "type": "DATETIME",
+          "is_primary_key": false,
+          "is_nullable": true
+        }
+      ]
+    }
+  ],
+  "folder_structure": {
+    "backend": [
+      "routes",
+      "models",
+      "schemas",
+      "services",
+      "utils",
+      "dependencies",
+      "config",
+      "security",
+      "database"
+    ]
+  },
+  "frontend_structure": {
+    "pages": [
+      "Signup",
+      "Login",
+      "PasswordResetRequest",
+      "PasswordReset",
+      "CandidateProfile",
+      "EmployerProfile",
+      "JobList",
+      "JobDetail",
+      "JobCreateEdit",
+      "ApplicationCreate"
+    ],
+    "components": [
+      "Header",
+      "Footer",
+      "JobCard",
+      "Pagination",
+      "SearchBar",
+      "ProfileForm",
+      "ResumeUploader",
+      "ApplicationForm",
+      "NotificationList",
+      "StatusBadge",
+      "Sidebar",
+      "Modal",
+      "Alert",
+      "SkillTag",
+      "FileDropzone"
+    ]
+  }
+}

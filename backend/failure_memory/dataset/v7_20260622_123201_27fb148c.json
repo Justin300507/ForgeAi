@@ -1,0 +1,30 @@
+{
+  "run_id": "v7_20260622_123201_27fb148c",
+  "timestamp": "2026-06-22T12:32:39",
+  "version": "v7",
+  "idea": "A learning management system with courses, lessons, quizzes, and student progress",
+  "project_name": "learning_management_system",
+  "provider": "auto",
+  "plan": {},
+  "architecture": {
+    "endpoint_count": 0,
+    "endpoints": [],
+    "db_schema_keys": []
+  },
+  "validation_errors": [],
+  "runtime_error": null,
+  "runtime_error_type": null,
+  "fixes_applied": [],
+  "score": 100,
+  "grade": "A",
+  "runtime_passed": true,
+  "frontend_passed": false,
+  "generation_time": 38.3,
+  "security_score": 70,
+  "performance_score": 68,
+  "maintainability_score": 70,
+  "qa_score": 42,
+  "v6_score": 71,
+  "prompt_version": "default",
+  "active_rules": []
+}

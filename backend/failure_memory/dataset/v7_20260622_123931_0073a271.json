@@ -1,0 +1,30 @@
+{
+  "run_id": "v7_20260622_123931_0073a271",
+  "timestamp": "2026-06-22T12:40:21",
+  "version": "v7",
+  "idea": "A subscription tracker with services, billing dates, costs, and spending analytics",
+  "project_name": "subscription_tracker",
+  "provider": "auto",
+  "plan": {},
+  "architecture": {
+    "endpoint_count": 0,
+    "endpoints": [],
+    "db_schema_keys": []
+  },
+  "validation_errors": [],
+  "runtime_error": null,
+  "runtime_error_type": null,
+  "fixes_applied": [],
+  "score": 100,
+  "grade": "A",
+  "runtime_passed": true,
+  "frontend_passed": false,
+  "generation_time": 49.82,
+  "security_score": 60,
+  "performance_score": 45,
+  "maintainability_score": 35,
+  "qa_score": 45,
+  "v6_score": 57,
+  "prompt_version": "default",
+  "active_rules": []
+}

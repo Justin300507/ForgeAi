@@ -1,0 +1,417 @@
+{
+  "api_endpoints": [
+    {
+      "method": "POST",
+      "path": "/auth/login",
+      "description": "Authenticate user and return JWT token",
+      "file": "app/routes/auth_routes.py"
+    },
+    {
+      "method": "POST",
+      "path": "/auth/register",
+      "description": "Create a new user account (admin only)",
+      "file": "app/routes/auth_routes.py"
+    },
+    {
+      "method": "GET",
+      "path": "/users",
+      "description": "List all users (admin)",
+      "file": "app/routes/user_routes.py"
+    },
+    {
+      "method": "GET",
+      "path": "/users/{id}",
+      "description": "Get details of a specific user",
+      "file": "app/routes/user_routes.py"
+    },
+    {
+      "method": "PUT",
+      "path": "/users/{id}",
+      "description": "Update user role or activation status",
+      "file": "app/routes/user_routes.py"
+    },
+    {
+      "method": "POST",
+      "path": "/tickets",
+      "description": "Create a new support ticket (customer)",
+      "file": "app/routes/ticket_routes.py"
+    },
+    {
+      "method": "GET",
+      "path": "/tickets",
+      "description": "List tickets (own tickets for customers, all with filters for agents/managers)",
+      "file": "app/routes/ticket_routes.py"
+    },
+    {
+      "method": "GET",
+      "path": "/tickets/{id}",
+      "description": "Retrieve detailed information of a ticket",
+      "file": "app/routes/ticket_routes.py"
+    },
+    {
+      "method": "PUT",
+      "path": "/tickets/{id}",
+      "description": "Update ticket status, assign agent, or change priority",
+      "file": "app/routes/ticket_routes.py"
+    },
+    {
+      "method": "POST",
+      "path": "/tickets/{ticket_id}/messages",
+      "description": "Add a message to a ticket (customer or agent)",
+      "file": "app/routes/message_routes.py"
+    },
+    {
+      "method": "GET",
+      "path": "/tickets/{ticket_id}/messages",
+      "description": "List messages for a ticket (paginated)",
+      "file": "app/routes/message_routes.py"
+    },
+    {
+      "method": "POST",
+      "path": "/messages/{message_id}/attachments",
+      "description": "Upload an attachment to a ticket message",
+      "file": "app/routes/attachment_routes.py"
+    },
+    {
+      "method": "GET",
+      "path": "/attachments/{id}",
+      "description": "Download an attachment file",
+      "file": "app/routes/attachment_routes.py"
+    },
+    {
+      "method": "GET",
+      "path": "/sla/rules",
+      "description": "List SLA rules per priority (manager)",
+      "file": "app/routes/sla_routes.py"
+    },
+    {
+      "method": "POST",
+      "path": "/sla/rules",
+      "description": "Create or update an SLA rule for a priority",
+      "file": "app/routes/sla_routes.py"
+    }
+  ],
+  "database_schema": [
+    {
+      "table_name": "users",
+      "columns": [
+        {
+          "name": "id",
+          "type": "INTEGER",
+          "is_primary_key": true,
+          "is_nullable": false
+        },
+        {
+          "name": "email",
+          "type": "VARCHAR(255)",
+          "is_primary_key": false,
+          "is_nullable": false
+        },
+        {
+          "name": "hashed_password",
+          "type": "VARCHAR(255)",
+          "is_primary_key": false,
+          "is_nullable": false
+        },
+        {
+          "name": "full_name",
+          "type": "VARCHAR(255)",
+          "is_primary_key": false,
+          "is_nullable": true
+        },
+        {
+          "name": "role",
+          "type": "VARCHAR(20)",
+          "is_primary_key": false,
+          "is_nullable": false
+        },
+        {
+          "name": "is_active",
+          "type": "BOOLEAN",
+          "is_primary_key": false,
+          "is_nullable": false
+        },
+        {
+          "name": "created_at",
+          "type": "DATETIME",
+          "is_primary_key": false,
+          "is_nullable": false
+        }
+      ]
+    },
+    {
+      "table_name": "priorities",
+      "columns": [
+        {
+          "name": "id",
+          "type": "INTEGER",
+          "is_primary_key": true,
+          "is_nullable": false
+        },
+        {
+          "name": "name",
+          "type": "VARCHAR(50)",
+          "is_primary_key": false,
+          "is_nullable": false
+        },
+        {
+          "name": "level",
+          "type": "INTEGER",
+          "is_primary_key": false,
+          "is_nullable": false
+        }
+      ]
+    },
+    {
+      "table_name": "sla_rules",
+      "columns": [
+        {
+          "name": "id",
+          "type": "INTEGER",
+          "is_primary_key": true,
+          "is_nullable": false
+        },
+        {
+          "name": "priority_id",
+          "type": "INTEGER",
+          "is_primary_key": false,
+          "is_nullable": false
+        },
+        {
+          "name": "response_time_minutes",
+          "type": "INTEGER",
+          "is_primary_key": false,
+          "is_nullable": false
+        },
+        {
+          "name": "resolution_time_minutes",
+          "type": "INTEGER",
+          "is_primary_key": false,
+          "is_nullable": false
+        }
+      ]
+    },
+    {
+      "table_name": "tickets",
+      "columns": [
+        {
+          "name": "id",
+          "type": "INTEGER",
+          "is_primary_key": true,
+          "is_nullable": false
+        },
+        {
+          "name": "subject",
+          "type": "VARCHAR(255)",
+          "is_primary_key": false,
+          "is_nullable": false
+        },
+        {
+          "name": "description",
+          "type": "TEXT",
+          "is_primary_key": false,
+          "is_nullable": false
+        },
+        {
+          "name": "status",
+          "type": "VARCHAR(20)",
+          "is_primary_key": false,
+          "is_nullable": false
+        },
+        {
+          "name": "priority_id",
+          "type": "INTEGER",
+          "is_primary_key": false,
+          "is_nullable": false
+        },
+        {
+          "name": "customer_id",
+          "type": "INTEGER",
+          "is_primary_key": false,
+          "is_nullable": false
+        },
+        {
+          "name": "assigned_agent_id",
+          "type": "INTEGER",
+          "is_primary_key": false,
+          "is_nullable": true
+        },
+        {
+          "name": "created_at",
+          "type": "DATETIME",
+          "is_primary_key": false,
+          "is_nullable": false
+        },
+        {
+          "name": "updated_at",
+          "type": "DATETIME",
+          "is_primary_key": false,
+          "is_nullable": false
+        },
+        {
+          "name": "response_deadline",
+          "type": "DATETIME",
+          "is_primary_key": false,
+          "is_nullable": true
+        },
+        {
+          "name": "resolution_deadline",
+          "type": "DATETIME",
+          "is_primary_key": false,
+          "is_nullable": true
+        }
+      ]
+    },
+    {
+      "table_name": "ticket_messages",
+      "columns": [
+        {
+          "name": "id",
+          "type": "INTEGER",
+          "is_primary_key": true,
+          "is_nullable": false
+        },
+        {
+          "name": "ticket_id",
+          "type": "INTEGER",
+          "is_primary_key": false,
+          "is_nullable": false
+        },
+        {
+          "name": "author_id",
+          "type": "INTEGER",
+          "is_primary_key": false,
+          "is_nullable": false
+        },
+        {
+          "name": "content",
+          "type": "TEXT",
+          "is_primary_key": false,
+          "is_nullable": false
+        },
+        {
+          "name": "created_at",
+          "type": "DATETIME",
+          "is_primary_key": false,
+          "is_nullable": false
+        }
+      ]
+    },
+    {
+      "table_name": "attachments",
+      "columns": [
+        {
+          "name": "id",
+          "type": "INTEGER",
+          "is_primary_key": true,
+          "is_nullable": false
+        },
+        {
+          "name": "message_id",
+          "type": "INTEGER",
+          "is_primary_key": false,
+          "is_nullable": false
+        },
+        {
+          "name": "filename",
+          "type": "VARCHAR(255)",
+          "is_primary_key": false,
+          "is_nullable": false
+        },
+        {
+          "name": "file_path",
+          "type": "VARCHAR(500)",
+          "is_primary_key": false,
+          "is_nullable": false
+        },
+        {
+          "name": "uploaded_at",
+          "type": "DATETIME",
+          "is_primary_key": false,
+          "is_nullable": false
+        },
+        {
+          "name": "size_bytes",
+          "type": "INTEGER",
+          "is_primary_key": false,
+          "is_nullable": false
+        }
+      ]
+    },
+    {
+      "table_name": "audit_logs",
+      "columns": [
+        {
+          "name": "id",
+          "type": "INTEGER",
+          "is_primary_key": true,
+          "is_nullable": false
+        },
+        {
+          "name": "user_id",
+          "type": "INTEGER",
+          "is_primary_key": false,
+          "is_nullable": false
+        },
+        {
+          "name": "action",
+          "type": "VARCHAR(255)",
+          "is_primary_key": false,
+          "is_nullable": false
+        },
+        {
+          "name": "details",
+          "type": "TEXT",
+          "is_primary_key": false,
+          "is_nullable": true
+        },
+        {
+          "name": "timestamp",
+          "type": "DATETIME",
+          "is_primary_key": false,
+          "is_nullable": false
+        }
+      ]
+    }
+  ],
+  "folder_structure": {
+    "backend": [
+      "app",
+      "app/models",
+      "app/schemas",
+      "app/routes",
+      "app/services",
+      "app/utils",
+      "app/dependencies",
+      "app/core"
+    ]
+  },
+  "frontend_structure": {
+    "pages": [
+      "LoginPage",
+      "TicketListPage",
+      "TicketDetailPage",
+      "TicketCreatePage",
+      "DashboardPage",
+      "UserManagementPage",
+      "SLAConfigPage"
+    ],
+    "components": [
+      "Header",
+      "Sidebar",
+      "TicketCard",
+      "MessageThread",
+      "MessageInput",
+      "AttachmentUploader",
+      "UserForm",
+      "SLAForm",
+      "Pagination",
+      "SearchBar",
+      "StatusBadge",
+      "RealTimeChart",
+      "Modal",
+      "ToastNotification",
+      "FilePreview"
+    ]
+  }
+}

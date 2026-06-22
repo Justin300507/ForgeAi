@@ -1,0 +1,456 @@
+{
+  "api_endpoints": [
+    {
+      "method": "POST",
+      "path": "/auth/signup",
+      "description": "Register a new user and return a JWT token",
+      "file": "app/routes/auth_routes.py"
+    },
+    {
+      "method": "POST",
+      "path": "/auth/login",
+      "description": "Authenticate user credentials and return a JWT token",
+      "file": "app/routes/auth_routes.py"
+    },
+    {
+      "method": "GET",
+      "path": "/users/me",
+      "description": "Retrieve the profile of the authenticated user",
+      "file": "app/routes/user_routes.py"
+    },
+    {
+      "method": "GET",
+      "path": "/recipes",
+      "description": "Get a paginated list of recipes with optional search, cuisine and dietary filters",
+      "file": "app/routes/recipe_routes.py"
+    },
+    {
+      "method": "GET",
+      "path": "/recipes/{id}",
+      "description": "Get detailed information for a single recipe, including ingredients, steps, ratings and comments",
+      "file": "app/routes/recipe_routes.py"
+    },
+    {
+      "method": "POST",
+      "path": "/recipes",
+      "description": "Create a new recipe (authenticated users only)",
+      "file": "app/routes/recipe_routes.py"
+    },
+    {
+      "method": "PUT",
+      "path": "/recipes/{id}",
+      "description": "Update an existing recipe owned by the authenticated user",
+      "file": "app/routes/recipe_routes.py"
+    },
+    {
+      "method": "DELETE",
+      "path": "/recipes/{id}",
+      "description": "Delete a recipe owned by the authenticated user",
+      "file": "app/routes/recipe_routes.py"
+    },
+    {
+      "method": "POST",
+      "path": "/recipes/{id}/ratings",
+      "description": "Add a rating (and optional comment) to a recipe",
+      "file": "app/routes/rating_routes.py"
+    },
+    {
+      "method": "PUT",
+      "path": "/ratings/{id}",
+      "description": "Edit a rating within the allowed time window",
+      "file": "app/routes/rating_routes.py"
+    },
+    {
+      "method": "DELETE",
+      "path": "/ratings/{id}",
+      "description": "Delete a rating within the allowed time window",
+      "file": "app/routes/rating_routes.py"
+    },
+    {
+      "method": "POST",
+      "path": "/collections",
+      "description": "Create a new personal collection of recipes",
+      "file": "app/routes/collection_routes.py"
+    },
+    {
+      "method": "POST",
+      "path": "/collections/{id}/recipes/{recipe_id}",
+      "description": "Add a recipe to a specific collection",
+      "file": "app/routes/collection_routes.py"
+    },
+    {
+      "method": "GET",
+      "path": "/collections",
+      "description": "List all collections belonging to the authenticated user",
+      "file": "app/routes/collection_routes.py"
+    },
+    {
+      "method": "GET",
+      "path": "/admin/moderation",
+      "description": "Admin dashboard endpoint to list flagged recipes, comments, and users with pagination",
+      "file": "app/routes/admin_routes.py"
+    }
+  ],
+  "database_schema": [
+    {
+      "table_name": "users",
+      "columns": [
+        {
+          "name": "id",
+          "type": "INTEGER",
+          "is_primary_key": true,
+          "is_nullable": false
+        },
+        {
+          "name": "email",
+          "type": "STRING",
+          "is_primary_key": false,
+          "is_nullable": false
+        },
+        {
+          "name": "username",
+          "type": "STRING",
+          "is_primary_key": false,
+          "is_nullable": false
+        },
+        {
+          "name": "password_hash",
+          "type": "STRING",
+          "is_primary_key": false,
+          "is_nullable": false
+        },
+        {
+          "name": "role",
+          "type": "STRING",
+          "is_primary_key": false,
+          "is_nullable": false
+        },
+        {
+          "name": "created_at",
+          "type": "DATETIME",
+          "is_primary_key": false,
+          "is_nullable": false
+        }
+      ]
+    },
+    {
+      "table_name": "recipes",
+      "columns": [
+        {
+          "name": "id",
+          "type": "INTEGER",
+          "is_primary_key": true,
+          "is_nullable": false
+        },
+        {
+          "name": "title",
+          "type": "STRING",
+          "is_primary_key": false,
+          "is_nullable": false
+        },
+        {
+          "name": "description",
+          "type": "TEXT",
+          "is_primary_key": false,
+          "is_nullable": true
+        },
+        {
+          "name": "steps",
+          "type": "TEXT",
+          "is_primary_key": false,
+          "is_nullable": false
+        },
+        {
+          "name": "image_url",
+          "type": "STRING",
+          "is_primary_key": false,
+          "is_nullable": true
+        },
+        {
+          "name": "author_id",
+          "type": "INTEGER",
+          "is_primary_key": false,
+          "is_nullable": false
+        },
+        {
+          "name": "cuisine",
+          "type": "STRING",
+          "is_primary_key": false,
+          "is_nullable": true
+        },
+        {
+          "name": "dietary_tags",
+          "type": "STRING",
+          "is_primary_key": false,
+          "is_nullable": true
+        },
+        {
+          "name": "created_at",
+          "type": "DATETIME",
+          "is_primary_key": false,
+          "is_nullable": false
+        },
+        {
+          "name": "updated_at",
+          "type": "DATETIME",
+          "is_primary_key": false,
+          "is_nullable": true
+        }
+      ]
+    },
+    {
+      "table_name": "ingredients",
+      "columns": [
+        {
+          "name": "id",
+          "type": "INTEGER",
+          "is_primary_key": true,
+          "is_nullable": false
+        },
+        {
+          "name": "name",
+          "type": "STRING",
+          "is_primary_key": false,
+          "is_nullable": false
+        }
+      ]
+    },
+    {
+      "table_name": "recipe_ingredients",
+      "columns": [
+        {
+          "name": "id",
+          "type": "INTEGER",
+          "is_primary_key": true,
+          "is_nullable": false
+        },
+        {
+          "name": "recipe_id",
+          "type": "INTEGER",
+          "is_primary_key": false,
+          "is_nullable": false
+        },
+        {
+          "name": "ingredient_id",
+          "type": "INTEGER",
+          "is_primary_key": false,
+          "is_nullable": false
+        },
+        {
+          "name": "quantity",
+          "type": "FLOAT",
+          "is_primary_key": false,
+          "is_nullable": false
+        },
+        {
+          "name": "unit",
+          "type": "STRING",
+          "is_primary_key": false,
+          "is_nullable": false
+        }
+      ]
+    },
+    {
+      "table_name": "ratings",
+      "columns": [
+        {
+          "name": "id",
+          "type": "INTEGER",
+          "is_primary_key": true,
+          "is_nullable": false
+        },
+        {
+          "name": "recipe_id",
+          "type": "INTEGER",
+          "is_primary_key": false,
+          "is_nullable": false
+        },
+        {
+          "name": "user_id",
+          "type": "INTEGER",
+          "is_primary_key": false,
+          "is_nullable": false
+        },
+        {
+          "name": "stars",
+          "type": "INTEGER",
+          "is_primary_key": false,
+          "is_nullable": false
+        },
+        {
+          "name": "comment",
+          "type": "TEXT",
+          "is_primary_key": false,
+          "is_nullable": true
+        },
+        {
+          "name": "created_at",
+          "type": "DATETIME",
+          "is_primary_key": false,
+          "is_nullable": false
+        },
+        {
+          "name": "updated_at",
+          "type": "DATETIME",
+          "is_primary_key": false,
+          "is_nullable": true
+        }
+      ]
+    },
+    {
+      "table_name": "comments",
+      "columns": [
+        {
+          "name": "id",
+          "type": "INTEGER",
+          "is_primary_key": true,
+          "is_nullable": false
+        },
+        {
+          "name": "recipe_id",
+          "type": "INTEGER",
+          "is_primary_key": false,
+          "is_nullable": false
+        },
+        {
+          "name": "user_id",
+          "type": "INTEGER",
+          "is_primary_key": false,
+          "is_nullable": false
+        },
+        {
+          "name": "content",
+          "type": "TEXT",
+          "is_primary_key": false,
+          "is_nullable": false
+        },
+        {
+          "name": "created_at",
+          "type": "DATETIME",
+          "is_primary_key": false,
+          "is_nullable": false
+        },
+        {
+          "name": "updated_at",
+          "type": "DATETIME",
+          "is_primary_key": false,
+          "is_nullable": true
+        }
+      ]
+    },
+    {
+      "table_name": "collections",
+      "columns": [
+        {
+          "name": "id",
+          "type": "INTEGER",
+          "is_primary_key": true,
+          "is_nullable": false
+        },
+        {
+          "name": "user_id",
+          "type": "INTEGER",
+          "is_primary_key": false,
+          "is_nullable": false
+        },
+        {
+          "name": "name",
+          "type": "STRING",
+          "is_primary_key": false,
+          "is_nullable": false
+        },
+        {
+          "name": "is_public",
+          "type": "BOOLEAN",
+          "is_primary_key": false,
+          "is_nullable": false
+        },
+        {
+          "name": "created_at",
+          "type": "DATETIME",
+          "is_primary_key": false,
+          "is_nullable": false
+        },
+        {
+          "name": "updated_at",
+          "type": "DATETIME",
+          "is_primary_key": false,
+          "is_nullable": true
+        }
+      ]
+    },
+    {
+      "table_name": "collection_recipes",
+      "columns": [
+        {
+          "name": "id",
+          "type": "INTEGER",
+          "is_primary_key": true,
+          "is_nullable": false
+        },
+        {
+          "name": "collection_id",
+          "type": "INTEGER",
+          "is_primary_key": false,
+          "is_nullable": false
+        },
+        {
+          "name": "recipe_id",
+          "type": "INTEGER",
+          "is_primary_key": false,
+          "is_nullable": false
+        },
+        {
+          "name": "added_at",
+          "type": "DATETIME",
+          "is_primary_key": false,
+          "is_nullable": false
+        }
+      ]
+    }
+  ],
+  "folder_structure": {
+    "backend": [
+      "models",
+      "schemas",
+      "routes",
+      "services",
+      "utils",
+      "dependencies",
+      "auth",
+      "config",
+      "db"
+    ]
+  },
+  "frontend_structure": {
+    "pages": [
+      "Home",
+      "RecipeList",
+      "RecipeDetail",
+      "CreateRecipe",
+      "UserProfile",
+      "CollectionList",
+      "CollectionDetail",
+      "Login",
+      "Signup",
+      "AdminDashboard"
+    ],
+    "components": [
+      "Header",
+      "Footer",
+      "RecipeCard",
+      "Pagination",
+      "SearchBar",
+      "RecipeForm",
+      "RatingStars",
+      "CommentList",
+      "CollectionItem",
+      "Modal",
+      "ImageUploader",
+      "TagBadge",
+      "FilterPanel",
+      "UserMenu",
+      "AdminTable"
+    ]
+  }
+}

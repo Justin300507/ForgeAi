@@ -1,0 +1,320 @@
+{
+  "api_endpoints": [
+    {
+      "method": "POST",
+      "path": "/auth/login",
+      "description": "Authenticate user and return access and refresh JWT tokens.",
+      "file": "app/routes/auth_routes.py"
+    },
+    {
+      "method": "POST",
+      "path": "/auth/refresh",
+      "description": "Provide a new access token using a valid refresh token.",
+      "file": "app/routes/auth_routes.py"
+    },
+    {
+      "method": "POST",
+      "path": "/auth/forgot-password",
+      "description": "Send a password reset email containing a reset token.",
+      "file": "app/routes/auth_routes.py"
+    },
+    {
+      "method": "PUT",
+      "path": "/auth/reset-password",
+      "description": "Reset the user's password using a valid reset token.",
+      "file": "app/routes/auth_routes.py"
+    },
+    {
+      "method": "GET",
+      "path": "/categories",
+      "description": "Retrieve the list of expense categories for the authenticated user.",
+      "file": "app/routes/category_routes.py"
+    },
+    {
+      "method": "POST",
+      "path": "/categories",
+      "description": "Create a new expense category for the user.",
+      "file": "app/routes/category_routes.py"
+    },
+    {
+      "method": "GET",
+      "path": "/expenses",
+      "description": "List expenses with pagination, date-range filtering, category filter, and note search.",
+      "file": "app/routes/expense_routes.py"
+    },
+    {
+      "method": "POST",
+      "path": "/expenses",
+      "description": "Create a new expense record.",
+      "file": "app/routes/expense_routes.py"
+    },
+    {
+      "method": "PUT",
+      "path": "/expenses/{id}",
+      "description": "Update specified fields of an expense owned by the user.",
+      "file": "app/routes/expense_routes.py"
+    },
+    {
+      "method": "DELETE",
+      "path": "/expenses/{id}",
+      "description": "Delete an expense owned by the user.",
+      "file": "app/routes/expense_routes.py"
+    },
+    {
+      "method": "GET",
+      "path": "/budgets",
+      "description": "Retrieve budgets for a given month (query param month=YYYY-MM) for the authenticated user.",
+      "file": "app/routes/budget_routes.py"
+    },
+    {
+      "method": "POST",
+      "path": "/budgets",
+      "description": "Create or update a monthly budget limit for a specific category.",
+      "file": "app/routes/budget_routes.py"
+    },
+    {
+      "method": "GET",
+      "path": "/alerts",
+      "description": "List active over\u2011budget alerts for the current month for the authenticated user.",
+      "file": "app/routes/alert_routes.py"
+    },
+    {
+      "method": "GET",
+      "path": "/reports/trends",
+      "description": "Return aggregated expense totals per category for a month with percentage change from the previous month.",
+      "file": "app/routes/report_routes.py"
+    },
+    {
+      "method": "GET",
+      "path": "/exports/csv",
+      "description": "Export expenses within a date range as a CSV file.",
+      "file": "app/routes/export_routes.py"
+    }
+  ],
+  "database_schema": [
+    {
+      "table_name": "users",
+      "columns": [
+        {
+          "name": "id",
+          "type": "Integer",
+          "is_primary_key": true,
+          "is_nullable": false
+        },
+        {
+          "name": "email",
+          "type": "String",
+          "is_primary_key": false,
+          "is_nullable": false
+        },
+        {
+          "name": "hashed_password",
+          "type": "String",
+          "is_primary_key": false,
+          "is_nullable": false
+        },
+        {
+          "name": "created_at",
+          "type": "DateTime",
+          "is_primary_key": false,
+          "is_nullable": false
+        }
+      ]
+    },
+    {
+      "table_name": "categories",
+      "columns": [
+        {
+          "name": "id",
+          "type": "Integer",
+          "is_primary_key": true,
+          "is_nullable": false
+        },
+        {
+          "name": "user_id",
+          "type": "Integer",
+          "is_primary_key": false,
+          "is_nullable": false
+        },
+        {
+          "name": "name",
+          "type": "String",
+          "is_primary_key": false,
+          "is_nullable": false
+        },
+        {
+          "name": "icon",
+          "type": "String",
+          "is_primary_key": false,
+          "is_nullable": true
+        }
+      ]
+    },
+    {
+      "table_name": "expenses",
+      "columns": [
+        {
+          "name": "id",
+          "type": "Integer",
+          "is_primary_key": true,
+          "is_nullable": false
+        },
+        {
+          "name": "user_id",
+          "type": "Integer",
+          "is_primary_key": false,
+          "is_nullable": false
+        },
+        {
+          "name": "category_id",
+          "type": "Integer",
+          "is_primary_key": false,
+          "is_nullable": false
+        },
+        {
+          "name": "amount",
+          "type": "Numeric(10,2)",
+          "is_primary_key": false,
+          "is_nullable": false
+        },
+        {
+          "name": "date",
+          "type": "Date",
+          "is_primary_key": false,
+          "is_nullable": false
+        },
+        {
+          "name": "note",
+          "type": "Text",
+          "is_primary_key": false,
+          "is_nullable": true
+        },
+        {
+          "name": "created_at",
+          "type": "DateTime",
+          "is_primary_key": false,
+          "is_nullable": false
+        }
+      ]
+    },
+    {
+      "table_name": "budgets",
+      "columns": [
+        {
+          "name": "id",
+          "type": "Integer",
+          "is_primary_key": true,
+          "is_nullable": false
+        },
+        {
+          "name": "user_id",
+          "type": "Integer",
+          "is_primary_key": false,
+          "is_nullable": false
+        },
+        {
+          "name": "category_id",
+          "type": "Integer",
+          "is_primary_key": false,
+          "is_nullable": false
+        },
+        {
+          "name": "month",
+          "type": "String",
+          "is_primary_key": false,
+          "is_nullable": false
+        },
+        {
+          "name": "limit_amount",
+          "type": "Numeric(10,2)",
+          "is_primary_key": false,
+          "is_nullable": false
+        }
+      ]
+    },
+    {
+      "table_name": "alerts",
+      "columns": [
+        {
+          "name": "id",
+          "type": "Integer",
+          "is_primary_key": true,
+          "is_nullable": false
+        },
+        {
+          "name": "user_id",
+          "type": "Integer",
+          "is_primary_key": false,
+          "is_nullable": false
+        },
+        {
+          "name": "category_id",
+          "type": "Integer",
+          "is_primary_key": false,
+          "is_nullable": false
+        },
+        {
+          "name": "month",
+          "type": "String",
+          "is_primary_key": false,
+          "is_nullable": false
+        },
+        {
+          "name": "overage_amount",
+          "type": "Numeric(10,2)",
+          "is_primary_key": false,
+          "is_nullable": false
+        },
+        {
+          "name": "created_at",
+          "type": "DateTime",
+          "is_primary_key": false,
+          "is_nullable": false
+        }
+      ]
+    }
+  ],
+  "folder_structure": {
+    "backend": [
+      "app/models",
+      "app/schemas",
+      "app/routes",
+      "app/services",
+      "app/utils",
+      "app/dependencies",
+      "app/config",
+      "app/main.py"
+    ]
+  },
+  "frontend_structure": {
+    "pages": [
+      "LoginPage",
+      "DashboardPage",
+      "ExpenseListPage",
+      "ExpenseFormPage",
+      "CategoryManagementPage",
+      "BudgetPage",
+      "AlertPage",
+      "ReportPage",
+      "ExportPage",
+      "PasswordResetPage"
+    ],
+    "components": [
+      "Header",
+      "Footer",
+      "Sidebar",
+      "ExpenseItem",
+      "ExpenseForm",
+      "PaginationControls",
+      "SearchBar",
+      "CategorySelect",
+      "BudgetCard",
+      "AlertCard",
+      "TrendChart",
+      "CSVDownloadButton",
+      "DateRangePicker",
+      "Modal",
+      "NotificationToast"
+    ]
+  }
+}

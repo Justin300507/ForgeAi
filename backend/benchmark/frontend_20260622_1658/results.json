@@ -1,0 +1,45 @@
+{
+  "timestamp": "20260622_1658",
+  "provider": "auto",
+  "summary": {
+    "avg_vision": null,
+    "avg_forge": 80.0,
+    "builds_passed": 2,
+    "runtime_passed": 0,
+    "goal_met": false
+  },
+  "apps": [
+    {
+      "idx": 1,
+      "idea": "A job board platform with job listings, applications, employers, and candidate profiles",
+      "project_name": "career_connect",
+      "project_path": "C:\\Users\\jerry\\onedrive\\Desktop\\forgeai\\generated_projects\\career_connect",
+      "forge_score": 80,
+      "vision_score": null,
+      "build_passed": true,
+      "playwright_passed": true,
+      "runtime_passed": false,
+      "validation_passed": true,
+      "vision_issues": [],
+      "error": null,
+      "elapsed": 218.2,
+      "screenshot_count": 2
+    },
+    {
+      "idx": 2,
+      "idea": "A book library system with books, authors, members, borrowings, and reservations",
+      "project_name": "library_management_system",
+      "project_path": "C:\\Users\\jerry\\onedrive\\Desktop\\forgeai\\generated_projects\\library_management_system",
+      "forge_score": 80,
+      "vision_score": null,
+      "build_passed": true,
+      "playwright_passed": true,
+      "runtime_passed": false,
+      "validation_passed": true,
+      "vision_issues": [],
+      "error": null,
+      "elapsed": 198.9,
+      "screenshot_count": 2
+    }
+  ]
+}

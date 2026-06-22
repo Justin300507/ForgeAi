@@ -1,0 +1,133 @@
+{
+  "api_endpoints": [
+    {
+      "method": "GET",
+      "path": "/users",
+      "description": "Get all users.",
+      "file": "app/routes/user_routes.py"
+    },
+    {
+      "method": "POST",
+      "path": "/users",
+      "description": "Create a new user.",
+      "file": "app/routes/user_routes.py"
+    },
+    {
+      "method": "GET",
+      "path": "/users/{id}",
+      "description": "Get a specific user by ID.",
+      "file": "app/routes/user_routes.py"
+    },
+    {
+      "method": "PUT",
+      "path": "/users/{id}",
+      "description": "Update an existing user.",
+      "file": "app/routes/user_routes.py"
+    },
+    {
+      "method": "DELETE",
+      "path": "/users/{id}",
+      "description": "Delete a user.",
+      "file": "app/routes/user_routes.py"
+    },
+    {
+      "method": "GET",
+      "path": "/recipes",
+      "description": "Get all recipes.",
+      "file": "app/routes/recipe_routes.py"
+    },
+    {
+      "method": "POST",
+      "path": "/recipes",
+      "description": "Create a new recipe.",
+      "file": "app/routes/recipe_routes.py"
+    },
+    {
+      "method": "GET",
+      "path": "/recipes/{id}",
+      "description": "Get a specific recipe by ID.",
+      "file": "app/routes/recipe_routes.py"
+    },
+    {
+      "method": "PUT",
+      "path": "/recipes/{id}",
+      "description": "Update an existing recipe.",
+      "file": "app/routes/recipe_routes.py"
+    },
+    {
+      "method": "DELETE",
+      "path": "/recipes/{id}",
+      "description": "Delete a recipe.",
+      "file": "app/routes/recipe_routes.py"
+    }
+  ],
+  "database_schema": [
+    {
+      "table_name": "user",
+      "columns": [
+        {
+          "name": "id",
+          "type": "INTEGER",
+          "is_primary_key": true,
+          "is_nullable": false
+        },
+        {
+          "name": "username",
+          "type": "TEXT",
+          "is_primary_key": false,
+          "is_nullable": false
+        },
+        {
+          "name": "email",
+          "type": "TEXT",
+          "is_primary_key": false,
+          "is_nullable": false
+        }
+      ]
+    },
+    {
+      "table_name": "recipe",
+      "columns": [
+        {
+          "name": "id",
+          "type": "INTEGER",
+          "is_primary_key": true,
+          "is_nullable": false
+        },
+        {
+          "name": "title",
+          "type": "TEXT",
+          "is_primary_key": false,
+          "is_nullable": false
+        },
+        {
+          "name": "author_id",
+          "type": "INTEGER",
+          "is_primary_key": false,
+          "is_nullable": false
+        }
+      ]
+    }
+  ],
+  "folder_structure": {
+    "backend": [
+      "app/routes",
+      "app/models",
+      "app/services",
+      "app/schemas",
+      "app/utils"
+    ]
+  },
+  "frontend_structure": {
+    "pages": [
+      "DashboardPage",
+      "UserProfilePage",
+      "RecipePage"
+    ],
+    "components": [
+      "SearchBarComponent",
+      "RecipeCardComponent",
+      "UserListComponent"
+    ]
+  }
+}

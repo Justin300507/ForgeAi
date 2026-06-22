@@ -1,0 +1,30 @@
+{
+  "run_id": "v7_20260622_122053_dd418d8c",
+  "timestamp": "2026-06-22T12:21:26",
+  "version": "v7",
+  "idea": "A project management tool with user login, projects, tasks, deadlines, and team members",
+  "project_name": "project_hub",
+  "provider": "auto",
+  "plan": {},
+  "architecture": {
+    "endpoint_count": 0,
+    "endpoints": [],
+    "db_schema_keys": []
+  },
+  "validation_errors": [],
+  "runtime_error": null,
+  "runtime_error_type": null,
+  "fixes_applied": [],
+  "score": 100,
+  "grade": "A",
+  "runtime_passed": true,
+  "frontend_passed": false,
+  "generation_time": 32.91,
+  "security_score": 62,
+  "performance_score": 65,
+  "maintainability_score": 70,
+  "qa_score": 42,
+  "v6_score": 64,
+  "prompt_version": "default",
+  "active_rules": []
+}

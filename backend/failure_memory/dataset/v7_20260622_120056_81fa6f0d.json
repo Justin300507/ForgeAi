@@ -1,0 +1,32 @@
+{
+  "run_id": "v7_20260622_120056_81fa6f0d",
+  "timestamp": "2026-06-22T12:01:35",
+  "version": "v7",
+  "idea": "A job board with user accounts, job postings, applications, and employer profiles",
+  "project_name": "job_board_platform",
+  "provider": "auto",
+  "plan": {},
+  "architecture": {
+    "endpoint_count": 0,
+    "endpoints": [],
+    "db_schema_keys": []
+  },
+  "validation_errors": [
+    "Missing symbol 'admin_router' in app/routes/admin_user_routes.py (imported from app/main.py)"
+  ],
+  "runtime_error": null,
+  "runtime_error_type": null,
+  "fixes_applied": [],
+  "score": 75,
+  "grade": "C",
+  "runtime_passed": false,
+  "frontend_passed": false,
+  "generation_time": 39.71,
+  "security_score": 70,
+  "performance_score": 78,
+  "maintainability_score": 70,
+  "qa_score": 50,
+  "v6_score": 53,
+  "prompt_version": "default",
+  "active_rules": []
+}

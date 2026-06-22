@@ -1,0 +1,30 @@
+{
+  "run_id": "v7_20260622_122325_e2a116c5",
+  "timestamp": "2026-06-22T12:23:58",
+  "version": "v7",
+  "idea": "A habit tracker with daily habits, streaks, reminders, and progress charts",
+  "project_name": "habit_tracker_app",
+  "provider": "auto",
+  "plan": {},
+  "architecture": {
+    "endpoint_count": 0,
+    "endpoints": [],
+    "db_schema_keys": []
+  },
+  "validation_errors": [],
+  "runtime_error": null,
+  "runtime_error_type": null,
+  "fixes_applied": [],
+  "score": 100,
+  "grade": "A",
+  "runtime_passed": true,
+  "frontend_passed": false,
+  "generation_time": 33.23,
+  "security_score": 70,
+  "performance_score": 70,
+  "maintainability_score": 55,
+  "qa_score": 42,
+  "v6_score": 66,
+  "prompt_version": "default",
+  "active_rules": []
+}

@@ -1,0 +1,354 @@
+{
+  "api_endpoints": [
+    {
+      "method": "POST",
+      "path": "/api/auth/register",
+      "description": "Register a new user and return a JWT token",
+      "file": "app/routes/auth_routes.py"
+    },
+    {
+      "method": "POST",
+      "path": "/api/auth/login",
+      "description": "Authenticate user credentials and return a JWT token",
+      "file": "app/routes/auth_routes.py"
+    },
+    {
+      "method": "POST",
+      "path": "/api/bookmarks",
+      "description": "Create a new bookmark with URL, title, description, tags, and optional collection assignments",
+      "file": "app/routes/bookmark_routes.py"
+    },
+    {
+      "method": "GET",
+      "path": "/api/bookmarks",
+      "description": "Retrieve a paginated list of the authenticated user's bookmarks",
+      "file": "app/routes/bookmark_routes.py"
+    },
+    {
+      "method": "GET",
+      "path": "/api/bookmarks/{id}",
+      "description": "Get bookmark details; public bookmarks are accessible without authentication",
+      "file": "app/routes/bookmark_routes.py"
+    },
+    {
+      "method": "PATCH",
+      "path": "/api/bookmarks/{id}",
+      "description": "Update bookmark fields (title, description, tags, collections, privacy)",
+      "file": "app/routes/bookmark_routes.py"
+    },
+    {
+      "method": "DELETE",
+      "path": "/api/bookmarks/{id}",
+      "description": "Delete a bookmark and its tag associations",
+      "file": "app/routes/bookmark_routes.py"
+    },
+    {
+      "method": "POST",
+      "path": "/api/collections",
+      "description": "Create a new collection with name, description, privacy, and optional initial bookmarks",
+      "file": "app/routes/collection_routes.py"
+    },
+    {
+      "method": "GET",
+      "path": "/api/collections",
+      "description": "Retrieve a paginated list of the authenticated user's collections",
+      "file": "app/routes/collection_routes.py"
+    },
+    {
+      "method": "GET",
+      "path": "/api/collections/{id}",
+      "description": "Get collection details; public collections are accessible without authentication",
+      "file": "app/routes/collection_routes.py"
+    },
+    {
+      "method": "PATCH",
+      "path": "/api/collections/{id}",
+      "description": "Update collection fields (name, description, privacy, bookmark assignments)",
+      "file": "app/routes/collection_routes.py"
+    },
+    {
+      "method": "POST",
+      "path": "/api/follows/{followee_id}",
+      "description": "Create a follow relationship from the authenticated user to the specified user",
+      "file": "app/routes/follow_routes.py"
+    },
+    {
+      "method": "DELETE",
+      "path": "/api/follows/{followee_id}",
+      "description": "Remove the follow relationship from the authenticated user to the specified user",
+      "file": "app/routes/follow_routes.py"
+    },
+    {
+      "method": "GET",
+      "path": "/api/feed",
+      "description": "Return a paginated feed of public bookmarks from users the authenticated user follows",
+      "file": "app/routes/feed_routes.py"
+    },
+    {
+      "method": "GET",
+      "path": "/api/search",
+      "description": "Search bookmarks or collections by free\u2011text query and/or tag filters; supports pagination",
+      "file": "app/routes/search_routes.py"
+    }
+  ],
+  "database_schema": [
+    {
+      "table_name": "user",
+      "columns": [
+        {
+          "name": "id",
+          "type": "Integer",
+          "is_primary_key": true,
+          "is_nullable": false
+        },
+        {
+          "name": "email",
+          "type": "String",
+          "is_primary_key": false,
+          "is_nullable": false
+        },
+        {
+          "name": "username",
+          "type": "String",
+          "is_primary_key": false,
+          "is_nullable": false
+        },
+        {
+          "name": "hashed_password",
+          "type": "String",
+          "is_primary_key": false,
+          "is_nullable": false
+        },
+        {
+          "name": "created_at",
+          "type": "DateTime",
+          "is_primary_key": false,
+          "is_nullable": false
+        }
+      ]
+    },
+    {
+      "table_name": "bookmark",
+      "columns": [
+        {
+          "name": "id",
+          "type": "Integer",
+          "is_primary_key": true,
+          "is_nullable": false
+        },
+        {
+          "name": "user_id",
+          "type": "Integer",
+          "is_primary_key": false,
+          "is_nullable": false
+        },
+        {
+          "name": "url",
+          "type": "String",
+          "is_primary_key": false,
+          "is_nullable": false
+        },
+        {
+          "name": "title",
+          "type": "String",
+          "is_primary_key": false,
+          "is_nullable": false
+        },
+        {
+          "name": "description",
+          "type": "Text",
+          "is_primary_key": false,
+          "is_nullable": true
+        },
+        {
+          "name": "is_private",
+          "type": "Boolean",
+          "is_primary_key": false,
+          "is_nullable": false
+        },
+        {
+          "name": "created_at",
+          "type": "DateTime",
+          "is_primary_key": false,
+          "is_nullable": false
+        },
+        {
+          "name": "updated_at",
+          "type": "DateTime",
+          "is_primary_key": false,
+          "is_nullable": false
+        }
+      ]
+    },
+    {
+      "table_name": "tag",
+      "columns": [
+        {
+          "name": "id",
+          "type": "Integer",
+          "is_primary_key": true,
+          "is_nullable": false
+        },
+        {
+          "name": "name",
+          "type": "String",
+          "is_primary_key": false,
+          "is_nullable": false
+        },
+        {
+          "name": "created_at",
+          "type": "DateTime",
+          "is_primary_key": false,
+          "is_nullable": false
+        }
+      ]
+    },
+    {
+      "table_name": "bookmark_tag",
+      "columns": [
+        {
+          "name": "bookmark_id",
+          "type": "Integer",
+          "is_primary_key": true,
+          "is_nullable": false
+        },
+        {
+          "name": "tag_id",
+          "type": "Integer",
+          "is_primary_key": true,
+          "is_nullable": false
+        }
+      ]
+    },
+    {
+      "table_name": "collection",
+      "columns": [
+        {
+          "name": "id",
+          "type": "Integer",
+          "is_primary_key": true,
+          "is_nullable": false
+        },
+        {
+          "name": "user_id",
+          "type": "Integer",
+          "is_primary_key": false,
+          "is_nullable": false
+        },
+        {
+          "name": "name",
+          "type": "String",
+          "is_primary_key": false,
+          "is_nullable": false
+        },
+        {
+          "name": "description",
+          "type": "Text",
+          "is_primary_key": false,
+          "is_nullable": true
+        },
+        {
+          "name": "is_private",
+          "type": "Boolean",
+          "is_primary_key": false,
+          "is_nullable": false
+        },
+        {
+          "name": "created_at",
+          "type": "DateTime",
+          "is_primary_key": false,
+          "is_nullable": false
+        },
+        {
+          "name": "updated_at",
+          "type": "DateTime",
+          "is_primary_key": false,
+          "is_nullable": false
+        }
+      ]
+    },
+    {
+      "table_name": "collection_bookmark",
+      "columns": [
+        {
+          "name": "collection_id",
+          "type": "Integer",
+          "is_primary_key": true,
+          "is_nullable": false
+        },
+        {
+          "name": "bookmark_id",
+          "type": "Integer",
+          "is_primary_key": true,
+          "is_nullable": false
+        }
+      ]
+    },
+    {
+      "table_name": "follow",
+      "columns": [
+        {
+          "name": "follower_id",
+          "type": "Integer",
+          "is_primary_key": true,
+          "is_nullable": false
+        },
+        {
+          "name": "followee_id",
+          "type": "Integer",
+          "is_primary_key": true,
+          "is_nullable": false
+        },
+        {
+          "name": "created_at",
+          "type": "DateTime",
+          "is_primary_key": false,
+          "is_nullable": false
+        }
+      ]
+    }
+  ],
+  "folder_structure": {
+    "backend": [
+      "app",
+      "app/models",
+      "app/schemas",
+      "app/routes",
+      "app/services",
+      "app/utils",
+      "app/dependencies",
+      "app/config",
+      "app/main.py"
+    ]
+  },
+  "frontend_structure": {
+    "pages": [
+      "Home",
+      "Login",
+      "Register",
+      "Bookmarks",
+      "BookmarkDetail",
+      "Collections",
+      "CollectionDetail",
+      "Feed",
+      "Search"
+    ],
+    "components": [
+      "Header",
+      "Footer",
+      "BookmarkCard",
+      "CollectionCard",
+      "TagBadge",
+      "SearchBar",
+      "Pagination",
+      "BookmarkForm",
+      "CollectionForm",
+      "FollowButton",
+      "UserAvatar",
+      "FeedList",
+      "SearchResults",
+      "ProtectedRoute",
+      "ErrorMessage"
+    ]
+  }
+}

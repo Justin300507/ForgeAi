@@ -1,0 +1,429 @@
+{
+  "api_endpoints": [
+    {
+      "method": "POST",
+      "path": "/auth/register",
+      "description": "Create a new user account with email and password",
+      "file": "app/routes/auth_routes.py"
+    },
+    {
+      "method": "POST",
+      "path": "/auth/login",
+      "description": "Authenticate user and return JWT access token",
+      "file": "app/routes/auth_routes.py"
+    },
+    {
+      "method": "GET",
+      "path": "/users/me",
+      "description": "Retrieve profile of the currently authenticated user",
+      "file": "app/routes/user_routes.py"
+    },
+    {
+      "method": "GET",
+      "path": "/portfolios",
+      "description": "List portfolios belonging to the authenticated user (supports pagination)",
+      "file": "app/routes/portfolio_routes.py"
+    },
+    {
+      "method": "POST",
+      "path": "/portfolios",
+      "description": "Create a new portfolio for the authenticated user",
+      "file": "app/routes/portfolio_routes.py"
+    },
+    {
+      "method": "GET",
+      "path": "/holdings",
+      "description": "Get paginated list of holdings with optional ticker search",
+      "file": "app/routes/holding_routes.py"
+    },
+    {
+      "method": "POST",
+      "path": "/holdings",
+      "description": "Add a new holding (stock, quantity, purchase price) to a portfolio",
+      "file": "app/routes/holding_routes.py"
+    },
+    {
+      "method": "PUT",
+      "path": "/holdings/{id}",
+      "description": "Update quantity or average cost of an existing holding",
+      "file": "app/routes/holding_routes.py"
+    },
+    {
+      "method": "DELETE",
+      "path": "/holdings/{id}",
+      "description": "Remove a holding from a portfolio",
+      "file": "app/routes/holding_routes.py"
+    },
+    {
+      "method": "POST",
+      "path": "/transactions",
+      "description": "Record a buy or sell transaction; adjusts related holding automatically",
+      "file": "app/routes/transaction_routes.py"
+    },
+    {
+      "method": "GET",
+      "path": "/transactions",
+      "description": "Retrieve paginated transaction history with optional ticker filter",
+      "file": "app/routes/transaction_routes.py"
+    },
+    {
+      "method": "POST",
+      "path": "/dividends",
+      "description": "Log a dividend payout for a stock in a portfolio",
+      "file": "app/routes/dividend_routes.py"
+    },
+    {
+      "method": "GET",
+      "path": "/dividends",
+      "description": "List dividends with optional ticker search and pagination",
+      "file": "app/routes/dividend_routes.py"
+    },
+    {
+      "method": "POST",
+      "path": "/shares",
+      "description": "Generate a read\u2011only share token for a portfolio with expiration",
+      "file": "app/routes/share_routes.py"
+    },
+    {
+      "method": "POST",
+      "path": "/import/transactions",
+      "description": "Upload CSV file to bulk import past transactions; returns validation errors per line",
+      "file": "app/routes/import_routes.py"
+    }
+  ],
+  "database_schema": [
+    {
+      "table_name": "users",
+      "columns": [
+        {
+          "name": "id",
+          "type": "INTEGER",
+          "is_primary_key": true,
+          "is_nullable": false
+        },
+        {
+          "name": "email",
+          "type": "VARCHAR(255)",
+          "is_primary_key": false,
+          "is_nullable": false
+        },
+        {
+          "name": "hashed_password",
+          "type": "VARCHAR(255)",
+          "is_primary_key": false,
+          "is_nullable": false
+        },
+        {
+          "name": "role",
+          "type": "VARCHAR(20)",
+          "is_primary_key": false,
+          "is_nullable": false
+        },
+        {
+          "name": "created_at",
+          "type": "DATETIME",
+          "is_primary_key": false,
+          "is_nullable": false
+        }
+      ]
+    },
+    {
+      "table_name": "portfolios",
+      "columns": [
+        {
+          "name": "id",
+          "type": "INTEGER",
+          "is_primary_key": true,
+          "is_nullable": false
+        },
+        {
+          "name": "user_id",
+          "type": "INTEGER",
+          "is_primary_key": false,
+          "is_nullable": false
+        },
+        {
+          "name": "name",
+          "type": "VARCHAR(100)",
+          "is_primary_key": false,
+          "is_nullable": false
+        },
+        {
+          "name": "created_at",
+          "type": "DATETIME",
+          "is_primary_key": false,
+          "is_nullable": false
+        }
+      ]
+    },
+    {
+      "table_name": "stocks",
+      "columns": [
+        {
+          "name": "ticker",
+          "type": "VARCHAR(10)",
+          "is_primary_key": true,
+          "is_nullable": false
+        },
+        {
+          "name": "name",
+          "type": "VARCHAR(255)",
+          "is_primary_key": false,
+          "is_nullable": false
+        },
+        {
+          "name": "sector",
+          "type": "VARCHAR(100)",
+          "is_primary_key": false,
+          "is_nullable": true
+        }
+      ]
+    },
+    {
+      "table_name": "holdings",
+      "columns": [
+        {
+          "name": "id",
+          "type": "INTEGER",
+          "is_primary_key": true,
+          "is_nullable": false
+        },
+        {
+          "name": "portfolio_id",
+          "type": "INTEGER",
+          "is_primary_key": false,
+          "is_nullable": false
+        },
+        {
+          "name": "stock_ticker",
+          "type": "VARCHAR(10)",
+          "is_primary_key": false,
+          "is_nullable": false
+        },
+        {
+          "name": "quantity",
+          "type": "FLOAT",
+          "is_primary_key": false,
+          "is_nullable": false
+        },
+        {
+          "name": "avg_cost",
+          "type": "FLOAT",
+          "is_primary_key": false,
+          "is_nullable": false
+        },
+        {
+          "name": "created_at",
+          "type": "DATETIME",
+          "is_primary_key": false,
+          "is_nullable": false
+        },
+        {
+          "name": "updated_at",
+          "type": "DATETIME",
+          "is_primary_key": false,
+          "is_nullable": false
+        }
+      ]
+    },
+    {
+      "table_name": "transactions",
+      "columns": [
+        {
+          "name": "id",
+          "type": "INTEGER",
+          "is_primary_key": true,
+          "is_nullable": false
+        },
+        {
+          "name": "portfolio_id",
+          "type": "INTEGER",
+          "is_primary_key": false,
+          "is_nullable": false
+        },
+        {
+          "name": "stock_ticker",
+          "type": "VARCHAR(10)",
+          "is_primary_key": false,
+          "is_nullable": false
+        },
+        {
+          "name": "type",
+          "type": "VARCHAR(4)",
+          "is_primary_key": false,
+          "is_nullable": false
+        },
+        {
+          "name": "date",
+          "type": "DATETIME",
+          "is_primary_key": false,
+          "is_nullable": false
+        },
+        {
+          "name": "quantity",
+          "type": "FLOAT",
+          "is_primary_key": false,
+          "is_nullable": false
+        },
+        {
+          "name": "price_per_share",
+          "type": "FLOAT",
+          "is_primary_key": false,
+          "is_nullable": false
+        },
+        {
+          "name": "fees",
+          "type": "FLOAT",
+          "is_primary_key": false,
+          "is_nullable": true
+        },
+        {
+          "name": "created_at",
+          "type": "DATETIME",
+          "is_primary_key": false,
+          "is_nullable": false
+        }
+      ]
+    },
+    {
+      "table_name": "dividends",
+      "columns": [
+        {
+          "name": "id",
+          "type": "INTEGER",
+          "is_primary_key": true,
+          "is_nullable": false
+        },
+        {
+          "name": "portfolio_id",
+          "type": "INTEGER",
+          "is_primary_key": false,
+          "is_nullable": false
+        },
+        {
+          "name": "stock_ticker",
+          "type": "VARCHAR(10)",
+          "is_primary_key": false,
+          "is_nullable": false
+        },
+        {
+          "name": "date",
+          "type": "DATETIME",
+          "is_primary_key": false,
+          "is_nullable": false
+        },
+        {
+          "name": "amount",
+          "type": "FLOAT",
+          "is_primary_key": false,
+          "is_nullable": false
+        },
+        {
+          "name": "note",
+          "type": "TEXT",
+          "is_primary_key": false,
+          "is_nullable": true
+        }
+      ]
+    },
+    {
+      "table_name": "prices",
+      "columns": [
+        {
+          "name": "id",
+          "type": "INTEGER",
+          "is_primary_key": true,
+          "is_nullable": false
+        },
+        {
+          "name": "stock_ticker",
+          "type": "VARCHAR(10)",
+          "is_primary_key": false,
+          "is_nullable": false
+        },
+        {
+          "name": "date",
+          "type": "DATE",
+          "is_primary_key": false,
+          "is_nullable": false
+        },
+        {
+          "name": "close_price",
+          "type": "FLOAT",
+          "is_primary_key": false,
+          "is_nullable": false
+        }
+      ]
+    },
+    {
+      "table_name": "shared_links",
+      "columns": [
+        {
+          "name": "id",
+          "type": "INTEGER",
+          "is_primary_key": true,
+          "is_nullable": false
+        },
+        {
+          "name": "portfolio_id",
+          "type": "INTEGER",
+          "is_primary_key": false,
+          "is_nullable": false
+        },
+        {
+          "name": "token",
+          "type": "VARCHAR(64)",
+          "is_primary_key": false,
+          "is_nullable": false
+        },
+        {
+          "name": "expires_at",
+          "type": "DATETIME",
+          "is_primary_key": false,
+          "is_nullable": false
+        },
+        {
+          "name": "created_at",
+          "type": "DATETIME",
+          "is_primary_key": false,
+          "is_nullable": false
+        }
+      ]
+    }
+  ],
+  "folder_structure": {
+    "backend": [
+      "app/models",
+      "app/schemas",
+      "app/routes",
+      "app/services",
+      "app/utils",
+      "app/core"
+    ]
+  },
+  "frontend_structure": {
+    "pages": [
+      "DashboardPage",
+      "HoldingsPage",
+      "HoldingFormPage",
+      "TransactionsPage",
+      "DividendsPage",
+      "ImportPage",
+      "SharePage",
+      "LoginPage",
+      "RegisterPage"
+    ],
+    "components": [
+      "Navbar",
+      "HoldingTable",
+      "HoldingForm",
+      "TransactionForm",
+      "DividendTable",
+      "ChartComponent",
+      "FileUpload",
+      "ShareLinkModal",
+      "StockSearchDropdown",
+      "PaginationControls"
+    ]
+  }
+}

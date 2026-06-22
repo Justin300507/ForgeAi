@@ -1,0 +1,124 @@
+{
+  "timestamp": "20260622_1159",
+  "provider": "auto",
+  "summary": {
+    "avg_vision": 61.7,
+    "avg_forge": 86.0,
+    "builds_passed": 3,
+    "runtime_passed": 2,
+    "goal_met": true
+  },
+  "apps": [
+    {
+      "idx": 1,
+      "idea": "A note-taking app with user login, notebooks, tags, and full-text search",
+      "project_name": "note_taker_pro",
+      "project_path": "C:\\Users\\jerry\\onedrive\\Desktop\\forgeai\\generated_projects\\note_taker_pro",
+      "forge_score": 100,
+      "vision_score": 85,
+      "build_passed": true,
+      "playwright_passed": true,
+      "runtime_passed": true,
+      "validation_passed": true,
+      "vision_issues": [
+        {
+          "severity": "info",
+          "page": "/login",
+          "description": "The 'Logout' button is present in the header of the login page, which is confusing as a user would not be logged in to be on this page."
+        },
+        {
+          "severity": "info",
+          "page": "/register",
+          "description": "The 'Logout' button is present in the header of the register page, which is confusing as a user would not be logged in to be on this page."
+        }
+      ],
+      "error": null,
+      "elapsed": 61.0,
+      "screenshot_count": 2
+    },
+    {
+      "idx": 2,
+      "idea": "A job board with user accounts, job postings, applications, and employer profiles",
+      "project_name": "job_board_platform",
+      "project_path": "C:\\Users\\jerry\\onedrive\\Desktop\\forgeai\\generated_projects\\job_board_platform",
+      "forge_score": 95,
+      "vision_score": 55,
+      "build_passed": true,
+      "playwright_passed": true,
+      "runtime_passed": true,
+      "validation_passed": true,
+      "vision_issues": [
+        {
+          "severity": "warning",
+          "page": "/login",
+          "description": "The 'Sign In' heading is not properly aligned with the form fields. It appears left-aligned while the form is centered, creating an unbalanced look."
+        },
+        {
+          "severity": "warning",
+          "page": "/login",
+          "description": "The input fields for 'Email' and 'Password' are plain and lack any styling beyond basic browser defaults. They could benefit from borders, padding, and consistent height/width to improve user experience."
+        },
+        {
+          "severity": "warning",
+          "page": "/login",
+          "description": "The login button is a basic primary color. It could benefit from a hover state, focus state, and more distinct styling to visually indicate interactivity."
+        },
+        {
+          "severity": "warning",
+          "page": "/login",
+          "description": "There is no 'Forgot Password?' or 'Sign Up' link on the login page, which are common and important features for user authentication processes."
+        },
+        {
+          "severity": "info",
+          "page": "/login",
+          "description": "The entire login form block could benefit from being contained within a card or a designated area with a background to visually separate it from the rest of the page and draw attention to it."
+        },
+        {
+          "severity": "info",
+          "page": "/login",
+          "description": "Overall spacing between elements in the login form could be refined for better readability and visual appeal."
+        },
+        {
+          "severity": "critical",
+          "page": "/register",
+          "description": "The /register page is almost entirely blank, only showing the header/footer and copyright information. There are no registration fields or content visible."
+        },
+        {
+          "severity": "critical",
+          "page": "/register",
+          "description": "This page is unusable as a registration page because it does not provide any means for a user to register."
+        }
+      ],
+      "error": null,
+      "elapsed": 110.3,
+      "screenshot_count": 2
+    },
+    {
+      "idx": 3,
+      "idea": "A personal finance tracker with accounts, transactions, budgets, and spending reports",
+      "project_name": "personal_finance_tracker",
+      "project_path": "C:\\Users\\jerry\\onedrive\\Desktop\\forgeai\\generated_projects\\personal_finance_tracker",
+      "forge_score": 63,
+      "vision_score": 45,
+      "build_passed": true,
+      "playwright_passed": false,
+      "runtime_passed": false,
+      "validation_passed": true,
+      "vision_issues": [
+        {
+          "severity": "info",
+          "page": "/login",
+          "description": "The 'FinanceApp' logo/title in the header is not vertically aligned with the navigation links. The navigation links in the header are right-aligned, which is good, but they lack sufficient padding or margin on the right side, making them too close to the edge of the viewport. Consider adding `padding-right` or `margin-right` to the last item or the navigation container. The overall layout of the login form is functional, but the input fields could benefit from a slight increase in `height` for better usability, and the 'Login' button's `border-radius` could be made more consistent with a slightly rounded square shape for a more modern look, aligning with many current UI trends."
+        },
+        {
+          "severity": "critical",
+          "page": "/register",
+          "description": "The /register page is a blank white screen, indicating a critical rendering issue (e.g., component not loaded, styling problem, or JavaScript error)."
+        }
+      ],
+      "error": null,
+      "elapsed": 85.3,
+      "screenshot_count": 2
+    }
+  ]
+}

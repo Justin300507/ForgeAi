@@ -1,0 +1,407 @@
+{
+  "api_endpoints": [
+    {
+      "method": "POST",
+      "path": "/auth/login",
+      "description": "Authenticate user and return JWT token",
+      "file": "app/routes/auth_routes.py"
+    },
+    {
+      "method": "PATCH",
+      "path": "/users/{id}/role",
+      "description": "Update role of a user (admin only)",
+      "file": "app/routes/user_routes.py"
+    },
+    {
+      "method": "GET",
+      "path": "/projects",
+      "description": "List all projects visible to the authenticated user (paginated)",
+      "file": "app/routes/project_routes.py"
+    },
+    {
+      "method": "POST",
+      "path": "/projects",
+      "description": "Create a new project",
+      "file": "app/routes/project_routes.py"
+    },
+    {
+      "method": "GET",
+      "path": "/projects/{id}",
+      "description": "Get detailed information of a specific project",
+      "file": "app/routes/project_routes.py"
+    },
+    {
+      "method": "PATCH",
+      "path": "/projects/{id}",
+      "description": "Update project fields or archive the project",
+      "file": "app/routes/project_routes.py"
+    },
+    {
+      "method": "GET",
+      "path": "/projects/{project_id}/issues",
+      "description": "List issues for a project with optional filters and pagination",
+      "file": "app/routes/issue_routes.py"
+    },
+    {
+      "method": "POST",
+      "path": "/projects/{project_id}/issues",
+      "description": "Create a new issue within a project",
+      "file": "app/routes/issue_routes.py"
+    },
+    {
+      "method": "GET",
+      "path": "/issues/{id}",
+      "description": "Retrieve detailed information of a specific issue",
+      "file": "app/routes/issue_routes.py"
+    },
+    {
+      "method": "PATCH",
+      "path": "/issues/{id}",
+      "description": "Update issue fields such as status, priority, assignee, or description",
+      "file": "app/routes/issue_routes.py"
+    },
+    {
+      "method": "GET",
+      "path": "/issues/{issue_id}/comments",
+      "description": "List comments for an issue (threaded, paginated)",
+      "file": "app/routes/comment_routes.py"
+    },
+    {
+      "method": "POST",
+      "path": "/issues/{issue_id}/comments",
+      "description": "Add a new comment to an issue",
+      "file": "app/routes/comment_routes.py"
+    },
+    {
+      "method": "POST",
+      "path": "/issues/{issue_id}/attachments",
+      "description": "Upload an attachment file to an issue",
+      "file": "app/routes/attachment_routes.py"
+    },
+    {
+      "method": "GET",
+      "path": "/attachments/{id}",
+      "description": "Download an attachment file",
+      "file": "app/routes/attachment_routes.py"
+    },
+    {
+      "method": "GET",
+      "path": "/search",
+      "description": "Full\u2011text search across projects and issues with filters",
+      "file": "app/routes/search_routes.py"
+    }
+  ],
+  "database_schema": [
+    {
+      "table_name": "users",
+      "columns": [
+        {
+          "name": "id",
+          "type": "INTEGER",
+          "is_primary_key": true,
+          "is_nullable": false
+        },
+        {
+          "name": "email",
+          "type": "VARCHAR(255)",
+          "is_primary_key": false,
+          "is_nullable": false
+        },
+        {
+          "name": "name",
+          "type": "VARCHAR(150)",
+          "is_primary_key": false,
+          "is_nullable": false
+        },
+        {
+          "name": "hashed_password",
+          "type": "VARCHAR(255)",
+          "is_primary_key": false,
+          "is_nullable": false
+        },
+        {
+          "name": "role",
+          "type": "VARCHAR(50)",
+          "is_primary_key": false,
+          "is_nullable": false
+        },
+        {
+          "name": "created_at",
+          "type": "DATETIME",
+          "is_primary_key": false,
+          "is_nullable": false
+        }
+      ]
+    },
+    {
+      "table_name": "projects",
+      "columns": [
+        {
+          "name": "id",
+          "type": "INTEGER",
+          "is_primary_key": true,
+          "is_nullable": false
+        },
+        {
+          "name": "name",
+          "type": "VARCHAR(200)",
+          "is_primary_key": false,
+          "is_nullable": false
+        },
+        {
+          "name": "description",
+          "type": "TEXT",
+          "is_primary_key": false,
+          "is_nullable": true
+        },
+        {
+          "name": "created_at",
+          "type": "DATETIME",
+          "is_primary_key": false,
+          "is_nullable": false
+        },
+        {
+          "name": "owner_id",
+          "type": "INTEGER",
+          "is_primary_key": false,
+          "is_nullable": false
+        },
+        {
+          "name": "archived",
+          "type": "BOOLEAN",
+          "is_primary_key": false,
+          "is_nullable": false
+        }
+      ]
+    },
+    {
+      "table_name": "issues",
+      "columns": [
+        {
+          "name": "id",
+          "type": "INTEGER",
+          "is_primary_key": true,
+          "is_nullable": false
+        },
+        {
+          "name": "project_id",
+          "type": "INTEGER",
+          "is_primary_key": false,
+          "is_nullable": false
+        },
+        {
+          "name": "issue_number",
+          "type": "INTEGER",
+          "is_primary_key": false,
+          "is_nullable": false
+        },
+        {
+          "name": "title",
+          "type": "VARCHAR(250)",
+          "is_primary_key": false,
+          "is_nullable": false
+        },
+        {
+          "name": "description",
+          "type": "TEXT",
+          "is_primary_key": false,
+          "is_nullable": true
+        },
+        {
+          "name": "status_id",
+          "type": "INTEGER",
+          "is_primary_key": false,
+          "is_nullable": false
+        },
+        {
+          "name": "priority_id",
+          "type": "INTEGER",
+          "is_primary_key": false,
+          "is_nullable": false
+        },
+        {
+          "name": "assignee_id",
+          "type": "INTEGER",
+          "is_primary_key": false,
+          "is_nullable": true
+        },
+        {
+          "name": "reporter_id",
+          "type": "INTEGER",
+          "is_primary_key": false,
+          "is_nullable": false
+        },
+        {
+          "name": "created_at",
+          "type": "DATETIME",
+          "is_primary_key": false,
+          "is_nullable": false
+        },
+        {
+          "name": "updated_at",
+          "type": "DATETIME",
+          "is_primary_key": false,
+          "is_nullable": false
+        }
+      ]
+    },
+    {
+      "table_name": "comments",
+      "columns": [
+        {
+          "name": "id",
+          "type": "INTEGER",
+          "is_primary_key": true,
+          "is_nullable": false
+        },
+        {
+          "name": "issue_id",
+          "type": "INTEGER",
+          "is_primary_key": false,
+          "is_nullable": false
+        },
+        {
+          "name": "author_id",
+          "type": "INTEGER",
+          "is_primary_key": false,
+          "is_nullable": false
+        },
+        {
+          "name": "content",
+          "type": "TEXT",
+          "is_primary_key": false,
+          "is_nullable": false
+        },
+        {
+          "name": "created_at",
+          "type": "DATETIME",
+          "is_primary_key": false,
+          "is_nullable": false
+        }
+      ]
+    },
+    {
+      "table_name": "attachments",
+      "columns": [
+        {
+          "name": "id",
+          "type": "INTEGER",
+          "is_primary_key": true,
+          "is_nullable": false
+        },
+        {
+          "name": "issue_id",
+          "type": "INTEGER",
+          "is_primary_key": false,
+          "is_nullable": false
+        },
+        {
+          "name": "filename",
+          "type": "VARCHAR(255)",
+          "is_primary_key": false,
+          "is_nullable": false
+        },
+        {
+          "name": "filepath",
+          "type": "VARCHAR(500)",
+          "is_primary_key": false,
+          "is_nullable": false
+        },
+        {
+          "name": "uploaded_by",
+          "type": "INTEGER",
+          "is_primary_key": false,
+          "is_nullable": false
+        },
+        {
+          "name": "uploaded_at",
+          "type": "DATETIME",
+          "is_primary_key": false,
+          "is_nullable": false
+        }
+      ]
+    },
+    {
+      "table_name": "issue_statuses",
+      "columns": [
+        {
+          "name": "id",
+          "type": "INTEGER",
+          "is_primary_key": true,
+          "is_nullable": false
+        },
+        {
+          "name": "name",
+          "type": "VARCHAR(50)",
+          "is_primary_key": false,
+          "is_nullable": false
+        }
+      ]
+    },
+    {
+      "table_name": "priorities",
+      "columns": [
+        {
+          "name": "id",
+          "type": "INTEGER",
+          "is_primary_key": true,
+          "is_nullable": false
+        },
+        {
+          "name": "name",
+          "type": "VARCHAR(50)",
+          "is_primary_key": false,
+          "is_nullable": false
+        },
+        {
+          "name": "order",
+          "type": "INTEGER",
+          "is_primary_key": false,
+          "is_nullable": false
+        }
+      ]
+    }
+  ],
+  "folder_structure": {
+    "backend": [
+      "app",
+      "app/models",
+      "app/schemas",
+      "app/routes",
+      "app/services",
+      "app/utils",
+      "app/dependencies",
+      "app/config"
+    ]
+  },
+  "frontend_structure": {
+    "pages": [
+      "DashboardPage",
+      "ProjectListPage",
+      "ProjectDetailPage",
+      "IssueDetailPage",
+      "IssueFormPage",
+      "CommentThreadPage",
+      "UserManagementPage",
+      "SearchResultsPage",
+      "LoginPage"
+    ],
+    "components": [
+      "Navbar",
+      "SearchBar",
+      "ProjectCard",
+      "IssueCard",
+      "IssueForm",
+      "CommentBox",
+      "CommentList",
+      "AttachmentUploader",
+      "AttachmentList",
+      "RoleDropdown",
+      "NotificationToast",
+      "WatchToggle",
+      "PaginationControls",
+      "FilterBar",
+      "Avatar"
+    ]
+  }
+}

@@ -1,0 +1,30 @@
+{
+  "run_id": "v7_20260622_124339_f084d6ab",
+  "timestamp": "2026-06-22T12:44:23",
+  "version": "v7",
+  "idea": "A volunteer management system with events, shifts, volunteers, and hours tracking",
+  "project_name": "volunteer_management_system",
+  "provider": "auto",
+  "plan": {},
+  "architecture": {
+    "endpoint_count": 0,
+    "endpoints": [],
+    "db_schema_keys": []
+  },
+  "validation_errors": [],
+  "runtime_error": null,
+  "runtime_error_type": null,
+  "fixes_applied": [],
+  "score": 100,
+  "grade": "A",
+  "runtime_passed": true,
+  "frontend_passed": false,
+  "generation_time": 44.31,
+  "security_score": 62,
+  "performance_score": 78,
+  "maintainability_score": 55,
+  "qa_score": 50,
+  "v6_score": 68,
+  "prompt_version": "default",
+  "active_rules": []
+}

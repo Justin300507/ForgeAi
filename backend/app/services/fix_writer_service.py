@@ -10,6 +10,22 @@ def _normalize_newlines(path, content):
         content = content.replace("\\n", "\n").replace("\\t", "\t")
     if path.endswith((".jsx", ".js")) and '\\"' in content:
         content = content.replace('\\"', '"')
+    if path.endswith(".py"):
+        from app.services.file_writer_service import (
+            _repair_backslash_syntax, _add_extend_existing,
+            _fix_pydantic_v1_patterns, _strip_auth_classes_from_schema,
+            _strip_invalid_eager_loading, _fix_double_depends,
+        )
+        content = _repair_backslash_syntax(content)
+        content = _add_extend_existing(content)
+        content = _strip_auth_classes_from_schema(path, content)
+        content = _fix_pydantic_v1_patterns(content)
+        if "/routes/" in path.replace("\\", "/"):
+            content = _strip_invalid_eager_loading(content)
+            content = _fix_double_depends(content)
+    if path.endswith((".jsx", ".js")):
+        from app.services.file_writer_service import _fix_smart_quotes
+        content = _fix_smart_quotes(content)
     if path.endswith(".py") and "schemas." in content:
         from app.services.file_writer_service import _fix_schemas_namespace
         content = _fix_schemas_namespace(content)

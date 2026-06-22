@@ -1,0 +1,459 @@
+{
+  "api_endpoints": [
+    {
+      "method": "POST",
+      "path": "/auth/signup",
+      "description": "Create a new user account with email, password, and role (mentor or mentee). Returns JWT token.",
+      "file": "app/routes/auth_routes.py"
+    },
+    {
+      "method": "POST",
+      "path": "/auth/login",
+      "description": "Authenticate user credentials and return a JWT token.",
+      "file": "app/routes/auth_routes.py"
+    },
+    {
+      "method": "GET",
+      "path": "/users/me",
+      "description": "Retrieve the authenticated user's profile, including role\u2011specific details.",
+      "file": "app/routes/user_routes.py"
+    },
+    {
+      "method": "PUT",
+      "path": "/users/me",
+      "description": "Update personal information and upload a profile picture for the authenticated user.",
+      "file": "app/routes/user_routes.py"
+    },
+    {
+      "method": "POST",
+      "path": "/mentor_applications",
+      "description": "Submit a mentor application with resume URL and optional certification documents.",
+      "file": "app/routes/mentor_application_routes.py"
+    },
+    {
+      "method": "GET",
+      "path": "/admin/mentor_applications",
+      "description": "Admin view of pending mentor applications with pagination.",
+      "file": "app/routes/mentor_application_routes.py"
+    },
+    {
+      "method": "PATCH",
+      "path": "/admin/mentor_applications/{id}",
+      "description": "Admin approves or rejects a mentor application, optionally adding a comment.",
+      "file": "app/routes/mentor_application_routes.py"
+    },
+    {
+      "method": "GET",
+      "path": "/goals",
+      "description": "List the authenticated mentee's goals with pagination and optional status filter.",
+      "file": "app/routes/goal_routes.py"
+    },
+    {
+      "method": "POST",
+      "path": "/goals",
+      "description": "Create a new learning goal for the authenticated mentee.",
+      "file": "app/routes/goal_routes.py"
+    },
+    {
+      "method": "PUT",
+      "path": "/goals/{id}",
+      "description": "Update title, description, target date, or status of an existing goal.",
+      "file": "app/routes/goal_routes.py"
+    },
+    {
+      "method": "DELETE",
+      "path": "/goals/{id}",
+      "description": "Delete a goal owned by the authenticated mentee.",
+      "file": "app/routes/goal_routes.py"
+    },
+    {
+      "method": "POST",
+      "path": "/sessions",
+      "description": "Book a session by selecting a mentor, a time slot, and duration (30, 60, 90 minutes). Sends email and in\u2011app notifications.",
+      "file": "app/routes/session_routes.py"
+    },
+    {
+      "method": "POST",
+      "path": "/sessions/{id}/feedback",
+      "description": "Submit session notes and a rating (1\u20115) after a session ends. Feedback is immutable.",
+      "file": "app/routes/feedback_routes.py"
+    },
+    {
+      "method": "GET",
+      "path": "/notifications",
+      "description": "Retrieve paginated list of notifications for the authenticated user.",
+      "file": "app/routes/notification_routes.py"
+    },
+    {
+      "method": "PATCH",
+      "path": "/notifications/{id}",
+      "description": "Mark a notification as read or unread.",
+      "file": "app/routes/notification_routes.py"
+    },
+    {
+      "method": "GET",
+      "path": "/search/mentors",
+      "description": "Search mentors by skill, industry, and next available slot with pagination.",
+      "file": "app/routes/search_routes.py"
+    }
+  ],
+  "database_schema": [
+    {
+      "table_name": "users",
+      "columns": [
+        {
+          "name": "id",
+          "type": "INTEGER",
+          "is_primary_key": true,
+          "is_nullable": false
+        },
+        {
+          "name": "email",
+          "type": "STRING",
+          "is_primary_key": false,
+          "is_nullable": false
+        },
+        {
+          "name": "password_hash",
+          "type": "STRING",
+          "is_primary_key": false,
+          "is_nullable": false
+        },
+        {
+          "name": "role",
+          "type": "ENUM('mentor','mentee','admin')",
+          "is_primary_key": false,
+          "is_nullable": false
+        },
+        {
+          "name": "profile_picture_url",
+          "type": "STRING",
+          "is_primary_key": false,
+          "is_nullable": true
+        }
+      ]
+    },
+    {
+      "table_name": "mentor_profiles",
+      "columns": [
+        {
+          "name": "id",
+          "type": "INTEGER",
+          "is_primary_key": true,
+          "is_nullable": false
+        },
+        {
+          "name": "user_id",
+          "type": "INTEGER",
+          "is_primary_key": false,
+          "is_nullable": false
+        },
+        {
+          "name": "bio",
+          "type": "TEXT",
+          "is_primary_key": false,
+          "is_nullable": true
+        },
+        {
+          "name": "skills",
+          "type": "STRING",
+          "is_primary_key": false,
+          "is_nullable": true
+        },
+        {
+          "name": "industry",
+          "type": "STRING",
+          "is_primary_key": false,
+          "is_nullable": true
+        },
+        {
+          "name": "approval_status",
+          "type": "ENUM('pending','approved','rejected')",
+          "is_primary_key": false,
+          "is_nullable": false
+        }
+      ]
+    },
+    {
+      "table_name": "mentee_profiles",
+      "columns": [
+        {
+          "name": "id",
+          "type": "INTEGER",
+          "is_primary_key": true,
+          "is_nullable": false
+        },
+        {
+          "name": "user_id",
+          "type": "INTEGER",
+          "is_primary_key": false,
+          "is_nullable": false
+        },
+        {
+          "name": "bio",
+          "type": "TEXT",
+          "is_primary_key": false,
+          "is_nullable": true
+        },
+        {
+          "name": "interests",
+          "type": "STRING",
+          "is_primary_key": false,
+          "is_nullable": true
+        }
+      ]
+    },
+    {
+      "table_name": "mentor_applications",
+      "columns": [
+        {
+          "name": "id",
+          "type": "INTEGER",
+          "is_primary_key": true,
+          "is_nullable": false
+        },
+        {
+          "name": "user_id",
+          "type": "INTEGER",
+          "is_primary_key": false,
+          "is_nullable": false
+        },
+        {
+          "name": "resume_url",
+          "type": "STRING",
+          "is_primary_key": false,
+          "is_nullable": false
+        },
+        {
+          "name": "certifications",
+          "type": "TEXT",
+          "is_primary_key": false,
+          "is_nullable": true
+        },
+        {
+          "name": "submitted_at",
+          "type": "DATETIME",
+          "is_primary_key": false,
+          "is_nullable": false
+        },
+        {
+          "name": "status",
+          "type": "ENUM('pending','approved','rejected')",
+          "is_primary_key": false,
+          "is_nullable": false
+        },
+        {
+          "name": "admin_comment",
+          "type": "TEXT",
+          "is_primary_key": false,
+          "is_nullable": true
+        }
+      ]
+    },
+    {
+      "table_name": "goals",
+      "columns": [
+        {
+          "name": "id",
+          "type": "INTEGER",
+          "is_primary_key": true,
+          "is_nullable": false
+        },
+        {
+          "name": "mentee_id",
+          "type": "INTEGER",
+          "is_primary_key": false,
+          "is_nullable": false
+        },
+        {
+          "name": "title",
+          "type": "STRING",
+          "is_primary_key": false,
+          "is_nullable": false
+        },
+        {
+          "name": "description",
+          "type": "TEXT",
+          "is_primary_key": false,
+          "is_nullable": true
+        },
+        {
+          "name": "target_date",
+          "type": "DATETIME",
+          "is_primary_key": false,
+          "is_nullable": false
+        },
+        {
+          "name": "status",
+          "type": "ENUM('pending','in_progress','completed')",
+          "is_primary_key": false,
+          "is_nullable": false
+        }
+      ]
+    },
+    {
+      "table_name": "sessions",
+      "columns": [
+        {
+          "name": "id",
+          "type": "INTEGER",
+          "is_primary_key": true,
+          "is_nullable": false
+        },
+        {
+          "name": "mentor_id",
+          "type": "INTEGER",
+          "is_primary_key": false,
+          "is_nullable": false
+        },
+        {
+          "name": "mentee_id",
+          "type": "INTEGER",
+          "is_primary_key": false,
+          "is_nullable": false
+        },
+        {
+          "name": "start_time",
+          "type": "DATETIME",
+          "is_primary_key": false,
+          "is_nullable": false
+        },
+        {
+          "name": "end_time",
+          "type": "DATETIME",
+          "is_primary_key": false,
+          "is_nullable": false
+        },
+        {
+          "name": "status",
+          "type": "ENUM('scheduled','completed','canceled')",
+          "is_primary_key": false,
+          "is_nullable": false
+        }
+      ]
+    },
+    {
+      "table_name": "feedback",
+      "columns": [
+        {
+          "name": "id",
+          "type": "INTEGER",
+          "is_primary_key": true,
+          "is_nullable": false
+        },
+        {
+          "name": "session_id",
+          "type": "INTEGER",
+          "is_primary_key": false,
+          "is_nullable": false
+        },
+        {
+          "name": "goal_id",
+          "type": "INTEGER",
+          "is_primary_key": false,
+          "is_nullable": true
+        },
+        {
+          "name": "notes",
+          "type": "TEXT",
+          "is_primary_key": false,
+          "is_nullable": false
+        },
+        {
+          "name": "rating",
+          "type": "INTEGER",
+          "is_primary_key": false,
+          "is_nullable": false
+        },
+        {
+          "name": "created_at",
+          "type": "DATETIME",
+          "is_primary_key": false,
+          "is_nullable": false
+        }
+      ]
+    },
+    {
+      "table_name": "notifications",
+      "columns": [
+        {
+          "name": "id",
+          "type": "INTEGER",
+          "is_primary_key": true,
+          "is_nullable": false
+        },
+        {
+          "name": "user_id",
+          "type": "INTEGER",
+          "is_primary_key": false,
+          "is_nullable": false
+        },
+        {
+          "name": "type",
+          "type": "STRING",
+          "is_primary_key": false,
+          "is_nullable": false
+        },
+        {
+          "name": "message",
+          "type": "TEXT",
+          "is_primary_key": false,
+          "is_nullable": false
+        },
+        {
+          "name": "is_read",
+          "type": "BOOLEAN",
+          "is_primary_key": false,
+          "is_nullable": false
+        },
+        {
+          "name": "created_at",
+          "type": "DATETIME",
+          "is_primary_key": false,
+          "is_nullable": false
+        }
+      ]
+    }
+  ],
+  "folder_structure": {
+    "backend": [
+      "app/routes",
+      "app/models",
+      "app/schemas",
+      "app/services",
+      "app/utils",
+      "app/core"
+    ]
+  },
+  "frontend_structure": {
+    "pages": [
+      "Home",
+      "SignupLogin",
+      "UserProfile",
+      "MentorApplication",
+      "GoalDashboard",
+      "SessionBooking",
+      "FeedbackForm",
+      "Notifications",
+      "MentorSearch",
+      "AdminDashboard"
+    ],
+    "components": [
+      "Navbar",
+      "ProfileForm",
+      "GoalCard",
+      "GoalForm",
+      "SessionCalendar",
+      "SessionCard",
+      "FeedbackFormComponent",
+      "NotificationItem",
+      "SearchBar",
+      "Pagination",
+      "MentorCard",
+      "FileUpload",
+      "RatingStars",
+      "Badge",
+      "Modal"
+    ]
+  }
+}

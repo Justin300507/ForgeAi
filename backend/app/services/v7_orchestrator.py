@@ -51,6 +51,8 @@ def generate_project_v7(
     provider: str = "auto",
     run_improvement_cycle: bool = True,
     improvement_cycle_every_n: int = 5,
+    skip_reviews: bool = False,
+    frontend_target: str = "web",
 ) -> dict[str, Any]:
     """
     V7 pipeline = V6 generation + self-improvement cycle.
@@ -74,7 +76,7 @@ def generate_project_v7(
 
     # ── Step 1: Generate with V6 multi-agent pipeline ────────────────────
     collab = AgentCollaboration()
-    v6_result = generate_project_v6(idea, provider=provider, collab=collab)
+    v6_result = generate_project_v6(idea, provider=provider, collab=collab, skip_reviews=skip_reviews, frontend_target=frontend_target)
 
     # ── Step 2: Record to failure dataset ────────────────────────────────
     _record_to_dataset(idea, run_id, provider, v6_result)
@@ -84,7 +86,7 @@ def generate_project_v7(
         v6_result.get("runtime") and v6_result["runtime"].get("success")
     )
     if not runtime_passed and not v6_result.get("validation", {}).get("passed"):
-        v6_result = _attempt_self_healing(idea, provider, v6_result, run_id)
+        v6_result = _attempt_self_healing(idea, provider, v6_result, run_id, skip_reviews=skip_reviews, frontend_target=frontend_target)
         runtime_passed = bool(
             v6_result.get("runtime") and v6_result["runtime"].get("success")
         )
@@ -157,7 +159,9 @@ def _record_to_dataset(
 
 
 def _attempt_self_healing(
-    idea: str, provider: str, failed_result: dict, run_id: str
+    idea: str, provider: str, failed_result: dict, run_id: str,
+    skip_reviews: bool = False,
+    frontend_target: str = "web",
 ) -> dict:
     """
     V7 Self-Healing: when the V6 pipeline completely fails, consult the
@@ -192,7 +196,7 @@ def _attempt_self_healing(
 
         collab = AgentCollaboration()
         healed = generate_project_v6(
-            idea, provider=provider, collab=collab
+            idea, provider=provider, collab=collab, skip_reviews=skip_reviews, frontend_target=frontend_target
         )
         healed["v7_self_healed"] = True
         healed["v7_healing_context"] = healing_context[:500]

@@ -53,30 +53,26 @@ def generate_architecture(
         print(f"Architect Response Length: {len(text)}")
         print(f"Architect Time: {time.time() - start:.2f}s")
 
-        clean_text = text
-        clean_text = clean_text.replace("```json", "")
-        clean_text = clean_text.replace("```", "")
-        clean_text = clean_text.strip()
+        clean_text = text.replace("```json", "").replace("```", "").strip()
 
-        try:
-            data = extract_json(clean_text)
-
-        except json.JSONDecodeError as e:
-
-            print("\n=== ARCHITECT JSON ERROR ===")
-            print(e)
-            print("\nArchitect Response Preview:")
-            print(clean_text[:500])
-
-            with open(
-                "architect_failed_response.txt", "w", encoding="utf-8"
-            ) as f:
-                f.write(clean_text)
-
-            raise HTTPException(
-                status_code=500,
-                detail="Architect returned invalid JSON."
-            )
+        data = None
+        for attempt in range(3):
+            try:
+                data = extract_json(clean_text)
+                break
+            except json.JSONDecodeError as e:
+                print(f"\n=== ARCHITECT JSON ERROR (attempt {attempt+1}/3) ===")
+                print(e)
+                if attempt < 2:
+                    print("Retrying architect LLM call...")
+                    text = generate_content(prompt, provider, max_tokens=max_tokens)
+                    if not text:
+                        break
+                    clean_text = text.replace("```json", "").replace("```", "").strip()
+                else:
+                    with open("architect_failed_response.txt", "w", encoding="utf-8") as f:
+                        f.write(clean_text)
+                    raise HTTPException(status_code=500, detail="Architect returned invalid JSON after 3 attempts.")
 
         if not isinstance(data, dict):
             raise HTTPException(

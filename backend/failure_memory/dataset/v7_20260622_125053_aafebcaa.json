@@ -1,0 +1,30 @@
+{
+  "run_id": "v7_20260622_125053_aafebcaa",
+  "timestamp": "2026-06-22T12:51:56",
+  "version": "v7",
+  "idea": "A bug tracker with projects, issues, comments, priorities, and status workflows",
+  "project_name": "bug_tracker",
+  "provider": "auto",
+  "plan": {},
+  "architecture": {
+    "endpoint_count": 0,
+    "endpoints": [],
+    "db_schema_keys": []
+  },
+  "validation_errors": [],
+  "runtime_error": null,
+  "runtime_error_type": "ImportError",
+  "fixes_applied": [],
+  "score": 80,
+  "grade": "B",
+  "runtime_passed": false,
+  "frontend_passed": false,
+  "generation_time": 63.1,
+  "security_score": 55,
+  "performance_score": 70,
+  "maintainability_score": 50,
+  "qa_score": 45,
+  "v6_score": 42,
+  "prompt_version": "default",
+  "active_rules": []
+}

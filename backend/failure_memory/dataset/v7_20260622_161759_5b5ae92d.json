@@ -1,0 +1,40 @@
+{
+  "run_id": "v7_20260622_161759_5b5ae92d",
+  "timestamp": "2026-06-22T16:18:31",
+  "version": "v7",
+  "idea": "A job board platform with job listings, applications, employers, and candidate profiles",
+  "project_name": "job_board_platform",
+  "provider": "auto",
+  "plan": {},
+  "architecture": {
+    "endpoint_count": 0,
+    "endpoints": [],
+    "db_schema_keys": []
+  },
+  "validation_errors": [
+    "Missing symbol 'RegisterRequest' in app/schemas/user.py (imported from app/routes/auth_routes.py)",
+    "Missing symbol 'LoginRequest' in app/schemas/user.py (imported from app/routes/auth_routes.py)",
+    "Missing symbol 'Token' in app/schemas/user.py (imported from app/routes/auth_routes.py)",
+    "Missing symbol 'LoginRequest' in app/schemas/user.py (imported from app/routes/user_routes.py)",
+    "Missing symbol 'RegisterRequest' in app/schemas/user.py (imported from app/routes/user_routes.py)",
+    "Missing symbol 'Token' in app/schemas/user.py (imported from app/routes/user_routes.py)",
+    "Duplicate class definition: 'LoginRequest' is defined in multiple files (app/schemas/admin.py, app/schemas/candidate.py) — this creates incompatible duplicate types",
+    "Duplicate class definition: 'RegisterRequest' is defined in multiple files (app/schemas/admin.py, app/schemas/candidate.py) — this creates incompatible duplicate types",
+    "Duplicate class definition: 'Token' is defined in multiple files (app/schemas/admin.py, app/schemas/candidate.py) — this creates incompatible duplicate types"
+  ],
+  "runtime_error": null,
+  "runtime_error_type": null,
+  "fixes_applied": [],
+  "score": 59,
+  "grade": "F",
+  "runtime_passed": false,
+  "frontend_passed": false,
+  "generation_time": 31.41,
+  "security_score": null,
+  "performance_score": null,
+  "maintainability_score": null,
+  "qa_score": null,
+  "v6_score": 60,
+  "prompt_version": "default",
+  "active_rules": []
+}

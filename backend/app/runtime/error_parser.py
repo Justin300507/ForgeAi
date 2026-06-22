@@ -57,6 +57,21 @@ def parse_runtime_error(stderr):
                 "hint": "werkzeug is a Flask library, not available here. Use passlib[bcrypt] instead: `from passlib.context import CryptContext`"
             }
 
+        # Specific: monolithic schemas.py — route imports from app.schemas.X but only schemas.py exists
+        if module_name and module_name.startswith("app.schemas.") and module_name != "app.schemas.schemas":
+            schema_name = module_name.split(".")[-1]  # e.g. "account"
+            return {
+                "type": "MonolithicSchemaError",
+                "missing_module": module_name,
+                "schema_name": schema_name,
+                "error_file": error_file,
+                "hint": (
+                    f"Route imports from '{module_name}' but only 'app/schemas/schemas.py' exists. "
+                    f"Create 'app/schemas/{schema_name}.py' with the relevant Pydantic classes, "
+                    "OR change the import in the route file to 'from app.schemas.schemas import ...'"
+                ),
+            }
+
         return {
             "type": "ModuleNotFoundError",
             "module": module_name,
@@ -79,24 +94,39 @@ def parse_runtime_error(stderr):
             r"cannot import name ['\"](.+?)['\"]",
             stderr
         )
-
         target_match = re.search(
             r"from ['\"](.+?)['\"]",
             stderr
         )
+        missing_symbol = symbol_match.group(1) if symbol_match else None
+        import_target = target_match.group(1) if target_match else None
+
+        _AUTH_HELPERS = {
+            "get_user_by_email", "get_user_by_username", "get_user_by_id",
+            "authenticate_user", "verify_password", "get_password_hash",
+            "hash_password", "check_password", "create_access_token",
+            "decode_token", "decode_access_token", "verify_token",
+        }
+        if missing_symbol in _AUTH_HELPERS and import_target and (
+            "auth" in import_target or "user" in import_target
+        ):
+            return {
+                "type": "MissingAuthHelperError",
+                "missing_symbol": missing_symbol,
+                "import_target_module": import_target,
+                "error_file": error_file,
+                "hint": (
+                    f"'{missing_symbol}' is not defined in '{import_target}'. "
+                    "Define it there, or import from the correct module. "
+                    "Auth utilities (hash/verify/create_token) go in app/utils/auth.py. "
+                    "User lookup functions (get_user_by_email) go in app/services/auth.py or app/services/user.py."
+                ),
+            }
 
         return {
             "type": "ImportError",
-            "missing_symbol": (
-                symbol_match.group(1)
-                if symbol_match
-                else None
-            ),
-            "import_target_module": (
-                target_match.group(1)
-                if target_match
-                else None
-            ),
+            "missing_symbol": missing_symbol,
+            "import_target_module": import_target,
             "error_file": error_file
         }
 
@@ -157,10 +187,27 @@ def parse_runtime_error(stderr):
         }
 
     if "FastAPIError" in stderr:
-
+        # Specific: response_model is a SQLAlchemy model, not Pydantic schema
+        hint = None
+        if "is a valid Pydantic field type" in stderr or "response field" in stderr:
+            hint = "response_model must be a Pydantic schema (e.g. UserResponse), not a SQLAlchemy model class (e.g. User)."
         return {
             "type": "FastAPIError",
-            "error_file": error_file
+            "error_file": error_file,
+            "hint": hint,
+        }
+
+    if "Table" in stderr and "is already defined for this MetaData instance" in stderr:
+        table_match = re.search(r"Table '(.+?)' is already defined", stderr)
+        return {
+            "type": "DuplicateTableError",
+            "table": table_match.group(1) if table_match else None,
+            "error_file": error_file,
+            "hint": (
+                "A model file is importing another model at module level, causing double table registration. "
+                "Fix: model files must NOT import other model classes. Use ForeignKey('table.id') strings only. "
+                "All model imports belong in main.py only."
+            ),
         }
 
     if "Error loading ASGI app" in stderr:
@@ -203,19 +250,61 @@ def parse_runtime_error(stderr):
             "hint": "A model with this table name is missing from the imports in main.py — add it so Base.metadata sees it."
         }
 
-    # NOT NULL constraint on timestamp columns — model missing server_default
+    # NOT NULL constraint — distinguish FK vs timestamp columns
     if "IntegrityError" in stderr and "NOT NULL constraint failed" in stderr:
         col_match = re.search(r"NOT NULL constraint failed: (\S+)", stderr)
         col = col_match.group(1) if col_match else None
         table = col.split(".")[0] if col else None
+        col_name = col.split(".")[-1] if col else ""
+
+        _TIMESTAMP_COLS = {"created_at", "updated_at", "deleted_at", "modified_at", "timestamp"}
+        _FK_COLS_SUFFIXES = ("_id",)
+
+        if col_name in _TIMESTAMP_COLS or col_name.endswith(("_at", "_date", "_time")):
+            return {
+                "type": "TimestampNotNullError",
+                "column": col,
+                "table": table,
+                "error_file": error_file,
+                "hint": (
+                    f"Column '{col}' is NOT NULL but has no server_default. "
+                    "Add: server_default=func.now() and onupdate=func.now() to the Column."
+                ),
+            }
+
+        if col_name.endswith(_FK_COLS_SUFFIXES):
+            return {
+                "type": "UserIdNotInjectedError",
+                "column": col,
+                "table": table,
+                "col_name": col_name,
+                "error_file": error_file,
+                "hint": (
+                    f"Column '{col}' is NOT NULL (foreign key) but the route handler "
+                    "doesn't inject it from auth. Add `current_user: User = Depends(get_current_user)` "
+                    f"to the route and set `obj.{col_name} = current_user.id` before db.add()."
+                ),
+            }
+
         return {
-            "type": "TimestampNotNullError",
+            "type": "NotNullViolationError",
             "column": col,
             "table": table,
             "error_file": error_file,
+            "hint": f"Column '{col}' is NOT NULL but was inserted as NULL. Ensure the field is required in the schema and populated by the route.",
+        }
+
+    # SQLAlchemy relationship string resolution — model not imported in main.py
+    if "InvalidRequestError" in stderr and ("failed to locate a name" in stderr or "expression" in stderr and "failed" in stderr):
+        model_match = re.search(r"expression ['\"](.+?)['\"] failed to locate a name", stderr)
+        return {
+            "type": "RelationshipModelNotImported",
+            "missing_model": model_match.group(1) if model_match else None,
+            "error_file": error_file,
             "hint": (
-                f"Column '{col}' is NOT NULL but has no server_default. "
-                "Add: server_default=func.now() and onupdate=func.now() to the Column."
+                "A SQLAlchemy relationship() uses a string name but that model's file is not "
+                "imported in main.py. Add the import: `from app.models.<name> import <Model>` "
+                "to main.py so Base.metadata can resolve the relationship."
             ),
         }
 

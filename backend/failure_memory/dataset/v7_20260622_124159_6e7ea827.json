@@ -1,0 +1,30 @@
+{
+  "run_id": "v7_20260622_124159_6e7ea827",
+  "timestamp": "2026-06-22T12:43:11",
+  "version": "v7",
+  "idea": "A pet care app with pets, vet appointments, vaccinations, and feeding schedules",
+  "project_name": "pet_care_manager",
+  "provider": "auto",
+  "plan": {},
+  "architecture": {
+    "endpoint_count": 0,
+    "endpoints": [],
+    "db_schema_keys": []
+  },
+  "validation_errors": [],
+  "runtime_error": null,
+  "runtime_error_type": null,
+  "fixes_applied": [],
+  "score": 100,
+  "grade": "A",
+  "runtime_passed": true,
+  "frontend_passed": false,
+  "generation_time": 71.52,
+  "security_score": 68,
+  "performance_score": 55,
+  "maintainability_score": 68,
+  "qa_score": 45,
+  "v6_score": 66,
+  "prompt_version": "default",
+  "active_rules": []
+}

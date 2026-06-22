@@ -1,0 +1,418 @@
+{
+  "api_endpoints": [
+    {
+      "method": "POST",
+      "path": "/api/auth/login",
+      "description": "Authenticate user and return JWT token",
+      "file": "app/routes/auth_routes.py"
+    },
+    {
+      "method": "POST",
+      "path": "/api/users",
+      "description": "Create a new user (admin only)",
+      "file": "app/routes/user_routes.py"
+    },
+    {
+      "method": "PATCH",
+      "path": "/api/users/{user_id}/role",
+      "description": "Update a user's role (admin only)",
+      "file": "app/routes/user_routes.py"
+    },
+    {
+      "method": "GET",
+      "path": "/api/projects",
+      "description": "List all projects accessible to the user",
+      "file": "app/routes/project_routes.py"
+    },
+    {
+      "method": "GET",
+      "path": "/api/projects/{project_id}",
+      "description": "Get project details and members",
+      "file": "app/routes/project_routes.py"
+    },
+    {
+      "method": "GET",
+      "path": "/api/projects/{project_id}/dashboard",
+      "description": "Return issue count per status for the project",
+      "file": "app/routes/project_routes.py"
+    },
+    {
+      "method": "GET",
+      "path": "/api/projects/{project_id}/issues",
+      "description": "List issues in a project with filtering, pagination",
+      "file": "app/routes/issue_routes.py"
+    },
+    {
+      "method": "POST",
+      "path": "/api/projects/{project_id}/issues",
+      "description": "Create a new issue in a project",
+      "file": "app/routes/issue_routes.py"
+    },
+    {
+      "method": "PATCH",
+      "path": "/api/issues/{issue_id}",
+      "description": "Update issue fields, including allowed status transitions",
+      "file": "app/routes/issue_routes.py"
+    },
+    {
+      "method": "GET",
+      "path": "/api/issues/{issue_id}/comments",
+      "description": "List comments for an issue with pagination",
+      "file": "app/routes/comment_routes.py"
+    },
+    {
+      "method": "POST",
+      "path": "/api/issues/{issue_id}/comments",
+      "description": "Add a comment to an issue",
+      "file": "app/routes/comment_routes.py"
+    },
+    {
+      "method": "POST",
+      "path": "/api/comments/{comment_id}/attachments",
+      "description": "Upload an attachment to a comment (max 5\u202fMB)",
+      "file": "app/routes/attachment_routes.py"
+    },
+    {
+      "method": "GET",
+      "path": "/api/attachments/{attachment_id}",
+      "description": "Download an attachment file",
+      "file": "app/routes/attachment_routes.py"
+    },
+    {
+      "method": "GET",
+      "path": "/api/search",
+      "description": "Full\u2011text search across projects and issues",
+      "file": "app/routes/search_routes.py"
+    },
+    {
+      "method": "WS",
+      "path": "/ws/issues/{issue_id}/stream",
+      "description": "WebSocket stream for real\u2011time comment and status events on an issue",
+      "file": "app/routes/issue_routes.py"
+    }
+  ],
+  "database_schema": [
+    {
+      "table_name": "users",
+      "columns": [
+        {
+          "name": "id",
+          "type": "INTEGER",
+          "is_primary_key": true,
+          "is_nullable": false
+        },
+        {
+          "name": "email",
+          "type": "VARCHAR(255)",
+          "is_primary_key": false,
+          "is_nullable": false
+        },
+        {
+          "name": "hashed_password",
+          "type": "VARCHAR(255)",
+          "is_primary_key": false,
+          "is_nullable": false
+        },
+        {
+          "name": "role",
+          "type": "ENUM('admin','manager','developer')",
+          "is_primary_key": false,
+          "is_nullable": false
+        },
+        {
+          "name": "is_active",
+          "type": "BOOLEAN",
+          "is_primary_key": false,
+          "is_nullable": false
+        }
+      ]
+    },
+    {
+      "table_name": "projects",
+      "columns": [
+        {
+          "name": "id",
+          "type": "INTEGER",
+          "is_primary_key": true,
+          "is_nullable": false
+        },
+        {
+          "name": "name",
+          "type": "VARCHAR(200)",
+          "is_primary_key": false,
+          "is_nullable": false
+        },
+        {
+          "name": "description",
+          "type": "TEXT",
+          "is_primary_key": false,
+          "is_nullable": true
+        },
+        {
+          "name": "created_at",
+          "type": "DATETIME",
+          "is_primary_key": false,
+          "is_nullable": false
+        }
+      ]
+    },
+    {
+      "table_name": "project_members",
+      "columns": [
+        {
+          "name": "id",
+          "type": "INTEGER",
+          "is_primary_key": true,
+          "is_nullable": false
+        },
+        {
+          "name": "project_id",
+          "type": "INTEGER",
+          "is_primary_key": false,
+          "is_nullable": false
+        },
+        {
+          "name": "user_id",
+          "type": "INTEGER",
+          "is_primary_key": false,
+          "is_nullable": false
+        },
+        {
+          "name": "member_role",
+          "type": "ENUM('manager','developer')",
+          "is_primary_key": false,
+          "is_nullable": false
+        }
+      ]
+    },
+    {
+      "table_name": "issues",
+      "columns": [
+        {
+          "name": "id",
+          "type": "INTEGER",
+          "is_primary_key": true,
+          "is_nullable": false
+        },
+        {
+          "name": "project_id",
+          "type": "INTEGER",
+          "is_primary_key": false,
+          "is_nullable": false
+        },
+        {
+          "name": "title",
+          "type": "VARCHAR(200)",
+          "is_primary_key": false,
+          "is_nullable": false
+        },
+        {
+          "name": "description",
+          "type": "TEXT",
+          "is_primary_key": false,
+          "is_nullable": true
+        },
+        {
+          "name": "priority",
+          "type": "ENUM('High','Medium','Low')",
+          "is_primary_key": false,
+          "is_nullable": false
+        },
+        {
+          "name": "status",
+          "type": "ENUM('Open','In Progress','Resolved','Closed')",
+          "is_primary_key": false,
+          "is_nullable": false
+        },
+        {
+          "name": "reporter_id",
+          "type": "INTEGER",
+          "is_primary_key": false,
+          "is_nullable": false
+        },
+        {
+          "name": "assignee_id",
+          "type": "INTEGER",
+          "is_primary_key": false,
+          "is_nullable": true
+        },
+        {
+          "name": "created_at",
+          "type": "DATETIME",
+          "is_primary_key": false,
+          "is_nullable": false
+        },
+        {
+          "name": "updated_at",
+          "type": "DATETIME",
+          "is_primary_key": false,
+          "is_nullable": false
+        }
+      ]
+    },
+    {
+      "table_name": "comments",
+      "columns": [
+        {
+          "name": "id",
+          "type": "INTEGER",
+          "is_primary_key": true,
+          "is_nullable": false
+        },
+        {
+          "name": "issue_id",
+          "type": "INTEGER",
+          "is_primary_key": false,
+          "is_nullable": false
+        },
+        {
+          "name": "author_id",
+          "type": "INTEGER",
+          "is_primary_key": false,
+          "is_nullable": false
+        },
+        {
+          "name": "content",
+          "type": "TEXT",
+          "is_primary_key": false,
+          "is_nullable": false
+        },
+        {
+          "name": "created_at",
+          "type": "DATETIME",
+          "is_primary_key": false,
+          "is_nullable": false
+        }
+      ]
+    },
+    {
+      "table_name": "attachments",
+      "columns": [
+        {
+          "name": "id",
+          "type": "INTEGER",
+          "is_primary_key": true,
+          "is_nullable": false
+        },
+        {
+          "name": "comment_id",
+          "type": "INTEGER",
+          "is_primary_key": false,
+          "is_nullable": false
+        },
+        {
+          "name": "filename",
+          "type": "VARCHAR(255)",
+          "is_primary_key": false,
+          "is_nullable": false
+        },
+        {
+          "name": "filepath",
+          "type": "VARCHAR(500)",
+          "is_primary_key": false,
+          "is_nullable": false
+        },
+        {
+          "name": "mime_type",
+          "type": "VARCHAR(100)",
+          "is_primary_key": false,
+          "is_nullable": false
+        },
+        {
+          "name": "size",
+          "type": "INTEGER",
+          "is_primary_key": false,
+          "is_nullable": false
+        },
+        {
+          "name": "uploaded_at",
+          "type": "DATETIME",
+          "is_primary_key": false,
+          "is_nullable": false
+        }
+      ]
+    },
+    {
+      "table_name": "issue_status_audit",
+      "columns": [
+        {
+          "name": "id",
+          "type": "INTEGER",
+          "is_primary_key": true,
+          "is_nullable": false
+        },
+        {
+          "name": "issue_id",
+          "type": "INTEGER",
+          "is_primary_key": false,
+          "is_nullable": false
+        },
+        {
+          "name": "previous_status",
+          "type": "ENUM('Open','In Progress','Resolved','Closed')",
+          "is_primary_key": false,
+          "is_nullable": false
+        },
+        {
+          "name": "new_status",
+          "type": "ENUM('Open','In Progress','Resolved','Closed')",
+          "is_primary_key": false,
+          "is_nullable": false
+        },
+        {
+          "name": "changed_by",
+          "type": "INTEGER",
+          "is_primary_key": false,
+          "is_nullable": false
+        },
+        {
+          "name": "changed_at",
+          "type": "DATETIME",
+          "is_primary_key": false,
+          "is_nullable": false
+        }
+      ]
+    }
+  ],
+  "folder_structure": {
+    "backend": [
+      "app",
+      "app/models",
+      "app/schemas",
+      "app/routes",
+      "app/services",
+      "app/utils",
+      "app/dependencies",
+      "app/config"
+    ]
+  },
+  "frontend_structure": {
+    "pages": [
+      "LoginPage",
+      "ProjectListPage",
+      "ProjectDashboardPage",
+      "IssueListPage",
+      "IssueDetailPage",
+      "SearchPage",
+      "UserManagementPage"
+    ],
+    "components": [
+      "Header",
+      "Sidebar",
+      "ProjectCard",
+      "IssueCard",
+      "CommentItem",
+      "AttachmentUploader",
+      "StatusDropdown",
+      "Pagination",
+      "SearchBar",
+      "WebSocketProvider",
+      "MarkdownViewer",
+      "UserForm",
+      "RoleSelect",
+      "DashboardStats",
+      "FilePreview",
+      "ToastNotification"
+    ]
+  }
+}

@@ -29,13 +29,12 @@ from pathlib import Path
 
 sys.stdout.reconfigure(encoding="utf-8", errors="replace")
 
-IDEAS = [
-    "A todo list app with user login, task priorities, and due dates",
-    "A blog platform with posts, categories, comments, and author profiles",
-    "A recipe manager with ingredients, cooking steps, and favorites",
-    "An expense tracker with categories, budgets, and monthly summaries",
-    "An inventory system with products, stock levels, and low-stock alerts",
+IDEAS_V75 = [
+    "A job board platform with job listings, applications, employers, and candidate profiles",
+    "A book library system with books, authors, members, borrowings, and reservations",
 ]
+
+IDEAS = IDEAS_V75
 
 BENCH_ROOT = Path(__file__).parent / "benchmark"
 
@@ -94,6 +93,7 @@ def run_benchmark(provider: str = "auto") -> None:
                 idea,
                 provider=provider,
                 run_improvement_cycle=False,
+                skip_reviews=True,
             )
             project_path = v7.get("project_path", "")
             project_name = v7.get("project_name", f"app_{idx}")

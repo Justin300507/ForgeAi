@@ -1,0 +1,30 @@
+{
+  "run_id": "v7_20260622_124559_ba5651c4",
+  "timestamp": "2026-06-22T12:46:58",
+  "version": "v7",
+  "idea": "A meal planning app with recipes, weekly plans, shopping lists, and nutrition info",
+  "project_name": "meal_planner_pro",
+  "provider": "auto",
+  "plan": {},
+  "architecture": {
+    "endpoint_count": 0,
+    "endpoints": [],
+    "db_schema_keys": []
+  },
+  "validation_errors": [],
+  "runtime_error": null,
+  "runtime_error_type": null,
+  "fixes_applied": [],
+  "score": 100,
+  "grade": "A",
+  "runtime_passed": true,
+  "frontend_passed": false,
+  "generation_time": 59.85,
+  "security_score": 70,
+  "performance_score": 57,
+  "maintainability_score": 35,
+  "qa_score": 45,
+  "v6_score": 58,
+  "prompt_version": "default",
+  "active_rules": []
+}

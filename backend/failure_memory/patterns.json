@@ -1,7 +1,7 @@
 {
   "patterns": {
     "RouterExportMismatch": {
-      "count": 2,
+      "count": 8,
       "examples": [
         {
           "project": "test_app",
@@ -10,13 +10,25 @@
         {
           "project": "test_app2",
           "error": "Router export mismatch in app/routes/user_routes.py"
+        },
+        {
+          "project": "mentorship_platform",
+          "error": "Router export mismatch in app/routes/auth_user_routes.py. Expected 'auth_user_router'"
+        },
+        {
+          "project": "mentorship_platform",
+          "error": "Router export mismatch in app/routes/goal_session_feedback_routes.py. Expected 'goal_session_feedback_router'"
+        },
+        {
+          "project": "mentorship_platform",
+          "error": "Router export mismatch in app/routes/profile_routes.py. Expected 'profile_router'"
         }
       ],
       "first_seen": "2026-06-21T20:43:34.977754",
-      "last_seen": "2026-06-21T20:43:34.978769"
+      "last_seen": "2026-06-22T11:48:13.728754"
     },
     "NoReferencedTableError": {
-      "count": 3,
+      "count": 5,
       "examples": [
         {
           "project": "test_app",
@@ -29,10 +41,18 @@
         {
           "project": "PodTrack",
           "error": "NoReferencedTableError"
+        },
+        {
+          "project": "library_system",
+          "error": "NoReferencedTableError"
+        },
+        {
+          "project": "library_system",
+          "error": "NoReferencedTableError"
         }
       ],
       "first_seen": "2026-06-21T20:43:34.977765",
-      "last_seen": "2026-06-21T21:44:32.382189"
+      "last_seen": "2026-06-22T11:15:06.174696"
     },
     "FrontendBuildError": {
       "count": 2,
@@ -50,7 +70,7 @@
       "last_seen": "2026-06-21T21:31:58.284956"
     },
     "ModuleNotFoundError": {
-      "count": 4,
+      "count": 8,
       "examples": [
         {
           "project": "HydroTrack",
@@ -67,21 +87,41 @@
         {
           "project": "inventory_system",
           "error": "ModuleNotFoundError"
+        },
+        {
+          "project": "personal_finance_tracker",
+          "error": "ModuleNotFoundError"
         }
       ],
       "first_seen": "2026-06-21T21:19:46.461599",
-      "last_seen": "2026-06-22T05:41:00.673858"
+      "last_seen": "2026-06-22T11:13:08.860100"
     },
     "SQLAlchemyError": {
-      "count": 1,
+      "count": 7,
       "examples": [
         {
           "project": "HR Onboarding System",
           "error": "SQLAlchemyError"
+        },
+        {
+          "project": "restaurant_reservation_system",
+          "error": "SQLAlchemyError"
+        },
+        {
+          "project": "job_board_platform",
+          "error": "SQLAlchemyError"
+        },
+        {
+          "project": "library_system",
+          "error": "SQLAlchemyError"
+        },
+        {
+          "project": "career_connect",
+          "error": "SQLAlchemyError"
         }
       ],
       "first_seen": "2026-06-21T21:30:53.208370",
-      "last_seen": "2026-06-21T21:30:53.208395"
+      "last_seen": "2026-06-22T11:43:55.097028"
     },
     "ValidationError": {
       "count": 1,
@@ -106,17 +146,101 @@
       "last_seen": "2026-06-22T05:53:56.254146"
     },
     "ImportError": {
-      "count": 1,
+      "count": 5,
       "examples": [
         {
           "project": "inventory_system",
           "error": "ImportError"
+        },
+        {
+          "project": "bug_tracker",
+          "error": "ImportError"
+        },
+        {
+          "project": "recipe_share",
+          "error": "ImportError"
+        },
+        {
+          "project": "library_system",
+          "error": "ImportError"
+        },
+        {
+          "project": "career_connect",
+          "error": "ImportError"
         }
       ],
       "first_seen": "2026-06-22T05:55:11.076646",
-      "last_seen": "2026-06-22T05:55:11.076652"
+      "last_seen": "2026-06-22T11:25:11.338884"
+    },
+    "MonolithicSchemaError": {
+      "count": 1,
+      "examples": [
+        {
+          "project": "volunteer_management_system",
+          "error": "MonolithicSchemaError"
+        }
+      ],
+      "first_seen": "2026-06-22T07:34:30.310083",
+      "last_seen": "2026-06-22T07:34:30.310089"
+    },
+    "MissingEndpoint": {
+      "count": 6,
+      "examples": [
+        {
+          "project": "bug_tracker",
+          "error": "Missing endpoint WS /ws/issues/{issue_id}/stream (expected in app/routes/issue_routes.py)"
+        },
+        {
+          "project": "classroom_manager",
+          "error": "Missing endpoint DELETE /classes/{id} (expected in app/routes/class_routes.py)"
+        },
+        {
+          "project": "classroom_manager",
+          "error": "Missing endpoint GET /classes (expected in app/routes/class_routes.py)"
+        },
+        {
+          "project": "classroom_manager",
+          "error": "Missing endpoint POST /assignments/{id}/submissions (expected in app/routes/submission_routes.py)"
+        },
+        {
+          "project": "classroom_manager",
+          "error": "Missing endpoint POST /classes (expected in app/routes/class_routes.py)"
+        }
+      ],
+      "first_seen": "2026-06-22T07:49:29.613937",
+      "last_seen": "2026-06-22T08:18:06.744575"
+    },
+    "FastAPIError": {
+      "count": 1,
+      "examples": [
+        {
+          "project": "job_tracker_app",
+          "error": "FastAPIError"
+        }
+      ],
+      "first_seen": "2026-06-22T10:09:33.395362",
+      "last_seen": "2026-06-22T10:09:33.395375"
+    },
+    "RelationshipModelNotImported": {
+      "count": 3,
+      "examples": [
+        {
+          "project": "job_board_platform",
+          "error": "RelationshipModelNotImported"
+        },
+        {
+          "project": "job_board_platform",
+          "error": "RelationshipModelNotImported"
+        },
+        {
+          "project": "library_system",
+          "error": "RelationshipModelNotImported"
+        }
+      ],
+      "first_seen": "2026-06-22T10:44:11.605211",
+      "last_seen": "2026-06-22T11:22:25.507048"
     }
   },
-  "total_runs": 75,
-  "last_updated": "2026-06-22T05:57:27.771792"
+  "total_runs": 178,
+  "last_updated": "2026-06-22T19:43:51.449411"
 }

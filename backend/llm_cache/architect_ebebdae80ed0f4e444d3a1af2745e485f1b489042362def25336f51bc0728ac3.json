@@ -1,0 +1,370 @@
+{
+  "api_endpoints": [
+    {
+      "method": "POST",
+      "path": "/auth/register",
+      "description": "Create a new user account and return JWT token.",
+      "file": "app/routes/auth_routes.py"
+    },
+    {
+      "method": "POST",
+      "path": "/auth/login",
+      "description": "Authenticate user credentials and return JWT token.",
+      "file": "app/routes/auth_routes.py"
+    },
+    {
+      "method": "GET",
+      "path": "/users/me",
+      "description": "Retrieve profile of the authenticated user.",
+      "file": "app/routes/user_routes.py"
+    },
+    {
+      "method": "GET",
+      "path": "/providers",
+      "description": "List all service providers (read\u2011only).",
+      "file": "app/routes/provider_routes.py"
+    },
+    {
+      "method": "GET",
+      "path": "/subscriptions",
+      "description": "Paginated list of user's subscriptions with optional search by service name or provider.",
+      "file": "app/routes/subscription_routes.py"
+    },
+    {
+      "method": "POST",
+      "path": "/subscriptions",
+      "description": "Create a new subscription for the authenticated user.",
+      "file": "app/routes/subscription_routes.py"
+    },
+    {
+      "method": "GET",
+      "path": "/subscriptions/{id}",
+      "description": "Get details of a specific subscription belonging to the user.",
+      "file": "app/routes/subscription_routes.py"
+    },
+    {
+      "method": "PUT",
+      "path": "/subscriptions/{id}",
+      "description": "Update an existing subscription owned by the user.",
+      "file": "app/routes/subscription_routes.py"
+    },
+    {
+      "method": "DELETE",
+      "path": "/subscriptions/{id}",
+      "description": "Delete a subscription and all its future billing events.",
+      "file": "app/routes/subscription_routes.py"
+    },
+    {
+      "method": "GET",
+      "path": "/billing-events",
+      "description": "Retrieve billing events for the user's subscriptions within a date range (used for calendar view).",
+      "file": "app/routes/billingevent_routes.py"
+    },
+    {
+      "method": "GET",
+      "path": "/notifications",
+      "description": "Paginated list of user's notifications with optional search by message content.",
+      "file": "app/routes/notification_routes.py"
+    },
+    {
+      "method": "POST",
+      "path": "/notifications/{id}/dismiss",
+      "description": "Mark a notification as dismissed; persists dismissed state.",
+      "file": "app/routes/notification_routes.py"
+    },
+    {
+      "method": "GET",
+      "path": "/analytics/spending",
+      "description": "Return total spend for a given month with breakdown by provider and category.",
+      "file": "app/routes/analytics_routes.py"
+    },
+    {
+      "method": "POST",
+      "path": "/subscriptions/import",
+      "description": "Upload a CSV file (\u22645\u202fMB) to bulk import subscriptions; returns import report.",
+      "file": "app/routes/subscription_routes.py"
+    },
+    {
+      "method": "GET",
+      "path": "/subscriptions/export",
+      "description": "Download a CSV containing the user's subscriptions, respecting current filters.",
+      "file": "app/routes/subscription_routes.py"
+    }
+  ],
+  "database_schema": [
+    {
+      "table_name": "users",
+      "columns": [
+        {
+          "name": "id",
+          "type": "INTEGER",
+          "is_primary_key": true,
+          "is_nullable": false
+        },
+        {
+          "name": "email",
+          "type": "VARCHAR(255)",
+          "is_primary_key": false,
+          "is_nullable": false
+        },
+        {
+          "name": "hashed_password",
+          "type": "VARCHAR(255)",
+          "is_primary_key": false,
+          "is_nullable": false
+        },
+        {
+          "name": "created_at",
+          "type": "DATETIME",
+          "is_primary_key": false,
+          "is_nullable": false
+        }
+      ]
+    },
+    {
+      "table_name": "providers",
+      "columns": [
+        {
+          "name": "id",
+          "type": "INTEGER",
+          "is_primary_key": true,
+          "is_nullable": false
+        },
+        {
+          "name": "name",
+          "type": "VARCHAR(255)",
+          "is_primary_key": false,
+          "is_nullable": false
+        },
+        {
+          "name": "website",
+          "type": "VARCHAR(255)",
+          "is_primary_key": false,
+          "is_nullable": true
+        }
+      ]
+    },
+    {
+      "table_name": "subscriptions",
+      "columns": [
+        {
+          "name": "id",
+          "type": "INTEGER",
+          "is_primary_key": true,
+          "is_nullable": false
+        },
+        {
+          "name": "user_id",
+          "type": "INTEGER",
+          "is_primary_key": false,
+          "is_nullable": false
+        },
+        {
+          "name": "provider_id",
+          "type": "INTEGER",
+          "is_primary_key": false,
+          "is_nullable": false
+        },
+        {
+          "name": "service_name",
+          "type": "VARCHAR(255)",
+          "is_primary_key": false,
+          "is_nullable": false
+        },
+        {
+          "name": "cost",
+          "type": "FLOAT",
+          "is_primary_key": false,
+          "is_nullable": false
+        },
+        {
+          "name": "frequency",
+          "type": "VARCHAR(50)",
+          "is_primary_key": false,
+          "is_nullable": false
+        },
+        {
+          "name": "next_billing_date",
+          "type": "DATE",
+          "is_primary_key": false,
+          "is_nullable": false
+        },
+        {
+          "name": "category",
+          "type": "VARCHAR(100)",
+          "is_primary_key": false,
+          "is_nullable": true
+        },
+        {
+          "name": "notes",
+          "type": "TEXT",
+          "is_primary_key": false,
+          "is_nullable": true
+        },
+        {
+          "name": "created_at",
+          "type": "DATETIME",
+          "is_primary_key": false,
+          "is_nullable": false
+        }
+      ]
+    },
+    {
+      "table_name": "billing_events",
+      "columns": [
+        {
+          "name": "id",
+          "type": "INTEGER",
+          "is_primary_key": true,
+          "is_nullable": false
+        },
+        {
+          "name": "subscription_id",
+          "type": "INTEGER",
+          "is_primary_key": false,
+          "is_nullable": false
+        },
+        {
+          "name": "due_date",
+          "type": "DATE",
+          "is_primary_key": false,
+          "is_nullable": false
+        },
+        {
+          "name": "amount",
+          "type": "FLOAT",
+          "is_primary_key": false,
+          "is_nullable": false
+        },
+        {
+          "name": "created_at",
+          "type": "DATETIME",
+          "is_primary_key": false,
+          "is_nullable": false
+        }
+      ]
+    },
+    {
+      "table_name": "notifications",
+      "columns": [
+        {
+          "name": "id",
+          "type": "INTEGER",
+          "is_primary_key": true,
+          "is_nullable": false
+        },
+        {
+          "name": "user_id",
+          "type": "INTEGER",
+          "is_primary_key": false,
+          "is_nullable": false
+        },
+        {
+          "name": "billing_event_id",
+          "type": "INTEGER",
+          "is_primary_key": false,
+          "is_nullable": false
+        },
+        {
+          "name": "message",
+          "type": "VARCHAR(500)",
+          "is_primary_key": false,
+          "is_nullable": false
+        },
+        {
+          "name": "sent_at",
+          "type": "DATETIME",
+          "is_primary_key": false,
+          "is_nullable": false
+        },
+        {
+          "name": "is_read",
+          "type": "BOOLEAN",
+          "is_primary_key": false,
+          "is_nullable": false
+        },
+        {
+          "name": "dismissed_at",
+          "type": "DATETIME",
+          "is_primary_key": false,
+          "is_nullable": true
+        }
+      ]
+    },
+    {
+      "table_name": "settings",
+      "columns": [
+        {
+          "name": "id",
+          "type": "INTEGER",
+          "is_primary_key": true,
+          "is_nullable": false
+        },
+        {
+          "name": "user_id",
+          "type": "INTEGER",
+          "is_primary_key": false,
+          "is_nullable": false
+        },
+        {
+          "name": "key",
+          "type": "VARCHAR(100)",
+          "is_primary_key": false,
+          "is_nullable": false
+        },
+        {
+          "name": "value",
+          "type": "VARCHAR(255)",
+          "is_primary_key": false,
+          "is_nullable": false
+        },
+        {
+          "name": "created_at",
+          "type": "DATETIME",
+          "is_primary_key": false,
+          "is_nullable": false
+        }
+      ]
+    }
+  ],
+  "folder_structure": {
+    "backend": [
+      "models",
+      "schemas",
+      "routes",
+      "services",
+      "utils",
+      "dependencies",
+      "core"
+    ]
+  },
+  "frontend_structure": {
+    "pages": [
+      "Login",
+      "Dashboard",
+      "SubscriptionsList",
+      "SubscriptionForm",
+      "Calendar",
+      "Analytics",
+      "Settings",
+      "ImportExport"
+    ],
+    "components": [
+      "Header",
+      "Sidebar",
+      "SubscriptionCard",
+      "SubscriptionTable",
+      "Pagination",
+      "SearchBar",
+      "CalendarDay",
+      "NotificationToast",
+      "AnalyticsChart",
+      "FileUploader",
+      "ExportButton",
+      "Modal",
+      "FormInput",
+      "DatePicker",
+      "Select"
+    ]
+  }
+}

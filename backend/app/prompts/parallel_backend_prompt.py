@@ -46,6 +46,10 @@ RULES:
 - Add relationship() for every FK column so joinedload works
 - Do NOT define get_db or Base here — those are in app/database.py
 - No Pydantic. Only SQLAlchemy.
+- NEVER import other model classes inside this file (causes duplicate table crash).
+  Use ForeignKey('tablename.id') with string table name — no model import needed.
+- NEVER use backslash for line continuation. Use parentheses instead.
+- In the JSON "content" value, use \\n for newlines (proper JSON escaping). Never embed literal backslash-n.
 
 Return ONLY valid JSON (no markdown, no code fences):
 {{"path": "app/models/{entity_name.lower()}.py", "content": "<escaped python code>"}}"""
@@ -84,6 +88,11 @@ RULES:
 - Nullable DB columns -> Optional[Type] = None
 - Do NOT inherit from Base. No SQLAlchemy here.
 - If auth is needed, also define LoginRequest, RegisterRequest, Token in this file — NOT in a separate auth.py
+- Required string fields (name, title, email, username, etc.) in Create schemas MUST use Field(min_length=1):
+    from pydantic import BaseModel, Field
+    class {resource.title().replace('_', '')}Create(BaseModel):
+        title: str = Field(min_length=1)
+        description: str = Field(min_length=1)
 
 Return ONLY valid JSON (no markdown, no code fences):
 {{"path": "app/schemas/{resource}.py", "content": "<escaped python code>"}}"""
@@ -140,6 +149,11 @@ RULES:
 - oauth2_scheme = OAuth2PasswordBearer(tokenUrl="/auth/token") — NEVER auth2_scheme
 - Every endpoint in the list above MUST be implemented. No stubs, no `pass`.
 - Body parameters first, then Path()/Query()/Depends() parameters
+- GET list endpoints MUST include `limit: int = Query(50, ge=1, le=500), offset: int = Query(0, ge=0)`
+  and apply them: `db.query(Model).offset(offset).limit(limit).all()`
+- Every GET/PUT/DELETE by ID MUST return 404 if not found:
+  `if not obj: raise HTTPException(status_code=404, detail="Not found")`
+- Required string fields in schemas MUST use `Field(min_length=1)`
 
 Return ONLY valid JSON (no markdown, no code fences):
 {{"path": "{route_file}", "content": "<escaped python code>"}}"""
@@ -149,7 +163,9 @@ def build_main_prompt(
     route_files: list[str],
     project_name: str,
     contract: str,
+    model_files: list[str] | None = None,
 ) -> str:
+    model_files = model_files or []
     imports = "\n".join(
         f"from {f.replace('/', '.').replace('.py', '')} import "
         f"{f.split('/')[-1].replace('.py', '').replace('_routes', '')}_router"
@@ -160,6 +176,11 @@ def build_main_prompt(
         f"{f.split('/')[-1].replace('.py', '').replace('_routes', '')}_router)"
         for f in route_files
     )
+    model_imports = "\n".join(
+        f"from {f.replace('/', '.').replace('.py', '')} import *  # noqa: F401"
+        for f in model_files
+        if "__init__" not in f
+    )
 
     return f"""You are a ForgeAI Backend Engineer. Generate app/main.py for a FastAPI project.
 
@@ -169,18 +190,40 @@ PROJECT: {project_name}
 ROUTE FILES GENERATED:
 {chr(10).join('  ' + f for f in route_files)}
 
-REQUIRED IMPORTS (use exactly these):
+MODEL FILES (MUST be imported so SQLAlchemy Base.metadata sees all tables):
+{chr(10).join('  ' + f for f in model_files) or '  (none)'}
+
+REQUIRED ROUTER IMPORTS (use exactly these):
 {imports}
+
+REQUIRED MODEL IMPORTS (use exactly these — critical for FK resolution):
+{model_imports or '  # no models'}
 
 REQUIRED ROUTER REGISTRATIONS:
 {includes}
 
 RULES:
+- Import ALL models listed above — every single one (prevents NoReferencedTableError on FK relationships)
 - Import ALL routers listed above — every single one
-- Call Base.metadata.create_all(bind=engine) BEFORE including routers
-- Add CORS middleware (allow_origins=["*"] for development)
-- Include GET /health endpoint returning {{"status": "ok"}}
+- Call Base.metadata.create_all(bind=engine) AFTER model imports, BEFORE including routers
 - No extra routers. No missing routers.
+
+REQUIRED BOILERPLATE — copy this exactly, do NOT omit either block:
+
+  # CORS (required for frontend access)
+  from fastapi.middleware.cors import CORSMiddleware
+  app.add_middleware(
+      CORSMiddleware,
+      allow_origins=["*"],
+      allow_credentials=True,
+      allow_methods=["*"],
+      allow_headers=["*"],
+  )
+
+  # Health endpoint (required for deployment health checks)
+  @app.get("/health")
+  def health():
+      return {{"status": "ok"}}
 
 Return ONLY valid JSON (no markdown, no code fences):
 {{"path": "app/main.py", "content": "<escaped python code>"}}"""

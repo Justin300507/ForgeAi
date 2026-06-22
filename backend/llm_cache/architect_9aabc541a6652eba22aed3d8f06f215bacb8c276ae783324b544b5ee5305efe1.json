@@ -1,0 +1,445 @@
+{
+  "api_endpoints": [
+    {
+      "method": "POST",
+      "path": "/auth/login",
+      "description": "Authenticate user and return JWT access token.",
+      "file": "app/routes/auth_routes.py"
+    },
+    {
+      "method": "GET",
+      "path": "/users/me",
+      "description": "Retrieve the profile of the currently authenticated user.",
+      "file": "app/routes/user_routes.py"
+    },
+    {
+      "method": "GET",
+      "path": "/exercises",
+      "description": "List exercises with pagination and optional search by name or muscle group.",
+      "file": "app/routes/exercise_routes.py"
+    },
+    {
+      "method": "GET",
+      "path": "/exercises/{id}",
+      "description": "Get detailed information for a specific exercise.",
+      "file": "app/routes/exercise_routes.py"
+    },
+    {
+      "method": "POST",
+      "path": "/exercises",
+      "description": "Create a new exercise (trainer role).",
+      "file": "app/routes/exercise_routes.py"
+    },
+    {
+      "method": "GET",
+      "path": "/workouts",
+      "description": "Paginated list of the user's workouts, searchable by date or name.",
+      "file": "app/routes/workout_routes.py"
+    },
+    {
+      "method": "GET",
+      "path": "/workouts/{id}",
+      "description": "Retrieve a workout with its nested exercises and sets.",
+      "file": "app/routes/workout_routes.py"
+    },
+    {
+      "method": "POST",
+      "path": "/workouts",
+      "description": "Create a new workout including nested exercises and sets.",
+      "file": "app/routes/workout_routes.py"
+    },
+    {
+      "method": "PUT",
+      "path": "/workouts/{id}",
+      "description": "Update an existing workout and its nested data.",
+      "file": "app/routes/workout_routes.py"
+    },
+    {
+      "method": "DELETE",
+      "path": "/workouts/{id}",
+      "description": "Delete a workout owned by the user.",
+      "file": "app/routes/workout_routes.py"
+    },
+    {
+      "method": "GET",
+      "path": "/personal_records",
+      "description": "List personal records for the authenticated user.",
+      "file": "app/routes/personalrecord_routes.py"
+    },
+    {
+      "method": "POST",
+      "path": "/personal_records",
+      "description": "Create or update a personal record when a set is marked as a PR.",
+      "file": "app/routes/personalrecord_routes.py"
+    },
+    {
+      "method": "GET",
+      "path": "/templates",
+      "description": "List workout templates created by the trainer.",
+      "file": "app/routes/template_routes.py"
+    },
+    {
+      "method": "POST",
+      "path": "/templates",
+      "description": "Create a new workout template (trainer role).",
+      "file": "app/routes/template_routes.py"
+    },
+    {
+      "method": "POST",
+      "path": "/templates/{id}/assign",
+      "description": "Assign a template to a client, creating a pre\u2011filled workout for them.",
+      "file": "app/routes/template_routes.py"
+    }
+  ],
+  "database_schema": [
+    {
+      "table_name": "users",
+      "columns": [
+        {
+          "name": "id",
+          "type": "INTEGER",
+          "is_primary_key": true,
+          "is_nullable": false
+        },
+        {
+          "name": "email",
+          "type": "VARCHAR(255)",
+          "is_primary_key": false,
+          "is_nullable": false
+        },
+        {
+          "name": "hashed_password",
+          "type": "VARCHAR(255)",
+          "is_primary_key": false,
+          "is_nullable": false
+        },
+        {
+          "name": "full_name",
+          "type": "VARCHAR(255)",
+          "is_primary_key": false,
+          "is_nullable": true
+        },
+        {
+          "name": "role",
+          "type": "VARCHAR(20)",
+          "is_primary_key": false,
+          "is_nullable": false
+        },
+        {
+          "name": "profile_picture",
+          "type": "TEXT",
+          "is_primary_key": false,
+          "is_nullable": true
+        }
+      ]
+    },
+    {
+      "table_name": "exercises",
+      "columns": [
+        {
+          "name": "id",
+          "type": "INTEGER",
+          "is_primary_key": true,
+          "is_nullable": false
+        },
+        {
+          "name": "name",
+          "type": "VARCHAR(100)",
+          "is_primary_key": false,
+          "is_nullable": false
+        },
+        {
+          "name": "muscle_group",
+          "type": "VARCHAR(50)",
+          "is_primary_key": false,
+          "is_nullable": true
+        },
+        {
+          "name": "equipment",
+          "type": "VARCHAR(100)",
+          "is_primary_key": false,
+          "is_nullable": true
+        },
+        {
+          "name": "description",
+          "type": "TEXT",
+          "is_primary_key": false,
+          "is_nullable": true
+        },
+        {
+          "name": "thumbnail_url",
+          "type": "VARCHAR(255)",
+          "is_primary_key": false,
+          "is_nullable": true
+        }
+      ]
+    },
+    {
+      "table_name": "workouts",
+      "columns": [
+        {
+          "name": "id",
+          "type": "INTEGER",
+          "is_primary_key": true,
+          "is_nullable": false
+        },
+        {
+          "name": "user_id",
+          "type": "INTEGER",
+          "is_primary_key": false,
+          "is_nullable": false
+        },
+        {
+          "name": "date",
+          "type": "DATE",
+          "is_primary_key": false,
+          "is_nullable": false
+        },
+        {
+          "name": "name",
+          "type": "VARCHAR(100)",
+          "is_primary_key": false,
+          "is_nullable": true
+        },
+        {
+          "name": "notes",
+          "type": "TEXT",
+          "is_primary_key": false,
+          "is_nullable": true
+        }
+      ]
+    },
+    {
+      "table_name": "workout_exercises",
+      "columns": [
+        {
+          "name": "id",
+          "type": "INTEGER",
+          "is_primary_key": true,
+          "is_nullable": false
+        },
+        {
+          "name": "workout_id",
+          "type": "INTEGER",
+          "is_primary_key": false,
+          "is_nullable": false
+        },
+        {
+          "name": "exercise_id",
+          "type": "INTEGER",
+          "is_primary_key": false,
+          "is_nullable": false
+        },
+        {
+          "name": "order",
+          "type": "INTEGER",
+          "is_primary_key": false,
+          "is_nullable": false
+        }
+      ]
+    },
+    {
+      "table_name": "sets",
+      "columns": [
+        {
+          "name": "id",
+          "type": "INTEGER",
+          "is_primary_key": true,
+          "is_nullable": false
+        },
+        {
+          "name": "workout_exercise_id",
+          "type": "INTEGER",
+          "is_primary_key": false,
+          "is_nullable": false
+        },
+        {
+          "name": "set_number",
+          "type": "INTEGER",
+          "is_primary_key": false,
+          "is_nullable": false
+        },
+        {
+          "name": "weight",
+          "type": "FLOAT",
+          "is_primary_key": false,
+          "is_nullable": true
+        },
+        {
+          "name": "reps",
+          "type": "INTEGER",
+          "is_primary_key": false,
+          "is_nullable": true
+        },
+        {
+          "name": "notes",
+          "type": "TEXT",
+          "is_primary_key": false,
+          "is_nullable": true
+        },
+        {
+          "name": "is_pr",
+          "type": "BOOLEAN",
+          "is_primary_key": false,
+          "is_nullable": false
+        }
+      ]
+    },
+    {
+      "table_name": "personal_records",
+      "columns": [
+        {
+          "name": "id",
+          "type": "INTEGER",
+          "is_primary_key": true,
+          "is_nullable": false
+        },
+        {
+          "name": "user_id",
+          "type": "INTEGER",
+          "is_primary_key": false,
+          "is_nullable": false
+        },
+        {
+          "name": "exercise_id",
+          "type": "INTEGER",
+          "is_primary_key": false,
+          "is_nullable": false
+        },
+        {
+          "name": "weight",
+          "type": "FLOAT",
+          "is_primary_key": false,
+          "is_nullable": false
+        },
+        {
+          "name": "reps",
+          "type": "INTEGER",
+          "is_primary_key": false,
+          "is_nullable": false
+        },
+        {
+          "name": "record_date",
+          "type": "DATE",
+          "is_primary_key": false,
+          "is_nullable": false
+        }
+      ]
+    },
+    {
+      "table_name": "templates",
+      "columns": [
+        {
+          "name": "id",
+          "type": "INTEGER",
+          "is_primary_key": true,
+          "is_nullable": false
+        },
+        {
+          "name": "trainer_id",
+          "type": "INTEGER",
+          "is_primary_key": false,
+          "is_nullable": false
+        },
+        {
+          "name": "name",
+          "type": "VARCHAR(100)",
+          "is_primary_key": false,
+          "is_nullable": false
+        },
+        {
+          "name": "description",
+          "type": "TEXT",
+          "is_primary_key": false,
+          "is_nullable": true
+        }
+      ]
+    },
+    {
+      "table_name": "template_exercises",
+      "columns": [
+        {
+          "name": "id",
+          "type": "INTEGER",
+          "is_primary_key": true,
+          "is_nullable": false
+        },
+        {
+          "name": "template_id",
+          "type": "INTEGER",
+          "is_primary_key": false,
+          "is_nullable": false
+        },
+        {
+          "name": "exercise_id",
+          "type": "INTEGER",
+          "is_primary_key": false,
+          "is_nullable": false
+        },
+        {
+          "name": "order",
+          "type": "INTEGER",
+          "is_primary_key": false,
+          "is_nullable": false
+        },
+        {
+          "name": "default_sets",
+          "type": "INTEGER",
+          "is_primary_key": false,
+          "is_nullable": true
+        },
+        {
+          "name": "default_reps",
+          "type": "INTEGER",
+          "is_primary_key": false,
+          "is_nullable": true
+        },
+        {
+          "name": "default_weight",
+          "type": "FLOAT",
+          "is_primary_key": false,
+          "is_nullable": true
+        }
+      ]
+    }
+  ],
+  "folder_structure": {
+    "backend": [
+      "app/models",
+      "app/schemas",
+      "app/routes",
+      "app/services",
+      "app/utils",
+      "app/dependencies",
+      "app/config",
+      "app/main.py"
+    ]
+  },
+  "frontend_structure": {
+    "pages": [
+      "LoginPage",
+      "DashboardPage",
+      "WorkoutListPage",
+      "WorkoutDetailPage",
+      "ExerciseSearchPage",
+      "TemplateListPage"
+    ],
+    "components": [
+      "Header",
+      "WorkoutForm",
+      "ExerciseSearchBar",
+      "ExerciseCard",
+      "SetRow",
+      "PRBadge",
+      "Pagination",
+      "ProfileAvatar",
+      "TemplateCard",
+      "AssignTemplateModal",
+      "WorkoutSummary",
+      "ExerciseDetail",
+      "NotificationToast",
+      "Sidebar",
+      "Footer"
+    ]
+  }
+}

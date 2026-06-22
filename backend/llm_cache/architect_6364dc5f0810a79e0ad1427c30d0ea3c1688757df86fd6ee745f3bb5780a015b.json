@@ -1,0 +1,253 @@
+{
+  "api_endpoints": [
+    {
+      "method": "GET",
+      "path": "/classes",
+      "description": "List all classes.",
+      "file": "app/routes/class_routes.py"
+    },
+    {
+      "method": "POST",
+      "path": "/classes",
+      "description": "Create a new class.",
+      "file": "app/routes/class_routes.py"
+    },
+    {
+      "method": "GET",
+      "path": "/students",
+      "description": "List all students.",
+      "file": "app/routes/student_routes.py"
+    },
+    {
+      "method": "POST",
+      "path": "/assignments",
+      "description": "Upload an assignment.",
+      "file": "app/routes/assignment_routes.py"
+    },
+    {
+      "method": "GET",
+      "path": "/grades",
+      "description": "List all grades.",
+      "file": "app/routes/grade_routes.py"
+    },
+    {
+      "method": "POST",
+      "path": "/attendance",
+      "description": "Record attendance.",
+      "file": "app/routes/attendance_routes.py"
+    },
+    {
+      "method": "GET",
+      "path": "/notifications",
+      "description": "List all notifications.",
+      "file": "app/routes/notification_routes.py"
+    },
+    {
+      "method": "POST",
+      "path": "/reports",
+      "description": "Generate reports.",
+      "file": "app/routes/report_routes.py"
+    }
+  ],
+  "database_schema": [
+    {
+      "table_name": "Classes",
+      "columns": [
+        {
+          "name": "class_id",
+          "type": "INTEGER",
+          "is_primary_key": true,
+          "is_nullable": false
+        },
+        {
+          "name": "teacher_id",
+          "type": "INTEGER",
+          "is_primary_key": false,
+          "is_nullable": false
+        },
+        {
+          "name": "class_name",
+          "type": "TEXT",
+          "is_primary_key": false,
+          "is_nullable": false
+        }
+      ]
+    },
+    {
+      "table_name": "Students",
+      "columns": [
+        {
+          "name": "student_id",
+          "type": "INTEGER",
+          "is_primary_key": true,
+          "is_nullable": false
+        },
+        {
+          "name": "student_name",
+          "type": "TEXT",
+          "is_primary_key": false,
+          "is_nullable": false
+        }
+      ]
+    },
+    {
+      "table_name": "Assignments",
+      "columns": [
+        {
+          "name": "assignment_id",
+          "type": "INTEGER",
+          "is_primary_key": true,
+          "is_nullable": false
+        },
+        {
+          "name": "class_id",
+          "type": "INTEGER",
+          "is_primary_key": false,
+          "is_nullable": false
+        },
+        {
+          "name": "assignment_file",
+          "type": "TEXT",
+          "is_primary_key": false,
+          "is_nullable": true
+        }
+      ]
+    },
+    {
+      "table_name": "Grades",
+      "columns": [
+        {
+          "name": "grade_id",
+          "type": "INTEGER",
+          "is_primary_key": true,
+          "is_nullable": false
+        },
+        {
+          "name": "student_id",
+          "type": "INTEGER",
+          "is_primary_key": false,
+          "is_nullable": false
+        },
+        {
+          "name": "assignment_id",
+          "type": "INTEGER",
+          "is_primary_key": false,
+          "is_nullable": false
+        },
+        {
+          "name": "grade_value",
+          "type": "REAL",
+          "is_primary_key": false,
+          "is_nullable": true
+        }
+      ]
+    },
+    {
+      "table_name": "Attendance",
+      "columns": [
+        {
+          "name": "attendance_id",
+          "type": "INTEGER",
+          "is_primary_key": true,
+          "is_nullable": false
+        },
+        {
+          "name": "student_id",
+          "type": "INTEGER",
+          "is_primary_key": false,
+          "is_nullable": false
+        },
+        {
+          "name": "class_id",
+          "type": "INTEGER",
+          "is_primary_key": false,
+          "is_nullable": false
+        },
+        {
+          "name": "timestamp",
+          "type": "TEXT",
+          "is_primary_key": false,
+          "is_nullable": true
+        }
+      ]
+    },
+    {
+      "table_name": "Notifications",
+      "columns": [
+        {
+          "name": "notification_id",
+          "type": "INTEGER",
+          "is_primary_key": true,
+          "is_nullable": false
+        },
+        {
+          "name": "student_id",
+          "type": "INTEGER",
+          "is_primary_key": false,
+          "is_nullable": false
+        },
+        {
+          "name": "message",
+          "type": "TEXT",
+          "is_primary_key": false,
+          "is_nullable": true
+        }
+      ]
+    },
+    {
+      "table_name": "Reports",
+      "columns": [
+        {
+          "name": "report_id",
+          "type": "INTEGER",
+          "is_primary_key": true,
+          "is_nullable": false
+        },
+        {
+          "name": "student_id",
+          "type": "INTEGER",
+          "is_primary_key": false,
+          "is_nullable": false
+        },
+        {
+          "name": "report_data",
+          "type": "TEXT",
+          "is_primary_key": false,
+          "is_nullable": true
+        }
+      ]
+    }
+  ],
+  "folder_structure": {
+    "backend": [
+      "app/routes/class_routes.py",
+      "app/routes/student_routes.py",
+      "app/routes/assignment_routes.py",
+      "app/routes/grade_routes.py",
+      "app/routes/attendance_routes.py",
+      "app/routes/notification_routes.py",
+      "app/routes/report_routes.py"
+    ]
+  },
+  "frontend_structure": {
+    "pages": [
+      "Home",
+      "ClassList",
+      "StudentList",
+      "AssignmentUpload",
+      "GradeManagement",
+      "AttendanceRecording",
+      "NotificationView",
+      "ReportGeneration"
+    ],
+    "components": [
+      "ClassCard",
+      "StudentCard",
+      "AssignmentForm",
+      "GradeInput",
+      "AttendanceRecord",
+      "NotificationMessage",
+      "ReportGenerator"
+    ]
+  }
+}

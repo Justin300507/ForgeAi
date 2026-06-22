@@ -1,0 +1,397 @@
+{
+  "api_endpoints": [
+    {
+      "method": "POST",
+      "path": "/auth/login",
+      "description": "Authenticate user and return JWT access token",
+      "file": "app/routes/auth_routes.py"
+    },
+    {
+      "method": "GET",
+      "path": "/users",
+      "description": "List all users with pagination (admin only)",
+      "file": "app/routes/user_routes.py"
+    },
+    {
+      "method": "POST",
+      "path": "/users",
+      "description": "Create a new user account and assign role (admin)",
+      "file": "app/routes/user_routes.py"
+    },
+    {
+      "method": "PUT",
+      "path": "/users/{id}",
+      "description": "Update user details such as role or activation status (admin)",
+      "file": "app/routes/user_routes.py"
+    },
+    {
+      "method": "GET",
+      "path": "/events",
+      "description": "Retrieve paginated list of events with search and filter options",
+      "file": "app/routes/event_routes.py"
+    },
+    {
+      "method": "POST",
+      "path": "/events",
+      "description": "Create a new event with basic details (organizer)",
+      "file": "app/routes/event_routes.py"
+    },
+    {
+      "method": "PUT",
+      "path": "/events/{id}",
+      "description": "Edit event information or publish/cancel the event (organizer)",
+      "file": "app/routes/event_routes.py"
+    },
+    {
+      "method": "DELETE",
+      "path": "/events/{id}",
+      "description": "Cancel an event and cascade cancel its shifts (organizer)",
+      "file": "app/routes/event_routes.py"
+    },
+    {
+      "method": "GET",
+      "path": "/events/{event_id}/shifts",
+      "description": "List all shifts belonging to a specific event",
+      "file": "app/routes/shift_routes.py"
+    },
+    {
+      "method": "POST",
+      "path": "/events/{event_id}/shifts",
+      "description": "Create a shift template for an event (organizer)",
+      "file": "app/routes/shift_routes.py"
+    },
+    {
+      "method": "PUT",
+      "path": "/shifts/{id}",
+      "description": "Edit shift details such as time or required volunteers (organizer)",
+      "file": "app/routes/shift_routes.py"
+    },
+    {
+      "method": "POST",
+      "path": "/shifts/{shift_id}/signup",
+      "description": "Volunteer signs up for a shift; validates capacity",
+      "file": "app/routes/volunteer_shift_routes.py"
+    },
+    {
+      "method": "GET",
+      "path": "/my/shifts",
+      "description": "Retrieve upcoming shifts the logged\u2011in volunteer has signed up for",
+      "file": "app/routes/volunteer_shift_routes.py"
+    },
+    {
+      "method": "POST",
+      "path": "/volunteer_shifts/{vs_id}/hour_logs",
+      "description": "Log actual hours worked for a signed\u2011up shift with validation",
+      "file": "app/routes/hour_log_routes.py"
+    },
+    {
+      "method": "GET",
+      "path": "/reports/event_hours",
+      "description": "Generate CSV report of total volunteer hours for a given event and date range",
+      "file": "app/routes/report_routes.py"
+    }
+  ],
+  "database_schema": [
+    {
+      "table_name": "users",
+      "columns": [
+        {
+          "name": "id",
+          "type": "INTEGER",
+          "is_primary_key": true,
+          "is_nullable": false
+        },
+        {
+          "name": "email",
+          "type": "VARCHAR(255)",
+          "is_primary_key": false,
+          "is_nullable": false
+        },
+        {
+          "name": "hashed_password",
+          "type": "VARCHAR(255)",
+          "is_primary_key": false,
+          "is_nullable": false
+        },
+        {
+          "name": "role",
+          "type": "VARCHAR(20)",
+          "is_primary_key": false,
+          "is_nullable": false
+        },
+        {
+          "name": "is_active",
+          "type": "BOOLEAN",
+          "is_primary_key": false,
+          "is_nullable": false
+        }
+      ]
+    },
+    {
+      "table_name": "events",
+      "columns": [
+        {
+          "name": "id",
+          "type": "INTEGER",
+          "is_primary_key": true,
+          "is_nullable": false
+        },
+        {
+          "name": "title",
+          "type": "VARCHAR(200)",
+          "is_primary_key": false,
+          "is_nullable": false
+        },
+        {
+          "name": "description",
+          "type": "TEXT",
+          "is_primary_key": false,
+          "is_nullable": false
+        },
+        {
+          "name": "start_date",
+          "type": "DATE",
+          "is_primary_key": false,
+          "is_nullable": false
+        },
+        {
+          "name": "end_date",
+          "type": "DATE",
+          "is_primary_key": false,
+          "is_nullable": false
+        },
+        {
+          "name": "location",
+          "type": "VARCHAR(200)",
+          "is_primary_key": false,
+          "is_nullable": false
+        },
+        {
+          "name": "image_url",
+          "type": "VARCHAR(500)",
+          "is_primary_key": false,
+          "is_nullable": true
+        },
+        {
+          "name": "created_by",
+          "type": "INTEGER",
+          "is_primary_key": false,
+          "is_nullable": false
+        },
+        {
+          "name": "status",
+          "type": "VARCHAR(20)",
+          "is_primary_key": false,
+          "is_nullable": false
+        }
+      ]
+    },
+    {
+      "table_name": "shifts",
+      "columns": [
+        {
+          "name": "id",
+          "type": "INTEGER",
+          "is_primary_key": true,
+          "is_nullable": false
+        },
+        {
+          "name": "event_id",
+          "type": "INTEGER",
+          "is_primary_key": false,
+          "is_nullable": false
+        },
+        {
+          "name": "date",
+          "type": "DATE",
+          "is_primary_key": false,
+          "is_nullable": false
+        },
+        {
+          "name": "start_time",
+          "type": "TIME",
+          "is_primary_key": false,
+          "is_nullable": false
+        },
+        {
+          "name": "end_time",
+          "type": "TIME",
+          "is_primary_key": false,
+          "is_nullable": false
+        },
+        {
+          "name": "required_volunteers",
+          "type": "INTEGER",
+          "is_primary_key": false,
+          "is_nullable": false
+        },
+        {
+          "name": "status",
+          "type": "VARCHAR(20)",
+          "is_primary_key": false,
+          "is_nullable": false
+        }
+      ]
+    },
+    {
+      "table_name": "volunteer_shifts",
+      "columns": [
+        {
+          "name": "id",
+          "type": "INTEGER",
+          "is_primary_key": true,
+          "is_nullable": false
+        },
+        {
+          "name": "user_id",
+          "type": "INTEGER",
+          "is_primary_key": false,
+          "is_nullable": false
+        },
+        {
+          "name": "shift_id",
+          "type": "INTEGER",
+          "is_primary_key": false,
+          "is_nullable": false
+        },
+        {
+          "name": "signup_timestamp",
+          "type": "DATETIME",
+          "is_primary_key": false,
+          "is_nullable": false
+        },
+        {
+          "name": "status",
+          "type": "VARCHAR(20)",
+          "is_primary_key": false,
+          "is_nullable": false
+        }
+      ]
+    },
+    {
+      "table_name": "hour_logs",
+      "columns": [
+        {
+          "name": "id",
+          "type": "INTEGER",
+          "is_primary_key": true,
+          "is_nullable": false
+        },
+        {
+          "name": "volunteer_shift_id",
+          "type": "INTEGER",
+          "is_primary_key": false,
+          "is_nullable": false
+        },
+        {
+          "name": "actual_start",
+          "type": "DATETIME",
+          "is_primary_key": false,
+          "is_nullable": false
+        },
+        {
+          "name": "actual_end",
+          "type": "DATETIME",
+          "is_primary_key": false,
+          "is_nullable": false
+        },
+        {
+          "name": "notes",
+          "type": "TEXT",
+          "is_primary_key": false,
+          "is_nullable": true
+        },
+        {
+          "name": "approved",
+          "type": "BOOLEAN",
+          "is_primary_key": false,
+          "is_nullable": false
+        }
+      ]
+    },
+    {
+      "table_name": "notifications",
+      "columns": [
+        {
+          "name": "id",
+          "type": "INTEGER",
+          "is_primary_key": true,
+          "is_nullable": false
+        },
+        {
+          "name": "user_id",
+          "type": "INTEGER",
+          "is_primary_key": false,
+          "is_nullable": false
+        },
+        {
+          "name": "type",
+          "type": "VARCHAR(50)",
+          "is_primary_key": false,
+          "is_nullable": false
+        },
+        {
+          "name": "message",
+          "type": "TEXT",
+          "is_primary_key": false,
+          "is_nullable": false
+        },
+        {
+          "name": "created_at",
+          "type": "DATETIME",
+          "is_primary_key": false,
+          "is_nullable": false
+        },
+        {
+          "name": "read",
+          "type": "BOOLEAN",
+          "is_primary_key": false,
+          "is_nullable": false
+        }
+      ]
+    }
+  ],
+  "folder_structure": {
+    "backend": [
+      "app",
+      "app/models",
+      "app/schemas",
+      "app/routes",
+      "app/services",
+      "app/utils",
+      "app/dependencies",
+      "app/config",
+      "app/main.py"
+    ]
+  },
+  "frontend_structure": {
+    "pages": [
+      "HomePage",
+      "EventDetailPage",
+      "OrganizerEventFormPage",
+      "MyShiftsPage",
+      "HourLogFormPage",
+      "AdminUserManagementPage",
+      "ReportPage",
+      "NotificationCenterPage",
+      "LoginPage"
+    ],
+    "components": [
+      "Navbar",
+      "EventCard",
+      "ShiftCard",
+      "SignUpModal",
+      "HourLogModal",
+      "Pagination",
+      "SearchBar",
+      "RoleSelect",
+      "NotificationItem",
+      "RealTimeToast",
+      "FileUpload",
+      "DateRangePicker",
+      "ShiftStatusBadge",
+      "UserAvatar",
+      "LoadingSpinner"
+    ]
+  }
+}

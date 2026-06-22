@@ -1,0 +1,34 @@
+{
+  "run_id": "v7_20260622_154629_657bdd4e",
+  "timestamp": "2026-06-22T15:47:12",
+  "version": "v7",
+  "idea": "A job board platform with job listings, applications, employers, and candidate profiles",
+  "project_name": "job_board_platform",
+  "provider": "auto",
+  "plan": {},
+  "architecture": {
+    "endpoint_count": 0,
+    "endpoints": [],
+    "db_schema_keys": []
+  },
+  "validation_errors": [
+    "Duplicate class definition: 'LoginRequest' is defined in multiple files (app/routes/job_routes.py, app/schemas/admin.py, app/schemas/application.py, app/schemas/auth.py, app/schemas/candidate.py, app/schemas/employer.py, app/schemas/job.py) — this creates incompatible duplicate types",
+    "Duplicate class definition: 'RegisterRequest' is defined in multiple files (app/routes/job_routes.py, app/schemas/admin.py, app/schemas/application.py, app/schemas/auth.py, app/schemas/candidate.py, app/schemas/employer.py, app/schemas/job.py) — this creates incompatible duplicate types",
+    "Duplicate class definition: 'Token' is defined in multiple files (app/routes/job_routes.py, app/schemas/admin.py, app/schemas/application.py, app/schemas/auth.py, app/schemas/candidate.py, app/schemas/employer.py, app/schemas/job.py) — this creates incompatible duplicate types"
+  ],
+  "runtime_error": null,
+  "runtime_error_type": null,
+  "fixes_applied": [],
+  "score": 74,
+  "grade": "C",
+  "runtime_passed": false,
+  "frontend_passed": false,
+  "generation_time": 42.35,
+  "security_score": null,
+  "performance_score": null,
+  "maintainability_score": null,
+  "qa_score": null,
+  "v6_score": 61,
+  "prompt_version": "default",
+  "active_rules": []
+}

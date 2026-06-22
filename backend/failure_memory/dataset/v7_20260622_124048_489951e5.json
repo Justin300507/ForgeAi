@@ -1,0 +1,30 @@
+{
+  "run_id": "v7_20260622_124048_489951e5",
+  "timestamp": "2026-06-22T12:41:32",
+  "version": "v7",
+  "idea": "A book club app with reading lists, reviews, discussions, and member progress",
+  "project_name": "book_club_app",
+  "provider": "auto",
+  "plan": {},
+  "architecture": {
+    "endpoint_count": 0,
+    "endpoints": [],
+    "db_schema_keys": []
+  },
+  "validation_errors": [],
+  "runtime_error": null,
+  "runtime_error_type": null,
+  "fixes_applied": [],
+  "score": 100,
+  "grade": "A",
+  "runtime_passed": true,
+  "frontend_passed": false,
+  "generation_time": 43.64,
+  "security_score": 70,
+  "performance_score": 55,
+  "maintainability_score": 75,
+  "qa_score": 25,
+  "v6_score": 68,
+  "prompt_version": "default",
+  "active_rules": []
+}

@@ -1,0 +1,391 @@
+{
+  "api_endpoints": [
+    {
+      "method": "POST",
+      "path": "/auth/register",
+      "description": "Register a new user with email, password and role",
+      "file": "app/routes/auth_routes.py"
+    },
+    {
+      "method": "POST",
+      "path": "/auth/login",
+      "description": "Authenticate user and return JWT access token",
+      "file": "app/routes/auth_routes.py"
+    },
+    {
+      "method": "GET",
+      "path": "/users/me",
+      "description": "Get profile of the currently authenticated user",
+      "file": "app/routes/user_routes.py"
+    },
+    {
+      "method": "GET",
+      "path": "/instruments",
+      "description": "List instruments of the logged\u2011in musician with pagination and optional search",
+      "file": "app/routes/instrument_routes.py"
+    },
+    {
+      "method": "POST",
+      "path": "/instruments",
+      "description": "Create a new instrument for the logged\u2011in musician",
+      "file": "app/routes/instrument_routes.py"
+    },
+    {
+      "method": "PUT",
+      "path": "/instruments/{id}",
+      "description": "Update name, type or description of an existing instrument",
+      "file": "app/routes/instrument_routes.py"
+    },
+    {
+      "method": "DELETE",
+      "path": "/instruments/{id}",
+      "description": "Delete an instrument owned by the logged\u2011in musician",
+      "file": "app/routes/instrument_routes.py"
+    },
+    {
+      "method": "GET",
+      "path": "/sessions",
+      "description": "Retrieve paginated list of practice sessions for the user, filterable by instrument or date",
+      "file": "app/routes/session_routes.py"
+    },
+    {
+      "method": "POST",
+      "path": "/sessions",
+      "description": "Log a new practice session, optionally uploading an audio file",
+      "file": "app/routes/session_routes.py"
+    },
+    {
+      "method": "GET",
+      "path": "/sessions/{id}",
+      "description": "Get detailed information of a single practice session, including audio playback URL",
+      "file": "app/routes/session_routes.py"
+    },
+    {
+      "method": "GET",
+      "path": "/goals",
+      "description": "List practice goals for the user with current progress percentages",
+      "file": "app/routes/goal_routes.py"
+    },
+    {
+      "method": "POST",
+      "path": "/goals",
+      "description": "Create a weekly or monthly practice goal for a specific instrument",
+      "file": "app/routes/goal_routes.py"
+    },
+    {
+      "method": "POST",
+      "path": "/sessions/{session_id}/comments",
+      "description": "Teacher adds a comment to a student's practice session",
+      "file": "app/routes/comment_routes.py"
+    },
+    {
+      "method": "GET",
+      "path": "/teacher/students",
+      "description": "Teacher retrieves list of assigned students with their latest session dates",
+      "file": "app/routes/teacher_routes.py"
+    },
+    {
+      "method": "GET",
+      "path": "/reports/student/{student_id}/pdf",
+      "description": "Generate and download a PDF report of a student's monthly practice activity",
+      "file": "app/routes/report_routes.py"
+    }
+  ],
+  "database_schema": [
+    {
+      "table_name": "user",
+      "columns": [
+        {
+          "name": "id",
+          "type": "INTEGER",
+          "is_primary_key": true,
+          "is_nullable": false
+        },
+        {
+          "name": "email",
+          "type": "VARCHAR(255)",
+          "is_primary_key": false,
+          "is_nullable": false
+        },
+        {
+          "name": "hashed_password",
+          "type": "VARCHAR(255)",
+          "is_primary_key": false,
+          "is_nullable": false
+        },
+        {
+          "name": "role",
+          "type": "VARCHAR(20)",
+          "is_primary_key": false,
+          "is_nullable": false
+        },
+        {
+          "name": "created_at",
+          "type": "DATETIME",
+          "is_primary_key": false,
+          "is_nullable": false
+        }
+      ]
+    },
+    {
+      "table_name": "instrument",
+      "columns": [
+        {
+          "name": "id",
+          "type": "INTEGER",
+          "is_primary_key": true,
+          "is_nullable": false
+        },
+        {
+          "name": "user_id",
+          "type": "INTEGER",
+          "is_primary_key": false,
+          "is_nullable": false
+        },
+        {
+          "name": "name",
+          "type": "VARCHAR(100)",
+          "is_primary_key": false,
+          "is_nullable": false
+        },
+        {
+          "name": "type",
+          "type": "VARCHAR(50)",
+          "is_primary_key": false,
+          "is_nullable": false
+        },
+        {
+          "name": "description",
+          "type": "TEXT",
+          "is_primary_key": false,
+          "is_nullable": true
+        },
+        {
+          "name": "created_at",
+          "type": "DATETIME",
+          "is_primary_key": false,
+          "is_nullable": false
+        }
+      ]
+    },
+    {
+      "table_name": "practice_session",
+      "columns": [
+        {
+          "name": "id",
+          "type": "INTEGER",
+          "is_primary_key": true,
+          "is_nullable": false
+        },
+        {
+          "name": "user_id",
+          "type": "INTEGER",
+          "is_primary_key": false,
+          "is_nullable": false
+        },
+        {
+          "name": "instrument_id",
+          "type": "INTEGER",
+          "is_primary_key": false,
+          "is_nullable": false
+        },
+        {
+          "name": "date",
+          "type": "DATE",
+          "is_primary_key": false,
+          "is_nullable": false
+        },
+        {
+          "name": "duration_minutes",
+          "type": "INTEGER",
+          "is_primary_key": false,
+          "is_nullable": false
+        },
+        {
+          "name": "repertoire",
+          "type": "VARCHAR(200)",
+          "is_primary_key": false,
+          "is_nullable": true
+        },
+        {
+          "name": "notes",
+          "type": "TEXT",
+          "is_primary_key": false,
+          "is_nullable": true
+        },
+        {
+          "name": "audio_file_path",
+          "type": "VARCHAR(255)",
+          "is_primary_key": false,
+          "is_nullable": true
+        },
+        {
+          "name": "created_at",
+          "type": "DATETIME",
+          "is_primary_key": false,
+          "is_nullable": false
+        }
+      ]
+    },
+    {
+      "table_name": "goal",
+      "columns": [
+        {
+          "name": "id",
+          "type": "INTEGER",
+          "is_primary_key": true,
+          "is_nullable": false
+        },
+        {
+          "name": "user_id",
+          "type": "INTEGER",
+          "is_primary_key": false,
+          "is_nullable": false
+        },
+        {
+          "name": "instrument_id",
+          "type": "INTEGER",
+          "is_primary_key": false,
+          "is_nullable": false
+        },
+        {
+          "name": "target_minutes",
+          "type": "INTEGER",
+          "is_primary_key": false,
+          "is_nullable": false
+        },
+        {
+          "name": "period_start",
+          "type": "DATE",
+          "is_primary_key": false,
+          "is_nullable": false
+        },
+        {
+          "name": "period_end",
+          "type": "DATE",
+          "is_primary_key": false,
+          "is_nullable": false
+        },
+        {
+          "name": "type",
+          "type": "VARCHAR(20)",
+          "is_primary_key": false,
+          "is_nullable": false
+        },
+        {
+          "name": "created_at",
+          "type": "DATETIME",
+          "is_primary_key": false,
+          "is_nullable": false
+        }
+      ]
+    },
+    {
+      "table_name": "session_comment",
+      "columns": [
+        {
+          "name": "id",
+          "type": "INTEGER",
+          "is_primary_key": true,
+          "is_nullable": false
+        },
+        {
+          "name": "session_id",
+          "type": "INTEGER",
+          "is_primary_key": false,
+          "is_nullable": false
+        },
+        {
+          "name": "teacher_id",
+          "type": "INTEGER",
+          "is_primary_key": false,
+          "is_nullable": false
+        },
+        {
+          "name": "comment_text",
+          "type": "TEXT",
+          "is_primary_key": false,
+          "is_nullable": false
+        },
+        {
+          "name": "created_at",
+          "type": "DATETIME",
+          "is_primary_key": false,
+          "is_nullable": false
+        }
+      ]
+    },
+    {
+      "table_name": "teacher_student_link",
+      "columns": [
+        {
+          "name": "id",
+          "type": "INTEGER",
+          "is_primary_key": true,
+          "is_nullable": false
+        },
+        {
+          "name": "teacher_id",
+          "type": "INTEGER",
+          "is_primary_key": false,
+          "is_nullable": false
+        },
+        {
+          "name": "student_id",
+          "type": "INTEGER",
+          "is_primary_key": false,
+          "is_nullable": false
+        },
+        {
+          "name": "created_at",
+          "type": "DATETIME",
+          "is_primary_key": false,
+          "is_nullable": false
+        }
+      ]
+    }
+  ],
+  "folder_structure": {
+    "backend": [
+      "app/models",
+      "app/schemas",
+      "app/routes",
+      "app/services",
+      "app/utils",
+      "app/dependencies",
+      "app/config"
+    ]
+  },
+  "frontend_structure": {
+    "pages": [
+      "LoginPage",
+      "RegisterPage",
+      "DashboardPage",
+      "InstrumentsPage",
+      "InstrumentFormPage",
+      "SessionsPage",
+      "SessionFormPage",
+      "GoalsPage",
+      "GoalFormPage",
+      "StudentListPage",
+      "ReportPage"
+    ],
+    "components": [
+      "Header",
+      "Footer",
+      "InstrumentCard",
+      "SessionCard",
+      "GoalCard",
+      "AudioPlayer",
+      "CommentForm",
+      "Pagination",
+      "SearchBar",
+      "ProgressChart",
+      "Modal",
+      "LoadingSpinner",
+      "FormInput",
+      "FileUploader",
+      "Sidebar"
+    ]
+  }
+}

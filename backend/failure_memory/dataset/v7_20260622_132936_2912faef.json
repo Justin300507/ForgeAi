@@ -1,0 +1,35 @@
+{
+  "run_id": "v7_20260622_132936_2912faef",
+  "timestamp": "2026-06-22T13:30:18",
+  "version": "v7",
+  "idea": "A event ticketing system with events, tickets, venues, attendees, and seat selection",
+  "project_name": "event_ticketing_system",
+  "provider": "auto",
+  "plan": {},
+  "architecture": {
+    "endpoint_count": 0,
+    "endpoints": [],
+    "db_schema_keys": []
+  },
+  "validation_errors": [
+    "Duplicate class definition: 'Venue' is defined in multiple files (app/models/venue.py, app/schemas/venue.py) — this creates incompatible duplicate types",
+    "Duplicate class definition: 'LoginRequest' is defined in multiple files (app/schemas/auth.py, app/schemas/dashboard.py, app/schemas/event.py, app/schemas/payment.py, app/schemas/user.py, app/schemas/venue.py) — this creates incompatible duplicate types",
+    "Duplicate class definition: 'RegisterRequest' is defined in multiple files (app/schemas/auth.py, app/schemas/dashboard.py, app/schemas/event.py, app/schemas/payment.py, app/schemas/user.py, app/schemas/venue.py) — this creates incompatible duplicate types",
+    "Duplicate class definition: 'Token' is defined in multiple files (app/schemas/auth.py, app/schemas/dashboard.py, app/schemas/event.py, app/schemas/payment.py, app/schemas/user.py, app/schemas/venue.py) — this creates incompatible duplicate types"
+  ],
+  "runtime_error": null,
+  "runtime_error_type": null,
+  "fixes_applied": [],
+  "score": 72,
+  "grade": "C",
+  "runtime_passed": false,
+  "frontend_passed": false,
+  "generation_time": 42.49,
+  "security_score": null,
+  "performance_score": null,
+  "maintainability_score": null,
+  "qa_score": null,
+  "v6_score": 61,
+  "prompt_version": "default",
+  "active_rules": []
+}

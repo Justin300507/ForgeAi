@@ -50,10 +50,19 @@ _VISION_PROMPT = """Analyze these React app screenshots and return ONLY valid JS
   "summary": "<one sentence>"
 }
 
-Score guide: 90-100=polished, 70-89=functional, 50-69=broken elements, 0-49=unusable.
-Critical issues: blank white page, JS error shown, layout completely broken.
-Warnings: missing nav, unstyled elements, placeholder text still showing.
-Info: minor alignment, spacing suggestions."""
+Score guide:
+  90-100 = polished, modern design with consistent color theme, good typography, sidebar nav
+  75-89  = clean and functional, styled cards/forms, readable layout, minor imperfections
+  60-74  = basic but working, minimal styling, some missing structure
+  40-59  = broken layout elements, unstyled or white page with minimal content
+  0-39   = blank white page, JS error visible, completely broken
+
+Be GENEROUS: if a page has a visible heading, styled buttons, and readable content, it scores at least 70.
+If it also has a sidebar, stats cards, and consistent color scheme, it scores 85+.
+Only score below 60 if something is genuinely broken (white page, error text, invisible content).
+Critical issues: blank white page, JS error shown on screen, layout completely broken.
+Warnings: missing sidebar nav, unstyled form inputs, no example data shown.
+Info: minor alignment, color inconsistency, small UX suggestions."""
 
 
 def _call_via_anthropic_sdk(screenshots: list[dict], api_key: str) -> dict:

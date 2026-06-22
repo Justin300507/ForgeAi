@@ -26,13 +26,15 @@ def _fix_jsx_brace_errors(content: str) -> str:
 def generate_frontend(
     architecture,
     provider="auto",
-    max_tokens=24000
+    max_tokens=24000,
+    frontend_target: str = "web",
+    idea: str = "",
 ):
     try:
 
         print("\n=== START FRONTEND ===")
 
-        prompt = build_frontend_prompt(architecture)
+        prompt = build_frontend_prompt(architecture, target=frontend_target, idea=idea)
 
         data = None
         for attempt in range(3):
@@ -117,7 +119,7 @@ def generate_frontend(
                 print(f"Skipping frontend file with invalid (non-ASCII) path: {path}")
                 continue
 
-            if not path.endswith(".jsx"):
+            if not path.endswith((".jsx", ".js", ".css")):
                 print(f"Skipping frontend file with invalid extension: {path}")
                 continue
 

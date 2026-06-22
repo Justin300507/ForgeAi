@@ -1,0 +1,32 @@
+{
+  "run_id": "v7_20260623_011226_cae0523d",
+  "timestamp": "2026-06-23T01:13:12",
+  "version": "v7",
+  "idea": "Gym Progress Tracker PWA: log workouts, track sets/reps/weight per exercise, personal records, weekly progress charts, rest timer, and daily workout reminders. User login with JWT.",
+  "project_name": "gym_progress_tracker",
+  "provider": "auto",
+  "plan": {},
+  "architecture": {
+    "endpoint_count": 0,
+    "endpoints": [],
+    "db_schema_keys": []
+  },
+  "validation_errors": [
+    "Missing frontend import target: ../utils/notifications"
+  ],
+  "runtime_error": null,
+  "runtime_error_type": null,
+  "fixes_applied": [],
+  "score": 74,
+  "grade": "C",
+  "runtime_passed": false,
+  "frontend_passed": false,
+  "generation_time": 45.68,
+  "security_score": null,
+  "performance_score": null,
+  "maintainability_score": null,
+  "qa_score": null,
+  "v6_score": 61,
+  "prompt_version": "default",
+  "active_rules": []
+}

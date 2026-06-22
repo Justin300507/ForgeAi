@@ -321,6 +321,17 @@ def validate_frontend_imports(project_path, errors):
                         )
                     )
 
+                elif imp.endswith(".js"):
+
+                    possible_paths.append(
+                        os.path.normpath(
+                            os.path.join(
+                                root,
+                                imp
+                            )
+                        )
+                    )
+
                 else:
 
                     possible_paths.append(
@@ -331,9 +342,17 @@ def validate_frontend_imports(project_path, errors):
                             )
                         )
                     )
+                    possible_paths.append(
+                        os.path.normpath(
+                            os.path.join(
+                                root,
+                                imp + ".js"
+                            )
+                        )
+                    )
 
                 filename = os.path.basename(
-                    imp.replace(".jsx", "")
+                    imp.replace(".jsx", "").replace(".js", "")
                 )
 
                 possible_paths.append(
@@ -359,6 +378,17 @@ def validate_frontend_imports(project_path, errors):
                         "index.jsx"
                     )
                 )
+
+                # Check src/utils/ — JS utilities provided by templates
+                possible_paths.append(
+                    os.path.join(src_path, "utils", f"{filename}.js")
+                )
+                possible_paths.append(
+                    os.path.join(src_path, "utils", f"{filename}.jsx")
+                )
+                # Check src-root for files generated at the top level
+                possible_paths.append(os.path.join(src_path, f"{filename}.jsx"))
+                possible_paths.append(os.path.join(src_path, f"{filename}.js"))
 
                 exists = any(
                     os.path.exists(path)
@@ -517,6 +547,44 @@ def validate_requirements(
         )
 
 
+def validate_common_antipatterns(project_path, errors):
+    """Catch LLM anti-patterns that validators miss but always crash at runtime."""
+    routes_dir = os.path.join(project_path, "app", "routes")
+    if not os.path.isdir(routes_dir):
+        return
+
+    for fname in os.listdir(routes_dir):
+        if not fname.endswith(".py"):
+            continue
+        fpath = os.path.join(routes_dir, fname)
+        try:
+            content = open(fpath, encoding="utf-8").read()
+        except Exception:
+            continue
+
+        rel_path = rel(project_path, fpath)
+
+        # auth2_scheme typo — crashes FastAPI at startup
+        if "auth2_scheme" in content and "oauth2_scheme" not in content:
+            errors.append(
+                f"Typo 'auth2_scheme' in {rel_path} — must be 'oauth2_scheme'. "
+                "Define: oauth2_scheme = OAuth2PasswordBearer(tokenUrl='/auth/token')"
+            )
+
+        # werkzeug import — Flask lib, not installed
+        if "from werkzeug" in content or "import werkzeug" in content:
+            errors.append(
+                f"werkzeug imported in {rel_path} — Flask library, not available. "
+                "Use passlib: from passlib.context import CryptContext"
+            )
+
+        # orm_mode — Pydantic v1 deprecated in v2
+        if "orm_mode = True" in content:
+            errors.append(
+                f"orm_mode=True in {rel_path} — use from_attributes=True (Pydantic v2)"
+            )
+
+
 def validate_project(project_path):
 
     errors = []
@@ -642,6 +710,10 @@ def validate_project(project_path):
         errors
     )
     validate_requirements(
+        project_path,
+        errors
+    )
+    validate_common_antipatterns(
         project_path,
         errors
     )

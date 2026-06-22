@@ -1,0 +1,302 @@
+{
+  "api_endpoints": [
+    {
+      "method": "POST",
+      "path": "/auth/signup",
+      "description": "Register a new user and send verification email",
+      "file": "app/routes/auth_routes.py"
+    },
+    {
+      "method": "POST",
+      "path": "/auth/login",
+      "description": "Authenticate user and return JWT token",
+      "file": "app/routes/auth_routes.py"
+    },
+    {
+      "method": "POST",
+      "path": "/auth/password-reset",
+      "description": "Request password reset email",
+      "file": "app/routes/auth_routes.py"
+    },
+    {
+      "method": "GET",
+      "path": "/auth/me",
+      "description": "Get profile of the authenticated user",
+      "file": "app/routes/auth_routes.py"
+    },
+    {
+      "method": "GET",
+      "path": "/categories",
+      "description": "List all categories (default and user\u2011created)",
+      "file": "app/routes/category_routes.py"
+    },
+    {
+      "method": "POST",
+      "path": "/categories",
+      "description": "Create a custom category for the authenticated user",
+      "file": "app/routes/category_routes.py"
+    },
+    {
+      "method": "POST",
+      "path": "/expenses",
+      "description": "Create a new expense record",
+      "file": "app/routes/expense_routes.py"
+    },
+    {
+      "method": "GET",
+      "path": "/expenses",
+      "description": "Get paginated list of expenses with optional month, category_id, and full\u2011text search (q) filters",
+      "file": "app/routes/expense_routes.py"
+    },
+    {
+      "method": "GET",
+      "path": "/expenses/{id}",
+      "description": "Retrieve a single expense by its ID",
+      "file": "app/routes/expense_routes.py"
+    },
+    {
+      "method": "PUT",
+      "path": "/expenses/{id}",
+      "description": "Update an existing expense record",
+      "file": "app/routes/expense_routes.py"
+    },
+    {
+      "method": "DELETE",
+      "path": "/expenses/{id}",
+      "description": "Delete an expense record",
+      "file": "app/routes/expense_routes.py"
+    },
+    {
+      "method": "GET",
+      "path": "/expenses/export",
+      "description": "Export expenses for a date range to CSV",
+      "file": "app/routes/expense_routes.py"
+    },
+    {
+      "method": "POST",
+      "path": "/budgets",
+      "description": "Create or update a monthly budget limit for a category",
+      "file": "app/routes/budget_routes.py"
+    },
+    {
+      "method": "GET",
+      "path": "/budgets",
+      "description": "List all budgets for the authenticated user",
+      "file": "app/routes/budget_routes.py"
+    },
+    {
+      "method": "GET",
+      "path": "/reports/trends",
+      "description": "Return aggregated monthly totals per category for a date range",
+      "file": "app/routes/report_routes.py"
+    }
+  ],
+  "database_schema": [
+    {
+      "table_name": "users",
+      "columns": [
+        {
+          "name": "id",
+          "type": "Integer",
+          "is_primary_key": true,
+          "is_nullable": false
+        },
+        {
+          "name": "email",
+          "type": "String",
+          "is_primary_key": false,
+          "is_nullable": false
+        },
+        {
+          "name": "hashed_password",
+          "type": "String",
+          "is_primary_key": false,
+          "is_nullable": false
+        },
+        {
+          "name": "created_at",
+          "type": "DateTime",
+          "is_primary_key": false,
+          "is_nullable": false
+        },
+        {
+          "name": "is_active",
+          "type": "Boolean",
+          "is_primary_key": false,
+          "is_nullable": false
+        }
+      ]
+    },
+    {
+      "table_name": "categories",
+      "columns": [
+        {
+          "name": "id",
+          "type": "Integer",
+          "is_primary_key": true,
+          "is_nullable": false
+        },
+        {
+          "name": "name",
+          "type": "String",
+          "is_primary_key": false,
+          "is_nullable": false
+        },
+        {
+          "name": "is_default",
+          "type": "Boolean",
+          "is_primary_key": false,
+          "is_nullable": false
+        },
+        {
+          "name": "user_id",
+          "type": "Integer",
+          "is_primary_key": false,
+          "is_nullable": true
+        },
+        {
+          "name": "created_at",
+          "type": "DateTime",
+          "is_primary_key": false,
+          "is_nullable": false
+        }
+      ]
+    },
+    {
+      "table_name": "expenses",
+      "columns": [
+        {
+          "name": "id",
+          "type": "Integer",
+          "is_primary_key": true,
+          "is_nullable": false
+        },
+        {
+          "name": "user_id",
+          "type": "Integer",
+          "is_primary_key": false,
+          "is_nullable": false
+        },
+        {
+          "name": "category_id",
+          "type": "Integer",
+          "is_primary_key": false,
+          "is_nullable": false
+        },
+        {
+          "name": "amount",
+          "type": "Numeric(10,2)",
+          "is_primary_key": false,
+          "is_nullable": false
+        },
+        {
+          "name": "date",
+          "type": "Date",
+          "is_primary_key": false,
+          "is_nullable": false
+        },
+        {
+          "name": "notes",
+          "type": "Text",
+          "is_primary_key": false,
+          "is_nullable": true
+        },
+        {
+          "name": "created_at",
+          "type": "DateTime",
+          "is_primary_key": false,
+          "is_nullable": false
+        }
+      ]
+    },
+    {
+      "table_name": "budgets",
+      "columns": [
+        {
+          "name": "id",
+          "type": "Integer",
+          "is_primary_key": true,
+          "is_nullable": false
+        },
+        {
+          "name": "user_id",
+          "type": "Integer",
+          "is_primary_key": false,
+          "is_nullable": false
+        },
+        {
+          "name": "category_id",
+          "type": "Integer",
+          "is_primary_key": false,
+          "is_nullable": false
+        },
+        {
+          "name": "month",
+          "type": "String",
+          "is_primary_key": false,
+          "is_nullable": false
+        },
+        {
+          "name": "limit_amount",
+          "type": "Numeric(10,2)",
+          "is_primary_key": false,
+          "is_nullable": false
+        },
+        {
+          "name": "status",
+          "type": "String",
+          "is_primary_key": false,
+          "is_nullable": false
+        },
+        {
+          "name": "created_at",
+          "type": "DateTime",
+          "is_primary_key": false,
+          "is_nullable": false
+        }
+      ]
+    }
+  ],
+  "folder_structure": {
+    "backend": [
+      "app",
+      "app/models",
+      "app/schemas",
+      "app/routes",
+      "app/services",
+      "app/utils",
+      "app/dependencies",
+      "app/config",
+      "app/main.py"
+    ]
+  },
+  "frontend_structure": {
+    "pages": [
+      "LoginPage",
+      "SignupPage",
+      "DashboardPage",
+      "ExpensesPage",
+      "CategoriesPage",
+      "BudgetsPage",
+      "ReportsPage",
+      "ExportPage"
+    ],
+    "components": [
+      "Header",
+      "Sidebar",
+      "ExpenseForm",
+      "ExpenseList",
+      "CategoryForm",
+      "BudgetForm",
+      "TrendChart",
+      "Pagination",
+      "SearchBar",
+      "CSVDownloadButton",
+      "AlertToast",
+      "ProfileCard",
+      "Modal",
+      "LoadingSpinner",
+      "ErrorBoundary"
+    ]
+  }
+}

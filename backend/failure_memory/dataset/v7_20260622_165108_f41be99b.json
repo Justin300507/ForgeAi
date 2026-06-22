@@ -1,0 +1,30 @@
+{
+  "run_id": "v7_20260622_165108_f41be99b",
+  "timestamp": "2026-06-22T16:52:25",
+  "version": "v7",
+  "idea": "A book library system with books, authors, members, borrowings, and reservations",
+  "project_name": "library_system",
+  "provider": "auto",
+  "plan": {},
+  "architecture": {
+    "endpoint_count": 0,
+    "endpoints": [],
+    "db_schema_keys": []
+  },
+  "validation_errors": [],
+  "runtime_error": null,
+  "runtime_error_type": "RelationshipModelNotImported",
+  "fixes_applied": [],
+  "score": 80,
+  "grade": "B",
+  "runtime_passed": false,
+  "frontend_passed": false,
+  "generation_time": 76.97,
+  "security_score": null,
+  "performance_score": null,
+  "maintainability_score": null,
+  "qa_score": null,
+  "v6_score": 61,
+  "prompt_version": "default",
+  "active_rules": []
+}

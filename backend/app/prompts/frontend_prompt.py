@@ -1,167 +1,327 @@
 import json
 
+from app.prompts.design_system import build_design_system_injection
 
-def build_frontend_prompt(architecture):
 
-    return f"""
-You are ForgeAI Frontend Generator. Generate a high-quality, visually real React frontend.
+def build_frontend_prompt(architecture, target: str = "web", idea: str = ""):
+    # Extract idea from architecture if not passed directly
+    if not idea:
+        idea = (
+            architecture.get("project_name", "")
+            + " "
+            + " ".join(architecture.get("features", []))
+        )
+    design_system = build_design_system_injection(idea)
+
+    pwa_note = (
+        "\n\nPWA TARGET — apply ALL of these:"
+        "\n• Import and render <InstallPrompt /> in App.jsx (provided at src/components/InstallPrompt.jsx — do NOT re-generate it)"
+        "\n• Import notification utilities where relevant:"
+        "\n    import { requestNotificationPermission, scheduleDaily, alertBudgetExceeded, alertWorkoutReminder } from '../utils/notifications';"
+        "\n• On the Settings or Dashboard page, add a 'Enable Notifications' button:"
+        "\n    <button onClick={async () => { const r = await requestNotificationPermission(); setNotifStatus(r); }} ...>"
+        "\n• Wire budget/workout/task alerts to the appropriate actions (e.g. when adding an expense that exceeds budget, call alertBudgetExceeded)"
+        "\n• The notifications.js utility is already provided — do NOT re-generate it"
+        if target == "pwa" else ""
+    )
+
+    return f"""You are ForgeAI Frontend Generator v2. Generate a modern, polished React + Tailwind CSS frontend.
 
 Architecture:
-
 {json.dumps(architecture, indent=2)}
+{pwa_note}
+{design_system}
 
-Return ONLY valid JSON.
+Return ONLY valid JSON in this exact format:
+{{"files": [{{"path": "src/App.jsx", "content": "..."}}, ...]}}
 
-Format:
+═══════════════════════════════════════════════════════
+STACK  (mandatory — no exceptions)
+═══════════════════════════════════════════════════════
 
-{{
-  "files": [
-    {{
-      "path": "",
-      "content": ""
-    }}
-  ]
-}}
+✅ Tailwind CSS utility classes for ALL styling
+✅ lucide-react for ALL icons
+✅ recharts for ALL charts/graphs (dashboard only)
+✅ react-router-dom for routing
+✅ React.useState / React.useEffect for state
+✅ axios for API calls (import axios from 'axios')
+❌ NO inline style={{}} objects (only Tailwind classes)
+❌ NO @mui, @chakra-ui, antd, or other component libraries
+❌ NO external CSS files except src/index.css (already provided)
+❌ NO TypeScript
 
-========================================
+═══════════════════════════════════════════════════════
 FILE RULES
-========================================
+═══════════════════════════════════════════════════════
 
-- Generate every page and every component listed in frontend_structure
-- Maximum 25 files total
-- Generate only:
-  - src/App.jsx
-  - src/pages/*.jsx
-  - src/components/*.jsx
-- NEVER import a page or component you did not also generate in this same response.
-  If you must cut scope, remove the import AND the JSX usage together.
-- Every path must: start with src/, use forward slashes, contain only ASCII, end with .jsx
+- Generate: src/App.jsx + src/pages/*.jsx + src/components/*.jsx
+- Maximum 20 files total
+- Every path: starts with src/, forward slashes, ASCII only, ends with .jsx
+- Never import a file you did not also generate in this same response
+- Every component: export default ComponentName (no named exports)
+- src/index.css and src/main.jsx are already provided — DO NOT regenerate them
 
-VALID:   src/App.jsx  |  src/pages/Login.jsx  |  src/components/Header.jsx
-INVALID: src\\pages\\Login.jsx  |  src/pages/Login.js  |  src/pages/Login.tsx
+═══════════════════════════════════════════════════════
+DESIGN SYSTEM  (use these patterns exactly)
+═══════════════════════════════════════════════════════
 
-If frontend_structure.components is empty:
-- Do NOT create standalone reusable components
-- Pages render their own JSX directly
+COLOR PALETTE (Tailwind classes):
+  Backgrounds:  bg-slate-50  dark:bg-slate-900
+  Surfaces:     bg-white  dark:bg-slate-800
+  Borders:      border-slate-100  dark:border-slate-700
+  Text primary: text-slate-900  dark:text-slate-100
+  Text muted:   text-slate-500  dark:text-slate-400
+  Accent:       bg-indigo-600 hover:bg-indigo-700  text-indigo-600
 
-========================================
-UI QUALITY RULES — MANDATORY
-========================================
+SIDEBAR LAYOUT (use for ALL authenticated pages):
+```jsx
+<div className="flex min-h-screen bg-slate-50 dark:bg-slate-900">
+  {{/* Sidebar */}}
+  <aside className="w-56 bg-white dark:bg-slate-800 border-r border-slate-100 dark:border-slate-700 flex flex-col px-3 py-4 fixed h-full">
+    <div className="flex items-center gap-2 px-2 mb-6">
+      <div className="w-7 h-7 rounded-lg bg-indigo-600 flex items-center justify-center">
+        <span className="text-white text-sm font-bold">A</span>
+      </div>
+      <span className="font-bold text-slate-900 dark:text-white text-sm">AppName</span>
+    </div>
+    <nav className="flex-1 space-y-0.5">
+      <NavLink to="/dashboard" ... />
+    </nav>
+  </aside>
+  {{/* Main */}}
+  <main className="ml-56 flex-1 p-6 overflow-auto">
+    ...page content...
+  </main>
+</div>
+```
 
-Every generated component MUST look real and functional. No skeleton components.
-No placeholder text. No empty divs.
+NAV LINK PATTERN:
+```jsx
+import {{ NavLink }} from 'react-router-dom';
+<NavLink to="/path"
+  className={{({{isActive}}) =>
+    `flex items-center gap-2.5 px-3 py-2 rounded-lg text-sm font-medium transition-colors ${{
+      isActive
+        ? 'bg-indigo-50 dark:bg-indigo-900/40 text-indigo-700 dark:text-indigo-300'
+        : 'text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-700'
+    }}`
+  }}
+>
+  <Icon size={{16}} /> Label
+</NavLink>
+```
 
-Use inline styles for all visual design. No external CSS files. No Tailwind classes.
+STAT CARD:
+```jsx
+<div className="bg-white dark:bg-slate-800 rounded-xl p-5 border border-slate-100 dark:border-slate-700 shadow-sm">
+  <p className="text-xs font-medium text-slate-500 dark:text-slate-400 uppercase tracking-wide">Total Expenses</p>
+  <p className="text-2xl font-bold text-slate-900 dark:text-white mt-1">$1,240</p>
+  <p className="text-xs text-emerald-600 mt-1 flex items-center gap-1">
+    <TrendingUp size={{12}} /> +8.2% vs last month
+  </p>
+</div>
+```
 
-CONTAINER PATTERN — use this wrapper on every page:
-  <div style={{{{margin:"0 auto",maxWidth:"900px",padding:"2rem",fontFamily:"sans-serif"}}}}>
+LIST ITEM CARD:
+```jsx
+<div className="bg-white dark:bg-slate-800 rounded-xl border border-slate-100 dark:border-slate-700 p-4 flex items-center justify-between hover:shadow-sm transition-shadow">
+  <div className="flex items-center gap-3">
+    <div className="w-9 h-9 rounded-lg bg-indigo-50 dark:bg-indigo-900/30 flex items-center justify-center">
+      <ShoppingCart className="text-indigo-600" size={{18}} />
+    </div>
+    <div>
+      <p className="text-sm font-semibold text-slate-900 dark:text-white">Grocery Run</p>
+      <p className="text-xs text-slate-500 dark:text-slate-400">Food · Jun 22</p>
+    </div>
+  </div>
+  <span className="text-sm font-bold text-red-500">-$47.80</span>
+</div>
+```
 
-LOGIN PAGE — MUST contain ALL of these:
-  - <h1> or <h2> with the app name or "Sign In"
-  - <input type="email" placeholder="Email" .../>
-  - <input type="password" placeholder="Password" .../>
-  - <button> with "Login" or "Sign In" text
-  - All inputs must have value/onChange wired to useState
+PRIMARY BUTTON:
+```jsx
+<button className="btn-primary flex items-center gap-1.5">
+  <Plus size={{16}} /> Add Item
+</button>
+```
 
-REGISTER PAGE — MUST contain ALL of these:
-  - <h1> or <h2> with "Create Account" or "Sign Up"
-  - <input> for name/username
-  - <input type="email"> for email
-  - <input type="password"> for password
-  - <button> with "Register" or "Create Account" text
-  - All inputs must have value/onChange wired to useState
+FORM INPUT:
+```jsx
+<div className="space-y-1">
+  <label className="text-xs font-medium text-slate-700 dark:text-slate-300">Email</label>
+  <input
+    type="email"
+    value={{email}}
+    onChange={{e => setEmail(e.target.value)}}
+    placeholder="you@example.com"
+    className="input"
+  />
+</div>
+```
 
-DASHBOARD / HOME PAGE — MUST contain ALL of these:
-  - A visible heading (h1 or h2) describing what the page shows
-  - At least one interactive element (button, form, or clickable card)
-  - A content area with real placeholder data (at least 2-3 items/cards)
-  - Navigation links or a header bar
+BADGE:
+```jsx
+<span className="badge bg-emerald-50 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-400">Active</span>
+<span className="badge bg-amber-50 text-amber-700 dark:bg-amber-900/30 dark:text-amber-400">Pending</span>
+<span className="badge bg-red-50 text-red-700 dark:bg-red-900/30 dark:text-red-400">Overdue</span>
+```
 
-LIST / INDEX PAGES (TaskList, NoteList, etc.) — MUST contain:
-  - A heading
-  - A "New [Resource]" or "Add [Resource]" button
-  - At least 2 hardcoded example items rendered in a card or list style
-    (use useState with an initial array — do not leave the list empty)
+═══════════════════════════════════════════════════════
+PAGE REQUIREMENTS
+═══════════════════════════════════════════════════════
 
-FORM PAGES (Create, Edit) — MUST contain:
-  - A heading
-  - All relevant <input> or <textarea> fields for that resource
-  - A submit <button>
-  - All inputs wired to useState
+LOGIN PAGE (no sidebar — centered card):
+```jsx
+<div className="min-h-screen bg-slate-50 dark:bg-slate-900 flex items-center justify-center p-4">
+  <div className="w-full max-w-sm">
+    <div className="text-center mb-8">
+      <div className="w-12 h-12 rounded-2xl bg-indigo-600 mx-auto mb-3 flex items-center justify-center">
+        <span className="text-white font-bold text-xl">A</span>
+      </div>
+      <h1 className="text-2xl font-bold text-slate-900 dark:text-white">Welcome back</h1>
+      <p className="text-slate-500 dark:text-slate-400 text-sm mt-1">Sign in to your account</p>
+    </div>
+    <div className="bg-white dark:bg-slate-800 rounded-2xl shadow-sm border border-slate-100 dark:border-slate-700 p-6 space-y-4">
+      {{/* email input, password input, submit button */}}
+      <button type="submit" className="btn-primary w-full justify-center">Sign In</button>
+    </div>
+    <p className="text-center text-sm text-slate-500 mt-4">
+      Don't have an account? <Link to="/register" className="text-indigo-600 font-medium hover:underline">Sign up</Link>
+    </p>
+  </div>
+</div>
+```
 
-CARD STYLE for list items (use this or similar):
-  <div style={{{{border:"1px solid #ddd",borderRadius:"8px",padding:"1rem",marginBottom:"1rem",background:"#fff"}}}}>
+DASHBOARD PAGE — MUST include ALL of:
+  1. Page header with greeting + current date
+  2. Stats grid (4 cards) — grid-cols-1 sm:grid-cols-2 lg:grid-cols-4
+  3. Recharts chart (BarChart or AreaChart) in a card below stats
+  4. Recent items list (last 5 entries)
 
-BUTTON STYLE (use this or similar):
-  <button style={{{{background:"#4f46e5",color:"#fff",border:"none",borderRadius:"6px",padding:"0.5rem 1.2rem",cursor:"pointer"}}}}>
+RECHARTS EXAMPLE (area chart):
+```jsx
+import {{ AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer }} from 'recharts';
 
-HEADER / NAV pattern:
-  <nav style={{{{background:"#1e1b4b",color:"#fff",padding:"1rem 2rem",display:"flex",justifyContent:"space-between",alignItems:"center"}}}}>
+const data = [
+  {{ month: 'Jan', total: 840 }},
+  {{ month: 'Feb', total: 720 }},
+  {{ month: 'Mar', total: 1100 }},
+  {{ month: 'Apr', total: 890 }},
+  {{ month: 'May', total: 1240 }},
+  {{ month: 'Jun', total: 980 }},
+];
 
-========================================
+<div className="bg-white dark:bg-slate-800 rounded-xl border border-slate-100 dark:border-slate-700 p-5">
+  <h3 className="font-semibold text-slate-900 dark:text-white mb-4">Monthly Overview</h3>
+  <ResponsiveContainer width="100%" height={{240}}>
+    <AreaChart data={{data}}>
+      <defs>
+        <linearGradient id="colorTotal" x1="0" y1="0" x2="0" y2="1">
+          <stop offset="5%" stopColor="#6366f1" stopOpacity={{0.15}} />
+          <stop offset="95%" stopColor="#6366f1" stopOpacity={{0}} />
+        </linearGradient>
+      </defs>
+      <CartesianGrid strokeDasharray="3 3" stroke="#e2e8f0" />
+      <XAxis dataKey="month" tick={{{{ fontSize: 12, fill: '#94a3b8' }}}} axisLine={{false}} tickLine={{false}} />
+      <YAxis tick={{{{ fontSize: 12, fill: '#94a3b8' }}}} axisLine={{false}} tickLine={{false}} />
+      <Tooltip contentStyle={{{{ background: '#1e293b', border: 'none', borderRadius: '8px', color: '#f1f5f9' }}}} />
+      <Area type="monotone" dataKey="total" stroke="#6366f1" strokeWidth={{2}} fill="url(#colorTotal)" />
+    </AreaChart>
+  </ResponsiveContainer>
+</div>
+```
+
+LIST / INDEX PAGES — MUST contain:
+  - Page header with title + "Add X" button (flex justify-between items-center)
+  - Search/filter bar (optional but recommended)
+  - At least 3 pre-populated example items using useState initial array
+  - Empty state component if list is empty (icon + message)
+
+FORM PAGES — MUST contain:
+  - Page header with back button
+  - All fields with labels above inputs
+  - Submit + Cancel buttons at bottom
+
+═══════════════════════════════════════════════════════
+LUCIDE-REACT ICON GUIDE
+═══════════════════════════════════════════════════════
+
+Import only what you use:
+  import {{ LayoutDashboard, Plus, Search, Trash2, Pencil, ChevronRight,
+           TrendingUp, TrendingDown, DollarSign, Users, Package,
+           ShoppingCart, Calendar, Bell, Settings, LogOut, X,
+           CheckCircle, AlertCircle, Clock, BarChart2 }} from 'lucide-react';
+
+Use as JSX: <LayoutDashboard size={{18}} className="text-indigo-600" />
+Default size: 16 for nav, 18 for list icons, 20 for page headings
+
+═══════════════════════════════════════════════════════
+DARK MODE
+═══════════════════════════════════════════════════════
+
+Add a dark mode toggle button somewhere (header or settings page):
+```jsx
+const [dark, setDark] = React.useState(false);
+React.useEffect(() => {{
+  document.documentElement.classList.toggle('dark', dark);
+}}, [dark]);
+
+<button onClick={{() => setDark(d => !d)}} className="p-2 rounded-lg text-slate-500 hover:bg-slate-100 dark:hover:bg-slate-700 transition-colors">
+  {{dark ? <Sun size={{18}} /> : <Moon size={{18}} />}}
+</button>
+```
+
+═══════════════════════════════════════════════════════
+API INTEGRATION
+═══════════════════════════════════════════════════════
+
+Use axios with the backend base URL:
+```jsx
+import axios from 'axios';
+const API = axios.create({{ baseURL: 'http://localhost:8000' }});
+
+// With auth token:
+API.interceptors.request.use(cfg => {{
+  const token = localStorage.getItem('token');
+  if (token) cfg.headers.Authorization = `Bearer ${{token}}`;
+  return cfg;
+}});
+```
+
+For auth pages: save token to localStorage after login:
+```jsx
+const res = await API.post('/auth/login', {{ email, password }});
+localStorage.setItem('token', res.data.access_token);
+navigate('/dashboard');
+```
+
+═══════════════════════════════════════════════════════
 CODE RULES
-========================================
+═══════════════════════════════════════════════════════
 
-- Use React.useState for local state in every interactive component
-- Use arrow functions: const MyComponent = () => {{ ... }}
-- Keep file length reasonable: aim for 40-120 lines per file
-- No external libraries except React and react-router-dom
-- No comments
-- Import React at the top of every file: import React, {{ useState }} from 'react';
-- Use Link from react-router-dom for navigation between pages
+- Arrow function components only: const Page = () => {{ ... }}; export default Page;
+- useState for all form state and list data
+- useEffect with empty deps [] to fetch data on mount
+- Try/catch around all axios calls
+- No comments in code
+- 50-150 lines per file max
+- No TypeScript, no PropTypes
 
-========================================
-IMPORT RULES
-========================================
+═══════════════════════════════════════════════════════
+JSON OUTPUT RULES  (CRITICAL)
+═══════════════════════════════════════════════════════
 
-- Import only generated files
-- Every imported page must exist in this response
-- Every imported component must exist in this response
-- Every page and component MUST use: export default ComponentName
-- Import default exports WITHOUT curly braces:
-  Valid:   import LoginPage from './pages/Login';
-  Invalid: import {{ LoginPage }} from './pages/Login';
-- NEVER mix named-import syntax with a default export
-
-========================================
-APP.JSX RULES
-========================================
-
-- App.jsx MUST be generated
-- Use BrowserRouter + Routes + Route from react-router-dom
-- Wire every generated page to a route path
-- Include a basic nav or redirect from "/" to the most logical landing page
-
-========================================
-JSON ESCAPE RULES
-========================================
-
-- Every file's content is a JSON string value
-- Escape newlines as \\n
-- Escape double quotes as \\"
+- Escape newlines as \\n inside JSON string values
+- Escape double-quotes inside JSX as \\" (use single quotes where possible)
 - Escape backslashes as \\\\
-- Only escape these characters: \\" \\\\ \\n \\t \\r
-- NEVER put a backslash before any other character
-- Do not output a raw, literal line break inside a JSON string
-
-========================================
-RELIABILITY RULES
-========================================
-
-- Prioritize valid JSON above all else
-- If you must choose between feature richness and JSON validity, choose validity
-- Test every import: if the target file is not in your response, remove the import
-- Test every string: ensure every " inside JSX content is escaped as \\"
+- NEVER put a raw literal newline inside a JSON string value
+- Return ONLY the JSON object — no markdown, no backticks, no explanation
 
 Before returning:
-
-1. Verify all imports reference files you generated in this response.
-2. Verify all paths are valid (src/*.jsx format).
-3. Verify every import matches its target's export style (default vs named).
-4. Verify JSON is valid — no raw newlines in string values.
-5. Verify every Login/Register page has real input fields.
-6. Verify every list page has at least 2 example items.
-7. Verify every page has a visible heading.
-
-Return JSON only.
+1. Verify every import references a file you generated (or react/axios/lucide-react/recharts/react-router-dom)
+2. Verify every file ends with: export default ComponentName
+3. Verify JSON is syntactically valid
+4. Verify Login/Register pages have real wired inputs
+5. Verify Dashboard has stat cards + a recharts chart
+6. Verify list pages have at least 3 example items
 """

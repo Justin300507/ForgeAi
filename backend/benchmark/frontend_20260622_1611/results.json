@@ -1,0 +1,45 @@
+{
+  "timestamp": "20260622_1611",
+  "provider": "auto",
+  "summary": {
+    "avg_vision": null,
+    "avg_forge": 77.5,
+    "builds_passed": 2,
+    "runtime_passed": 0,
+    "goal_met": false
+  },
+  "apps": [
+    {
+      "idx": 1,
+      "idea": "A job board platform with job listings, applications, employers, and candidate profiles",
+      "project_name": "job_board_platform",
+      "project_path": "C:\\Users\\jerry\\onedrive\\Desktop\\forgeai\\generated_projects\\job_board_platform",
+      "forge_score": 80,
+      "vision_score": null,
+      "build_passed": true,
+      "playwright_passed": true,
+      "runtime_passed": false,
+      "validation_passed": true,
+      "vision_issues": [],
+      "error": null,
+      "elapsed": 160.9,
+      "screenshot_count": 2
+    },
+    {
+      "idx": 2,
+      "idea": "A book library system with books, authors, members, borrowings, and reservations",
+      "project_name": "library_system",
+      "project_path": "C:\\Users\\jerry\\onedrive\\Desktop\\forgeai\\generated_projects\\library_system",
+      "forge_score": 75,
+      "vision_score": null,
+      "build_passed": true,
+      "playwright_passed": false,
+      "runtime_passed": false,
+      "validation_passed": true,
+      "vision_issues": [],
+      "error": null,
+      "elapsed": 147.8,
+      "screenshot_count": 2
+    }
+  ]
+}

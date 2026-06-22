@@ -1,0 +1,30 @@
+{
+  "run_id": "v7_20260622_171417_6fbbf513",
+  "timestamp": "2026-06-22T17:14:41",
+  "version": "v7",
+  "idea": "A book library system with books, authors, members, borrowings, and reservations",
+  "project_name": "library_system",
+  "provider": "auto",
+  "plan": {},
+  "architecture": {
+    "endpoint_count": 0,
+    "endpoints": [],
+    "db_schema_keys": []
+  },
+  "validation_errors": [],
+  "runtime_error": null,
+  "runtime_error_type": null,
+  "fixes_applied": [],
+  "score": 100,
+  "grade": "A",
+  "runtime_passed": true,
+  "frontend_passed": false,
+  "generation_time": 24.31,
+  "security_score": null,
+  "performance_score": null,
+  "maintainability_score": null,
+  "qa_score": null,
+  "v6_score": 79,
+  "prompt_version": "default",
+  "active_rules": []
+}

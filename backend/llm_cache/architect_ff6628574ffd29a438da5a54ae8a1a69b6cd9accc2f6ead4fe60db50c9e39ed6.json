@@ -1,0 +1,380 @@
+{
+  "api_endpoints": [
+    {
+      "method": "POST",
+      "path": "/auth/register",
+      "description": "Register a new user (driver or operator)",
+      "file": "app/routes/auth_routes.py"
+    },
+    {
+      "method": "POST",
+      "path": "/auth/login",
+      "description": "Authenticate user and return JWT",
+      "file": "app/routes/auth_routes.py"
+    },
+    {
+      "method": "GET",
+      "path": "/auth/me",
+      "description": "Get current authenticated user profile",
+      "file": "app/routes/auth_routes.py"
+    },
+    {
+      "method": "GET",
+      "path": "/parking_lots",
+      "description": "List all parking lots with pagination",
+      "file": "app/routes/parkinglot_routes.py"
+    },
+    {
+      "method": "POST",
+      "path": "/parking_lots",
+      "description": "Create a new parking lot (operator only)",
+      "file": "app/routes/parkinglot_routes.py"
+    },
+    {
+      "method": "GET",
+      "path": "/spots",
+      "description": "Search spots by location, price range, and type; supports pagination",
+      "file": "app/routes/spot_routes.py"
+    },
+    {
+      "method": "POST",
+      "path": "/spots",
+      "description": "Create a new spot within a parking lot (operator only)",
+      "file": "app/routes/spot_routes.py"
+    },
+    {
+      "method": "PUT",
+      "path": "/spots/{id}",
+      "description": "Update spot attributes or status (operator only)",
+      "file": "app/routes/spot_routes.py"
+    },
+    {
+      "method": "POST",
+      "path": "/reservations",
+      "description": "Create a reservation for a spot with conflict detection",
+      "file": "app/routes/reservation_routes.py"
+    },
+    {
+      "method": "GET",
+      "path": "/reservations",
+      "description": "List reservations for the authenticated driver (pagination)",
+      "file": "app/routes/reservation_routes.py"
+    },
+    {
+      "method": "GET",
+      "path": "/reservations/{id}",
+      "description": "Get details of a specific reservation",
+      "file": "app/routes/reservation_routes.py"
+    },
+    {
+      "method": "POST",
+      "path": "/payments",
+      "description": "Process payment for a reservation via mock Stripe endpoint",
+      "file": "app/routes/payment_routes.py"
+    },
+    {
+      "method": "GET",
+      "path": "/payments/{id}",
+      "description": "Retrieve payment receipt and status",
+      "file": "app/routes/payment_routes.py"
+    },
+    {
+      "method": "POST",
+      "path": "/images",
+      "description": "Upload PNG/JPEG image for a parking lot layout (operator only)",
+      "file": "app/routes/image_routes.py"
+    },
+    {
+      "method": "GET",
+      "path": "/dashboard/overview",
+      "description": "Get occupancy and revenue summary for the current hour",
+      "file": "app/routes/dashboard_routes.py"
+    }
+  ],
+  "database_schema": [
+    {
+      "table_name": "users",
+      "columns": [
+        {
+          "name": "id",
+          "type": "INTEGER",
+          "is_primary_key": true,
+          "is_nullable": false
+        },
+        {
+          "name": "email",
+          "type": "VARCHAR(255)",
+          "is_primary_key": false,
+          "is_nullable": false
+        },
+        {
+          "name": "hashed_password",
+          "type": "VARCHAR(255)",
+          "is_primary_key": false,
+          "is_nullable": false
+        },
+        {
+          "name": "role",
+          "type": "VARCHAR(20)",
+          "is_primary_key": false,
+          "is_nullable": false
+        },
+        {
+          "name": "created_at",
+          "type": "DATETIME",
+          "is_primary_key": false,
+          "is_nullable": false
+        }
+      ]
+    },
+    {
+      "table_name": "parking_lots",
+      "columns": [
+        {
+          "name": "id",
+          "type": "INTEGER",
+          "is_primary_key": true,
+          "is_nullable": false
+        },
+        {
+          "name": "name",
+          "type": "VARCHAR(255)",
+          "is_primary_key": false,
+          "is_nullable": false
+        },
+        {
+          "name": "address",
+          "type": "VARCHAR(255)",
+          "is_primary_key": false,
+          "is_nullable": false
+        },
+        {
+          "name": "latitude",
+          "type": "FLOAT",
+          "is_primary_key": false,
+          "is_nullable": false
+        },
+        {
+          "name": "longitude",
+          "type": "FLOAT",
+          "is_primary_key": false,
+          "is_nullable": false
+        },
+        {
+          "name": "created_at",
+          "type": "DATETIME",
+          "is_primary_key": false,
+          "is_nullable": false
+        }
+      ]
+    },
+    {
+      "table_name": "spots",
+      "columns": [
+        {
+          "name": "id",
+          "type": "INTEGER",
+          "is_primary_key": true,
+          "is_nullable": false
+        },
+        {
+          "name": "lot_id",
+          "type": "INTEGER",
+          "is_primary_key": false,
+          "is_nullable": false
+        },
+        {
+          "name": "spot_number",
+          "type": "VARCHAR(20)",
+          "is_primary_key": false,
+          "is_nullable": false
+        },
+        {
+          "name": "type",
+          "type": "VARCHAR(20)",
+          "is_primary_key": false,
+          "is_nullable": false
+        },
+        {
+          "name": "price_per_hour",
+          "type": "INTEGER",
+          "is_primary_key": false,
+          "is_nullable": false
+        },
+        {
+          "name": "status",
+          "type": "VARCHAR(20)",
+          "is_primary_key": false,
+          "is_nullable": false
+        },
+        {
+          "name": "created_at",
+          "type": "DATETIME",
+          "is_primary_key": false,
+          "is_nullable": false
+        }
+      ]
+    },
+    {
+      "table_name": "reservations",
+      "columns": [
+        {
+          "name": "id",
+          "type": "INTEGER",
+          "is_primary_key": true,
+          "is_nullable": false
+        },
+        {
+          "name": "user_id",
+          "type": "INTEGER",
+          "is_primary_key": false,
+          "is_nullable": false
+        },
+        {
+          "name": "spot_id",
+          "type": "INTEGER",
+          "is_primary_key": false,
+          "is_nullable": false
+        },
+        {
+          "name": "start_time",
+          "type": "DATETIME",
+          "is_primary_key": false,
+          "is_nullable": false
+        },
+        {
+          "name": "end_time",
+          "type": "DATETIME",
+          "is_primary_key": false,
+          "is_nullable": false
+        },
+        {
+          "name": "status",
+          "type": "VARCHAR(20)",
+          "is_primary_key": false,
+          "is_nullable": false
+        },
+        {
+          "name": "created_at",
+          "type": "DATETIME",
+          "is_primary_key": false,
+          "is_nullable": false
+        }
+      ]
+    },
+    {
+      "table_name": "payments",
+      "columns": [
+        {
+          "name": "id",
+          "type": "INTEGER",
+          "is_primary_key": true,
+          "is_nullable": false
+        },
+        {
+          "name": "reservation_id",
+          "type": "INTEGER",
+          "is_primary_key": false,
+          "is_nullable": false
+        },
+        {
+          "name": "amount_cents",
+          "type": "INTEGER",
+          "is_primary_key": false,
+          "is_nullable": false
+        },
+        {
+          "name": "currency",
+          "type": "VARCHAR(10)",
+          "is_primary_key": false,
+          "is_nullable": false
+        },
+        {
+          "name": "status",
+          "type": "VARCHAR(20)",
+          "is_primary_key": false,
+          "is_nullable": false
+        },
+        {
+          "name": "created_at",
+          "type": "DATETIME",
+          "is_primary_key": false,
+          "is_nullable": false
+        }
+      ]
+    },
+    {
+      "table_name": "images",
+      "columns": [
+        {
+          "name": "id",
+          "type": "INTEGER",
+          "is_primary_key": true,
+          "is_nullable": false
+        },
+        {
+          "name": "lot_id",
+          "type": "INTEGER",
+          "is_primary_key": false,
+          "is_nullable": false
+        },
+        {
+          "name": "url",
+          "type": "VARCHAR(255)",
+          "is_primary_key": false,
+          "is_nullable": false
+        },
+        {
+          "name": "uploaded_at",
+          "type": "DATETIME",
+          "is_primary_key": false,
+          "is_nullable": false
+        }
+      ]
+    }
+  ],
+  "folder_structure": {
+    "backend": [
+      "app",
+      "app/models",
+      "app/schemas",
+      "app/routes",
+      "app/services",
+      "app/utils",
+      "app/dependencies",
+      "app/core",
+      "app/config"
+    ]
+  },
+  "frontend_structure": {
+    "pages": [
+      "LoginPage",
+      "RegisterPage",
+      "SpotListPage",
+      "SpotDetailPage",
+      "ReservationPage",
+      "PaymentPage",
+      "DashboardPage",
+      "ParkingLotManagementPage",
+      "ImageUploadPage",
+      "ProfilePage"
+    ],
+    "components": [
+      "Header",
+      "Footer",
+      "SpotCard",
+      "SpotFilter",
+      "ReservationForm",
+      "PaymentForm",
+      "DashboardStats",
+      "RevenueChart",
+      "LiveSpotStatus",
+      "ImageUploader",
+      "MapView",
+      "Pagination",
+      "AuthGuard",
+      "RoleBadge",
+      "NotificationToast"
+    ]
+  }
+}

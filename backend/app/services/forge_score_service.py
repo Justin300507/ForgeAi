@@ -5,6 +5,8 @@ def calculate_forge_score(
     playwright_result=None,
     vision_result=None,
     docker_result=None,
+    deployment_result=None,
+    health_report=None,
 ):
 
     category_weights = {
@@ -104,6 +106,22 @@ def calculate_forge_score(
             score -= 15
         elif not _dget("health_passed"):
             score -= 10
+
+    # Deployment: a generated app isn't complete without a live, healthy, fast URL.
+    #   -20  build/startup failed (pip error, crash on startup)
+    #   -15  deployed but /health returned non-200
+    #   -5   /health responds but latency > 2000ms (cold-start / heavy boot)
+    if deployment_result and not deployment_result.get("skipped"):
+        if not deployment_result.get("success"):
+            score -= 20
+        elif health_report and not health_report.get("skipped"):
+            if not health_report.get("success"):
+                score -= 15
+            else:
+                health_check = (health_report.get("checks") or {}).get("/health", {})
+                latency_ms = health_check.get("latency_ms")
+                if latency_ms and latency_ms > 2000:
+                    score -= 5
 
     score = max(0, score)
 

@@ -1,0 +1,430 @@
+{
+  "api_endpoints": [
+    {
+      "method": "POST",
+      "path": "/auth/register",
+      "description": "Register a new user with email, password and role (owner or vet). Returns JWT token.",
+      "file": "app/routes/auth_routes.py"
+    },
+    {
+      "method": "POST",
+      "path": "/auth/login",
+      "description": "Authenticate user credentials and return a JWT access token.",
+      "file": "app/routes/auth_routes.py"
+    },
+    {
+      "method": "GET",
+      "path": "/users/me",
+      "description": "Get profile of the currently authenticated user.",
+      "file": "app/routes/user_routes.py"
+    },
+    {
+      "method": "GET",
+      "path": "/pets",
+      "description": "List pets belonging to the logged\u2011in owner with pagination and optional search by name or breed.",
+      "file": "app/routes/pet_routes.py"
+    },
+    {
+      "method": "POST",
+      "path": "/pets",
+      "description": "Create a new pet record with details and optional photo upload.",
+      "file": "app/routes/pet_routes.py"
+    },
+    {
+      "method": "GET",
+      "path": "/pets/{id}",
+      "description": "Retrieve detailed information for a specific pet, including vaccinations, appointments and feeding schedules.",
+      "file": "app/routes/pet_routes.py"
+    },
+    {
+      "method": "PUT",
+      "path": "/pets/{id}",
+      "description": "Update pet information or replace the pet photo.",
+      "file": "app/routes/pet_routes.py"
+    },
+    {
+      "method": "DELETE",
+      "path": "/pets/{id}",
+      "description": "Delete a pet record owned by the user.",
+      "file": "app/routes/pet_routes.py"
+    },
+    {
+      "method": "GET",
+      "path": "/appointments",
+      "description": "List upcoming appointments for the owner (or shared pets for vets) with pagination.",
+      "file": "app/routes/appointment_routes.py"
+    },
+    {
+      "method": "POST",
+      "path": "/appointments",
+      "description": "Create a new veterinary appointment for a selected pet.",
+      "file": "app/routes/appointment_routes.py"
+    },
+    {
+      "method": "PUT",
+      "path": "/appointments/{id}",
+      "description": "Edit appointment details such as date, time, clinic or notes.",
+      "file": "app/routes/appointment_routes.py"
+    },
+    {
+      "method": "GET",
+      "path": "/feedings",
+      "description": "List feeding schedules for the owner\u2019s pets with pagination.",
+      "file": "app/routes/feeding_routes.py"
+    },
+    {
+      "method": "POST",
+      "path": "/feedings",
+      "description": "Create a feeding schedule entry (meal time, food type, quantity, repeat pattern) for a pet.",
+      "file": "app/routes/feeding_routes.py"
+    },
+    {
+      "method": "POST",
+      "path": "/documents",
+      "description": "Upload a pet photo or document (PDF) and associate it with a pet or user.",
+      "file": "app/routes/document_routes.py"
+    },
+    {
+      "method": "GET",
+      "path": "/notifications",
+      "description": "Retrieve a paginated list of push notifications for the logged\u2011in user.",
+      "file": "app/routes/notification_routes.py"
+    }
+  ],
+  "database_schema": [
+    {
+      "table_name": "users",
+      "columns": [
+        {
+          "name": "id",
+          "type": "INTEGER",
+          "is_primary_key": true,
+          "is_nullable": false
+        },
+        {
+          "name": "email",
+          "type": "VARCHAR(255)",
+          "is_primary_key": false,
+          "is_nullable": false
+        },
+        {
+          "name": "hashed_password",
+          "type": "VARCHAR(255)",
+          "is_primary_key": false,
+          "is_nullable": false
+        },
+        {
+          "name": "role",
+          "type": "VARCHAR(20)",
+          "is_primary_key": false,
+          "is_nullable": false
+        }
+      ]
+    },
+    {
+      "table_name": "pets",
+      "columns": [
+        {
+          "name": "id",
+          "type": "INTEGER",
+          "is_primary_key": true,
+          "is_nullable": false
+        },
+        {
+          "name": "owner_id",
+          "type": "INTEGER",
+          "is_primary_key": false,
+          "is_nullable": false
+        },
+        {
+          "name": "name",
+          "type": "VARCHAR(100)",
+          "is_primary_key": false,
+          "is_nullable": false
+        },
+        {
+          "name": "species",
+          "type": "VARCHAR(50)",
+          "is_primary_key": false,
+          "is_nullable": false
+        },
+        {
+          "name": "breed",
+          "type": "VARCHAR(100)",
+          "is_primary_key": false,
+          "is_nullable": true
+        },
+        {
+          "name": "birthdate",
+          "type": "DATE",
+          "is_primary_key": false,
+          "is_nullable": true
+        },
+        {
+          "name": "weight",
+          "type": "FLOAT",
+          "is_primary_key": false,
+          "is_nullable": true
+        },
+        {
+          "name": "photo_path",
+          "type": "VARCHAR(255)",
+          "is_primary_key": false,
+          "is_nullable": true
+        }
+      ]
+    },
+    {
+      "table_name": "appointments",
+      "columns": [
+        {
+          "name": "id",
+          "type": "INTEGER",
+          "is_primary_key": true,
+          "is_nullable": false
+        },
+        {
+          "name": "pet_id",
+          "type": "INTEGER",
+          "is_primary_key": false,
+          "is_nullable": false
+        },
+        {
+          "name": "vet_id",
+          "type": "INTEGER",
+          "is_primary_key": false,
+          "is_nullable": false
+        },
+        {
+          "name": "clinic_name",
+          "type": "VARCHAR(150)",
+          "is_primary_key": false,
+          "is_nullable": false
+        },
+        {
+          "name": "appointment_datetime",
+          "type": "DATETIME",
+          "is_primary_key": false,
+          "is_nullable": false
+        },
+        {
+          "name": "status",
+          "type": "VARCHAR(20)",
+          "is_primary_key": false,
+          "is_nullable": false
+        },
+        {
+          "name": "notes",
+          "type": "TEXT",
+          "is_primary_key": false,
+          "is_nullable": true
+        }
+      ]
+    },
+    {
+      "table_name": "feedingschedules",
+      "columns": [
+        {
+          "name": "id",
+          "type": "INTEGER",
+          "is_primary_key": true,
+          "is_nullable": false
+        },
+        {
+          "name": "pet_id",
+          "type": "INTEGER",
+          "is_primary_key": false,
+          "is_nullable": false
+        },
+        {
+          "name": "meal_time",
+          "type": "TIME",
+          "is_primary_key": false,
+          "is_nullable": false
+        },
+        {
+          "name": "food_type",
+          "type": "VARCHAR(100)",
+          "is_primary_key": false,
+          "is_nullable": false
+        },
+        {
+          "name": "quantity",
+          "type": "VARCHAR(50)",
+          "is_primary_key": false,
+          "is_nullable": false
+        },
+        {
+          "name": "repeat_pattern",
+          "type": "VARCHAR(50)",
+          "is_primary_key": false,
+          "is_nullable": true
+        }
+      ]
+    },
+    {
+      "table_name": "documents",
+      "columns": [
+        {
+          "name": "id",
+          "type": "INTEGER",
+          "is_primary_key": true,
+          "is_nullable": false
+        },
+        {
+          "name": "owner_id",
+          "type": "INTEGER",
+          "is_primary_key": false,
+          "is_nullable": false
+        },
+        {
+          "name": "pet_id",
+          "type": "INTEGER",
+          "is_primary_key": false,
+          "is_nullable": true
+        },
+        {
+          "name": "file_path",
+          "type": "VARCHAR(255)",
+          "is_primary_key": false,
+          "is_nullable": false
+        },
+        {
+          "name": "file_type",
+          "type": "VARCHAR(20)",
+          "is_primary_key": false,
+          "is_nullable": false
+        },
+        {
+          "name": "uploaded_at",
+          "type": "DATETIME",
+          "is_primary_key": false,
+          "is_nullable": false
+        }
+      ]
+    },
+    {
+      "table_name": "vaccinations",
+      "columns": [
+        {
+          "name": "id",
+          "type": "INTEGER",
+          "is_primary_key": true,
+          "is_nullable": false
+        },
+        {
+          "name": "pet_id",
+          "type": "INTEGER",
+          "is_primary_key": false,
+          "is_nullable": false
+        },
+        {
+          "name": "vaccine_name",
+          "type": "VARCHAR(100)",
+          "is_primary_key": false,
+          "is_nullable": false
+        },
+        {
+          "name": "date_administered",
+          "type": "DATE",
+          "is_primary_key": false,
+          "is_nullable": false
+        },
+        {
+          "name": "next_due_date",
+          "type": "DATE",
+          "is_primary_key": false,
+          "is_nullable": true
+        },
+        {
+          "name": "certificate_document_id",
+          "type": "INTEGER",
+          "is_primary_key": false,
+          "is_nullable": true
+        }
+      ]
+    },
+    {
+      "table_name": "notifications",
+      "columns": [
+        {
+          "name": "id",
+          "type": "INTEGER",
+          "is_primary_key": true,
+          "is_nullable": false
+        },
+        {
+          "name": "user_id",
+          "type": "INTEGER",
+          "is_primary_key": false,
+          "is_nullable": false
+        },
+        {
+          "name": "type",
+          "type": "VARCHAR(50)",
+          "is_primary_key": false,
+          "is_nullable": false
+        },
+        {
+          "name": "message",
+          "type": "TEXT",
+          "is_primary_key": false,
+          "is_nullable": false
+        },
+        {
+          "name": "sent_at",
+          "type": "DATETIME",
+          "is_primary_key": false,
+          "is_nullable": false
+        },
+        {
+          "name": "read_at",
+          "type": "DATETIME",
+          "is_primary_key": false,
+          "is_nullable": true
+        }
+      ]
+    }
+  ],
+  "folder_structure": {
+    "backend": [
+      "app",
+      "app/models",
+      "app/schemas",
+      "app/routes",
+      "app/services",
+      "app/utils",
+      "app/dependencies",
+      "app/config"
+    ]
+  },
+  "frontend_structure": {
+    "pages": [
+      "LoginPage",
+      "DashboardPage",
+      "PetListPage",
+      "PetDetailPage",
+      "AppointmentPage",
+      "FeedingPage",
+      "DocumentUploadPage",
+      "NotificationPage"
+    ],
+    "components": [
+      "Header",
+      "Footer",
+      "PetCard",
+      "PetForm",
+      "AppointmentForm",
+      "FeedingForm",
+      "DocumentUploader",
+      "NotificationItem",
+      "SearchBar",
+      "Pagination",
+      "Sidebar",
+      "Avatar",
+      "Modal",
+      "Toast",
+      "DatePicker"
+    ]
+  }
+}

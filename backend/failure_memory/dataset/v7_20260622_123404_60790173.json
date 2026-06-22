@@ -1,0 +1,30 @@
+{
+  "run_id": "v7_20260622_123404_60790173",
+  "timestamp": "2026-06-22T12:35:17",
+  "version": "v7",
+  "idea": "A medical appointment scheduler with patients, doctors, appointments, and health records",
+  "project_name": "med_sched",
+  "provider": "auto",
+  "plan": {},
+  "architecture": {
+    "endpoint_count": 0,
+    "endpoints": [],
+    "db_schema_keys": []
+  },
+  "validation_errors": [],
+  "runtime_error": null,
+  "runtime_error_type": null,
+  "fixes_applied": [],
+  "score": 100,
+  "grade": "A",
+  "runtime_passed": true,
+  "frontend_passed": false,
+  "generation_time": 73.13,
+  "security_score": 70,
+  "performance_score": 55,
+  "maintainability_score": 35,
+  "qa_score": 40,
+  "v6_score": 59,
+  "prompt_version": "default",
+  "active_rules": []
+}

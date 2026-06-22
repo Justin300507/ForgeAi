@@ -1,0 +1,38 @@
+{
+  "run_id": "v7_20260622_171728_8e8ce8fb",
+  "timestamp": "2026-06-22T17:18:13",
+  "version": "v7",
+  "idea": "A job board platform with job listings, applications, employers, and candidate profiles",
+  "project_name": "job_board_platform",
+  "provider": "auto",
+  "plan": {},
+  "architecture": {
+    "endpoint_count": 0,
+    "endpoints": [],
+    "db_schema_keys": []
+  },
+  "validation_errors": [
+    "Missing backend import target: app/routes/user_routes.py",
+    "Missing symbol 'RegisterRequest' in app/schemas/user.py (imported from app/routes/auth_routes.py)",
+    "Missing symbol 'LoginRequest' in app/schemas/user.py (imported from app/routes/auth_routes.py)",
+    "Missing symbol 'Token' in app/schemas/user.py (imported from app/routes/auth_routes.py)",
+    "Missing symbol 'UserResponse' in app/schemas/user.py (imported from app/routes/auth_routes.py)",
+    "Router export mismatch in app/routes/main.py. Expected 'main.py_router'",
+    "No endpoints found in app/routes/main.py"
+  ],
+  "runtime_error": null,
+  "runtime_error_type": null,
+  "fixes_applied": [],
+  "score": 46,
+  "grade": "F",
+  "runtime_passed": false,
+  "frontend_passed": false,
+  "generation_time": 44.75,
+  "security_score": null,
+  "performance_score": null,
+  "maintainability_score": null,
+  "qa_score": null,
+  "v6_score": 56,
+  "prompt_version": "default",
+  "active_rules": []
+}

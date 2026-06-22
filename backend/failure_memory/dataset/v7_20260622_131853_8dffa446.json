@@ -1,0 +1,33 @@
+{
+  "run_id": "v7_20260622_131853_8dffa446",
+  "timestamp": "2026-06-22T13:19:29",
+  "version": "v7",
+  "idea": "A bug tracker with projects, issues, comments, priorities, and status workflows",
+  "project_name": "bug_tracker",
+  "provider": "auto",
+  "plan": {},
+  "architecture": {
+    "endpoint_count": 0,
+    "endpoints": [],
+    "db_schema_keys": []
+  },
+  "validation_errors": [
+    "Missing symbol 'IssueResponse' in app/schemas/issue.py (imported from app/routes/issue_routes.py)",
+    "Missing endpoint WS /ws/issues/{issue_id}/stream (expected in app/routes/issue_routes.py)"
+  ],
+  "runtime_error": null,
+  "runtime_error_type": null,
+  "fixes_applied": [],
+  "score": 70,
+  "grade": "C",
+  "runtime_passed": false,
+  "frontend_passed": false,
+  "generation_time": 36.41,
+  "security_score": null,
+  "performance_score": null,
+  "maintainability_score": null,
+  "qa_score": null,
+  "v6_score": 61,
+  "prompt_version": "default",
+  "active_rules": []
+}

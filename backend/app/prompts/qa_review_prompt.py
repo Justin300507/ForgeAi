@@ -34,10 +34,20 @@ QA CHECKLIST:
 2. MISSING CRUD — If user stories mention creating/reading/updating/deleting X, are all 4 verbs present?
 3. AUTH COVERAGE — If spec says authentication is required, does every protected endpoint have Depends()?
 4. RESPONSE MODELS — Do endpoints have response_model set? Does the schema match what's returned?
-5. ERROR CASES — Are 404, 401, 403, 422 errors properly raised for edge cases?
+5. ERROR CASES — Are 404, 401, 403 errors properly raised for edge cases? (422 is automatic from Pydantic — do NOT flag it)
 6. HEALTH ENDPOINT — Is GET /health implemented?
-7. SCHEMA COMPLETENESS — Do Pydantic schemas have all the fields the frontend would need?
-8. RELATIONSHIP HANDLING — If spec has "has many" relationships, are nested endpoints present?
+7. SCHEMA COMPLETENESS — Do Pydantic schemas have required string fields with Field(min_length=1)?
+8. PAGINATION — Do GET list endpoints have limit/offset params?
+9. RELATIONSHIP HANDLING — If spec has "has many" relationships, are nested endpoints present?
+
+SCORING RULES:
+- Start at 100. Deduct points per blocker.
+- DO NOT flag as blockers: external service integrations (email, SMS, push notifications, Stripe, S3) — these require secrets not available at generation time and are not testable.
+- DO NOT flag as blockers: 422 responses — Pydantic validates input automatically and 422 is correct FastAPI behavior.
+- Deduct 15 pts each: missing /health, no pagination on list endpoints, no auth on protected endpoints
+- Deduct 10 pts each: missing CRUD verb for an explicit user story, no 404 on single-resource endpoints
+- Deduct 5 pts each: missing response_model, poor schema completeness
+- If all core endpoints are present and app passes static+runtime validation, minimum score is 60.
 
 OUTPUT FORMAT — return valid JSON:
 
@@ -58,8 +68,8 @@ OUTPUT FORMAT — return valid JSON:
     }}
   ],
   "missing_features": [
-    "GET /health endpoint not found",
-    "No pagination on GET /posts — returns all rows"
+    "No pagination on GET /posts — returns all rows",
+    "GET /items/{{id}} returns 500 instead of 404 when not found"
   ],
   "code_quality_issues": [
     {{
@@ -68,9 +78,9 @@ OUTPUT FORMAT — return valid JSON:
       "fix": "Add: if not task: raise HTTPException(404, 'Task not found')"
     }}
   ],
-  "passed": ["All user CRUD endpoints present", "Auth endpoints implemented"],
+  "passed": ["All user CRUD endpoints present", "Auth endpoints implemented", "GET /health present", "Pagination on list endpoints"],
   "ready_to_ship": false,
-  "blockers": ["Missing /health endpoint", "No pagination on list endpoints"]
+  "blockers": ["No pagination on list endpoints"]
 }}
 
 Return ONLY the JSON."""

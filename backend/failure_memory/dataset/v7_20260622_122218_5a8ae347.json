@@ -1,0 +1,30 @@
+{
+  "run_id": "v7_20260622_122218_5a8ae347",
+  "timestamp": "2026-06-22T12:22:56",
+  "version": "v7",
+  "idea": "A gym tracker with workouts, exercises, sets, reps, and personal records",
+  "project_name": "gym_tracker",
+  "provider": "auto",
+  "plan": {},
+  "architecture": {
+    "endpoint_count": 0,
+    "endpoints": [],
+    "db_schema_keys": []
+  },
+  "validation_errors": [],
+  "runtime_error": null,
+  "runtime_error_type": null,
+  "fixes_applied": [],
+  "score": 100,
+  "grade": "A",
+  "runtime_passed": true,
+  "frontend_passed": false,
+  "generation_time": 38.01,
+  "security_score": 80,
+  "performance_score": 70,
+  "maintainability_score": 60,
+  "qa_score": 35,
+  "v6_score": 72,
+  "prompt_version": "default",
+  "active_rules": []
+}

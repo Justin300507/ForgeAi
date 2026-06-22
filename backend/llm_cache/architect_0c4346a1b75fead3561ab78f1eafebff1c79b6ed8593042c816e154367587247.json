@@ -1,0 +1,379 @@
+{
+  "api_endpoints": [
+    {
+      "method": "POST",
+      "path": "/auth/register",
+      "description": "Register a new user and return JWT",
+      "file": "app/routes/auth_routes.py"
+    },
+    {
+      "method": "POST",
+      "path": "/auth/login",
+      "description": "Authenticate user and return JWT",
+      "file": "app/routes/auth_routes.py"
+    },
+    {
+      "method": "GET",
+      "path": "/companies",
+      "description": "List companies with search and pagination",
+      "file": "app/routes/company_routes.py"
+    },
+    {
+      "method": "POST",
+      "path": "/companies",
+      "description": "Create a new company record",
+      "file": "app/routes/company_routes.py"
+    },
+    {
+      "method": "PUT",
+      "path": "/companies/{id}",
+      "description": "Update company details",
+      "file": "app/routes/company_routes.py"
+    },
+    {
+      "method": "DELETE",
+      "path": "/companies/{id}",
+      "description": "Delete a company",
+      "file": "app/routes/company_routes.py"
+    },
+    {
+      "method": "GET",
+      "path": "/applications",
+      "description": "List applications with filters and pagination",
+      "file": "app/routes/application_routes.py"
+    },
+    {
+      "method": "POST",
+      "path": "/applications",
+      "description": "Create a new job application",
+      "file": "app/routes/application_routes.py"
+    },
+    {
+      "method": "PUT",
+      "path": "/applications/{id}",
+      "description": "Update application details",
+      "file": "app/routes/application_routes.py"
+    },
+    {
+      "method": "GET",
+      "path": "/interviews",
+      "description": "List upcoming interviews",
+      "file": "app/routes/interview_routes.py"
+    },
+    {
+      "method": "POST",
+      "path": "/interviews",
+      "description": "Schedule a new interview for an application",
+      "file": "app/routes/interview_routes.py"
+    },
+    {
+      "method": "GET",
+      "path": "/interviews/{id}",
+      "description": "Get interview details",
+      "file": "app/routes/interview_routes.py"
+    },
+    {
+      "method": "PUT",
+      "path": "/interviews/{id}",
+      "description": "Edit interview details",
+      "file": "app/routes/interview_routes.py"
+    },
+    {
+      "method": "POST",
+      "path": "/applications/{app_id}/status_updates",
+      "description": "Add a status update to an application",
+      "file": "app/routes/status_update_routes.py"
+    },
+    {
+      "method": "POST",
+      "path": "/applications/{app_id}/documents",
+      "description": "Upload a document (resume or cover letter) for an application",
+      "file": "app/routes/document_routes.py"
+    }
+  ],
+  "database_schema": [
+    {
+      "table_name": "users",
+      "columns": [
+        {
+          "name": "id",
+          "type": "INTEGER",
+          "is_primary_key": true,
+          "is_nullable": false
+        },
+        {
+          "name": "email",
+          "type": "VARCHAR(255)",
+          "is_primary_key": false,
+          "is_nullable": false
+        },
+        {
+          "name": "password_hash",
+          "type": "VARCHAR(255)",
+          "is_primary_key": false,
+          "is_nullable": false
+        },
+        {
+          "name": "role",
+          "type": "VARCHAR(50)",
+          "is_primary_key": false,
+          "is_nullable": false
+        },
+        {
+          "name": "created_at",
+          "type": "DATETIME",
+          "is_primary_key": false,
+          "is_nullable": false
+        }
+      ]
+    },
+    {
+      "table_name": "companies",
+      "columns": [
+        {
+          "name": "id",
+          "type": "INTEGER",
+          "is_primary_key": true,
+          "is_nullable": false
+        },
+        {
+          "name": "user_id",
+          "type": "INTEGER",
+          "is_primary_key": false,
+          "is_nullable": false
+        },
+        {
+          "name": "name",
+          "type": "VARCHAR(255)",
+          "is_primary_key": false,
+          "is_nullable": false
+        },
+        {
+          "name": "industry",
+          "type": "VARCHAR(100)",
+          "is_primary_key": false,
+          "is_nullable": true
+        },
+        {
+          "name": "location",
+          "type": "VARCHAR(150)",
+          "is_primary_key": false,
+          "is_nullable": true
+        },
+        {
+          "name": "website",
+          "type": "VARCHAR(255)",
+          "is_primary_key": false,
+          "is_nullable": true
+        }
+      ]
+    },
+    {
+      "table_name": "applications",
+      "columns": [
+        {
+          "name": "id",
+          "type": "INTEGER",
+          "is_primary_key": true,
+          "is_nullable": false
+        },
+        {
+          "name": "user_id",
+          "type": "INTEGER",
+          "is_primary_key": false,
+          "is_nullable": false
+        },
+        {
+          "name": "company_id",
+          "type": "INTEGER",
+          "is_primary_key": false,
+          "is_nullable": false
+        },
+        {
+          "name": "position_title",
+          "type": "VARCHAR(255)",
+          "is_primary_key": false,
+          "is_nullable": false
+        },
+        {
+          "name": "applied_date",
+          "type": "DATE",
+          "is_primary_key": false,
+          "is_nullable": false
+        },
+        {
+          "name": "status",
+          "type": "VARCHAR(50)",
+          "is_primary_key": false,
+          "is_nullable": false
+        }
+      ]
+    },
+    {
+      "table_name": "interviews",
+      "columns": [
+        {
+          "name": "id",
+          "type": "INTEGER",
+          "is_primary_key": true,
+          "is_nullable": false
+        },
+        {
+          "name": "application_id",
+          "type": "INTEGER",
+          "is_primary_key": false,
+          "is_nullable": false
+        },
+        {
+          "name": "type",
+          "type": "VARCHAR(50)",
+          "is_primary_key": false,
+          "is_nullable": false
+        },
+        {
+          "name": "scheduled_at",
+          "type": "DATETIME",
+          "is_primary_key": false,
+          "is_nullable": false
+        },
+        {
+          "name": "location",
+          "type": "VARCHAR(255)",
+          "is_primary_key": false,
+          "is_nullable": true
+        },
+        {
+          "name": "notes",
+          "type": "TEXT",
+          "is_primary_key": false,
+          "is_nullable": true
+        }
+      ]
+    },
+    {
+      "table_name": "status_updates",
+      "columns": [
+        {
+          "name": "id",
+          "type": "INTEGER",
+          "is_primary_key": true,
+          "is_nullable": false
+        },
+        {
+          "name": "application_id",
+          "type": "INTEGER",
+          "is_primary_key": false,
+          "is_nullable": false
+        },
+        {
+          "name": "status",
+          "type": "VARCHAR(50)",
+          "is_primary_key": false,
+          "is_nullable": false
+        },
+        {
+          "name": "updated_at",
+          "type": "DATETIME",
+          "is_primary_key": false,
+          "is_nullable": false
+        },
+        {
+          "name": "notes",
+          "type": "TEXT",
+          "is_primary_key": false,
+          "is_nullable": true
+        }
+      ]
+    },
+    {
+      "table_name": "documents",
+      "columns": [
+        {
+          "name": "id",
+          "type": "INTEGER",
+          "is_primary_key": true,
+          "is_nullable": false
+        },
+        {
+          "name": "application_id",
+          "type": "INTEGER",
+          "is_primary_key": false,
+          "is_nullable": false
+        },
+        {
+          "name": "user_id",
+          "type": "INTEGER",
+          "is_primary_key": false,
+          "is_nullable": false
+        },
+        {
+          "name": "file_name",
+          "type": "VARCHAR(255)",
+          "is_primary_key": false,
+          "is_nullable": false
+        },
+        {
+          "name": "file_path",
+          "type": "VARCHAR(500)",
+          "is_primary_key": false,
+          "is_nullable": false
+        },
+        {
+          "name": "uploaded_at",
+          "type": "DATETIME",
+          "is_primary_key": false,
+          "is_nullable": false
+        },
+        {
+          "name": "doc_type",
+          "type": "VARCHAR(50)",
+          "is_primary_key": false,
+          "is_nullable": false
+        }
+      ]
+    }
+  ],
+  "folder_structure": {
+    "backend": [
+      "app",
+      "app/models",
+      "app/schemas",
+      "app/routes",
+      "app/services",
+      "app/utils",
+      "app/dependencies",
+      "app/config"
+    ]
+  },
+  "frontend_structure": {
+    "pages": [
+      "LoginPage",
+      "DashboardPage",
+      "CompanyListPage",
+      "CompanyFormPage",
+      "ApplicationListPage",
+      "ApplicationFormPage",
+      "InterviewDashboardPage",
+      "InterviewFormPage",
+      "StatusTimelinePage",
+      "DocumentUploadPage"
+    ],
+    "components": [
+      "Header",
+      "Sidebar",
+      "CompanyCard",
+      "ApplicationCard",
+      "InterviewCard",
+      "StatusUpdateCard",
+      "DocumentList",
+      "FileUpload",
+      "SearchBar",
+      "Pagination",
+      "ToastNotification",
+      "Modal",
+      "FormInput",
+      "DateTimePicker",
+      "Select"
+    ]
+  }
+}

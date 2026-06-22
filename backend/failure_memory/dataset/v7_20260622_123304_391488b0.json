@@ -1,0 +1,30 @@
+{
+  "run_id": "v7_20260622_123304_391488b0",
+  "timestamp": "2026-06-22T12:33:40",
+  "version": "v7",
+  "idea": "A real estate listing app with properties, search filters, favorites, and agent profiles",
+  "project_name": "real_estate_listing_app",
+  "provider": "auto",
+  "plan": {},
+  "architecture": {
+    "endpoint_count": 0,
+    "endpoints": [],
+    "db_schema_keys": []
+  },
+  "validation_errors": [],
+  "runtime_error": null,
+  "runtime_error_type": null,
+  "fixes_applied": [],
+  "score": 100,
+  "grade": "A",
+  "runtime_passed": true,
+  "frontend_passed": false,
+  "generation_time": 35.13,
+  "security_score": 80,
+  "performance_score": 70,
+  "maintainability_score": 60,
+  "qa_score": 45,
+  "v6_score": 72,
+  "prompt_version": "default",
+  "active_rules": []
+}

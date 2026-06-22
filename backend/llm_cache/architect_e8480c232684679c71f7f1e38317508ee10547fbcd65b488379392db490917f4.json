@@ -1,0 +1,397 @@
+{
+  "api_endpoints": [
+    {
+      "method": "POST",
+      "path": "/auth/register",
+      "description": "Create a new user account (musician or teacher)",
+      "file": "app/routes/auth_routes.py"
+    },
+    {
+      "method": "POST",
+      "path": "/auth/login",
+      "description": "Authenticate user and return JWT token",
+      "file": "app/routes/auth_routes.py"
+    },
+    {
+      "method": "GET",
+      "path": "/users/me",
+      "description": "Retrieve profile of the authenticated user",
+      "file": "app/routes/user_routes.py"
+    },
+    {
+      "method": "GET",
+      "path": "/instruments",
+      "description": "List all instruments belonging to the current musician",
+      "file": "app/routes/instrument_routes.py"
+    },
+    {
+      "method": "POST",
+      "path": "/instruments",
+      "description": "Create a new instrument for the current musician",
+      "file": "app/routes/instrument_routes.py"
+    },
+    {
+      "method": "DELETE",
+      "path": "/instruments/{id}",
+      "description": "Delete an instrument owned by the current musician",
+      "file": "app/routes/instrument_routes.py"
+    },
+    {
+      "method": "GET",
+      "path": "/sessions",
+      "description": "List practice sessions for the current musician with pagination",
+      "file": "app/routes/session_routes.py"
+    },
+    {
+      "method": "POST",
+      "path": "/sessions",
+      "description": "Record a new practice session (date, instrument, duration, pieces)",
+      "file": "app/routes/session_routes.py"
+    },
+    {
+      "method": "GET",
+      "path": "/goals",
+      "description": "List time\u2011based goals for the current musician",
+      "file": "app/routes/goal_routes.py"
+    },
+    {
+      "method": "POST",
+      "path": "/goals",
+      "description": "Create a new practice goal for a specific instrument",
+      "file": "app/routes/goal_routes.py"
+    },
+    {
+      "method": "GET",
+      "path": "/notes",
+      "description": "List progress notes for the current musician (searchable)",
+      "file": "app/routes/note_routes.py"
+    },
+    {
+      "method": "POST",
+      "path": "/notes",
+      "description": "Add a progress note linked to a practice session",
+      "file": "app/routes/note_routes.py"
+    },
+    {
+      "method": "POST",
+      "path": "/attachments",
+      "description": "Upload an audio/video file and associate it with a practice session",
+      "file": "app/routes/attachment_routes.py"
+    },
+    {
+      "method": "POST",
+      "path": "/teacher/invite",
+      "description": "Teacher sends an invitation link to a new student",
+      "file": "app/routes/teacher_routes.py"
+    },
+    {
+      "method": "GET",
+      "path": "/teacher/students",
+      "description": "Teacher retrieves list of assigned students with summary stats",
+      "file": "app/routes/teacher_routes.py"
+    }
+  ],
+  "database_schema": [
+    {
+      "table_name": "users",
+      "columns": [
+        {
+          "name": "id",
+          "type": "Integer",
+          "is_primary_key": true,
+          "is_nullable": false
+        },
+        {
+          "name": "email",
+          "type": "String",
+          "is_primary_key": false,
+          "is_nullable": false
+        },
+        {
+          "name": "hashed_password",
+          "type": "String",
+          "is_primary_key": false,
+          "is_nullable": false
+        },
+        {
+          "name": "role",
+          "type": "Enum('musician','teacher')",
+          "is_primary_key": false,
+          "is_nullable": false
+        },
+        {
+          "name": "created_at",
+          "type": "DateTime",
+          "is_primary_key": false,
+          "is_nullable": false
+        }
+      ]
+    },
+    {
+      "table_name": "instruments",
+      "columns": [
+        {
+          "name": "id",
+          "type": "Integer",
+          "is_primary_key": true,
+          "is_nullable": false
+        },
+        {
+          "name": "user_id",
+          "type": "Integer",
+          "is_primary_key": false,
+          "is_nullable": false
+        },
+        {
+          "name": "name",
+          "type": "String",
+          "is_primary_key": false,
+          "is_nullable": false
+        },
+        {
+          "name": "type",
+          "type": "String",
+          "is_primary_key": false,
+          "is_nullable": false
+        },
+        {
+          "name": "created_at",
+          "type": "DateTime",
+          "is_primary_key": false,
+          "is_nullable": false
+        }
+      ]
+    },
+    {
+      "table_name": "practice_sessions",
+      "columns": [
+        {
+          "name": "id",
+          "type": "Integer",
+          "is_primary_key": true,
+          "is_nullable": false
+        },
+        {
+          "name": "user_id",
+          "type": "Integer",
+          "is_primary_key": false,
+          "is_nullable": false
+        },
+        {
+          "name": "instrument_id",
+          "type": "Integer",
+          "is_primary_key": false,
+          "is_nullable": false
+        },
+        {
+          "name": "date",
+          "type": "Date",
+          "is_primary_key": false,
+          "is_nullable": false
+        },
+        {
+          "name": "duration_minutes",
+          "type": "Integer",
+          "is_primary_key": false,
+          "is_nullable": false
+        },
+        {
+          "name": "created_at",
+          "type": "DateTime",
+          "is_primary_key": false,
+          "is_nullable": false
+        }
+      ]
+    },
+    {
+      "table_name": "goals",
+      "columns": [
+        {
+          "name": "id",
+          "type": "Integer",
+          "is_primary_key": true,
+          "is_nullable": false
+        },
+        {
+          "name": "user_id",
+          "type": "Integer",
+          "is_primary_key": false,
+          "is_nullable": false
+        },
+        {
+          "name": "instrument_id",
+          "type": "Integer",
+          "is_primary_key": false,
+          "is_nullable": false
+        },
+        {
+          "name": "target_minutes",
+          "type": "Integer",
+          "is_primary_key": false,
+          "is_nullable": false
+        },
+        {
+          "name": "start_date",
+          "type": "Date",
+          "is_primary_key": false,
+          "is_nullable": false
+        },
+        {
+          "name": "end_date",
+          "type": "Date",
+          "is_primary_key": false,
+          "is_nullable": false
+        },
+        {
+          "name": "created_at",
+          "type": "DateTime",
+          "is_primary_key": false,
+          "is_nullable": false
+        }
+      ]
+    },
+    {
+      "table_name": "progress_notes",
+      "columns": [
+        {
+          "name": "id",
+          "type": "Integer",
+          "is_primary_key": true,
+          "is_nullable": false
+        },
+        {
+          "name": "session_id",
+          "type": "Integer",
+          "is_primary_key": false,
+          "is_nullable": false
+        },
+        {
+          "name": "user_id",
+          "type": "Integer",
+          "is_primary_key": false,
+          "is_nullable": false
+        },
+        {
+          "name": "content",
+          "type": "Text",
+          "is_primary_key": false,
+          "is_nullable": false
+        },
+        {
+          "name": "created_at",
+          "type": "DateTime",
+          "is_primary_key": false,
+          "is_nullable": false
+        }
+      ]
+    },
+    {
+      "table_name": "attachments",
+      "columns": [
+        {
+          "name": "id",
+          "type": "Integer",
+          "is_primary_key": true,
+          "is_nullable": false
+        },
+        {
+          "name": "session_id",
+          "type": "Integer",
+          "is_primary_key": false,
+          "is_nullable": false
+        },
+        {
+          "name": "file_path",
+          "type": "String",
+          "is_primary_key": false,
+          "is_nullable": false
+        },
+        {
+          "name": "mime_type",
+          "type": "String",
+          "is_primary_key": false,
+          "is_nullable": false
+        },
+        {
+          "name": "size_bytes",
+          "type": "Integer",
+          "is_primary_key": false,
+          "is_nullable": false
+        },
+        {
+          "name": "created_at",
+          "type": "DateTime",
+          "is_primary_key": false,
+          "is_nullable": false
+        }
+      ]
+    },
+    {
+      "table_name": "teacher_student_links",
+      "columns": [
+        {
+          "name": "id",
+          "type": "Integer",
+          "is_primary_key": true,
+          "is_nullable": false
+        },
+        {
+          "name": "teacher_id",
+          "type": "Integer",
+          "is_primary_key": false,
+          "is_nullable": false
+        },
+        {
+          "name": "student_id",
+          "type": "Integer",
+          "is_primary_key": false,
+          "is_nullable": false
+        },
+        {
+          "name": "created_at",
+          "type": "DateTime",
+          "is_primary_key": false,
+          "is_nullable": false
+        }
+      ]
+    }
+  ],
+  "folder_structure": {
+    "backend": [
+      "app/routes",
+      "app/models",
+      "app/schemas",
+      "app/services",
+      "app/utils",
+      "app/dependencies",
+      "app/core",
+      "app/config"
+    ]
+  },
+  "frontend_structure": {
+    "pages": [
+      "LoginPage",
+      "RegisterPage",
+      "DashboardPage",
+      "InstrumentsPage",
+      "SessionsPage",
+      "GoalsPage",
+      "NotesPage",
+      "TeacherDashboardPage",
+      "InviteStudentPage"
+    ],
+    "components": [
+      "Header",
+      "Footer",
+      "InstrumentForm",
+      "SessionForm",
+      "GoalCard",
+      "NoteList",
+      "AttachmentUploader",
+      "StudentList",
+      "CommentForm",
+      "Pagination",
+      "SearchBar"
+    ]
+  }
+}

@@ -70,6 +70,8 @@ def generate_project_v6(
     provider: str = "auto",
     use_parallel_backend: bool = True,
     collab: AgentCollaboration | None = None,
+    skip_reviews: bool = False,
+    frontend_target: str = "web",
 ) -> dict[str, Any]:
     """
     Full V6 multi-agent pipeline.
@@ -187,7 +189,7 @@ def generate_project_v6(
     # Stage 5: Frontend Team
     # ------------------------------------------------------------------
     print("\n=== FRONTEND TEAM (V6) ===")
-    frontend_response = generate_frontend(architecture, provider)
+    frontend_response = generate_frontend(architecture, provider, frontend_target=frontend_target, idea=idea)
     frontend_files = frontend_response.get("files", []) if isinstance(frontend_response, dict) else []
 
     # ------------------------------------------------------------------
@@ -205,8 +207,14 @@ def generate_project_v6(
         seen[f["path"]] = f
     all_files = list(seen.values())
 
+    # Ensure main.py always has /health and CORS (covers both parallel and monolithic paths)
+    from app.services.parallel_backend_service import _ensure_main_py_quality
+    for f in all_files:
+        if f.get("path") in ("app/main.py", "app\\main.py") and f.get("content"):
+            f["content"] = _ensure_main_py_quality(f["content"])
+
     project_name = plan["project_name"]
-    project_path = write_files(project_name, all_files)
+    project_path = write_files(project_name, all_files, frontend_target=frontend_target)
     initialize_git(project_path)
     print(f"\n=== FILES WRITTEN: {project_path} ({len(all_files)} files) ===")
 
@@ -214,71 +222,54 @@ def generate_project_v6(
     metadata_path = save_metadata(project_path, plan, architecture, provider, total_time_so_far)
 
     # ------------------------------------------------------------------
-    # Stage 7: QA Team
+    # Stage 7-10: Review Agents (QA, Security, Code Review, Performance)
+    # Skip when skip_reviews=True to save ~14% token cost per app
     # ------------------------------------------------------------------
-    qa_report = run_qa_review(
-        project_path,
-        product_spec.raw if hasattr(product_spec, "raw") and product_spec.raw else plan,
-        architecture,
-        provider,
-    )
-    collab.record_decision(
-        agent="qa",
-        decision="qa_review_complete",
-        rationale=f"QA score: {qa_report.qa_score}/100",
-        data={
-            "score": qa_report.qa_score,
-            "blockers": qa_report.blockers,
-            "missing_features": qa_report.missing_features[:3],
-        },
-    )
+    qa_report = None
+    security_report = None
+    code_review_report = None
+    performance_report = None
 
-    # ------------------------------------------------------------------
-    # Stage 8: Security Team
-    # ------------------------------------------------------------------
-    security_report = run_security_review(project_path, provider)
-    print_security_report(security_report)
-    collab.record_decision(
-        agent="security",
-        decision="security_review_complete",
-        rationale=f"Security score: {security_report.security_score}/100 [{security_report.risk_level}]",
-        data={
-            "score": security_report.security_score,
-            "critical": security_report.critical_count,
-            "high": security_report.high_count,
-        },
-    )
+    if not skip_reviews:
+        qa_report = run_qa_review(
+            project_path,
+            product_spec.raw if hasattr(product_spec, "raw") and product_spec.raw else plan,
+            architecture,
+            provider,
+        )
+        collab.record_decision(
+            agent="qa",
+            decision="qa_review_complete",
+            rationale=f"QA score: {qa_report.qa_score}/100",
+            data={"score": qa_report.qa_score, "blockers": qa_report.blockers},
+        )
 
-    # ------------------------------------------------------------------
-    # Stage 9: Code Review Agent
-    # ------------------------------------------------------------------
-    code_review_report = run_code_review(project_path, architecture, provider)
-    collab.record_decision(
-        agent="code_review",
-        decision="code_review_complete",
-        rationale=f"Maintainability: {code_review_report.maintainability_score}/100 | Tech debt: {code_review_report.tech_debt_score}/100",
-        data={
-            "naming_score": code_review_report.naming_score,
-            "architecture_score": code_review_report.architecture_score,
-            "maintainability_score": code_review_report.maintainability_score,
-            "tech_debt_score": code_review_report.tech_debt_score,
-        },
-    )
+        security_report = run_security_review(project_path, provider)
+        print_security_report(security_report)
+        collab.record_decision(
+            agent="security",
+            decision="security_review_complete",
+            rationale=f"Security score: {security_report.security_score}/100",
+            data={"score": security_report.security_score},
+        )
 
-    # ------------------------------------------------------------------
-    # Stage 10: Performance Review
-    # ------------------------------------------------------------------
-    performance_report = run_performance_review(project_path, architecture, provider)
-    collab.record_decision(
-        agent="performance",
-        decision="performance_review_complete",
-        rationale=f"Performance score: {performance_report.performance_score}/100",
-        data={
-            "score": performance_report.performance_score,
-            "n_plus_one_count": performance_report.n_plus_one_count,
-            "missing_indexes": performance_report.missing_indexes,
-        },
-    )
+        code_review_report = run_code_review(project_path, architecture, provider)
+        collab.record_decision(
+            agent="code_review",
+            decision="code_review_complete",
+            rationale=f"Maintainability: {code_review_report.maintainability_score}/100",
+            data={"maintainability_score": code_review_report.maintainability_score},
+        )
+
+        performance_report = run_performance_review(project_path, architecture, provider)
+        collab.record_decision(
+            agent="performance",
+            decision="performance_review_complete",
+            rationale=f"Performance score: {performance_report.performance_score}/100",
+            data={"score": performance_report.performance_score},
+        )
+    else:
+        print("\n  [skip_reviews=True] Skipping QA/Security/Code/Performance reviews")
 
     # ------------------------------------------------------------------
     # Stage 11: Validation Loop (up to 4 fix attempts)
@@ -349,7 +340,19 @@ def generate_project_v6(
                     continue
 
                 fix["path"] = _sanitize_path(fix["path"])
-                write_fix(project_path, fix)
+                written = write_fix(project_path, fix)
+                if not written and fix.get("content"):
+                    # Fix had SyntaxError — retry once with explicit feedback
+                    import ast as _ast
+                    try:
+                        _ast.parse(fix["content"])
+                    except SyntaxError as se:
+                        syntax_hint = [f"Your previous fix had a SyntaxError: {se}. Fix the syntax error before returning."]
+                        fix2 = generate_fix(filepath, fix["content"], file_errors + syntax_hint, provider)
+                        if isinstance(fix2, dict) and fix2.get("path") and fix2.get("content"):
+                            fix2["path"] = _sanitize_path(fix2["path"])
+                            write_fix(project_path, fix2)
+                            fix = fix2
                 save_fix_log(project_path, "\n".join(file_errors), fix)
 
             except Exception as e:
@@ -508,33 +511,33 @@ def generate_project_v6(
             "files": len(backend_files),
         },
         "qa": {
-            "score": qa_report.qa_score,
-            "stories_covered": sum(1 for s in qa_report.user_story_coverage if s.covered),
-            "blockers": qa_report.blockers,
-            "skipped": qa_report.skipped,
+            "score": qa_report.qa_score if qa_report else None,
+            "stories_covered": sum(1 for s in qa_report.user_story_coverage if s.covered) if qa_report else 0,
+            "blockers": qa_report.blockers if qa_report else [],
+            "skipped": True if qa_report is None else qa_report.skipped,
         },
         "security": {
-            "score": security_report.security_score,
-            "risk_level": security_report.risk_level,
-            "critical_count": security_report.critical_count,
-            "high_count": security_report.high_count,
-            "skipped": security_report.skipped,
+            "score": security_report.security_score if security_report else None,
+            "risk_level": security_report.risk_level if security_report else "skipped",
+            "critical_count": security_report.critical_count if security_report else 0,
+            "high_count": security_report.high_count if security_report else 0,
+            "skipped": True if security_report is None else security_report.skipped,
         },
         "code_review": {
-            "naming_score": code_review_report.naming_score,
-            "architecture_score": code_review_report.architecture_score,
-            "maintainability_score": code_review_report.maintainability_score,
-            "tech_debt_score": code_review_report.tech_debt_score,
-            "overall_score": code_review_report.overall_score,
-            "skipped": code_review_report.skipped,
+            "naming_score": code_review_report.naming_score if code_review_report else None,
+            "architecture_score": code_review_report.architecture_score if code_review_report else None,
+            "maintainability_score": code_review_report.maintainability_score if code_review_report else None,
+            "tech_debt_score": code_review_report.tech_debt_score if code_review_report else None,
+            "overall_score": code_review_report.overall_score if code_review_report else None,
+            "skipped": True if code_review_report is None else code_review_report.skipped,
         },
         "performance": {
-            "score": performance_report.performance_score,
-            "n_plus_one_count": performance_report.n_plus_one_count,
-            "missing_indexes": performance_report.missing_indexes,
-            "large_payload_risks": performance_report.large_payload_risks,
-            "slow_api_warnings": performance_report.slow_api_warnings,
-            "skipped": performance_report.skipped,
+            "score": performance_report.performance_score if performance_report else None,
+            "n_plus_one_count": performance_report.n_plus_one_count if performance_report else 0,
+            "missing_indexes": performance_report.missing_indexes if performance_report else 0,
+            "large_payload_risks": performance_report.large_payload_risks if performance_report else 0,
+            "slow_api_warnings": performance_report.slow_api_warnings if performance_report else 0,
+            "skipped": True if performance_report is None else performance_report.skipped,
         },
         "validation": validation,
         "runtime": runtime_result,
