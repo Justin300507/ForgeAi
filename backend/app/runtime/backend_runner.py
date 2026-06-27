@@ -46,6 +46,7 @@ class BackendRunner:
                     "-m",
                     "pip",
                     "install",
+                    "-q",
                     "-r",
                     str(requirements_file)
                 ],
@@ -85,7 +86,7 @@ class BackendRunner:
             text=True
         )
 
-        max_wait = 10
+        max_wait = 5
         healthy = False
 
         for _ in range(max_wait):

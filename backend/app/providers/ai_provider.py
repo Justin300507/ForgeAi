@@ -60,19 +60,19 @@ def generate_content(
         print("Using Ollama")
         return _tracked("ollama", "local", prompt, ollama_generate, stage, max_tokens=max_tokens)
 
-    # Auto mode: DeepSeek -> Cerebras -> Groq -> OpenRouter -> Gemini -> Ollama
-
-    try:
-        print("Using DeepSeek")
-        return _tracked("deepseek", "deepseek-chat", prompt, deepseek_generate, stage, max_tokens=max_tokens)
-    except Exception as e:
-        print(f"DeepSeek failed: {e}")
+    # Auto mode: Cerebras -> DeepSeek -> Groq -> OpenRouter -> Gemini -> Ollama
 
     try:
         print("Using Cerebras")
         return _tracked("cerebras", "gpt-oss-120b", prompt, cerebras_generate, stage, max_tokens=max_tokens)
     except Exception as e:
         print(f"Cerebras failed: {e}")
+
+    try:
+        print("Using DeepSeek")
+        return _tracked("deepseek", "deepseek-chat", prompt, deepseek_generate, stage, max_tokens=max_tokens)
+    except Exception as e:
+        print(f"DeepSeek failed: {e}")
 
     try:
         print("Using Groq")
