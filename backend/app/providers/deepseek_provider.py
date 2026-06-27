@@ -6,7 +6,7 @@ from dotenv import load_dotenv
 load_dotenv()
 
 client = OpenAI(
-    api_key=os.getenv("DEEPSEEK_API_KEY"),
+    api_key=os.getenv("DEEPSEEK_API_KEY", "not-configured"),
     base_url="https://aicredits.in/v1",
     timeout=120,
 )

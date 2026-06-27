@@ -6,7 +6,7 @@ from dotenv import load_dotenv
 load_dotenv()
 
 client = OpenAI(
-    api_key=os.getenv("CEREBRAS_API_KEY"),
+    api_key=os.getenv("CEREBRAS_API_KEY", "not-configured"),
     base_url="https://api.cerebras.ai/v1",
     timeout=120
 )
