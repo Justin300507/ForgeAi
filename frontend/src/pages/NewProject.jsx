@@ -16,9 +16,9 @@ const MODELS = [
 ];
 
 const DEPLOYMENTS = [
-  { id:"none",       emoji:"📁", label:"No deployment",  sub:"Generate only" },
-  { id:"render",     emoji:"🖥️", label:"Backend only",   sub:"Deploy to Render" },
-  { id:"cloudflare", emoji:"🌐", label:"Full deploy",    sub:"Render + Cloudflare" },
+  { id:"none",       emoji:"📁", label:"No deployment",    sub:"Generate & download only" },
+  { id:"cloudflare", emoji:"🌐", label:"Frontend only",    sub:"Cloudflare Pages (static)" },
+  { id:"both",       emoji:"🚀", label:"Full stack",       sub:"Render backend + Cloudflare frontend" },
 ];
 
 function NavBar() {

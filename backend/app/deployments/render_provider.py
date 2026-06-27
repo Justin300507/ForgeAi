@@ -154,17 +154,16 @@ class RenderProvider(BaseDeploymentProvider):
             return deploy.get("id")
         return None
 
-    def _poll_service_url(self, service_id: str, attempts: int = 24, wait: int = 10) -> Optional[str]:
+    def _poll_service_url(self, service_id: str, attempts: int = 6, wait: int = 5) -> Optional[str]:
         for i in range(attempts):
-            time.sleep(wait)
             resp = self._get(f"/services/{service_id}")
             if resp.ok:
                 svc = resp.json().get("service", resp.json())
                 url = svc.get("serviceDetails", {}).get("url") or svc.get("defaultURL") or svc.get("url")
-                status = svc.get("serviceDetails", {}).get("buildCommand") and svc.get("suspended")
                 if url:
                     return url if url.startswith("http") else f"https://{url}"
             print(f"  [Render] Waiting for service URL (attempt {i+1}/{attempts})...")
+            time.sleep(wait)
         return None
 
     # ── public interface ──────────────────────────────────────────────────────
