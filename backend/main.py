@@ -876,12 +876,22 @@ def health():
 
 
 # ── Serve React frontend (production) ─────────────────────────────────────────
-# When deployed on Render, the frontend is built into ../frontend/dist.
-# This must come LAST so API routes take priority.
 import os as _os
-_dist = _os.path.abspath(_os.path.join(_os.path.dirname(__file__), "..", "frontend", "dist"))
+
+_here = _os.path.dirname(_os.path.abspath(__file__))
+_dist = _os.path.join(_here, "..", "frontend", "dist")
+_dist = _os.path.abspath(_dist)
+
+print(f"[startup] frontend dist path: {_dist} exists={_os.path.isdir(_dist)}")
+
 if _os.path.isdir(_dist):
-    app.mount("/assets", StaticFiles(directory=_os.path.join(_dist, "assets")), name="assets")
+    _assets = _os.path.join(_dist, "assets")
+    if _os.path.isdir(_assets):
+        app.mount("/assets", StaticFiles(directory=_assets), name="assets")
+
+    @app.get("/", include_in_schema=False)
+    async def serve_root():
+        return FileResponse(_os.path.join(_dist, "index.html"))
 
     @app.get("/{full_path:path}", include_in_schema=False)
     async def serve_spa(full_path: str):
