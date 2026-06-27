@@ -332,17 +332,39 @@ API.interceptors.request.use(cfg => {{
 export default API;
 ```
 
-ERROR HANDLING — always use this helper in every page/component that calls the API:
+ERROR HANDLING — always use these helpers in auth pages:
 ```jsx
 const parseError = (err) => {{
+  if (!err.response) return null; // network error — handle separately with retry
   const detail = err.response?.data?.detail;
-  if (!detail) return err.message || 'Something went wrong. Please try again.';
+  if (!detail) return 'Something went wrong. Please try again.';
   if (typeof detail === 'string') return detail;
   if (Array.isArray(detail)) return detail.map(d => d.msg).join(', ');
   return 'Something went wrong. Please try again.';
 }};
+const sleep = (ms) => new Promise(r => setTimeout(r, ms));
 ```
-FastAPI validation errors (422) return detail as an ARRAY — never display it raw or use `|| fallback` directly.
+FastAPI validation errors (422) return detail as an ARRAY — never display it raw.
+
+RETRY PATTERN — wrap all auth API calls in a retry loop (backend may be sleeping on free hosting):
+```jsx
+for (let attempt = 1; attempt <= 3; attempt++) {{
+  try {{
+    setStatus(attempt === 1 ? 'Signing in…' : `Starting up… retrying (${{attempt}}/3)`);
+    const res = await API.post('/auth/login', {{ email, password }});
+    localStorage.setItem('token', res.data.access_token);
+    navigate('/dashboard');
+    return;
+  }} catch (err) {{
+    const msg = parseError(err);
+    if (msg) {{ setError(msg); setLoading(false); return; }} // real API error, don't retry
+    if (attempt < 3) {{ setStatus(`Backend starting up… retrying in 15s (${{attempt}}/3)`); await sleep(15000); }}
+  }}
+}}
+setError('Backend took too long. Wait 30 seconds then try again.');
+setLoading(false);
+```
+Show `status` text in indigo below the form while retrying.
 
 AUTH RULES — mandatory for every app with authentication:
 
