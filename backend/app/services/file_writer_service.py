@@ -384,4 +384,12 @@ def write_files(project_name, files, frontend_target: str = "web"):
         with open(full_path, "w", encoding="utf-8") as f:
             f.write(content)
 
+    # Write deterministic deployment configs (render.yaml, .env.example, GitHub Actions, etc.)
+    # These override any LLM-generated versions which are often wrong.
+    try:
+        from app.services.deployment_config_service import generate_deployment_configs
+        generate_deployment_configs(base_dir, project_name)
+    except Exception as e:
+        print(f"  [V14] Deployment configs skipped: {e}")
+
     return base_dir

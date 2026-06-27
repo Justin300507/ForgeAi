@@ -17,7 +17,7 @@ from app.services.planner_service import generate_plan
 
 Base.metadata.create_all(bind=engine)
 
-app = FastAPI(title="ForgeAI", version="12.0")
+app = FastAPI(title="ForgeAI", version="14.0")
 
 app.add_middleware(
     CORSMiddleware,
@@ -423,6 +423,70 @@ def project_v12(request: V12Request):
     )
 
 
+class V14Request(BaseModel):
+    idea: str
+    provider: str = "auto"
+    deploy_to: str = "none"          # "render" | "cloudflare" | "both" | "none"
+    run_improvement_cycle: bool = False
+    skip_reviews: bool = True
+    frontend_target: str = "web"
+
+
+@app.post("/project/v14")
+def project_v14(request: V14Request):
+    """
+    V14 — One-Click Deployment Platform.
+    Generates, validates, pushes to GitHub, deploys backend to Render,
+    deploys frontend to Cloudflare Pages, runs health checks, returns a report.
+
+    deploy_to options:
+      "none"       — generate + configs only (default, no credentials needed)
+      "render"     — deploy backend to Render (needs RENDER_API_KEY + RENDER_OWNER_ID + GITHUB_TOKEN)
+      "cloudflare" — deploy frontend to Cloudflare Pages (needs CLOUDFLARE_API_TOKEN + CLOUDFLARE_ACCOUNT_ID)
+      "both"       — full stack deploy (needs all 5 credentials above)
+
+    Required in backend/.env for deployment:
+      GITHUB_TOKEN, RENDER_API_KEY, RENDER_OWNER_ID,
+      CLOUDFLARE_API_TOKEN, CLOUDFLARE_ACCOUNT_ID
+    """
+    from app.services.v14_orchestrator import generate_project_v14
+    return generate_project_v14(
+        idea=request.idea,
+        provider=request.provider,
+        deploy_to=request.deploy_to,
+        run_improvement_cycle=request.run_improvement_cycle,
+        skip_reviews=request.skip_reviews,
+        frontend_target=request.frontend_target,
+    )
+
+
+@app.post("/deploy/github")
+def deploy_github(project_name: str, project_path: str):
+    """Push a generated project to GitHub (creates repo automatically). Requires GITHUB_TOKEN."""
+    from app.services.github_service import push_to_github
+    return push_to_github(project_path, project_name)
+
+
+@app.post("/deploy/render")
+def deploy_render(project_name: str, project_path: str, github_repo_url: str = ""):
+    """Deploy a generated project's backend to Render. Requires RENDER_API_KEY + RENDER_OWNER_ID."""
+    from app.deployments.render_provider import RenderProvider
+    provider = RenderProvider()
+    env_vars = {"GITHUB_REPO_URL": github_repo_url} if github_repo_url else None
+    res = provider.deploy(project_path, project_name, env_vars=env_vars)
+    return {"success": res.success, "url": res.url, "error": res.error, "metadata": res.metadata}
+
+
+@app.post("/deploy/cloudflare")
+def deploy_cloudflare(project_name: str, project_path: str, backend_url: str = ""):
+    """Deploy a generated project's frontend to Cloudflare Pages. Requires CLOUDFLARE_API_TOKEN."""
+    from app.deployments.cloudflare_provider import CloudflareProvider
+    provider = CloudflareProvider()
+    env_vars = {"VITE_API_URL": backend_url} if backend_url else None
+    res = provider.deploy(project_path, project_name, env_vars=env_vars)
+    return {"success": res.success, "url": res.url, "error": res.error}
+
+
 @app.get("/health")
 def health():
-    return {"status": "ok", "version": "12.0"}
+    return {"status": "ok", "version": "14.0"}
