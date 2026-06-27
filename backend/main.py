@@ -5,7 +5,8 @@ import threading
 from datetime import datetime, timedelta
 
 from fastapi import FastAPI, Depends, HTTPException, status, BackgroundTasks, WebSocket, WebSocketDisconnect
-from fastapi.responses import RedirectResponse
+from fastapi.responses import RedirectResponse, FileResponse
+from fastapi.staticfiles import StaticFiles
 from fastapi.security import OAuth2PasswordRequestForm
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
@@ -98,7 +99,7 @@ def me(current_user=Depends(get_current_user)):
     return {"id": current_user.id, "email": current_user.email, "is_active": current_user.is_active}
 
 
-@app.get("/", include_in_schema=False)
+@app.get("/docs-redirect", include_in_schema=False)
 def root():
     return RedirectResponse(url="/docs")
 
@@ -872,3 +873,19 @@ def deploy_cloudflare(project_name: str, project_path: str, backend_url: str = "
 @app.get("/health")
 def health():
     return {"status": "ok", "version": "14.0"}
+
+
+# ── Serve React frontend (production) ─────────────────────────────────────────
+# When deployed on Render, the frontend is built into ../frontend/dist.
+# This must come LAST so API routes take priority.
+import os as _os
+_dist = _os.path.abspath(_os.path.join(_os.path.dirname(__file__), "..", "frontend", "dist"))
+if _os.path.isdir(_dist):
+    app.mount("/assets", StaticFiles(directory=_os.path.join(_dist, "assets")), name="assets")
+
+    @app.get("/{full_path:path}", include_in_schema=False)
+    async def serve_spa(full_path: str):
+        file = _os.path.join(_dist, full_path)
+        if _os.path.isfile(file):
+            return FileResponse(file)
+        return FileResponse(_os.path.join(_dist, "index.html"))

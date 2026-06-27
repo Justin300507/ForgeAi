@@ -91,8 +91,7 @@ export default function ProjectDetail() {
 
   useEffect(() => {
     if (!job || (job.status !== "pending" && job.status !== "running")) return;
-    const proto = location.protocol === "https:" ? "wss" : "ws";
-    const ws = new WebSocket(`${proto}://${location.host}/ws/${id}`);
+    const proto = (import.meta.env.VITE_WS_URL ? import.meta.env.VITE_WS_URL.replace(/^http/, "ws") : (location.protocol === "https:" ? "wss" : "ws") + "://" + location.host); const ws = new WebSocket(`${proto}/ws/${id}`);
     ws.onmessage = (e) => {
       const msg = JSON.parse(e.data);
       if (msg.type === "log") setLogs(p => [...p, msg.message]);

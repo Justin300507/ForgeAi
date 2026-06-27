@@ -2,6 +2,12 @@ __pycache__/
 *.pyc
 
 generated_projects/
+backend/llm_cache/
+backend/failure_memory/dataset/
+backend/*.db
+backend/app.db
+frontend/dist/
+frontend/node_modules/
 
 architect_response.txt
 backend_response.txt

@@ -1,7 +1,7 @@
 import axios from 'axios'
 
 const api = axios.create({
-  baseURL: '/api',
+  baseURL: import.meta.env.VITE_API_URL ?? '',
 })
 
 api.interceptors.request.use((config) => {
@@ -25,6 +25,8 @@ api.interceptors.response.use(
 export default api
 
 export function buildWsUrl(jobId) {
+  const base = import.meta.env.VITE_WS_URL
+  if (base) return `${base}/ws/${jobId}`
   const proto = window.location.protocol === 'https:' ? 'wss' : 'ws'
   return `${proto}://${window.location.host}/ws/${jobId}`
 }

@@ -291,13 +291,11 @@ def write_files(project_name, files, frontend_target: str = "web"):
         .lower()
     )
 
-    base_dir = os.path.abspath(
-        os.path.join(
-            "..",
-            "generated_projects",
-            project_name
-        )
+    _projects_root = os.environ.get(
+        "GENERATED_PROJECTS_DIR",
+        os.path.abspath(os.path.join("..", "generated_projects"))
     )
+    base_dir = os.path.join(_projects_root, project_name)
 
     if os.path.exists(base_dir):
         import stat

@@ -1,0 +1,28 @@
+services:
+  - type: web
+    name: forgeai
+    runtime: python
+    buildCommand: >
+      cd frontend && npm install && npm run build && cd ../backend && pip install -r requirements.txt
+    startCommand: cd backend && uvicorn main:app --host 0.0.0.0 --port $PORT
+    disk:
+      name: forgeai-data
+      mountPath: /data
+      sizeGB: 2
+    envVars:
+      - key: CEREBRAS_API_KEY
+        sync: false
+      - key: GROQ_API_KEY
+        sync: false
+      - key: OPENROUTER_API_KEY
+        sync: false
+      - key: GEMINI_API_KEY
+        sync: false
+      - key: SECRET_KEY
+        generateValue: true
+      - key: DATABASE_URL
+        value: sqlite:////data/forgeai.db
+      - key: GENERATED_PROJECTS_DIR
+        value: /data/generated_projects
+      - key: PYTHONIOENCODING
+        value: utf-8
