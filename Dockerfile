@@ -12,4 +12,4 @@ RUN pip install --no-cache-dir -r requirements.txt
 COPY backend/ ./
 COPY --from=frontend-builder /app/frontend/dist /app/frontend/dist
 
-CMD uvicorn main:app --host 0.0.0.0 --port ${PORT:-8080}
+CMD ["/bin/sh", "-c", "uvicorn main:app --host 0.0.0.0 --port ${PORT:-8080}"]
