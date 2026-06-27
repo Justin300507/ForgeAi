@@ -422,7 +422,16 @@ def _patch_orm_response_model(content: str, filepath: str) -> str:
     return _RESPONSE_MODEL_ATTR.sub(_replace_rm, content)
 
 
-# ── 5. Smart quotes → ASCII quotes ───────────────────────────────────────────
+# ── 5. Pydantic v2: regex= → pattern= in Field() calls ──────────────────────
+
+def _patch_pydantic_regex(content: str) -> str:
+    """Pydantic v2 removed `regex=` kwarg from Field() — replace with `pattern=`."""
+    if "regex=" not in content:
+        return content
+    return re.sub(r"\bregex\s*=\s*(r?['\"])", r"pattern=\1", content)
+
+
+# ── 6. Smart quotes → ASCII quotes ───────────────────────────────────────────
 
 _SMART_QUOTE_MAP = str.maketrans({
     "‘": "'", "’": "'",
@@ -456,6 +465,7 @@ def run_deterministic_patches(project_path: str) -> int:
         patched = original
         patched = _patch_smart_quotes(patched)
         patched = _patch_passlib(patched)
+        patched = _patch_pydantic_regex(patched)
         patched = _patch_async_sync(patched)
         patched = _patch_orm_response_model(patched, rel)
 
