@@ -233,14 +233,59 @@ const data = [
 
 LIST / INDEX PAGES — MUST contain:
   - Page header with title + "Add X" button (flex justify-between items-center)
-  - Search/filter bar (optional but recommended)
-  - At least 3 pre-populated example items using useState initial array
-  - Empty state component if list is empty (icon + message)
+  - Search bar with value/onChange wired to a search state variable
+  - Status/category filter dropdown wired to a filter state variable
+  - At LEAST 5 pre-populated example items in useState initial array (use realistic domain data)
+  - Empty state component if filtered list is empty (icon + "No results found" message)
+  - Loading skeleton (show when fetching) using animate-pulse divs
 
 FORM PAGES — MUST contain:
-  - Page header with back button
+  - Page header with back button (← Back)
   - All fields with labels above inputs
+  - Placeholder text matching the domain (e.g. "e.g. John Smith" not "Enter name")
+  - Client-side validation: disable submit button if required fields are empty
+  - Submit button shows loading state: disabled + spinner while submitting
   - Submit + Cancel buttons at bottom
+  - Success/error toast feedback after submit
+
+TOAST NOTIFICATIONS — add to every page that mutates data:
+```jsx
+const [toast, setToast] = React.useState(null);
+const showToast = (msg, type = 'success') => {{
+  setToast({{ msg, type }});
+  setTimeout(() => setToast(null), 3000);
+}};
+// In JSX:
+{{toast && (
+  <div className={{`fixed bottom-4 right-4 px-4 py-3 rounded-xl shadow-lg text-sm font-medium text-white z-50 ${{
+    toast.type === 'success' ? 'bg-emerald-600' : 'bg-red-600'
+  }}`}}>
+    {{toast.msg}}
+  </div>
+)}}
+```
+
+LOADING STATES — every useEffect data fetch MUST show a skeleton:
+```jsx
+const [loading, setLoading] = React.useState(true);
+// In JSX:
+{{loading ? (
+  <div className="animate-pulse space-y-3">
+    {{[...Array(5)].map((_, i) => (
+      <div key={{i}} className="h-16 bg-slate-200 dark:bg-slate-700 rounded-xl" />
+    ))}}
+  </div>
+) : (
+  /* real content */
+)}}
+```
+
+PRE-POPULATED DEMO DATA — use realistic domain-specific values:
+  Gym app:    members named "Alex Chen", "Maria Garcia", tier "Premium", class "7:00 AM Yoga"
+  Finance:    expenses like "Whole Foods $89.40", "Netflix $15.99", category "Food"/"Entertainment"
+  Tasks:      "Launch Q3 campaign", "Fix login bug", status "In Progress", priority "High"
+  Shop:       "Wireless Headphones $79.99", "USB-C Cable $12.99", stock 24, category "Electronics"
+  Never use:  "User 1", "Item A", "test@test.com", "Lorem ipsum", "Sample data"
 
 ═══════════════════════════════════════════════════════
 LUCIDE-REACT ICON GUIDE
@@ -275,37 +320,73 @@ React.useEffect(() => {{
 API INTEGRATION
 ═══════════════════════════════════════════════════════
 
-Use axios with the backend base URL:
+ALWAYS create src/api.js as a shared axios instance (every page imports from here):
 ```jsx
 import axios from 'axios';
-const API = axios.create({{ baseURL: 'http://localhost:8000' }});
-
-// With auth token:
+const API = axios.create({{ baseURL: import.meta.env.VITE_API_URL || 'http://localhost:8000' }});
 API.interceptors.request.use(cfg => {{
   const token = localStorage.getItem('token');
   if (token) cfg.headers.Authorization = `Bearer ${{token}}`;
   return cfg;
 }});
+export default API;
 ```
 
-For auth pages: save token to localStorage after login:
+ERROR HANDLING — always use this helper in every page/component that calls the API:
+```jsx
+const parseError = (err) => {{
+  const detail = err.response?.data?.detail;
+  if (!detail) return err.message || 'Something went wrong. Please try again.';
+  if (typeof detail === 'string') return detail;
+  if (Array.isArray(detail)) return detail.map(d => d.msg).join(', ');
+  return 'Something went wrong. Please try again.';
+}};
+```
+FastAPI validation errors (422) return detail as an ARRAY — never display it raw or use `|| fallback` directly.
+
+AUTH RULES — mandatory for every app with authentication:
+
+1. PRIVATE ROUTE — add to App.jsx to protect all authenticated pages:
+```jsx
+const PrivateRoute = ({{ children }}) =>
+  localStorage.getItem('token') ? children : <Navigate to="/login" replace />;
+```
+Wrap every authenticated route: `<Route path="/dashboard" element={{<PrivateRoute><Layout><Dashboard /></Layout></PrivateRoute>}} />`
+
+2. LOGIN PAGE — always POST JSON to /auth/login, store token, redirect:
 ```jsx
 const res = await API.post('/auth/login', {{ email, password }});
 localStorage.setItem('token', res.data.access_token);
 navigate('/dashboard');
 ```
 
+3. SIGNUP PAGE — always validate password length client-side BEFORE submitting:
+```jsx
+if (password.length < 8) {{ setError('Password must be at least 8 characters.'); return; }}
+```
+Show a hint below the password field: `<p className="text-xs text-slate-400">Must be at least 8 characters</p>`
+
+4. LOGOUT — always clear token and redirect:
+```jsx
+localStorage.removeItem('token'); navigate('/login');
+```
+
+5. API LIST RESPONSES — FastAPI always returns `{{ items: [...], total: N }}` wrappers.
+Always unwrap: `setItems(res.data.items || [])` — NEVER `setItems(res.data)`
+
 ═══════════════════════════════════════════════════════
 CODE RULES
 ═══════════════════════════════════════════════════════
 
 - Arrow function components only: const Page = () => {{ ... }}; export default Page;
-- useState for all form state and list data
+- useState for all form state, list data, loading, error, toast
 - useEffect with empty deps [] to fetch data on mount
-- Try/catch around all axios calls
+- Try/catch around all axios calls; show toast on error
 - No comments in code
-- 50-150 lines per file max
+- 80-250 lines per file (feature-rich pages need more lines — do not truncate)
 - No TypeScript, no PropTypes
+- Forms: all required fields have Field(min_length=1) equivalent; disable submit when empty
+- Search/filter: apply client-side filter on initial data AND wire to API query params
 
 ═══════════════════════════════════════════════════════
 JSON OUTPUT RULES  (CRITICAL)
@@ -321,7 +402,16 @@ Before returning:
 1. Verify every import references a file you generated (or react/axios/lucide-react/recharts/react-router-dom)
 2. Verify every file ends with: export default ComponentName
 3. Verify JSON is syntactically valid
-4. Verify Login/Register pages have real wired inputs
-5. Verify Dashboard has stat cards + a recharts chart
-6. Verify list pages have at least 3 example items
+4. Verify Login/Register pages have real wired inputs with domain-appropriate placeholders
+5. Verify Dashboard has 4 stat cards + a recharts chart with real data shape
+6. Verify list pages have at LEAST 5 pre-populated items with realistic domain values (NOT "User 1", NOT "test@test.com")
+7. Verify every list page has a working search bar
+8. Verify every form has placeholder text, a loading state on submit, and toast feedback
+9. Verify every data-fetching page has a loading skeleton
+10. Verify dashboard stats come from the /stats/summary API endpoint
+11. Verify src/api.js exists and uses import.meta.env.VITE_API_URL with localhost fallback
+12. Verify every auth error uses parseError() helper — never display raw detail or use plain || fallback
+13. Verify signup page validates password.length >= 8 before submitting, with visible hint text
+14. Verify App.jsx has PrivateRoute wrapping all authenticated routes
+15. Verify all list data fetching unwraps .items: setItems(res.data.items || []) not setItems(res.data)
 """
