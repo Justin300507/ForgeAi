@@ -27,7 +27,7 @@ def _build_synthetic_body(architecture, path):
     return body
 
 
-def run_endpoint_smoke_tests(architecture, base_url="http://127.0.0.1:8001", timeout=10):
+def run_endpoint_smoke_tests(architecture, base_url="http://127.0.0.1:8001", timeout=3):
 
     results = []
 

@@ -103,6 +103,29 @@ def generate_runtime_fix(
         except Exception as bp_err:
             print(f"  back_populates fix failed: {bp_err}")
 
+    # ── SQLAlchemy relationship() string can't resolve model → add import to main.py ──
+    if parsed_error.get("type") == "RelationshipModelNotImported":
+        missing_model = parsed_error.get("missing_model")
+        if missing_model:
+            main_py_path = os.path.join(project_path, "app", "main.py")
+            try:
+                with open(main_py_path, "r", encoding="utf-8") as f:
+                    main_content = f.read()
+                module_name = missing_model.lower()
+                import_line = f"from app.models.{module_name} import {missing_model}"
+                if import_line not in main_content:
+                    # Insert after the last existing model import or at top of imports
+                    insert_after = re.search(r"(from app\.models\.\w+ import \w+\n)", main_content)
+                    if insert_after:
+                        pos = insert_after.end()
+                        main_content = main_content[:pos] + import_line + "\n" + main_content[pos:]
+                    else:
+                        main_content = import_line + "\n" + main_content
+                    print(f"  RelationshipModelNotImported fix: added `{import_line}` to main.py")
+                    return {"path": "app/main.py", "content": main_content}
+            except Exception as e:
+                print(f"  RelationshipModelNotImported fix failed: {e}")
+
     # ── Werkzeug: replace the entire auth_service with passlib ──────────
     if parsed_error.get("type") == "WerkzeugImportError":
         error_file = parsed_error.get("error_file", "")
