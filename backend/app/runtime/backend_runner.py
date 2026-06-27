@@ -34,40 +34,10 @@ class BackendRunner:
             backend_dir / "app" / "requirements.txt"
         )
 
+        # Skip pip install — generated projects use the same stack already
+        # installed in the container (FastAPI, SQLAlchemy, pydantic, etc.)
         if requirements_file.exists():
-
-            print(
-                f"Installing requirements from: {requirements_file}"
-            )
-
-            install_result = subprocess.run(
-                [
-                    sys.executable,
-                    "-m",
-                    "pip",
-                    "install",
-                    "-q",
-                    "-r",
-                    str(requirements_file)
-                ],
-                cwd=backend_dir,
-                capture_output=True,
-                text=True
-            )
-
-            if install_result.returncode != 0:
-
-                return RuntimeResult(
-                    success=False,
-                    exit_code=install_result.returncode,
-                    stdout=install_result.stdout,
-                    stderr=install_result.stderr,
-                    startup_time=time.time() - start_time
-                )
-
-            print(
-                "Requirements installation complete"
-            )
+            print(f"Skipping pip install (packages pre-installed): {requirements_file}")
 
         process = subprocess.Popen(
             [
