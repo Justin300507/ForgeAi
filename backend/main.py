@@ -21,6 +21,7 @@ from app.services.frontend_service import generate_frontend
 from app.services.project_service import generate_project
 from app.services.planner_service import generate_plan
 from app.models.generation_job import GenerationJob
+from app.models.user_credentials import UserCredentials
 
 Base.metadata.create_all(bind=engine)
 
@@ -115,6 +116,7 @@ class JobRequest(BaseModel):
 
 def _run_job(job_id: str, req: JobRequest):
     """Runs the V14 pipeline in a background thread."""
+    import os
     from app.services.v14_orchestrator import generate_project_v14
 
     store = JOB_STORE[job_id]
@@ -124,6 +126,35 @@ def _run_job(job_id: str, req: JobRequest):
 
     # Write the result back to DB in a new session
     from app.database import SessionLocal
+
+    # Look up per-user deployment credentials and temporarily apply them as env vars
+    _saved_env: dict = {}
+    try:
+        _cred_db = SessionLocal()
+        try:
+            _job = _cred_db.query(GenerationJob).filter(GenerationJob.id == job_id).first()
+            _creds = (
+                _cred_db.query(UserCredentials)
+                .filter(UserCredentials.user_id == _job.user_id)
+                .first()
+            ) if _job else None
+        finally:
+            _cred_db.close()
+
+        if _creds:
+            _env_map = {
+                "GITHUB_TOKEN": _creds.github_token,
+                "RENDER_API_KEY": _creds.render_api_key,
+                "RENDER_OWNER_ID": _creds.render_owner_id,
+                "CLOUDFLARE_API_TOKEN": _creds.cloudflare_api_token,
+                "CLOUDFLARE_ACCOUNT_ID": _creds.cloudflare_account_id,
+            }
+            for _k, _v in _env_map.items():
+                if _v:
+                    _saved_env[_k] = os.environ.get(_k)
+                    os.environ[_k] = _v
+    except Exception as _ce:
+        print(f"[credentials] lookup failed: {_ce}")
 
     try:
         result = generate_project_v14(
@@ -182,6 +213,14 @@ def _run_job(job_id: str, req: JobRequest):
                     db.commit()
             finally:
                 db.close()
+
+    finally:
+        # Restore any env vars we temporarily overrode
+        for _k, _orig in _saved_env.items():
+            if _orig is None:
+                os.environ.pop(_k, None)
+            else:
+                os.environ[_k] = _orig
 
 
 def _run_job_retry(job_id: str, parent: "GenerationJob"):
@@ -868,6 +907,49 @@ def deploy_cloudflare(project_name: str, project_path: str, backend_url: str = "
     env_vars = {"VITE_API_URL": backend_url} if backend_url else None
     res = provider.deploy(project_path, project_name, env_vars=env_vars)
     return {"success": res.success, "url": res.url, "error": res.error}
+
+
+# ── Per-user deployment credentials ──────────────────────────────────────────
+
+class CredentialsRequest(BaseModel):
+    github_token: str = ""
+    render_api_key: str = ""
+    render_owner_id: str = ""
+    cloudflare_api_token: str = ""
+    cloudflare_account_id: str = ""
+
+
+@app.get("/credentials", tags=["credentials"])
+def get_credentials(db: Session = Depends(get_db), current_user=Depends(get_current_user)):
+    creds = db.query(UserCredentials).filter(UserCredentials.user_id == current_user.id).first()
+    if not creds:
+        return {}
+    return {
+        "github_token": creds.github_token or "",
+        "render_api_key": creds.render_api_key or "",
+        "render_owner_id": creds.render_owner_id or "",
+        "cloudflare_api_token": creds.cloudflare_api_token or "",
+        "cloudflare_account_id": creds.cloudflare_account_id or "",
+    }
+
+
+@app.post("/credentials", tags=["credentials"])
+def save_credentials(
+    req: CredentialsRequest,
+    db: Session = Depends(get_db),
+    current_user=Depends(get_current_user),
+):
+    creds = db.query(UserCredentials).filter(UserCredentials.user_id == current_user.id).first()
+    if not creds:
+        creds = UserCredentials(user_id=current_user.id)
+        db.add(creds)
+    creds.github_token = req.github_token or None
+    creds.render_api_key = req.render_api_key or None
+    creds.render_owner_id = req.render_owner_id or None
+    creds.cloudflare_api_token = req.cloudflare_api_token or None
+    creds.cloudflare_account_id = req.cloudflare_account_id or None
+    db.commit()
+    return {"saved": True}
 
 
 @app.get("/health")

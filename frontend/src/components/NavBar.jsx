@@ -18,6 +18,7 @@ export default function NavBar() {
       </Link>
       <div className="flex items-center gap-4">
         <Link to="/dashboard" className="text-sm text-gray-400 hover:text-white transition-colors">Dashboard</Link>
+        <Link to="/settings" className="text-sm text-gray-400 hover:text-white transition-colors">Deploy Keys</Link>
         <Link to="/new" className="text-sm font-semibold text-white px-4 py-2 rounded-lg transition-colors"
           style={{background:"#7c3aed"}}>
           + New App

@@ -27,4 +27,9 @@ export const jobsAPI = {
   retry: (id) => api.post(`/jobs/${id}/retry`),
 };
 
+export const credentialsAPI = {
+  get: () => api.get("/credentials"),
+  save: (data) => api.post("/credentials", data),
+};
+
 export default api;
