@@ -1,6 +1,7 @@
 from app.prompts.fixer_prompt import build_fixer_prompt
 from app.providers.ai_provider import generate_content
 from app.utils.json_cleaner import extract_json
+from app.utils.llm_cache import get_cached, set_cached
 import json
 
 
@@ -20,6 +21,12 @@ def generate_fix(
         errors
     )
 
+    _cache_payload = {"prompt": prompt}
+    _cached = get_cached("fix", _cache_payload)
+    if _cached is not None:
+        print(f"      [fix cache hit] {file_path}")
+        return _cached
+
     text = generate_content(
         prompt,
         provider,
@@ -27,7 +34,10 @@ def generate_fix(
     )
 
     try:
-        return extract_json(text)
+        result = extract_json(text)
+        if result and result.get("content"):
+            set_cached("fix", _cache_payload, result)
+        return result
 
     except (json.JSONDecodeError, ValueError) as e:
 

@@ -192,18 +192,8 @@ jobs:
 def _build_wrangler_toml(project_name: str) -> str:
     slug = _project_slug(project_name)
     return f"""name = "{slug}-frontend"
-compatibility_date = "2024-01-01"
-
-[build]
-command = "npm ci && npm run build"
-cwd = "."
-
-[build.upload]
-format = "directory"
-dir = "./dist"
-
-[env.production]
-name = "{slug}-frontend"
+compatibility_date = "2024-09-23"
+pages_build_output_dir = "dist"
 """
 
 

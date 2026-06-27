@@ -40,6 +40,7 @@ from app.services.architecture_fix_service import generate_architecture_fix
 from app.memory.failure_memory import record_run, build_prompt_injection
 from app.utils.cost_tracker import reset_session, flush_to_log, print_session_cost
 from app.services.runtime_validator_service import validate_runtime
+from app.services.deterministic_patcher import run_deterministic_patches
 
 
 ARCHITECTURE_ERROR_MARKERS = (
@@ -104,7 +105,6 @@ def generate_project_v6(
     # ------------------------------------------------------------------
     # Stage 1: Product Manager
     # ------------------------------------------------------------------
-    print("\n=== PRODUCT MANAGER (V6) ===")
     product_spec = run_product_manager(idea, provider)
     plan = product_spec.to_plan_dict()
     collab.record_decision(
@@ -217,6 +217,13 @@ def generate_project_v6(
     project_path = write_files(project_name, all_files, frontend_target=frontend_target)
     initialize_git(project_path)
     print(f"\n=== FILES WRITTEN: {project_path} ({len(all_files)} files) ===")
+
+    # ------------------------------------------------------------------
+    # Deterministic patcher — runs before validation, no LLM cost
+    # Fixes: passlib→bcrypt, missing FK imports, async+sync ORM, smart quotes
+    # ------------------------------------------------------------------
+    print("\n=== DETERMINISTIC PATCHER ===")
+    run_deterministic_patches(project_path)
 
     total_time_so_far = round(time.time() - start, 2)
     metadata_path = save_metadata(project_path, plan, architecture, provider, total_time_so_far)
@@ -544,6 +551,161 @@ def generate_project_v6(
         "forge_score": forge_score,
         "v6_score": v6_score,
         "collaboration_log": collab.get_summary(),
+        "generation_time_seconds": total_time,
+        "fix_attempts": fix_attempts_used,
+    }
+
+
+def repair_project(
+    project_path: str,
+    plan: dict,
+    architecture: dict,
+    provider: str = "auto",
+) -> dict:
+    """
+    Resume from an existing project directory — skip all generation stages.
+    Runs: deterministic patcher → validation fix loop → runtime fix loop → score.
+    Called by retry logic when files already exist on disk.
+    """
+    start = time.time()
+    project_name = plan.get("project_name", os.path.basename(project_path))
+
+    print(f"\n{'#'*70}")
+    print(f"# REPAIR (skip generation — files already exist)")
+    print(f"# Project: {project_name}")
+    print(f"{'#'*70}")
+
+    # Deterministic patches first
+    print("\n=== DETERMINISTIC PATCHER ===")
+    run_deterministic_patches(project_path)
+
+    # Validation fix loop
+    print("\n=== VALIDATION LOOP (REPAIR) ===")
+    validation = validate_project(project_path)
+    print(f"  Validation: {'PASS' if validation['passed'] else 'FAIL'} — {len(validation['errors'])} errors")
+
+    fix_attempts_used = 0
+    for attempt in range(4):
+        if validation["passed"]:
+            break
+        fix_attempts_used = attempt + 1
+        print(f"\n  Fix attempt {attempt + 1}/4 ...")
+        errors_by_file = defaultdict(list)
+        for err in validation["errors"]:
+            if err.startswith("Unknown dependency:"):
+                errors_by_file["app/requirements.txt"].append(err)
+                continue
+            if "Missing endpoint" in err or "Router export mismatch" in err:
+                m = re.search(r"expected in (app[\\/][^\s]+\.py)", err)
+                if m:
+                    errors_by_file[m.group(1).replace("\\", "/")].append(err)
+                    continue
+            m = re.search(r"(app[\\/][^\s:]+?\.(?:py|txt))", err)
+            if m:
+                errors_by_file[m.group(1).replace("\\", "/")].append(err)
+                continue
+            m = re.search(r"Missing frontend import target:\s+(\S+)", err)
+            if m:
+                imp = m.group(1)
+                name = os.path.basename(imp.replace(".jsx", ""))
+                for subdir in ("components", "pages"):
+                    if subdir in imp:
+                        errors_by_file[f"src/{subdir}/{name}.jsx"].append(err)
+                        break
+                else:
+                    errors_by_file[f"src/{name}.jsx"].append(err)
+
+        for filepath, file_errors in errors_by_file.items():
+            try:
+                safe_path = _sanitize_path(filepath)
+                abs_path = os.path.join(project_path, safe_path)
+                if any("Orphan file:" in e for e in file_errors):
+                    if os.path.exists(abs_path):
+                        os.remove(abs_path)
+                    continue
+                if not os.path.exists(abs_path):
+                    fix = generate_missing_file(filepath, "\n".join(file_errors), provider)
+                    if fix and fix.get("content"):
+                        fix["path"] = _sanitize_path(fix["path"])
+                        write_fix(project_path, fix)
+                        save_fix_log(project_path, "Missing File", fix)
+                    continue
+                with open(abs_path, "r", encoding="utf-8") as fh:
+                    file_content = fh.read()
+                fix = generate_fix(filepath, file_content, file_errors, provider)
+                if not isinstance(fix, dict) or not fix.get("path") or not fix.get("content"):
+                    continue
+                fix["path"] = _sanitize_path(fix["path"])
+                write_fix(project_path, fix)
+                save_fix_log(project_path, "\n".join(file_errors), fix)
+            except Exception as e:
+                print(f"  Fix failed for {filepath}: {e}")
+
+        validation = validate_project(project_path)
+        print(f"  Post-fix {attempt + 1}: {'PASS' if validation['passed'] else 'FAIL'} — {len(validation['errors'])} errors")
+
+    # Architecture repair
+    architecture_errors = [
+        e for e in validation.get("errors", [])
+        if any(marker in e for marker in ARCHITECTURE_ERROR_MARKERS)
+    ]
+    if architecture_errors and not validation["passed"]:
+        print("\n=== ARCHITECTURE REPAIR ===")
+        arch_fix = generate_architecture_fix(
+            architecture, architecture_errors, provider,
+            required_exports={}, required_endpoints={}, existing_symbols={}
+        )
+        if arch_fix and isinstance(arch_fix, dict) and arch_fix.get("files"):
+            for f in arch_fix["files"]:
+                f["path"] = _sanitize_path(f["path"])
+                write_fix(project_path, f)
+            validation = validate_project(project_path)
+            print(f"  Post-arch-repair: {'PASS' if validation['passed'] else 'FAIL'}")
+
+    # Runtime validation
+    runtime_result = None
+    if validation["passed"]:
+        print("\n=== RUNTIME VALIDATION (REPAIR) ===")
+        try:
+            from app.services.runtime_fix_service import generate_runtime_fix
+            for r_attempt in range(3):
+                runtime_result = validate_runtime(project_path, architecture=architecture)
+                print(f"  Runtime: {'PASS' if runtime_result.get('success') else 'FAIL'}")
+                if runtime_result.get("success"):
+                    break
+                if r_attempt == 2:
+                    break
+                rt_fix = generate_runtime_fix(runtime_result, project_path, provider)
+                if rt_fix and rt_fix.get("path") and rt_fix.get("content"):
+                    rt_fix["path"] = _sanitize_path(rt_fix["path"])
+                    write_fix(project_path, rt_fix)
+        except Exception as re_err:
+            runtime_result = {"success": False, "error": str(re_err)}
+            print(f"  Runtime error: {re_err}")
+
+    # Export
+    can_export = validation["passed"] and runtime_result and runtime_result.get("success", False)
+    zip_path = None
+    if can_export:
+        zip_path = create_zip(project_path)
+
+    forge_score = calculate_forge_score(
+        validation, runtime_result,
+        frontend_build_result=None, playwright_result=None,
+        vision_result=None, docker_result=None,
+    )
+
+    total_time = round(time.time() - start, 2)
+    print(f"\n=== REPAIR COMPLETE in {total_time}s — forge_score={forge_score} ===")
+
+    return {
+        "pipeline": "repair",
+        "project_name": project_name,
+        "project_path": project_path,
+        "zip_path": zip_path,
+        "validation": validation,
+        "runtime": runtime_result,
+        "forge_score": forge_score,
         "generation_time_seconds": total_time,
         "fix_attempts": fix_attempts_used,
     }

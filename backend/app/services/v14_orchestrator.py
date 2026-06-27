@@ -144,10 +144,12 @@ def generate_project_v14(
     result["total_time"] = total_time
 
     deployed = bool(backend_url or frontend_url)
+    raw_score = v7_result.get("forge_score")
+    forge_score_int = raw_score.get("score") if isinstance(raw_score, dict) else raw_score
     result["report"] = {
         "status": "deployed" if deployed else "generated",
         "project_name": project_name,
-        "forge_score": v7_result.get("forge_score"),
+        "forge_score": forge_score_int,
         "backend_url": backend_url,
         "frontend_url": frontend_url,
         "github_url": github_result.get("repo_url"),
@@ -266,6 +268,136 @@ def _build_manual_deploy_instructions(project_name: str) -> list[str]:
         f"3. Deploy frontend to Cloudflare: wrangler pages deploy ./dist --project-name={slug}",
         "4. Add RENDER_API_KEY, RENDER_OWNER_ID, GITHUB_TOKEN, CLOUDFLARE_API_TOKEN, CLOUDFLARE_ACCOUNT_ID to backend/.env for one-click deploy",
     ]
+
+
+def retry_project_v14(
+    project_path: str,
+    project_name: str,
+    idea: str,
+    provider: str = "auto",
+    deploy_to: str = "none",
+    frontend_target: str = "web",
+) -> dict:
+    """
+    Resume from an existing project on disk — skip generation entirely.
+    Runs: patcher → validation → runtime → deploy.
+    Used when "Fix & Retry" is clicked on a failed job.
+    """
+    import json
+    import os
+    start = time.time()
+
+    print(f"\n{'#'*70}")
+    print(f"# V14 RETRY — resuming from existing files")
+    print(f"# Project: {project_name} | Deploy: {deploy_to}")
+    print(f"{'#'*70}")
+
+    # Load plan + architecture from metadata.json
+    metadata_path = os.path.join(project_path, "metadata.json")
+    plan: dict = {"project_name": project_name}
+    architecture: dict = {}
+    if os.path.exists(metadata_path):
+        try:
+            with open(metadata_path, encoding="utf-8") as f:
+                meta = json.load(f)
+            plan = meta.get("plan", plan)
+            architecture = meta.get("architecture", architecture)
+        except Exception:
+            pass
+
+    from app.services.v6_orchestrator import repair_project
+    repair_result = repair_project(project_path, plan, architecture, provider)
+
+    static_passed = bool((repair_result.get("validation") or {}).get("passed"))
+    runtime_passed = bool((repair_result.get("runtime") or {}).get("success"))
+
+    result: dict = {
+        "idea": idea,
+        "version": "v14-retry",
+        "generation": {
+            "project_name": project_name,
+            "project_path": project_path,
+            "forge_score": repair_result.get("forge_score"),
+            "static_passed": static_passed,
+            "runtime_passed": runtime_passed,
+            "zip_path": repair_result.get("zip_path"),
+        },
+        "deployment_configs": {},
+        "github": {},
+        "render": {},
+        "cloudflare": {},
+        "health": {},
+        "report": {},
+    }
+
+    if not static_passed:
+        result["report"] = {
+            "status": "failed",
+            "reason": "Static validation still failing after repair",
+            "forge_score": repair_result.get("forge_score"),
+            "project_name": project_name,
+            "errors": (repair_result.get("validation") or {}).get("errors", [])[:10],
+        }
+        result["total_time"] = round(time.time() - start, 2)
+        return result
+
+    # Deployment configs
+    print("\n[V14-RETRY] Writing deployment configs...")
+    config_results = generate_deployment_configs(project_path, project_name)
+    result["deployment_configs"] = config_results
+
+    if deploy_to == "none":
+        result["report"] = {
+            "status": "generated_only",
+            "project_name": project_name,
+            "forge_score": repair_result.get("forge_score"),
+            "message": "Repair passed. Set deploy_to to redeploy.",
+        }
+        result["total_time"] = round(time.time() - start, 2)
+        return result
+
+    # Push to GitHub
+    print("\n[V14-RETRY] Pushing to GitHub...")
+    github_result = _push_to_github(project_path, project_name, idea)
+    result["github"] = github_result
+    github_repo_url = github_result.get("clone_url") or github_result.get("repo_url")
+
+    # Deploy Render
+    render_result: dict = {"skipped": True}
+    if deploy_to in ("render", "both"):
+        print("\n[V14-RETRY] Deploying to Render...")
+        render_result = _deploy_render(project_path, project_name, github_repo_url)
+    result["render"] = render_result
+    backend_url = render_result.get("backend_url") or render_result.get("url")
+
+    # Deploy Cloudflare
+    cloudflare_result: dict = {"skipped": True}
+    if deploy_to in ("cloudflare", "both"):
+        print("\n[V14-RETRY] Deploying to Cloudflare...")
+        cloudflare_result = _deploy_cloudflare(project_path, project_name, backend_url)
+    result["cloudflare"] = cloudflare_result
+    frontend_url = cloudflare_result.get("url")
+
+    # Health checks
+    health = _run_health_checks(backend_url, frontend_url)
+    result["health"] = health
+
+    total_time = round(time.time() - start, 2)
+    result["total_time"] = total_time
+    deployed = bool(backend_url or frontend_url)
+    result["report"] = {
+        "status": "deployed" if deployed else "repaired",
+        "project_name": project_name,
+        "forge_score": repair_result.get("forge_score"),
+        "backend_url": backend_url,
+        "frontend_url": frontend_url,
+        "github_url": github_result.get("repo_url"),
+        "backend_health": health.get("backend"),
+        "frontend_health": health.get("frontend"),
+        "total_time_seconds": total_time,
+    }
+    _print_report(result["report"])
+    return result
 
 
 def _print_report(report: dict) -> None:

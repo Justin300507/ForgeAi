@@ -206,22 +206,22 @@ If parsed_error contains:
     "type": "WerkzeugImportError"
 }}
 
-werkzeug is a Flask library — NOT installed. Replace with passlib:
+werkzeug is a Flask library — NOT installed. passlib is also BROKEN on Python 3.13+ (Render default). Replace with bcrypt directly:
 
 WRONG:
 from werkzeug.security import generate_password_hash, check_password_hash
+from passlib.context import CryptContext   # also WRONG — passlib broken on Render
 
 CORRECT:
-from passlib.context import CryptContext
-pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
+import bcrypt
 
-def hash_password(plain: str) -> str:
-    return pwd_context.hash(plain)
+def get_password_hash(password: str) -> str:
+    return bcrypt.hashpw(password.encode('utf-8'), bcrypt.gensalt()).decode('utf-8')
 
 def verify_password(plain: str, hashed: str) -> bool:
-    return pwd_context.verify(plain, hashed)
+    return bcrypt.checkpw(plain.encode('utf-8'), hashed.encode('utf-8'))
 
-Also add passlib[bcrypt] to requirements.txt.
+In requirements.txt use `bcrypt` (NOT passlib, NOT passlib[bcrypt]).
 
 ========================================
 SCHEMAS NAMESPACE ERROR RULES

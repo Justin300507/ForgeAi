@@ -57,10 +57,12 @@ REQUIRED FILES
 
 app/main.py
 app/requirements.txt
-app/**init**.py
-app/routes/**init**.py
-app/models/**init**.py
-app/services/**init**.py
+app/__init__.py
+app/routes/__init__.py
+app/models/__init__.py
+app/services/__init__.py
+app/routes/seed_routes.py    ← MANDATORY: POST /seed endpoint
+app/routes/stats_routes.py   ← MANDATORY: GET /stats/summary endpoint (or merge into relevant module)
 
 ========================================
 OPTIONAL FILES
@@ -69,6 +71,76 @@ OPTIONAL FILES
 app/routes/<module>_routes.py
 app/models/<module>.py
 app/services/<module>_service.py
+
+========================================
+SEED ROUTE RULES
+================
+
+app/routes/seed_routes.py MUST implement POST /seed.
+
+This endpoint inserts realistic demo records for EVERY major table.
+Use domain-appropriate hardcoded values — NOT "User 1", "test@test.com", "Sample item".
+
+Pattern:
+```python
+from sqlalchemy.exc import IntegrityError
+
+@seed_router.post("/seed")
+def seed_database(db: Session = Depends(get_db)):
+    seeded = []
+    # For each entity: check-before-insert or catch IntegrityError
+    try:
+        member = Member(first_name="Alex", last_name="Chen", email="alex@example.com", ...)
+        db.add(member)
+        db.commit()
+        seeded.append("member:alex")
+    except IntegrityError:
+        db.rollback()
+    return {{"seeded": seeded, "message": f"Seeded {{len(seeded)}} records"}}
+```
+
+Seed at LEAST 5 records per major entity. Use realistic values matching the app domain.
+
+========================================
+STATS ROUTE RULES
+=================
+
+GET /stats/summary MUST return a dict with at LEAST 4 numeric metrics.
+Query them directly from the DB using db.query(Model).count() or func.sum().
+
+Example:
+```python
+@stats_router.get("/stats/summary")
+def stats_summary(db: Session = Depends(get_db)):
+    return {{
+        "total_members": db.query(Member).count(),
+        "active_members": db.query(Member).filter(Member.is_active == True).count(),
+        "classes_today": db.query(GymClass).filter(...).count(),
+        "revenue_this_month": db.query(func.sum(Payment.amount)).scalar() or 0,
+    }}
+```
+
+========================================
+SEARCH ROUTE RULES
+==================
+
+Every list endpoint (GET /[resources]) MUST support a `search` query param:
+  - Filter by name/title/description using .ilike()
+  - Return all if search is None or empty
+
+Example:
+```python
+@item_router.get("/items")
+def list_items(search: str = Query(None), status: str = Query(None),
+               limit: int = Query(50, ge=1, le=500), offset: int = Query(0, ge=0),
+               db: Session = Depends(get_db)):
+    q = db.query(Item)
+    if search:
+        q = q.filter(Item.name.ilike(f"%{{search}}%"))
+    if status:
+        q = q.filter(Item.status == status)
+    return q.offset(offset).limit(limit).all()
+```
 
 ========================================
 ROUTE RULES
@@ -336,7 +408,7 @@ OUTPUT RULES
 * No markdown
 * No explanations
 * No code fences
-* Maximum 25 files
+* Maximum 35 files
 * Prioritize correctness over brevity
 * NEVER reference a service, model, or schema in an import unless
   you also generate that exact file in this same response.
@@ -364,6 +436,10 @@ Before returning:
 4. Verify all routers are included in main.py.
 5. Verify requirements.txt exists.
 6. Verify JSON is valid.
+7. Verify app/routes/seed_routes.py exists with POST /seed and realistic seed data.
+8. Verify GET /stats/summary exists and returns at least 4 numeric fields.
+9. Verify every list endpoint supports ?search= query param.
+10. Verify sqlalchemy-exc IntegrityError is handled in seed route.
 
 Return JSON only.
 """

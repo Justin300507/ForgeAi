@@ -55,14 +55,24 @@ class ParallelBackendResult:
 # ── Helpers ──────────────────────────────────────────────────────────────────
 
 def _call_llm(prompt: str, provider: str, max_tokens: int = 8000) -> dict | None:
-    """Call LLM and parse JSON response. Retries up to 2x on JSON decode failure."""
+    """Call LLM and parse JSON response. Caches results by prompt hash — same prompt = free."""
+    from app.utils.llm_cache import get_cached, set_cached
+    _cache_payload = {"prompt": prompt, "mt": max_tokens}
+    _cached = get_cached("backend_file", _cache_payload)
+    if _cached is not None:
+        print("      [cache hit]")
+        return _cached
+
     for attempt in range(3):
         try:
             text = generate_content(prompt, provider, max_tokens=max_tokens)
             if not text:
                 return None
             text = text.replace("```json", "").replace("```", "").strip()
-            return extract_json(text)
+            result = extract_json(text)
+            if result and "_error" not in result:
+                set_cached("backend_file", _cache_payload, result)
+            return result
         except json.JSONDecodeError as e:
             if attempt < 2:
                 print(f"      [retry {attempt+1}/2] JSON decode error: {e}")

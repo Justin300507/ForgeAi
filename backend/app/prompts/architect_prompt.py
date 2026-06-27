@@ -187,14 +187,34 @@ Return ONLY this schema:
 }}
 
 ========================================
-LIMITS
-======
+LIMITS & MINIMUMS
+=================
 
-* Maximum 15 API endpoints
-* Maximum 10 database tables
-* Maximum 10 backend folders
-* Maximum 10 frontend pages
-* Maximum 15 frontend components
+API endpoints:          MINIMUM 10, MAXIMUM 30
+Database tables:        MINIMUM 4,  MAXIMUM 12
+Backend folders:        no restriction
+Frontend pages:         MINIMUM 5,  MAXIMUM 15
+Frontend components:    MINIMUM 8,  MAXIMUM 20
+
+MANDATORY ENDPOINTS — every architecture MUST include:
+  POST /seed
+    → Populates database with realistic demo data (5–10 records per table)
+    → file: app/routes/seed_routes.py
+
+  GET /stats/summary  (or equivalent like GET /dashboard/stats)
+    → Returns aggregate counts and key metrics for the dashboard
+    → file: app/routes/stats_routes.py (or merged into a relevant routes file)
+
+  At least 1 search endpoint:
+    GET /[resource]?search=[q]&[filter_param]=
+    Supports text search + at least 1 filter param (status, category, date range)
+
+MANDATORY ENDPOINT PATTERN for every resource (5 minimum):
+  GET    /[resources]?search=&[filter]=&limit=&offset=
+  GET    /[resources]/[id]
+  POST   /[resources]
+  PUT    /[resources]/[id]
+  DELETE /[resources]/[id]
 
 ========================================
 JSON RULES

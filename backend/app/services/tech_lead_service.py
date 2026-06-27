@@ -9,6 +9,7 @@ from dataclasses import dataclass, field
 from app.providers.ai_provider import generate_content
 from app.prompts.tech_lead_prompt import build_tech_lead_prompt
 from app.utils.json_cleaner import extract_json
+from app.utils.llm_cache import get_cached, set_cached
 
 
 @dataclass
@@ -94,14 +95,20 @@ def run_tech_lead(product_spec: dict, architecture: dict, provider: str = "auto"
     """
     print("\n=== TECH LEAD REVIEW (V6) ===")
 
-    prompt = build_tech_lead_prompt(product_spec, architecture)
-
-    try:
-        raw_text = generate_content(prompt, provider, max_tokens=3000, stage="tech_lead")
-        data = extract_json(raw_text)
-    except Exception as e:
-        print(f"  Tech Lead failed: {e} — skipping constraints")
-        return _EMPTY_CONSTRAINTS
+    _ck = {"arch": architecture}
+    _cached = get_cached("tech_lead", _ck)
+    if _cached is not None:
+        print("  [cache hit]")
+        data = _cached
+    else:
+        prompt = build_tech_lead_prompt(product_spec, architecture)
+        try:
+            raw_text = generate_content(prompt, provider, max_tokens=3000, stage="tech_lead")
+            data = extract_json(raw_text)
+            set_cached("tech_lead", _ck, data)
+        except Exception as e:
+            print(f"  Tech Lead failed: {e} — skipping constraints")
+            return _EMPTY_CONSTRAINTS
 
     issues = [
         ArchIssue(

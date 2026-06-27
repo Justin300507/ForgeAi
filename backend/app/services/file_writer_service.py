@@ -300,18 +300,26 @@ def write_files(project_name, files, frontend_target: str = "web"):
     )
 
     if os.path.exists(base_dir):
-        # On Windows, OneDrive or a recently-killed uvicorn may hold files open.
-        # Retry rmtree up to 5 times; if it still fails, just overwrite in-place.
-        for attempt in range(5):
+        import stat
+
+        def _force_remove(func, path, excinfo):
+            # Windows: .git objects are read-only — clear the flag then retry
             try:
-                shutil.rmtree(base_dir)
+                os.chmod(path, stat.S_IWRITE)
+                func(path)
+            except Exception:
+                pass
+
+        for attempt in range(3):
+            try:
+                shutil.rmtree(base_dir, onerror=_force_remove)
                 break
             except (PermissionError, OSError) as e:
-                if attempt == 4:
-                    print(f"rmtree failed after 5 attempts — writing files in-place: {e}")
+                if attempt == 2:
+                    print(f"rmtree failed after 3 attempts — writing files in-place: {e}")
                     break
-                print(f"rmtree failed ({e}) — retrying in 2s...")
-                time.sleep(2)
+                print(f"rmtree failed ({e}) — retrying in 1s...")
+                time.sleep(1)
 
     os.makedirs(
         base_dir,

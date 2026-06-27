@@ -89,6 +89,20 @@ def generate_runtime_fix(
         {}
     )
 
+    # ── SQLAlchemy mapper crash from back_populates → strip all of them ──
+    error_type = parsed_error.get("type", "")
+    stderr = runtime_error.get("stderr", "") or ""
+    if error_type in ("SQLAlchemyError", "InvalidRequestError") or "back_populates" in stderr or "has no property" in stderr:
+        try:
+            from app.services.deterministic_patcher import _patch_strip_back_populates
+            from pathlib import Path
+            stripped = _patch_strip_back_populates(Path(project_path))
+            if stripped:
+                print(f"  back_populates fix: stripped from {stripped} model file(s) — mapper crash resolved")
+                return None  # signal caller to re-run validation without LLM call
+        except Exception as bp_err:
+            print(f"  back_populates fix failed: {bp_err}")
+
     # ── Werkzeug: replace the entire auth_service with passlib ──────────
     if parsed_error.get("type") == "WerkzeugImportError":
         error_file = parsed_error.get("error_file", "")
@@ -97,26 +111,36 @@ def generate_runtime_fix(
                 relative_path = os.path.relpath(error_file, project_path)
                 with open(error_file, "r", encoding="utf-8") as f:
                     content = f.read()
-                # Replace werkzeug imports with passlib equivalents
-                content = content.replace(
+                # Replace werkzeug imports with bcrypt directly (passlib broken on Python 3.13+)
+                _BCRYPT_HELPERS = (
+                    "import bcrypt\n\n"
+                    "def get_password_hash(password: str) -> str:\n"
+                    "    return bcrypt.hashpw(password.encode('utf-8'), bcrypt.gensalt()).decode('utf-8')\n\n"
+                    "def verify_password(plain: str, hashed: str) -> bool:\n"
+                    "    return bcrypt.checkpw(plain.encode('utf-8'), hashed.encode('utf-8'))\n\n"
+                    "def generate_password_hash(password: str) -> str:\n"
+                    "    return get_password_hash(password)\n\n"
+                    "def check_password_hash(hashed: str, password: str) -> bool:\n"
+                    "    return verify_password(password, hashed)\n"
+                )
+                for _old in (
                     "from werkzeug.security import generate_password_hash, check_password_hash",
-                    "from passlib.context import CryptContext\n\n_pwd_context = CryptContext(schemes=[\"bcrypt\"], deprecated=\"auto\")\n\n\ndef generate_password_hash(password: str) -> str:\n    return _pwd_context.hash(password)\n\n\ndef check_password_hash(hashed: str, password: str) -> bool:\n    return _pwd_context.verify(password, hashed)"
-                )
-                content = content.replace(
                     "from werkzeug.security import check_password_hash, generate_password_hash",
-                    "from passlib.context import CryptContext\n\n_pwd_context = CryptContext(schemes=[\"bcrypt\"], deprecated=\"auto\")\n\n\ndef generate_password_hash(password: str) -> str:\n    return _pwd_context.hash(password)\n\n\ndef check_password_hash(hashed: str, password: str) -> bool:\n    return _pwd_context.verify(password, hashed)"
-                )
-                # Add passlib to requirements
+                ):
+                    content = content.replace(_old, _BCRYPT_HELPERS)
+                # Ensure bcrypt in requirements, remove passlib
                 req_path = os.path.join(project_path, "app", "requirements.txt")
                 try:
                     with open(req_path, "r", encoding="utf-8") as f:
                         reqs = f.read()
-                    if "passlib" not in reqs:
-                        with open(req_path, "a", encoding="utf-8") as f:
-                            f.write("\npasslib[bcrypt]\n")
+                    reqs = "\n".join(l for l in reqs.splitlines() if not l.strip().startswith("passlib"))
+                    if "bcrypt" not in reqs:
+                        reqs += "\nbcrypt\n"
+                    with open(req_path, "w", encoding="utf-8") as f:
+                        f.write(reqs)
                 except Exception:
                     pass
-                print(f"Werkzeug fix: replaced with passlib in {relative_path}")
+                print(f"Werkzeug fix: replaced with bcrypt in {relative_path}")
                 return {"path": relative_path.replace(os.sep, "/"), "content": content}
             except Exception as e:
                 print(f"Werkzeug auto-fix failed: {e}")
@@ -182,7 +206,7 @@ def generate_runtime_fix(
             "pydantic": "pydantic",
             "fastapi": "fastapi",
             "uvicorn": "uvicorn",
-            "werkzeug": "passlib[bcrypt]",  # werkzeug is Flask-only; use passlib
+            "werkzeug": "bcrypt",  # werkzeug is Flask-only; use bcrypt directly
         }
 
         dependency = dependency_map.get(
@@ -245,35 +269,22 @@ def generate_runtime_fix(
             except Exception as tse:
                 print(f"TimestampNotNullError auto-fix failed: {tse}")
 
-    # NoReferencedTableError: a model's table is FK-referenced but never imported/created
+    # NoReferencedTableError: FK references a table that has no model file.
+    # Strategy: strip the dangling FK from the model column (deterministic, no LLM).
     if parsed_error.get("type") == "NoReferencedTableError":
         missing_table = parsed_error.get("missing_table", "")
         if missing_table:
-            # Find the model file that defines this table
-            models_dir = os.path.join(project_path, "app", "models")
-            main_path = os.path.join(project_path, "app", "main.py")
             try:
-                import glob as _glob
-                model_files = _glob.glob(os.path.join(models_dir, "*.py"))
-                matched_file = None
-                for mf in model_files:
-                    with open(mf, "r", encoding="utf-8") as f:
-                        if f'__tablename__ = "{missing_table}"' in f.read() or f"__tablename__ = '{missing_table}'" in f.read():
-                            matched_file = mf
-                            break
-                if matched_file:
-                    # Get the model module name e.g. app.models.task
-                    rel = os.path.relpath(matched_file, project_path).replace(os.sep, ".")[:-3]
-                    model_name = os.path.basename(matched_file)[:-3].title().replace("_", "")
-                    with open(main_path, "r", encoding="utf-8") as f:
-                        main_content = f.read()
-                    import_line = f"from {rel} import {model_name}  # noqa: F401 — ensures table is in metadata"
-                    if rel not in main_content:
-                        main_content = import_line + "\n" + main_content
-                        print(f"NoReferencedTableError fix: adding {import_line}")
-                        return {"path": "app/main.py", "content": main_content}
+                from app.services.deterministic_patcher import _patch_dangling_foreign_keys
+                from pathlib import Path
+                stripped = _patch_dangling_foreign_keys(Path(project_path))
+                if stripped:
+                    print(f"NoReferencedTableError: stripped dangling FK(s) to '{missing_table}' ({stripped} file(s))")
+                    # Return a sentinel so the caller re-runs validation without an LLM call
+                    # We return None here; the caller will re-run runtime validation
+                    return None
             except Exception as nrte:
-                print(f"NoReferencedTableError auto-fix failed: {nrte}")
+                print(f"NoReferencedTableError dangling-FK fix failed: {nrte}")
 
     relative_path = ""
     absolute_path = ""
@@ -328,6 +339,13 @@ def generate_runtime_fix(
         relative_path,
         file_content
     )
+
+    from app.utils.llm_cache import get_cached, set_cached
+    _cache_payload = {"prompt": prompt}
+    _cached = get_cached("runtime_fix", _cache_payload)
+    if _cached is not None:
+        print(f"      [runtime_fix cache hit] {relative_path}")
+        return _cached
 
     text = generate_content(
         prompt,
@@ -386,6 +404,7 @@ def generate_runtime_fix(
 
             return None
 
+        set_cached("runtime_fix", _cache_payload, fix)
         return fix
 
     except json.JSONDecodeError as e:

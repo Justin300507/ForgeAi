@@ -39,14 +39,32 @@ class RenderProvider(BaseDeploymentProvider):
 
     def __init__(self) -> None:
         self.api_key = os.getenv("RENDER_API_KEY")
-        self.owner_id = os.getenv("RENDER_OWNER_ID")
+        self._owner_id: str | None = os.getenv("RENDER_OWNER_ID")  # optional, auto-fetched if missing
 
     def _check(self) -> str | None:
         if not self.api_key:
             return "RENDER_API_KEY not set in .env — get it from dashboard.render.com → Account → API Keys"
-        if not self.owner_id:
-            return "RENDER_OWNER_ID not set in .env — your user or team ID from Render dashboard"
         return None
+
+    @property
+    def owner_id(self) -> str | None:
+        if self._owner_id:
+            return self._owner_id
+        # Auto-discover from API key — GET /owners returns the account linked to this key
+        try:
+            resp = requests.get(
+                f"{RENDER_API}/owners?limit=1",
+                headers=_headers(self.api_key),
+                timeout=15,
+            )
+            if resp.ok:
+                items = resp.json()
+                if items and isinstance(items, list):
+                    self._owner_id = items[0].get("owner", {}).get("id")
+                    print(f"  [Render] Auto-discovered owner_id: {self._owner_id}")
+        except Exception as e:
+            print(f"  [Render] Could not fetch owner_id: {e}")
+        return self._owner_id
 
     def _get(self, path: str) -> requests.Response:
         return requests.get(f"{RENDER_API}{path}", headers=_headers(self.api_key), timeout=30)
@@ -71,6 +89,8 @@ class RenderProvider(BaseDeploymentProvider):
         branch: str = "main",
         env_vars: dict | None = None,
     ) -> Optional[dict]:
+        extra_env = [{"key": k, "value": v} for k, v in (env_vars or {}).items()]
+        extra_env.append({"key": "SECRET_KEY", "generateValue": True})
         payload = {
             "type": "web_service",
             "name": name,
@@ -79,17 +99,15 @@ class RenderProvider(BaseDeploymentProvider):
             "branch": branch,
             "autoDeploy": "yes",
             "serviceDetails": {
-                "runtime": "python",
-                "buildCommand": "pip install -r app/requirements.txt",
-                "startCommand": "uvicorn app.main:app --host 0.0.0.0 --port $PORT",
+                "env": "python",
+                "envSpecificDetails": {
+                    "buildCommand": "pip install -r app/requirements.txt",
+                    "startCommand": "uvicorn app.main:app --host 0.0.0.0 --port $PORT",
+                },
                 "plan": "free",
                 "region": "oregon",
                 "healthCheckPath": "/health",
-                "envVars": [
-                    {"key": k, "value": v} for k, v in (env_vars or {}).items()
-                ] + [
-                    {"key": "SECRET_KEY", "generateValue": True},
-                ],
+                "envVars": extra_env,
             },
         }
         resp = self._post("/services", payload)

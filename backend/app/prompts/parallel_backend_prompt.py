@@ -237,7 +237,7 @@ def build_requirements_content(architecture: dict) -> str:
         "sqlalchemy",
         "pydantic[email]",
         "python-jose[cryptography]",
-        "passlib[bcrypt]",
+        "bcrypt",
         "python-multipart",
         "email-validator",
     ]

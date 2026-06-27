@@ -1,10 +1,15 @@
-from fastapi import FastAPI, Depends, HTTPException, status
+import sys
+import uuid
+import asyncio
+import threading
+from datetime import datetime, timedelta
+
+from fastapi import FastAPI, Depends, HTTPException, status, BackgroundTasks, WebSocket, WebSocketDisconnect
 from fastapi.responses import RedirectResponse
 from fastapi.security import OAuth2PasswordRequestForm
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
 from sqlalchemy.orm import Session
-from datetime import timedelta
 
 from app.database import Base, engine, get_db
 from app.services.user_service import create_user, get_user_by_email
@@ -14,8 +19,43 @@ from app.services.backend_service import generate_backend
 from app.services.frontend_service import generate_frontend
 from app.services.project_service import generate_project
 from app.services.planner_service import generate_plan
+from app.models.generation_job import GenerationJob
 
 Base.metadata.create_all(bind=engine)
+
+# ── Per-job stdout tee ────────────────────────────────────────────────────────
+
+_thread_local = threading.local()
+_original_stdout = sys.stdout
+
+
+class _JobCancelled(BaseException):
+    """Raised inside a generation thread when the user cancels the job.
+    Inherits BaseException so it passes through broad `except Exception` blocks."""
+
+
+class _TeeStdout:
+    def write(self, text):
+        _original_stdout.write(text)
+        if text and text.strip():
+            job_logs: list | None = getattr(_thread_local, "job_logs", None)
+            if job_logs is not None:
+                job_logs.append(text.rstrip("\n"))
+        # Cancellation check — every print() is a checkpoint
+        cancel: threading.Event | None = getattr(_thread_local, "cancel_event", None)
+        if cancel and cancel.is_set():
+            raise _JobCancelled("Job cancelled by user")
+
+    def flush(self):
+        _original_stdout.flush()
+
+
+sys.stdout = _TeeStdout()
+
+# ── In-memory job store (real-time streaming) ─────────────────────────────────
+# {job_id: {"status": str, "logs": list[str], "result": dict|None, "error": str|None,
+#            "cancel_event": threading.Event}}
+JOB_STORE: dict[str, dict] = {}
 
 app = FastAPI(title="ForgeAI", version="14.0")
 
@@ -61,6 +101,348 @@ def me(current_user=Depends(get_current_user)):
 @app.get("/", include_in_schema=False)
 def root():
     return RedirectResponse(url="/docs")
+
+
+# ── Job endpoints ─────────────────────────────────────────────────────────────
+
+class JobRequest(BaseModel):
+    idea: str
+    provider: str = "auto"
+    deploy_to: str = "none"
+    frontend_target: str = "web"
+
+
+def _run_job(job_id: str, req: JobRequest):
+    """Runs the V14 pipeline in a background thread."""
+    from app.services.v14_orchestrator import generate_project_v14
+
+    store = JOB_STORE[job_id]
+    _thread_local.job_logs = store["logs"]
+    _thread_local.cancel_event = store["cancel_event"]
+    store["status"] = "running"
+
+    # Write the result back to DB in a new session
+    from app.database import SessionLocal
+
+    try:
+        result = generate_project_v14(
+            idea=req.idea,
+            provider=req.provider,
+            deploy_to=req.deploy_to,
+            frontend_target=req.frontend_target,
+        )
+        report = result.get("report", {})
+        # Only mark done if not already cancelled by user
+        if not store["cancel_event"].is_set():
+            store["status"] = "done"
+            store["result"] = result
+
+            db = SessionLocal()
+            try:
+                job = db.query(GenerationJob).filter(GenerationJob.id == job_id).first()
+                if job and job.status != "cancelled":
+                    raw_score = report.get("forge_score")
+                    forge_score = raw_score.get("score") if isinstance(raw_score, dict) else raw_score
+                    # frontend_url: prefer report field, fall back to raw cloudflare result
+                    frontend_url = (
+                        report.get("frontend_url")
+                        or result.get("cloudflare", {}).get("url")
+                    )
+                    job.status = "done"
+                    job.project_name = report.get("project_name")
+                    job.forge_score = forge_score
+                    job.backend_url = report.get("backend_url")
+                    job.frontend_url = frontend_url
+                    job.github_url = report.get("github_url")
+                    job.zip_path = result.get("generation", {}).get("zip_path")
+                    job.completed_at = datetime.utcnow()
+                    db.commit()
+            finally:
+                db.close()
+
+    except _JobCancelled:
+        # cancel_job() already wrote status=cancelled to DB; just sync in-memory store
+        store["status"] = "cancelled"
+        store["error"] = "Cancelled by user"
+
+    except Exception as exc:
+        if store["cancel_event"].is_set():
+            store["status"] = "cancelled"
+        else:
+            store["status"] = "error"
+            store["error"] = str(exc)
+            db = SessionLocal()
+            try:
+                job = db.query(GenerationJob).filter(GenerationJob.id == job_id).first()
+                if job and job.status != "cancelled":
+                    job.status = "error"
+                    job.error = str(exc)
+                    job.completed_at = datetime.utcnow()
+                    db.commit()
+            finally:
+                db.close()
+
+
+def _run_job_retry(job_id: str, parent: "GenerationJob"):
+    """Resumes from existing project files — skips generation."""
+    from app.services.v14_orchestrator import retry_project_v14
+    from app.database import SessionLocal
+    import os
+
+    store = JOB_STORE[job_id]
+    _thread_local.job_logs = store["logs"]
+    _thread_local.cancel_event = store["cancel_event"]
+    store["status"] = "running"
+
+    project_path = os.path.join("generated_projects", parent.project_name) if parent.project_name else None
+
+    try:
+        result = retry_project_v14(
+            project_path=project_path,
+            project_name=parent.project_name or "",
+            idea=parent.idea,
+            provider=parent.provider or "auto",
+            deploy_to=parent.deploy_to or "none",
+            frontend_target=parent.frontend_target or "web",
+        )
+        report = result.get("report", {})
+        if not store["cancel_event"].is_set():
+            store["status"] = "done"
+            store["result"] = result
+
+            db = SessionLocal()
+            try:
+                job = db.query(GenerationJob).filter(GenerationJob.id == job_id).first()
+                if job and job.status != "cancelled":
+                    raw_score = report.get("forge_score")
+                    forge_score = raw_score.get("score") if isinstance(raw_score, dict) else raw_score
+                    frontend_url = report.get("frontend_url") or result.get("cloudflare", {}).get("url")
+                    job.status = "done"
+                    job.project_name = report.get("project_name") or parent.project_name
+                    job.forge_score = forge_score
+                    job.backend_url = report.get("backend_url")
+                    job.frontend_url = frontend_url
+                    job.github_url = report.get("github_url")
+                    job.zip_path = result.get("generation", {}).get("zip_path")
+                    job.completed_at = datetime.utcnow()
+                    db.commit()
+            finally:
+                db.close()
+
+    except _JobCancelled:
+        # cancel_job() already wrote status=cancelled to DB; just sync in-memory store
+        store["status"] = "cancelled"
+        store["error"] = "Cancelled by user"
+
+    except Exception as exc:
+        if store["cancel_event"].is_set():
+            # Job was cancelled mid-run; ignore the exception
+            store["status"] = "cancelled"
+        else:
+            store["status"] = "error"
+            store["error"] = str(exc)
+            db = SessionLocal()
+            try:
+                job = db.query(GenerationJob).filter(GenerationJob.id == job_id).first()
+                if job and job.status != "cancelled":
+                    job.status = "error"
+                    job.error = str(exc)
+                    job.completed_at = datetime.utcnow()
+                    db.commit()
+            finally:
+                db.close()
+
+
+@app.post("/jobs/{job_id}/cancel", tags=["jobs"])
+def cancel_job(
+    job_id: str,
+    db: Session = Depends(get_db),
+    current_user=Depends(get_current_user),
+):
+    """Immediately marks the job cancelled and signals the thread to stop."""
+    job = db.query(GenerationJob).filter(GenerationJob.id == job_id).first()
+    if not job or job.user_id != current_user.id:
+        raise HTTPException(status_code=404, detail="Job not found")
+    if job.status not in ("running", "pending"):
+        raise HTTPException(status_code=400, detail=f"Job is already {job.status}")
+
+    # Update DB immediately — don't wait for the thread
+    job.status = "cancelled"
+    job.error = "Cancelled by user"
+    job.completed_at = datetime.utcnow()
+    db.commit()
+
+    # Update in-memory store so WebSocket broadcasts "cancelled" on next tick
+    store = JOB_STORE.get(job_id)
+    if store:
+        store["status"] = "cancelled"
+        store["error"] = "Cancelled by user"
+        store["cancel_event"].set()
+
+    return {"cancelled": True}
+
+
+@app.post("/jobs/{job_id}/retry", tags=["jobs"])
+def retry_job(
+    job_id: str,
+    db: Session = Depends(get_db),
+    current_user=Depends(get_current_user),
+):
+    """
+    Resume a failed job from existing files — skips generation entirely.
+    Runs the fix loop + deployment again on the already-generated code.
+    Falls back to full rebuild if project files no longer exist on disk.
+    """
+    import os
+    parent = db.query(GenerationJob).filter(GenerationJob.id == job_id).first()
+    if not parent or parent.user_id != current_user.id:
+        raise HTTPException(status_code=404, detail="Job not found")
+
+    new_job_id = str(uuid.uuid4())
+    JOB_STORE[new_job_id] = {"status": "pending", "logs": [], "result": None, "error": None, "cancel_event": threading.Event()}
+
+    new_job = GenerationJob(
+        id=new_job_id,
+        user_id=current_user.id,
+        idea=parent.idea,
+        provider=parent.provider,
+        deploy_to=parent.deploy_to,
+        frontend_target=parent.frontend_target,
+        status="pending",
+        project_name=parent.project_name,  # preserve so retry can find the files
+    )
+    db.add(new_job)
+    db.commit()
+
+    # Check if project files exist on disk
+    project_files_exist = (
+        parent.project_name
+        and os.path.isdir(os.path.join("generated_projects", parent.project_name))
+    )
+
+    if project_files_exist:
+        thread = threading.Thread(target=_run_job_retry, args=(new_job_id, parent), daemon=True)
+    else:
+        # Files gone — fall back to full rebuild
+        req = JobRequest(
+            idea=parent.idea,
+            provider=parent.provider or "auto",
+            deploy_to=parent.deploy_to or "none",
+            frontend_target=parent.frontend_target or "web",
+        )
+        thread = threading.Thread(target=_run_job, args=(new_job_id, req), daemon=True)
+
+    thread.start()
+    return {"job_id": new_job_id, "resumed_from_files": project_files_exist}
+
+
+@app.post("/jobs", tags=["jobs"])
+def create_job(
+    req: JobRequest,
+    db: Session = Depends(get_db),
+    current_user=Depends(get_current_user),
+):
+    job_id = str(uuid.uuid4())
+    JOB_STORE[job_id] = {"status": "pending", "logs": [], "result": None, "error": None, "cancel_event": threading.Event()}
+
+    job = GenerationJob(
+        id=job_id,
+        user_id=current_user.id,
+        idea=req.idea,
+        provider=req.provider,
+        deploy_to=req.deploy_to,
+        frontend_target=req.frontend_target,
+        status="pending",
+    )
+    db.add(job)
+    db.commit()
+
+    thread = threading.Thread(target=_run_job, args=(job_id, req), daemon=True)
+    thread.start()
+
+    return {"job_id": job_id}
+
+
+@app.get("/jobs", tags=["jobs"])
+def list_jobs(db: Session = Depends(get_db), current_user=Depends(get_current_user)):
+    jobs = (
+        db.query(GenerationJob)
+        .filter(GenerationJob.user_id == current_user.id)
+        .order_by(GenerationJob.created_at.desc())
+        .limit(50)
+        .all()
+    )
+    return {"jobs": [_job_to_dict(j) for j in jobs]}
+
+
+@app.get("/jobs/{job_id}", tags=["jobs"])
+def get_job(job_id: str, db: Session = Depends(get_db), current_user=Depends(get_current_user)):
+    job = db.query(GenerationJob).filter(GenerationJob.id == job_id).first()
+    if not job or job.user_id != current_user.id:
+        raise HTTPException(status_code=404, detail="Job not found")
+    result = _job_to_dict(job)
+    # Merge in-memory logs if still running
+    mem = JOB_STORE.get(job_id)
+    if mem:
+        result["logs"] = mem.get("logs", [])
+        result["live_result"] = mem.get("result")
+    return result
+
+
+def _job_to_dict(job: GenerationJob) -> dict:
+    return {
+        "id": job.id,
+        "idea": job.idea,
+        "provider": job.provider,
+        "deploy_to": job.deploy_to,
+        "status": job.status,
+        "project_name": job.project_name,
+        "forge_score": job.forge_score,
+        "backend_url": job.backend_url,
+        "frontend_url": job.frontend_url,
+        "github_url": job.github_url,
+        "zip_path": job.zip_path,
+        "error": job.error,
+        "created_at": job.created_at.isoformat() if job.created_at else None,
+        "completed_at": job.completed_at.isoformat() if job.completed_at else None,
+    }
+
+
+# ── WebSocket — live generation log stream ────────────────────────────────────
+
+@app.websocket("/ws/{job_id}")
+async def ws_job(websocket: WebSocket, job_id: str):
+    await websocket.accept()
+    sent = 0
+    try:
+        while True:
+            store = JOB_STORE.get(job_id)
+            if not store:
+                await websocket.send_json({"type": "error", "message": "Job not found"})
+                break
+
+            logs: list[str] = store["logs"]
+            new_lines = logs[sent:]
+            for line in new_lines:
+                await websocket.send_json({"type": "log", "message": line})
+            sent += len(new_lines)
+
+            status = store["status"]
+            if status == "done":
+                await websocket.send_json({"type": "done", "result": store["result"]})
+                break
+            elif status == "cancelled":
+                await websocket.send_json({"type": "cancelled", "message": "Job cancelled by user"})
+                break
+            elif status == "error":
+                await websocket.send_json({"type": "error", "message": store["error"]})
+                break
+
+            await asyncio.sleep(0.4)
+    except WebSocketDisconnect:
+        pass
+    except Exception:
+        pass
 
 
 class ProjectIdea(BaseModel):

@@ -1,10 +1,11 @@
 import time
 
+from app.providers.deepseek_provider import generate as deepseek_generate
+from app.providers.cerebras_provider import generate as cerebras_generate
 from app.providers.gemini_provider import generate as gemini_generate
 from app.providers.openrouter_provider import generate as openrouter_generate
 from app.providers.groq_provider import generate as groq_generate
 from app.providers.ollama_provider import generate as ollama_generate
-from app.providers.cerebras_provider import generate as cerebras_generate
 from app.providers.openai_provider import generate as openai_generate
 
 
@@ -31,6 +32,10 @@ def generate_content(
     stage: str = "unknown",
 ):
 
+    if provider == "deepseek":
+        print("Using DeepSeek")
+        return _tracked("deepseek", "deepseek-chat", prompt, deepseek_generate, stage, max_tokens=max_tokens)
+
     if provider == "cerebras":
         print("Using Cerebras")
         return _tracked("cerebras", "gpt-oss-120b", prompt, cerebras_generate, stage, max_tokens=max_tokens)
@@ -55,7 +60,13 @@ def generate_content(
         print("Using Ollama")
         return _tracked("ollama", "local", prompt, ollama_generate, stage, max_tokens=max_tokens)
 
-    # Auto mode: Cerebras -> Groq -> OpenRouter -> Gemini -> Ollama
+    # Auto mode: DeepSeek -> Cerebras -> Groq -> OpenRouter -> Gemini -> Ollama
+
+    try:
+        print("Using DeepSeek")
+        return _tracked("deepseek", "deepseek-chat", prompt, deepseek_generate, stage, max_tokens=max_tokens)
+    except Exception as e:
+        print(f"DeepSeek failed: {e}")
 
     try:
         print("Using Cerebras")

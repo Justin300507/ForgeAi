@@ -36,6 +36,14 @@ def generate_frontend(
 
         prompt = build_frontend_prompt(architecture, target=frontend_target, idea=idea)
 
+        from app.utils.llm_cache import get_cached, set_cached
+        _cache_payload = {"prompt": prompt, "mt": max_tokens}
+        _cached_data = get_cached("frontend", _cache_payload)
+        if _cached_data is not None:
+            print("Frontend: [cache hit] — skipping LLM call")
+            print("=== END FRONTEND ===")
+            return _cached_data
+
         data = None
         for attempt in range(3):
             start = time.time()
@@ -146,7 +154,9 @@ def generate_frontend(
             "=== END FRONTEND ==="
         )
 
-        return validated.model_dump()
+        result = validated.model_dump()
+        set_cached("frontend", _cache_payload, result)
+        return result
 
     except HTTPException:
 
