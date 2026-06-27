@@ -12,6 +12,21 @@ MANDATORY IN EVERY main.py (non-negotiable — validator will reject missing ite
     def health():
         return {"status": "ok"}
 
+MANDATORY ROUTES IN EVERY GENERATED PROJECT:
+- POST /seed  (in app/routes/seed_routes.py)
+    Inserts realistic demo data for every table. Called once after deploy.
+    MUST insert at least 5 records per major entity using hardcoded realistic values.
+    On repeat calls, skip rows that already exist (use try/except IntegrityError or check first).
+    Example seed records — use domain-appropriate names, NOT "User 1" or "test@test.com":
+      Gym: members named "Alex Chen", "Maria Garcia", "James Kim"; classes "7:00 AM Yoga", "6:30 PM HIIT"
+      Finance: transactions "Whole Foods $89.40", "Netflix $15.99", "Rent $1,200"
+      Tasks: "Launch Q3 campaign" (High/In Progress), "Fix login bug" (Critical/Done)
+
+- GET /stats/summary  (in app/routes/stats_routes.py or merged into relevant module)
+    Returns aggregate counts and key metrics the dashboard frontend will display.
+    Must return a JSON object with at least 4 numeric fields.
+    Example: {{"total_members": 42, "active_today": 8, "revenue_this_month": 3200, "classes_today": 5}}
+
 LIST ENDPOINTS (any GET that returns multiple records)
 - MUST include pagination params: `limit: int = Query(50, ge=1, le=500), offset: int = Query(0, ge=0)`
 - Apply them: `return db.query(Model).offset(offset).limit(limit).all()`
@@ -85,7 +100,11 @@ AUTH
   The auth utils file already exists (pre-generated). SECRET_KEY is loaded from env there.
 - NEVER define SECRET_KEY, ALGORITHM, pwd_context, or ACCESS_TOKEN_EXPIRE_MINUTES in route files.
   These are ONLY in app/utils/auth.py — import from there, never redefine.
-- NEVER use werkzeug. Use passlib: `from passlib.context import CryptContext; pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")`
+- NEVER use werkzeug or passlib. passlib is broken on Python 3.13+ (Render/Railway default). Use bcrypt directly:
+    import bcrypt
+    def get_password_hash(password: str) -> str: return bcrypt.hashpw(password.encode(), bcrypt.gensalt()).decode()
+    def verify_password(plain: str, hashed: str) -> bool: return bcrypt.checkpw(plain.encode(), hashed.encode())
+  In requirements.txt use `bcrypt` (NOT `passlib[bcrypt]`).
 - Routes that CREATE/UPDATE user-owned resources (model with `user_id` NOT NULL FK) MUST:
   1. Include `current_user: User = Depends(get_current_user)` in the signature
   2. Set `obj.user_id = current_user.id` before `db.add(obj)`
