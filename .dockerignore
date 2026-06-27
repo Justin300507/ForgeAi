@@ -1,0 +1,9 @@
+backend/venv
+backend/__pycache__
+backend/**/__pycache__
+backend/*.pyc
+backend/llm_cache
+backend/generated_projects
+frontend/node_modules
+frontend/dist
+**/.env
