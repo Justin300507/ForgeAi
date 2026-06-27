@@ -323,7 +323,7 @@ API INTEGRATION
 ALWAYS create src/api.js as a shared axios instance (every page imports from here):
 ```jsx
 import axios from 'axios';
-const API = axios.create({{ baseURL: import.meta.env.VITE_API_URL || 'http://localhost:8000' }});
+const API = axios.create({{ baseURL: import.meta.env.VITE_API_URL || '' }});
 API.interceptors.request.use(cfg => {{
   const token = localStorage.getItem('token');
   if (token) cfg.headers.Authorization = `Bearer ${{token}}`;
@@ -375,26 +375,45 @@ const PrivateRoute = ({{ children }}) =>
 ```
 Wrap every authenticated route: `<Route path="/dashboard" element={{<PrivateRoute><Layout><Dashboard /></Layout></PrivateRoute>}} />`
 
-2. LOGIN PAGE — always POST JSON to /auth/login, store token, redirect:
+2. LOGIN PAGE — POST JSON to /auth/login, store token + user info, redirect:
 ```jsx
 const res = await API.post('/auth/login', {{ email, password }});
 localStorage.setItem('token', res.data.access_token);
+if (res.data.display_name) localStorage.setItem('display_name', res.data.display_name);
+if (res.data.user_id) localStorage.setItem('user_id', String(res.data.user_id));
+if (res.data.email) localStorage.setItem('user_email', res.data.email);
 navigate('/dashboard');
 ```
 
-3. SIGNUP PAGE — always validate password length client-side BEFORE submitting:
+3. SIGNUP PAGE — validate password, submit, then AUTO-LOGIN (never redirect to /login):
 ```jsx
 if (password.length < 8) {{ setError('Password must be at least 8 characters.'); return; }}
+// Step 1: create account
+await API.post('/auth/signup', {{ email, password, display_name: displayName }});
+// Step 2: immediately log in — user should never have to log in twice
+const loginRes = await API.post('/auth/login', {{ email, password }});
+localStorage.setItem('token', loginRes.data.access_token);
+if (loginRes.data.display_name) localStorage.setItem('display_name', loginRes.data.display_name);
+if (loginRes.data.user_id) localStorage.setItem('user_id', String(loginRes.data.user_id));
+navigate('/dashboard');
 ```
 Show a hint below the password field: `<p className="text-xs text-slate-400">Must be at least 8 characters</p>`
 
-4. LOGOUT — always clear token and redirect:
+4. LOGOUT — always clear ALL stored keys and redirect:
 ```jsx
-localStorage.removeItem('token'); navigate('/login');
+['token','display_name','user_id','user_email'].forEach(k => localStorage.removeItem(k));
+navigate('/login');
 ```
 
 5. API LIST RESPONSES — FastAPI always returns `{{ items: [...], total: N }}` wrappers.
 Always unwrap: `setItems(res.data.items || [])` — NEVER `setItems(res.data)`
+
+6. CURRENT USER — the login response includes display_name, user_id, email. Read from localStorage:
+```jsx
+const displayName = localStorage.getItem('display_name') || 'User';
+const userId = Number(localStorage.getItem('user_id'));
+```
+Use these instead of calling /auth/me — already available after login.
 
 ═══════════════════════════════════════════════════════
 CODE RULES
@@ -431,9 +450,12 @@ Before returning:
 8. Verify every form has placeholder text, a loading state on submit, and toast feedback
 9. Verify every data-fetching page has a loading skeleton
 10. Verify dashboard stats come from the /stats/summary API endpoint
-11. Verify src/api.js exists and uses import.meta.env.VITE_API_URL with localhost fallback
+11. Verify src/api.js uses baseURL: '' (empty string — relative URLs, works with Vite proxy)
 12. Verify every auth error uses parseError() helper — never display raw detail or use plain || fallback
 13. Verify signup page validates password.length >= 8 before submitting, with visible hint text
 14. Verify App.jsx has PrivateRoute wrapping all authenticated routes
 15. Verify all list data fetching unwraps .items: setItems(res.data.items || []) not setItems(res.data)
+16. Verify signup does auto-login after account creation — NEVER redirect to /login after signup
+17. Verify login stores display_name, user_id, user_email in localStorage from response
+18. Verify logout clears ALL keys: token, display_name, user_id, user_email
 """

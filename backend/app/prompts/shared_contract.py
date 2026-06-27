@@ -95,6 +95,22 @@ AUTH
   NEVER `from app.schemas.auth import LoginRequest` unless you generate app/schemas/auth.py.
 - `oauth2_scheme` (not `auth2_scheme`): `oauth2_scheme = OAuth2PasswordBearer(tokenUrl="token")`
 - NEVER use a bare built-in type as Depends(): `Depends(str)` crashes. Use `Depends(oauth2_scheme)`.
+
+MANDATORY AUTH ENDPOINTS — every app with a users table MUST have ALL of these:
+
+POST /auth/signup  → creates user, returns AuthResponse (id, email, display_name)
+POST /auth/login   → validates credentials, returns Token WITH user info embedded:
+  Token MUST include: access_token, token_type, user_id, email, display_name
+  Example:
+    access_token = create_access_token(data={{"sub": user.email}})
+    return {{"access_token": access_token, "token_type": "bearer",
+             "user_id": user.id, "email": user.email, "display_name": user.display_name}}
+GET  /auth/me      → returns current user info using Depends(get_current_user):
+  @auth_router.get("/auth/me")
+  def me(current_user = Depends(get_current_user)):
+      return {{"id": current_user.id, "email": current_user.email,
+               "display_name": getattr(current_user, "display_name", None),
+               "role": getattr(current_user, "role", None)}}
 - NEVER hardcode SECRET_KEY in route files. ALWAYS import from app.utils.auth:
     from app.utils.auth import create_access_token, verify_password, get_password_hash, get_current_user, oauth2_scheme
   The auth utils file already exists (pre-generated). SECRET_KEY is loaded from env there.
