@@ -1,14 +1,61 @@
-from fastapi import FastAPI
+from fastapi import FastAPI, Depends, HTTPException, status
 from fastapi.responses import RedirectResponse
+from fastapi.security import OAuth2PasswordRequestForm
+from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
+from sqlalchemy.orm import Session
+from datetime import timedelta
 
+from app.database import Base, engine, get_db
+from app.services.user_service import create_user, get_user_by_email
+from app.dependencies.auth import authenticate_user, create_access_token, get_current_user, ACCESS_TOKEN_EXPIRE_MINUTES
 from app.services.architect_service import generate_architecture
 from app.services.backend_service import generate_backend
 from app.services.frontend_service import generate_frontend
 from app.services.project_service import generate_project
 from app.services.planner_service import generate_plan
 
+Base.metadata.create_all(bind=engine)
+
 app = FastAPI(title="ForgeAI", version="12.0")
+
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["*"],
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
+
+
+class RegisterRequest(BaseModel):
+    email: str
+    password: str
+
+
+@app.post("/register", tags=["auth"])
+def register(request: RegisterRequest, db: Session = Depends(get_db)):
+    if get_user_by_email(db, request.email):
+        raise HTTPException(status_code=400, detail="Email already registered")
+    user = create_user(db, request.email, request.password)
+    return {"id": user.id, "email": user.email}
+
+
+@app.post("/login", tags=["auth"])
+def login(form_data: OAuth2PasswordRequestForm = Depends(), db: Session = Depends(get_db)):
+    user = authenticate_user(db, form_data.username, form_data.password)
+    if not user:
+        raise HTTPException(status_code=401, detail="Incorrect email or password")
+    token = create_access_token(
+        data={"sub": user.email},
+        expires_delta=timedelta(minutes=ACCESS_TOKEN_EXPIRE_MINUTES),
+    )
+    return {"access_token": token, "token_type": "bearer"}
+
+
+@app.get("/me", tags=["auth"])
+def me(current_user=Depends(get_current_user)):
+    return {"id": current_user.id, "email": current_user.email, "is_active": current_user.is_active}
 
 
 @app.get("/", include_in_schema=False)
