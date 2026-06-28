@@ -224,6 +224,8 @@ def generate_project_v6(
     # ------------------------------------------------------------------
     print("\n=== DETERMINISTIC PATCHER ===")
     run_deterministic_patches(project_path)
+    from app.services.database_patcher import patch_database_py
+    patch_database_py(project_path)
 
     total_time_so_far = round(time.time() - start, 2)
     metadata_path = save_metadata(project_path, plan, architecture, provider, total_time_so_far)
@@ -578,6 +580,8 @@ def repair_project(
     # Deterministic patches first
     print("\n=== DETERMINISTIC PATCHER ===")
     run_deterministic_patches(project_path)
+    from app.services.database_patcher import patch_database_py
+    patch_database_py(project_path)
 
     # Validation fix loop
     print("\n=== VALIDATION LOOP (REPAIR) ===")

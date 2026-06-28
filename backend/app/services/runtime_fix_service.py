@@ -89,6 +89,18 @@ def generate_runtime_fix(
         {}
     )
 
+    # ── postgres:// URL scheme / connection errors → overwrite database.py ──────
+    error_type = parsed_error.get("type", "")
+    stderr = runtime_error.get("stderr", "") or ""
+    if error_type in ("PostgresURLSchemeError", "DatabaseConnectionError") or "postgres://" in stderr:
+        try:
+            from app.services.database_patcher import patch_database_py
+            if patch_database_py(project_path):
+                print("  db_patcher: rewrote app/database.py (postgres URL fix)")
+                return None
+        except Exception as dp_err:
+            print(f"  db_patcher fix failed: {dp_err}")
+
     # ── SQLAlchemy mapper crash from back_populates → strip all of them ──
     error_type = parsed_error.get("type", "")
     stderr = runtime_error.get("stderr", "") or ""

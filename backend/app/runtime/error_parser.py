@@ -308,6 +308,26 @@ def parse_runtime_error(stderr):
             ),
         }
 
+    # postgres:// scheme used with SQLAlchemy 1.4+
+    if "postgres://" in stderr and "did you mean" not in stderr:
+        return {
+            "type": "PostgresURLSchemeError",
+            "error_file": error_file,
+            "hint": "Change DATABASE_URL prefix from 'postgres://' to 'postgresql://' — SQLAlchemy 1.4+ dropped the old scheme."
+        }
+
+    # OperationalError: connection refused / server closed connection (pool issue)
+    if "OperationalError" in stderr and (
+        "could not connect to server" in stderr
+        or "server closed the connection unexpectedly" in stderr
+        or "SSL connection has been closed unexpectedly" in stderr
+    ):
+        return {
+            "type": "DatabaseConnectionError",
+            "error_file": error_file,
+            "hint": "Add pool_pre_ping=True to create_engine() to recover from stale connections."
+        }
+
     # General SQLAlchemy errors
     if "sqlalchemy.exc" in stderr:
         exc_match = re.search(r"sqlalchemy\.exc\.(\w+)", stderr)
