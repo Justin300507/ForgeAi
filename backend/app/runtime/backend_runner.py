@@ -70,6 +70,28 @@ class BackendRunner:
 
         _free_port(port)
 
+        # Pre-flight DB init: run create_tables() BEFORE uvicorn starts so the
+        # schema is complete regardless of import order in main.py.  create_tables()
+        # scans app/models/, imports every model, then calls create_all() + ALTER TABLE.
+        try:
+            pre_db = subprocess.run(
+                [sys.executable, "-c",
+                 "import sys; sys.path.insert(0, '.'); "
+                 "from app.database import create_tables; "
+                 "create_tables(); "
+                 "print('DB schema ready')"],
+                cwd=str(backend_dir),
+                capture_output=True,
+                text=True,
+                timeout=20,
+            )
+            if "DB schema ready" in pre_db.stdout:
+                print(f"  [runner] Pre-flight DB init: OK")
+            else:
+                print(f"  [runner] Pre-flight DB init warning: {pre_db.stderr[-300:]}")
+        except Exception as pre_err:
+            print(f"  [runner] Pre-flight DB init failed (non-fatal): {pre_err}")
+
         process = subprocess.Popen(
             [sys.executable, "-m", "uvicorn", "app.main:app",
              "--host", "127.0.0.1", "--port", str(port)],

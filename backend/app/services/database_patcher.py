@@ -68,14 +68,7 @@ def _add_missing_columns() -> None:
 
 
 def create_tables():
-    """Import every model in app/models/ then create all tables.
-
-    Calling Base.metadata.create_all() before all model files are imported
-    causes no such column errors because SQLAlchemy only knows about columns
-    from models it has already seen.  This function forces all models to load
-    first so the DB schema is always complete.  _add_missing_columns() then
-    patches any tables that were created by an earlier partial create_all().
-    """
+    """Import every model in app/models/ then create all tables."""
     models_dir = os.path.join(os.path.dirname(__file__), "models")
     if os.path.isdir(models_dir):
         for fname in sorted(os.listdir(models_dir)):
@@ -90,7 +83,24 @@ def create_tables():
         _add_missing_columns()
 
 
+_schema_patched = False
+
+
 def get_db():
+    """Yield a DB session.
+
+    On the first call, also ensures the schema is complete.  By the time
+    get_db() is invoked, every route module has already been imported (the
+    request has been routed), so Base.metadata knows about ALL model columns.
+    This is the last-resort schema fix: even if create_tables() ran too early
+    (before some model imports), the first request will patch any missing columns.
+    """
+    global _schema_patched
+    if not _schema_patched:
+        _schema_patched = True
+        if DATABASE_URL.startswith("sqlite"):
+            Base.metadata.create_all(bind=engine)
+            _add_missing_columns()
     db = SessionLocal()
     try:
         yield db
