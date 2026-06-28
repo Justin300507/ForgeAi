@@ -2,137 +2,3518 @@
   "todo_crud": [
     {
       "category": "todo_crud",
-      "idea": "A simple todo app with user login",
+      "idea": "A todo app with tasks and user authentication",
       "architecture": {
         "api_endpoints": [
           {
-            "method": "POST",
-            "path": "/api/tasks",
-            "file": "app/routes/tasks.py"
+            "method": "GET",
+            "path": "/users",
+            "description": "Retrieve a list of users with optional search, status filter, pagination",
+            "file": "app\\routes\\user_routes.py"
           },
           {
             "method": "GET",
-            "path": "/api/tasks",
-            "file": "app/routes/tasks.py"
+            "path": "/users/{id}",
+            "description": "Retrieve a single user by ID",
+            "file": "app\\routes\\user_routes.py"
+          },
+          {
+            "method": "POST",
+            "path": "/users",
+            "description": "Create a new user",
+            "file": "app\\routes\\user_routes.py"
           },
           {
             "method": "PUT",
-            "path": "/api/tasks/{id}",
-            "file": "app/routes/tasks.py"
+            "path": "/users/{id}",
+            "description": "Update an existing user",
+            "file": "app\\routes\\user_routes.py"
           },
           {
             "method": "DELETE",
-            "path": "/api/tasks/{id}",
-            "file": "app/routes/tasks.py"
+            "path": "/users/{id}",
+            "description": "Delete a user",
+            "file": "app\\routes\\user_routes.py"
+          },
+          {
+            "method": "GET",
+            "path": "/projects",
+            "description": "Retrieve projects with optional search, status filter, pagination",
+            "file": "app\\routes\\project_routes.py"
+          },
+          {
+            "method": "GET",
+            "path": "/projects/{id}",
+            "description": "Retrieve a single project by ID",
+            "file": "app\\routes\\project_routes.py"
+          },
+          {
+            "method": "POST",
+            "path": "/projects",
+            "description": "Create a new project",
+            "file": "app\\routes\\project_routes.py"
+          },
+          {
+            "method": "PUT",
+            "path": "/projects/{id}",
+            "description": "Update an existing project",
+            "file": "app\\routes\\project_routes.py"
+          },
+          {
+            "method": "DELETE",
+            "path": "/projects/{id}",
+            "description": "Delete a project",
+            "file": "app\\routes\\project_routes.py"
+          },
+          {
+            "method": "GET",
+            "path": "/tasks",
+            "description": "Retrieve tasks with optional search, status and priority filters, pagination",
+            "file": "app\\routes\\task_routes.py"
+          },
+          {
+            "method": "GET",
+            "path": "/tasks/{id}",
+            "description": "Retrieve a single task by ID",
+            "file": "app\\routes\\task_routes.py"
+          },
+          {
+            "method": "POST",
+            "path": "/tasks",
+            "description": "Create a new task",
+            "file": "app\\routes\\task_routes.py"
+          },
+          {
+            "method": "PUT",
+            "path": "/tasks/{id}",
+            "description": "Update an existing task",
+            "file": "app\\routes\\task_routes.py"
+          },
+          {
+            "method": "DELETE",
+            "path": "/tasks/{id}",
+            "description": "Delete a task",
+            "file": "app\\routes\\task_routes.py"
+          },
+          {
+            "method": "GET",
+            "path": "/time-entries",
+            "description": "Retrieve time entries with optional user, task, date filters and pagination",
+            "file": "app\\routes\\time_entry_routes.py"
+          },
+          {
+            "method": "GET",
+            "path": "/time-entries/{id}",
+            "description": "Retrieve a single time entry by ID",
+            "file": "app\\routes\\time_entry_routes.py"
+          },
+          {
+            "method": "POST",
+            "path": "/time-entries",
+            "description": "Create a new time entry",
+            "file": "app\\routes\\time_entry_routes.py"
+          },
+          {
+            "method": "PUT",
+            "path": "/time-entries/{id}",
+            "description": "Update an existing time entry",
+            "file": "app\\routes\\time_entry_routes.py"
+          },
+          {
+            "method": "DELETE",
+            "path": "/time-entries/{id}",
+            "description": "Delete a time entry",
+            "file": "app\\routes\\time_entry_routes.py"
+          },
+          {
+            "method": "GET",
+            "path": "/activities",
+            "description": "Retrieve activity feed entries with optional search, type filter, pagination",
+            "file": "app\\routes\\activity_routes.py"
+          },
+          {
+            "method": "GET",
+            "path": "/activities/{id}",
+            "description": "Retrieve a single activity entry by ID",
+            "file": "app\\routes\\activity_routes.py"
+          },
+          {
+            "method": "POST",
+            "path": "/activities",
+            "description": "Create a new activity entry",
+            "file": "app\\routes\\activity_routes.py"
+          },
+          {
+            "method": "PUT",
+            "path": "/activities/{id}",
+            "description": "Update an existing activity entry",
+            "file": "app\\routes\\activity_routes.py"
+          },
+          {
+            "method": "DELETE",
+            "path": "/activities/{id}",
+            "description": "Delete an activity entry",
+            "file": "app\\routes\\activity_routes.py"
+          },
+          {
+            "method": "POST",
+            "path": "/auth/register",
+            "description": "Register a new user account",
+            "file": "app\\routes\\auth_routes.py"
+          },
+          {
+            "method": "POST",
+            "path": "/auth/login",
+            "description": "Authenticate a user and issue a token",
+            "file": "app\\routes\\auth_routes.py"
+          },
+          {
+            "method": "POST",
+            "path": "/auth/logout",
+            "description": "Invalidate the current authentication token",
+            "file": "app\\routes\\auth_routes.py"
+          },
+          {
+            "method": "POST",
+            "path": "/seed",
+            "description": "Populate the database with demo data",
+            "file": "app\\routes\\seed_routes.py"
+          },
+          {
+            "method": "GET",
+            "path": "/stats/summary",
+            "description": "Return aggregate counts and key metrics for the dashboard",
+            "file": "app\\routes\\stats_routes.py"
           }
         ],
-        "database_schema": {
-          "entities": [
-            {
-              "name": "User",
-              "fields": [
-                "id",
-                "email",
-                "hashed_password"
-              ]
-            },
-            {
-              "name": "Task",
-              "fields": [
-                "id",
-                "title",
-                "done",
-                "user_id"
-              ]
-            }
+        "database_schema": [
+          {
+            "table_name": "users",
+            "columns": [
+              {
+                "name": "id",
+                "type": "Integer",
+                "is_primary_key": true,
+                "is_nullable": false
+              },
+              {
+                "name": "email",
+                "type": "String",
+                "is_primary_key": false,
+                "is_nullable": false
+              },
+              {
+                "name": "password_hash",
+                "type": "String",
+                "is_primary_key": false,
+                "is_nullable": false
+              },
+              {
+                "name": "full_name",
+                "type": "String",
+                "is_primary_key": false,
+                "is_nullable": true
+              },
+              {
+                "name": "role",
+                "type": "String",
+                "is_primary_key": false,
+                "is_nullable": false
+              },
+              {
+                "name": "is_active",
+                "type": "Boolean",
+                "is_primary_key": false,
+                "is_nullable": false
+              },
+              {
+                "name": "created_at",
+                "type": "DateTime",
+                "is_primary_key": false,
+                "is_nullable": false
+              },
+              {
+                "name": "updated_at",
+                "type": "DateTime",
+                "is_primary_key": false,
+                "is_nullable": false
+              }
+            ]
+          },
+          {
+            "table_name": "projects",
+            "columns": [
+              {
+                "name": "id",
+                "type": "Integer",
+                "is_primary_key": true,
+                "is_nullable": false
+              },
+              {
+                "name": "name",
+                "type": "String",
+                "is_primary_key": false,
+                "is_nullable": false
+              },
+              {
+                "name": "description",
+                "type": "Text",
+                "is_primary_key": false,
+                "is_nullable": true
+              },
+              {
+                "name": "status",
+                "type": "String",
+                "is_primary_key": false,
+                "is_nullable": false
+              },
+              {
+                "name": "start_date",
+                "type": "Date",
+                "is_primary_key": false,
+                "is_nullable": true
+              },
+              {
+                "name": "end_date",
+                "type": "Date",
+                "is_primary_key": false,
+                "is_nullable": true
+              },
+              {
+                "name": "owner_id",
+                "type": "Integer",
+                "is_primary_key": false,
+                "is_nullable": false
+              },
+              {
+                "name": "created_at",
+                "type": "DateTime",
+                "is_primary_key": false,
+                "is_nullable": false
+              },
+              {
+                "name": "updated_at",
+                "type": "DateTime",
+                "is_primary_key": false,
+                "is_nullable": false
+              }
+            ]
+          },
+          {
+            "table_name": "tasks",
+            "columns": [
+              {
+                "name": "id",
+                "type": "Integer",
+                "is_primary_key": true,
+                "is_nullable": false
+              },
+              {
+                "name": "title",
+                "type": "String",
+                "is_primary_key": false,
+                "is_nullable": false
+              },
+              {
+                "name": "description",
+                "type": "Text",
+                "is_primary_key": false,
+                "is_nullable": true
+              },
+              {
+                "name": "status",
+                "type": "String",
+                "is_primary_key": false,
+                "is_nullable": false
+              },
+              {
+                "name": "priority",
+                "type": "String",
+                "is_primary_key": false,
+                "is_nullable": false
+              },
+              {
+                "name": "due_date",
+                "type": "Date",
+                "is_primary_key": false,
+                "is_nullable": true
+              },
+              {
+                "name": "assignee_id",
+                "type": "Integer",
+                "is_primary_key": false,
+                "is_nullable": true
+              },
+              {
+                "name": "project_id",
+                "type": "Integer",
+                "is_primary_key": false,
+                "is_nullable": false
+              },
+              {
+                "name": "created_at",
+                "type": "DateTime",
+                "is_primary_key": false,
+                "is_nullable": false
+              },
+              {
+                "name": "updated_at",
+                "type": "DateTime",
+                "is_primary_key": false,
+                "is_nullable": false
+              }
+            ]
+          },
+          {
+            "table_name": "time_entries",
+            "columns": [
+              {
+                "name": "id",
+                "type": "Integer",
+                "is_primary_key": true,
+                "is_nullable": false
+              },
+              {
+                "name": "task_id",
+                "type": "Integer",
+                "is_primary_key": false,
+                "is_nullable": false
+              },
+              {
+                "name": "user_id",
+                "type": "Integer",
+                "is_primary_key": false,
+                "is_nullable": false
+              },
+              {
+                "name": "start_time",
+                "type": "DateTime",
+                "is_primary_key": false,
+                "is_nullable": false
+              },
+              {
+                "name": "end_time",
+                "type": "DateTime",
+                "is_primary_key": false,
+                "is_nullable": true
+              },
+              {
+                "name": "duration_minutes",
+                "type": "Integer",
+                "is_primary_key": false,
+                "is_nullable": true
+              },
+              {
+                "name": "created_at",
+                "type": "DateTime",
+                "is_primary_key": false,
+                "is_nullable": false
+              },
+              {
+                "name": "updated_at",
+                "type": "DateTime",
+                "is_primary_key": false,
+                "is_nullable": false
+              }
+            ]
+          },
+          {
+            "table_name": "activities",
+            "columns": [
+              {
+                "name": "id",
+                "type": "Integer",
+                "is_primary_key": true,
+                "is_nullable": false
+              },
+              {
+                "name": "user_id",
+                "type": "Integer",
+                "is_primary_key": false,
+                "is_nullable": false
+              },
+              {
+                "name": "type",
+                "type": "String",
+                "is_primary_key": false,
+                "is_nullable": false
+              },
+              {
+                "name": "description",
+                "type": "Text",
+                "is_primary_key": false,
+                "is_nullable": true
+              },
+              {
+                "name": "created_at",
+                "type": "DateTime",
+                "is_primary_key": false,
+                "is_nullable": false
+              },
+              {
+                "name": "updated_at",
+                "type": "DateTime",
+                "is_primary_key": false,
+                "is_nullable": false
+              }
+            ]
+          }
+        ],
+        "folder_structure": {
+          "backend": [
+            "app/models",
+            "app/schemas",
+            "app/services",
+            "app/routes",
+            "app/utils",
+            "app/main.py"
           ]
         },
-        "folder_structure": {
-          "backend_files": [
-            "app/main.py",
-            "app/models/user.py",
-            "app/routes/tasks.py"
+        "frontend_structure": {
+          "pages": [
+            "Login",
+            "Register",
+            "Dashboard",
+            "Projects",
+            "ProjectDetails",
+            "TaskBoard",
+            "TimeTracker",
+            "Reports",
+            "Settings"
+          ],
+          "components": [
+            "Header",
+            "Sidebar",
+            "ProjectCard",
+            "TaskCard",
+            "KanbanBoard",
+            "TimeEntryForm",
+            "ActivityFeed",
+            "SearchBar",
+            "UserAvatar",
+            "StatSummary",
+            "Pagination"
           ]
         }
       },
       "plan": {
-        "project_name": "task_manager",
-        "features": [
-          "auth",
-          "crud"
+        "project_name": "TaskFlow Pro",
+        "description": "A collaborative productivity platform for teams to manage projects, track tasks, log time, and visualize progress through kanban boards and analytics dashboards.",
+        "target_users": [
+          "Project managers",
+          "Team leads",
+          "Developers",
+          "Freelancers",
+          "Small business owners"
+        ],
+        "core_features": [
+          "Project creation with milestones, deadlines, and owner assignment",
+          "Task management with assignee, priority, due dates, and kanban status flow (Backlog → In Progress → Review → Done)",
+          "Team member invitation and role-based access control",
+          "Time tracking per task with start/stop timers and manual entry",
+          "Real-time activity feed showing recent task updates and time logs",
+          "Analytics dashboard with project velocity, burndown charts, and individual productivity stats"
+        ],
+        "future_features": [
+          "Calendar integration (Google, Outlook)",
+          "Slack and email notifications for task changes",
+          "Custom workflow templates per team",
+          "Advanced reporting with export to CSV/PDF",
+          "Mobile app for iOS and Android"
+        ],
+        "tech_stack": [
+          "FastAPI",
+          "React",
+          "SQLite",
+          "Pydantic",
+          "SQLAlchemy"
+        ],
+        "database_entities": [
+          {
+            "name": "User",
+            "fields": [
+              "id",
+              "email",
+              "password_hash",
+              "full_name",
+              "role",
+              "is_active",
+              "created_at",
+              "updated_at"
+            ]
+          },
+          {
+            "name": "Project",
+            "fields": [
+              "id",
+              "name",
+              "description",
+              "status",
+              "start_date",
+              "end_date",
+              "owner_id",
+              "created_at",
+              "updated_at"
+            ]
+          },
+          {
+            "name": "Task",
+            "fields": [
+              "id",
+              "title",
+              "description",
+              "status",
+              "priority",
+              "due_date",
+              "assignee_id",
+              "project_id",
+              "created_at",
+              "updated_at"
+            ]
+          },
+          {
+            "name": "TimeEntry",
+            "fields": [
+              "id",
+              "task_id",
+              "user_id",
+              "start_time",
+              "end_time",
+              "duration_minutes",
+              "created_at",
+              "updated_at"
+            ]
+          }
+        ],
+        "api_modules": [
+          {
+            "name": "auth",
+            "endpoints": [
+              "POST /auth/register",
+              "POST /auth/login",
+              "POST /auth/logout"
+            ]
+          },
+          {
+            "name": "users",
+            "endpoints": [
+              "GET /users?search=&status=&limit=&offset=",
+              "GET /users/{id}",
+              "POST /users",
+              "PUT /users/{id}",
+              "DELETE /users/{id}"
+            ]
+          },
+          {
+            "name": "projects",
+            "endpoints": [
+              "GET /projects?search=&status=&limit=&offset=",
+              "GET /projects/{id}",
+              "POST /projects",
+              "PUT /projects/{id}",
+              "DELETE /projects/{id}"
+            ]
+          },
+          {
+            "name": "tasks",
+            "endpoints": [
+              "GET /tasks?search=&status=&priority=&limit=&offset=",
+              "GET /tasks/{id}",
+              "POST /tasks",
+              "PUT /tasks/{id}",
+              "DELETE /tasks/{id}"
+            ]
+          },
+          {
+            "name": "time_entries",
+            "endpoints": [
+              "GET /time-entries?user_id=&task_id=&date=&limit=&offset=",
+              "GET /time-entries/{id}",
+              "POST /time-entries",
+              "PUT /time-entries/{id}",
+              "DELETE /time-entries/{id}"
+            ]
+          },
+          {
+            "name": "analytics",
+            "endpoints": [
+              "GET /stats/summary",
+              "GET /projects/velocity",
+              "GET /tasks/burndown",
+              "GET /activity/recent",
+              "GET /search?q="
+            ]
+          }
+        ],
+        "pages": [
+          "Login",
+          "Register",
+          "Dashboard",
+          "Projects",
+          "Project Details",
+          "Tasks",
+          "Task Board",
+          "Time Tracker",
+          "Reports",
+          "Settings"
+        ],
+        "backend_modules": [
+          "auth_service",
+          "user_service",
+          "project_service",
+          "task_service",
+          "time_entry_service",
+          "analytics_service"
+        ],
+        "roadmap": [
+          {
+            "phase": "Phase 1: MVP",
+            "milestones": [
+              "User authentication and role management",
+              "Project CRUD with owner assignment",
+              "Task CRUD with kanban status flow",
+              "Basic time entry logging",
+              "Initial dashboard with task counts"
+            ]
+          },
+          {
+            "phase": "Phase 2: Enhanced Collaboration",
+            "milestones": [
+              "Team invitation and role-based permissions",
+              "Real-time activity feed",
+              "Bulk time entry import/export",
+              "Search across projects and tasks",
+              "Responsive UI improvements"
+            ]
+          },
+          {
+            "phase": "Phase 3: Advanced Analytics",
+            "milestones": [
+              "Project velocity and burndown charts",
+              "Individual productivity reports",
+              "Custom date range analytics",
+              "Export analytics to CSV/PDF",
+              "Integration with external calendar services"
+            ]
+          }
         ]
       },
-      "score": 95.0,
+      "score": 100,
       "success_count": 1,
-      "generation_id": "6b00261246",
-      "timestamp": "2026-06-28T01:26:50Z"
+      "generation_id": "c255d3fe15",
+      "timestamp": "2026-06-28T21:24:35Z"
     },
     {
       "category": "todo_crud",
-      "idea": "A simple todo app with user login",
+      "idea": "A todo app with tasks and user authentication",
       "architecture": {
         "api_endpoints": [
           {
-            "method": "POST",
-            "path": "/api/tasks",
-            "file": "app/routes/tasks.py"
+            "method": "GET",
+            "path": "/users",
+            "description": "Retrieve a list of users with optional search, status filter, pagination",
+            "file": "app\\routes\\user_routes.py"
           },
           {
             "method": "GET",
-            "path": "/api/tasks",
-            "file": "app/routes/tasks.py"
+            "path": "/users/{id}",
+            "description": "Retrieve a single user by ID",
+            "file": "app\\routes\\user_routes.py"
+          },
+          {
+            "method": "POST",
+            "path": "/users",
+            "description": "Create a new user",
+            "file": "app\\routes\\user_routes.py"
           },
           {
             "method": "PUT",
-            "path": "/api/tasks/{id}",
-            "file": "app/routes/tasks.py"
+            "path": "/users/{id}",
+            "description": "Update an existing user",
+            "file": "app\\routes\\user_routes.py"
           },
           {
             "method": "DELETE",
-            "path": "/api/tasks/{id}",
-            "file": "app/routes/tasks.py"
+            "path": "/users/{id}",
+            "description": "Delete a user",
+            "file": "app\\routes\\user_routes.py"
+          },
+          {
+            "method": "GET",
+            "path": "/projects",
+            "description": "Retrieve projects with optional search, status filter, pagination",
+            "file": "app\\routes\\project_routes.py"
+          },
+          {
+            "method": "GET",
+            "path": "/projects/{id}",
+            "description": "Retrieve a single project by ID",
+            "file": "app\\routes\\project_routes.py"
+          },
+          {
+            "method": "POST",
+            "path": "/projects",
+            "description": "Create a new project",
+            "file": "app\\routes\\project_routes.py"
+          },
+          {
+            "method": "PUT",
+            "path": "/projects/{id}",
+            "description": "Update an existing project",
+            "file": "app\\routes\\project_routes.py"
+          },
+          {
+            "method": "DELETE",
+            "path": "/projects/{id}",
+            "description": "Delete a project",
+            "file": "app\\routes\\project_routes.py"
+          },
+          {
+            "method": "GET",
+            "path": "/tasks",
+            "description": "Retrieve tasks with optional search, status and priority filters, pagination",
+            "file": "app\\routes\\task_routes.py"
+          },
+          {
+            "method": "GET",
+            "path": "/tasks/{id}",
+            "description": "Retrieve a single task by ID",
+            "file": "app\\routes\\task_routes.py"
+          },
+          {
+            "method": "POST",
+            "path": "/tasks",
+            "description": "Create a new task",
+            "file": "app\\routes\\task_routes.py"
+          },
+          {
+            "method": "PUT",
+            "path": "/tasks/{id}",
+            "description": "Update an existing task",
+            "file": "app\\routes\\task_routes.py"
+          },
+          {
+            "method": "DELETE",
+            "path": "/tasks/{id}",
+            "description": "Delete a task",
+            "file": "app\\routes\\task_routes.py"
+          },
+          {
+            "method": "GET",
+            "path": "/time-entries",
+            "description": "Retrieve time entries with optional user, task, date filters and pagination",
+            "file": "app\\routes\\time_entry_routes.py"
+          },
+          {
+            "method": "GET",
+            "path": "/time-entries/{id}",
+            "description": "Retrieve a single time entry by ID",
+            "file": "app\\routes\\time_entry_routes.py"
+          },
+          {
+            "method": "POST",
+            "path": "/time-entries",
+            "description": "Create a new time entry",
+            "file": "app\\routes\\time_entry_routes.py"
+          },
+          {
+            "method": "PUT",
+            "path": "/time-entries/{id}",
+            "description": "Update an existing time entry",
+            "file": "app\\routes\\time_entry_routes.py"
+          },
+          {
+            "method": "DELETE",
+            "path": "/time-entries/{id}",
+            "description": "Delete a time entry",
+            "file": "app\\routes\\time_entry_routes.py"
+          },
+          {
+            "method": "GET",
+            "path": "/activities",
+            "description": "Retrieve activity feed entries with optional search, type filter, pagination",
+            "file": "app\\routes\\activity_routes.py"
+          },
+          {
+            "method": "GET",
+            "path": "/activities/{id}",
+            "description": "Retrieve a single activity entry by ID",
+            "file": "app\\routes\\activity_routes.py"
+          },
+          {
+            "method": "POST",
+            "path": "/activities",
+            "description": "Create a new activity entry",
+            "file": "app\\routes\\activity_routes.py"
+          },
+          {
+            "method": "PUT",
+            "path": "/activities/{id}",
+            "description": "Update an existing activity entry",
+            "file": "app\\routes\\activity_routes.py"
+          },
+          {
+            "method": "DELETE",
+            "path": "/activities/{id}",
+            "description": "Delete an activity entry",
+            "file": "app\\routes\\activity_routes.py"
+          },
+          {
+            "method": "POST",
+            "path": "/auth/register",
+            "description": "Register a new user account",
+            "file": "app\\routes\\auth_routes.py"
+          },
+          {
+            "method": "POST",
+            "path": "/auth/login",
+            "description": "Authenticate a user and issue a token",
+            "file": "app\\routes\\auth_routes.py"
+          },
+          {
+            "method": "POST",
+            "path": "/auth/logout",
+            "description": "Invalidate the current authentication token",
+            "file": "app\\routes\\auth_routes.py"
+          },
+          {
+            "method": "POST",
+            "path": "/seed",
+            "description": "Populate the database with demo data",
+            "file": "app\\routes\\seed_routes.py"
+          },
+          {
+            "method": "GET",
+            "path": "/stats/summary",
+            "description": "Return aggregate counts and key metrics for the dashboard",
+            "file": "app\\routes\\stats_routes.py"
           }
         ],
-        "database_schema": {
-          "entities": [
-            {
-              "name": "User",
-              "fields": [
-                "id",
-                "email",
-                "hashed_password"
-              ]
-            },
-            {
-              "name": "Task",
-              "fields": [
-                "id",
-                "title",
-                "done",
-                "user_id"
-              ]
-            }
+        "database_schema": [
+          {
+            "table_name": "users",
+            "columns": [
+              {
+                "name": "id",
+                "type": "Integer",
+                "is_primary_key": true,
+                "is_nullable": false
+              },
+              {
+                "name": "email",
+                "type": "String",
+                "is_primary_key": false,
+                "is_nullable": false
+              },
+              {
+                "name": "password_hash",
+                "type": "String",
+                "is_primary_key": false,
+                "is_nullable": false
+              },
+              {
+                "name": "full_name",
+                "type": "String",
+                "is_primary_key": false,
+                "is_nullable": true
+              },
+              {
+                "name": "role",
+                "type": "String",
+                "is_primary_key": false,
+                "is_nullable": false
+              },
+              {
+                "name": "is_active",
+                "type": "Boolean",
+                "is_primary_key": false,
+                "is_nullable": false
+              },
+              {
+                "name": "created_at",
+                "type": "DateTime",
+                "is_primary_key": false,
+                "is_nullable": false
+              },
+              {
+                "name": "updated_at",
+                "type": "DateTime",
+                "is_primary_key": false,
+                "is_nullable": false
+              }
+            ]
+          },
+          {
+            "table_name": "projects",
+            "columns": [
+              {
+                "name": "id",
+                "type": "Integer",
+                "is_primary_key": true,
+                "is_nullable": false
+              },
+              {
+                "name": "name",
+                "type": "String",
+                "is_primary_key": false,
+                "is_nullable": false
+              },
+              {
+                "name": "description",
+                "type": "Text",
+                "is_primary_key": false,
+                "is_nullable": true
+              },
+              {
+                "name": "status",
+                "type": "String",
+                "is_primary_key": false,
+                "is_nullable": false
+              },
+              {
+                "name": "start_date",
+                "type": "Date",
+                "is_primary_key": false,
+                "is_nullable": true
+              },
+              {
+                "name": "end_date",
+                "type": "Date",
+                "is_primary_key": false,
+                "is_nullable": true
+              },
+              {
+                "name": "owner_id",
+                "type": "Integer",
+                "is_primary_key": false,
+                "is_nullable": false
+              },
+              {
+                "name": "created_at",
+                "type": "DateTime",
+                "is_primary_key": false,
+                "is_nullable": false
+              },
+              {
+                "name": "updated_at",
+                "type": "DateTime",
+                "is_primary_key": false,
+                "is_nullable": false
+              }
+            ]
+          },
+          {
+            "table_name": "tasks",
+            "columns": [
+              {
+                "name": "id",
+                "type": "Integer",
+                "is_primary_key": true,
+                "is_nullable": false
+              },
+              {
+                "name": "title",
+                "type": "String",
+                "is_primary_key": false,
+                "is_nullable": false
+              },
+              {
+                "name": "description",
+                "type": "Text",
+                "is_primary_key": false,
+                "is_nullable": true
+              },
+              {
+                "name": "status",
+                "type": "String",
+                "is_primary_key": false,
+                "is_nullable": false
+              },
+              {
+                "name": "priority",
+                "type": "String",
+                "is_primary_key": false,
+                "is_nullable": false
+              },
+              {
+                "name": "due_date",
+                "type": "Date",
+                "is_primary_key": false,
+                "is_nullable": true
+              },
+              {
+                "name": "assignee_id",
+                "type": "Integer",
+                "is_primary_key": false,
+                "is_nullable": true
+              },
+              {
+                "name": "project_id",
+                "type": "Integer",
+                "is_primary_key": false,
+                "is_nullable": false
+              },
+              {
+                "name": "created_at",
+                "type": "DateTime",
+                "is_primary_key": false,
+                "is_nullable": false
+              },
+              {
+                "name": "updated_at",
+                "type": "DateTime",
+                "is_primary_key": false,
+                "is_nullable": false
+              }
+            ]
+          },
+          {
+            "table_name": "time_entries",
+            "columns": [
+              {
+                "name": "id",
+                "type": "Integer",
+                "is_primary_key": true,
+                "is_nullable": false
+              },
+              {
+                "name": "task_id",
+                "type": "Integer",
+                "is_primary_key": false,
+                "is_nullable": false
+              },
+              {
+                "name": "user_id",
+                "type": "Integer",
+                "is_primary_key": false,
+                "is_nullable": false
+              },
+              {
+                "name": "start_time",
+                "type": "DateTime",
+                "is_primary_key": false,
+                "is_nullable": false
+              },
+              {
+                "name": "end_time",
+                "type": "DateTime",
+                "is_primary_key": false,
+                "is_nullable": true
+              },
+              {
+                "name": "duration_minutes",
+                "type": "Integer",
+                "is_primary_key": false,
+                "is_nullable": true
+              },
+              {
+                "name": "created_at",
+                "type": "DateTime",
+                "is_primary_key": false,
+                "is_nullable": false
+              },
+              {
+                "name": "updated_at",
+                "type": "DateTime",
+                "is_primary_key": false,
+                "is_nullable": false
+              }
+            ]
+          },
+          {
+            "table_name": "activities",
+            "columns": [
+              {
+                "name": "id",
+                "type": "Integer",
+                "is_primary_key": true,
+                "is_nullable": false
+              },
+              {
+                "name": "user_id",
+                "type": "Integer",
+                "is_primary_key": false,
+                "is_nullable": false
+              },
+              {
+                "name": "type",
+                "type": "String",
+                "is_primary_key": false,
+                "is_nullable": false
+              },
+              {
+                "name": "description",
+                "type": "Text",
+                "is_primary_key": false,
+                "is_nullable": true
+              },
+              {
+                "name": "created_at",
+                "type": "DateTime",
+                "is_primary_key": false,
+                "is_nullable": false
+              },
+              {
+                "name": "updated_at",
+                "type": "DateTime",
+                "is_primary_key": false,
+                "is_nullable": false
+              }
+            ]
+          }
+        ],
+        "folder_structure": {
+          "backend": [
+            "app/models",
+            "app/schemas",
+            "app/services",
+            "app/routes",
+            "app/utils",
+            "app/main.py"
           ]
         },
-        "folder_structure": {
-          "backend_files": [
-            "app/main.py",
-            "app/models/user.py",
-            "app/routes/tasks.py"
+        "frontend_structure": {
+          "pages": [
+            "Login",
+            "Register",
+            "Dashboard",
+            "Projects",
+            "ProjectDetails",
+            "TaskBoard",
+            "TimeTracker",
+            "Reports",
+            "Settings"
+          ],
+          "components": [
+            "Header",
+            "Sidebar",
+            "ProjectCard",
+            "TaskCard",
+            "KanbanBoard",
+            "TimeEntryForm",
+            "ActivityFeed",
+            "SearchBar",
+            "UserAvatar",
+            "StatSummary",
+            "Pagination"
           ]
         }
       },
       "plan": {
-        "project_name": "task_manager",
-        "features": [
-          "auth",
-          "crud"
+        "project_name": "TaskFlow Pro",
+        "description": "A collaborative productivity platform for teams to manage projects, track tasks, log time, and visualize progress through kanban boards and analytics dashboards.",
+        "target_users": [
+          "Project managers",
+          "Team leads",
+          "Developers",
+          "Freelancers",
+          "Small business owners"
+        ],
+        "core_features": [
+          "Project creation with milestones, deadlines, and owner assignment",
+          "Task management with assignee, priority, due dates, and kanban status flow (Backlog → In Progress → Review → Done)",
+          "Team member invitation and role-based access control",
+          "Time tracking per task with start/stop timers and manual entry",
+          "Real-time activity feed showing recent task updates and time logs",
+          "Analytics dashboard with project velocity, burndown charts, and individual productivity stats"
+        ],
+        "future_features": [
+          "Calendar integration (Google, Outlook)",
+          "Slack and email notifications for task changes",
+          "Custom workflow templates per team",
+          "Advanced reporting with export to CSV/PDF",
+          "Mobile app for iOS and Android"
+        ],
+        "tech_stack": [
+          "FastAPI",
+          "React",
+          "SQLite",
+          "Pydantic",
+          "SQLAlchemy"
+        ],
+        "database_entities": [
+          {
+            "name": "User",
+            "fields": [
+              "id",
+              "email",
+              "password_hash",
+              "full_name",
+              "role",
+              "is_active",
+              "created_at",
+              "updated_at"
+            ]
+          },
+          {
+            "name": "Project",
+            "fields": [
+              "id",
+              "name",
+              "description",
+              "status",
+              "start_date",
+              "end_date",
+              "owner_id",
+              "created_at",
+              "updated_at"
+            ]
+          },
+          {
+            "name": "Task",
+            "fields": [
+              "id",
+              "title",
+              "description",
+              "status",
+              "priority",
+              "due_date",
+              "assignee_id",
+              "project_id",
+              "created_at",
+              "updated_at"
+            ]
+          },
+          {
+            "name": "TimeEntry",
+            "fields": [
+              "id",
+              "task_id",
+              "user_id",
+              "start_time",
+              "end_time",
+              "duration_minutes",
+              "created_at",
+              "updated_at"
+            ]
+          }
+        ],
+        "api_modules": [
+          {
+            "name": "auth",
+            "endpoints": [
+              "POST /auth/register",
+              "POST /auth/login",
+              "POST /auth/logout"
+            ]
+          },
+          {
+            "name": "users",
+            "endpoints": [
+              "GET /users?search=&status=&limit=&offset=",
+              "GET /users/{id}",
+              "POST /users",
+              "PUT /users/{id}",
+              "DELETE /users/{id}"
+            ]
+          },
+          {
+            "name": "projects",
+            "endpoints": [
+              "GET /projects?search=&status=&limit=&offset=",
+              "GET /projects/{id}",
+              "POST /projects",
+              "PUT /projects/{id}",
+              "DELETE /projects/{id}"
+            ]
+          },
+          {
+            "name": "tasks",
+            "endpoints": [
+              "GET /tasks?search=&status=&priority=&limit=&offset=",
+              "GET /tasks/{id}",
+              "POST /tasks",
+              "PUT /tasks/{id}",
+              "DELETE /tasks/{id}"
+            ]
+          },
+          {
+            "name": "time_entries",
+            "endpoints": [
+              "GET /time-entries?user_id=&task_id=&date=&limit=&offset=",
+              "GET /time-entries/{id}",
+              "POST /time-entries",
+              "PUT /time-entries/{id}",
+              "DELETE /time-entries/{id}"
+            ]
+          },
+          {
+            "name": "analytics",
+            "endpoints": [
+              "GET /stats/summary",
+              "GET /projects/velocity",
+              "GET /tasks/burndown",
+              "GET /activity/recent",
+              "GET /search?q="
+            ]
+          }
+        ],
+        "pages": [
+          "Login",
+          "Register",
+          "Dashboard",
+          "Projects",
+          "Project Details",
+          "Tasks",
+          "Task Board",
+          "Time Tracker",
+          "Reports",
+          "Settings"
+        ],
+        "backend_modules": [
+          "auth_service",
+          "user_service",
+          "project_service",
+          "task_service",
+          "time_entry_service",
+          "analytics_service"
+        ],
+        "roadmap": [
+          {
+            "phase": "Phase 1: MVP",
+            "milestones": [
+              "User authentication and role management",
+              "Project CRUD with owner assignment",
+              "Task CRUD with kanban status flow",
+              "Basic time entry logging",
+              "Initial dashboard with task counts"
+            ]
+          },
+          {
+            "phase": "Phase 2: Enhanced Collaboration",
+            "milestones": [
+              "Team invitation and role-based permissions",
+              "Real-time activity feed",
+              "Bulk time entry import/export",
+              "Search across projects and tasks",
+              "Responsive UI improvements"
+            ]
+          },
+          {
+            "phase": "Phase 3: Advanced Analytics",
+            "milestones": [
+              "Project velocity and burndown charts",
+              "Individual productivity reports",
+              "Custom date range analytics",
+              "Export analytics to CSV/PDF",
+              "Integration with external calendar services"
+            ]
+          }
         ]
       },
-      "score": 95.0,
+      "score": 85,
       "success_count": 1,
-      "generation_id": "6b00261246",
-      "timestamp": "2026-06-28T01:27:30Z"
+      "generation_id": "c255d3fe15",
+      "timestamp": "2026-06-28T21:25:53Z"
+    },
+    {
+      "category": "todo_crud",
+      "idea": "A todo app with tasks and user authentication",
+      "architecture": {
+        "api_endpoints": [
+          {
+            "method": "GET",
+            "path": "/users",
+            "description": "Retrieve a list of users with optional search, status filter, pagination",
+            "file": "app\\routes\\user_routes.py"
+          },
+          {
+            "method": "GET",
+            "path": "/users/{id}",
+            "description": "Retrieve a single user by ID",
+            "file": "app\\routes\\user_routes.py"
+          },
+          {
+            "method": "POST",
+            "path": "/users",
+            "description": "Create a new user",
+            "file": "app\\routes\\user_routes.py"
+          },
+          {
+            "method": "PUT",
+            "path": "/users/{id}",
+            "description": "Update an existing user",
+            "file": "app\\routes\\user_routes.py"
+          },
+          {
+            "method": "DELETE",
+            "path": "/users/{id}",
+            "description": "Delete a user",
+            "file": "app\\routes\\user_routes.py"
+          },
+          {
+            "method": "GET",
+            "path": "/projects",
+            "description": "Retrieve projects with optional search, status filter, pagination",
+            "file": "app\\routes\\project_routes.py"
+          },
+          {
+            "method": "GET",
+            "path": "/projects/{id}",
+            "description": "Retrieve a single project by ID",
+            "file": "app\\routes\\project_routes.py"
+          },
+          {
+            "method": "POST",
+            "path": "/projects",
+            "description": "Create a new project",
+            "file": "app\\routes\\project_routes.py"
+          },
+          {
+            "method": "PUT",
+            "path": "/projects/{id}",
+            "description": "Update an existing project",
+            "file": "app\\routes\\project_routes.py"
+          },
+          {
+            "method": "DELETE",
+            "path": "/projects/{id}",
+            "description": "Delete a project",
+            "file": "app\\routes\\project_routes.py"
+          },
+          {
+            "method": "GET",
+            "path": "/tasks",
+            "description": "Retrieve tasks with optional search, status and priority filters, pagination",
+            "file": "app\\routes\\task_routes.py"
+          },
+          {
+            "method": "GET",
+            "path": "/tasks/{id}",
+            "description": "Retrieve a single task by ID",
+            "file": "app\\routes\\task_routes.py"
+          },
+          {
+            "method": "POST",
+            "path": "/tasks",
+            "description": "Create a new task",
+            "file": "app\\routes\\task_routes.py"
+          },
+          {
+            "method": "PUT",
+            "path": "/tasks/{id}",
+            "description": "Update an existing task",
+            "file": "app\\routes\\task_routes.py"
+          },
+          {
+            "method": "DELETE",
+            "path": "/tasks/{id}",
+            "description": "Delete a task",
+            "file": "app\\routes\\task_routes.py"
+          },
+          {
+            "method": "GET",
+            "path": "/time-entries",
+            "description": "Retrieve time entries with optional user, task, date filters and pagination",
+            "file": "app\\routes\\time_entry_routes.py"
+          },
+          {
+            "method": "GET",
+            "path": "/time-entries/{id}",
+            "description": "Retrieve a single time entry by ID",
+            "file": "app\\routes\\time_entry_routes.py"
+          },
+          {
+            "method": "POST",
+            "path": "/time-entries",
+            "description": "Create a new time entry",
+            "file": "app\\routes\\time_entry_routes.py"
+          },
+          {
+            "method": "PUT",
+            "path": "/time-entries/{id}",
+            "description": "Update an existing time entry",
+            "file": "app\\routes\\time_entry_routes.py"
+          },
+          {
+            "method": "DELETE",
+            "path": "/time-entries/{id}",
+            "description": "Delete a time entry",
+            "file": "app\\routes\\time_entry_routes.py"
+          },
+          {
+            "method": "GET",
+            "path": "/activities",
+            "description": "Retrieve activity feed entries with optional search, type filter, pagination",
+            "file": "app\\routes\\activity_routes.py"
+          },
+          {
+            "method": "GET",
+            "path": "/activities/{id}",
+            "description": "Retrieve a single activity entry by ID",
+            "file": "app\\routes\\activity_routes.py"
+          },
+          {
+            "method": "POST",
+            "path": "/activities",
+            "description": "Create a new activity entry",
+            "file": "app\\routes\\activity_routes.py"
+          },
+          {
+            "method": "PUT",
+            "path": "/activities/{id}",
+            "description": "Update an existing activity entry",
+            "file": "app\\routes\\activity_routes.py"
+          },
+          {
+            "method": "DELETE",
+            "path": "/activities/{id}",
+            "description": "Delete an activity entry",
+            "file": "app\\routes\\activity_routes.py"
+          },
+          {
+            "method": "POST",
+            "path": "/auth/register",
+            "description": "Register a new user account",
+            "file": "app\\routes\\auth_routes.py"
+          },
+          {
+            "method": "POST",
+            "path": "/auth/login",
+            "description": "Authenticate a user and issue a token",
+            "file": "app\\routes\\auth_routes.py"
+          },
+          {
+            "method": "POST",
+            "path": "/auth/logout",
+            "description": "Invalidate the current authentication token",
+            "file": "app\\routes\\auth_routes.py"
+          },
+          {
+            "method": "POST",
+            "path": "/seed",
+            "description": "Populate the database with demo data",
+            "file": "app\\routes\\seed_routes.py"
+          },
+          {
+            "method": "GET",
+            "path": "/stats/summary",
+            "description": "Return aggregate counts and key metrics for the dashboard",
+            "file": "app\\routes\\stats_routes.py"
+          }
+        ],
+        "database_schema": [
+          {
+            "table_name": "users",
+            "columns": [
+              {
+                "name": "id",
+                "type": "Integer",
+                "is_primary_key": true,
+                "is_nullable": false
+              },
+              {
+                "name": "email",
+                "type": "String",
+                "is_primary_key": false,
+                "is_nullable": false
+              },
+              {
+                "name": "password_hash",
+                "type": "String",
+                "is_primary_key": false,
+                "is_nullable": false
+              },
+              {
+                "name": "full_name",
+                "type": "String",
+                "is_primary_key": false,
+                "is_nullable": true
+              },
+              {
+                "name": "role",
+                "type": "String",
+                "is_primary_key": false,
+                "is_nullable": false
+              },
+              {
+                "name": "is_active",
+                "type": "Boolean",
+                "is_primary_key": false,
+                "is_nullable": false
+              },
+              {
+                "name": "created_at",
+                "type": "DateTime",
+                "is_primary_key": false,
+                "is_nullable": false
+              },
+              {
+                "name": "updated_at",
+                "type": "DateTime",
+                "is_primary_key": false,
+                "is_nullable": false
+              }
+            ]
+          },
+          {
+            "table_name": "projects",
+            "columns": [
+              {
+                "name": "id",
+                "type": "Integer",
+                "is_primary_key": true,
+                "is_nullable": false
+              },
+              {
+                "name": "name",
+                "type": "String",
+                "is_primary_key": false,
+                "is_nullable": false
+              },
+              {
+                "name": "description",
+                "type": "Text",
+                "is_primary_key": false,
+                "is_nullable": true
+              },
+              {
+                "name": "status",
+                "type": "String",
+                "is_primary_key": false,
+                "is_nullable": false
+              },
+              {
+                "name": "start_date",
+                "type": "Date",
+                "is_primary_key": false,
+                "is_nullable": true
+              },
+              {
+                "name": "end_date",
+                "type": "Date",
+                "is_primary_key": false,
+                "is_nullable": true
+              },
+              {
+                "name": "owner_id",
+                "type": "Integer",
+                "is_primary_key": false,
+                "is_nullable": false
+              },
+              {
+                "name": "created_at",
+                "type": "DateTime",
+                "is_primary_key": false,
+                "is_nullable": false
+              },
+              {
+                "name": "updated_at",
+                "type": "DateTime",
+                "is_primary_key": false,
+                "is_nullable": false
+              }
+            ]
+          },
+          {
+            "table_name": "tasks",
+            "columns": [
+              {
+                "name": "id",
+                "type": "Integer",
+                "is_primary_key": true,
+                "is_nullable": false
+              },
+              {
+                "name": "title",
+                "type": "String",
+                "is_primary_key": false,
+                "is_nullable": false
+              },
+              {
+                "name": "description",
+                "type": "Text",
+                "is_primary_key": false,
+                "is_nullable": true
+              },
+              {
+                "name": "status",
+                "type": "String",
+                "is_primary_key": false,
+                "is_nullable": false
+              },
+              {
+                "name": "priority",
+                "type": "String",
+                "is_primary_key": false,
+                "is_nullable": false
+              },
+              {
+                "name": "due_date",
+                "type": "Date",
+                "is_primary_key": false,
+                "is_nullable": true
+              },
+              {
+                "name": "assignee_id",
+                "type": "Integer",
+                "is_primary_key": false,
+                "is_nullable": true
+              },
+              {
+                "name": "project_id",
+                "type": "Integer",
+                "is_primary_key": false,
+                "is_nullable": false
+              },
+              {
+                "name": "created_at",
+                "type": "DateTime",
+                "is_primary_key": false,
+                "is_nullable": false
+              },
+              {
+                "name": "updated_at",
+                "type": "DateTime",
+                "is_primary_key": false,
+                "is_nullable": false
+              }
+            ]
+          },
+          {
+            "table_name": "time_entries",
+            "columns": [
+              {
+                "name": "id",
+                "type": "Integer",
+                "is_primary_key": true,
+                "is_nullable": false
+              },
+              {
+                "name": "task_id",
+                "type": "Integer",
+                "is_primary_key": false,
+                "is_nullable": false
+              },
+              {
+                "name": "user_id",
+                "type": "Integer",
+                "is_primary_key": false,
+                "is_nullable": false
+              },
+              {
+                "name": "start_time",
+                "type": "DateTime",
+                "is_primary_key": false,
+                "is_nullable": false
+              },
+              {
+                "name": "end_time",
+                "type": "DateTime",
+                "is_primary_key": false,
+                "is_nullable": true
+              },
+              {
+                "name": "duration_minutes",
+                "type": "Integer",
+                "is_primary_key": false,
+                "is_nullable": true
+              },
+              {
+                "name": "created_at",
+                "type": "DateTime",
+                "is_primary_key": false,
+                "is_nullable": false
+              },
+              {
+                "name": "updated_at",
+                "type": "DateTime",
+                "is_primary_key": false,
+                "is_nullable": false
+              }
+            ]
+          },
+          {
+            "table_name": "activities",
+            "columns": [
+              {
+                "name": "id",
+                "type": "Integer",
+                "is_primary_key": true,
+                "is_nullable": false
+              },
+              {
+                "name": "user_id",
+                "type": "Integer",
+                "is_primary_key": false,
+                "is_nullable": false
+              },
+              {
+                "name": "type",
+                "type": "String",
+                "is_primary_key": false,
+                "is_nullable": false
+              },
+              {
+                "name": "description",
+                "type": "Text",
+                "is_primary_key": false,
+                "is_nullable": true
+              },
+              {
+                "name": "created_at",
+                "type": "DateTime",
+                "is_primary_key": false,
+                "is_nullable": false
+              },
+              {
+                "name": "updated_at",
+                "type": "DateTime",
+                "is_primary_key": false,
+                "is_nullable": false
+              }
+            ]
+          }
+        ],
+        "folder_structure": {
+          "backend": [
+            "app/models",
+            "app/schemas",
+            "app/services",
+            "app/routes",
+            "app/utils",
+            "app/main.py"
+          ]
+        },
+        "frontend_structure": {
+          "pages": [
+            "Login",
+            "Register",
+            "Dashboard",
+            "Projects",
+            "ProjectDetails",
+            "TaskBoard",
+            "TimeTracker",
+            "Reports",
+            "Settings"
+          ],
+          "components": [
+            "Header",
+            "Sidebar",
+            "ProjectCard",
+            "TaskCard",
+            "KanbanBoard",
+            "TimeEntryForm",
+            "ActivityFeed",
+            "SearchBar",
+            "UserAvatar",
+            "StatSummary",
+            "Pagination"
+          ]
+        }
+      },
+      "plan": {
+        "project_name": "TaskFlow Pro",
+        "description": "A collaborative productivity platform for teams to manage projects, track tasks, log time, and visualize progress through kanban boards and analytics dashboards.",
+        "target_users": [
+          "Project managers",
+          "Team leads",
+          "Developers",
+          "Freelancers",
+          "Small business owners"
+        ],
+        "core_features": [
+          "Project creation with milestones, deadlines, and owner assignment",
+          "Task management with assignee, priority, due dates, and kanban status flow (Backlog → In Progress → Review → Done)",
+          "Team member invitation and role-based access control",
+          "Time tracking per task with start/stop timers and manual entry",
+          "Real-time activity feed showing recent task updates and time logs",
+          "Analytics dashboard with project velocity, burndown charts, and individual productivity stats"
+        ],
+        "future_features": [
+          "Calendar integration (Google, Outlook)",
+          "Slack and email notifications for task changes",
+          "Custom workflow templates per team",
+          "Advanced reporting with export to CSV/PDF",
+          "Mobile app for iOS and Android"
+        ],
+        "tech_stack": [
+          "FastAPI",
+          "React",
+          "SQLite",
+          "Pydantic",
+          "SQLAlchemy"
+        ],
+        "database_entities": [
+          {
+            "name": "User",
+            "fields": [
+              "id",
+              "email",
+              "password_hash",
+              "full_name",
+              "role",
+              "is_active",
+              "created_at",
+              "updated_at"
+            ]
+          },
+          {
+            "name": "Project",
+            "fields": [
+              "id",
+              "name",
+              "description",
+              "status",
+              "start_date",
+              "end_date",
+              "owner_id",
+              "created_at",
+              "updated_at"
+            ]
+          },
+          {
+            "name": "Task",
+            "fields": [
+              "id",
+              "title",
+              "description",
+              "status",
+              "priority",
+              "due_date",
+              "assignee_id",
+              "project_id",
+              "created_at",
+              "updated_at"
+            ]
+          },
+          {
+            "name": "TimeEntry",
+            "fields": [
+              "id",
+              "task_id",
+              "user_id",
+              "start_time",
+              "end_time",
+              "duration_minutes",
+              "created_at",
+              "updated_at"
+            ]
+          }
+        ],
+        "api_modules": [
+          {
+            "name": "auth",
+            "endpoints": [
+              "POST /auth/register",
+              "POST /auth/login",
+              "POST /auth/logout"
+            ]
+          },
+          {
+            "name": "users",
+            "endpoints": [
+              "GET /users?search=&status=&limit=&offset=",
+              "GET /users/{id}",
+              "POST /users",
+              "PUT /users/{id}",
+              "DELETE /users/{id}"
+            ]
+          },
+          {
+            "name": "projects",
+            "endpoints": [
+              "GET /projects?search=&status=&limit=&offset=",
+              "GET /projects/{id}",
+              "POST /projects",
+              "PUT /projects/{id}",
+              "DELETE /projects/{id}"
+            ]
+          },
+          {
+            "name": "tasks",
+            "endpoints": [
+              "GET /tasks?search=&status=&priority=&limit=&offset=",
+              "GET /tasks/{id}",
+              "POST /tasks",
+              "PUT /tasks/{id}",
+              "DELETE /tasks/{id}"
+            ]
+          },
+          {
+            "name": "time_entries",
+            "endpoints": [
+              "GET /time-entries?user_id=&task_id=&date=&limit=&offset=",
+              "GET /time-entries/{id}",
+              "POST /time-entries",
+              "PUT /time-entries/{id}",
+              "DELETE /time-entries/{id}"
+            ]
+          },
+          {
+            "name": "analytics",
+            "endpoints": [
+              "GET /stats/summary",
+              "GET /projects/velocity",
+              "GET /tasks/burndown",
+              "GET /activity/recent",
+              "GET /search?q="
+            ]
+          }
+        ],
+        "pages": [
+          "Login",
+          "Register",
+          "Dashboard",
+          "Projects",
+          "Project Details",
+          "Tasks",
+          "Task Board",
+          "Time Tracker",
+          "Reports",
+          "Settings"
+        ],
+        "backend_modules": [
+          "auth_service",
+          "user_service",
+          "project_service",
+          "task_service",
+          "time_entry_service",
+          "analytics_service"
+        ],
+        "roadmap": [
+          {
+            "phase": "Phase 1: MVP",
+            "milestones": [
+              "User authentication and role management",
+              "Project CRUD with owner assignment",
+              "Task CRUD with kanban status flow",
+              "Basic time entry logging",
+              "Initial dashboard with task counts"
+            ]
+          },
+          {
+            "phase": "Phase 2: Enhanced Collaboration",
+            "milestones": [
+              "Team invitation and role-based permissions",
+              "Real-time activity feed",
+              "Bulk time entry import/export",
+              "Search across projects and tasks",
+              "Responsive UI improvements"
+            ]
+          },
+          {
+            "phase": "Phase 3: Advanced Analytics",
+            "milestones": [
+              "Project velocity and burndown charts",
+              "Individual productivity reports",
+              "Custom date range analytics",
+              "Export analytics to CSV/PDF",
+              "Integration with external calendar services"
+            ]
+          }
+        ]
+      },
+      "score": 90,
+      "success_count": 1,
+      "generation_id": "c255d3fe15",
+      "timestamp": "2026-06-28T21:29:21Z"
+    },
+    {
+      "category": "todo_crud",
+      "idea": "A todo app with tasks and user authentication",
+      "architecture": {
+        "api_endpoints": [
+          {
+            "method": "GET",
+            "path": "/users",
+            "description": "Retrieve a list of users with optional search, status filter, pagination",
+            "file": "app\\routes\\user_routes.py"
+          },
+          {
+            "method": "GET",
+            "path": "/users/{id}",
+            "description": "Retrieve a single user by ID",
+            "file": "app\\routes\\user_routes.py"
+          },
+          {
+            "method": "POST",
+            "path": "/users",
+            "description": "Create a new user",
+            "file": "app\\routes\\user_routes.py"
+          },
+          {
+            "method": "PUT",
+            "path": "/users/{id}",
+            "description": "Update an existing user",
+            "file": "app\\routes\\user_routes.py"
+          },
+          {
+            "method": "DELETE",
+            "path": "/users/{id}",
+            "description": "Delete a user",
+            "file": "app\\routes\\user_routes.py"
+          },
+          {
+            "method": "GET",
+            "path": "/projects",
+            "description": "Retrieve projects with optional search, status filter, pagination",
+            "file": "app\\routes\\project_routes.py"
+          },
+          {
+            "method": "GET",
+            "path": "/projects/{id}",
+            "description": "Retrieve a single project by ID",
+            "file": "app\\routes\\project_routes.py"
+          },
+          {
+            "method": "POST",
+            "path": "/projects",
+            "description": "Create a new project",
+            "file": "app\\routes\\project_routes.py"
+          },
+          {
+            "method": "PUT",
+            "path": "/projects/{id}",
+            "description": "Update an existing project",
+            "file": "app\\routes\\project_routes.py"
+          },
+          {
+            "method": "DELETE",
+            "path": "/projects/{id}",
+            "description": "Delete a project",
+            "file": "app\\routes\\project_routes.py"
+          },
+          {
+            "method": "GET",
+            "path": "/tasks",
+            "description": "Retrieve tasks with optional search, status and priority filters, pagination",
+            "file": "app\\routes\\task_routes.py"
+          },
+          {
+            "method": "GET",
+            "path": "/tasks/{id}",
+            "description": "Retrieve a single task by ID",
+            "file": "app\\routes\\task_routes.py"
+          },
+          {
+            "method": "POST",
+            "path": "/tasks",
+            "description": "Create a new task",
+            "file": "app\\routes\\task_routes.py"
+          },
+          {
+            "method": "PUT",
+            "path": "/tasks/{id}",
+            "description": "Update an existing task",
+            "file": "app\\routes\\task_routes.py"
+          },
+          {
+            "method": "DELETE",
+            "path": "/tasks/{id}",
+            "description": "Delete a task",
+            "file": "app\\routes\\task_routes.py"
+          },
+          {
+            "method": "GET",
+            "path": "/time-entries",
+            "description": "Retrieve time entries with optional user, task, date filters and pagination",
+            "file": "app\\routes\\time_entry_routes.py"
+          },
+          {
+            "method": "GET",
+            "path": "/time-entries/{id}",
+            "description": "Retrieve a single time entry by ID",
+            "file": "app\\routes\\time_entry_routes.py"
+          },
+          {
+            "method": "POST",
+            "path": "/time-entries",
+            "description": "Create a new time entry",
+            "file": "app\\routes\\time_entry_routes.py"
+          },
+          {
+            "method": "PUT",
+            "path": "/time-entries/{id}",
+            "description": "Update an existing time entry",
+            "file": "app\\routes\\time_entry_routes.py"
+          },
+          {
+            "method": "DELETE",
+            "path": "/time-entries/{id}",
+            "description": "Delete a time entry",
+            "file": "app\\routes\\time_entry_routes.py"
+          },
+          {
+            "method": "GET",
+            "path": "/activities",
+            "description": "Retrieve activity feed entries with optional search, type filter, pagination",
+            "file": "app\\routes\\activity_routes.py"
+          },
+          {
+            "method": "GET",
+            "path": "/activities/{id}",
+            "description": "Retrieve a single activity entry by ID",
+            "file": "app\\routes\\activity_routes.py"
+          },
+          {
+            "method": "POST",
+            "path": "/activities",
+            "description": "Create a new activity entry",
+            "file": "app\\routes\\activity_routes.py"
+          },
+          {
+            "method": "PUT",
+            "path": "/activities/{id}",
+            "description": "Update an existing activity entry",
+            "file": "app\\routes\\activity_routes.py"
+          },
+          {
+            "method": "DELETE",
+            "path": "/activities/{id}",
+            "description": "Delete an activity entry",
+            "file": "app\\routes\\activity_routes.py"
+          },
+          {
+            "method": "POST",
+            "path": "/auth/register",
+            "description": "Register a new user account",
+            "file": "app\\routes\\auth_routes.py"
+          },
+          {
+            "method": "POST",
+            "path": "/auth/login",
+            "description": "Authenticate a user and issue a token",
+            "file": "app\\routes\\auth_routes.py"
+          },
+          {
+            "method": "POST",
+            "path": "/auth/logout",
+            "description": "Invalidate the current authentication token",
+            "file": "app\\routes\\auth_routes.py"
+          },
+          {
+            "method": "POST",
+            "path": "/seed",
+            "description": "Populate the database with demo data",
+            "file": "app\\routes\\seed_routes.py"
+          },
+          {
+            "method": "GET",
+            "path": "/stats/summary",
+            "description": "Return aggregate counts and key metrics for the dashboard",
+            "file": "app\\routes\\stats_routes.py"
+          }
+        ],
+        "database_schema": [
+          {
+            "table_name": "users",
+            "columns": [
+              {
+                "name": "id",
+                "type": "Integer",
+                "is_primary_key": true,
+                "is_nullable": false
+              },
+              {
+                "name": "email",
+                "type": "String",
+                "is_primary_key": false,
+                "is_nullable": false
+              },
+              {
+                "name": "password_hash",
+                "type": "String",
+                "is_primary_key": false,
+                "is_nullable": false
+              },
+              {
+                "name": "full_name",
+                "type": "String",
+                "is_primary_key": false,
+                "is_nullable": true
+              },
+              {
+                "name": "role",
+                "type": "String",
+                "is_primary_key": false,
+                "is_nullable": false
+              },
+              {
+                "name": "is_active",
+                "type": "Boolean",
+                "is_primary_key": false,
+                "is_nullable": false
+              },
+              {
+                "name": "created_at",
+                "type": "DateTime",
+                "is_primary_key": false,
+                "is_nullable": false
+              },
+              {
+                "name": "updated_at",
+                "type": "DateTime",
+                "is_primary_key": false,
+                "is_nullable": false
+              }
+            ]
+          },
+          {
+            "table_name": "projects",
+            "columns": [
+              {
+                "name": "id",
+                "type": "Integer",
+                "is_primary_key": true,
+                "is_nullable": false
+              },
+              {
+                "name": "name",
+                "type": "String",
+                "is_primary_key": false,
+                "is_nullable": false
+              },
+              {
+                "name": "description",
+                "type": "Text",
+                "is_primary_key": false,
+                "is_nullable": true
+              },
+              {
+                "name": "status",
+                "type": "String",
+                "is_primary_key": false,
+                "is_nullable": false
+              },
+              {
+                "name": "start_date",
+                "type": "Date",
+                "is_primary_key": false,
+                "is_nullable": true
+              },
+              {
+                "name": "end_date",
+                "type": "Date",
+                "is_primary_key": false,
+                "is_nullable": true
+              },
+              {
+                "name": "owner_id",
+                "type": "Integer",
+                "is_primary_key": false,
+                "is_nullable": false
+              },
+              {
+                "name": "created_at",
+                "type": "DateTime",
+                "is_primary_key": false,
+                "is_nullable": false
+              },
+              {
+                "name": "updated_at",
+                "type": "DateTime",
+                "is_primary_key": false,
+                "is_nullable": false
+              }
+            ]
+          },
+          {
+            "table_name": "tasks",
+            "columns": [
+              {
+                "name": "id",
+                "type": "Integer",
+                "is_primary_key": true,
+                "is_nullable": false
+              },
+              {
+                "name": "title",
+                "type": "String",
+                "is_primary_key": false,
+                "is_nullable": false
+              },
+              {
+                "name": "description",
+                "type": "Text",
+                "is_primary_key": false,
+                "is_nullable": true
+              },
+              {
+                "name": "status",
+                "type": "String",
+                "is_primary_key": false,
+                "is_nullable": false
+              },
+              {
+                "name": "priority",
+                "type": "String",
+                "is_primary_key": false,
+                "is_nullable": false
+              },
+              {
+                "name": "due_date",
+                "type": "Date",
+                "is_primary_key": false,
+                "is_nullable": true
+              },
+              {
+                "name": "assignee_id",
+                "type": "Integer",
+                "is_primary_key": false,
+                "is_nullable": true
+              },
+              {
+                "name": "project_id",
+                "type": "Integer",
+                "is_primary_key": false,
+                "is_nullable": false
+              },
+              {
+                "name": "created_at",
+                "type": "DateTime",
+                "is_primary_key": false,
+                "is_nullable": false
+              },
+              {
+                "name": "updated_at",
+                "type": "DateTime",
+                "is_primary_key": false,
+                "is_nullable": false
+              }
+            ]
+          },
+          {
+            "table_name": "time_entries",
+            "columns": [
+              {
+                "name": "id",
+                "type": "Integer",
+                "is_primary_key": true,
+                "is_nullable": false
+              },
+              {
+                "name": "task_id",
+                "type": "Integer",
+                "is_primary_key": false,
+                "is_nullable": false
+              },
+              {
+                "name": "user_id",
+                "type": "Integer",
+                "is_primary_key": false,
+                "is_nullable": false
+              },
+              {
+                "name": "start_time",
+                "type": "DateTime",
+                "is_primary_key": false,
+                "is_nullable": false
+              },
+              {
+                "name": "end_time",
+                "type": "DateTime",
+                "is_primary_key": false,
+                "is_nullable": true
+              },
+              {
+                "name": "duration_minutes",
+                "type": "Integer",
+                "is_primary_key": false,
+                "is_nullable": true
+              },
+              {
+                "name": "created_at",
+                "type": "DateTime",
+                "is_primary_key": false,
+                "is_nullable": false
+              },
+              {
+                "name": "updated_at",
+                "type": "DateTime",
+                "is_primary_key": false,
+                "is_nullable": false
+              }
+            ]
+          },
+          {
+            "table_name": "activities",
+            "columns": [
+              {
+                "name": "id",
+                "type": "Integer",
+                "is_primary_key": true,
+                "is_nullable": false
+              },
+              {
+                "name": "user_id",
+                "type": "Integer",
+                "is_primary_key": false,
+                "is_nullable": false
+              },
+              {
+                "name": "type",
+                "type": "String",
+                "is_primary_key": false,
+                "is_nullable": false
+              },
+              {
+                "name": "description",
+                "type": "Text",
+                "is_primary_key": false,
+                "is_nullable": true
+              },
+              {
+                "name": "created_at",
+                "type": "DateTime",
+                "is_primary_key": false,
+                "is_nullable": false
+              },
+              {
+                "name": "updated_at",
+                "type": "DateTime",
+                "is_primary_key": false,
+                "is_nullable": false
+              }
+            ]
+          }
+        ],
+        "folder_structure": {
+          "backend": [
+            "app/models",
+            "app/schemas",
+            "app/services",
+            "app/routes",
+            "app/utils",
+            "app/main.py"
+          ]
+        },
+        "frontend_structure": {
+          "pages": [
+            "Login",
+            "Register",
+            "Dashboard",
+            "Projects",
+            "ProjectDetails",
+            "TaskBoard",
+            "TimeTracker",
+            "Reports",
+            "Settings"
+          ],
+          "components": [
+            "Header",
+            "Sidebar",
+            "ProjectCard",
+            "TaskCard",
+            "KanbanBoard",
+            "TimeEntryForm",
+            "ActivityFeed",
+            "SearchBar",
+            "UserAvatar",
+            "StatSummary",
+            "Pagination"
+          ]
+        }
+      },
+      "plan": {
+        "project_name": "TaskFlow Pro",
+        "description": "A collaborative productivity platform for teams to manage projects, track tasks, log time, and visualize progress through kanban boards and analytics dashboards.",
+        "target_users": [
+          "Project managers",
+          "Team leads",
+          "Developers",
+          "Freelancers",
+          "Small business owners"
+        ],
+        "core_features": [
+          "Project creation with milestones, deadlines, and owner assignment",
+          "Task management with assignee, priority, due dates, and kanban status flow (Backlog → In Progress → Review → Done)",
+          "Team member invitation and role-based access control",
+          "Time tracking per task with start/stop timers and manual entry",
+          "Real-time activity feed showing recent task updates and time logs",
+          "Analytics dashboard with project velocity, burndown charts, and individual productivity stats"
+        ],
+        "future_features": [
+          "Calendar integration (Google, Outlook)",
+          "Slack and email notifications for task changes",
+          "Custom workflow templates per team",
+          "Advanced reporting with export to CSV/PDF",
+          "Mobile app for iOS and Android"
+        ],
+        "tech_stack": [
+          "FastAPI",
+          "React",
+          "SQLite",
+          "Pydantic",
+          "SQLAlchemy"
+        ],
+        "database_entities": [
+          {
+            "name": "User",
+            "fields": [
+              "id",
+              "email",
+              "password_hash",
+              "full_name",
+              "role",
+              "is_active",
+              "created_at",
+              "updated_at"
+            ]
+          },
+          {
+            "name": "Project",
+            "fields": [
+              "id",
+              "name",
+              "description",
+              "status",
+              "start_date",
+              "end_date",
+              "owner_id",
+              "created_at",
+              "updated_at"
+            ]
+          },
+          {
+            "name": "Task",
+            "fields": [
+              "id",
+              "title",
+              "description",
+              "status",
+              "priority",
+              "due_date",
+              "assignee_id",
+              "project_id",
+              "created_at",
+              "updated_at"
+            ]
+          },
+          {
+            "name": "TimeEntry",
+            "fields": [
+              "id",
+              "task_id",
+              "user_id",
+              "start_time",
+              "end_time",
+              "duration_minutes",
+              "created_at",
+              "updated_at"
+            ]
+          }
+        ],
+        "api_modules": [
+          {
+            "name": "auth",
+            "endpoints": [
+              "POST /auth/register",
+              "POST /auth/login",
+              "POST /auth/logout"
+            ]
+          },
+          {
+            "name": "users",
+            "endpoints": [
+              "GET /users?search=&status=&limit=&offset=",
+              "GET /users/{id}",
+              "POST /users",
+              "PUT /users/{id}",
+              "DELETE /users/{id}"
+            ]
+          },
+          {
+            "name": "projects",
+            "endpoints": [
+              "GET /projects?search=&status=&limit=&offset=",
+              "GET /projects/{id}",
+              "POST /projects",
+              "PUT /projects/{id}",
+              "DELETE /projects/{id}"
+            ]
+          },
+          {
+            "name": "tasks",
+            "endpoints": [
+              "GET /tasks?search=&status=&priority=&limit=&offset=",
+              "GET /tasks/{id}",
+              "POST /tasks",
+              "PUT /tasks/{id}",
+              "DELETE /tasks/{id}"
+            ]
+          },
+          {
+            "name": "time_entries",
+            "endpoints": [
+              "GET /time-entries?user_id=&task_id=&date=&limit=&offset=",
+              "GET /time-entries/{id}",
+              "POST /time-entries",
+              "PUT /time-entries/{id}",
+              "DELETE /time-entries/{id}"
+            ]
+          },
+          {
+            "name": "analytics",
+            "endpoints": [
+              "GET /stats/summary",
+              "GET /projects/velocity",
+              "GET /tasks/burndown",
+              "GET /activity/recent",
+              "GET /search?q="
+            ]
+          }
+        ],
+        "pages": [
+          "Login",
+          "Register",
+          "Dashboard",
+          "Projects",
+          "Project Details",
+          "Tasks",
+          "Task Board",
+          "Time Tracker",
+          "Reports",
+          "Settings"
+        ],
+        "backend_modules": [
+          "auth_service",
+          "user_service",
+          "project_service",
+          "task_service",
+          "time_entry_service",
+          "analytics_service"
+        ],
+        "roadmap": [
+          {
+            "phase": "Phase 1: MVP",
+            "milestones": [
+              "User authentication and role management",
+              "Project CRUD with owner assignment",
+              "Task CRUD with kanban status flow",
+              "Basic time entry logging",
+              "Initial dashboard with task counts"
+            ]
+          },
+          {
+            "phase": "Phase 2: Enhanced Collaboration",
+            "milestones": [
+              "Team invitation and role-based permissions",
+              "Real-time activity feed",
+              "Bulk time entry import/export",
+              "Search across projects and tasks",
+              "Responsive UI improvements"
+            ]
+          },
+          {
+            "phase": "Phase 3: Advanced Analytics",
+            "milestones": [
+              "Project velocity and burndown charts",
+              "Individual productivity reports",
+              "Custom date range analytics",
+              "Export analytics to CSV/PDF",
+              "Integration with external calendar services"
+            ]
+          }
+        ]
+      },
+      "score": 90,
+      "success_count": 1,
+      "generation_id": "c255d3fe15",
+      "timestamp": "2026-06-28T21:33:07Z"
+    },
+    {
+      "category": "todo_crud",
+      "idea": "A todo app with tasks and user authentication",
+      "architecture": {
+        "api_endpoints": [
+          {
+            "method": "GET",
+            "path": "/users",
+            "description": "Retrieve a list of users with optional search, status filter, pagination",
+            "file": "app\\routes\\user_routes.py"
+          },
+          {
+            "method": "GET",
+            "path": "/users/{id}",
+            "description": "Retrieve a single user by ID",
+            "file": "app\\routes\\user_routes.py"
+          },
+          {
+            "method": "POST",
+            "path": "/users",
+            "description": "Create a new user",
+            "file": "app\\routes\\user_routes.py"
+          },
+          {
+            "method": "PUT",
+            "path": "/users/{id}",
+            "description": "Update an existing user",
+            "file": "app\\routes\\user_routes.py"
+          },
+          {
+            "method": "DELETE",
+            "path": "/users/{id}",
+            "description": "Delete a user",
+            "file": "app\\routes\\user_routes.py"
+          },
+          {
+            "method": "GET",
+            "path": "/projects",
+            "description": "Retrieve projects with optional search, status filter, pagination",
+            "file": "app\\routes\\project_routes.py"
+          },
+          {
+            "method": "GET",
+            "path": "/projects/{id}",
+            "description": "Retrieve a single project by ID",
+            "file": "app\\routes\\project_routes.py"
+          },
+          {
+            "method": "POST",
+            "path": "/projects",
+            "description": "Create a new project",
+            "file": "app\\routes\\project_routes.py"
+          },
+          {
+            "method": "PUT",
+            "path": "/projects/{id}",
+            "description": "Update an existing project",
+            "file": "app\\routes\\project_routes.py"
+          },
+          {
+            "method": "DELETE",
+            "path": "/projects/{id}",
+            "description": "Delete a project",
+            "file": "app\\routes\\project_routes.py"
+          },
+          {
+            "method": "GET",
+            "path": "/tasks",
+            "description": "Retrieve tasks with optional search, status and priority filters, pagination",
+            "file": "app\\routes\\task_routes.py"
+          },
+          {
+            "method": "GET",
+            "path": "/tasks/{id}",
+            "description": "Retrieve a single task by ID",
+            "file": "app\\routes\\task_routes.py"
+          },
+          {
+            "method": "POST",
+            "path": "/tasks",
+            "description": "Create a new task",
+            "file": "app\\routes\\task_routes.py"
+          },
+          {
+            "method": "PUT",
+            "path": "/tasks/{id}",
+            "description": "Update an existing task",
+            "file": "app\\routes\\task_routes.py"
+          },
+          {
+            "method": "DELETE",
+            "path": "/tasks/{id}",
+            "description": "Delete a task",
+            "file": "app\\routes\\task_routes.py"
+          },
+          {
+            "method": "GET",
+            "path": "/time-entries",
+            "description": "Retrieve time entries with optional user, task, date filters and pagination",
+            "file": "app\\routes\\time_entry_routes.py"
+          },
+          {
+            "method": "GET",
+            "path": "/time-entries/{id}",
+            "description": "Retrieve a single time entry by ID",
+            "file": "app\\routes\\time_entry_routes.py"
+          },
+          {
+            "method": "POST",
+            "path": "/time-entries",
+            "description": "Create a new time entry",
+            "file": "app\\routes\\time_entry_routes.py"
+          },
+          {
+            "method": "PUT",
+            "path": "/time-entries/{id}",
+            "description": "Update an existing time entry",
+            "file": "app\\routes\\time_entry_routes.py"
+          },
+          {
+            "method": "DELETE",
+            "path": "/time-entries/{id}",
+            "description": "Delete a time entry",
+            "file": "app\\routes\\time_entry_routes.py"
+          },
+          {
+            "method": "GET",
+            "path": "/activities",
+            "description": "Retrieve activity feed entries with optional search, type filter, pagination",
+            "file": "app\\routes\\activity_routes.py"
+          },
+          {
+            "method": "GET",
+            "path": "/activities/{id}",
+            "description": "Retrieve a single activity entry by ID",
+            "file": "app\\routes\\activity_routes.py"
+          },
+          {
+            "method": "POST",
+            "path": "/activities",
+            "description": "Create a new activity entry",
+            "file": "app\\routes\\activity_routes.py"
+          },
+          {
+            "method": "PUT",
+            "path": "/activities/{id}",
+            "description": "Update an existing activity entry",
+            "file": "app\\routes\\activity_routes.py"
+          },
+          {
+            "method": "DELETE",
+            "path": "/activities/{id}",
+            "description": "Delete an activity entry",
+            "file": "app\\routes\\activity_routes.py"
+          },
+          {
+            "method": "POST",
+            "path": "/auth/register",
+            "description": "Register a new user account",
+            "file": "app\\routes\\auth_routes.py"
+          },
+          {
+            "method": "POST",
+            "path": "/auth/login",
+            "description": "Authenticate a user and issue a token",
+            "file": "app\\routes\\auth_routes.py"
+          },
+          {
+            "method": "POST",
+            "path": "/auth/logout",
+            "description": "Invalidate the current authentication token",
+            "file": "app\\routes\\auth_routes.py"
+          },
+          {
+            "method": "POST",
+            "path": "/seed",
+            "description": "Populate the database with demo data",
+            "file": "app\\routes\\seed_routes.py"
+          },
+          {
+            "method": "GET",
+            "path": "/stats/summary",
+            "description": "Return aggregate counts and key metrics for the dashboard",
+            "file": "app\\routes\\stats_routes.py"
+          }
+        ],
+        "database_schema": [
+          {
+            "table_name": "users",
+            "columns": [
+              {
+                "name": "id",
+                "type": "Integer",
+                "is_primary_key": true,
+                "is_nullable": false
+              },
+              {
+                "name": "email",
+                "type": "String",
+                "is_primary_key": false,
+                "is_nullable": false
+              },
+              {
+                "name": "password_hash",
+                "type": "String",
+                "is_primary_key": false,
+                "is_nullable": false
+              },
+              {
+                "name": "full_name",
+                "type": "String",
+                "is_primary_key": false,
+                "is_nullable": true
+              },
+              {
+                "name": "role",
+                "type": "String",
+                "is_primary_key": false,
+                "is_nullable": false
+              },
+              {
+                "name": "is_active",
+                "type": "Boolean",
+                "is_primary_key": false,
+                "is_nullable": false
+              },
+              {
+                "name": "created_at",
+                "type": "DateTime",
+                "is_primary_key": false,
+                "is_nullable": false
+              },
+              {
+                "name": "updated_at",
+                "type": "DateTime",
+                "is_primary_key": false,
+                "is_nullable": false
+              }
+            ]
+          },
+          {
+            "table_name": "projects",
+            "columns": [
+              {
+                "name": "id",
+                "type": "Integer",
+                "is_primary_key": true,
+                "is_nullable": false
+              },
+              {
+                "name": "name",
+                "type": "String",
+                "is_primary_key": false,
+                "is_nullable": false
+              },
+              {
+                "name": "description",
+                "type": "Text",
+                "is_primary_key": false,
+                "is_nullable": true
+              },
+              {
+                "name": "status",
+                "type": "String",
+                "is_primary_key": false,
+                "is_nullable": false
+              },
+              {
+                "name": "start_date",
+                "type": "Date",
+                "is_primary_key": false,
+                "is_nullable": true
+              },
+              {
+                "name": "end_date",
+                "type": "Date",
+                "is_primary_key": false,
+                "is_nullable": true
+              },
+              {
+                "name": "owner_id",
+                "type": "Integer",
+                "is_primary_key": false,
+                "is_nullable": false
+              },
+              {
+                "name": "created_at",
+                "type": "DateTime",
+                "is_primary_key": false,
+                "is_nullable": false
+              },
+              {
+                "name": "updated_at",
+                "type": "DateTime",
+                "is_primary_key": false,
+                "is_nullable": false
+              }
+            ]
+          },
+          {
+            "table_name": "tasks",
+            "columns": [
+              {
+                "name": "id",
+                "type": "Integer",
+                "is_primary_key": true,
+                "is_nullable": false
+              },
+              {
+                "name": "title",
+                "type": "String",
+                "is_primary_key": false,
+                "is_nullable": false
+              },
+              {
+                "name": "description",
+                "type": "Text",
+                "is_primary_key": false,
+                "is_nullable": true
+              },
+              {
+                "name": "status",
+                "type": "String",
+                "is_primary_key": false,
+                "is_nullable": false
+              },
+              {
+                "name": "priority",
+                "type": "String",
+                "is_primary_key": false,
+                "is_nullable": false
+              },
+              {
+                "name": "due_date",
+                "type": "Date",
+                "is_primary_key": false,
+                "is_nullable": true
+              },
+              {
+                "name": "assignee_id",
+                "type": "Integer",
+                "is_primary_key": false,
+                "is_nullable": true
+              },
+              {
+                "name": "project_id",
+                "type": "Integer",
+                "is_primary_key": false,
+                "is_nullable": false
+              },
+              {
+                "name": "created_at",
+                "type": "DateTime",
+                "is_primary_key": false,
+                "is_nullable": false
+              },
+              {
+                "name": "updated_at",
+                "type": "DateTime",
+                "is_primary_key": false,
+                "is_nullable": false
+              }
+            ]
+          },
+          {
+            "table_name": "time_entries",
+            "columns": [
+              {
+                "name": "id",
+                "type": "Integer",
+                "is_primary_key": true,
+                "is_nullable": false
+              },
+              {
+                "name": "task_id",
+                "type": "Integer",
+                "is_primary_key": false,
+                "is_nullable": false
+              },
+              {
+                "name": "user_id",
+                "type": "Integer",
+                "is_primary_key": false,
+                "is_nullable": false
+              },
+              {
+                "name": "start_time",
+                "type": "DateTime",
+                "is_primary_key": false,
+                "is_nullable": false
+              },
+              {
+                "name": "end_time",
+                "type": "DateTime",
+                "is_primary_key": false,
+                "is_nullable": true
+              },
+              {
+                "name": "duration_minutes",
+                "type": "Integer",
+                "is_primary_key": false,
+                "is_nullable": true
+              },
+              {
+                "name": "created_at",
+                "type": "DateTime",
+                "is_primary_key": false,
+                "is_nullable": false
+              },
+              {
+                "name": "updated_at",
+                "type": "DateTime",
+                "is_primary_key": false,
+                "is_nullable": false
+              }
+            ]
+          },
+          {
+            "table_name": "activities",
+            "columns": [
+              {
+                "name": "id",
+                "type": "Integer",
+                "is_primary_key": true,
+                "is_nullable": false
+              },
+              {
+                "name": "user_id",
+                "type": "Integer",
+                "is_primary_key": false,
+                "is_nullable": false
+              },
+              {
+                "name": "type",
+                "type": "String",
+                "is_primary_key": false,
+                "is_nullable": false
+              },
+              {
+                "name": "description",
+                "type": "Text",
+                "is_primary_key": false,
+                "is_nullable": true
+              },
+              {
+                "name": "created_at",
+                "type": "DateTime",
+                "is_primary_key": false,
+                "is_nullable": false
+              },
+              {
+                "name": "updated_at",
+                "type": "DateTime",
+                "is_primary_key": false,
+                "is_nullable": false
+              }
+            ]
+          }
+        ],
+        "folder_structure": {
+          "backend": [
+            "app/models",
+            "app/schemas",
+            "app/services",
+            "app/routes",
+            "app/utils",
+            "app/main.py"
+          ]
+        },
+        "frontend_structure": {
+          "pages": [
+            "Login",
+            "Register",
+            "Dashboard",
+            "Projects",
+            "ProjectDetails",
+            "TaskBoard",
+            "TimeTracker",
+            "Reports",
+            "Settings"
+          ],
+          "components": [
+            "Header",
+            "Sidebar",
+            "ProjectCard",
+            "TaskCard",
+            "KanbanBoard",
+            "TimeEntryForm",
+            "ActivityFeed",
+            "SearchBar",
+            "UserAvatar",
+            "StatSummary",
+            "Pagination"
+          ]
+        }
+      },
+      "plan": {
+        "project_name": "TaskFlow Pro",
+        "description": "A collaborative productivity platform for teams to manage projects, track tasks, log time, and visualize progress through kanban boards and analytics dashboards.",
+        "target_users": [
+          "Project managers",
+          "Team leads",
+          "Developers",
+          "Freelancers",
+          "Small business owners"
+        ],
+        "core_features": [
+          "Project creation with milestones, deadlines, and owner assignment",
+          "Task management with assignee, priority, due dates, and kanban status flow (Backlog → In Progress → Review → Done)",
+          "Team member invitation and role-based access control",
+          "Time tracking per task with start/stop timers and manual entry",
+          "Real-time activity feed showing recent task updates and time logs",
+          "Analytics dashboard with project velocity, burndown charts, and individual productivity stats"
+        ],
+        "future_features": [
+          "Calendar integration (Google, Outlook)",
+          "Slack and email notifications for task changes",
+          "Custom workflow templates per team",
+          "Advanced reporting with export to CSV/PDF",
+          "Mobile app for iOS and Android"
+        ],
+        "tech_stack": [
+          "FastAPI",
+          "React",
+          "SQLite",
+          "Pydantic",
+          "SQLAlchemy"
+        ],
+        "database_entities": [
+          {
+            "name": "User",
+            "fields": [
+              "id",
+              "email",
+              "password_hash",
+              "full_name",
+              "role",
+              "is_active",
+              "created_at",
+              "updated_at"
+            ]
+          },
+          {
+            "name": "Project",
+            "fields": [
+              "id",
+              "name",
+              "description",
+              "status",
+              "start_date",
+              "end_date",
+              "owner_id",
+              "created_at",
+              "updated_at"
+            ]
+          },
+          {
+            "name": "Task",
+            "fields": [
+              "id",
+              "title",
+              "description",
+              "status",
+              "priority",
+              "due_date",
+              "assignee_id",
+              "project_id",
+              "created_at",
+              "updated_at"
+            ]
+          },
+          {
+            "name": "TimeEntry",
+            "fields": [
+              "id",
+              "task_id",
+              "user_id",
+              "start_time",
+              "end_time",
+              "duration_minutes",
+              "created_at",
+              "updated_at"
+            ]
+          }
+        ],
+        "api_modules": [
+          {
+            "name": "auth",
+            "endpoints": [
+              "POST /auth/register",
+              "POST /auth/login",
+              "POST /auth/logout"
+            ]
+          },
+          {
+            "name": "users",
+            "endpoints": [
+              "GET /users?search=&status=&limit=&offset=",
+              "GET /users/{id}",
+              "POST /users",
+              "PUT /users/{id}",
+              "DELETE /users/{id}"
+            ]
+          },
+          {
+            "name": "projects",
+            "endpoints": [
+              "GET /projects?search=&status=&limit=&offset=",
+              "GET /projects/{id}",
+              "POST /projects",
+              "PUT /projects/{id}",
+              "DELETE /projects/{id}"
+            ]
+          },
+          {
+            "name": "tasks",
+            "endpoints": [
+              "GET /tasks?search=&status=&priority=&limit=&offset=",
+              "GET /tasks/{id}",
+              "POST /tasks",
+              "PUT /tasks/{id}",
+              "DELETE /tasks/{id}"
+            ]
+          },
+          {
+            "name": "time_entries",
+            "endpoints": [
+              "GET /time-entries?user_id=&task_id=&date=&limit=&offset=",
+              "GET /time-entries/{id}",
+              "POST /time-entries",
+              "PUT /time-entries/{id}",
+              "DELETE /time-entries/{id}"
+            ]
+          },
+          {
+            "name": "analytics",
+            "endpoints": [
+              "GET /stats/summary",
+              "GET /projects/velocity",
+              "GET /tasks/burndown",
+              "GET /activity/recent",
+              "GET /search?q="
+            ]
+          }
+        ],
+        "pages": [
+          "Login",
+          "Register",
+          "Dashboard",
+          "Projects",
+          "Project Details",
+          "Tasks",
+          "Task Board",
+          "Time Tracker",
+          "Reports",
+          "Settings"
+        ],
+        "backend_modules": [
+          "auth_service",
+          "user_service",
+          "project_service",
+          "task_service",
+          "time_entry_service",
+          "analytics_service"
+        ],
+        "roadmap": [
+          {
+            "phase": "Phase 1: MVP",
+            "milestones": [
+              "User authentication and role management",
+              "Project CRUD with owner assignment",
+              "Task CRUD with kanban status flow",
+              "Basic time entry logging",
+              "Initial dashboard with task counts"
+            ]
+          },
+          {
+            "phase": "Phase 2: Enhanced Collaboration",
+            "milestones": [
+              "Team invitation and role-based permissions",
+              "Real-time activity feed",
+              "Bulk time entry import/export",
+              "Search across projects and tasks",
+              "Responsive UI improvements"
+            ]
+          },
+          {
+            "phase": "Phase 3: Advanced Analytics",
+            "milestones": [
+              "Project velocity and burndown charts",
+              "Individual productivity reports",
+              "Custom date range analytics",
+              "Export analytics to CSV/PDF",
+              "Integration with external calendar services"
+            ]
+          }
+        ]
+      },
+      "score": 100,
+      "success_count": 1,
+      "generation_id": "c255d3fe15",
+      "timestamp": "2026-06-28T21:35:23Z"
     }
   ]
 }

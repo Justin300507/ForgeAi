@@ -21,7 +21,7 @@ against these rules and return a JSON critique.
 
 CONTRACT RULES (non-exhaustive):
 1. No Flask / Django — FastAPI only
-2. Router vars named exactly {resource}_router (e.g. user_router, task_router)
+2. Router vars named exactly {{resource}}_router (e.g. user_router, task_router)
 3. Pydantic schemas use `from_attributes = True`, NOT `orm_mode = True`
 4. No bare built-in type in Depends() — e.g. Depends(str) is wrong
 5. All imports absolute starting with `app.`

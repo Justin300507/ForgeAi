@@ -55,7 +55,7 @@
       "last_seen": "2026-06-27T14:53:33.736245"
     },
     "FrontendBuildError": {
-      "count": 2,
+      "count": 4,
       "examples": [
         {
           "project": "test_app2",
@@ -64,10 +64,18 @@
         {
           "project": "Inventory Management System",
           "error": "vite build failed"
+        },
+        {
+          "project": "TaskFlow Pro",
+          "error": "vite build failed"
+        },
+        {
+          "project": "TaskFlow Pro",
+          "error": "vite build failed"
         }
       ],
       "first_seen": "2026-06-21T20:43:34.978774",
-      "last_seen": "2026-06-21T21:31:58.284956"
+      "last_seen": "2026-06-28T21:25:53.237969"
     },
     "ModuleNotFoundError": {
       "count": 8,
@@ -124,15 +132,19 @@
       "last_seen": "2026-06-27T17:01:25.687774"
     },
     "ValidationError": {
-      "count": 1,
+      "count": 2,
       "examples": [
         {
           "project": "TeamFlow",
           "error": "ValidationError"
+        },
+        {
+          "project": "TaskFlow Pro",
+          "error": "ValidationError"
         }
       ],
       "first_seen": "2026-06-21T23:42:14.421044",
-      "last_seen": "2026-06-21T23:42:14.421054"
+      "last_seen": "2026-06-28T21:09:54.229124"
     },
     "TimestampNotNullError": {
       "count": 1,
@@ -250,8 +262,19 @@
       ],
       "first_seen": "2026-06-27T15:15:34.575254",
       "last_seen": "2026-06-27T15:15:34.575276"
+    },
+    "UserIdNotInjectedError": {
+      "count": 1,
+      "examples": [
+        {
+          "project": "TaskFlow Pro",
+          "error": "UserIdNotInjectedError"
+        }
+      ],
+      "first_seen": "2026-06-28T21:05:09.324006",
+      "last_seen": "2026-06-28T21:05:09.324044"
     }
   },
-  "total_runs": 193,
-  "last_updated": "2026-06-27T19:42:04.619688"
+  "total_runs": 211,
+  "last_updated": "2026-06-28T21:35:23.130905"
 }

@@ -48,31 +48,26 @@ _SQL_INJECTION_RE = re.compile(
     re.IGNORECASE,
 )
 
-_QUERY_ALL_RE = re.compile(r'db\.query\(.+?\)\.all\(\)', re.DOTALL)
+_QUERY_ALL_RE = re.compile(r'db\.query\([^)]*\)\.all\(\)')
 _QUERY_LIMIT_RE = re.compile(r'\.limit\(')
 
 _LIST_ROUTE_RE = re.compile(
-    r'@\w+_router\.(get|post)\(["\']\/\w*["\'].*?\)\s*\ndef\s+\w+\s*\(([^)]*)\)',
-    re.DOTALL,
+    r'@\w+_router\.(get|post)\(["\'][^"\']*["\'][^\n]*\)\s*\ndef\s+\w+\s*\(([^)]*)\)',
 )
 _PAGINATION_PARAMS_RE = re.compile(r'\b(limit|offset|page|per_page|skip)\b', re.IGNORECASE)
 
-_N_PLUS_ONE_RE = re.compile(
-    r'for\s+\w+\s+in\s+\w+.*?:\s*\n(?:.*\n)*?.*db\.query\(',
-    re.DOTALL,
-)
+# N+1 heuristic: check for db.query() inside a for-loop block (line-based, not regex)
+_N_PLUS_ONE_RE = None  # replaced by _has_n_plus_one()
 
 _FIRST_NO_CHECK_RE = re.compile(
-    r'=\s*db\.query\(.+?\)\.first\(\)\s*\n(?!\s*(if|assert|raise))',
-    re.DOTALL,
+    r'=\s*db\.query\([^)]*\)\.first\(\)\s*$',
+    re.MULTILINE,
 )
 
 _TRY_EXCEPT_RE = re.compile(r'\btry\s*:', re.MULTILINE)
 _HTTP_EXCEPTION_RE = re.compile(r'\bHTTPException\b')
 _ROUTE_HANDLER_RE = re.compile(
-    r'@\w+_router\.\w+\(.*?\)\s*\n(?:async\s+)?def\s+\w+\([^)]*\)\s*:\s*\n((?:.*\n)*?)'
-    r'(?=\n@|\Z)',
-    re.DOTALL,
+    r'@\w+_router\.\w+\([^\n]*\)\s*\n(?:async\s+)?def\s+\w+\([^)]*\)\s*:',
 )
 
 _LOGGING_IMPORT_RE = re.compile(r'\bimport\s+logging\b|\blogger\s*=\s*')
@@ -132,13 +127,26 @@ def _scan_performance(path: Path, content: str, rel: str) -> list[ProductionIssu
                 fix_hint="Add limit: int = Query(20), offset: int = Query(0) to the handler.",
             ))
 
-    # N+1 smell
-    if _N_PLUS_ONE_RE.search(content):
-        issues.append(ProductionIssue(
-            severity="warning", category="performance", file=rel, line=0,
-            description="Possible N+1 query: db.query() inside a for loop",
-            fix_hint="Use joinedload() or a single query with IN clause instead.",
-        ))
+    # N+1 smell — line-based check avoids catastrophic regex backtracking
+    lines_list = content.splitlines()
+    in_for_block = False
+    for_indent = -1
+    for i, ln in enumerate(lines_list[:200]):  # cap at 200 lines for speed
+        stripped = ln.lstrip()
+        indent = len(ln) - len(stripped)
+        if stripped.startswith("for ") and " in " in stripped:
+            in_for_block = True
+            for_indent = indent
+        elif in_for_block:
+            if indent <= for_indent and stripped and not stripped.startswith("#"):
+                in_for_block = False
+            elif "db.query(" in stripped:
+                issues.append(ProductionIssue(
+                    severity="warning", category="performance", file=rel, line=i + 1,
+                    description="Possible N+1 query: db.query() inside a for loop",
+                    fix_hint="Use joinedload() or a single query with IN clause instead.",
+                ))
+                break
 
     return issues
 
@@ -146,14 +154,17 @@ def _scan_performance(path: Path, content: str, rel: str) -> list[ProductionIssu
 def _scan_reliability(path: Path, content: str, rel: str) -> list[ProductionIssue]:
     issues = []
 
-    # .first() result used without None check
+    # .first() result used without None check — verify next line has guard
+    lines_list = content.splitlines()
     for m in _FIRST_NO_CHECK_RE.finditer(content):
-        line = content[:m.start()].count("\n") + 1
-        issues.append(ProductionIssue(
-            severity="warning", category="reliability", file=rel, line=line,
-            description=".first() result may be None — no null-check follows",
-            fix_hint="Add: if result is None: raise HTTPException(status_code=404, detail='Not found')",
-        ))
+        line_no = content[:m.start()].count("\n")
+        next_line = lines_list[line_no + 1].lstrip() if line_no + 1 < len(lines_list) else ""
+        if not re.match(r'(if|assert|raise)\b', next_line):
+            issues.append(ProductionIssue(
+                severity="warning", category="reliability", file=rel, line=line_no + 1,
+                description=".first() result may be None — no null-check follows",
+                fix_hint="Add: if result is None: raise HTTPException(status_code=404, detail='Not found')",
+            ))
 
     # Route files without any error handling
     if "router" in content and not _TRY_EXCEPT_RE.search(content) and not _HTTP_EXCEPTION_RE.search(content):

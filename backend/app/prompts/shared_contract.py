@@ -192,6 +192,10 @@ ROUTE HANDLERS
 - Every handler must have a real implementation. Never `pass` or placeholder bodies.
 - Parameter order: body params first, then `Path()`/`Query()`/`Depends()` params.
   RIGHT: `def update_task(task_in: TaskUpdate, task_id: int = Path(...), db: Session = Depends(get_db))`
-- `async def` only if the body uses `await`. Never mix sync Session calls with async def.
+- Use plain `def` (NOT `async def`) for ALL route handlers. SQLAlchemy, bcrypt, and other
+  CPU-intensive or synchronous I/O operations BLOCK the event loop when used with `async def`.
+  FastAPI runs plain `def` handlers in a thread pool automatically — use that.
+  WRONG: `async def register(...)` with `bcrypt.hashpw(...)` inside — blocks event loop, causes timeouts.
+  RIGHT:  `def register(...)` — FastAPI threads it; bcrypt is safe.
 - `# type: ignore` is a comment. `type: ignore` as a bare statement is invalid code.
 """

@@ -226,7 +226,7 @@ class BackendRunner:
                 f"{timeout_count} timeouts, {error_count} errors)"
             )
 
-        # Terminate the server
+        # Terminate the server — be aggressive to avoid port conflicts on retry
         if process.poll() is None:
             try:
                 process.terminate()
@@ -234,56 +234,63 @@ class BackendRunner:
             except subprocess.TimeoutExpired:
                 process.kill()
                 stdout, stderr = process.communicate()
+        else:
+            try:
+                stdout, stderr = process.communicate(timeout=2)
+            except Exception:
+                stdout, stderr = "", ""
 
-            # Give Windows a moment to release file handles
-            time.sleep(1)
+        # Force-free the port after process death so the next runtime attempt
+        # can bind cleanly — Windows TIME_WAIT can hold the socket briefly.
+        _free_port(port)
+        time.sleep(2)  # Give OS time to fully release the socket
 
-            if not healthy:
-                return RuntimeResult(
-                    success=False,
-                    exit_code=1,
-                    stdout=stdout,
-                    stderr=stderr + "\nHealth Check Failed",
-                    startup_time=time.time() - start_time,
-                    total_endpoints=total_endpoints,
-                    endpoint_pass_rate=0.0,
-                )
-
-            # SUCCESS = server healthy AND enough endpoints pass AND CRUD not critically broken
-            # Thresholds:
-            #   - endpoint_pass_rate < 0.5 → FAIL (majority of endpoints broken)
-            #   - crud_passed == False → FAIL (CRUD workflow critically failed)
-            runtime_success = (
-                healthy
-                and endpoint_pass_rate >= 0.5
-                and crud_passed is not False
-            )
-
-            if not runtime_success:
-                reasons = []
-                if endpoint_pass_rate < 0.5:
-                    reasons.append(
-                        f"endpoint pass rate too low ({endpoint_pass_rate:.0%}, "
-                        f"{timeout_count} timeouts, {error_count} 5xx errors)"
-                    )
-                if crud_passed is False:
-                    reasons.append("CRUD workflow failed critical steps")
-                print(f"\n  Runtime FAIL: {'; '.join(reasons)}")
-
+        if not healthy:
             return RuntimeResult(
-                success=runtime_success,
-                exit_code=0,
+                success=False,
+                exit_code=1,
                 stdout=stdout,
-                stderr=stderr,
+                stderr=stderr + "\nHealth Check Failed",
                 startup_time=time.time() - start_time,
-                behavioral_issues=behavioral_issues,
                 total_endpoints=total_endpoints,
-                timeout_count=timeout_count,
-                error_count=error_count,
-                endpoint_pass_rate=round(endpoint_pass_rate, 3),
-                crud_passed=crud_passed,
-                journey=journey_data,
+                endpoint_pass_rate=0.0,
             )
+
+        # SUCCESS = server healthy AND enough endpoints pass AND CRUD not critically broken
+        # Thresholds:
+        #   - endpoint_pass_rate < 0.5 → FAIL (majority of endpoints broken)
+        #   - crud_passed == False → FAIL (CRUD workflow critically failed)
+        runtime_success = (
+            healthy
+            and endpoint_pass_rate >= 0.5
+            and crud_passed is not False
+        )
+
+        if not runtime_success:
+            reasons = []
+            if endpoint_pass_rate < 0.5:
+                reasons.append(
+                    f"endpoint pass rate too low ({endpoint_pass_rate:.0%}, "
+                    f"{timeout_count} timeouts, {error_count} 5xx errors)"
+                )
+            if crud_passed is False:
+                reasons.append("CRUD workflow failed critical steps")
+            print(f"\n  Runtime FAIL: {'; '.join(reasons)}")
+
+        return RuntimeResult(
+            success=runtime_success,
+            exit_code=0,
+            stdout=stdout,
+            stderr=stderr,
+            startup_time=time.time() - start_time,
+            behavioral_issues=behavioral_issues,
+            total_endpoints=total_endpoints,
+            timeout_count=timeout_count,
+            error_count=error_count,
+            endpoint_pass_rate=round(endpoint_pass_rate, 3),
+            crud_passed=crud_passed,
+            journey=journey_data,
+        )
 
         stdout, stderr = process.communicate()
         return RuntimeResult(

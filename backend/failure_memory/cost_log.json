@@ -5044,5 +5044,329 @@
     "forge_score": 61,
     "wall_time_s": 20.8,
     "timestamp": "2026-06-28T01:12:04"
+  },
+  {
+    "total_calls": 4,
+    "total_tokens": 43176,
+    "total_cost_usd": 0.025906,
+    "total_llm_time_s": 29.08,
+    "by_stage": {
+      "unknown": {
+        "calls": 4,
+        "tokens": 43176,
+        "cost_usd": 0.025906,
+        "time_s": 29.080000000000002
+      }
+    },
+    "project_name": "TaskFlow Pro",
+    "forge_score": 98,
+    "wall_time_s": 89.59,
+    "timestamp": "2026-06-28T23:53:47"
+  },
+  {
+    "total_calls": 9,
+    "total_tokens": 103512,
+    "total_cost_usd": 0.062108,
+    "total_llm_time_s": 35.24,
+    "by_stage": {
+      "unknown": {
+        "calls": 9,
+        "tokens": 103512,
+        "cost_usd": 0.062108000000000003,
+        "time_s": 35.239999999999995
+      }
+    },
+    "project_name": "TaskFlow Pro",
+    "forge_score": 50,
+    "wall_time_s": 180.83,
+    "timestamp": "2026-06-29T00:09:32"
+  },
+  {
+    "total_calls": 15,
+    "total_tokens": 90354,
+    "total_cost_usd": 0.054214,
+    "total_llm_time_s": 36.48,
+    "by_stage": {
+      "unknown": {
+        "calls": 15,
+        "tokens": 90354,
+        "cost_usd": 0.054214,
+        "time_s": 36.480000000000004
+      }
+    },
+    "project_name": "TaskFlow Pro",
+    "forge_score": 48,
+    "wall_time_s": 103.28,
+    "timestamp": "2026-06-29T02:24:39"
+  },
+  {
+    "total_calls": 8,
+    "total_tokens": 39884,
+    "total_cost_usd": 0.023931,
+    "total_llm_time_s": 19.6,
+    "by_stage": {
+      "unknown": {
+        "calls": 8,
+        "tokens": 39884,
+        "cost_usd": 0.023930999999999997,
+        "time_s": 19.6
+      }
+    },
+    "project_name": "TaskFlow Pro",
+    "forge_score": 100,
+    "wall_time_s": 110.04,
+    "timestamp": "2026-06-29T02:33:27"
+  },
+  {
+    "total_calls": 5,
+    "total_tokens": 44090,
+    "total_cost_usd": 0.026454,
+    "total_llm_time_s": 20.92,
+    "by_stage": {
+      "unknown": {
+        "calls": 5,
+        "tokens": 44090,
+        "cost_usd": 0.026454,
+        "time_s": 20.92
+      }
+    },
+    "project_name": "TaskFlow Pro",
+    "forge_score": 25,
+    "wall_time_s": 77.12,
+    "timestamp": "2026-06-29T02:35:09"
+  },
+  {
+    "total_calls": 4,
+    "total_tokens": 32612,
+    "total_cost_usd": 0.019567,
+    "total_llm_time_s": 12.55,
+    "by_stage": {
+      "unknown": {
+        "calls": 4,
+        "tokens": 32612,
+        "cost_usd": 0.019567,
+        "time_s": 12.549999999999999
+      }
+    },
+    "project_name": "TaskFlow Pro",
+    "forge_score": 70,
+    "wall_time_s": 94.3,
+    "timestamp": "2026-06-29T02:39:54"
+  },
+  {
+    "total_calls": 22,
+    "total_tokens": 105351,
+    "total_cost_usd": 0.06321,
+    "total_llm_time_s": 46.7,
+    "by_stage": {
+      "unknown": {
+        "calls": 22,
+        "tokens": 105351,
+        "cost_usd": 0.06320999999999999,
+        "time_s": 46.7
+      }
+    },
+    "project_name": "TaskFlow Pro",
+    "forge_score": 50,
+    "wall_time_s": 70.25,
+    "timestamp": "2026-06-29T02:43:29"
+  },
+  {
+    "total_calls": 2,
+    "total_tokens": 21328,
+    "total_cost_usd": 0.012796,
+    "total_llm_time_s": 8.9,
+    "by_stage": {
+      "unknown": {
+        "calls": 2,
+        "tokens": 21328,
+        "cost_usd": 0.012796,
+        "time_s": 8.9
+      }
+    },
+    "project_name": "TaskFlow Pro",
+    "forge_score": 90,
+    "wall_time_s": 76.91,
+    "timestamp": "2026-06-29T02:48:35"
+  },
+  {
+    "total_calls": 2,
+    "total_tokens": 21011,
+    "total_cost_usd": 0.012607,
+    "total_llm_time_s": 11.16,
+    "by_stage": {
+      "unknown": {
+        "calls": 2,
+        "tokens": 21011,
+        "cost_usd": 0.012607,
+        "time_s": 11.16
+      }
+    },
+    "project_name": "TaskFlow Pro",
+    "forge_score": 100,
+    "wall_time_s": 84.28,
+    "timestamp": "2026-06-29T02:50:46"
+  },
+  {
+    "total_calls": 4,
+    "total_tokens": 28848,
+    "total_cost_usd": 0.017309,
+    "total_llm_time_s": 19.3,
+    "by_stage": {
+      "unknown": {
+        "calls": 4,
+        "tokens": 28848,
+        "cost_usd": 0.017308999999999998,
+        "time_s": 19.299999999999997
+      }
+    },
+    "project_name": "TaskFlow Pro",
+    "forge_score": 50,
+    "wall_time_s": 59.54,
+    "timestamp": "2026-06-29T02:52:10"
+  },
+  {
+    "total_calls": 2,
+    "total_tokens": 20394,
+    "total_cost_usd": 0.012236,
+    "total_llm_time_s": 10.64,
+    "by_stage": {
+      "unknown": {
+        "calls": 2,
+        "tokens": 20394,
+        "cost_usd": 0.012236,
+        "time_s": 10.639999999999999
+      }
+    },
+    "project_name": "TaskFlow Pro",
+    "forge_score": 85,
+    "wall_time_s": 20.3,
+    "timestamp": "2026-06-29T02:53:50"
+  },
+  {
+    "total_calls": 2,
+    "total_tokens": 20929,
+    "total_cost_usd": 0.012558,
+    "total_llm_time_s": 8.2,
+    "by_stage": {
+      "unknown": {
+        "calls": 2,
+        "tokens": 20929,
+        "cost_usd": 0.012558,
+        "time_s": 8.2
+      }
+    },
+    "project_name": "TaskFlow Pro",
+    "forge_score": 100,
+    "wall_time_s": 77.15,
+    "timestamp": "2026-06-29T02:54:35"
+  },
+  {
+    "total_calls": 2,
+    "total_tokens": 21051,
+    "total_cost_usd": 0.01263,
+    "total_llm_time_s": 8.94,
+    "by_stage": {
+      "unknown": {
+        "calls": 2,
+        "tokens": 21051,
+        "cost_usd": 0.01263,
+        "time_s": 8.940000000000001
+      }
+    },
+    "project_name": "TaskFlow Pro",
+    "forge_score": 85,
+    "wall_time_s": 63.56,
+    "timestamp": "2026-06-29T02:55:53"
+  },
+  {
+    "total_calls": 4,
+    "total_tokens": 30111,
+    "total_cost_usd": 0.018066,
+    "total_llm_time_s": 17.46,
+    "by_stage": {
+      "unknown": {
+        "calls": 4,
+        "tokens": 30111,
+        "cost_usd": 0.018066,
+        "time_s": 17.46
+      }
+    },
+    "project_name": "TaskFlow Pro",
+    "forge_score": 70,
+    "wall_time_s": 37.31,
+    "timestamp": "2026-06-29T02:57:04"
+  },
+  {
+    "total_calls": 4,
+    "total_tokens": 28994,
+    "total_cost_usd": 0.017396,
+    "total_llm_time_s": 16.58,
+    "by_stage": {
+      "unknown": {
+        "calls": 4,
+        "tokens": 28994,
+        "cost_usd": 0.017396000000000002,
+        "time_s": 16.58
+      }
+    },
+    "project_name": "TaskFlow Pro",
+    "forge_score": 70,
+    "wall_time_s": 151.07,
+    "timestamp": "2026-06-29T02:58:44"
+  },
+  {
+    "total_calls": 2,
+    "total_tokens": 19885,
+    "total_cost_usd": 0.011931,
+    "total_llm_time_s": 8.45,
+    "by_stage": {
+      "unknown": {
+        "calls": 2,
+        "tokens": 19885,
+        "cost_usd": 0.011931,
+        "time_s": 8.45
+      }
+    },
+    "project_name": "TaskFlow Pro",
+    "forge_score": 90,
+    "wall_time_s": 83.22,
+    "timestamp": "2026-06-29T02:59:21"
+  },
+  {
+    "total_calls": 7,
+    "total_tokens": 41167,
+    "total_cost_usd": 0.024699,
+    "total_llm_time_s": 23.29,
+    "by_stage": {
+      "unknown": {
+        "calls": 7,
+        "tokens": 41167,
+        "cost_usd": 0.024699,
+        "time_s": 23.290000000000003
+      }
+    },
+    "project_name": "TaskFlow Pro",
+    "forge_score": 90,
+    "wall_time_s": 204.24,
+    "timestamp": "2026-06-29T03:03:07"
+  },
+  {
+    "total_calls": 2,
+    "total_tokens": 21505,
+    "total_cost_usd": 0.012903,
+    "total_llm_time_s": 17.24,
+    "by_stage": {
+      "unknown": {
+        "calls": 2,
+        "tokens": 21505,
+        "cost_usd": 0.012903,
+        "time_s": 17.240000000000002
+      }
+    },
+    "project_name": "TaskFlow Pro",
+    "forge_score": 100,
+    "wall_time_s": 95.24,
+    "timestamp": "2026-06-29T03:05:23"
   }
 ]
