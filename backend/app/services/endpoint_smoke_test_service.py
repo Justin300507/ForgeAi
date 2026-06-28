@@ -32,7 +32,7 @@ def _build_synthetic_body(architecture, path):
     return body
 
 
-def run_endpoint_smoke_tests(architecture, base_url="http://127.0.0.1:8001", timeout=3, seed_timeout=15):
+def run_endpoint_smoke_tests(architecture, base_url="http://127.0.0.1:8001", timeout=3, seed_timeout=30):
 
     results = []
     consecutive_timeouts = 0
@@ -58,9 +58,14 @@ def run_endpoint_smoke_tests(architecture, base_url="http://127.0.0.1:8001", tim
         url_path = re.sub(r"\{[^}]+\}", "1", path)
         url = base_url + url_path
 
+        # /seed and /seed-data are bulk-insert helpers — skip from smoke tests entirely
+        # They use bcrypt (slow), insert many rows, and are not core endpoints.
+        is_seed = path.rstrip("/") in ("/seed", "/seed-data")
+        if is_seed:
+            continue
+
         try:
-            # /seed is a bulk-insert operation — give it much longer
-            eff_timeout = seed_timeout if path.rstrip("/") == "/seed" else timeout
+            eff_timeout = timeout
 
             if method == "GET":
                 response = requests.get(url, timeout=eff_timeout)

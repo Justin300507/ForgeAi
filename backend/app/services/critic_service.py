@@ -93,7 +93,9 @@ def run_critic(project_path: str, provider: str = "auto") -> dict:
         f"### {f['path']}\n```python\n{f['content']}\n```" for f in files
     )
 
-    prompt = _CRITIC_PROMPT.format(files_block=files_block)
+    # Use replace() instead of .format() to avoid KeyError when generated
+    # code contains curly-brace format specifiers like {resource}, {user_id}.
+    prompt = _CRITIC_PROMPT.replace("{files_block}", files_block)
 
     try:
         raw = generate_content(prompt, provider, max_tokens=1500)

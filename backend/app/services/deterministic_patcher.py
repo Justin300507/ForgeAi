@@ -276,6 +276,7 @@ def _patch_main_fk_imports(project_path: Path) -> None:
 _ASYNC_DEF = re.compile(r"^async def (\w+)\(", re.MULTILINE)
 _ROUTER_DECORATOR = re.compile(r"^@\w+_router\.(get|post|put|delete|patch)\b", re.MULTILINE)
 _SYNC_ORM = re.compile(r"\bdb\.(query|add|commit|delete|refresh|execute|flush|rollback)\b")
+_DB_DEPENDS = re.compile(r"\bdb\s*:\s*Session\b")
 _AWAIT_USAGE = re.compile(r"\bawait\b")
 
 
@@ -307,9 +308,14 @@ def _patch_async_sync(content: str) -> str:
             body_only = "".join(body_lines[1:])
             has_sync_orm = _SYNC_ORM.search(body_text)
             has_real_await = _AWAIT_USAGE.search(body_only)
+            # Also strip if the signature has db: Session (sync SQLAlchemy dependency)
+            has_db_depends = _DB_DEPENDS.search(line)
 
-            # Strip async if uses sync ORM, OR is a route handler with no real await
-            should_strip = has_sync_orm or (is_route_handler and not has_real_await)
+            # Strip async if:
+            # - uses sync ORM calls (db.query/add/commit/etc.), OR
+            # - is a route handler with no real await, OR
+            # - has db: Session parameter (sync SQLAlchemy must NOT run in async context)
+            should_strip = has_sync_orm or has_db_depends or (is_route_handler and not has_real_await)
             if should_strip:
                 body_text = body_text.replace("async def ", "def ", 1)
                 result.append(body_text)
@@ -517,24 +523,14 @@ def _patch_relationship_string_aliases(project_path: Path) -> None:
 # Contract: body params first, then Path/Query/Depends.
 
 _DEFAULT_MARKERS = re.compile(r"\b(Path|Query|Depends|Header|Cookie|Body|Form)\s*\(")
-# Match a full multi-line function signature: def name(\n    ...\n):
-_FUNC_SIG_RE = re.compile(
-    r"(^[ \t]*def \w+\()\n((?:[ \t]+[^\n]*\n)*?)([ \t]*\)[ \t]*(?:->.*?)?\s*:)",
-    re.MULTILINE,
-)
 
 
-def _reorder_params(sig_body: str, indent: str) -> str | None:
-    """
-    Given the raw lines between `def name(` and `):`, reorder params so
-    non-default (body schema) params come before default (Path/Query/Depends).
-    Returns None if no reorder needed.
-    """
-    # Split into individual params (respect nested parens)
-    raw_params: list[str] = []
+def _split_params(sig: str) -> list[str]:
+    """Split a full parameter string into individual params respecting nested parens."""
+    raw: list[str] = []
     buf = ""
     depth = 0
-    for ch in sig_body:
+    for ch in sig:
         if ch == "(":
             depth += 1
         elif ch == ")":
@@ -542,29 +538,56 @@ def _reorder_params(sig_body: str, indent: str) -> str | None:
         if ch == "," and depth == 0:
             p = buf.strip()
             if p:
-                raw_params.append(p)
+                raw.append(p)
             buf = ""
         else:
             buf += ch
     p = buf.strip().rstrip(",")
     if p:
-        raw_params.append(p)
+        raw.append(p)
+    return raw
 
-    if len(raw_params) < 2:
+
+def _param_has_default(p: str) -> bool:
+    if _DEFAULT_MARKERS.search(p):
+        return True
+    after_colon = p.split(":", 1)[1] if ":" in p else p
+    return bool(re.search(r"=\s*\S", after_colon))
+
+
+def _extract_full_sig(content: str, def_pos: int) -> tuple[int, int] | None:
+    """
+    Given position of 'def ' in content, find the matching ')' that closes the
+    parameter list.  Returns (open_paren_pos, close_paren_pos) or None.
+    """
+    # Find opening paren
+    p = content.find("(", def_pos)
+    if p == -1:
+        return None
+    depth = 1
+    i = p + 1
+    while i < len(content) and depth > 0:
+        if content[i] == "(":
+            depth += 1
+        elif content[i] == ")":
+            depth -= 1
+        i += 1
+    if depth != 0:
+        return None
+    return p, i - 1  # positions of ( and )
+
+
+def _reorder_sig(content: str, open_p: int, close_p: int, indent: str) -> str | None:
+    """Reorder params inside (open_p, close_p) so non-defaults come first."""
+    raw_sig = content[open_p + 1: close_p]
+    params = _split_params(raw_sig)
+    if len(params) < 2:
         return None
 
-    no_default, with_default = [], []
-    for p in raw_params:
-        if _DEFAULT_MARKERS.search(p) or re.search(r"=\s*\S", p.split(":")[1] if ":" in p else p):
-            with_default.append(p)
-        else:
-            no_default.append(p)
-
-    # Check if ordering is already correct
     needs_reorder = False
     seen_default = False
-    for p in raw_params:
-        has_def = _DEFAULT_MARKERS.search(p) or re.search(r"=\s*\S", p.split(":")[1] if ":" in p else p)
+    for p in params:
+        has_def = _param_has_default(p)
         if has_def:
             seen_default = True
         elif seen_default:
@@ -574,9 +597,12 @@ def _reorder_params(sig_body: str, indent: str) -> str | None:
     if not needs_reorder:
         return None
 
+    no_default = [p for p in params if not _param_has_default(p)]
+    with_default = [p for p in params if _param_has_default(p)]
     reordered = no_default + with_default
     param_indent = indent + "    "
-    return "\n".join(f"{param_indent}{p}," for p in reordered) + "\n"
+    inner = "\n" + "\n".join(f"{param_indent}{p}," for p in reordered) + "\n" + indent
+    return content[:open_p + 1] + inner + content[close_p:]
 
 
 def _patch_param_order(project_path: Path) -> int:
@@ -594,19 +620,28 @@ def _patch_param_order(project_path: Path) -> int:
         except Exception:
             continue
 
-        def _fix_sig(m: re.Match) -> str:
-            def_line = m.group(1)   # "def update_game("
-            body = m.group(2)       # "    game_id: int = Path(...),\n    game_in: GameUpdate,\n..."
-            close = m.group(3)      # "):" or ") -> dict:"
-            indent = " " * (len(def_line) - len(def_line.lstrip()))
-            new_body = _reorder_params(body, indent)
-            if new_body is None:
-                return m.group(0)
-            return def_line + "\n" + new_body + close
+        # Fast skip: only process files with syntax errors of this type
+        try:
+            compile(original, str(rf), "exec")
+            continue  # No syntax error — skip
+        except SyntaxError as e:
+            if "non-default argument follows default argument" not in (e.msg or ""):
+                continue
 
-        new_content = _FUNC_SIG_RE.sub(_fix_sig, original)
-        if new_content != original:
-            rf.write_text(new_content, encoding="utf-8")
+        content = original
+        # Find all 'def ' positions and try to fix each
+        for m in list(re.finditer(r"^([ \t]*)def \w+\(", content, re.MULTILINE)):
+            coords = _extract_full_sig(content, m.start())
+            if coords is None:
+                continue
+            open_p, close_p = coords
+            indent = m.group(1)
+            fixed = _reorder_sig(content, open_p, close_p, indent)
+            if fixed is not None:
+                content = fixed
+
+        if content != original:
+            rf.write_text(content, encoding="utf-8")
             patched += 1
             print(f"  [patcher] Fixed param order in {rf.name}")
 
@@ -844,13 +879,14 @@ class LoginRequest(BaseModel):
 
 
 def _get_user_model():
-    """Import User model by trying singular then plural name."""
-    try:
-        from app.models.user import User
-        return User
-    except ImportError:
-        from app.models.users import Users
-        return Users
+    import importlib
+    for mod, cls in (("app.models.user", "User"), ("app.models.users", "Users")):
+        try:
+            m = importlib.import_module(mod)
+            return getattr(m, cls)
+        except (ImportError, AttributeError):
+            continue
+    raise ImportError("No User model found in app.models.user or app.models.users")
 
 
 def _make_user(email: str, password: str, display_name: str = ""):
@@ -1104,6 +1140,24 @@ def _patch_seed_robustness(project_path: Path) -> int:
     return 0
 
 
+# ── 12a. Fix = Depends() on body parameters in route handlers ──────────────────
+# LLM sometimes generates: `entry_in: MySchema = Depends()` instead of `entry_in: MySchema`
+# This is wrong — Depends() on a Pydantic model treats it as a query-param dependency,
+# not a JSON body. FastAPI reads JSON bodies from plain type annotations.
+
+_DEPENDS_BODY_RE = re.compile(
+    r"(\w+):\s+([A-Z]\w+(?:Create|Update|In|Request|Schema)?)\s*=\s*Depends\(\s*\)",
+)
+
+
+def _patch_depends_body(content: str, filepath: str) -> str:
+    """Remove = Depends() from Pydantic schema body params in route files."""
+    norm = filepath.replace("\\", "/")
+    if "Depends()" not in content or "/routes/" not in norm:
+        return content
+    return _DEPENDS_BODY_RE.sub(r"\1: \2", content)
+
+
 # ── 12. Pydantic v2 from_orm → model_validate ────────────────────────────────
 # Pydantic v2 deprecated from_orm(); calling it still works but only if the
 # schema has model_config = ConfigDict(from_attributes=True).  The real failure
@@ -1146,6 +1200,7 @@ def run_deterministic_patches(project_path: str) -> int:
         patched = _patch_passlib(patched)
         patched = _patch_pydantic_regex(patched)
         patched = _patch_async_sync(patched)
+        patched = _patch_depends_body(patched, rel)
         patched = _patch_from_orm(patched)
         patched = _patch_orm_response_model(patched, rel)
 

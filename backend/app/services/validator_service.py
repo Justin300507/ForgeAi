@@ -44,8 +44,9 @@ def rel(project_path, file_path):
 
 
 def validate_backend_imports(project_path, errors):
-
+    _SKIP_DIRS = {"node_modules", ".git", "__pycache__", ".venv", "venv", "dist"}
     for root, dirs, files in os.walk(project_path):
+        dirs[:] = [d for d in dirs if d not in _SKIP_DIRS]
 
         for file in files:
 
@@ -71,8 +72,9 @@ def validate_backend_imports(project_path, errors):
                 continue
 
             imports = re.findall(
-                r"from\s+app\.(services|models|routes)\.(\w+)\s+import",
-                content
+                r"^from\s+app\.(services|models|routes)\.(\w+)\s+import",
+                content,
+                re.MULTILINE,
             )
 
             for folder, module in imports:
@@ -94,8 +96,9 @@ def validate_imported_symbols(
     project_path,
     errors
 ):
-
+    _SKIP_DIRS = {"node_modules", ".git", "__pycache__", ".venv", "venv", "dist"}
     for root, dirs, files in os.walk(project_path):
+        dirs[:] = [d for d in dirs if d not in _SKIP_DIRS]
 
         for file in files:
 
@@ -743,7 +746,10 @@ def validate_project(project_path):
         errors
     )
 
+    _SKIP_DIRS = {"node_modules", ".git", "__pycache__", ".venv", "venv", "dist", ".next"}
     for root, dirs, files in os.walk(project_path):
+        # Prune dirs in-place to skip non-project directories
+        dirs[:] = [d for d in dirs if d not in _SKIP_DIRS]
 
         for file in files:
 

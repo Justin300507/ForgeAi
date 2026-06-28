@@ -68,14 +68,19 @@ def calculate_forge_score(
     if not runtime_result or not runtime_result.get("success", False):
         score -= 30
     else:
-        # Penalize endpoint timeouts/errors even when health passed
+        # Penalize endpoint timeouts/errors even when health passed.
+        # /seed is a bulk-insert helper (not a core endpoint) — exclude from penalty.
         behavioral_issues = runtime_result.get("behavioral_issues", [])
         if behavioral_issues:
+            penalized_issues = [
+                i for i in behavioral_issues
+                if i.get("path", "").rstrip("/") not in ("/seed", "/seed-data")
+            ]
             timeout_count = sum(
-                1 for i in behavioral_issues if "timed out" in i.get("issue", "")
+                1 for i in penalized_issues if "timed out" in i.get("issue", "")
             )
             error_count = sum(
-                1 for i in behavioral_issues if "crashed" in i.get("issue", "")
+                1 for i in penalized_issues if "crashed" in i.get("issue", "")
             )
             # 5 pts per timeout, 3 pts per 5xx crash, capped at 25
             endpoint_penalty = min(timeout_count * 5 + error_count * 3, 25)

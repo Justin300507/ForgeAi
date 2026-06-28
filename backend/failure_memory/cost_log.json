@@ -5368,5 +5368,23 @@
     "forge_score": 100,
     "wall_time_s": 95.24,
     "timestamp": "2026-06-29T03:05:23"
+  },
+  {
+    "total_calls": 2,
+    "total_tokens": 21098,
+    "total_cost_usd": 0.012658,
+    "total_llm_time_s": 14.67,
+    "by_stage": {
+      "unknown": {
+        "calls": 2,
+        "tokens": 21098,
+        "cost_usd": 0.012657999999999999,
+        "time_s": 14.670000000000002
+      }
+    },
+    "project_name": "TaskFlow Pro",
+    "forge_score": 100,
+    "wall_time_s": 106.65,
+    "timestamp": "2026-06-29T03:08:16"
   }
 ]
