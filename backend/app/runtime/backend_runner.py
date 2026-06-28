@@ -12,29 +12,56 @@ from app.services.endpoint_smoke_test_service import run_endpoint_smoke_tests
 def _free_port(port: int) -> None:
     """Kill any process holding the given port so uvicorn can bind cleanly."""
     freed = False
-    # Linux: fuser -k {port}/tcp (sends SIGKILL to all holders)
-    try:
-        r = subprocess.run(
-            ["fuser", "-k", f"{port}/tcp"],
-            capture_output=True, timeout=5, check=False,
-        )
-        if r.returncode == 0:
-            freed = True
-    except Exception:
-        pass
-    # Fallback: lsof → kill -9
-    try:
-        r = subprocess.run(
-            ["lsof", "-ti", f"tcp:{port}"],
-            capture_output=True, text=True, timeout=5, check=False,
-        )
-        pids = [p for p in r.stdout.strip().split() if p.isdigit()]
-        for pid in pids:
-            subprocess.run(["kill", "-9", pid], capture_output=True, check=False)
-        if pids:
-            freed = True
-    except Exception:
-        pass
+
+    if sys.platform == "win32":
+        # Windows: netstat -ano to find PID, then taskkill
+        try:
+            r = subprocess.run(
+                ["netstat", "-ano"],
+                capture_output=True, text=True, timeout=10, check=False,
+            )
+            pids = set()
+            for line in r.stdout.splitlines():
+                if f":{port}" in line and ("LISTENING" in line or "ESTABLISHED" in line):
+                    parts = line.split()
+                    if parts:
+                        pid = parts[-1]
+                        if pid.isdigit() and pid != "0":
+                            pids.add(pid)
+            for pid in pids:
+                subprocess.run(
+                    ["taskkill", "/F", "/PID", pid],
+                    capture_output=True, check=False,
+                )
+            if pids:
+                freed = True
+        except Exception:
+            pass
+    else:
+        # Linux: fuser -k {port}/tcp (sends SIGKILL to all holders)
+        try:
+            r = subprocess.run(
+                ["fuser", "-k", f"{port}/tcp"],
+                capture_output=True, timeout=5, check=False,
+            )
+            if r.returncode == 0:
+                freed = True
+        except Exception:
+            pass
+        # Fallback: lsof → kill -9
+        try:
+            r = subprocess.run(
+                ["lsof", "-ti", f"tcp:{port}"],
+                capture_output=True, text=True, timeout=5, check=False,
+            )
+            pids = [p for p in r.stdout.strip().split() if p.isdigit()]
+            for pid in pids:
+                subprocess.run(["kill", "-9", pid], capture_output=True, check=False)
+            if pids:
+                freed = True
+        except Exception:
+            pass
+
     if freed:
         time.sleep(0.5)  # Give OS time to fully release the socket
 

@@ -143,10 +143,16 @@ class FrontendRunner:
 
         t0 = time.time()
 
-        # ── npm install (only if node_modules is absent or stale) ────────
+        # ── npm install (only if node_modules is absent or vite binary missing) ──
         node_modules = project_dir / "node_modules"
-        if not node_modules.exists():
-            print("[Frontend] Installing dependencies (npm install)...")
+        vite_bin = node_modules / ".bin" / "vite"
+        vite_bin_cmd = node_modules / ".bin" / "vite.cmd"
+        vite_present = vite_bin.exists() or vite_bin_cmd.exists()
+        if not node_modules.exists() or not vite_present:
+            if node_modules.exists():
+                print("[Frontend] node_modules exists but vite missing — reinstalling...")
+            else:
+                print("[Frontend] Installing dependencies (npm install)...")
             install = subprocess.run(
                 # No --prefer-offline: Render has no npm cache, that flag causes
                 # silent ENOENT failures when packages aren't cached locally.
@@ -181,6 +187,15 @@ class FrontendRunner:
             print("[Frontend] npm install complete")
         else:
             print("[Frontend] node_modules exists — skipping npm install")
+
+        # ── Clear stale dist/ so vite always writes a clean build ─────────
+        import shutil as _shutil
+        dist_dir = project_dir / "dist"
+        if dist_dir.exists():
+            try:
+                _shutil.rmtree(str(dist_dir))
+            except Exception:
+                pass
 
         # ── npm run build ────────────────────────────────────────────────
         print("Running vite build...")
