@@ -9,6 +9,36 @@ from app.runtime.runtime_models import RuntimeResult
 from app.services.endpoint_smoke_test_service import run_endpoint_smoke_tests
 
 
+def _free_port(port: int) -> None:
+    """Kill any process holding the given port so uvicorn can bind cleanly."""
+    freed = False
+    # Linux: fuser -k {port}/tcp (sends SIGKILL to all holders)
+    try:
+        r = subprocess.run(
+            ["fuser", "-k", f"{port}/tcp"],
+            capture_output=True, timeout=5, check=False,
+        )
+        if r.returncode == 0:
+            freed = True
+    except Exception:
+        pass
+    # Fallback: lsof → kill -9
+    try:
+        r = subprocess.run(
+            ["lsof", "-ti", f"tcp:{port}"],
+            capture_output=True, text=True, timeout=5, check=False,
+        )
+        pids = [p for p in r.stdout.strip().split() if p.isdigit()]
+        for pid in pids:
+            subprocess.run(["kill", "-9", pid], capture_output=True, check=False)
+        if pids:
+            freed = True
+    except Exception:
+        pass
+    if freed:
+        time.sleep(0.5)  # Give OS time to fully release the socket
+
+
 class BackendRunner:
     def run(self, backend_path: str, architecture: dict | None = None, port: int = 8001) -> RuntimeResult:
 
@@ -37,6 +67,8 @@ class BackendRunner:
                 stale_db.unlink()
             except Exception:
                 pass
+
+        _free_port(port)
 
         process = subprocess.Popen(
             [sys.executable, "-m", "uvicorn", "app.main:app",
