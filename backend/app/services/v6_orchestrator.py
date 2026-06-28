@@ -429,6 +429,11 @@ def generate_project_v6(
     # ------------------------------------------------------------------
     runtime_result = None
     if validation["passed"]:
+        # Re-run database patcher: the validation fix loop may have overwritten
+        # database.py from fix cache with a version missing create_tables().
+        from app.services.database_patcher import patch_database_py
+        patch_database_py(project_path)
+
         print("\n=== RUNTIME VALIDATION (V6) ===")
         max_runtime_attempts = 2
         try:
@@ -715,6 +720,9 @@ def repair_project(
     # Runtime validation
     runtime_result = None
     if validation["passed"]:
+        from app.services.database_patcher import patch_database_py
+        patch_database_py(project_path)
+
         print("\n=== RUNTIME VALIDATION (REPAIR) ===")
         try:
             from app.services.runtime_fix_service import generate_runtime_fix
