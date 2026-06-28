@@ -83,24 +83,7 @@ def create_tables():
         _add_missing_columns()
 
 
-_schema_patched = False
-
-
 def get_db():
-    """Yield a DB session.
-
-    On the first call, also ensures the schema is complete.  By the time
-    get_db() is invoked, every route module has already been imported (the
-    request has been routed), so Base.metadata knows about ALL model columns.
-    This is the last-resort schema fix: even if create_tables() ran too early
-    (before some model imports), the first request will patch any missing columns.
-    """
-    global _schema_patched
-    if not _schema_patched:
-        _schema_patched = True
-        if DATABASE_URL.startswith("sqlite"):
-            Base.metadata.create_all(bind=engine)
-            _add_missing_columns()
     db = SessionLocal()
     try:
         yield db

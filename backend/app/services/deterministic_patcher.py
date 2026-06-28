@@ -955,15 +955,18 @@ def _patch_auth_routes(project_path: Path) -> None:
     else:
         try:
             existing = auth_routes_file.read_text(encoding="utf-8", errors="replace")
-            # Re-inject if signup/login endpoints are missing
-            if "/auth/signup" not in existing and "/auth/login" not in existing:
+            # Re-inject if /auth/signup is missing — the LLM often generates
+            # /auth/register instead, which breaks the journey and smoke tests.
+            # The known-good template uses dynamic field detection so it works
+            # with any User model regardless of field names.
+            if "/auth/signup" not in existing:
                 needs_inject = True
         except Exception:
             needs_inject = True
 
     if needs_inject:
         auth_routes_file.write_text(_AUTH_ROUTES_TEMPLATE, encoding="utf-8")
-        print("  [patcher] Injected known-good app/routes/auth_routes.py")
+        print("  [patcher] Injected known-good app/routes/auth_routes.py (had /register not /signup)")
 
     # Ensure main.py imports and includes auth_router
     try:
@@ -1068,6 +1071,25 @@ def _patch_seed_robustness(project_path: Path) -> int:
     return 0
 
 
+# ── 12. Pydantic v2 from_orm → model_validate ────────────────────────────────
+# Pydantic v2 deprecated from_orm(); calling it still works but only if the
+# schema has model_config = ConfigDict(from_attributes=True).  The real failure
+# mode is that the LLM generates schemas whose field names don't match the ORM
+# model.  Replacing .from_orm(obj) with .model_validate(obj, from_attributes=True)
+# is the v2 idiomatic form and surfaces a clearer ValidationError.
+
+_FROM_ORM_RE = re.compile(r'(\w+)\.from_orm\(([^)]+)\)')
+
+
+def _patch_from_orm(content: str) -> str:
+    if "from_orm" not in content:
+        return content
+    return _FROM_ORM_RE.sub(
+        lambda m: f"{m.group(1)}.model_validate({m.group(2)}, from_attributes=True)",
+        content,
+    )
+
+
 # ── Main entry point ──────────────────────────────────────────────────────────
 
 def run_deterministic_patches(project_path: str) -> int:
@@ -1091,6 +1113,7 @@ def run_deterministic_patches(project_path: str) -> int:
         patched = _patch_passlib(patched)
         patched = _patch_pydantic_regex(patched)
         patched = _patch_async_sync(patched)
+        patched = _patch_from_orm(patched)
         patched = _patch_orm_response_model(patched, rel)
 
         if patched != original:
