@@ -46,13 +46,8 @@ class RailwayProvider(BaseDeploymentProvider):
         self.token = _read_token()
 
     def _check(self) -> str | None:
-        if not shutil.which("railway"):
-            return "Railway CLI not found — install with: npm install -g @railway/cli"
         if not self.token:
-            return (
-                "Not logged in to Railway — run: railway login\n"
-                f"(expected token in {RAILWAY_CONFIG})"
-            )
+            return "No Railway token — add your personal token in Deploy Settings (railway.app/account/tokens)"
         return None
 
     def _gql(self, query: str, variables: dict | None = None) -> dict:
@@ -232,6 +227,44 @@ class RailwayProvider(BaseDeploymentProvider):
             print(f"  [Railway] No domain yet (attempt {i+1}/{attempts})...")
         return None
 
+    def _connect_github(self, service_id: str, github_url: str, logs: list) -> None:
+        """Connect a Railway service to a GitHub repo so Railway auto-deploys on push."""
+        m = re.search(r'github\.com[:/]([^/]+/[^/.]+?)(?:\.git)?$', github_url)
+        if not m:
+            logs.append(f"[Railway] Could not parse GitHub URL: {github_url}")
+            return
+        repo = m.group(1)
+        try:
+            self._gql_retry(
+                """mutation C($id: String!, $repo: String!) {
+                    serviceConnect(id: $id, input: { repo: $repo, branch: "main" }) { id }
+                }""",
+                {"id": service_id, "repo": repo},
+            )
+            logs.append(f"[Railway] Connected service to GitHub: {repo}")
+            print(f"  [Railway] Connected to GitHub: {repo}")
+        except Exception as exc:
+            logs.append(f"[Railway] GitHub connect skipped: {exc}")
+
+    def _create_domain(self, service_id: str, environment_id: str, logs: list) -> str | None:
+        """Create a Railway-provided domain for the service."""
+        try:
+            data = self._gql_retry(
+                """mutation C($sid: String!, $eid: String!) {
+                    serviceDomainCreate(input: { serviceId: $sid, environmentId: $eid }) { domain }
+                }""",
+                {"sid": service_id, "eid": environment_id},
+            )
+            domain = (data.get("serviceDomainCreate") or {}).get("domain")
+            if domain:
+                url = domain if domain.startswith("http") else f"https://{domain}"
+                logs.append(f"[Railway] Domain: {url}")
+                print(f"  [Railway] Domain assigned: {url}")
+                return url
+        except Exception as exc:
+            logs.append(f"[Railway] Domain creation failed: {exc}")
+        return None
+
     # ── public interface ──────────────────────────────────────────────────
 
     def deploy(
@@ -239,7 +272,15 @@ class RailwayProvider(BaseDeploymentProvider):
         project_path: str,
         project_name: str,
         env_vars: dict | None = None,
+        github_url: str | None = None,
     ) -> DeploymentResult:
+        """
+        API-only deploy — no Railway CLI required.
+        1. Create project + service via GraphQL
+        2. Connect service to GitHub repo (triggers auto-deploy on Railway's end)
+        3. Create a public domain
+        4. Return the domain URL immediately (build runs async on Railway)
+        """
         err = self._check()
         if err:
             return DeploymentResult(
@@ -247,111 +288,34 @@ class RailwayProvider(BaseDeploymentProvider):
                 deploy_id=None, provider="railway",
             )
 
-        project_dir = Path(project_path)
         logs: list[str] = []
-
         try:
-            # ── Step 1: Get existing project ID + build env ──────────────
-            project_id, _ = self._default_ids()
-            if not project_id:
-                return DeploymentResult(
-                    success=False, url=None, logs="",
-                    error="No linked Railway project. Run: railway link",
-                    deploy_id=None, provider="railway",
-                )
-
-            railway_exe = shutil.which("railway") or "railway"
+            # ── Step 1: Create project + service ─────────────────────────
+            service_name = f"{project_name[:40]}"
+            print(f"  [Railway] Creating project + service '{service_name}'...")
+            project_id, service_id = self._create_project(service_name)
             environment_id = self._default_environment_id() or ""
-            # Do NOT pass RAILWAY_TOKEN — that's for project tokens, not user OAuth tokens.
-            # Auth comes from ~/.railway/config.json; we link the generated project there.
-            env = {
-                **os.environ,
-                "RAILWAY_PROJECT_ID": project_id,
-                "RAILWAY_ENVIRONMENT_ID": environment_id,
-            }
-            if self.token:
-                env["RAILWAY_TOKEN"] = self.token
-            if env_vars:
-                env.update(env_vars)
+            logs.append(f"[Railway] project={project_id} service={service_id} env={environment_id}")
 
-            # ── Step 2: Create a fresh service via GraphQL ────────────────
-            # Append timestamp to avoid name collisions on re-runs of the same project
-            service_name = f"{project_name[:40]}_{int(time.time())}"
-            print(f"  [Railway] Creating service '{service_name}'...")
-            try:
-                service_id: str | None = self._create_service(project_id, service_name)
-                print(f"  [Railway] Service created: {service_id}")
-            except Exception as exc:
-                print(f"  [Railway] Service creation via API failed ({exc}) — falling back to railway add")
-                add = subprocess.run(
-                    [railway_exe, "add", "--service", project_name, "--json"],
-                    cwd=project_dir, env=env,
-                    capture_output=True, text=True, timeout=60,
-                )
-                logs.append(f"[add]\n{add.stdout}\n{add.stderr}")
-                service_id = None
-                try:
-                    service_id = json.loads(add.stdout).get("serviceId") or json.loads(add.stdout).get("id")
-                except Exception:
-                    pass
-                if not service_id:
-                    m = re.search(r'[0-9a-f]{8}-[0-9a-f-]{27}', add.stdout + add.stderr)
-                    service_id = m.group(0) if m else None
-
-            if service_id:
-                env["RAILWAY_SERVICE_ID"] = service_id
-                # Register in global Railway config — this is exactly what `railway link` does.
-                # This lets `railway up` from the generated project dir find the right service
-                # without the user running `railway link` interactively.
-                self._link_globally(project_dir, project_id, service_id)
-                print(f"  [Railway] Global config linked for service {service_id}")
+            # ── Step 2: Connect to GitHub so Railway auto-deploys ─────────
+            if github_url:
+                self._connect_github(service_id, github_url, logs)
             else:
-                print(f"  [Railway] Service ID unknown — deploying without service binding")
+                logs.append("[Railway] No GitHub URL — service created but not linked to a repo")
 
-            # ── Step 3: Deploy to the new service ────────────────────────
-            print(f"  [Railway] Uploading {project_dir.name}...")
-            try:
-                up = subprocess.run(
-                    [railway_exe, "up", "--detach"],
-                    cwd=project_dir, env=env,
-                    capture_output=True, text=True, timeout=300,
-                )
-            finally:
-                # Always clean up the global config entry after deploy attempt
-                if service_id:
-                    self._unlink_globally(project_dir)
-
-            logs.append(f"[up stdout]\n{up.stdout}\n[up stderr]\n{up.stderr}")
-
-            if up.returncode != 0:
-                return DeploymentResult(
-                    success=False, url=None,
-                    logs="\n".join(logs)[:3000],
-                    error=f"railway up failed (exit {up.returncode}): {up.stderr[:400]}",
-                    deploy_id=service_id or project_name, provider="railway",
-                    metadata={"project_id": project_id},
-                )
-
-            # ── Step 5: Get domain ────────────────────────────────────────
-            print("  [Railway] Waiting for domain...")
-            url = self._poll_domain(project_dir, project_id, env)
+            # ── Step 3: Create a public domain ────────────────────────────
+            url = self._create_domain(service_id, environment_id, logs)
 
             return DeploymentResult(
                 success=bool(url),
                 url=url,
-                logs="\n".join(logs)[:3000],
-                error=None if url else "No domain yet — check railway.app dashboard",
-                deploy_id=project_name,
+                logs="\n".join(logs),
+                error=None if url else "Service created — Railway will build from GitHub (check dashboard)",
+                deploy_id=service_id,
                 provider="railway",
-                metadata={"project_id": project_id},
+                metadata={"project_id": project_id, "service_id": service_id},
             )
 
-        except subprocess.TimeoutExpired:
-            return DeploymentResult(
-                success=False, url=None, logs="\n".join(logs),
-                error="Railway deployment timed out",
-                deploy_id=None, provider="railway",
-            )
         except Exception as exc:
             return DeploymentResult(
                 success=False, url=None, logs="\n".join(logs),

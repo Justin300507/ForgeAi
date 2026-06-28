@@ -120,7 +120,7 @@ def generate_project_v14(
     railway_result: dict = {"skipped": True}
     if deploy_to in ("railway", "both"):
         print("\n[V14] Step 4a/5 — Deploying backend to Railway...")
-        railway_result = _deploy_railway(project_path, project_name)
+        railway_result = _deploy_railway(project_path, project_name, github_repo_url)
     result["railway"] = railway_result
 
     backend_url = railway_result.get("url")
@@ -198,11 +198,11 @@ def _push_to_github(project_path: str, project_name: str, idea: str) -> dict:
         return {"success": False, "error": str(exc), "repo_url": None, "clone_url": None}
 
 
-def _deploy_railway(project_path: str, project_name: str) -> dict:
+def _deploy_railway(project_path: str, project_name: str, github_url: str | None = None) -> dict:
     try:
         from app.deployments.railway_provider import RailwayProvider
         provider = RailwayProvider()
-        res = provider.deploy(project_path, project_name)
+        res = provider.deploy(project_path, project_name, github_url=github_url)
         return {
             "success": res.success,
             "url": res.url,
@@ -382,7 +382,7 @@ def retry_project_v14(
     railway_result: dict = {"skipped": True}
     if deploy_to in ("railway", "both"):
         print("\n[V14-RETRY] Deploying to Railway...")
-        railway_result = _deploy_railway(project_path, project_name)
+        railway_result = _deploy_railway(project_path, project_name, github_repo_url)
     result["railway"] = railway_result
     backend_url = railway_result.get("url")
 

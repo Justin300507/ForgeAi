@@ -18,6 +18,7 @@ import re
 import shutil
 import subprocess
 import sys
+import tempfile
 from pathlib import Path
 
 def _npm() -> str:
@@ -65,6 +66,31 @@ class CloudflareProvider(BaseDeploymentProvider):
         stderr = (result.stderr or b"").decode("utf-8", errors="replace")
         return subprocess.CompletedProcess(result.args, result.returncode, stdout, stderr)
 
+    def _prepare_build_dir(self, project_path: str, slug: str) -> Path:
+        """Copy frontend source files to /tmp for isolated npm build.
+
+        Builds in /tmp instead of in-place to avoid ENOENT errors on constrained
+        filesystems (Railway /data volumes, Docker read-only layers, etc.).
+        Excludes the Python backend and any existing build artifacts.
+        """
+        _EXCLUDE = {"app", "node_modules", "dist", ".git", ".env", "venv", ".venv", "__pycache__"}
+        tmp = Path(tempfile.mkdtemp(prefix=f"forge-cf-{slug[:20]}-"))
+        for item in Path(project_path).iterdir():
+            if item.name in _EXCLUDE:
+                continue
+            dst = tmp / item.name
+            try:
+                if item.is_dir():
+                    shutil.copytree(
+                        str(item), str(dst),
+                        ignore=shutil.ignore_patterns("__pycache__", "*.pyc", "*.pyo"),
+                    )
+                else:
+                    shutil.copy2(str(item), str(dst))
+            except Exception as copy_err:
+                print(f"  [Cloudflare] Warning: skipped {item.name}: {copy_err}")
+        return tmp
+
     def deploy(
         self,
         project_path: str,
@@ -77,8 +103,8 @@ class CloudflareProvider(BaseDeploymentProvider):
                                     deploy_id=None, provider="cloudflare")
 
         slug = _slug(project_name)
-        cwd = str(project_path)
         logs: list[str] = []
+        build_dir: Path | None = None
 
         # wrangler-specific env — CI=true needed for wrangler but NOT for npm build
         # (CI=true makes Vite/CRA treat warnings as errors, breaking the build)
@@ -90,12 +116,13 @@ class CloudflareProvider(BaseDeploymentProvider):
             "WRANGLER_SEND_METRICS": "false",
             "CI": "true",
         }
-        build_env = {**os.environ}  # no CI=true during npm build
+        # npm cache in /tmp avoids permission failures on restricted filesystems
+        npm_cache = str(Path(tempfile.gettempdir()) / ".npm-forge-cache")
+        build_env = {**os.environ, "npm_config_cache": npm_cache}
         if env_vars:
             wrangler_env.update(env_vars)
             build_env.update(env_vars)
 
-        # Ensure node_modules exists
         package_json = Path(project_path) / "package.json"
         if not package_json.exists():
             return DeploymentResult(
@@ -104,99 +131,117 @@ class CloudflareProvider(BaseDeploymentProvider):
                 deploy_id=None, provider="cloudflare",
             )
 
-        # Pre-flight: log the directory so failures are debuggable
-        frontend_dir = Path(project_path)
-        print(f"  [Cloudflare] cwd:          {frontend_dir}")
-        print(f"  [Cloudflare] cwd exists:   {frontend_dir.exists()}")
-        print(f"  [Cloudflare] package.json: {'✓' if (frontend_dir / 'package.json').exists() else '✗ MISSING'}")
-
-        # Build frontend
         npm = _npm()
-        print(f"  [Cloudflare] Building frontend (npm={npm})...")
-        # Use npm install instead of npm ci — generated projects have no package-lock.json.
-        # --legacy-peer-deps avoids peer conflict aborts on generated dep sets.
-        build_result = self._run(
-            [npm, "install", "--no-fund", "--no-audit", "--legacy-peer-deps"],
-            cwd, build_env,
-        )
-        # Log full output, not just last 200 chars — ENOENT errors are in the middle
-        logs.append(f"[npm install]\nstdout:\n{build_result.stdout}\nstderr:\n{build_result.stderr}")
-
-        if build_result.returncode != 0:
-            diag = (
-                f"Working dir: {frontend_dir}\n"
-                f"package.json exists: {(frontend_dir / 'package.json').exists()}\n\n"
-                f"stdout:\n{build_result.stdout}\n"
-                f"stderr:\n{build_result.stderr}"
-            )
-            print(f"  [Cloudflare] npm install FAILED (rc={build_result.returncode})")
-            print(diag[:800])
+        if npm == "npm" and not shutil.which("npm"):
             return DeploymentResult(
-                success=False, url=None, logs="\n".join(logs),
-                error=f"npm install failed (rc={build_result.returncode}):\n{diag}",
+                success=False, url=None, logs="",
+                error="npm not found — install Node.js to enable frontend deployment",
                 deploy_id=None, provider="cloudflare",
             )
 
-        build_result = self._run([npm, "run", "build"], cwd, build_env)
-        logs.append(f"[npm build]\n{build_result.stdout[-500:]}\n{build_result.stderr[-300:]}")
+        try:
+            # ── Pre-build disk cleanup ───────────────────────────────────────
+            # Accumulated node_modules and npm caches on the /data volume cause
+            # ENOSPC failures. Remove leftovers from previous builds before starting.
+            import glob as _glob
+            for _old in _glob.glob("/tmp/forge-cf-*"):
+                shutil.rmtree(_old, ignore_errors=True)
+            # Remove node_modules from previously-generated projects to free /data
+            for _nm in _glob.glob("/data/generated_projects/*/node_modules"):
+                shutil.rmtree(_nm, ignore_errors=True)
+            # Clear the npm cache so it doesn't eat temp space
+            try:
+                subprocess.run([npm, "cache", "clean", "--force"], capture_output=True, timeout=60)
+            except Exception:
+                pass
 
-        if build_result.returncode != 0:
-            err = build_result.stderr[-600:] or build_result.stdout[-400:]
-            print(f"  [Cloudflare] Frontend build failed — {err[:200]}")
+            # Build in /tmp to avoid ENOENT errors on Railway /data volumes and other
+            # constrained filesystems where npm can't create node_modules in-place.
+            build_dir = self._prepare_build_dir(project_path, slug)
+            cwd = str(build_dir)
+
+            print(f"  [Cloudflare] Source:       {project_path}")
+            print(f"  [Cloudflare] Build dir:    {build_dir}")
+            print(f"  [Cloudflare] package.json: {'✓' if (build_dir / 'package.json').exists() else '✗ MISSING'}")
+            print(f"  [Cloudflare] src/:         {'✓' if (build_dir / 'src').exists() else '✗ MISSING'}")
+
+            print(f"  [Cloudflare] Running npm install (npm={npm})...")
+            install_result = self._run(
+                [npm, "install", "--no-fund", "--no-audit", "--legacy-peer-deps", "--no-optional", "--prefer-offline"],
+                cwd, build_env,
+            )
+            logs.append(f"[npm install]\nstdout:\n{install_result.stdout}\nstderr:\n{install_result.stderr}")
+
+            if install_result.returncode != 0:
+                diag = (
+                    f"Build dir: {build_dir}\n"
+                    f"package.json: {(build_dir / 'package.json').exists()}\n"
+                    f"src/: {(build_dir / 'src').exists()}\n\n"
+                    f"stdout:\n{install_result.stdout}\n"
+                    f"stderr:\n{install_result.stderr}"
+                )
+                print(f"  [Cloudflare] npm install FAILED (rc={install_result.returncode})")
+                print(diag[:800])
+                return DeploymentResult(
+                    success=False, url=None, logs="\n".join(logs),
+                    error=f"npm install failed (rc={install_result.returncode}):\n{diag}",
+                    deploy_id=None, provider="cloudflare",
+                )
+
+            build_result = self._run([npm, "run", "build"], cwd, build_env)
+            logs.append(f"[npm build]\n{build_result.stdout[-500:]}\n{build_result.stderr[-300:]}")
+
+            if build_result.returncode != 0:
+                build_err = build_result.stderr[-600:] or build_result.stdout[-400:]
+                print(f"  [Cloudflare] Frontend build failed — {build_err[:200]}")
+                return DeploymentResult(
+                    success=False, url=None, logs="\n".join(logs),
+                    error=f"Frontend build failed: {build_err}",
+                    deploy_id=None, provider="cloudflare",
+                )
+
+            dist_dir = build_dir / "dist"
+            if not dist_dir.exists():
+                return DeploymentResult(
+                    success=False, url=None, logs="\n".join(logs),
+                    error="dist/ not found after build",
+                    deploy_id=None, provider="cloudflare",
+                )
+
+            # Ensure the Cloudflare Pages project exists (wrangler won't auto-create in CI mode)
+            self._ensure_project_exists(slug, logs)
+
+            print(f"  [Cloudflare] Deploying {slug} to Pages...")
+            wrangler = shutil.which("wrangler") or "wrangler"
+            deploy_result = self._run(
+                [wrangler, "pages", "deploy", "--project-name", slug, "--branch", "main", "--directory", "dist"],
+                cwd, wrangler_env,
+            )
+            combined = (deploy_result.stdout or "") + (deploy_result.stderr or "")
+            logs.append(f"[wrangler deploy]\n{combined[-1000:]}")
+
+            url_match = _URL_RE.search(combined)
+            url = url_match.group(0) if url_match else None
+
+            if deploy_result.returncode != 0:
+                error_tail = (deploy_result.stderr or "")[-400:]
+                print(f"  [Cloudflare] Deploy failed — {error_tail[:120]}")
+                return DeploymentResult(
+                    success=False, url=None, logs="\n".join(logs),
+                    error=error_tail, deploy_id=None, provider="cloudflare",
+                )
+
+            final_url = url or f"https://{slug}.pages.dev"
+            print(f"  [Cloudflare] Frontend live at: {final_url}")
             return DeploymentResult(
-                success=False, url=None, logs="\n".join(logs),
-                error=f"Frontend build failed: {err}",
-                deploy_id=None, provider="cloudflare",
+                success=True, url=final_url, logs="\n".join(logs),
+                error=None, deploy_id=slug, provider="cloudflare",
             )
 
-        dist_dir = Path(project_path) / "dist"
-        if not dist_dir.exists():
-            return DeploymentResult(
-                success=False, url=None, logs="\n".join(logs),
-                error="dist/ not found after build",
-                deploy_id=None, provider="cloudflare",
-            )
-
-        # Ensure the Cloudflare Pages project exists (wrangler won't auto-create in CI mode)
-        self._ensure_project_exists(slug, logs)
-
-        # Deploy to Cloudflare Pages
-        print(f"  [Cloudflare] Deploying {slug} to Pages...")
-        wrangler = shutil.which("wrangler") or "wrangler"
-        deploy_result = self._run(
-            [wrangler, "pages", "deploy", "--project-name", slug, "--branch", "main", "--directory", "dist"],
-            cwd, wrangler_env,
-        )
-        combined = (deploy_result.stdout or "") + (deploy_result.stderr or "")
-        logs.append(f"[wrangler deploy]\n{combined[-1000:]}")
-
-        # Extract URL from output
-        url_match = _URL_RE.search(combined)
-        url = url_match.group(0) if url_match else None
-
-        if deploy_result.returncode != 0:
-            error_tail = (deploy_result.stderr or "")[-400:]
-            print(f"  [Cloudflare] Deploy failed — {error_tail[:120]}")
-            return DeploymentResult(
-                success=False,
-                url=None,
-                logs="\n".join(logs),
-                error=error_tail,
-                deploy_id=None,
-                provider="cloudflare",
-            )
-
-        # Only use fallback URL when wrangler actually succeeded (exit 0)
-        final_url = url or f"https://{slug}.pages.dev"
-        print(f"  [Cloudflare] Frontend live at: {final_url}")
-        return DeploymentResult(
-            success=True,
-            url=final_url,
-            logs="\n".join(logs),
-            error=None,
-            deploy_id=slug,
-            provider="cloudflare",
-        )
+        finally:
+            # Always clean up the temp build dir
+            if build_dir and build_dir.exists():
+                shutil.rmtree(str(build_dir), ignore_errors=True)
 
     def _ensure_project_exists(self, slug: str, logs: list) -> None:
         """Create the Cloudflare Pages project via REST API if it doesn't exist yet.
