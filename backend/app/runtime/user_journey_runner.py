@@ -37,6 +37,9 @@ _CRITICAL_STEPS = {"Login", "Create entity", "List entities", "Edit entity", "De
 # Segments that are path prefixes, not resource names
 _PREFIX_SEGMENTS = {"api", "v1", "v2", "v3", "v4", "auth", "me", "admin"}
 
+# Resources that are auth-related — prefer to test other entities first
+_AUTH_RESOURCES = {"users", "user", "accounts", "account", "members", "member"}
+
 
 def _detect_api_prefix(architecture: dict) -> str:
     """Return the common URL prefix for all non-auth endpoints (e.g. '/api/v1')."""
@@ -128,11 +131,22 @@ def _detect_crud_entity(architecture: dict, api_prefix: str) -> str | None:
         if parts:
             by_resource[parts[0]].add(method)
 
+    # Prefer non-auth resources first (so we don't accidentally delete the registered user)
+    for resource, methods in by_resource.items():
+        if resource in _AUTH_RESOURCES:
+            continue
+        if {"GET", "POST", "PUT", "DELETE"}.issubset(methods):
+            return resource
+
+    # Fallback: any full-CRUD resource including auth ones
     for resource, methods in by_resource.items():
         if {"GET", "POST", "PUT", "DELETE"}.issubset(methods):
             return resource
 
-    # Fallback: any resource with POST + GET
+    # Fallback: any resource with POST + GET (non-auth first)
+    for resource, methods in by_resource.items():
+        if resource not in _AUTH_RESOURCES and {"GET", "POST"}.issubset(methods):
+            return resource
     for resource, methods in by_resource.items():
         if {"GET", "POST"}.issubset(methods):
             return resource

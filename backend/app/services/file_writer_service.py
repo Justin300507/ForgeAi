@@ -388,7 +388,7 @@ def write_files(project_name, files, frontend_target: str = "web"):
         path = file["path"]
         content = file["content"]
 
-        if path == "app/database.py":
+        if path.replace("\\", "/") == "app/database.py":
             content = DATABASE_PY_TEMPLATE
             database_file_seen = True
 

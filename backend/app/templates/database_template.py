@@ -1,23 +1,79 @@
-DATABASE_PY_TEMPLATE = '''import os
+DATABASE_PY_TEMPLATE = '''import importlib
+import os
 from sqlalchemy import create_engine
-from sqlalchemy.orm import declarative_base, sessionmaker
+from sqlalchemy.ext.declarative import declarative_base
+from sqlalchemy.orm import sessionmaker
 
-# Support both SQLite (local dev) and PostgreSQL (Railway/Render/Fly.io deployment)
-DATABASE_URL = os.environ.get("DATABASE_URL", "sqlite:///./app.db")
-# SQLAlchemy 2.x requires postgresql:// not postgres://
+DATABASE_URL = os.getenv("DATABASE_URL", "sqlite:///./app.db")
+
+# Render/Heroku provide postgres:// but SQLAlchemy 1.4+ requires postgresql://
 if DATABASE_URL.startswith("postgres://"):
     DATABASE_URL = DATABASE_URL.replace("postgres://", "postgresql://", 1)
 
-connect_args = {"check_same_thread": False} if DATABASE_URL.startswith("sqlite") else {}
-engine = create_engine(DATABASE_URL, connect_args=connect_args)
+if DATABASE_URL.startswith("sqlite"):
+    engine = create_engine(DATABASE_URL, connect_args={"check_same_thread": False})
+else:
+    engine = create_engine(DATABASE_URL, pool_pre_ping=True, pool_recycle=300)
+
 SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
+
 Base = declarative_base()
+
+
+def _add_missing_columns() -> None:
+    """ALTER TABLE ADD COLUMN for any mapped columns missing from existing tables."""
+    try:
+        from sqlalchemy import inspect as _inspect, text as _text
+        insp = _inspect(engine)
+        existing_tables = set(insp.get_table_names())
+        with engine.begin() as conn:
+            for table in Base.metadata.sorted_tables:
+                if table.name not in existing_tables:
+                    continue
+                try:
+                    existing_cols = {c["name"] for c in insp.get_columns(table.name)}
+                except Exception:
+                    continue
+                for col in table.columns:
+                    if col.name in existing_cols:
+                        continue
+                    try:
+                        type_str = col.type.compile(dialect=engine.dialect)
+                    except Exception:
+                        type_str = "TEXT"
+                    try:
+                        conn.execute(_text(
+                            f"ALTER TABLE {table.name} ADD COLUMN {col.name} {type_str}"
+                        ))
+                    except Exception:
+                        pass
+    except Exception:
+        pass
+
+
+def create_tables():
+    """Import every model in app/models/ then create all tables."""
+    models_dir = os.path.join(os.path.dirname(__file__), "models")
+    if os.path.isdir(models_dir):
+        for fname in sorted(os.listdir(models_dir)):
+            if fname.endswith(".py") and fname not in ("__init__.py",):
+                mod_name = fname[:-3]
+                try:
+                    importlib.import_module(f"app.models.{mod_name}")
+                except Exception:
+                    pass
+    Base.metadata.create_all(bind=engine)
+    if DATABASE_URL.startswith("sqlite"):
+        _add_missing_columns()
 
 
 def get_db():
     db = SessionLocal()
     try:
         yield db
+    except Exception:
+        db.rollback()
+        raise
     finally:
         db.close()
 '''

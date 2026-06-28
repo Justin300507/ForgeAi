@@ -476,6 +476,14 @@ def generate_runtime_fix(
 
             return None
 
+        # Block path traversal before caching
+        fix_path = fix.get("path", "")
+        import os as _os
+        norm = _os.path.normpath(fix_path)
+        if norm.startswith("..") or _os.path.isabs(norm):
+            print(f"  [runtime_fix] blocked path traversal: {fix_path!r}")
+            return None
+
         set_cached("runtime_fix", _cache_payload, fix)
         return fix
 

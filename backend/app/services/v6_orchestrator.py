@@ -58,6 +58,10 @@ ARCHITECTURE_ERROR_MARKERS = (
 def _sanitize_path(path: str) -> str:
     safe = re.sub(r"[?{}:*<>|\"]", "_", path)
     safe = os.path.normpath(safe)
+    # Block path traversal: if normpath still starts with ".." or is absolute, strip leading ..
+    parts = safe.replace("\\", "/").split("/")
+    parts = [p for p in parts if p and p != ".."]
+    safe = os.path.join(*parts) if parts else safe
     return safe
 
 
@@ -356,6 +360,14 @@ def generate_project_v6(
                 if any("Orphan file:" in e for e in file_errors):
                     if os.path.exists(abs_path):
                         os.remove(abs_path)
+                    continue
+
+                # Never LLM-fix database.py — patch_database_py() injects a
+                # known-good version after this loop.  LLM fixes cache incorrectly
+                # and overwrite the template with broken versions.
+                if filepath in ("app/database.py", "app\\database.py"):
+                    from app.services.database_patcher import patch_database_py
+                    patch_database_py(project_path)
                     continue
 
                 if not os.path.exists(abs_path):

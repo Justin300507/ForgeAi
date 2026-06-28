@@ -56,6 +56,10 @@ def generate_backend(
         clean_text = clean_text.replace("```", "")
         clean_text = clean_text.strip()
 
+        # Fallback provider order for backend retries — if primary truncates, try next
+        _fallback_providers = ["groq", "openrouter", "gemini"]
+        _fallback_idx = 0
+
         data = None
         for attempt in range(3):
             try:
@@ -65,8 +69,16 @@ def generate_backend(
                 print(f"\n=== BACKEND JSON ERROR (attempt {attempt+1}/3) ===")
                 print(e)
                 if attempt < 2:
-                    print("Retrying LLM call...")
-                    text = generate_content(prompt, provider, max_tokens=max_tokens)
+                    # If response looks truncated (error near end), try a fallback provider
+                    is_truncated = len(clean_text) >= max_tokens * 3  # ~3 chars/token
+                    if is_truncated and _fallback_idx < len(_fallback_providers):
+                        retry_provider = _fallback_providers[_fallback_idx]
+                        _fallback_idx += 1
+                        print(f"Truncation detected — retrying with {retry_provider}...")
+                    else:
+                        retry_provider = provider
+                        print("Retrying LLM call...")
+                    text = generate_content(prompt, retry_provider, max_tokens=max_tokens)
                     if not text:
                         break
                     clean_text = text.replace("```json", "").replace("```", "").strip()

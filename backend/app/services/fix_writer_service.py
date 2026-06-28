@@ -75,6 +75,19 @@ def write_fix(project_path, fix):
         print("write_fix called with missing path/content, skipping.")
         return False
 
+    # Block path traversal attacks — LLMs occasionally generate "../" paths
+    norm = os.path.normpath(path)
+    if norm.startswith("..") or os.path.isabs(norm):
+        print(f"write_fix: blocked suspicious path: {path!r}")
+        return False
+
+    # Always inject the known-good database.py — never let LLM fixes overwrite it
+    norm_fwd = path.replace("\\", "/")
+    if norm_fwd == "app/database.py":
+        from app.services.database_patcher import patch_database_py
+        patch_database_py(project_path)
+        return True
+
     content = _normalize_newlines(path, content)
     content = _ensure_create_all(path, content)
 
