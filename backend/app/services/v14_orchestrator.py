@@ -233,6 +233,10 @@ def _deploy_railway(project_path: str, project_name: str, github_url: str | None
         from app.deployments.railway_provider import RailwayProvider
         provider = RailwayProvider()
         res = provider.deploy(project_path, project_name, github_url=github_url)
+        if not res.success:
+            print(f"  [Railway] Deploy failed: {(res.error or '')[:400]}")
+            if res.logs:
+                print(f"  [Railway] Logs: {res.logs[-300:]}")
         return {
             "success": res.success,
             "url": res.url,
@@ -241,6 +245,7 @@ def _deploy_railway(project_path: str, project_name: str, github_url: str | None
             "metadata": res.metadata,
         }
     except Exception as exc:
+        print(f"  [Railway] Exception: {exc}")
         return {"success": False, "error": str(exc), "url": None}
 
 

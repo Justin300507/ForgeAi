@@ -110,35 +110,7 @@ class BackendRunner:
         crud_passed: bool | None = None
 
         if healthy and architecture:
-            print("\n=== ENDPOINT SMOKE TESTS ===")
-            behavioral_issues = run_endpoint_smoke_tests(architecture)
-
-            for issue in behavioral_issues:
-                print(f"  {issue['method']} {issue['path']} -> {issue['issue']}")
-
-            if not behavioral_issues:
-                print("  All endpoints responded without errors.")
-
-            # Compute endpoint health metrics
-            total_endpoints = len(architecture.get("api_endpoints", []))
-            timeout_count = sum(
-                1 for i in behavioral_issues if "timed out" in i.get("issue", "")
-            )
-            error_count = sum(
-                1 for i in behavioral_issues if "crashed" in i.get("issue", "")
-            )
-            failed_count = len(behavioral_issues)
-            endpoint_pass_rate = (
-                (total_endpoints - failed_count) / total_endpoints
-                if total_endpoints > 0 else 1.0
-            )
-            print(
-                f"\n  Endpoint pass rate: {endpoint_pass_rate:.0%} "
-                f"({total_endpoints - failed_count}/{total_endpoints} passed, "
-                f"{timeout_count} timeouts, {error_count} errors)"
-            )
-
-            # Run user journey while server is still alive
+            # ── Journey first — before smoke tests can crash/hang the server ──
             print("\n=== USER JOURNEY (CRUD WORKFLOW) ===")
             try:
                 from app.runtime.user_journey_runner import run_user_journey
@@ -176,6 +148,34 @@ class BackendRunner:
                 print(f"  Journey error: {je}")
                 journey_data = {"skipped": True, "skip_reason": str(je)}
                 crud_passed = None
+
+            # ── Smoke tests after journey — they can hang/crash the server ──
+            print("\n=== ENDPOINT SMOKE TESTS ===")
+            behavioral_issues = run_endpoint_smoke_tests(architecture)
+
+            for issue in behavioral_issues:
+                print(f"  {issue['method']} {issue['path']} -> {issue['issue']}")
+
+            if not behavioral_issues:
+                print("  All endpoints responded without errors.")
+
+            total_endpoints = len(architecture.get("api_endpoints", []))
+            timeout_count = sum(
+                1 for i in behavioral_issues if "timed out" in i.get("issue", "")
+            )
+            error_count = sum(
+                1 for i in behavioral_issues if "crashed" in i.get("issue", "")
+            )
+            failed_count = len(behavioral_issues)
+            endpoint_pass_rate = (
+                (total_endpoints - failed_count) / total_endpoints
+                if total_endpoints > 0 else 1.0
+            )
+            print(
+                f"\n  Endpoint pass rate: {endpoint_pass_rate:.0%} "
+                f"({total_endpoints - failed_count}/{total_endpoints} passed, "
+                f"{timeout_count} timeouts, {error_count} errors)"
+            )
 
         # Terminate the server
         if process.poll() is None:
