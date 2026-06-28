@@ -433,6 +433,8 @@ def generate_project_v6(
                 for f in arch_fix["files"]:
                     f["path"] = _sanitize_path(f["path"])
                     write_fix(project_path, f)
+                # Re-run patcher so any new route files get schema stubs created
+                run_deterministic_patches(project_path)
                 validation = validate_project(project_path)
                 print(f"  Post-arch-repair: {'PASS' if validation['passed'] else 'FAIL'}")
 
@@ -728,6 +730,8 @@ def repair_project(
             for f in arch_fix["files"]:
                 f["path"] = _sanitize_path(f["path"])
                 write_fix(project_path, f)
+            # Re-run patcher so any new route files get schema stubs created
+            run_deterministic_patches(project_path)
             validation = validate_project(project_path)
             print(f"  Post-arch-repair: {'PASS' if validation['passed'] else 'FAIL'}")
 

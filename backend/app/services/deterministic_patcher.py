@@ -1254,6 +1254,97 @@ def _patch_from_orm(content: str) -> str:
     )
 
 
+# ── 13. Create stub schema files for missing imports ─────────────────────────
+# After architecture repair, the LLM may generate route files importing from
+# app.schemas.X where X.py doesn't exist.  We scan all route imports and create
+# minimal Pydantic stub files so uvicorn can at least start and run the endpoint.
+
+_SCHEMA_IMPORT_RE = re.compile(
+    r"^from app\.schemas\.(\w+) import ([^\n]+)", re.MULTILINE
+)
+_COL_RE = re.compile(r"^\s*(\w+)\s*=\s*Column\s*\(\s*(\w+)", re.MULTILINE)
+_TYPE_MAP = {
+    "Integer": "int", "BigInteger": "int", "SmallInteger": "int",
+    "Float": "float", "Numeric": "float",
+    "String": "str", "Text": "str", "VARCHAR": "str",
+    "Boolean": "bool",
+    "DateTime": "Optional[str]", "Date": "Optional[str]", "Time": "Optional[str]",
+}
+
+
+def _patch_create_missing_schemas(project_path: Path) -> int:
+    """
+    Create minimal Pydantic schema files when route files import from
+    app.schemas.X but X.py doesn't exist.
+    """
+    schemas_dir = project_path / "app" / "schemas"
+    routes_dir = project_path / "app" / "routes"
+    models_dir = project_path / "app" / "models"
+
+    if not routes_dir.exists() or not schemas_dir.exists():
+        return 0
+
+    # Collect all schema module imports from route files
+    schema_imports: dict[str, set[str]] = {}
+    for rf in routes_dir.glob("*.py"):
+        try:
+            content = rf.read_text(encoding="utf-8", errors="replace")
+        except Exception:
+            continue
+        for m in _SCHEMA_IMPORT_RE.finditer(content):
+            module = m.group(1)
+            names = {n.strip() for n in m.group(2).split(",") if n.strip()}
+            schema_imports.setdefault(module, set()).update(names)
+
+    created = 0
+    for module, needed_classes in schema_imports.items():
+        schema_file = schemas_dir / f"{module}.py"
+        if schema_file.exists():
+            continue
+
+        # Try to find the matching model file (handle list_member / listmember)
+        model_file: Path | None = None
+        candidates = [module, module.replace("_", ""), module + "s", module.rstrip("s")]
+        for mf in models_dir.glob("*.py"):
+            if mf.stem in candidates or mf.stem.replace("_", "") in candidates:
+                model_file = mf
+                break
+
+        # Build field lines from model columns
+        columns: list[tuple[str, str]] = []
+        if model_file and model_file.exists():
+            model_text = model_file.read_text(encoding="utf-8", errors="replace")
+            for cm in _COL_RE.finditer(model_text):
+                col_name = cm.group(1)
+                py_type = _TYPE_MAP.get(cm.group(2), "str")
+                if col_name not in ("id",):
+                    columns.append((col_name, py_type))
+
+        base_name = "".join(w.capitalize() for w in module.split("_"))
+
+        lines = ["from typing import Optional", "from pydantic import BaseModel", "", ""]
+        for cls_name in sorted(needed_classes):
+            if columns:
+                field_lines = "\n".join(
+                    f"    {name}: Optional[{typ}] = None" for name, typ in columns
+                )
+            else:
+                field_lines = "    pass"
+            lines += [
+                f"class {cls_name}(BaseModel):",
+                field_lines,
+                "    model_config = {'from_attributes': True}",
+                "",
+                "",
+            ]
+
+        schema_file.write_text("\n".join(lines), encoding="utf-8")
+        created += 1
+        print(f"  [patcher] Created missing schema stub {module}.py ({len(needed_classes)} class(es))")
+
+    return created
+
+
 # ── Main entry point ──────────────────────────────────────────────────────────
 
 def run_deterministic_patches(project_path: str) -> int:
@@ -1325,6 +1416,10 @@ def run_deterministic_patches(project_path: str) -> int:
 
     # Seed robustness: guard against IndexError when parent entity inserts fail
     _patch_seed_robustness(root)
+
+    # Create stub schema files for any route imports that point to missing modules
+    # (common after architecture repair generates new route files)
+    _patch_create_missing_schemas(root)
 
     if modified:
         print(f"  [patcher] Patched {modified} file(s) — passlib→bcrypt, async→sync, smart quotes")
