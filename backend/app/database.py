@@ -2,7 +2,8 @@ import os
 from sqlalchemy import create_engine
 from sqlalchemy.orm import declarative_base, sessionmaker
 
-DATABASE_URL = os.environ.get("DATABASE_URL", "sqlite:///./forgeai.db")
+_DEFAULT_DB = "sqlite:////data/forgeai.db" if os.path.isdir("/data") else "sqlite:///./forgeai.db"
+DATABASE_URL = os.environ.get("DATABASE_URL", _DEFAULT_DB)
 if DATABASE_URL.startswith("postgres://"):
     DATABASE_URL = DATABASE_URL.replace("postgres://", "postgresql://", 1)
 

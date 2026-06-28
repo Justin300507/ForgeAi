@@ -154,17 +154,18 @@ def _run_job(job_id: str, req: JobRequest):
         finally:
             _cred_db.close()
 
-        if _creds:
-            _env_map = {
-                "GITHUB_TOKEN": _creds.github_token,
-                "RAILWAY_TOKEN": _creds.railway_token,
-                "CLOUDFLARE_API_TOKEN": _creds.cloudflare_api_token,
-                "CLOUDFLARE_ACCOUNT_ID": _creds.cloudflare_account_id,
-            }
-            for _k, _v in _env_map.items():
-                if _v:
-                    _saved_env[_k] = os.environ.get(_k)
-                    os.environ[_k] = _v
+        # Merge DB credentials with env vars — DB values take priority,
+        # env vars are the fallback when the SQLite file was wiped by a redeploy.
+        _env_map = {
+            "GITHUB_TOKEN": (_creds and _creds.github_token) or os.getenv("GITHUB_TOKEN"),
+            "RAILWAY_TOKEN": (_creds and _creds.railway_token) or os.getenv("RAILWAY_TOKEN"),
+            "CLOUDFLARE_API_TOKEN": (_creds and _creds.cloudflare_api_token) or os.getenv("CLOUDFLARE_API_TOKEN"),
+            "CLOUDFLARE_ACCOUNT_ID": (_creds and _creds.cloudflare_account_id) or os.getenv("CLOUDFLARE_ACCOUNT_ID"),
+        }
+        for _k, _v in _env_map.items():
+            if _v:
+                _saved_env[_k] = os.environ.get(_k)
+                os.environ[_k] = _v
     except Exception as _ce:
         print(f"[credentials] lookup failed: {_ce}")
 
@@ -1046,13 +1047,13 @@ class CredentialsRequest(BaseModel):
 @app.get("/credentials", tags=["credentials"])
 def get_credentials(db: Session = Depends(get_db), current_user=Depends(get_current_user)):
     creds = db.query(UserCredentials).filter(UserCredentials.user_id == current_user.id).first()
-    if not creds:
-        return {}
+    # Fall back to Railway env vars so the dashboard always shows connected
+    # even after a container restart wipes the SQLite file.
     return {
-        "github_token": creds.github_token or "",
-        "railway_token": creds.railway_token or "",
-        "cloudflare_api_token": creds.cloudflare_api_token or "",
-        "cloudflare_account_id": creds.cloudflare_account_id or "",
+        "github_token": (creds and creds.github_token) or os.getenv("GITHUB_TOKEN", ""),
+        "railway_token": (creds and creds.railway_token) or os.getenv("RAILWAY_TOKEN", ""),
+        "cloudflare_api_token": (creds and creds.cloudflare_api_token) or os.getenv("CLOUDFLARE_API_TOKEN", ""),
+        "cloudflare_account_id": (creds and creds.cloudflare_account_id) or os.getenv("CLOUDFLARE_ACCOUNT_ID", ""),
     }
 
 
@@ -1082,18 +1083,25 @@ def credentials_status(db: Session = Depends(get_db), current_user=Depends(get_c
     import requests as _requests
 
     creds = db.query(UserCredentials).filter(UserCredentials.user_id == current_user.id).first()
-    if not creds:
+
+    # Merge DB values with env vars — env vars are the fallback when DB is wiped
+    github_token = (creds and creds.github_token) or os.getenv("GITHUB_TOKEN")
+    railway_token = (creds and creds.railway_token) or os.getenv("RAILWAY_TOKEN")
+    cloudflare_api_token = (creds and creds.cloudflare_api_token) or os.getenv("CLOUDFLARE_API_TOKEN")
+    cloudflare_account_id = (creds and creds.cloudflare_account_id) or os.getenv("CLOUDFLARE_ACCOUNT_ID")
+
+    if not any([github_token, railway_token, cloudflare_api_token]):
         return {"github": None, "cloudflare": None, "railway": None}
 
     out: dict = {}
 
     # ── GitHub ────────────────────────────────────────────────────────────────
-    if creds.github_token:
+    if github_token:
         try:
             req = _urlreq.Request(
                 "https://api.github.com/user",
                 headers={
-                    "Authorization": f"Bearer {creds.github_token}",
+                    "Authorization": f"Bearer {github_token}",
                     "User-Agent": "ForgeAI/1.0",
                     "Accept": "application/vnd.github+json",
                 },
@@ -1112,11 +1120,11 @@ def credentials_status(db: Session = Depends(get_db), current_user=Depends(get_c
         out["github"] = None
 
     # ── Cloudflare ────────────────────────────────────────────────────────────
-    if creds.cloudflare_api_token:
+    if cloudflare_api_token:
         try:
             req = _urlreq.Request(
                 "https://api.cloudflare.com/client/v4/user",
-                headers={"Authorization": f"Bearer {creds.cloudflare_api_token}"},
+                headers={"Authorization": f"Bearer {cloudflare_api_token}"},
             )
             with _urlreq.urlopen(req, timeout=8) as resp:
                 data = _json.loads(resp.read())
@@ -1125,7 +1133,7 @@ def credentials_status(db: Session = Depends(get_db), current_user=Depends(get_c
                 "connected": data.get("success", False),
                 "email": result.get("email"),
                 "username": result.get("username"),
-                "account_id": creds.cloudflare_account_id,
+                "account_id": cloudflare_account_id,
             }
         except Exception:
             out["cloudflare"] = {"connected": False}
@@ -1133,16 +1141,13 @@ def credentials_status(db: Session = Depends(get_db), current_user=Depends(get_c
         out["cloudflare"] = None
 
     # ── Railway ───────────────────────────────────────────────────────────────
-    # Railway personal tokens are UUIDs. Their GraphQL API doesn't expose
-    # user info for API tokens (only OAuth CLI sessions), so we validate
-    # the token format instead of making a live API call.
-    if creds.railway_token:
+    if railway_token:
         import re as _re
         _uuid_re = _re.compile(
             r'^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$',
             _re.IGNORECASE,
         )
-        valid = bool(_uuid_re.match(creds.railway_token.strip()))
+        valid = bool(_uuid_re.match(railway_token.strip()))
         out["railway"] = {"connected": valid, "name": "justin300507" if valid else None}
     else:
         out["railway"] = None
