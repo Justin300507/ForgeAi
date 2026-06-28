@@ -1,6 +1,6 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { Link, useNavigate } from "react-router-dom";
-import { jobsAPI } from "../api";
+import { jobsAPI, credentialsAPI } from "../api";
 
 const EXAMPLES = [
   "A habit tracker with streaks, badges, dark mode, and weekly reports",
@@ -16,10 +16,16 @@ const MODELS = [
 ];
 
 const DEPLOYMENTS = [
-  { id:"none",       emoji:"📁", label:"No deployment",    sub:"Generate & download only" },
-  { id:"cloudflare", emoji:"🌐", label:"Frontend only",    sub:"Cloudflare Pages (live in ~2 min)" },
-  { id:"both",       emoji:"🚀", label:"Full stack",       sub:"Cloudflare (instant) + Render backend (~5 min to build)" },
+  { id:"none",       emoji:"📁", label:"Download Only",  sub:"Generate & download the code", requires:[] },
+  { id:"cloudflare", emoji:"🌐", label:"Frontend Only",  sub:"Deploy to Cloudflare Pages",   requires:["github","cloudflare"] },
+  { id:"both",       emoji:"🚀", label:"Full Stack",     sub:"GitHub + Cloudflare + Railway", requires:["github","cloudflare","railway"] },
 ];
+
+const SERVICE_META = {
+  github:     { label:"GitHub",     icon:"🐙" },
+  cloudflare: { label:"Cloudflare", icon:"☁️" },
+  railway:    { label:"Railway",    icon:"🚂" },
+};
 
 function NavBar() {
   return (
@@ -47,7 +53,16 @@ export default function NewProject() {
   const [deploy, setDeploy] = useState("none");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
-  const [preview, setPreview] = useState(null); // null=idle, "running"=active
+  const [connStatus, setConnStatus] = useState(null);
+
+  useEffect(() => {
+    credentialsAPI.status().then(r => setConnStatus(r.data)).catch(() => {});
+  }, []);
+
+  const selected = DEPLOYMENTS.find(d => d.id === deploy);
+  const requiredServices = selected?.requires ?? [];
+  const allConnected = requiredServices.every(s => connStatus?.[s]?.connected === true);
+  const canSubmit = !loading && !!idea.trim() && (requiredServices.length === 0 || allConnected);
 
   const submit = async (e) => {
     e.preventDefault();
@@ -131,19 +146,61 @@ export default function NewProject() {
                       {deploy === d.id && <div className="w-2 h-2 rounded-full" style={{background:"#7c3aed"}} />}
                     </div>
                     <span className="text-lg">{d.emoji}</span>
-                    <div>
+                    <div className="flex-1 min-w-0">
                       <div className="text-sm font-semibold text-white">{d.label}</div>
                       <div className="text-xs text-gray-500">{d.sub}</div>
                     </div>
+                    {d.id !== "none" && deploy === d.id && (
+                      <span className="text-xs font-medium shrink-0" style={{color: allConnected ? "#34d399" : "#fbbf24"}}>
+                        {allConnected ? "Ready" : "Setup needed"}
+                      </span>
+                    )}
                   </button>
                 ))}
               </div>
+
+              {/* Required accounts */}
+              {requiredServices.length > 0 && (
+                <div className="mt-3 rounded-xl border border-white/8 p-4 space-y-2.5" style={{background:"#12121f"}}>
+                  <p className="text-xs text-gray-500 uppercase tracking-wide font-mono mb-1">Required accounts</p>
+                  {requiredServices.map(svc => {
+                    const meta = SERVICE_META[svc];
+                    const st = connStatus?.[svc];
+                    const connected = st?.connected === true;
+                    const acctLabel = st?.login || st?.name || st?.email || "Connected";
+                    return (
+                      <div key={svc} className="flex items-center gap-2.5">
+                        <span className="text-base w-5 text-center">{meta.icon}</span>
+                        <span className="text-sm text-gray-300 w-20 shrink-0">{meta.label}</span>
+                        {connected ? (
+                          <span className="text-xs flex items-center gap-1" style={{color:"#34d399"}}>
+                            <span>✓</span>
+                            <span className="truncate max-w-[140px]">{acctLabel}</span>
+                          </span>
+                        ) : (
+                          <Link to="/credentials"
+                            className="text-xs underline underline-offset-2"
+                            style={{color:"#a78bfa"}}>
+                            Connect →
+                          </Link>
+                        )}
+                      </div>
+                    );
+                  })}
+                  {!allConnected && (
+                    <p className="text-xs pt-1 border-t border-white/5" style={{color:"#fbbf24",opacity:0.8}}>
+                      Connect all accounts to enable deployment.
+                    </p>
+                  )}
+                </div>
+              )}
             </div>
 
-            <button type="submit" disabled={loading || !idea.trim()}
+            <button type="submit" disabled={!canSubmit}
               className="w-full font-semibold text-white py-3.5 rounded-xl text-sm transition-all disabled:opacity-40"
+              title={!allConnected && requiredServices.length > 0 ? "Connect all required accounts first" : undefined}
               style={{background:"#7c3aed"}}>
-              {loading ? "Starting generation…" : "⚡ Generate App"}
+              {loading ? "Starting generation…" : deploy === "none" ? "⚡ Generate App" : "⚡ Generate & Deploy"}
             </button>
           </form>
 
