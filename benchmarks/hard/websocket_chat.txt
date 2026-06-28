@@ -1,0 +1,1 @@
+A real-time group chat app with multiple rooms, typing indicators, online presence, and message history. Users authenticate with JWT and messages are stored in PostgreSQL.

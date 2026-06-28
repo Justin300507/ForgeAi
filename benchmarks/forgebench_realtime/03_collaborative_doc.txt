@@ -1,0 +1,1 @@
+A collaborative document editor with user login. Multiple users can open the same document and type simultaneously; every keystroke is broadcast via WebSocket so all editors see changes in real time. Documents are stored in a database and load their latest content on join. Show a live list of who is currently editing the document.

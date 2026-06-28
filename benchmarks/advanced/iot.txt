@@ -1,0 +1,1 @@
+An IoT monitoring dashboard. Devices send telemetry data (temperature, humidity, voltage). Dashboard shows real-time readings, historical charts, configurable alert thresholds, and device health status.

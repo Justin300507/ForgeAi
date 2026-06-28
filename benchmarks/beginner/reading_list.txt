@@ -1,0 +1,1 @@
+A book reading tracker. Users add books with title, author, and status (to-read/reading/done). Tracks pages read and finish date for completed books.

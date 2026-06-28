@@ -1,0 +1,1 @@
+A real-time gaming leaderboard with user login. Players submit scores for a named game; the backend immediately broadcasts the updated top-20 rankings to all connected viewers via WebSocket. The leaderboard highlights rank changes with a visual up/down indicator compared to the previous position. Admins can reset the leaderboard for a fresh competition.

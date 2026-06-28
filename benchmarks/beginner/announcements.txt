@@ -1,0 +1,1 @@
+A team announcements board. Admins post announcements with title, body, and priority. Team members can view and acknowledge announcements.

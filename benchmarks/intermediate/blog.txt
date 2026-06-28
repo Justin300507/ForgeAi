@@ -1,0 +1,1 @@
+A blog platform with posts, comments, and author profiles. Posts have title, content, cover image, tags, and published status. Readers can comment and like posts. Authors see post analytics.

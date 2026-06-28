@@ -1,0 +1,1 @@
+An appointment booking system. Service providers list their services and available time slots. Customers book appointments and receive confirmation. Providers can block time and view their schedule.

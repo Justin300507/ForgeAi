@@ -1,0 +1,1 @@
+A property management platform. Landlords list units, screen tenant applications, sign digital leases, collect online rent, handle maintenance requests, and generate financial reports.

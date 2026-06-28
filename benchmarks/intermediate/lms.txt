@@ -1,0 +1,1 @@
+An online learning platform with courses, lessons, and enrollments. Instructors create courses with video lessons and quizzes. Students enroll, track progress, and earn completion certificates.

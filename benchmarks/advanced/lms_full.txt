@@ -1,0 +1,1 @@
+A feature-complete learning management system with live video sessions, assignment submission and grading, peer review, certificates, discussion boards, progress analytics, and a course marketplace.

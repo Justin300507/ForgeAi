@@ -1,0 +1,1 @@
+An AI email drafting assistant with user login. Users enter bullet points describing what they want to say and choose a recipient context (colleague, client, executive). The backend asks the OpenAI API to produce three complete email drafts in different tones: professional, friendly, and concise. Users can edit any draft inline and save it to their draft library.

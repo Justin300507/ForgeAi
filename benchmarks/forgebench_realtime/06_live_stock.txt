@@ -1,0 +1,1 @@
+A stock watchlist app with user login. Users search for ticker symbols and add them to their personal watchlist. The backend simulates price changes every 2 seconds using a random walk and pushes updates to connected clients via WebSocket. The watchlist displays the current price, change since open, and total portfolio value, all updating in real time.

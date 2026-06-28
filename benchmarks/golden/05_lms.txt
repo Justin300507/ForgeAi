@@ -1,0 +1,1 @@
+A learning management system with two roles: instructor and student. Instructors create courses with title, description, and lessons (title, content text, order). Students enroll in courses and mark lessons complete. Student dashboard shows enrolled courses and completion percentage per course. Instructors see enrollment counts per course.

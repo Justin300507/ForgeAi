@@ -1,0 +1,1 @@
+A movie and TV show watchlist. Users add titles with genre, rating (1-5), and watch status. Can filter by genre and sort by rating.

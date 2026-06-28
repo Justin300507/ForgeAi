@@ -1,0 +1,1 @@
+A basic workout log. Users log exercises with sets, reps, and weight. Can view personal bests per exercise and workout history by date.

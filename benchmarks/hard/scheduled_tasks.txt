@@ -1,0 +1,1 @@
+A report automation platform. Users configure recurring reports (daily/weekly/monthly) that run on a schedule, generate PDF summaries, and email them to a distribution list. Uses APScheduler or similar.

@@ -1,0 +1,1 @@
+An airline management platform with flight scheduling, seat inventory and pricing, online check-in, boarding pass QR codes, baggage tracking, crew scheduling, loyalty program points, and revenue management analytics.

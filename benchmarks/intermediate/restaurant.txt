@@ -1,0 +1,1 @@
+A restaurant management system. Manages menu items, tables, and orders. Waitstaff take orders per table, kitchen sees pending orders, and management views daily sales reports.

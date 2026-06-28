@@ -1,0 +1,1 @@
+A smart city operations dashboard. Integrates traffic signal control, public transit tracking, utility meter readings, waste management routes, emergency dispatch, citizen service requests, and an executive city performance scorecard.

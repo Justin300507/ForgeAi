@@ -1,0 +1,1 @@
+An e-commerce store with admin and customer roles. Admins add products (name, description, price, stock quantity, category). Customers browse products, add to cart, and place orders. Order has status: pending/confirmed/shipped/delivered. Customers view order history with status. Admins view all orders and update their status. Stock decrements when order is placed.

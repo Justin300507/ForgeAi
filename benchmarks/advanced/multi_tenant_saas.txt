@@ -1,0 +1,1 @@
+A multi-tenant SaaS platform. Each organization has its own workspace with custom branding and isolated data. Includes role-based access control, usage-based billing, and an admin super-dashboard.

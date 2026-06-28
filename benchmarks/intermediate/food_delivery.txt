@@ -1,0 +1,1 @@
+A food delivery platform. Restaurants list menus. Customers browse, add to cart, and place orders. Delivery drivers accept and fulfill orders. Real-time order status tracking.

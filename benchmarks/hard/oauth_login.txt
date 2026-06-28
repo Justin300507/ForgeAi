@@ -1,0 +1,1 @@
+A developer portfolio site with GitHub OAuth login. Users authenticate via GitHub, import their repos, star projects, and publish a public profile page. No password storage.

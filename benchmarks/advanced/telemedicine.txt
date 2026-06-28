@@ -1,0 +1,1 @@
+A telemedicine platform. Patients book video consultations with doctors. Doctors access patient history, write prescriptions, and refer to specialists. Billing integrates with insurance.

@@ -1,0 +1,1 @@
+A church member management system. Tracks member profiles, cell groups, and ministry assignments. Records attendance, tithes, and special event sign-ups.

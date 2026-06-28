@@ -1,0 +1,1 @@
+A retail chain ERP. Manages multiple store locations, each with its own POS, staff, and inventory. Central purchasing, stock transfers between stores, promotions, and consolidated reporting.

@@ -1,0 +1,1 @@
+A code snippet manager with user accounts. Snippets have title, language, description, and code. Users can tag snippets and search by language or tag.

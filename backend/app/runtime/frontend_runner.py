@@ -95,18 +95,40 @@ class FrontendRunner:
                 node_missing=True,
             )
 
-        project_dir = Path(project_path)
+        project_dir = Path(project_path).resolve()
         package_json = project_dir / "package.json"
 
-        if not package_json.exists():
+        # Pre-flight diagnostics — printed unconditionally so failures are debuggable
+        print(f"[Frontend] cwd:          {project_dir}")
+        print(f"[Frontend] cwd exists:   {project_dir.exists()}")
+        print(f"[Frontend] package.json: {'✓ exists' if package_json.exists() else '✗ MISSING'}")
+        print(f"[Frontend] npm:          {npm}")
+
+        if not project_dir.exists():
             return FrontendBuildResult(
                 success=False,
                 exit_code=-1,
-                stderr="No package.json found — frontend templates were not written",
+                stderr=f"Project directory does not exist: {project_dir}",
             )
 
-        print(f"Frontend build in: {project_dir}")
-        print(f"Using npm: {npm}")
+        if not package_json.exists():
+            # List what IS in the directory to help debug wrong-path issues
+            try:
+                contents = [p.name for p in project_dir.iterdir()][:20]
+            except Exception:
+                contents = ["<unable to list>"]
+            return FrontendBuildResult(
+                success=False,
+                exit_code=-1,
+                stderr=(
+                    f"No package.json in {project_dir}. "
+                    f"Directory contains: {contents}. "
+                    "Check that the generator wrote frontend files with paths starting "
+                    "with src/ (not frontend/src/) or that the template injector ran."
+                ),
+            )
+
+        print(f"[Frontend] Building in: {project_dir}")
 
         # Ensure Node's own directory is on PATH so npm post-install scripts
         # (like esbuild's install.js) can call `node` directly.
@@ -120,27 +142,41 @@ class FrontendRunner:
         # ── npm install (only if node_modules is absent or stale) ────────
         node_modules = project_dir / "node_modules"
         if not node_modules.exists():
-            print("Installing frontend dependencies...")
+            print("[Frontend] Installing dependencies (npm install)...")
             install = subprocess.run(
-                [npm, "install", "--prefer-offline"],
-                cwd=project_dir,
+                # No --prefer-offline: Render has no npm cache, that flag causes
+                # silent ENOENT failures when packages aren't cached locally.
+                # --no-fund / --no-audit keep output clean; --legacy-peer-deps
+                # avoids peer conflict aborts on generated dependency sets.
+                [npm, "install", "--no-fund", "--no-audit", "--legacy-peer-deps"],
+                cwd=str(project_dir),
                 capture_output=True,
                 text=True,
-                timeout=180,
+                timeout=300,
                 env=env,
             )
             if install.returncode != 0:
+                # Full output — never truncate, debugging blind is the real cost
+                diag = (
+                    f"Working dir: {project_dir}\n"
+                    f"package.json exists: {package_json.exists()}\n"
+                    f"node_modules before: {node_modules.exists()}\n\n"
+                    f"--- stdout ---\n{install.stdout}\n"
+                    f"--- stderr ---\n{install.stderr}"
+                )
+                print(f"[Frontend] npm install FAILED (rc={install.returncode})")
+                print(diag)
                 return FrontendBuildResult(
                     success=False,
                     exit_code=install.returncode,
                     stdout=install.stdout,
-                    stderr=install.stderr,
-                    errors=[f"npm install failed: {install.stderr[:500]}"],
+                    stderr=diag,
+                    errors=[f"npm install failed (rc={install.returncode}): {install.stderr[:300]}"],
                     build_time=round(time.time() - t0, 2),
                 )
-            print("npm install complete")
+            print("[Frontend] npm install complete")
         else:
-            print("node_modules exists — skipping npm install")
+            print("[Frontend] node_modules exists — skipping npm install")
 
         # ── npm run build ────────────────────────────────────────────────
         print("Running vite build...")

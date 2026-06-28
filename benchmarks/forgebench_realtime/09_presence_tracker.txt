@@ -1,0 +1,1 @@
+A user presence tracker with user login. When a user opens any page in the app, they send a WebSocket heartbeat every 10 seconds indicating their current page. An admin dashboard displays a live list of online users with their name, current page, and how long they have been active. Users who miss two consecutive heartbeats are shown as offline within 30 seconds.

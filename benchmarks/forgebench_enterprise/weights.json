@@ -1,0 +1,23 @@
+{
+  "_comment": "Weights reflect enterprise complexity: multi-tenancy, workflow depth, compliance requirements. w=5 for full multi-tenant or complex multi-stage workflows, w=4 for structured workflows with approvals, w=3 for tracking/reporting without workflow state machines.",
+  "01_multi_tenant_saas":  5,
+  "02_rbac_system":        5,
+  "03_approval_workflow":  4,
+  "04_compliance_tracker": 4,
+  "05_vendor_portal":      4,
+  "06_sla_monitor":        3,
+  "07_data_catalog":       4,
+  "08_change_management":  4,
+  "09_license_manager":    3,
+  "10_contract_lifecycle": 4,
+  "11_incident_manager":   4,
+  "12_budget_allocation":  4,
+  "13_onboarding_system":  3,
+  "14_policy_manager":     3,
+  "15_asset_lifecycle":    3,
+  "16_supplier_scorecard": 4,
+  "17_project_governance": 5,
+  "18_risk_register":      5,
+  "19_audit_management":   5,
+  "20_capacity_planner":   4
+}

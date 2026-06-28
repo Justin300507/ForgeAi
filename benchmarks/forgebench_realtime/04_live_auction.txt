@@ -1,0 +1,1 @@
+A real-time auction platform with user login. Sellers list items with a starting price and an end time. Any visitor watching an auction sees the current highest bid, total bid count, and countdown timer update live via WebSocket whenever a new bid is placed. Users place bids and are immediately outbid-notified if someone beats them.

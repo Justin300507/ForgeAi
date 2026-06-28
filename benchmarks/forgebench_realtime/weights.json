@@ -1,0 +1,23 @@
+{
+  "_comment": "Weights reflect WebSocket/real-time complexity. Scale 3-5. w=5 for full collaborative sync, w=4 for moderately complex real-time, w=3 for push-only or simpler patterns.",
+  "01_live_chat":          3,
+  "02_live_dashboard":     3,
+  "03_collaborative_doc":  5,
+  "04_live_auction":       4,
+  "05_multiplayer_quiz":   4,
+  "06_live_stock":         3,
+  "07_live_notifications": 3,
+  "08_realtime_kanban":    4,
+  "09_presence_tracker":   3,
+  "10_live_order_tracking":3,
+  "11_pair_programming":   5,
+  "12_live_voting":        3,
+  "13_chat_support":       4,
+  "14_realtime_game":      3,
+  "15_live_whiteboard":    5,
+  "16_live_feed":          4,
+  "17_collab_spreadsheet": 5,
+  "18_live_leaderboard":   3,
+  "19_realtime_form":      4,
+  "20_event_stream":       3
+}

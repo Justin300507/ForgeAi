@@ -1,0 +1,1 @@
+A supply chain management platform. Manages suppliers, purchase orders, inbound shipments, goods receipt, warehouse put-away, outbound orders, and end-to-end shipment tracking.

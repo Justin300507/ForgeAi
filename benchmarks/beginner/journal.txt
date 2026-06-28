@@ -1,0 +1,1 @@
+A personal diary app with user authentication. Each entry has a date, mood (1-5), and free text. Users can view entries by month and see mood trends.

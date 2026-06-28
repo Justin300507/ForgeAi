@@ -1,0 +1,1 @@
+An operations monitoring dashboard with user login. The backend generates mock metrics every 5 seconds (CPU %, memory %, requests per minute, error rate) and pushes them to connected clients via WebSocket. The dashboard displays live charts for each metric and highlights values that exceed configurable thresholds in red.

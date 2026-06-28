@@ -1,0 +1,1 @@
+A healthcare network platform. Multiple clinics share patient records. Supports referrals between specialists, lab order integration, imaging reports, and cross-facility appointment scheduling.

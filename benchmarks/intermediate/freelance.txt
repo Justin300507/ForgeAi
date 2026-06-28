@@ -1,0 +1,1 @@
+A freelancer platform. Clients post projects with budget and skills required. Freelancers submit proposals. Client accepts one proposal. Milestones track payment and deliverables.

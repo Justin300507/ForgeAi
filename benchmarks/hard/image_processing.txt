@@ -1,0 +1,1 @@
+A photo album app where users upload images that are automatically resized to thumbnail, medium, and full-resolution versions using Pillow. Supports albums, tags, and a public gallery view.

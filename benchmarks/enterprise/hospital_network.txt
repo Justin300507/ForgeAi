@@ -1,0 +1,1 @@
+A multi-hospital network platform. Central patient identity management, cross-facility appointment booking, shared lab and imaging repository, interoperable clinical records, network-wide resource allocation, and consolidated financial billing.

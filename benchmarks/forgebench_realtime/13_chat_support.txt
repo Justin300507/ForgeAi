@@ -1,0 +1,1 @@
+A customer support live chat platform with customer and agent roles. Customers open a chat widget and enter a queue; they see their current position in the queue update live via WebSocket. When an agent picks up their session the chat opens and messages flow in real time. Agents see all open sessions and can switch between them; closed sessions are saved to a transcript history.

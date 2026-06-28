@@ -1,0 +1,1 @@
+An HR management system. Manages employee profiles, departments, and job positions. Handles leave requests (approval workflow), attendance tracking, and basic payroll calculation.

@@ -1,0 +1,1 @@
+A school management system. Manages students, teachers, classes, and subjects. Teachers enter grades per assignment. Students see their report card. Parents view their child's progress.

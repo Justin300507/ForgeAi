@@ -288,3 +288,92 @@ def estimate_cost_usd(provider: str, prompt_tokens: int, completion_tokens: int)
     rate = _COST_PER_M_TOKENS.get(provider, 1.0)
     total_tokens = prompt_tokens + completion_tokens
     return (total_tokens / 1_000_000) * rate
+
+
+# ── Data-driven provider learning ─────────────────────────────────────────────
+
+import json as _json
+from pathlib import Path as _Path
+
+_PERF_PATH = _Path(__file__).parent.parent.parent / "failure_memory" / "provider_perf.json"
+
+
+def _load_perf() -> dict:
+    if _PERF_PATH.exists():
+        try:
+            return _json.loads(_PERF_PATH.read_text(encoding="utf-8"))
+        except Exception:
+            pass
+    return {}
+
+
+def _save_perf(data: dict) -> None:
+    try:
+        _PERF_PATH.parent.mkdir(parents=True, exist_ok=True)
+        _PERF_PATH.write_text(_json.dumps(data, indent=2), encoding="utf-8")
+    except Exception:
+        pass
+
+
+def record_provider_outcome(
+    idea: str,
+    provider: str,
+    forge_score: float,
+    runtime_success: bool,
+) -> None:
+    """
+    Record provider performance for an idea after the run completes.
+    Over time this builds a data-driven map of:
+      category × provider → avg score + success rate
+
+    This feeds back into route() so the router becomes data-driven,
+    not just rule-based.
+    """
+    if provider in ("auto", ""):
+        return
+
+    try:
+        from app.knowledge.arch_db import classify_idea
+        category = classify_idea(idea)
+    except Exception:
+        category = "generic"
+
+    key = f"{category}::{provider}"
+    data = _load_perf()
+    entry = data.setdefault(key, {
+        "category": category, "provider": provider,
+        "seen": 0, "successes": 0, "total_score": 0.0,
+    })
+    entry["seen"] += 1
+    entry["total_score"] += forge_score
+    if runtime_success and forge_score >= 80:
+        entry["successes"] += 1
+    entry["avg_score"] = round(entry["total_score"] / entry["seen"], 1)
+    entry["success_rate"] = round(entry["successes"] / entry["seen"], 3)
+    _save_perf(data)
+
+
+def get_best_provider_for_category(category: str, stage: str = "backend") -> Optional[str]:
+    """
+    Return the data-driven best provider for a category+stage,
+    if we have ≥5 data points. Otherwise returns None (use rule-based routing).
+    """
+    data = _load_perf()
+    candidates = {
+        k: v for k, v in data.items()
+        if v.get("category") == category and v.get("seen", 0) >= 5
+    }
+    if not candidates:
+        return None
+
+    # Pick highest average score
+    best_key = max(candidates, key=lambda k: candidates[k].get("avg_score", 0))
+    return candidates[best_key].get("provider")
+
+
+def get_provider_leaderboard() -> list[dict]:
+    """Return provider performance sorted by avg score (best first)."""
+    data = _load_perf()
+    rows = list(data.values())
+    rows.sort(key=lambda r: r.get("avg_score", 0), reverse=True)
+    return rows

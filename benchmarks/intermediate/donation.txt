@@ -1,0 +1,1 @@
+A donation campaign platform. Nonprofits create fundraising campaigns with goals. Donors contribute and see campaign progress. Generates tax receipts and thank-you messages.

@@ -1,0 +1,1 @@
+A sleep tracker where users log bedtime, wake time, and quality (1-5). Shows average sleep duration and quality score for the past 30 days.

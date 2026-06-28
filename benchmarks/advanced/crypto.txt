@@ -1,0 +1,1 @@
+A cryptocurrency portfolio tracker. Connects to exchange APIs to import trades. Tracks cost basis, unrealized/realized P&L, portfolio diversification, historical performance, and tax report generation.

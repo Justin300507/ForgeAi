@@ -1,0 +1,1 @@
+A todo list app with user authentication and task priorities. Users can create, complete, and delete tasks. Each task has a title, due date, and priority level (high/medium/low).

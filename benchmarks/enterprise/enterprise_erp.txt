@@ -1,0 +1,1 @@
+A comprehensive enterprise ERP integrating HR (recruitment to payroll), Finance (GL, AR, AP, budgeting), Supply Chain (procurement to delivery), Manufacturing (BOM to quality), and executive KPI dashboards across all modules.

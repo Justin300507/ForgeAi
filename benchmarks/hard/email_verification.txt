@@ -1,0 +1,1 @@
+A user registration system with email verification, password reset via email, and account lockout after 5 failed login attempts. Uses SMTP for transactional emails.

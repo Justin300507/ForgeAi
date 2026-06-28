@@ -1,0 +1,1 @@
+An AI meeting notes processor with user login. Users paste a raw meeting transcript and hit process. The backend sends it to the OpenAI API and asks it to extract: a three-sentence summary, a list of action items (owner, task, deadline), key decisions made, and open questions remaining. The structured output is saved and browsable in a searchable meeting archive.

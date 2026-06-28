@@ -1,0 +1,1 @@
+A todo list app with user accounts. Users can register and log in. Each user sees only their own todos. Todos have a title, optional description, due date, priority (low/medium/high), and done/undone status. Users can create, edit, delete, and mark todos complete. Filter by status and priority.

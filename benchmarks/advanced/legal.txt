@@ -1,0 +1,1 @@
+A legal case management system. Manages matters, clients, opposing parties, court dates, document versions, timekeeping against cases, billing, and trust account reconciliation.

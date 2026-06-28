@@ -1,0 +1,1 @@
+A developer portfolio platform. Users create profiles with bio, skills, and project showcases. Projects have screenshots, tech stack, and live/repo links. Contact form sends email.

@@ -1,0 +1,1 @@
+A real-time admin notification system with user login. When backend events occur (new user registration, order placed, error logged), the server immediately pushes a toast notification to all connected admin sessions via WebSocket. Admins see a live notification bell with unread count; clicking it opens a panel showing recent events with timestamps and event type icons.

@@ -1,0 +1,1 @@
+A multi-tenant SaaS platform where every user belongs to an organization. Org admins can invite members, assign roles (admin/member), and view billing status. A superadmin account can see all organizations, suspend any org, and manage global settings. All data—projects, records, settings—is strictly isolated per organization so no tenant can see another's data.

@@ -1,0 +1,1 @@
+A customer support chatbot backed by OpenAI. Users describe their problem, the bot answers using a knowledge base of FAQ documents, escalates to human if confidence is low, and logs all conversations for review.

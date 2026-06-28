@@ -1,0 +1,1 @@
+A two-player online Tic-Tac-Toe game, no login required. Players enter a username and either create a room or join one with a code. When a player places their mark, the board state is pushed via WebSocket to the opponent immediately. The server enforces turn order and win detection; the result screen shows the winner and offers a rematch option.

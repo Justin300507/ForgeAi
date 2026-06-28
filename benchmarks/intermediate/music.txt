@@ -1,0 +1,1 @@
+A music streaming platform. Admins upload tracks with artist, album, and genre. Users create playlists, like songs, and view their listening history. Basic search functionality.

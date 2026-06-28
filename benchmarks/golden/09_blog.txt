@@ -1,0 +1,1 @@
+A blog CMS with author and reader roles. Authors write posts with title, content (markdown), tags, and cover image URL. Posts can be saved as draft or published. Readers see all published posts, can filter by tag, and read individual posts. Authors manage their own posts (create, edit, delete, publish). Post list shows title, author, date, and tag list.

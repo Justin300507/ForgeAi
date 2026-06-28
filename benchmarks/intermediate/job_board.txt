@@ -1,0 +1,1 @@
+A job board platform. Companies post jobs with requirements and salary range. Candidates create profiles, apply with cover letters. Companies review applications and update status.

@@ -104,24 +104,38 @@ class CloudflareProvider(BaseDeploymentProvider):
                 deploy_id=None, provider="cloudflare",
             )
 
+        # Pre-flight: log the directory so failures are debuggable
+        frontend_dir = Path(project_path)
+        print(f"  [Cloudflare] cwd:          {frontend_dir}")
+        print(f"  [Cloudflare] cwd exists:   {frontend_dir.exists()}")
+        print(f"  [Cloudflare] package.json: {'✓' if (frontend_dir / 'package.json').exists() else '✗ MISSING'}")
+
         # Build frontend
         npm = _npm()
         print(f"  [Cloudflare] Building frontend (npm={npm})...")
-        build_result = self._run([npm, "ci"], cwd, build_env)
-        logs.append(f"[npm ci]\n{build_result.stdout[-500:]}\n{build_result.stderr[-200:]}")
+        # Use npm install instead of npm ci — generated projects have no package-lock.json.
+        # --legacy-peer-deps avoids peer conflict aborts on generated dep sets.
+        build_result = self._run(
+            [npm, "install", "--no-fund", "--no-audit", "--legacy-peer-deps"],
+            cwd, build_env,
+        )
+        # Log full output, not just last 200 chars — ENOENT errors are in the middle
+        logs.append(f"[npm install]\nstdout:\n{build_result.stdout}\nstderr:\n{build_result.stderr}")
 
         if build_result.returncode != 0:
-            print(f"  [Cloudflare] npm ci failed (rc={build_result.returncode}), trying npm install...")
-            build_result = self._run([npm, "install"], cwd, build_env)
-            logs.append(f"[npm install fallback]\n{build_result.stderr[-200:]}")
-            if build_result.returncode != 0:
-                err = build_result.stderr[-400:]
-                print(f"  [Cloudflare] npm install also failed — {err[:120]}")
-                return DeploymentResult(
-                    success=False, url=None, logs="\n".join(logs),
-                    error=f"npm install failed: {err}",
-                    deploy_id=None, provider="cloudflare",
-                )
+            diag = (
+                f"Working dir: {frontend_dir}\n"
+                f"package.json exists: {(frontend_dir / 'package.json').exists()}\n\n"
+                f"stdout:\n{build_result.stdout}\n"
+                f"stderr:\n{build_result.stderr}"
+            )
+            print(f"  [Cloudflare] npm install FAILED (rc={build_result.returncode})")
+            print(diag[:800])
+            return DeploymentResult(
+                success=False, url=None, logs="\n".join(logs),
+                error=f"npm install failed (rc={build_result.returncode}):\n{diag}",
+                deploy_id=None, provider="cloudflare",
+            )
 
         build_result = self._run([npm, "run", "build"], cwd, build_env)
         logs.append(f"[npm build]\n{build_result.stdout[-500:]}\n{build_result.stderr[-300:]}")

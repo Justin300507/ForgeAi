@@ -1,0 +1,1 @@
+A live public voting app, no login required. Anyone can create a poll with a question and up to 6 options and share the poll link. Voters pick one option; the bar chart of vote percentages updates in real time via WebSocket for everyone watching the results page. One vote per browser session is enforced using a session token stored client-side.

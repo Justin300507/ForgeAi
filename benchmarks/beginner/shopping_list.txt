@@ -1,0 +1,1 @@
+A collaborative shopping list app. Users create lists, add items with quantity and category, and check them off. Multiple users can share a list.

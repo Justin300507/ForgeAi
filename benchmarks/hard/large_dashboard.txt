@@ -1,0 +1,1 @@
+An analytics dashboard for an e-commerce store. Shows real-time sales charts, conversion funnels, cohort retention, revenue by product, geographic heatmaps, and allows date-range filtering. Data is pre-aggregated for performance.

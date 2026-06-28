@@ -1,0 +1,1 @@
+An AI resume screening tool with user login. Recruiters paste a job description, then upload one or more resume texts. The backend sends each resume plus the job description to the OpenAI API and asks it to score the match from 0 to 100 with a brief reasoning paragraph. Results are displayed as a ranked table that recruiters can export or annotate.

@@ -1,0 +1,1 @@
+A logistics management platform. Manages carriers, shipment creation, multi-leg routing, customs documentation, delivery proof, invoice reconciliation, and carrier performance analytics.

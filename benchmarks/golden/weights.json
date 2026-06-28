@@ -1,0 +1,23 @@
+{
+  "_comment": "Weights reflect how much a failure reveals about system capability. Scale 1-5.",
+  "01_todo":             1,
+  "02_expense_tracker":  2,
+  "03_gym_tracker":      2,
+  "04_crm":              3,
+  "05_lms":              3,
+  "06_ecommerce":        3,
+  "07_chat":             5,
+  "08_booking":          3,
+  "09_blog":             2,
+  "10_portfolio":        2,
+  "11_ai_chatbot":       4,
+  "12_dashboard":        3,
+  "13_file_upload":      4,
+  "14_auth":             4,
+  "15_payment":          5,
+  "16_multiplayer_game": 5,
+  "17_admin_panel":      3,
+  "18_inventory":        2,
+  "19_hospital":         5,
+  "20_restaurant_pos":   3
+}

@@ -1,0 +1,1 @@
+A travel itinerary planner. Users create trips with destinations, dates, and daily activities. Can add hotels and flights. Shared itineraries allow collaborative editing.

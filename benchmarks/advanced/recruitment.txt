@@ -1,0 +1,1 @@
+A full recruitment platform. HR posts jobs, screens resumes with scoring, schedules multi-stage interviews, collects interviewer feedback, extends offers, and tracks time-to-hire analytics.

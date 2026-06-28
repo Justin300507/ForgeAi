@@ -1,0 +1,1 @@
+A collaborative form-filling tool with user login. One user (the filler) completes a multi-step form; a second user (the reviewer) watches the form fill out live via WebSocket as each field is typed. The reviewer can attach a text comment to any field; comments appear as inline annotations visible to both parties in real time. Completed forms are saved to a database.

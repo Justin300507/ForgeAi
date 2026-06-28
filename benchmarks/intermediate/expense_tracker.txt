@@ -1,0 +1,1 @@
+An expense tracker with budgets and categories. Users link bank transactions, set monthly budgets per category, and get alerts when over budget. Shows spending trends and monthly summaries.

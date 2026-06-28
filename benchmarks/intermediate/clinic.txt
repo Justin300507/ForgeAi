@@ -1,0 +1,1 @@
+A medical clinic system. Manages patients, doctors, and appointments. Doctors record visit notes, diagnoses, and prescriptions. Receptionists schedule appointments and handle billing.

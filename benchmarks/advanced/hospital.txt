@@ -1,0 +1,1 @@
+A hospital management system. Manages departments, doctors, nurses, patients, admissions, bed allocation, surgery scheduling, lab results, pharmacy dispensing, and insurance billing.

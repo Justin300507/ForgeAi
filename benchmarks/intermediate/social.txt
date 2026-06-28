@@ -1,0 +1,1 @@
+A social networking platform. Users post text and images, follow other users, and see a feed of people they follow. Supports likes, comments, and reposts.

@@ -1,0 +1,1 @@
+A manufacturing ERP. Manages bill of materials, production orders, raw material procurement, shop floor scheduling, quality control checkpoints, finished goods inventory, and production cost reporting.

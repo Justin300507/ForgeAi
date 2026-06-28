@@ -1,0 +1,1 @@
+A comprehensive school ERP. Handles admissions, student records across multiple grades, teacher assignments, exam scheduling, grade reporting, parent portal, fee management, and school-wide announcements.

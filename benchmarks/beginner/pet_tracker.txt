@@ -1,0 +1,1 @@
+A pet care tracker. Users manage multiple pets (name, species, breed, birthday). Log feeding, vet visits, and medications per pet.

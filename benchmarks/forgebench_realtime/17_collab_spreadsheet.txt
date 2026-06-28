@@ -1,0 +1,1 @@
+A collaborative spreadsheet with user login. Each sheet is a 10-column by 20-row grid of editable cells. When a user clicks a cell and types, other users viewing the same sheet see a colored border on that cell showing who is editing it, and the value updates live via WebSocket when the user moves away. Sheets are persisted in the database.

@@ -1,0 +1,1 @@
+A citizen services government portal. Citizens create verified accounts for permit applications, tax filings, license renewals, public record requests, complaint submissions, and payment of government fees. Includes inter-department workflow routing.

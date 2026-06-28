@@ -1,0 +1,1 @@
+A full-featured multi-vendor ecommerce platform. Vendors manage their storefronts. Supports product variants, promotions, abandoned cart recovery, multi-currency, reviews, and a seller analytics dashboard.

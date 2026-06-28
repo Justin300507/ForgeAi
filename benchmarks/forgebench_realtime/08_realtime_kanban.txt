@@ -1,0 +1,1 @@
+A Kanban project board with user login. The board has three columns: To Do, In Progress, Done. When a user drags a card to a different column, the change is broadcast via WebSocket so all other users viewing the same board see the card move instantly without refreshing. Users can create, rename, and delete cards; all changes sync in real time.

@@ -1,0 +1,1 @@
+A food delivery order tracking app with customer and delivery-staff roles. Customers place orders and then watch a live status page showing: order placed, being prepared, picked up, out for delivery, delivered. Delivery staff update the order status from their dashboard. Each status change is pushed to the customer's page instantly via WebSocket so they never need to refresh.

@@ -1,0 +1,1 @@
+A hotel booking platform. Manages room types, rates, and availability. Guests search dates and book rooms online. Front desk handles check-in/check-out. Shows occupancy reports.

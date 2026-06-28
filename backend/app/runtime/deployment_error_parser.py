@@ -43,6 +43,58 @@ def parse_deployment_error(
     combined = f"{logs or ''}\n{error or ''}"
     snippet = combined[-3000:]  # last 3000 chars have the most relevant info
 
+    # ── 0. Frontend / Cloudflare Pages build errors ─────────────────────
+    if _matches(snippet, [
+        "ENOENT",
+        "node_modules/.bin",
+        "npm ERR",
+        "npm install",
+        "Cannot find module",
+        "vite: not found",
+        "react-scripts",
+        "Cloudflare Pages",
+        "Failed to build",
+        "Build failed",
+    ]) and _matches(snippet, ["node", "npm", "vite", "webpack", "frontend", "build"]):
+        return _result(
+            error_type="FrontendBuildError",
+            message="Frontend npm/vite build failed",
+            fix_hint=(
+                "Ensure package.json has a 'build' script ('vite build'), "
+                "vite and @vitejs/plugin-react are in devDependencies, "
+                "and vite.config.js exists at the project root. "
+                "For Cloudflare Pages: set Build command to 'npm run build' "
+                "and Build output directory to 'dist'."
+            ),
+            fixable=True,
+            snippet=snippet[:500],
+        )
+
+    if _matches(snippet, ["Cloudflare", "wrangler", "_redirects", "_headers", "pages"]):
+        return _result(
+            error_type="CloudflareBuildError",
+            message="Cloudflare Pages deployment configuration error",
+            fix_hint=(
+                "Add public/_redirects with '/* /index.html 200' for SPA routing. "
+                "Set Build output directory to 'dist' in Cloudflare dashboard. "
+                "Ensure wrangler.toml is not present (Cloudflare Pages uses dashboard config)."
+            ),
+            fixable=True,
+            snippet=snippet[:500],
+        )
+
+    if _matches(snippet, ["render.yaml", "Render", "disk", "start command", "health check path"]):
+        return _result(
+            error_type="RenderTimeoutError",
+            message="Render deployment configuration issue",
+            fix_hint=(
+                "Add render.yaml with startCommand: 'uvicorn app.main:app --host 0.0.0.0 --port $PORT' "
+                "and healthCheckPath: /health"
+            ),
+            fixable=True,
+            snippet=snippet[:500],
+        )
+
     # ── 1. Build errors (pip install / Docker) ──────────────────────────
     if _matches(snippet, [
         "ERROR: Could not find a version",

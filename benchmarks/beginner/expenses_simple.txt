@@ -1,0 +1,1 @@
+A simple expense log where users record daily spending. Each expense has amount, category, date, and description. Shows monthly total per category.

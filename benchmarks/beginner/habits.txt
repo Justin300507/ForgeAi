@@ -1,0 +1,1 @@
+A daily habit tracker where users log habits they want to build. Tracks current and longest streak per habit. Shows a weekly completion calendar.

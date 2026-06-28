@@ -1,0 +1,1 @@
+A wishlist app where users create lists of items they want. Each item has a name, URL, price, and priority. Useful for gift tracking and saving goals.

@@ -1,0 +1,1 @@
+A full banking platform with retail banking (savings/checking/cards), corporate banking (trade finance, payroll), investment products (FDs, mutual funds), loan origination and servicing, fraud detection, and regulatory reporting.

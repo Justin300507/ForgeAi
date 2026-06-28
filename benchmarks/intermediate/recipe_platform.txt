@@ -1,0 +1,1 @@
+A public recipe sharing platform. Users post recipes with ingredients, steps, prep time, and difficulty. Others rate and comment. Features recipe collections and a meal planner.

@@ -1,0 +1,1 @@
+A shared drawing whiteboard with user login. Multiple users can open the same board and draw with a mouse or touch; every stroke is broadcast via WebSocket so all participants see it appear in real time. Supports at least three brush colors and an eraser. The canvas state is saved so rejoining users see the existing drawing.

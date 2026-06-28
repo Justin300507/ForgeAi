@@ -1,0 +1,1 @@
+An online auction platform. Sellers list items with starting price and end time. Buyers place bids. System auto-outbids up to a max amount. Winner notified when auction ends.

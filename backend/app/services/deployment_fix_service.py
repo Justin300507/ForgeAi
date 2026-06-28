@@ -52,6 +52,123 @@ def _fix_port_error(project_path: str, parsed_error: dict) -> dict | None:
     return None  # Dockerfile is written by deployment_service.py
 
 
+@_deterministic_fix("FrontendBuildError")
+def _fix_frontend_build(project_path: str, parsed_error: dict) -> dict | None:
+    """
+    Deterministic fixes for npm/Cloudflare Pages build failures.
+
+    Common causes of ENOENT mkdir node_modules/.bin:
+      - package.json missing a build script
+      - Wrong build root directory
+      - Malformed package.json
+    """
+    root = Path(project_path)
+    package_json_path = root / "package.json"
+    if not package_json_path.exists():
+        return None
+
+    try:
+        pkg = json.loads(package_json_path.read_text(encoding="utf-8"))
+    except Exception:
+        return None
+
+    changed = False
+
+    # Ensure build script exists
+    scripts = pkg.setdefault("scripts", {})
+    if "build" not in scripts:
+        scripts["build"] = "vite build"
+        changed = True
+
+    # Ensure preview script for Cloudflare compatibility
+    if "preview" not in scripts:
+        scripts["preview"] = "vite preview"
+        changed = True
+
+    # Ensure vite is in devDependencies
+    dev_deps = pkg.setdefault("devDependencies", {})
+    if "vite" not in dev_deps and "vite" not in pkg.get("dependencies", {}):
+        dev_deps["vite"] = "^5.0.0"
+        changed = True
+
+    if "@vitejs/plugin-react" not in dev_deps:
+        dev_deps["@vitejs/plugin-react"] = "^4.0.0"
+        changed = True
+
+    if changed:
+        package_json_path.write_text(json.dumps(pkg, indent=2), encoding="utf-8")
+
+    # Ensure vite.config.js exists at root
+    vite_config = root / "vite.config.js"
+    if not vite_config.exists():
+        vite_config.write_text(
+            'import { defineConfig } from "vite";\n'
+            'import react from "@vitejs/plugin-react";\n'
+            "export default defineConfig({ plugins: [react()] });\n",
+            encoding="utf-8",
+        )
+        changed = True
+
+    if changed:
+        return {"path": "package.json", "fix": "ensured build script, vite devDep, vite.config.js"}
+    return None
+
+
+@_deterministic_fix("CloudflareBuildError")
+def _fix_cloudflare_build(project_path: str, parsed_error: dict) -> dict | None:
+    """
+    Cloudflare Pages-specific fixes.
+    Writes a _headers file and ensures the build output directory is correct.
+    """
+    root = Path(project_path)
+    package_json_path = root / "package.json"
+    if not package_json_path.exists():
+        return None
+
+    # Write _headers for Cloudflare Pages SPA routing
+    headers_path = root / "public" / "_headers"
+    headers_path.parent.mkdir(parents=True, exist_ok=True)
+    if not headers_path.exists():
+        headers_path.write_text(
+            "/*\n"
+            "  X-Frame-Options: DENY\n"
+            "  X-Content-Type-Options: nosniff\n",
+            encoding="utf-8",
+        )
+
+    # Write _redirects for SPA fallback
+    redirects_path = root / "public" / "_redirects"
+    if not redirects_path.exists():
+        redirects_path.write_text("/* /index.html 200\n", encoding="utf-8")
+        return {"path": "public/_redirects", "fix": "added Cloudflare SPA redirect rules"}
+
+    return None
+
+
+@_deterministic_fix("RenderTimeoutError")
+def _fix_render_timeout(project_path: str, parsed_error: dict) -> dict | None:
+    """
+    Render deployment timeouts usually mean the app failed to bind to $PORT.
+    Ensure main.py respects the PORT env var.
+    """
+    root = Path(project_path)
+    render_yaml = root / "render.yaml"
+    if render_yaml.exists():
+        return None  # already configured
+
+    render_yaml.write_text(
+        "services:\n"
+        "  - type: web\n"
+        "    name: forgeai-app\n"
+        "    env: python\n"
+        "    buildCommand: pip install -r app/requirements.txt\n"
+        "    startCommand: uvicorn app.main:app --host 0.0.0.0 --port $PORT\n"
+        "    healthCheckPath: /health\n",
+        encoding="utf-8",
+    )
+    return {"path": "render.yaml", "fix": "added render.yaml with $PORT binding"}
+
+
 @_deterministic_fix("BuildError")
 def _fix_requirements(project_path: str, parsed_error: dict) -> dict | None:
     req_file = Path(project_path) / "app" / "requirements.txt"
@@ -357,3 +474,121 @@ def get_deployment_leaderboard() -> dict:
 def get_deployment_memory_summary() -> dict:
     """Raw memory dump — used by /deployment/memory endpoint."""
     return _load_memory()
+
+
+# ── Deployment Verification & Recovery Engine ─────────────────────────────────
+
+def verify_and_recover_deployment(
+    project_path: str,
+    live_url: str | None = None,
+    deploy_logs: str = "",
+    provider: str = "auto",
+    max_fix_attempts: int = 2,
+) -> dict:
+    """
+    Full deployment verification and recovery loop.
+
+    Steps:
+      1. Collect deployment logs / hit live URL for health data
+      2. Classify the failure type (deterministic, not LLM)
+      3. Apply deterministic fix if available
+      4. Fall back to LLM fix only for complex errors
+      5. Record outcome to deployment memory
+
+    Returns a structured result with what was tried and whether recovery succeeded.
+    """
+    from app.runtime.deployment_error_parser import parse_deployment_error
+    from app.runtime.deployment_validator import validate_deployment_with_retry
+
+    results: list[dict] = []
+    health_report: dict | None = None
+
+    # Step 1: Health check against live URL if provided
+    if live_url:
+        print(f"\n  [DeployVerify] Checking live URL: {live_url}")
+        health_report = validate_deployment_with_retry(live_url, retries=2, wait=10)
+        status = "PASS" if health_report.get("success") else "FAIL"
+        print(f"  [DeployVerify] Health check {status}: {health_report.get('error', 'ok')}")
+
+        if health_report.get("success"):
+            record_deployment_outcome(success=True)
+            return {
+                "success": True,
+                "health_report": health_report,
+                "fixes_applied": [],
+                "attempts": 0,
+                "message": "Deployment healthy — no recovery needed",
+            }
+
+    for attempt in range(1, max_fix_attempts + 1):
+        print(f"\n  [DeployVerify] Recovery attempt {attempt}/{max_fix_attempts}")
+
+        # Step 2: Classify failure
+        parsed_error = parse_deployment_error(
+            logs=deploy_logs,
+            url=live_url,
+            health_report=health_report,
+        )
+        error_type = parsed_error.get("type", "Unknown")
+        print(f"  [DeployVerify] Error classified: {error_type} — {parsed_error.get('message', '')}")
+
+        # Step 3: Apply fix
+        fix = generate_deployment_fix(
+            project_path=project_path,
+            parsed_error=parsed_error,
+            error_log=deploy_logs,
+            provider=provider,
+        )
+
+        if fix:
+            results.append({
+                "attempt": attempt,
+                "error_type": error_type,
+                "fix": fix.get("fix") or fix.get("path"),
+            })
+            print(f"  [DeployVerify] Fix applied: {fix.get('fix') or fix.get('path')}")
+        else:
+            print(f"  [DeployVerify] No fix available for {error_type}")
+            # If it's not fixable and we have no suggestions, stop retrying
+            if not parsed_error.get("fixable"):
+                break
+
+        # Step 4: Re-verify if we have a URL to check
+        if live_url and fix:
+            print(f"  [DeployVerify] Re-checking health after fix...")
+            # Short wait for potential redeploy (if auto-redeploy was triggered)
+            time.sleep(5)
+            health_report = validate_deployment_with_retry(live_url, retries=2, wait=10)
+            if health_report.get("success"):
+                print(f"  [DeployVerify] Recovery succeeded after {attempt} attempt(s)")
+                record_deployment_outcome(
+                    success=True,
+                    health_latency_ms=_extract_latency(health_report),
+                )
+                return {
+                    "success": True,
+                    "health_report": health_report,
+                    "fixes_applied": results,
+                    "attempts": attempt,
+                    "message": f"Recovered after {attempt} attempt(s)",
+                }
+
+    # All attempts exhausted
+    error_types = [r["error_type"] for r in results]
+    record_deployment_outcome(success=False, error_types=error_types)
+    return {
+        "success": False,
+        "health_report": health_report,
+        "fixes_applied": results,
+        "attempts": max_fix_attempts,
+        "message": (
+            f"Could not recover deployment after {max_fix_attempts} attempt(s). "
+            f"Error types seen: {', '.join(set(error_types)) or 'Unknown'}"
+        ),
+    }
+
+
+def _extract_latency(health_report: dict) -> int | None:
+    checks = health_report.get("checks") or {}
+    check = checks.get("/health") or {}
+    return check.get("latency_ms")

@@ -1,0 +1,1 @@
+A retail chain management platform for a franchise network. Central product catalogue, franchise-level ordering and inventory, store performance benchmarking, promotions engine, supplier portal, and real-time consolidated P&L reporting.

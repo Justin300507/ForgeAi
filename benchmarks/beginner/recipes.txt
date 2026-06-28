@@ -1,0 +1,1 @@
+A personal recipe collection. Recipes have title, ingredients list, steps, prep time, and a category (breakfast/lunch/dinner/dessert). Users can search and favourite recipes.

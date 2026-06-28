@@ -1,0 +1,1 @@
+An AI code review tool with user login. Users paste a code snippet and select the language; the backend sends it to the OpenAI API with a prompt requesting a structured review covering bugs, security issues, performance, and style suggestions. Each review is saved to a per-user history so users can browse past reviews and compare revisions.

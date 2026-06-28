@@ -1,0 +1,1 @@
+An advanced auction platform. Supports live auctions with real-time bid feed, sealed-bid auctions, reserve prices, buyer verification, payment escrow, and seller dispute resolution.

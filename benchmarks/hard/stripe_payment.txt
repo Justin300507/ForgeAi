@@ -1,0 +1,1 @@
+A subscription billing platform. Users select a plan (free/pro/enterprise), enter card details via Stripe, manage their subscription, view invoices, and cancel anytime. Includes webhook handling for payment events.

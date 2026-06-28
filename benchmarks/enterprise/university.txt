@@ -1,0 +1,1 @@
+A university management system covering admissions, course registration, academic records, research project management, grant tracking, library integration, alumni network, campus housing, and a public-facing student portal.

@@ -1,0 +1,1 @@
+A simple poll app. Users create polls with a question and up to 6 options. Anyone can vote once per poll. Shows live result percentages.

@@ -1,0 +1,1 @@
+An AI content generation platform. Users create text, image, and code generation jobs. Queued jobs run against configured AI providers. Includes usage metering, content moderation, and a prompt library.

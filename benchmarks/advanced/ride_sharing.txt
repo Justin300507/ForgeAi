@@ -1,0 +1,1 @@
+A ride-sharing platform. Riders request trips, drivers accept nearby requests. Dynamic surge pricing based on demand. Live location tracking, trip history, driver ratings, and earnings dashboard.

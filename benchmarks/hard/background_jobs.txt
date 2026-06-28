@@ -1,0 +1,1 @@
+A data export service. Users request CSV exports of large datasets (up to 1M rows). Exports run as background tasks, users get notified by email when ready, and can download the file for 24 hours.

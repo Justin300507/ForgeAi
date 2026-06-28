@@ -2,7 +2,7 @@ from app.runtime.backend_runner import BackendRunner
 from app.runtime.error_parser import parse_runtime_error
 
 
-def validate_runtime(project_path, architecture=None):
+def validate_runtime(project_path, architecture=None, port: int = 8001):
 
     try:
 
@@ -10,7 +10,8 @@ def validate_runtime(project_path, architecture=None):
 
         result = runner.run(
             project_path,
-            architecture=architecture
+            architecture=architecture,
+            port=port,
         )
 
         runtime_data = (

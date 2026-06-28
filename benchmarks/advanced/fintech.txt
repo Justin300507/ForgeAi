@@ -1,0 +1,1 @@
+A fintech portfolio dashboard. Tracks stocks, ETFs, and crypto across multiple accounts. Shows unrealized gain/loss, sector allocation, dividend history, and tax-lot reporting.

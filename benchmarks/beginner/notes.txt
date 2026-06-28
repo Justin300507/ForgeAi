@@ -1,0 +1,1 @@
+A note-taking app where users can create, edit, and delete notes. Notes belong to notebooks and can have tags. Supports searching notes by title or content.

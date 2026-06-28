@@ -22,6 +22,7 @@ from app.services.project_service import generate_project
 from app.services.planner_service import generate_plan
 from app.models.generation_job import GenerationJob
 from app.models.user_credentials import UserCredentials
+from app.queue.api import router as queue_router
 
 Base.metadata.create_all(bind=engine)
 
@@ -60,7 +61,9 @@ sys.stdout = _TeeStdout()
 JOB_STORE: dict[str, dict] = {}
 CHECK_STORE: dict[str, dict] = {}  # {job_id: {"status": str, "result": dict|None}}
 
-app = FastAPI(title="ForgeAI", version="14.0")
+app = FastAPI(title="ForgeAI", version="19.0")
+
+app.include_router(queue_router)
 
 app.add_middleware(
     CORSMiddleware,

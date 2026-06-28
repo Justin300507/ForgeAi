@@ -1,0 +1,1 @@
+A real-time group chat application with user login. Users create or join named chat rooms. Messages are delivered instantly to all room members via WebSocket without page refresh. Show typing indicators when another member is composing, and mark messages as read once a member has seen them.

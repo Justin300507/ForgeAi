@@ -1,0 +1,1 @@
+An event management system. Organizers create events with ticket types and quantities. Attendees purchase tickets and receive QR code confirmations. Event staff check in attendees.

@@ -1,0 +1,1 @@
+A banking platform with user accounts, savings and checking accounts, fund transfers, loan applications, fixed deposits, monthly statements, and a transaction dispute system.

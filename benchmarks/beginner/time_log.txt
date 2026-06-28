@@ -1,0 +1,1 @@
+A simple time entry tracker. Users log time against projects with start time, end time, and description. Shows total hours per project per week.

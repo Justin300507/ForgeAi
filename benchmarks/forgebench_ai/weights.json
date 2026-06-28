@@ -1,0 +1,23 @@
+{
+  "_comment": "Weights reflect AI integration complexity. w=5 for multi-step pipelines (RAG, vision+storage, multi-turn eval), w=4 for structured multi-output or stateful AI, w=3 for single-call completions.",
+  "01_qa_bot":            5,
+  "02_code_reviewer":     3,
+  "03_resume_screener":   4,
+  "04_email_drafts":      3,
+  "05_sentiment_analyzer":3,
+  "06_meeting_notes":     4,
+  "07_content_moderator": 4,
+  "08_ai_tutor":          4,
+  "09_sql_generator":     4,
+  "10_product_describer":  3,
+  "11_interview_prep":    4,
+  "12_legal_summarizer":  3,
+  "13_image_captioner":   5,
+  "14_competitor_analyzer":4,
+  "15_flashcard_generator":4,
+  "16_bug_reporter":      3,
+  "17_api_documenter":    4,
+  "18_data_interpreter":  5,
+  "19_persona_chat":      5,
+  "20_changelog_writer":  3
+}

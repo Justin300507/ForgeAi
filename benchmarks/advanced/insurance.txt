@@ -1,0 +1,1 @@
+An insurance platform supporting policy creation, premium calculation, policy issuance, claim submission, claim assessment workflow, payment processing, and renewal reminders.

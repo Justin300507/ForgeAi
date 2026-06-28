@@ -1,0 +1,1 @@
+A volunteer management platform. Organizations post volunteer opportunities with time slots. Volunteers sign up, log hours, and receive certificates. Admins track total hours per volunteer.

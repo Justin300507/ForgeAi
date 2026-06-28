@@ -1,0 +1,1 @@
+A warehouse management system. Manages locations (zone/aisle/bin), inventory positions, and pick orders. Staff receive inventory, locate stock, and fulfill outbound orders.

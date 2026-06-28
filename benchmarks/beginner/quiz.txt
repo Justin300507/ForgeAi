@@ -1,0 +1,1 @@
+A quiz builder. Admins create quizzes with multiple-choice questions. Users take quizzes and see their score. Tracks best score per user per quiz.

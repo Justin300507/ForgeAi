@@ -1,0 +1,1 @@
+A flashcard study app. Users create decks, add cards with front/back sides. Study mode shows cards randomly and marks them as known/unknown.

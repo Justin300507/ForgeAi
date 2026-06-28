@@ -1,0 +1,1 @@
+A document management system. Users upload PDF and Word files (up to 50MB), which are stored on disk, indexed by filename and tag, and searchable. Supports folder organization and file sharing via signed URLs.

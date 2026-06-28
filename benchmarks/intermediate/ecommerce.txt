@@ -1,0 +1,1 @@
+An online store with products, cart, and orders. Products have images, price, stock quantity, and category. Customers browse, add to cart, and place orders. Admins manage inventory and order status.

@@ -1,0 +1,1 @@
+A daily water intake tracker. Users set a daily goal in ml, log each drink, and see a progress bar. Shows a 7-day completion history.

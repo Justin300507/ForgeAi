@@ -1,0 +1,1 @@
+A library management system. Manages books (ISBN, author, copies), members, and loans. Members borrow and return books. System tracks overdue loans and sends reminder notices.

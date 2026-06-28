@@ -1,0 +1,1 @@
+A customer feedback form builder. Users create feedback forms with star rating and text fields. Collects responses and shows average ratings.

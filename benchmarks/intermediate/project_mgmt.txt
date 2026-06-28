@@ -1,0 +1,1 @@
+A project management tool with boards, tasks, and team members. Tasks have assignee, due date, priority, and status columns (backlog/in-progress/review/done). Teams can comment on tasks and attach files.

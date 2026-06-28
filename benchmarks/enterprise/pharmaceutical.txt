@@ -1,0 +1,1 @@
+A pharmaceutical supply chain and compliance platform. Tracks drug batches from manufacturing to dispensing, manages clinical trial data, handles FDA submission documentation, and enforces cold-chain temperature logging.

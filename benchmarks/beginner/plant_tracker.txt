@@ -1,0 +1,1 @@
+A houseplant care app. Each plant has a name, species, photo URL, and watering interval. Logs watering history and shows which plants are due for water today.

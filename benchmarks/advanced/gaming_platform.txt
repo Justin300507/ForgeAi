@@ -1,0 +1,1 @@
+A gaming tournament platform. Players register, join tournaments, submit match results, and climb leaderboards. Supports team-based games, prize pool tracking, and spectator mode.

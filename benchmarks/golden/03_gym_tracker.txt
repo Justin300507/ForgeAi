@@ -1,0 +1,1 @@
+A gym workout tracker with user login. Users create workout plans containing exercises (name, sets, reps, weight in kg). They log completed workout sessions per plan. Each session records actual sets/reps/weight for each exercise. Progress view shows weight lifted over time per exercise. Users can create, edit, and delete plans and sessions.

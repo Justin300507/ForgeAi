@@ -1,0 +1,1 @@
+A customer support ticketing system. Customers submit tickets with category and priority. Agents claim tickets, reply, and resolve them. Tracks first-response time and resolution time per agent.

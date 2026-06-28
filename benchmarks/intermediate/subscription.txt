@@ -1,0 +1,1 @@
+A subscription tracker app. Users log subscriptions (Netflix, gym, etc.) with cost, billing cycle, and renewal date. Monthly cost summary and upcoming renewals calendar.

@@ -1,0 +1,1 @@
+A nonprofit donor management system. Tracks donors, donation campaigns, and individual contributions. Generates donor receipts, campaign progress reports, and top donor leaderboards.

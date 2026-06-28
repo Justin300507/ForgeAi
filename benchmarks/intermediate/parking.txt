@@ -1,0 +1,1 @@
+A parking lot management system. Admins define parking spots by zone and size. Drivers reserve spots by time slot. System tracks occupancy and generates daily revenue reports.

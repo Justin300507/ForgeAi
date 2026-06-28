@@ -1,0 +1,1 @@
+A personal expense tracker with user login. Users log expenses with amount, category (food/transport/utilities/entertainment/other), date, and notes. Dashboard shows total spent this month, breakdown by category with percentages, and a list of recent transactions. Users can edit and delete expenses. Monthly summary view.

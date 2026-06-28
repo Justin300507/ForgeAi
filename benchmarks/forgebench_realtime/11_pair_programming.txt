@@ -1,0 +1,1 @@
+A pair programming session tool with user login. Two users join a named session and share a code editor. Every character typed by either user is immediately broadcast via WebSocket to the other, and each user's cursor position is shown as a colored highlight in the shared editor. Sessions are saved to the database and can be resumed later.

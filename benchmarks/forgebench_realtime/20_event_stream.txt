@@ -1,0 +1,1 @@
+A live event stream dashboard with user login. The backend emits a stream of business events (user signed up, purchase completed, error occurred, deployment finished) using Server-Sent Events. The frontend renders a scrolling event log showing event type, message, severity, and timestamp; new events prepend to the top. Admins can filter by event type and pause the stream.

@@ -1,0 +1,1 @@
+A real-time social feed with user login. Users follow other users and post short text updates. When someone you follow posts, their post appears at the top of your feed instantly via WebSocket without a page reload. Users can like posts; the like count updates live. Profile pages show all posts from that user in reverse-chronological order.

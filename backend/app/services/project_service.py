@@ -22,7 +22,8 @@ from app.services.runtime_validator_service import validate_runtime
 from app.services.runtime_fix_service import generate_runtime_fix
 from app.services.missing_file_service import generate_missing_file
 from app.services.forge_score_service import (
-    calculate_forge_score
+    calculate_forge_score,
+    build_pipeline_metrics,
 )
 from app.services.architecture_fix_service import (
     generate_architecture_fix
@@ -273,10 +274,26 @@ def generate_project(idea: str, provider: str = "auto", use_tournament: bool = F
     start = time.time()
     reset_session()  # clear cost tracker for this run
 
+    # Stage timing: records wall-clock seconds per pipeline stage
+    _t = {}
+    def _snap(name: str, t0: float) -> float:
+        _t[name] = round(time.time() - t0, 2)
+        return time.time()
+
+    # Cost snapshot helper
+    def _cost_now() -> float:
+        try:
+            from app.utils.cost_tracker import get_session_cost_usd
+            return get_session_cost_usd()
+        except Exception:
+            return 0.0
+
     # ------------------------------------------------------------------
     # 1. Planning & Architecture
     # ------------------------------------------------------------------
+    _t0 = time.time()
     plan = generate_plan(idea, provider)
+    _t0 = _snap("plan", _t0)
 
     tournament_result = None
     if use_tournament:
@@ -287,6 +304,7 @@ def generate_project(idea: str, provider: str = "auto", use_tournament: bool = F
               f"scores={tournament_result.scores}, duration={tournament_result.duration}s")
     else:
         architecture = generate_architecture(plan, provider)
+    _t0 = _snap("architect", _t0)
 
     # Sanitize any illegal characters in architecture file paths
     _sanitize_architecture_paths(architecture)
@@ -300,7 +318,9 @@ def generate_project(idea: str, provider: str = "auto", use_tournament: bool = F
     # 2. Code Generation
     # ------------------------------------------------------------------
     backend = generate_backend(architecture, provider)
+    _t0 = _snap("backend", _t0)
     frontend = generate_frontend(architecture, provider)
+    _t0 = _snap("frontend", _t0)
     all_files = []
     all_files.extend(backend["files"])
     all_files.extend(frontend["files"])
@@ -338,10 +358,19 @@ def generate_project(idea: str, provider: str = "auto", use_tournament: bool = F
     # ------------------------------------------------------------------
     # 5. Validation & Fix Loop
     # ------------------------------------------------------------------
+    _t0 = time.time()
     validation = validate_project(project_path)
+    _t["validation_first"] = round(time.time() - _t0, 2)
+
+    # Capture first-pass result BEFORE any repairs — used for ForgeBench metrics
+    first_pass_compile = validation.get("passed", False)
+    first_pass_error_count = len(validation.get("errors", []))
+    _cost_before_repairs = _cost_now()
 
     max_fix_attempts = 4          # increased from 2 to give more chances to auto‑fix
     fix_attempts_used = 0
+    _repair_files_changed: set[str] = set()
+    _repairs_start = time.time()
     runtime_result = None
 
     for attempt in range(max_fix_attempts):
@@ -464,6 +493,7 @@ def generate_project(idea: str, provider: str = "auto", use_tournament: bool = F
 
                 write_fix(project_path, fix)
                 save_fix_log(project_path, "\n".join(file_errors), fix)
+                _repair_files_changed.add(filepath)   # track for repair efficiency
 
             except Exception as e:
                 print(f"Fix Agent Failed: {str(e)}")
@@ -471,6 +501,9 @@ def generate_project(idea: str, provider: str = "auto", use_tournament: bool = F
 
         validation = validate_project(project_path)
         print(f"\nRevalidation Result: {validation}")
+
+    _t["repairs"] = round(time.time() - _repairs_start, 2)
+    _cost_after_repairs = _cost_now()
 
     # ------------------------------------------------------------------
     # 6. Architecture‑specific repairs (if any architecture errors remain)
@@ -543,6 +576,7 @@ def generate_project(idea: str, provider: str = "auto", use_tournament: bool = F
     if validation["passed"]:
         print("\n=== RUNTIME VALIDATION ===")
         max_runtime_fix_attempts = 2
+        _runtime_start = time.time()
 
         try:
             for runtime_attempt in range(max_runtime_fix_attempts + 1):
@@ -579,6 +613,8 @@ def generate_project(idea: str, provider: str = "auto", use_tournament: bool = F
         except Exception as e:
             runtime_result = {"success": False, "error": str(e)}
             print(f"Runtime Validation Failed: {e}")
+
+        _t["runtime"] = round(time.time() - _runtime_start, 2)
 
     # ------------------------------------------------------------------
     # 7b. Autonomous Regeneration (V4)
@@ -676,17 +712,9 @@ def generate_project(idea: str, provider: str = "auto", use_tournament: bool = F
             print(f"Playwright error: {e}")
             playwright_result = None
 
-    # ------------------------------------------------------------------
-    # 9b2. Full User Journey Testing (V5.5) — API-based E2E
-    # ------------------------------------------------------------------
-    journey_result = None
-    if runtime_result and runtime_result.get("success"):
-        print("\n=== USER JOURNEY (V5.5) ===")
-        try:
-            from app.runtime.user_journey_runner import run_user_journey
-            journey_result = run_user_journey(project_path, architecture)
-        except Exception as _je:
-            print(f"User journey error: {_je}")
+    # 9b2. User journey now runs inside BackendRunner while the server is alive.
+    # runtime_result["journey"] contains the serialized JourneyResult.
+    # We expose it here for backwards compatibility with the return value.
 
     # ------------------------------------------------------------------
     # 9c. Vision-Based UI Validation (V4)
@@ -786,6 +814,11 @@ def generate_project(idea: str, provider: str = "auto", use_tournament: bool = F
     )
     print(f"\nForge Score: {forge_score}")
 
+    pipeline_metrics = build_pipeline_metrics(
+        validation, runtime_result, frontend_build_result, playwright_result
+    )
+    print(f"Pipeline Metrics: {pipeline_metrics}")
+
     # V5.7: Print and persist cost summary
     try:
         print_session_cost()
@@ -815,6 +848,53 @@ def generate_project(idea: str, provider: str = "auto", use_tournament: bool = F
         )
     except Exception as _e:
         pass  # never let memory recording crash the pipeline
+
+    # ------------------------------------------------------------------
+    # Continuous Learning — update knowledge bases after every run
+    # ------------------------------------------------------------------
+    _runtime_success = runtime_result.get("success", False) if runtime_result else False
+    _score = forge_score.get("score", 0)
+
+    try:
+        from app.knowledge.arch_db import arch_db
+        arch_db.record(idea, architecture, plan, score=_score)
+    except Exception:
+        pass
+
+    try:
+        from app.knowledge.component_db import component_db
+        component_db.record_run(
+            project_path,
+            success=_runtime_success,
+            forge_score=_score,
+        )
+    except Exception:
+        pass
+
+    try:
+        from app.providers.model_router import record_provider_outcome
+        _provider_used = provider if provider != "auto" else "auto"
+        record_provider_outcome(idea, _provider_used, _score, _runtime_success)
+    except Exception:
+        pass
+
+    try:
+        from app.knowledge.project_history import project_history, build_run_from_result
+        _full_result = {
+            "architecture": architecture,
+            "validation": validation,
+            "runtime": runtime_result,
+            "frontend_build": frontend_build_result,
+            "forge_score": forge_score,
+            "pipeline_metrics": pipeline_metrics,
+            "project_path": project_path,
+            "stats": {"fix_attempts": fix_attempts_used},
+            "generation_time_seconds": total_time,
+        }
+        _run = build_run_from_result(idea, _full_result, provider=provider)
+        project_history.record(_run)
+    except Exception:
+        pass
 
     endpoint_coverage = calculate_endpoint_coverage(
         architecture,
@@ -890,16 +970,24 @@ def generate_project(idea: str, provider: str = "auto", use_tournament: bool = F
             "files_written": repo_docs_result.files_written if repo_docs_result else [],
             "skipped": repo_docs_result.skipped if repo_docs_result else True,
         } if repo_docs_result else None,
-        "journey": {
-            "success": journey_result.success if journey_result else None,
-            "steps_passed": sum(1 for s in (journey_result.steps if journey_result else []) if s.passed),
-            "steps_failed": sum(1 for s in (journey_result.steps if journey_result else []) if not s.passed),
-            "persistence_verified": journey_result.persistence_verified if journey_result else False,
-            "duration": journey_result.total_duration if journey_result else 0,
-            "skipped": journey_result.skipped if journey_result else True,
-        } if journey_result else None,
+        "journey": (runtime_result or {}).get("journey"),
         "stats": validation_stats,
+        "pipeline_metrics": pipeline_metrics,
         "generation_time_seconds": total_time,
+        "first_pass_compile": first_pass_compile,
+        "first_pass_error_count": first_pass_error_count,
+        "needs_repair": fix_attempts_used > 0,
+        "stage_timings": _t,
+        "cost_breakdown": {
+            "generation_usd": round(_cost_before_repairs, 5),
+            "repairs_usd":    round(_cost_after_repairs - _cost_before_repairs, 5),
+            "total_usd":      round(_cost_after_repairs, 5),
+        },
+        "repair_efficiency": {
+            "fix_attempts":        fix_attempts_used,
+            "files_changed":       len(_repair_files_changed),
+            "success_after_repair": validation.get("passed", False),
+        },
     }
 
 

@@ -1,0 +1,1 @@
+A local services finder. Users search for nearby plumbers, electricians, and cleaners by location, see results on an interactive map using Leaflet.js, filter by rating and price, book appointments, and leave reviews.

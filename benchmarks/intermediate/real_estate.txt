@@ -1,0 +1,1 @@
+A real estate listing platform. Agents list properties with photos, price, and details. Buyers browse and save favourites. Agents manage inquiries and schedule viewings.

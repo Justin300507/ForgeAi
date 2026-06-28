@@ -1,0 +1,1 @@
+An advanced fleet management system with real-time GPS tracking, route optimization, fuel consumption monitoring, predictive maintenance alerts, driver performance scoring, and compliance reporting.

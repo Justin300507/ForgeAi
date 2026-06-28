@@ -1,0 +1,1 @@
+A large-scale event ticketing platform. Supports venue seat maps with tiered pricing, group bookings, QR code scanning, exhibitor management, live attendance counts, and post-event analytics.

@@ -1,0 +1,1 @@
+A real-time multiplayer word guessing game. Players join rooms, take turns submitting guesses, see live scores, and get notified when the game ends. Uses WebSocket for synchronization.

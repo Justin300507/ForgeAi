@@ -1,0 +1,1 @@
+A telecom billing platform supporting plan management, usage-based metering (data/calls/SMS), invoicing, payment collection, dunning management, SIM lifecycle, network provisioning events, and regulatory compliance reporting.

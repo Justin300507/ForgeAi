@@ -1,0 +1,1 @@
+A gym management system. Manages member profiles, membership plans, class schedules, and trainer assignments. Members can book classes, track attendance, and view their workout history.

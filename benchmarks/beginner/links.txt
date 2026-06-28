@@ -1,0 +1,1 @@
+A link shortener. Users create short URLs for long links. Tracks total click count per link. Users can see all their links and delete old ones.

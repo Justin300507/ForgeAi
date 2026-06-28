@@ -1,0 +1,1 @@
+A fleet management system. Tracks vehicles with make, model, mileage, and assigned driver. Logs maintenance records and fuel fills. Alerts when service is due by mileage or date.

@@ -1,0 +1,1 @@
+A URL bookmark manager with user accounts. Bookmarks have a title, URL, description, and tags. Users can organize bookmarks into folders and search them.

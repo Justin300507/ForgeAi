@@ -1,0 +1,1 @@
+A CRM for small businesses. Manages contacts, companies, and deals through a sales pipeline (lead/qualified/proposal/won/lost). Includes follow-up tasks, deal value, and sales rep assignment.

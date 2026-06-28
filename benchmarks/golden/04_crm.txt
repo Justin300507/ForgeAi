@@ -1,0 +1,1 @@
+A simple CRM for small businesses with user login. Users manage contacts (name, email, phone, company, status: lead/prospect/customer/churned). Add notes to any contact with timestamps. Log interactions (call/email/meeting) with date and outcome. Pipeline view shows contacts grouped by status with counts. Search contacts by name or company.

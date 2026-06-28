@@ -1,0 +1,1 @@
+A personal contact book with user login. Contacts have name, email, phone, and address. Users can search, filter by category, and add notes to each contact.

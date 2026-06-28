@@ -1,0 +1,1 @@
+A peer-to-peer marketplace. Sellers list items with photos and price. Buyers browse, message sellers, and purchase. Includes ratings for buyers and sellers.

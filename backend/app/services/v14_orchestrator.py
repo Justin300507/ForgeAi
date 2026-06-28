@@ -145,7 +145,29 @@ def generate_project_v14(
 
     deployed = bool(backend_url or frontend_url)
     raw_score = v7_result.get("forge_score")
-    forge_score_int = raw_score.get("score") if isinstance(raw_score, dict) else raw_score
+    forge_score_int = raw_score.get("score") if isinstance(raw_score, dict) else (raw_score or 0)
+
+    # Apply deployment penalties to the reported score so a 100-point generation
+    # doesn't stay at 100 when the deploy pipeline failed.
+    frontend_deployed = bool(frontend_url)
+    backend_deployed  = bool(backend_url)
+    cloudflare_failed = (
+        not cloudflare_result.get("skipped")
+        and not cloudflare_result.get("success")
+        and not frontend_deployed
+    )
+    render_failed = (
+        not result.get("render", {}).get("skipped")
+        and not backend_deployed
+        and "render" in (result.get("render") or {})
+    )
+    if cloudflare_failed:
+        forge_score_int = max(0, forge_score_int - 20)
+        print(f"[Score] -20 Cloudflare deploy failed → adjusted score: {forge_score_int}")
+    if render_failed:
+        forge_score_int = max(0, forge_score_int - 20)
+        print(f"[Score] -20 Render deploy failed → adjusted score: {forge_score_int}")
+
     result["report"] = {
         "status": "deployed" if deployed else "generated",
         "project_name": project_name,
@@ -383,10 +405,17 @@ def retry_project_v14(
     total_time = round(time.time() - start, 2)
     result["total_time"] = total_time
     deployed = bool(backend_url or frontend_url)
+
+    raw_score = repair_result.get("forge_score")
+    retry_score = raw_score.get("score") if isinstance(raw_score, dict) else (raw_score or 0)
+    if not cloudflare_result.get("skipped") and not cloudflare_result.get("success") and not frontend_url:
+        retry_score = max(0, retry_score - 20)
+        print(f"[Score] -20 Cloudflare deploy failed → retry adjusted score: {retry_score}")
+
     result["report"] = {
         "status": "deployed" if deployed else "repaired",
         "project_name": project_name,
-        "forge_score": repair_result.get("forge_score"),
+        "forge_score": retry_score,
         "backend_url": backend_url,
         "frontend_url": frontend_url,
         "github_url": github_result.get("repo_url"),

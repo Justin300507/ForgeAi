@@ -1,0 +1,1 @@
+A real-time group chat application with user login. Users join named chat rooms. Messages appear instantly via WebSocket without page refresh. Each message shows sender name and timestamp. Users can see who else is currently in the room (online presence). Create new rooms, list available rooms, and leave rooms. Message history loads when joining a room.

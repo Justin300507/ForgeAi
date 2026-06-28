@@ -1,0 +1,1 @@
+A sports league management system. Manages teams, players, and match schedules. Records match scores and auto-calculates league standings. Players see their stats per season.
