@@ -330,7 +330,7 @@ export default function Generate() {
                             </span>
                           ) : (
                             <Link
-                              to="/credentials"
+                              to="/settings"
                               className="text-xs text-violet-400 hover:text-violet-300 underline underline-offset-2"
                             >
                               Connect →
