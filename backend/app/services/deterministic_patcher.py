@@ -580,6 +580,127 @@ def _patch_router_names(project_path: Path) -> int:
     return patched
 
 
+# ── 9. Known-good app/utils/auth.py injection ────────────────────────────────
+# LLM-generated auth files often use passlib, python-jose, or miss get_current_user.
+# We overwrite with a template that uses bcrypt + PyJWT directly.
+
+_AUTH_UTILS_TEMPLATE = '''\
+import os
+from datetime import datetime, timedelta
+from typing import Optional
+
+import bcrypt
+import jwt
+from fastapi import Depends, HTTPException, status
+from fastapi.security import OAuth2PasswordBearer
+from sqlalchemy.orm import Session
+
+from app.database import get_db
+
+SECRET_KEY = os.getenv("SECRET_KEY", "changeme-dev-secret")
+ALGORITHM = "HS256"
+ACCESS_TOKEN_EXPIRE_MINUTES = 60 * 24 * 7
+
+oauth2_scheme = OAuth2PasswordBearer(tokenUrl="/auth/login")
+
+
+def get_password_hash(password: str) -> str:
+    return bcrypt.hashpw(password.encode("utf-8"), bcrypt.gensalt()).decode("utf-8")
+
+
+def verify_password(plain: str, hashed: str) -> bool:
+    try:
+        return bcrypt.checkpw(plain.encode("utf-8"), hashed.encode("utf-8"))
+    except Exception:
+        return False
+
+
+def create_access_token(data: dict, expires_delta: Optional[timedelta] = None) -> str:
+    to_encode = data.copy()
+    expire = datetime.utcnow() + (expires_delta or timedelta(minutes=ACCESS_TOKEN_EXPIRE_MINUTES))
+    to_encode["exp"] = expire
+    return jwt.encode(to_encode, SECRET_KEY, algorithm=ALGORITHM)
+
+
+def get_current_user(token: str = Depends(oauth2_scheme), db: Session = Depends(get_db)):
+    from app.models.user import User
+    credentials_exception = HTTPException(
+        status_code=status.HTTP_401_UNAUTHORIZED,
+        detail="Could not validate credentials",
+        headers={"WWW-Authenticate": "Bearer"},
+    )
+    try:
+        payload = jwt.decode(token, SECRET_KEY, algorithms=[ALGORITHM])
+        email: str = payload.get("sub")
+        if not email:
+            raise credentials_exception
+    except Exception:
+        raise credentials_exception
+    user = db.query(User).filter(User.email == email).first()
+    if not user:
+        raise credentials_exception
+    return user
+'''
+
+
+def _patch_auth_utils(project_path: Path) -> None:
+    utils_dir = project_path / "app" / "utils"
+    auth_file = utils_dir / "auth.py"
+
+    if not utils_dir.exists():
+        return
+
+    should_inject = False
+    if not auth_file.exists():
+        should_inject = True
+    else:
+        try:
+            content = auth_file.read_text(encoding="utf-8", errors="replace")
+            if "passlib" in content or "werkzeug" in content:
+                should_inject = True
+            elif "python_jose" in content or "from jose" in content:
+                should_inject = True
+            elif "get_current_user" not in content or "verify_password" not in content:
+                should_inject = True
+        except Exception:
+            should_inject = True
+
+    if should_inject:
+        auth_file.write_text(_AUTH_UTILS_TEMPLATE, encoding="utf-8")
+        print(f"  [patcher] Injected known-good app/utils/auth.py")
+
+
+def _patch_auth_requirements(project_path: Path) -> None:
+    req_file = project_path / "app" / "requirements.txt"
+    if not req_file.exists():
+        return
+    try:
+        lines = req_file.read_text(encoding="utf-8").splitlines()
+    except Exception:
+        return
+
+    out = []
+    has_pyjwt = False
+    has_bcrypt = False
+    for line in lines:
+        stripped = line.strip().lower()
+        # Remove broken/replaced auth packages
+        if stripped.startswith("passlib") or stripped.startswith("python-jose"):
+            continue
+        if stripped.startswith("pyjwt") or stripped == "jwt":
+            has_pyjwt = True
+        if stripped.startswith("bcrypt"):
+            has_bcrypt = True
+        out.append(line)
+
+    if not has_pyjwt:
+        out.append("PyJWT")
+    if not has_bcrypt:
+        out.append("bcrypt")
+
+    req_file.write_text("\n".join(out) + "\n", encoding="utf-8")
+
+
 # ── Main entry point ──────────────────────────────────────────────────────────
 
 def run_deterministic_patches(project_path: str) -> int:
@@ -631,6 +752,10 @@ def run_deterministic_patches(project_path: str) -> int:
 
     # Router names: `router` → `{resource}_router` (eliminates RouterExportMismatch)
     _patch_router_names(root)
+
+    # Auth utils: inject known-good app/utils/auth.py (eliminates passlib/jose login crashes)
+    _patch_auth_utils(root)
+    _patch_auth_requirements(root)
 
     if modified:
         print(f"  [patcher] Patched {modified} file(s) — passlib→bcrypt, async→sync, smart quotes")

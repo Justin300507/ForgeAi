@@ -68,6 +68,113 @@ const LOG_CLS = (line) => {
   return "#9ca3af";
 };
 
+function CheckPanel({ jobId, backendUrl }) {
+  const [checking, setChecking] = useState(false);
+  const [checkData, setCheckData] = useState(null);
+  const pollRef = useRef(null);
+
+  const startCheck = async () => {
+    setChecking(true);
+    setCheckData(null);
+    try {
+      await jobsAPI.checkDeployed(jobId);
+      // Poll for result
+      pollRef.current = setInterval(async () => {
+        try {
+          const r = await jobsAPI.checkStatus(jobId);
+          if (r.data.status === "done" || r.data.status === "error") {
+            setCheckData(r.data);
+            setChecking(false);
+            clearInterval(pollRef.current);
+          }
+        } catch {}
+      }, 2000);
+    } catch (e) {
+      setChecking(false);
+      setCheckData({ status: "error", result: { error: e.response?.data?.detail || String(e) } });
+    }
+  };
+
+  useEffect(() => () => clearInterval(pollRef.current), []);
+
+  const result = checkData?.result;
+  const errors = result?.errors || [];
+  const passed = result?.passed || [];
+  const fixes  = result?.fixes  || [];
+
+  return (
+    <div className="mt-4 pt-4 border-t border-white/5 space-y-3">
+      <div className="flex items-center gap-3">
+        <button
+          onClick={startCheck}
+          disabled={checking}
+          className="text-xs font-medium px-3 py-1.5 rounded-lg border transition-all disabled:opacity-50"
+          style={{background:"rgba(34,197,94,0.12)",color:"#4ade80",borderColor:"rgba(34,197,94,0.25)"}}>
+          {checking ? (
+            <span className="flex items-center gap-1.5">
+              <span className="w-2.5 h-2.5 rounded-full bg-green-400 animate-pulse inline-block" />
+              Checking…
+            </span>
+          ) : "🔍 Check & Fix deployed app"}
+        </button>
+        {checking && <span className="text-xs text-gray-600">Testing auth, CORS, endpoints… (~30s)</span>}
+      </div>
+
+      {result && (
+        <div className="rounded-xl border border-white/8 overflow-hidden text-xs" style={{background:"#0d0d1a"}}>
+          <div className="px-4 py-2.5 border-b border-white/5 flex items-center gap-2">
+            <span className="font-medium" style={{color: errors.length === 0 ? "#4ade80" : "#f87171"}}>
+              {errors.length === 0 ? "✓ All checks passed" : `${errors.length} issue${errors.length > 1 ? "s" : ""} found`}
+            </span>
+            {result.ready && <span className="text-gray-600">· backend is live</span>}
+            {!result.ready && <span className="text-yellow-500">· backend still starting up</span>}
+          </div>
+
+          {passed.length > 0 && (
+            <div className="px-4 py-2 space-y-0.5">
+              {passed.map((p, i) => (
+                <div key={i} className="flex items-start gap-2 text-green-400/80">
+                  <span className="mt-0.5 shrink-0">✓</span><span>{p}</span>
+                </div>
+              ))}
+            </div>
+          )}
+
+          {errors.length > 0 && (
+            <div className="px-4 py-2 space-y-2 border-t border-white/5">
+              {errors.map((e, i) => (
+                <div key={i} className="space-y-0.5">
+                  <div className="flex items-start gap-2 text-red-400">
+                    <span className="mt-0.5 shrink-0">✕</span>
+                    <span><strong>{e.type}</strong> {e.endpoint} {e.status ? `→ ${e.status}` : ""}</span>
+                  </div>
+                  <div className="ml-4 text-gray-600">{e.detail}</div>
+                  <div className="ml-4 text-yellow-600/80">Fix: {e.fix_hint}</div>
+                </div>
+              ))}
+            </div>
+          )}
+
+          {fixes.length > 0 && (
+            <div className="px-4 py-2.5 border-t border-white/5 space-y-1">
+              <div className="font-medium text-blue-400 mb-1">Fixes applied:</div>
+              {fixes.map((f, i) => (
+                <div key={i} className="flex items-start gap-2 text-blue-300/80">
+                  <span className="shrink-0">→</span><span>{f}</span>
+                </div>
+              ))}
+            </div>
+          )}
+
+          {result.error && (
+            <div className="px-4 py-2.5 border-t border-white/5 text-red-400">{result.error}</div>
+          )}
+        </div>
+      )}
+    </div>
+  );
+}
+
 export default function ProjectDetail() {
   const { id } = useParams();
   const [job, setJob] = useState(null);
@@ -164,6 +271,9 @@ export default function ProjectDetail() {
                 className="text-xs font-medium px-3 py-1.5 rounded-lg border border-white/8 text-gray-400 hover:text-white"
                 style={{background:"rgba(255,255,255,0.04)"}}>⬇️ Download zip</a>}
             </div>
+          )}
+          {isDone && job.backend_url && (
+            <CheckPanel jobId={id} backendUrl={job.backend_url} />
           )}
           {isActive && (
             <div className="mt-4 pt-4 border-t border-white/5">

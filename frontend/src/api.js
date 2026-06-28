@@ -25,6 +25,8 @@ export const jobsAPI = {
   get: (id) => api.get(`/jobs/${id}`),
   cancel: (id) => api.post(`/jobs/${id}/cancel`),
   retry: (id) => api.post(`/jobs/${id}/retry`),
+  checkDeployed: (id) => api.post(`/jobs/${id}/check-deployed`),
+  checkStatus: (id) => api.get(`/jobs/${id}/check-status`),
 };
 
 export const credentialsAPI = {

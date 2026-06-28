@@ -58,6 +58,7 @@ sys.stdout = _TeeStdout()
 # {job_id: {"status": str, "logs": list[str], "result": dict|None, "error": str|None,
 #            "cancel_event": threading.Event}}
 JOB_STORE: dict[str, dict] = {}
+CHECK_STORE: dict[str, dict] = {}  # {job_id: {"status": str, "result": dict|None}}
 
 app = FastAPI(title="ForgeAI", version="14.0")
 
@@ -376,6 +377,85 @@ def retry_job(
     return {"job_id": new_job_id, "resumed_from_files": project_files_exist}
 
 
+# ── Post-deploy error checker ─────────────────────────────────────────────────
+
+def _run_check_and_fix(job_id: str, backend_url: str, project_name: str | None,
+                       github_url: str | None, creds: dict):
+    from app.services.deployed_checker import check_deployed_app
+    from app.services.deployed_fixer import fix_deployed_app
+    import os
+
+    CHECK_STORE[job_id] = {"status": "checking", "result": None}
+    try:
+        check_result = check_deployed_app(backend_url)
+        fixes: list[str] = []
+        if check_result.get("errors"):
+            project_path = os.path.join("generated_projects", project_name) if project_name else None
+            fix_result = fix_deployed_app(check_result, project_path, github_url, creds)
+            fixes = fix_result.get("fixes", [])
+        CHECK_STORE[job_id] = {"status": "done", "result": {**check_result, "fixes": fixes}}
+    except Exception as e:
+        CHECK_STORE[job_id] = {"status": "error", "result": {"error": str(e)}}
+
+
+@app.post("/jobs/{job_id}/check-deployed", tags=["jobs"])
+def check_deployed_job(
+    job_id: str,
+    background_tasks: BackgroundTasks,
+    db: Session = Depends(get_db),
+    current_user=Depends(get_current_user),
+):
+    """Check a deployed app for errors and automatically fix + redeploy."""
+    job = db.query(GenerationJob).filter(
+        GenerationJob.id == job_id,
+        GenerationJob.user_id == current_user.id,
+    ).first()
+    if not job:
+        raise HTTPException(status_code=404, detail="Job not found")
+    if not job.backend_url:
+        raise HTTPException(status_code=400, detail="No backend URL — deploy first")
+
+    # Collect user credentials for GitHub push
+    from app.database import SessionLocal
+    creds: dict = {}
+    try:
+        _db = SessionLocal()
+        _creds = _db.query(UserCredentials).filter(UserCredentials.user_id == current_user.id).first()
+        if _creds:
+            creds = {
+                "GITHUB_TOKEN": _creds.github_token,
+                "RENDER_API_KEY": _creds.render_api_key,
+                "CLOUDFLARE_API_TOKEN": _creds.cloudflare_api_token,
+                "CLOUDFLARE_ACCOUNT_ID": _creds.cloudflare_account_id,
+            }
+        _db.close()
+    except Exception:
+        pass
+
+    CHECK_STORE[job_id] = {"status": "checking", "result": None}
+    background_tasks.add_task(
+        _run_check_and_fix, job_id, job.backend_url,
+        job.project_name, job.github_url, creds,
+    )
+    return {"status": "checking", "message": f"Checking {job.backend_url}..."}
+
+
+@app.get("/jobs/{job_id}/check-status", tags=["jobs"])
+def get_check_status(
+    job_id: str,
+    db: Session = Depends(get_db),
+    current_user=Depends(get_current_user),
+):
+    """Poll for check-deployed result."""
+    job = db.query(GenerationJob).filter(
+        GenerationJob.id == job_id,
+        GenerationJob.user_id == current_user.id,
+    ).first()
+    if not job:
+        raise HTTPException(status_code=404, detail="Job not found")
+    return CHECK_STORE.get(job_id, {"status": "not_started", "result": None})
+
+
 @app.post("/jobs", tags=["jobs"])
 def create_job(
     req: JobRequest,
@@ -430,6 +510,7 @@ def get_job(job_id: str, db: Session = Depends(get_db), current_user=Depends(get
 
 
 def _job_to_dict(job: GenerationJob) -> dict:
+    check = CHECK_STORE.get(job.id, {})
     return {
         "id": job.id,
         "idea": job.idea,
@@ -445,6 +526,8 @@ def _job_to_dict(job: GenerationJob) -> dict:
         "error": job.error,
         "created_at": job.created_at.isoformat() if job.created_at else None,
         "completed_at": job.completed_at.isoformat() if job.completed_at else None,
+        "check_status": check.get("status"),
+        "check_result": check.get("result"),
     }
 
 
