@@ -26,6 +26,15 @@ from app.queue.api import router as queue_router
 
 Base.metadata.create_all(bind=engine)
 
+# Add railway_token column if upgrading from a version that had render fields
+from sqlalchemy import text as _sql_text
+with engine.connect() as _conn:
+    try:
+        _conn.execute(_sql_text("ALTER TABLE user_credentials ADD COLUMN railway_token VARCHAR(512)"))
+        _conn.commit()
+    except Exception:
+        pass  # column already exists
+
 # ── Per-job stdout tee ────────────────────────────────────────────────────────
 
 _thread_local = threading.local()
@@ -148,8 +157,7 @@ def _run_job(job_id: str, req: JobRequest):
         if _creds:
             _env_map = {
                 "GITHUB_TOKEN": _creds.github_token,
-                "RENDER_API_KEY": _creds.render_api_key,
-                "RENDER_OWNER_ID": _creds.render_owner_id,
+                "RAILWAY_TOKEN": _creds.railway_token,
                 "CLOUDFLARE_API_TOKEN": _creds.cloudflare_api_token,
                 "CLOUDFLARE_ACCOUNT_ID": _creds.cloudflare_account_id,
             }
@@ -427,7 +435,7 @@ def check_deployed_job(
         if _creds:
             creds = {
                 "GITHUB_TOKEN": _creds.github_token,
-                "RENDER_API_KEY": _creds.render_api_key,
+                "RAILWAY_TOKEN": _creds.railway_token,
                 "CLOUDFLARE_API_TOKEN": _creds.cloudflare_api_token,
                 "CLOUDFLARE_ACCOUNT_ID": _creds.cloudflare_account_id,
             }
@@ -944,25 +952,23 @@ class V15Request(BaseModel):
     idea: str
     provider: str = "auto"
     deploy: bool = True
-    deploy_to: str = "both"          # "render" | "cloudflare" | "both" | "none"
+    deploy_to: str = "both"          # "railway" | "cloudflare" | "both" | "none"
 
 
 @app.post("/project/v14")
 def project_v14(request: V14Request):
     """
     V14 — One-Click Deployment Platform.
-    Generates, validates, pushes to GitHub, deploys backend to Render,
+    Generates, validates, pushes to GitHub, deploys backend to Railway,
     deploys frontend to Cloudflare Pages, runs health checks, returns a report.
 
     deploy_to options:
       "none"       — generate + configs only (default, no credentials needed)
-      "render"     — deploy backend to Render (needs RENDER_API_KEY + RENDER_OWNER_ID + GITHUB_TOKEN)
+      "railway"    — deploy backend to Railway (needs RAILWAY_TOKEN + GITHUB_TOKEN)
       "cloudflare" — deploy frontend to Cloudflare Pages (needs CLOUDFLARE_API_TOKEN + CLOUDFLARE_ACCOUNT_ID)
-      "both"       — full stack deploy (needs all 5 credentials above)
+      "both"       — full stack deploy (needs all 4 credentials above)
 
-    Required in backend/.env for deployment:
-      GITHUB_TOKEN, RENDER_API_KEY, RENDER_OWNER_ID,
-      CLOUDFLARE_API_TOKEN, CLOUDFLARE_ACCOUNT_ID
+    Credentials come from the user's ForgeAI Deploy Settings page.
     """
     from app.services.v14_orchestrator import generate_project_v14
     return generate_project_v14(
@@ -989,7 +995,7 @@ def project_v15(request: V15Request):
            attempt 1: patch  |  2: improved prompt  |  3: regen module
            attempt 4: switch model  |  5: redesign architecture
       6. Regression protection — fixes that break passing tests are reverted
-      7. Deploy only when score ≥ 95 (Render backend + Cloudflare frontend)
+      7. Deploy only when score ≥ 95 (Railway backend + Cloudflare frontend)
 
     Returns full observability: score history, timeline, token usage, cost.
     """
@@ -1009,13 +1015,12 @@ def deploy_github(project_name: str, project_path: str):
     return push_to_github(project_path, project_name)
 
 
-@app.post("/deploy/render")
-def deploy_render(project_name: str, project_path: str, github_repo_url: str = ""):
-    """Deploy a generated project's backend to Render. Requires RENDER_API_KEY + RENDER_OWNER_ID."""
-    from app.deployments.render_provider import RenderProvider
-    provider = RenderProvider()
-    env_vars = {"GITHUB_REPO_URL": github_repo_url} if github_repo_url else None
-    res = provider.deploy(project_path, project_name, env_vars=env_vars)
+@app.post("/deploy/railway")
+def deploy_railway(project_name: str, project_path: str):
+    """Deploy a generated project's backend to Railway. Requires RAILWAY_TOKEN."""
+    from app.deployments.railway_provider import RailwayProvider
+    provider = RailwayProvider()
+    res = provider.deploy(project_path, project_name)
     return {"success": res.success, "url": res.url, "error": res.error, "metadata": res.metadata}
 
 
@@ -1033,8 +1038,7 @@ def deploy_cloudflare(project_name: str, project_path: str, backend_url: str = "
 
 class CredentialsRequest(BaseModel):
     github_token: str = ""
-    render_api_key: str = ""
-    render_owner_id: str = ""
+    railway_token: str = ""
     cloudflare_api_token: str = ""
     cloudflare_account_id: str = ""
 
@@ -1046,8 +1050,7 @@ def get_credentials(db: Session = Depends(get_db), current_user=Depends(get_curr
         return {}
     return {
         "github_token": creds.github_token or "",
-        "render_api_key": creds.render_api_key or "",
-        "render_owner_id": creds.render_owner_id or "",
+        "railway_token": creds.railway_token or "",
         "cloudflare_api_token": creds.cloudflare_api_token or "",
         "cloudflare_account_id": creds.cloudflare_account_id or "",
     }
@@ -1064,12 +1067,96 @@ def save_credentials(
         creds = UserCredentials(user_id=current_user.id)
         db.add(creds)
     creds.github_token = req.github_token or None
-    creds.render_api_key = req.render_api_key or None
-    creds.render_owner_id = req.render_owner_id or None
+    creds.railway_token = req.railway_token or None
     creds.cloudflare_api_token = req.cloudflare_api_token or None
     creds.cloudflare_account_id = req.cloudflare_account_id or None
     db.commit()
     return {"saved": True}
+
+
+@app.get("/credentials/status", tags=["credentials"])
+def credentials_status(db: Session = Depends(get_db), current_user=Depends(get_current_user)):
+    """Validate stored tokens against each service's API and return account info."""
+    import urllib.request as _urlreq
+    import json as _json
+    import requests as _requests
+
+    creds = db.query(UserCredentials).filter(UserCredentials.user_id == current_user.id).first()
+    if not creds:
+        return {"github": None, "cloudflare": None, "railway": None}
+
+    out: dict = {}
+
+    # ── GitHub ────────────────────────────────────────────────────────────────
+    if creds.github_token:
+        try:
+            req = _urlreq.Request(
+                "https://api.github.com/user",
+                headers={
+                    "Authorization": f"Bearer {creds.github_token}",
+                    "User-Agent": "ForgeAI/1.0",
+                    "Accept": "application/vnd.github+json",
+                },
+            )
+            with _urlreq.urlopen(req, timeout=8) as resp:
+                data = _json.loads(resp.read())
+            out["github"] = {
+                "connected": True,
+                "login": data.get("login"),
+                "name": data.get("name"),
+                "avatar_url": data.get("avatar_url"),
+            }
+        except Exception:
+            out["github"] = {"connected": False}
+    else:
+        out["github"] = None
+
+    # ── Cloudflare ────────────────────────────────────────────────────────────
+    if creds.cloudflare_api_token:
+        try:
+            req = _urlreq.Request(
+                "https://api.cloudflare.com/client/v4/user",
+                headers={"Authorization": f"Bearer {creds.cloudflare_api_token}"},
+            )
+            with _urlreq.urlopen(req, timeout=8) as resp:
+                data = _json.loads(resp.read())
+            result = data.get("result") or {}
+            out["cloudflare"] = {
+                "connected": data.get("success", False),
+                "email": result.get("email"),
+                "username": result.get("username"),
+                "account_id": creds.cloudflare_account_id,
+            }
+        except Exception:
+            out["cloudflare"] = {"connected": False}
+    else:
+        out["cloudflare"] = None
+
+    # ── Railway ───────────────────────────────────────────────────────────────
+    if creds.railway_token:
+        try:
+            resp = _requests.post(
+                "https://backboard.railway.app/graphql/v2",
+                json={"query": "{ me { name email } }"},
+                headers={
+                    "Authorization": f"Bearer {creds.railway_token}",
+                    "Content-Type": "application/json",
+                },
+                timeout=8,
+            )
+            data = resp.json()
+            me = (data.get("data") or {}).get("me") or {}
+            out["railway"] = {
+                "connected": bool(me),
+                "name": me.get("name"),
+                "email": me.get("email"),
+            }
+        except Exception:
+            out["railway"] = {"connected": False}
+    else:
+        out["railway"] = None
+
+    return out
 
 
 @app.get("/health")

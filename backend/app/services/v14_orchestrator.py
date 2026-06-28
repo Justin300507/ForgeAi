@@ -3,9 +3,9 @@ V14 — One-Click Deployment Platform
 
 Pipeline:
   1. Generate + validate with V7 (FastAPI backend + React frontend)
-  2. Write deterministic deployment configs (render.yaml, .env.example, GitHub Actions, wrangler.toml)
+  2. Write deterministic deployment configs (.env.example, GitHub Actions, wrangler.toml)
   3. Push to GitHub (creates repo automatically)
-  4. Deploy backend to Render (via Render REST API)
+  4. Deploy backend to Railway (via Railway GraphQL API + CLI)
   5. Deploy frontend to Cloudflare Pages (via Wrangler CLI)
   6. Health check both deployments
   7. Return full deployment status report
@@ -13,10 +13,10 @@ Pipeline:
 Steps 3-6 are optional (skip_deploy=True for generation-only).
 Each step fails gracefully — a GitHub failure doesn't block Cloudflare.
 
-Required env vars in backend/.env:
-  GITHUB_TOKEN       — Personal Access Token with repo scope
-  RENDER_API_KEY     — From dashboard.render.com → Account → API Keys
-  RENDER_OWNER_ID    — Your Render user/team ID
+Credentials come from the user's ForgeAI account (Deploy Settings page),
+injected as env vars before the job runs:
+  GITHUB_TOKEN         — Personal Access Token with repo scope
+  RAILWAY_TOKEN        — Railway personal token (railway.app/account/tokens)
   CLOUDFLARE_API_TOKEN — From dash.cloudflare.com → Profile → API Tokens
   CLOUDFLARE_ACCOUNT_ID — Your Cloudflare account ID
 """
@@ -30,7 +30,7 @@ from app.services.deployment_config_service import generate_deployment_configs
 def generate_project_v14(
     idea: str,
     provider: str = "auto",
-    deploy_to: str = "both",          # "render" | "cloudflare" | "both" | "none"
+    deploy_to: str = "both",          # "railway" | "cloudflare" | "both" | "none"
     run_improvement_cycle: bool = False,
     skip_reviews: bool = True,
     frontend_target: str = "web",
@@ -41,7 +41,7 @@ def generate_project_v14(
     Args:
         idea:                   plain-English project description
         provider:               LLM provider (auto/cerebras/groq/gemini/openai)
-        deploy_to:              where to deploy — "render", "cloudflare", "both", or "none"
+        deploy_to:              where to deploy — "railway", "cloudflare", "both", or "none"
         run_improvement_cycle:  run V7 self-improvement after generation
         skip_reviews:           skip QA/Security reviews (faster, cheaper)
         frontend_target:        "web" (React+Tailwind) or "pwa" (installable PWA)
@@ -60,7 +60,7 @@ def generate_project_v14(
         "generation": {},
         "deployment_configs": {},
         "github": {},
-        "render": {},
+        "railway": {},
         "cloudflare": {},
         "health": {},
         "report": {},
@@ -102,7 +102,7 @@ def generate_project_v14(
     if deploy_to == "none":
         result["report"] = {
             "status": "generated_only",
-            "message": "Project generated with deployment configs. Set deploy_to to 'render', 'cloudflare', or 'both' to auto-deploy.",
+            "message": "Project generated with deployment configs. Set deploy_to to 'railway', 'cloudflare', or 'both' to auto-deploy.",
             "files_generated": list(config_results.keys()),
             "next_steps": _build_manual_deploy_instructions(project_name),
         }
@@ -116,14 +116,14 @@ def generate_project_v14(
 
     github_repo_url = github_result.get("clone_url") or github_result.get("repo_url")
 
-    # ── Step 4: Deploy backend to Render ─────────────────────────────────────
-    render_result: dict = {"skipped": True}
-    if deploy_to in ("render", "both"):
-        print("\n[V14] Step 4a/5 — Deploying backend to Render...")
-        render_result = _deploy_render(project_path, project_name, github_repo_url)
-    result["render"] = render_result
+    # ── Step 4: Deploy backend to Railway ────────────────────────────────────
+    railway_result: dict = {"skipped": True}
+    if deploy_to in ("railway", "both"):
+        print("\n[V14] Step 4a/5 — Deploying backend to Railway...")
+        railway_result = _deploy_railway(project_path, project_name)
+    result["railway"] = railway_result
 
-    backend_url = render_result.get("backend_url") or render_result.get("url")
+    backend_url = railway_result.get("url")
 
     # ── Step 5: Deploy frontend to Cloudflare Pages ───────────────────────────
     cloudflare_result: dict = {"skipped": True}
@@ -156,17 +156,17 @@ def generate_project_v14(
         and not cloudflare_result.get("success")
         and not frontend_deployed
     )
-    render_failed = (
-        not result.get("render", {}).get("skipped")
+    railway_failed = (
+        not result.get("railway", {}).get("skipped")
         and not backend_deployed
-        and "render" in (result.get("render") or {})
+        and not result.get("railway", {}).get("success", True)
     )
     if cloudflare_failed:
         forge_score_int = max(0, forge_score_int - 20)
         print(f"[Score] -20 Cloudflare deploy failed → adjusted score: {forge_score_int}")
-    if render_failed:
+    if railway_failed:
         forge_score_int = max(0, forge_score_int - 20)
-        print(f"[Score] -20 Render deploy failed → adjusted score: {forge_score_int}")
+        print(f"[Score] -20 Railway deploy failed → adjusted score: {forge_score_int}")
 
     result["report"] = {
         "status": "deployed" if deployed else "generated",
@@ -178,6 +178,7 @@ def generate_project_v14(
         "backend_health": health.get("backend"),
         "frontend_health": health.get("frontend"),
         "cloudflare_error": cloudflare_result.get("error") if not cloudflare_result.get("url") else None,
+        "railway_error": railway_result.get("error") if not railway_result.get("url") else None,
         "total_time_seconds": total_time,
         "deployment_files": list(config_results.keys()),
         "next_steps": _build_next_steps(project_name, backend_url, frontend_url, github_result),
@@ -197,19 +198,14 @@ def _push_to_github(project_path: str, project_name: str, idea: str) -> dict:
         return {"success": False, "error": str(exc), "repo_url": None, "clone_url": None}
 
 
-def _deploy_render(project_path: str, project_name: str, repo_url: str | None) -> dict:
+def _deploy_railway(project_path: str, project_name: str) -> dict:
     try:
-        from app.deployments.render_provider import RenderProvider
-        provider = RenderProvider()
-        env_vars = {}
-        if repo_url:
-            env_vars["GITHUB_REPO_URL"] = repo_url
-        res = provider.deploy(project_path, project_name, env_vars=env_vars or None)
+        from app.deployments.railway_provider import RailwayProvider
+        provider = RailwayProvider()
+        res = provider.deploy(project_path, project_name)
         return {
             "success": res.success,
             "url": res.url,
-            "backend_url": (res.metadata or {}).get("backend_url"),
-            "frontend_url": (res.metadata or {}).get("frontend_url"),
             "error": res.error,
             "logs": res.logs[-500:] if res.logs else "",
             "metadata": res.metadata,
@@ -248,8 +244,8 @@ def _run_health_checks(backend_url: str | None, frontend_url: str | None) -> dic
             r = requests.get(f"{backend_url}/health", timeout=8)
             health["backend"] = {"status": r.status_code, "ok": r.status_code == 200, "latency_ms": int(r.elapsed.total_seconds() * 1000)}
         except Exception:
-            # Render free tier backends take 5-10 min to build — health fail here is expected
-            health["backend"] = {"ok": False, "note": "Render backend building (~5 min) — URL is correct, check back soon"}
+            # Railway backends take ~3 min to build — health fail here is expected
+            health["backend"] = {"ok": False, "note": "Railway backend building (~3 min) — URL is correct, check back soon"}
 
     if frontend_url:
         try:
@@ -269,7 +265,7 @@ def _build_next_steps(project_name: str, backend_url: str | None, frontend_url: 
     if not github.get("success"):
         steps.append(f"1. Push to GitHub: cd generated_projects/{project_name} && git init && git push")
     if not backend_url:
-        steps.append("2. Deploy backend: go to render.com → New → Blueprint → connect your GitHub repo")
+        steps.append("2. Deploy backend: go to railway.app → New Project → Deploy from GitHub repo")
     if not frontend_url:
         steps.append("3. Deploy frontend: cd your-project && wrangler pages deploy ./dist --project-name=" + slug)
     if backend_url and not frontend_url:
@@ -284,9 +280,9 @@ def _build_manual_deploy_instructions(project_name: str) -> list[str]:
     slug = project_name.lower().replace("_", "-")
     return [
         f"1. Push to GitHub: cd generated_projects/{project_name} && git init && git push",
-        "2. Deploy to Render: go to render.com → New → Blueprint → connect repo (uses render.yaml)",
+        "2. Deploy to Railway: go to railway.app → New Project → Deploy from GitHub repo",
         f"3. Deploy frontend to Cloudflare: wrangler pages deploy ./dist --project-name={slug}",
-        "4. Add RENDER_API_KEY, RENDER_OWNER_ID, GITHUB_TOKEN, CLOUDFLARE_API_TOKEN, CLOUDFLARE_ACCOUNT_ID to backend/.env for one-click deploy",
+        "4. Connect GitHub, Cloudflare, and Railway in ForgeAI Deploy Settings for one-click deploy",
     ]
 
 
@@ -344,7 +340,7 @@ def retry_project_v14(
         },
         "deployment_configs": {},
         "github": {},
-        "render": {},
+        "railway": {},
         "cloudflare": {},
         "health": {},
         "report": {},
@@ -382,13 +378,13 @@ def retry_project_v14(
     result["github"] = github_result
     github_repo_url = github_result.get("clone_url") or github_result.get("repo_url")
 
-    # Deploy Render
-    render_result: dict = {"skipped": True}
-    if deploy_to in ("render", "both"):
-        print("\n[V14-RETRY] Deploying to Render...")
-        render_result = _deploy_render(project_path, project_name, github_repo_url)
-    result["render"] = render_result
-    backend_url = render_result.get("backend_url") or render_result.get("url")
+    # Deploy Railway
+    railway_result: dict = {"skipped": True}
+    if deploy_to in ("railway", "both"):
+        print("\n[V14-RETRY] Deploying to Railway...")
+        railway_result = _deploy_railway(project_path, project_name)
+    result["railway"] = railway_result
+    backend_url = railway_result.get("url")
 
     # Deploy Cloudflare
     cloudflare_result: dict = {"skipped": True}
@@ -411,6 +407,9 @@ def retry_project_v14(
     if not cloudflare_result.get("skipped") and not cloudflare_result.get("success") and not frontend_url:
         retry_score = max(0, retry_score - 20)
         print(f"[Score] -20 Cloudflare deploy failed → retry adjusted score: {retry_score}")
+    if not railway_result.get("skipped") and not railway_result.get("success") and not backend_url:
+        retry_score = max(0, retry_score - 20)
+        print(f"[Score] -20 Railway deploy failed → retry adjusted score: {retry_score}")
 
     result["report"] = {
         "status": "deployed" if deployed else "repaired",
@@ -422,6 +421,7 @@ def retry_project_v14(
         "backend_health": health.get("backend"),
         "frontend_health": health.get("frontend"),
         "cloudflare_error": cloudflare_result.get("error") if not cloudflare_result.get("url") else None,
+        "railway_error": railway_result.get("error") if not railway_result.get("url") else None,
         "total_time_seconds": total_time,
     }
     _print_report(result["report"])

@@ -11,11 +11,34 @@ const MODELS = [
 ]
 
 const DEPLOY_OPTIONS = [
-  { id: 'none', label: 'No deployment', desc: 'Generate only', icon: '📁' },
-  { id: 'render', label: 'Backend only', desc: 'Deploy to Render', icon: '🖥️' },
-  { id: 'cloudflare', label: 'Frontend only', desc: 'Deploy to Cloudflare', icon: '🌐' },
-  { id: 'both', label: 'Full deploy', desc: 'GitHub + Render + Cloudflare', icon: '🚀' },
+  {
+    id: 'none',
+    label: 'Download Only',
+    desc: 'Get a zip of the generated code',
+    icon: '📁',
+    requires: [],
+  },
+  {
+    id: 'cloudflare',
+    label: 'Frontend Only',
+    desc: 'Deploy to Cloudflare Pages',
+    icon: '🌐',
+    requires: ['github', 'cloudflare'],
+  },
+  {
+    id: 'both',
+    label: 'Full Stack',
+    desc: 'GitHub + Cloudflare + Railway',
+    icon: '🚀',
+    requires: ['github', 'cloudflare', 'railway'],
+  },
 ]
+
+const SERVICE_META = {
+  github:     { label: 'GitHub',     icon: '🐙' },
+  cloudflare: { label: 'Cloudflare', icon: '☁️' },
+  railway:    { label: 'Railway',    icon: '🚂' },
+}
 
 const PIPELINE_STAGES = [
   { key: 'planner', label: 'Planner', keywords: ['Planning', 'plann', 'Step 1'] },
@@ -24,7 +47,7 @@ const PIPELINE_STAGES = [
   { key: 'frontend', label: 'Frontend', keywords: ['frontend', 'Frontend', 'React', 'JSX'] },
   { key: 'validation', label: 'Validation', keywords: ['validat', 'Validat', 'fix', 'Fix'] },
   { key: 'github', label: 'GitHub Push', keywords: ['GitHub', 'github', 'push', 'repo'] },
-  { key: 'render', label: 'Render Deploy', keywords: ['Render', 'render', 'backend deploy'] },
+  { key: 'railway', label: 'Railway Deploy', keywords: ['Railway', 'railway', 'backend deploy'] },
   { key: 'cloudflare', label: 'Cloudflare', keywords: ['Cloudflare', 'cloudflare', 'pages', 'wrangler'] },
   { key: 'health', label: 'Health Check', keywords: ['health', 'Health', 'live', 'done'] },
 ]
@@ -76,6 +99,7 @@ export default function Generate() {
   const [done, setDone] = useState(false)
   const [error, setError] = useState('')
   const [result, setResult] = useState(null)
+  const [connStatus, setConnStatus] = useState(null)
   const logsEndRef = useRef(null)
   const wsRef = useRef(null)
   const currentStageRef = useRef(null)
@@ -86,6 +110,10 @@ export default function Generate() {
 
   useEffect(() => {
     return () => wsRef.current?.close()
+  }, [])
+
+  useEffect(() => {
+    api.get('/credentials/status').then(r => setConnStatus(r.data)).catch(() => {})
   }, [])
 
   function connectWs(jid) {
@@ -176,6 +204,11 @@ export default function Generate() {
   const report = result?.report || {}
   const isBuilding = submitting && !done
 
+  const selectedOption = DEPLOY_OPTIONS.find(o => o.id === deployTo)
+  const requiredServices = selectedOption?.requires ?? []
+  const allConnected = requiredServices.every(svc => connStatus?.[svc]?.connected === true)
+  const canSubmit = !isBuilding && !!idea.trim() && (requiredServices.length === 0 || allConnected)
+
   return (
     <div className="min-h-screen">
       <Navbar />
@@ -262,27 +295,72 @@ export default function Generate() {
                         className="accent-violet-500"
                       />
                       <span className="text-lg">{opt.icon}</span>
-                      <div>
+                      <div className="flex-1 min-w-0">
                         <div className="text-sm font-medium">{opt.label}</div>
                         <div className="text-xs text-gray-500">{opt.desc}</div>
                       </div>
+                      {opt.id !== 'none' && deployTo === opt.id && (
+                        <span className={`text-xs font-medium shrink-0 ${allConnected ? 'text-emerald-400' : 'text-amber-400'}`}>
+                          {allConnected ? 'Ready' : 'Setup needed'}
+                        </span>
+                      )}
                     </label>
                   ))}
                 </div>
+
+                {/* Required accounts panel */}
+                {requiredServices.length > 0 && (
+                  <div className="mt-3 rounded-lg border border-gray-700 p-3 space-y-2">
+                    <div className="text-xs text-gray-500 uppercase tracking-wide font-mono mb-1">Required accounts</div>
+                    {requiredServices.map(svc => {
+                      const meta = SERVICE_META[svc]
+                      const st = connStatus?.[svc]
+                      const connected = st?.connected === true
+                      const label = connected
+                        ? (st.login || st.name || st.email || 'Connected')
+                        : null
+                      return (
+                        <div key={svc} className="flex items-center gap-2.5">
+                          <span className="text-base w-5 text-center">{meta.icon}</span>
+                          <span className="text-sm text-gray-300 w-20 shrink-0">{meta.label}</span>
+                          {connected ? (
+                            <span className="text-xs text-emerald-400 flex items-center gap-1">
+                              <span>✓</span>
+                              <span className="truncate max-w-[120px]">{label}</span>
+                            </span>
+                          ) : (
+                            <Link
+                              to="/credentials"
+                              className="text-xs text-violet-400 hover:text-violet-300 underline underline-offset-2"
+                            >
+                              Connect →
+                            </Link>
+                          )}
+                        </div>
+                      )
+                    })}
+                    {!allConnected && (
+                      <p className="text-xs text-amber-400/80 mt-1 pt-1 border-t border-gray-700/50">
+                        Connect all accounts to enable deployment.
+                      </p>
+                    )}
+                  </div>
+                )}
               </div>
 
               <div className="flex gap-2">
                 <button
                   type="submit"
                   className="btn-primary flex-1 py-3 text-base"
-                  disabled={isBuilding || !idea.trim()}
+                  disabled={!canSubmit}
+                  title={!allConnected && requiredServices.length > 0 ? 'Connect all required accounts first' : undefined}
                 >
                   {isBuilding ? (
                     <span className="flex items-center justify-center gap-2">
                       <span className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
                       Building your app...
                     </span>
-                  ) : 'Generate App'}
+                  ) : deployTo === 'none' ? 'Generate App' : 'Generate & Deploy'}
                 </button>
                 {isBuilding && jobId && (
                   <button

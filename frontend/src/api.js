@@ -32,6 +32,7 @@ export const jobsAPI = {
 export const credentialsAPI = {
   get: () => api.get("/credentials"),
   save: (data) => api.post("/credentials", data),
+  status: () => api.get("/credentials/status"),
 };
 
 export default api;

@@ -28,11 +28,13 @@ RAILWAY_CONFIG = Path.home() / ".railway" / "config.json"
 
 
 def _read_token() -> str | None:
-    """Read auth token from ~/.railway/config.json (written by `railway login`)."""
+    """Return Railway auth token — checks RAILWAY_TOKEN env var first, then ~/.railway/config.json."""
+    env_token = os.environ.get("RAILWAY_TOKEN")
+    if env_token:
+        return env_token
     try:
         data = json.loads(RAILWAY_CONFIG.read_text())
         user = data.get("user", {})
-        # Prefer accessToken (OAuth flow), fall back to legacy token field
         return user.get("accessToken") or user.get("token") or data.get("token")
     except Exception:
         return None
@@ -93,6 +95,8 @@ class RailwayProvider(BaseDeploymentProvider):
         return None, None
 
     def _default_environment_id(self) -> str | None:
+        if getattr(self, "_cached_env_id", None):
+            return self._cached_env_id
         try:
             data = json.loads(RAILWAY_CONFIG.read_text())
             for proj in data.get("projects", {}).values():
@@ -174,22 +178,40 @@ class RailwayProvider(BaseDeploymentProvider):
     def _create_project(self, name: str) -> tuple[str, str]:
         """
         Get or create a Railway project + service.
-        Strategy: reuse the existing linked project (from railway link) and
-        create a new service in it — avoids the slow projectCreate API call.
+        If a project is already linked via ~/.railway/config.json, reuse it.
+        Otherwise create a fresh project via the GraphQL API (works with personal tokens).
         Returns (project_id, service_id).
         """
         project_id, _ = self._default_ids()
         if not project_id:
-            raise RuntimeError(
-                "No linked Railway project found.\n"
-                "Run: railway link  — to link a project, then retry."
+            print(f"  [Railway] Creating new project '{name}'...")
+            data = self._gql_retry(
+                """mutation C($n: String!) {
+                    projectCreate(input: { name: $n, defaultEnvironmentName: "production" }) {
+                        id
+                        environments { edges { node { id name } } }
+                    }
+                }""",
+                {"n": name},
             )
-        print(f"  [Railway] Using existing project {project_id}")
+            proj = data["projectCreate"]
+            project_id = proj["id"]
+            for edge in proj.get("environments", {}).get("edges", []):
+                node = edge.get("node", {})
+                if node.get("name") == "production":
+                    self._cached_env_id = node["id"]
+                    break
+            print(f"  [Railway] Created project: {project_id}")
+        else:
+            print(f"  [Railway] Using existing project {project_id}")
         service_id = self._create_service(project_id, name)
         return project_id, service_id
 
     def _run(self, cmd: list[str], cwd: Path, timeout: int = 300) -> subprocess.CompletedProcess:
-        return subprocess.run(cmd, cwd=cwd, capture_output=True, text=True, timeout=timeout)
+        env = {**os.environ}
+        if self.token:
+            env["RAILWAY_TOKEN"] = self.token
+        return subprocess.run(cmd, cwd=cwd, capture_output=True, text=True, timeout=timeout, env=env)
 
     def _poll_domain(
         self, project_dir: Path, project_id: str, env: dict,
@@ -247,6 +269,8 @@ class RailwayProvider(BaseDeploymentProvider):
                 "RAILWAY_PROJECT_ID": project_id,
                 "RAILWAY_ENVIRONMENT_ID": environment_id,
             }
+            if self.token:
+                env["RAILWAY_TOKEN"] = self.token
             if env_vars:
                 env.update(env_vars)
 
