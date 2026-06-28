@@ -452,6 +452,8 @@ def generate_project_v6(
                 if rt_fix and rt_fix.get("path") and rt_fix.get("content"):
                     rt_fix["path"] = _sanitize_path(rt_fix["path"])
                     write_fix(project_path, rt_fix)
+                # Re-inject database.py — the LLM fix may have overwritten it
+                patch_database_py(project_path)
         except Exception as re_err:
             runtime_result = {"success": False, "error": str(re_err)}
             print(f"  Runtime validation error: {re_err}")
@@ -737,6 +739,8 @@ def repair_project(
                 if rt_fix and rt_fix.get("path") and rt_fix.get("content"):
                     rt_fix["path"] = _sanitize_path(rt_fix["path"])
                     write_fix(project_path, rt_fix)
+                # Re-inject database.py — the LLM fix may have overwritten it
+                patch_database_py(project_path)
         except Exception as re_err:
             runtime_result = {"success": False, "error": str(re_err)}
             print(f"  Runtime error: {re_err}")

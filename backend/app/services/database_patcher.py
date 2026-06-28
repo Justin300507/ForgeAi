@@ -32,17 +32,53 @@ SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
 Base = declarative_base()
 
 
+def _add_missing_columns() -> None:
+    """ALTER TABLE ADD COLUMN for any mapped columns missing from existing tables.
+
+    Fixes schema mismatches when create_all() ran before all models were imported.
+    SQLite never modifies existing tables on create_all() — this patches them.
+    """
+    try:
+        from sqlalchemy import inspect as _inspect, text as _text
+        insp = _inspect(engine)
+        existing_tables = set(insp.get_table_names())
+        with engine.begin() as conn:
+            for table in Base.metadata.sorted_tables:
+                if table.name not in existing_tables:
+                    continue
+                try:
+                    existing_cols = {c["name"] for c in insp.get_columns(table.name)}
+                except Exception:
+                    continue
+                for col in table.columns:
+                    if col.name in existing_cols:
+                        continue
+                    try:
+                        type_str = col.type.compile(dialect=engine.dialect)
+                    except Exception:
+                        type_str = "TEXT"
+                    try:
+                        conn.execute(_text(
+                            f"ALTER TABLE {table.name} ADD COLUMN {col.name} {type_str}"
+                        ))
+                    except Exception:
+                        pass
+    except Exception:
+        pass
+
+
 def create_tables():
     """Import every model in app/models/ then create all tables.
 
     Calling Base.metadata.create_all() before all model files are imported
-    causes 'no such column' errors because SQLAlchemy only knows about columns
+    causes no such column errors because SQLAlchemy only knows about columns
     from models it has already seen.  This function forces all models to load
-    first so the DB schema is always complete.
+    first so the DB schema is always complete.  _add_missing_columns() then
+    patches any tables that were created by an earlier partial create_all().
     """
     models_dir = os.path.join(os.path.dirname(__file__), "models")
     if os.path.isdir(models_dir):
-        for fname in os.listdir(models_dir):
+        for fname in sorted(os.listdir(models_dir)):
             if fname.endswith(".py") and fname not in ("__init__.py",):
                 mod_name = fname[:-3]
                 try:
@@ -50,12 +86,17 @@ def create_tables():
                 except Exception:
                     pass
     Base.metadata.create_all(bind=engine)
+    if DATABASE_URL.startswith("sqlite"):
+        _add_missing_columns()
 
 
 def get_db():
     db = SessionLocal()
     try:
         yield db
+    except Exception:
+        db.rollback()
+        raise
     finally:
         db.close()
 '''
@@ -64,24 +105,13 @@ def get_db():
 def patch_database_py(project_path: str) -> bool:
     """
     Overwrite app/database.py with a known-good template.
+    Always injects — the LLM runtime fix loop may have overwritten the file
+    between retry attempts, so we force the known-good version every time.
     Returns True if the file was written.
     """
     db_file = Path(project_path) / "app" / "database.py"
     if not db_file.parent.exists():
         return False
-
-    # Check if already good (has the postgres:// fix and correct exports)
-    if db_file.exists():
-        current = db_file.read_text(encoding="utf-8", errors="replace")
-        needs_fix = (
-            "postgres://" in current and "postgresql://" not in current  # missing URL fix
-            or "pool_pre_ping" not in current  # missing PostgreSQL resilience
-            or "check_same_thread" not in current  # missing SQLite fix
-            or "get_db" not in current  # missing get_db export
-            or "create_tables" not in current  # missing model auto-import
-        )
-        if not needs_fix:
-            return False
 
     db_file.write_text(_DATABASE_PY, encoding="utf-8")
     print(f"  [db_patcher] Injected known-good app/database.py")
