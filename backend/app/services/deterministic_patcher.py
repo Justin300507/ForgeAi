@@ -444,6 +444,62 @@ def _patch_smart_quotes(content: str) -> str:
     return content.translate(_SMART_QUOTE_MAP)
 
 
+# ── 7. Relationship string name → alias in model file ────────────────────────
+# e.g. relationship('Genre') but class is Genres — add Genre = Genres alias
+
+_RELATIONSHIP_STR = re.compile(r"""relationship\(['"]([\w]+)['"]\s*[,)]""")
+
+
+def _patch_relationship_string_aliases(project_path: Path) -> None:
+    models_dir = project_path / "app" / "models"
+    if not models_dir.exists():
+        return
+
+    # Build map: class_name → file path
+    class_to_file: dict[str, Path] = {}
+    for mf in models_dir.glob("*.py"):
+        if mf.name.startswith("_"):
+            continue
+        try:
+            text = mf.read_text(encoding="utf-8", errors="replace")
+        except Exception:
+            continue
+        for cls in re.findall(r"^class (\w+)\(", text, re.MULTILINE):
+            class_to_file[cls] = mf
+
+    # Scan all model files for relationship('X') where X has no class
+    for mf in models_dir.glob("*.py"):
+        if mf.name.startswith("_"):
+            continue
+        try:
+            text = mf.read_text(encoding="utf-8", errors="replace")
+        except Exception:
+            continue
+        for name in _RELATIONSHIP_STR.findall(text):
+            if name in class_to_file:
+                continue  # already resolvable
+            # Find closest match (e.g. Genre → Genres)
+            name_lower = name.lower()
+            best = None
+            for cls in class_to_file:
+                c = cls.lower()
+                if c == name_lower + "s" or c.rstrip("s") == name_lower.rstrip("s"):
+                    best = cls
+                    break
+            if best and best in class_to_file:
+                target_file = class_to_file[best]
+                try:
+                    target_text = target_file.read_text(encoding="utf-8", errors="replace")
+                    alias = f"{name} = {best}  # alias"
+                    if alias not in target_text:
+                        target_text = target_text.rstrip() + f"\n\n{alias}\n"
+                        target_file.write_text(target_text, encoding="utf-8")
+                        print(f"  [patcher] Added relationship alias {alias} in {target_file.name}")
+                        class_to_file[name] = target_file
+                except Exception:
+                    pass
+
+
 # ── Main entry point ──────────────────────────────────────────────────────────
 
 def run_deterministic_patches(project_path: str) -> int:
@@ -486,6 +542,9 @@ def run_deterministic_patches(project_path: str) -> int:
 
     # Model class aliases (Games→Game etc) — run before FK import patcher
     _patch_model_aliases(root)
+
+    # Relationship string aliases (Genre→Genres etc) — must run before FK import patcher
+    _patch_relationship_string_aliases(root)
 
     # FK imports in main.py (must run after alias patch so class names are correct)
     _patch_main_fk_imports(root)

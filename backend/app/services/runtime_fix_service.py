@@ -109,12 +109,28 @@ def generate_runtime_fix(
         if missing_model:
             main_py_path = os.path.join(project_path, "app", "main.py")
             try:
+                module_name = missing_model.lower()
+                model_file = os.path.join(project_path, "app", "models", f"{module_name}.py")
+
+                # Find the actual class exported by this model file
+                actual_class = missing_model
+                if os.path.exists(model_file):
+                    model_src = open(model_file, encoding="utf-8").read()
+                    classes = re.findall(r"^class (\w+)\(", model_src, re.MULTILINE)
+                    if classes and missing_model not in classes:
+                        actual_class = classes[0]
+                        # Add alias so relationship('Genre') resolves to Genres
+                        alias = f"{missing_model} = {actual_class}  # alias"
+                        if alias not in model_src:
+                            model_src = model_src.rstrip() + f"\n\n{alias}\n"
+                            with open(model_file, "w", encoding="utf-8") as f:
+                                f.write(model_src)
+                            print(f"  RelationshipModelNotImported fix: added alias {alias} in {module_name}.py")
+
                 with open(main_py_path, "r", encoding="utf-8") as f:
                     main_content = f.read()
-                module_name = missing_model.lower()
-                import_line = f"from app.models.{module_name} import {missing_model}"
+                import_line = f"from app.models.{module_name} import {actual_class}"
                 if import_line not in main_content:
-                    # Insert after the last existing model import or at top of imports
                     insert_after = re.search(r"(from app\.models\.\w+ import \w+\n)", main_content)
                     if insert_after:
                         pos = insert_after.end()
