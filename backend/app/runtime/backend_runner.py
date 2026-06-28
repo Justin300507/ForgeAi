@@ -39,6 +39,20 @@ class BackendRunner:
         if requirements_file.exists():
             print(f"Skipping pip install (packages pre-installed): {requirements_file}")
 
+        # Delete stale SQLite DBs — schema may have changed since last run
+        # (Base.metadata.create_all won't ALTER existing tables, just skips them)
+        for stale_db in backend_dir.rglob("*.db"):
+            try:
+                stale_db.unlink()
+                print(f"  [runner] Deleted stale DB: {stale_db.name}")
+            except Exception:
+                pass
+        for stale_db in backend_dir.rglob("*.sqlite3"):
+            try:
+                stale_db.unlink()
+            except Exception:
+                pass
+
         process = subprocess.Popen(
             [
                 sys.executable,
