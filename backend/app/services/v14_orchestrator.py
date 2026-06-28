@@ -155,6 +155,7 @@ def generate_project_v14(
         "github_url": github_result.get("repo_url"),
         "backend_health": health.get("backend"),
         "frontend_health": health.get("frontend"),
+        "cloudflare_error": cloudflare_result.get("error") if not cloudflare_result.get("url") else None,
         "total_time_seconds": total_time,
         "deployment_files": list(config_results.keys()),
         "next_steps": _build_next_steps(project_name, backend_url, frontend_url, github_result),
@@ -203,6 +204,8 @@ def _deploy_cloudflare(project_path: str, project_name: str, backend_url: str | 
         if backend_url:
             env_vars["VITE_API_URL"] = backend_url
         res = provider.deploy(project_path, project_name, env_vars=env_vars or None)
+        if not res.success:
+            print(f"  [V14] Cloudflare deploy failed: {(res.error or '')[:300]}")
         return {
             "success": res.success,
             "url": res.url,
@@ -210,6 +213,7 @@ def _deploy_cloudflare(project_path: str, project_name: str, backend_url: str | 
             "logs": res.logs[-500:] if res.logs else "",
         }
     except Exception as exc:
+        print(f"  [V14] Cloudflare deploy exception: {exc}")
         return {"success": False, "error": str(exc), "url": None}
 
 
@@ -388,6 +392,7 @@ def retry_project_v14(
         "github_url": github_result.get("repo_url"),
         "backend_health": health.get("backend"),
         "frontend_health": health.get("frontend"),
+        "cloudflare_error": cloudflare_result.get("error") if not cloudflare_result.get("url") else None,
         "total_time_seconds": total_time,
     }
     _print_report(result["report"])
@@ -405,6 +410,8 @@ def _print_report(report: dict) -> None:
         print(f"  Backend:      {report['backend_url']} ({report.get('backend_health', {}).get('status', '?')})")
     if report.get("frontend_url"):
         print(f"  Frontend:     {report['frontend_url']} ({report.get('frontend_health', {}).get('status', '?')})")
+    elif report.get("cloudflare_error"):
+        print(f"  Frontend:     (deploy failed) {str(report['cloudflare_error'])[:150]}")
     if report.get("github_url"):
         print(f"  GitHub:       {report['github_url']}")
     print(f"  Total time:   {report.get('total_time_seconds', '?')}s")

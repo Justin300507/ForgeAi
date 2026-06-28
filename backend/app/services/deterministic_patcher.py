@@ -500,7 +500,109 @@ def _patch_relationship_string_aliases(project_path: Path) -> None:
                     pass
 
 
-# ── 8. Router name fixer (router → {resource}_router) ────────────────────────
+# ── 8. Route parameter order fix ─────────────────────────────────────────────
+# Python SyntaxError: "non-default argument follows default argument"
+# Caused when Path(...)/Depends(...) params come before body (Schema) params.
+# Contract: body params first, then Path/Query/Depends.
+
+_DEFAULT_MARKERS = re.compile(r"\b(Path|Query|Depends|Header|Cookie|Body|Form)\s*\(")
+# Match a full multi-line function signature: def name(\n    ...\n):
+_FUNC_SIG_RE = re.compile(
+    r"(^[ \t]*def \w+\()\n((?:[ \t]+[^\n]*\n)*?)([ \t]*\)[ \t]*(?:->.*?)?\s*:)",
+    re.MULTILINE,
+)
+
+
+def _reorder_params(sig_body: str, indent: str) -> str | None:
+    """
+    Given the raw lines between `def name(` and `):`, reorder params so
+    non-default (body schema) params come before default (Path/Query/Depends).
+    Returns None if no reorder needed.
+    """
+    # Split into individual params (respect nested parens)
+    raw_params: list[str] = []
+    buf = ""
+    depth = 0
+    for ch in sig_body:
+        if ch == "(":
+            depth += 1
+        elif ch == ")":
+            depth -= 1
+        if ch == "," and depth == 0:
+            p = buf.strip()
+            if p:
+                raw_params.append(p)
+            buf = ""
+        else:
+            buf += ch
+    p = buf.strip().rstrip(",")
+    if p:
+        raw_params.append(p)
+
+    if len(raw_params) < 2:
+        return None
+
+    no_default, with_default = [], []
+    for p in raw_params:
+        if _DEFAULT_MARKERS.search(p) or re.search(r"=\s*\S", p.split(":")[1] if ":" in p else p):
+            with_default.append(p)
+        else:
+            no_default.append(p)
+
+    # Check if ordering is already correct
+    needs_reorder = False
+    seen_default = False
+    for p in raw_params:
+        has_def = _DEFAULT_MARKERS.search(p) or re.search(r"=\s*\S", p.split(":")[1] if ":" in p else p)
+        if has_def:
+            seen_default = True
+        elif seen_default:
+            needs_reorder = True
+            break
+
+    if not needs_reorder:
+        return None
+
+    reordered = no_default + with_default
+    param_indent = indent + "    "
+    return "\n".join(f"{param_indent}{p}," for p in reordered) + "\n"
+
+
+def _patch_param_order(project_path: Path) -> int:
+    """Reorder route params to fix 'non-default argument follows default argument'."""
+    routes_dir = project_path / "app" / "routes"
+    if not routes_dir.exists():
+        return 0
+
+    patched = 0
+    for rf in routes_dir.glob("*.py"):
+        if rf.name.startswith("_"):
+            continue
+        try:
+            original = rf.read_text(encoding="utf-8", errors="replace")
+        except Exception:
+            continue
+
+        def _fix_sig(m: re.Match) -> str:
+            def_line = m.group(1)   # "def update_game("
+            body = m.group(2)       # "    game_id: int = Path(...),\n    game_in: GameUpdate,\n..."
+            close = m.group(3)      # "):" or ") -> dict:"
+            indent = " " * (len(def_line) - len(def_line.lstrip()))
+            new_body = _reorder_params(body, indent)
+            if new_body is None:
+                return m.group(0)
+            return def_line + "\n" + new_body + close
+
+        new_content = _FUNC_SIG_RE.sub(_fix_sig, original)
+        if new_content != original:
+            rf.write_text(new_content, encoding="utf-8")
+            patched += 1
+            print(f"  [patcher] Fixed param order in {rf.name}")
+
+    return patched
+
+
+# ── 8b. Router name fixer (router → {resource}_router) ────────────────────────
 # LLM often writes `router = APIRouter()` instead of `task_router = APIRouter()`
 # The router_export_validator rejects this.  We fix it deterministically.
 
@@ -752,6 +854,9 @@ def run_deterministic_patches(project_path: str) -> int:
 
     # Router names: `router` → `{resource}_router` (eliminates RouterExportMismatch)
     _patch_router_names(root)
+
+    # Parameter ordering: Path(...) before body param → SyntaxError → reorder
+    _patch_param_order(root)
 
     # Auth utils: inject known-good app/utils/auth.py (eliminates passlib/jose login crashes)
     _patch_auth_utils(root)

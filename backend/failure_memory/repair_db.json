@@ -1,0 +1,12 @@
+{
+  "f2161d11926f66ce": {
+    "fix_hash": "f2161d11926f66ce",
+    "fix_content": {
+      "app/utils/auth.py": "import jwt\n# patched"
+    },
+    "success_count": 2,
+    "first_seen": "2026-06-28T01:18:05Z",
+    "last_seen": "2026-06-28T01:19:26Z",
+    "source_idea": "test app"
+  }
+}

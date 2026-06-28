@@ -937,6 +937,13 @@ class V14Request(BaseModel):
     frontend_target: str = "web"
 
 
+class V15Request(BaseModel):
+    idea: str
+    provider: str = "auto"
+    deploy: bool = True
+    deploy_to: str = "both"          # "render" | "cloudflare" | "both" | "none"
+
+
 @app.post("/project/v14")
 def project_v14(request: V14Request):
     """
@@ -962,6 +969,33 @@ def project_v14(request: V14Request):
         run_improvement_cycle=request.run_improvement_cycle,
         skip_reviews=request.skip_reviews,
         frontend_target=request.frontend_target,
+    )
+
+
+@app.post("/project/v15")
+def project_v15(request: V15Request):
+    """
+    V15 — Autonomous Self-Healing Generation Platform.
+
+    Pipeline:
+      1. V6 generation (plan → architect → backend → frontend)
+      2. Deterministic patches (param order, router names, auth, DB)
+      3. Full verification: static + runtime (uvicorn) + browser (Playwright)
+      4. Quality scoring across 10 dimensions (0–100)
+      5. Fix loop up to 5 attempts with escalating strategy:
+           attempt 1: patch  |  2: improved prompt  |  3: regen module
+           attempt 4: switch model  |  5: redesign architecture
+      6. Regression protection — fixes that break passing tests are reverted
+      7. Deploy only when score ≥ 95 (Render backend + Cloudflare frontend)
+
+    Returns full observability: score history, timeline, token usage, cost.
+    """
+    from app.services.v15_orchestrator import generate_project_v15
+    return generate_project_v15(
+        idea=request.idea,
+        provider=request.provider,
+        deploy=request.deploy,
+        deploy_to=request.deploy_to,
     )
 
 

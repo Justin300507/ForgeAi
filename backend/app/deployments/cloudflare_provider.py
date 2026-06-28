@@ -80,16 +80,20 @@ class CloudflareProvider(BaseDeploymentProvider):
         cwd = str(project_path)
         logs: list[str] = []
 
-        deploy_env = {
+        # wrangler-specific env — CI=true needed for wrangler but NOT for npm build
+        # (CI=true makes Vite/CRA treat warnings as errors, breaking the build)
+        wrangler_env = {
             **os.environ,
             "CLOUDFLARE_API_TOKEN": self.api_token,
             "CLOUDFLARE_ACCOUNT_ID": self.account_id,
-            "CF_API_TOKEN": self.api_token,          # older wrangler versions use CF_ prefix
-            "WRANGLER_SEND_METRICS": "false",         # suppress analytics prompt
-            "CI": "true",                             # tells wrangler it's non-interactive
+            "CF_API_TOKEN": self.api_token,
+            "WRANGLER_SEND_METRICS": "false",
+            "CI": "true",
         }
+        build_env = {**os.environ}  # no CI=true during npm build
         if env_vars:
-            deploy_env.update(env_vars)
+            wrangler_env.update(env_vars)
+            build_env.update(env_vars)
 
         # Ensure node_modules exists
         package_json = Path(project_path) / "package.json"
@@ -103,20 +107,31 @@ class CloudflareProvider(BaseDeploymentProvider):
         # Build frontend
         npm = _npm()
         print(f"  [Cloudflare] Building frontend (npm={npm})...")
-        build_result = self._run([npm, "ci"], cwd, deploy_env)
+        build_result = self._run([npm, "ci"], cwd, build_env)
         logs.append(f"[npm ci]\n{build_result.stdout[-500:]}\n{build_result.stderr[-200:]}")
 
         if build_result.returncode != 0:
-            build_result = self._run([npm, "install"], cwd, deploy_env)
+            print(f"  [Cloudflare] npm ci failed (rc={build_result.returncode}), trying npm install...")
+            build_result = self._run([npm, "install"], cwd, build_env)
             logs.append(f"[npm install fallback]\n{build_result.stderr[-200:]}")
+            if build_result.returncode != 0:
+                err = build_result.stderr[-400:]
+                print(f"  [Cloudflare] npm install also failed — {err[:120]}")
+                return DeploymentResult(
+                    success=False, url=None, logs="\n".join(logs),
+                    error=f"npm install failed: {err}",
+                    deploy_id=None, provider="cloudflare",
+                )
 
-        build_result = self._run([npm, "run", "build"], cwd, deploy_env)
+        build_result = self._run([npm, "run", "build"], cwd, build_env)
         logs.append(f"[npm build]\n{build_result.stdout[-500:]}\n{build_result.stderr[-300:]}")
 
         if build_result.returncode != 0:
+            err = build_result.stderr[-600:] or build_result.stdout[-400:]
+            print(f"  [Cloudflare] Frontend build failed — {err[:200]}")
             return DeploymentResult(
                 success=False, url=None, logs="\n".join(logs),
-                error=f"Frontend build failed: {build_result.stderr[-400:]}",
+                error=f"Frontend build failed: {err}",
                 deploy_id=None, provider="cloudflare",
             )
 
@@ -136,7 +151,7 @@ class CloudflareProvider(BaseDeploymentProvider):
         wrangler = shutil.which("wrangler") or "wrangler"
         deploy_result = self._run(
             [wrangler, "pages", "deploy", "--project-name", slug, "--branch", "main", "--directory", "dist"],
-            cwd, deploy_env,
+            cwd, wrangler_env,
         )
         combined = (deploy_result.stdout or "") + (deploy_result.stderr or "")
         logs.append(f"[wrangler deploy]\n{combined[-1000:]}")

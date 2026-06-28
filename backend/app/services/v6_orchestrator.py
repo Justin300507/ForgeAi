@@ -73,6 +73,7 @@ def generate_project_v6(
     collab: AgentCollaboration | None = None,
     skip_reviews: bool = False,
     frontend_target: str = "web",
+    arch_template: str = "",     # optional: Architecture DB template injection
 ) -> dict[str, Any]:
     """
     Full V6 multi-agent pipeline.
@@ -132,6 +133,8 @@ def generate_project_v6(
         f"  User stories: {len(product_spec.user_stories)}\n"
     )
     extra_context = learned + "\n\n" + pm_context if learned else pm_context
+    if arch_template:
+        extra_context = arch_template + "\n\n" + extra_context
     architecture = generate_architecture(plan, provider, extra_context=extra_context)
     _sanitize_architecture_paths(architecture)
     collab.record_decision(
