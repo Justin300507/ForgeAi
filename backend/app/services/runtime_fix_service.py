@@ -230,8 +230,60 @@ def generate_runtime_fix(
         and module
         and module.startswith("app.")
     ):
-        missing_path = module.replace(".", os.sep) + ".py"
-        full_missing_path = os.path.join(project_path, missing_path)
+        # Check if any existing file imports a submodule of this module
+        # (e.g., if module is "app.utils", check for "from app.utils.auth import...")
+        # If so, we need a package directory, not a flat .py file.
+        module_parts = module.split(".")
+        needs_package = False
+        sub_module_path = None
+        if len(module_parts) >= 2:
+            module_dir = os.path.join(project_path, *module_parts)
+            # If any submodule file exists under this path, it's already a package dir
+            if os.path.isdir(module_dir):
+                needs_package = True
+                sub_module_path = os.path.join(module_dir, "__init__.py")
+            else:
+                # Scan project files for imports of submodules of this module
+                module_prefix = module + "."
+                for root, _dirs, fnames in os.walk(project_path):
+                    for fname in fnames:
+                        if not fname.endswith(".py"):
+                            continue
+                        try:
+                            text = open(os.path.join(root, fname), encoding="utf-8").read()
+                            if f"from {module_prefix}" in text or f"import {module_prefix}" in text:
+                                needs_package = True
+                                break
+                        except Exception:
+                            pass
+                    if needs_package:
+                        break
+
+        if needs_package:
+            # Create the package directory and __init__.py instead of a flat file.
+            # Return None so the orchestrator re-validates instead of writing a fix.
+            os.makedirs(module_dir, exist_ok=True)
+            init_path = os.path.join(module_dir, "__init__.py")
+            if not os.path.exists(init_path):
+                open(init_path, "w").close()
+            # Remove any conflicting flat .py file + its __pycache__ bytecode
+            flat_file = os.path.join(project_path, *module_parts[:-1], module_parts[-1] + ".py")
+            if os.path.isfile(flat_file):
+                os.remove(flat_file)
+                print(f"  [runtime_fix] removed conflicting flat module {os.path.basename(flat_file)}")
+                import glob as _glob
+                cache_dir = os.path.join(os.path.dirname(flat_file), "__pycache__")
+                for pyc in _glob.glob(os.path.join(cache_dir, module_parts[-1] + "*.pyc")):
+                    try:
+                        os.remove(pyc)
+                    except Exception:
+                        pass
+            print(f"  [runtime_fix] created package {module} → __init__.py")
+            return None  # signal orchestrator to re-validate (no file to write)
+        else:
+            missing_path = module.replace(".", os.sep) + ".py"
+            full_missing_path = os.path.join(project_path, missing_path)
+
         if not os.path.exists(full_missing_path):
             print(f"Missing internal module {module} — generating file {missing_path}")
             try:

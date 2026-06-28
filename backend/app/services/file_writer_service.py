@@ -216,6 +216,147 @@ def _strip_invalid_eager_loading(content: str) -> str:
     return content
 
 
+def _auto_fix_missing_pydantic_import(content: str) -> str:
+    """Add 'from pydantic import BaseModel' if BaseModel is used but not imported."""
+    if "BaseModel" not in content:
+        return content
+    if re.search(r'from\s+pydantic\s+import\b.*\bBaseModel\b', content):
+        return content
+    lines = content.splitlines(keepends=True)
+    insert_idx = 0
+    in_multiline = False
+    for i, line in enumerate(lines):
+        stripped_r = line.rstrip()
+        stripped_l = line.lstrip()
+        if in_multiline:
+            # End of multi-line import is a line containing ")"
+            if ")" in stripped_l:
+                insert_idx = i + 1
+                in_multiline = False
+            continue
+        if stripped_l.startswith("from ") or stripped_l.startswith("import "):
+            if stripped_r.endswith("("):
+                # Multi-line import: from x import (
+                in_multiline = True
+            else:
+                insert_idx = i + 1
+    lines.insert(insert_idx, "from pydantic import BaseModel\n")
+    return "".join(lines)
+
+
+def _fix_fastapi_param_order(content: str) -> str:
+    """Fix FastAPI route handlers where Path/Query/Depends params appear before body params.
+
+    Python requires non-default params before default params. FastAPI route handlers
+    often have `item_id: int = Path(...)` before `body: Schema` — reorder so body
+    params (no default) come first.
+    """
+    try:
+        ast.parse(content)
+        return content  # already valid
+    except SyntaxError as e:
+        if "default" not in str(e).lower():
+            return content
+
+    def _split_params(params_str: str) -> list:
+        """Split a comma-separated param string respecting nested parens."""
+        params = []
+        current: list = []
+        depth = 0
+        for ch in params_str:
+            if ch in "([":
+                depth += 1
+            elif ch in ")]":
+                depth -= 1
+            if ch == "," and depth == 0:
+                params.append("".join(current))
+                current = []
+            else:
+                current.append(ch)
+        if "".join(current).strip():
+            params.append("".join(current))
+        return params
+
+    def _reorder(m: re.Match) -> str:
+        prefix = m.group(1)   # e.g. "def update_task(\n"
+        body = m.group(2)     # everything between outer parens
+        suffix = m.group(3)   # "):"
+        params = _split_params(body)
+        no_def = [p for p in params if "=" not in p and p.strip()]
+        has_def = [p for p in params if "=" in p and p.strip()]
+        if not no_def or not has_def:
+            return m.group(0)
+        # Check ordering is actually wrong (last no-default appears after first with-default)
+        positions = {p: i for i, p in enumerate(params)}
+        last_no = max(positions[p] for p in no_def)
+        first_yes = min(positions[p] for p in has_def)
+        if last_no < first_yes:
+            return m.group(0)  # already correct
+        reordered = no_def + has_def
+        new_body = ",".join(reordered)
+        result = f"{prefix}{new_body}{suffix}"
+        # Validate the fix before returning
+        try:
+            ast.parse(result)
+            return result
+        except SyntaxError:
+            return m.group(0)
+
+    # Match `def name( params ):` spanning multiple lines.
+    # Group 2 can't use [^)]+ because params often contain ) (e.g. Depends(get_db)).
+    # Strategy: find def...(, then collect the balanced paren content, then ):
+    import re as _re
+    lines = content.splitlines(keepends=True)
+    result = []
+    i = 0
+    changed = False
+    while i < len(lines):
+        line = lines[i]
+        if not _re.match(r'\s*def\s+\w+\s*\(', line):
+            result.append(line)
+            i += 1
+            continue
+        # Collect lines until the closing ): of the function signature
+        sig_lines = [line]
+        depth = line.count('(') - line.count(')')
+        j = i + 1
+        while j < len(lines) and depth > 0:
+            sig_lines.append(lines[j])
+            depth += lines[j].count('(') - lines[j].count(')')
+            j += 1
+        sig = "".join(sig_lines)
+        # Try to extract and reorder params
+        m = _re.match(r'(\s*def\s+\w+\s*\()(.*?)(\)\s*(?:->.*?)?\s*:)', sig, _re.DOTALL)
+        if m:
+            params = _split_params(m.group(2))
+            no_def = [p for p in params if "=" not in p and p.strip()]
+            has_def = [p for p in params if "=" in p and p.strip()]
+            if no_def and has_def:
+                positions = {p: k for k, p in enumerate(params)}
+                last_no = max(positions[p] for p in no_def)
+                first_yes = min(positions[p] for p in has_def)
+                if last_no > first_yes:
+                    reordered = no_def + has_def
+                    new_sig = m.group(1) + ",".join(reordered) + m.group(3)
+                    try:
+                        # Validate with a dummy body since sig has no function body
+                        ast.parse(new_sig.lstrip() + "\n    pass")
+                        sig = new_sig
+                        changed = True
+                    except SyntaxError:
+                        pass
+        result.append(sig)
+        i = j
+    fixed = "".join(result)
+    if changed:
+        try:
+            ast.parse(fixed)
+            return fixed
+        except SyntaxError:
+            pass
+    return content
+
+
 def _normalize_newlines(path, content):
     if "\\n" in content and "\n" not in content:
         content = content.replace("\\n", "\n").replace("\\t", "\t")
@@ -229,6 +370,15 @@ def _normalize_newlines(path, content):
         content = _add_extend_existing(content)
         content = _strip_auth_classes_from_schema(path, content)
         content = _fix_pydantic_v1_patterns(content)
+        # Fix LLM typo: auth2_scheme (missing 'o') → oauth2_scheme
+        # Use word boundary so we don't corrupt the correctly-spelled "oauth2_scheme"
+        # ("auth2_scheme" is a substring of "oauth2_scheme" — naive string replace would double it)
+        if re.search(r'\bauth2_scheme\b', content):
+            content = re.sub(r'\bauth2_scheme\b', 'oauth2_scheme', content)
+        # Auto-add missing pydantic BaseModel import
+        content = _auto_fix_missing_pydantic_import(content)
+        # Fix FastAPI param ordering: body params must come before Path/Query/Depends
+        content = _fix_fastapi_param_order(content)
         if "/routes/" in path.replace("\\", "/"):
             content = _strip_invalid_eager_loading(content)
             content = _fix_double_depends(content)

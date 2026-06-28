@@ -5,6 +5,32 @@ import re
 _CREATE_ALL_SNIPPET = "\nfrom app.database import Base, engine\nBase.metadata.create_all(bind=engine)\n"
 
 
+def _auto_fix_missing_pydantic_import(content: str) -> str:
+    """Add 'from pydantic import BaseModel' if BaseModel is used but not imported."""
+    if "BaseModel" not in content:
+        return content
+    if re.search(r'from\s+pydantic\s+import\b.*\bBaseModel\b', content):
+        return content
+    lines = content.splitlines(keepends=True)
+    insert_idx = 0
+    in_multiline = False
+    for i, line in enumerate(lines):
+        stripped_r = line.rstrip()
+        stripped_l = line.lstrip()
+        if in_multiline:
+            if ")" in stripped_l:
+                insert_idx = i + 1
+                in_multiline = False
+            continue
+        if stripped_l.startswith("from ") or stripped_l.startswith("import "):
+            if stripped_r.endswith("("):
+                in_multiline = True
+            else:
+                insert_idx = i + 1
+    lines.insert(insert_idx, "from pydantic import BaseModel\n")
+    return "".join(lines)
+
+
 def _normalize_newlines(path, content):
     if "\\n" in content and "\n" not in content:
         content = content.replace("\\n", "\n").replace("\\t", "\t")
@@ -20,6 +46,14 @@ def _normalize_newlines(path, content):
         content = _add_extend_existing(content)
         content = _strip_auth_classes_from_schema(path, content)
         content = _fix_pydantic_v1_patterns(content)
+        # Fix LLM typo: auth2_scheme (missing 'o') → oauth2_scheme
+        if re.search(r'\bauth2_scheme\b', content):
+            content = re.sub(r'\bauth2_scheme\b', 'oauth2_scheme', content)
+        # Auto-add missing pydantic BaseModel import
+        content = _auto_fix_missing_pydantic_import(content)
+        # Fix FastAPI param ordering: body params must come before Path/Query/Depends
+        from app.services.file_writer_service import _fix_fastapi_param_order
+        content = _fix_fastapi_param_order(content)
         if "/routes/" in path.replace("\\", "/"):
             content = _strip_invalid_eager_loading(content)
             content = _fix_double_depends(content)
@@ -99,10 +133,25 @@ def write_fix(project_path, fix):
         path
     )
 
+    parent_dir = os.path.dirname(full_path)
+
+    # When writing a nested module like app/utils/auth.py, Python requires app/utils/
+    # to be a package directory — not a flat app/utils.py file. Remove the conflicting
+    # flat file and create __init__.py so the directory becomes a proper package.
+    flat_conflict = parent_dir + ".py"
+    if os.path.isfile(flat_conflict):
+        os.remove(flat_conflict)
+        print(f"  [fix_writer] removed conflicting flat module {os.path.relpath(flat_conflict, project_path)}")
+
     os.makedirs(
-        os.path.dirname(full_path),
+        parent_dir,
         exist_ok=True
     )
+
+    # Ensure the package __init__.py exists so Python treats the directory as a package
+    init_file = os.path.join(parent_dir, "__init__.py")
+    if not os.path.exists(init_file):
+        open(init_file, "w").close()
 
     with open(
         full_path,

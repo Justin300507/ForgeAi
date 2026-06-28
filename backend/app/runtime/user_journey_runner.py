@@ -97,16 +97,77 @@ def _get_openapi_fields(requests_mod, base_url: str, path: str) -> set:
         return set()
 
 
+_PASSWORD_VARIANTS = {"password", "password_hash", "hashed_password", "passwd", "pwd"}
+_EMAIL_VARIANTS = {"email", "email_address"}
+_USERNAME_VARIANTS = {"username", "user_name", "login"}
+_NAME_FIELDS = ("full_name", "display_name", "name", "first_name", "last_name")
+
+# Sensible defaults for any extra fields that might appear in register schemas
+_REGISTER_EXTRA_DEFAULTS = {
+    "role": "user",
+    "is_active": True,
+    "phone": "+1234567890",
+    "bio": "",
+    "avatar": "",
+}
+
+
 def _build_register_body(fields: set, creds: dict) -> dict:
     """Construct a register payload matching whatever fields the schema declares."""
-    body: dict = {"email": creds["email"], "password": creds["password"]}
-    if "username" in fields:
-        body["username"] = creds["username"]
-    for name_field in ("display_name", "full_name", "name"):
+    if not fields:
+        return {"email": creds["email"], "password": creds["password"]}
+
+    body: dict = {}
+
+    # Handle email / username identifier field
+    for f in _EMAIL_VARIANTS:
+        if f in fields:
+            body[f] = creds["email"]
+            break
+    for f in _USERNAME_VARIANTS:
+        if f in fields:
+            body[f] = creds["username"]
+            break
+    # If neither email nor username found in schema, default to email
+    if not any(f in body for f in list(_EMAIL_VARIANTS) + list(_USERNAME_VARIANTS)):
+        body["email"] = creds["email"]
+
+    # Handle all password field name variants (LLM sometimes uses password_hash)
+    for f in _PASSWORD_VARIANTS:
+        if f in fields:
+            body[f] = creds["password"]
+            break
+    if not any(f in body for f in _PASSWORD_VARIANTS):
+        body["password"] = creds["password"]
+
+    # Handle name fields
+    for name_field in _NAME_FIELDS:
         if name_field in fields:
             body[name_field] = "Journey Tester"
             break
+
+    # Handle any other required fields with defaults
+    for field_name, default_value in _REGISTER_EXTRA_DEFAULTS.items():
+        if field_name in fields and field_name not in body:
+            body[field_name] = default_value
+
     return body
+
+
+def _parse_missing_fields(response) -> set:
+    """Parse a FastAPI 422 response body to extract which body fields failed validation."""
+    try:
+        detail = response.json().get("detail", [])
+        if isinstance(detail, list):
+            return {
+                err["loc"][-1]
+                for err in detail
+                if isinstance(err.get("loc"), list) and len(err["loc"]) >= 2
+                   and err["loc"][0] == "body"
+            }
+    except Exception:
+        pass
+    return set()
 
 
 def _detect_crud_entity(architecture: dict, api_prefix: str) -> str | None:
@@ -224,29 +285,60 @@ def run_user_journey(
         schema_fields = _get_openapi_fields(requests, base, arch_register) if arch_register else set()
         body = _build_register_body(schema_fields, creds)
 
-        for url in candidates:
-            r = requests.post(url, json=body, timeout=5)
+        def _try_register(url: str, payload: dict):
+            """Attempt POST to url, return (response, token_or_None) on 200/201/400."""
+            r = requests.post(url, json=payload, timeout=5)
             if r.status_code in (200, 201):
+                tok = None
                 try:
-                    token = r.json().get("access_token") or r.json().get("token") or token
+                    tok = r.json().get("access_token") or r.json().get("token")
                 except Exception:
                     pass
+                return r, tok
+            return r, None
+
+        for url in candidates:
+            r, tok = _try_register(url, body)
+            if r.status_code in (200, 201):
+                token = tok or token
                 return True, f"{r.status_code} @ {url.split('/')[-1]}"
             if r.status_code == 400:
                 return True, "400 (user already exists)"
             if r.status_code == 422:
-                # Schema mismatch — try with minimal body (email + password only)
-                minimal = {"email": creds["email"], "password": creds["password"]}
-                r2 = requests.post(url, json=minimal, timeout=5)
-                if r2.status_code in (200, 201):
-                    try:
-                        token = r2.json().get("access_token") or r2.json().get("token") or token
-                    except Exception:
-                        pass
-                    return True, f"{r2.status_code} @ {url.split('/')[-1]} (minimal)"
-                if r2.status_code == 400:
-                    return True, "400 (user already exists)"
-                # Still 422 — route exists, schema unknown; treat as soft pass
+                # Attempt 2: try password_hash variant if schema-built body didn't use it
+                if "password_hash" not in body:
+                    body2 = {**body, "password_hash": creds["password"]}
+                    body2.pop("password", None)
+                    r2, tok2 = _try_register(url, body2)
+                    if r2.status_code in (200, 201):
+                        token = tok2 or token
+                        return True, f"{r2.status_code} @ {url.split('/')[-1]} (pw_hash)"
+                    if r2.status_code == 400:
+                        return True, "400 (user already exists)"
+
+                # Attempt 3: parse 422 error to find which body fields are missing
+                missing = _parse_missing_fields(r)
+                if missing:
+                    enriched = dict(body)
+                    _extra = {
+                        "role": "user", "is_active": True, "phone": "+1234567890",
+                        "bio": "", "avatar_url": "",
+                    }
+                    for f in missing:
+                        if f not in enriched:
+                            if f in _extra:
+                                enriched[f] = _extra[f]
+                            elif f in _PASSWORD_VARIANTS:
+                                enriched[f] = creds["password"]
+                    if enriched != body:
+                        r3, tok3 = _try_register(url, enriched)
+                        if r3.status_code in (200, 201):
+                            token = tok3 or token
+                            return True, f"{r3.status_code} @ {url.split('/')[-1]} (enriched)"
+                        if r3.status_code == 400:
+                            return True, "400 (user already exists)"
+
+                # Route exists but schema is unknown — treat as soft pass so journey continues
                 return True, f"422 @ {url.split('/')[-1]} (server alive, schema mismatch)"
         return False, "404 (no register/signup endpoint found)"
     steps.append(_step("Register", do_register))
@@ -331,21 +423,60 @@ def run_user_journey(
     steps.append(detect_step)
 
     # ── Step 4: Create entity ─────────────────────────────────────────
+    # Sensible defaults for commonly-required fields in generated schemas
+    _FIELD_DEFAULTS = {
+        "status": "active", "state": "active",
+        "owner_id": 1, "user_id": 1, "project_id": 1, "task_id": 1,
+        "assignee_id": 1, "author_id": 1, "created_by": 1,
+        "priority": "medium", "role": "user",
+        "type": "general", "category": "general",
+        "is_active": True, "is_done": False, "is_completed": False,
+        "is_public": True,
+        "start_time": "2024-01-01T09:00:00", "end_time": "2024-01-01T10:00:00",
+        "duration_minutes": 60, "hours": 1,
+        "quantity": 1, "amount": 1.0, "price": 1.0,
+        "color": "#3498db", "tags": [], "labels": [],
+    }
+
     def do_create():
         nonlocal entity_id, headers
         # Refresh headers in case login just set the token
         if token:
             headers.update({"Authorization": f"Bearer {token}"})
-        payload = {"title": "Journey Test Item", "name": "Journey Test Item",
-                   "description": "created by V5.5 journey runner"}
-        r = requests.post(entity_url, json=payload, headers=headers, timeout=5)
-        if r.status_code in (200, 201):
-            try:
-                data = r.json()
-                entity_id = data.get("id") or (data[0].get("id") if isinstance(data, list) else None)
-            except Exception:
-                pass
-            return True, f"{r.status_code} id={entity_id}"
+
+        base_payload = {"title": "Journey Test Item", "name": "Journey Test Item",
+                        "description": "created by V5.5 journey runner"}
+
+        # If no token, attempt without auth but abort immediately on 5xx (avoids SQLite lock cascade)
+        # Routes requiring auth will return 401; skip CRUD gracefully.
+
+        # Query OpenAPI schema to discover required fields we might be missing
+        entity_path = entity_url[len(base):]
+        schema_fields = _get_openapi_fields(requests, base, entity_path)
+        enriched_payload = dict(base_payload)
+        for field_name in schema_fields:
+            if field_name not in enriched_payload and field_name in _FIELD_DEFAULTS:
+                enriched_payload[field_name] = _FIELD_DEFAULTS[field_name]
+
+        # Try enriched payload first, then minimal — stop immediately on 5xx
+        last_r = None
+        for payload in (enriched_payload, base_payload):
+            last_r = requests.post(entity_url, json=payload, headers=headers, timeout=5)
+            if last_r.status_code in (200, 201):
+                try:
+                    data = last_r.json()
+                    entity_id = data.get("id") or (data[0].get("id") if isinstance(data, list) else None)
+                except Exception:
+                    pass
+                return True, f"{last_r.status_code} id={entity_id}"
+            if last_r.status_code >= 500:
+                # 5xx can corrupt SQLite — don't retry, report the error code
+                return False, f"{last_r.status_code} (server error)"
+            if last_r.status_code == 401:
+                # Auth required and we don't have a token — skip CRUD cleanly
+                return False, "401 (auth required, no valid token)"
+
+        r = last_r
         if r.status_code == 422:
             return True, f"422 (schema mismatch, server alive)"
         return False, f"{r.status_code}"
