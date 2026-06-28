@@ -149,9 +149,14 @@ export default function ProjectDetail() {
               {job.frontend_url && <a href={job.frontend_url} target="_blank" rel="noopener noreferrer"
                 className="text-xs font-medium px-3 py-1.5 rounded-lg border transition-colors"
                 style={{background:"rgba(124,58,237,0.12)",color:"#a78bfa",borderColor:"rgba(124,58,237,0.25)"}}>🌐 Live frontend</a>}
-              {job.backend_url && <a href={`${job.backend_url}/docs`} target="_blank" rel="noopener noreferrer"
-                className="text-xs font-medium px-3 py-1.5 rounded-lg border border-white/8 text-gray-400 hover:text-white"
-                style={{background:"rgba(255,255,255,0.04)"}}>📖 API docs</a>}
+              {job.backend_url && (
+                <a href={`${job.backend_url}/docs`} target="_blank" rel="noopener noreferrer"
+                  className="text-xs font-medium px-3 py-1.5 rounded-lg border border-white/8 text-gray-400 hover:text-white flex items-center gap-1.5"
+                  style={{background:"rgba(255,255,255,0.04)"}}>
+                  📖 API docs
+                  <span className="text-gray-600 font-normal">(backend building ~5 min)</span>
+                </a>
+              )}
               {job.github_url && <a href={job.github_url} target="_blank" rel="noopener noreferrer"
                 className="text-xs font-medium px-3 py-1.5 rounded-lg border border-white/8 text-gray-400 hover:text-white"
                 style={{background:"rgba(255,255,255,0.04)"}}>🐙 GitHub</a>}

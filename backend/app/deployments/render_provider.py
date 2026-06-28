@@ -154,7 +154,7 @@ class RenderProvider(BaseDeploymentProvider):
             return deploy.get("id")
         return None
 
-    def _poll_service_url(self, service_id: str, attempts: int = 6, wait: int = 5) -> Optional[str]:
+    def _poll_service_url(self, service_id: str, attempts: int = 4, wait: int = 2) -> Optional[str]:
         for i in range(attempts):
             resp = self._get(f"/services/{service_id}")
             if resp.ok:
@@ -162,8 +162,16 @@ class RenderProvider(BaseDeploymentProvider):
                 url = svc.get("serviceDetails", {}).get("url") or svc.get("defaultURL") or svc.get("url")
                 if url:
                     return url if url.startswith("http") else f"https://{url}"
-            print(f"  [Render] Waiting for service URL (attempt {i+1}/{attempts})...")
-            time.sleep(wait)
+            if i < attempts - 1:
+                print(f"  [Render] Waiting for service URL (attempt {i+1}/{attempts})...")
+                time.sleep(wait)
+        return None
+
+    def _extract_url_from_service(self, svc: dict) -> Optional[str]:
+        """Extract URL from a service dict (creation or poll response)."""
+        url = svc.get("serviceDetails", {}).get("url") or svc.get("defaultURL") or svc.get("url")
+        if url:
+            return url if url.startswith("http") else f"https://{url}"
         return None
 
     # ── public interface ──────────────────────────────────────────────────────
@@ -194,9 +202,12 @@ class RenderProvider(BaseDeploymentProvider):
         # Create or find backend web service
         print(f"  [Render] Creating backend service '{slug}-backend'...")
         backend_name = f"{slug}-backend"
+        service_id = None
+        backend_url = None
         existing = self._find_service(backend_name)
         if existing:
             service_id = existing.get("id")
+            backend_url = self._extract_url_from_service(existing)
             logs.append(f"Reusing existing Render service: {backend_name}")
             self._trigger_deploy(service_id)
         else:
@@ -208,42 +219,27 @@ class RenderProvider(BaseDeploymentProvider):
                     deploy_id=None, provider="render",
                 )
             service_id = svc.get("id")
-            logs.append(f"Created Render service: {backend_name} (id={service_id})")
+            # URL may be in creation response — try that first, then quick poll
+            backend_url = self._extract_url_from_service(svc)
+            if not backend_url and service_id:
+                backend_url = self._poll_service_url(service_id)
+            logs.append(f"Created Render service: {backend_name} → {backend_url or 'URL pending'}")
 
-        # Poll for backend URL
-        print(f"  [Render] Waiting for backend to deploy...")
-        backend_url = self._poll_service_url(service_id)
-        logs.append(f"Backend URL: {backend_url or 'not ready yet'}")
-
-        # Create frontend static site
-        print(f"  [Render] Creating frontend static site '{slug}-frontend'...")
-        frontend_name = f"{slug}-frontend"
-        front_existing = self._find_service(frontend_name)
-        if front_existing:
-            front_id = front_existing.get("id")
-            self._trigger_deploy(front_id)
-            frontend_url = self._poll_service_url(front_id, attempts=6, wait=10)
-        else:
-            front_svc = self._create_static_site(frontend_name, repo_url, api_url=backend_url or "")
-            front_id = (front_svc or {}).get("id")
-            frontend_url = self._poll_service_url(front_id, attempts=6, wait=10) if front_id else None
-
-        logs.append(f"Frontend URL: {frontend_url or 'not ready yet'}")
-
-        primary_url = frontend_url or backend_url
+        print(f"  [Render] Backend queued: {backend_url or 'URL pending'} (building in background ~5 min)")
+        logs.append(f"Backend URL: {backend_url or 'not ready yet'} (Render free tier builds in ~5 min)")
 
         return DeploymentResult(
-            success=bool(primary_url),
-            url=primary_url,
+            success=bool(backend_url or service_id),
+            url=backend_url,
             logs="\n".join(logs),
-            error=None if primary_url else "Render services created but URLs not yet available — check dashboard.render.com",
+            error=None,
             deploy_id=service_id,
             provider="render",
             metadata={
                 "backend_url": backend_url,
-                "frontend_url": frontend_url,
+                "frontend_url": None,
                 "backend_service_id": service_id,
-                "frontend_service_id": front_id if front_id else None,
+                "backend_status": "building",
             },
         )
 

@@ -48,5 +48,55 @@
     "improvement": 0.0,
     "promoted": false,
     "timestamp": "2026-06-22T05:46:00"
+  },
+  {
+    "pattern_key": "ModuleNotFoundError",
+    "rule": "Every external library used in the generated code MUST be imported at the top of the file with its exact package name. WRONG: `import orm` (undefined). RIGHT: `from sqlalchemy import Column, Integer, String`. Missing imports cause ModuleNotFoundError at runtime.",
+    "quality_score": 8.0,
+    "old_pass_rate": 0.0,
+    "new_pass_rate": 0.0,
+    "improvement": 0.0,
+    "promoted": false,
+    "timestamp": "2026-06-27T13:46:58"
+  },
+  {
+    "pattern_key": "SQLAlchemyError",
+    "rule": "All SQLAlchemy models MUST inherit from the same declarative Base imported from a single `database.py` file, and a FastAPI dependency `get_db` must be used for session handling. WRONG: defining `Base = declarative_base()` in each model file. RIGHT: `from .database import Base, get_db` and using `db: Session = Depends(get_db)`. Consistent Base and session prevent SQLAlchemy errors.",
+    "quality_score": 8.0,
+    "old_pass_rate": 0.0,
+    "new_pass_rate": 0.0,
+    "improvement": 0.0,
+    "promoted": false,
+    "timestamp": "2026-06-27T13:46:58"
+  },
+  {
+    "pattern_key": "RouterExportMismatch",
+    "rule": "Every route file MUST define a variable named exactly <resource>_router (e.g. user_router) and export it. WRONG: router = APIRouter(). RIGHT: user_router = APIRouter(). Using a generic name like `router` prevents the main app from importing the router correctly, causing RouterExportMismatch failures.",
+    "quality_score": 8.0,
+    "old_pass_rate": 0.0,
+    "new_pass_rate": 0.0,
+    "improvement": 0.0,
+    "promoted": false,
+    "timestamp": "2026-06-27T13:59:42"
+  },
+  {
+    "pattern_key": "SQLAlchemyError",
+    "rule": "Every SQLAlchemy model must define a `__tablename__` string and any `ForeignKey` must reference an existing table name. WRONG: class Order(Base): user_id = Column(Integer, ForeignKey('user.id')). RIGHT: class Order(Base): __tablename__ = 'orders'; user_id = Column(Integer, ForeignKey('users.id')). This avoids SQLAlchemyError and NoReferencedTableError.",
+    "quality_score": 7.5,
+    "old_pass_rate": 0.0,
+    "new_pass_rate": 0.0,
+    "improvement": 0.0,
+    "promoted": false,
+    "timestamp": "2026-06-27T13:59:42"
+  },
+  {
+    "pattern_key": "ModuleNotFoundError",
+    "rule": "All route modules must reside in the `app/routes/` package, be listed in `app/routes/__init__.py`, and be imported in `app/main.py` using the exact module name. WRONG: from app.routes.user import router. RIGHT: from app.routes.user_routes import user_router. This guarantees the import path exists and prevents ModuleNotFoundError.",
+    "quality_score": 7.0,
+    "old_pass_rate": 0.0,
+    "new_pass_rate": 0.0,
+    "improvement": 0.0,
+    "promoted": false,
+    "timestamp": "2026-06-27T13:59:42"
   }
 ]

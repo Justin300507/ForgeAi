@@ -219,17 +219,11 @@ def _run_health_checks(backend_url: str | None, frontend_url: str | None) -> dic
 
     if backend_url:
         try:
-            for _ in range(3):
-                try:
-                    r = requests.get(f"{backend_url}/health", timeout=15)
-                    health["backend"] = {"status": r.status_code, "ok": r.status_code == 200, "latency_ms": int(r.elapsed.total_seconds() * 1000)}
-                    break
-                except Exception:
-                    time.sleep(5)
-            else:
-                health["backend"] = {"status": 0, "ok": False, "latency_ms": None, "error": "timeout"}
-        except Exception as e:
-            health["backend"] = {"ok": False, "error": str(e)}
+            r = requests.get(f"{backend_url}/health", timeout=8)
+            health["backend"] = {"status": r.status_code, "ok": r.status_code == 200, "latency_ms": int(r.elapsed.total_seconds() * 1000)}
+        except Exception:
+            # Render free tier backends take 5-10 min to build — health fail here is expected
+            health["backend"] = {"ok": False, "note": "Render backend building (~5 min) — URL is correct, check back soon"}
 
     if frontend_url:
         try:

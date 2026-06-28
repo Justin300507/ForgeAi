@@ -500,6 +500,86 @@ def _patch_relationship_string_aliases(project_path: Path) -> None:
                     pass
 
 
+# ── 8. Router name fixer (router → {resource}_router) ────────────────────────
+# LLM often writes `router = APIRouter()` instead of `task_router = APIRouter()`
+# The router_export_validator rejects this.  We fix it deterministically.
+
+_APIROUTER_ASSIGN = re.compile(r"^\s*(\w+)\s*=\s*APIRouter\(", re.MULTILINE)
+
+
+def _patch_router_names(project_path: Path) -> int:
+    routes_dir = project_path / "app" / "routes"
+    main_py = project_path / "app" / "main.py"
+    if not routes_dir.exists():
+        return 0
+
+    patched = 0
+    rename_pairs: list[tuple[str, str, str]] = []  # (resource, old_name, new_name)
+
+    for rf in routes_dir.glob("*.py"):
+        if rf.name.startswith("_"):
+            continue
+        stem = rf.stem
+        if stem.endswith("_routes"):
+            resource = stem[:-7]
+        elif stem.endswith("_route"):
+            resource = stem[:-6]
+        else:
+            resource = stem
+        expected = f"{resource}_router"
+
+        try:
+            content = rf.read_text(encoding="utf-8", errors="replace")
+        except Exception:
+            continue
+
+        # Already correct?
+        if re.search(rf"^\s*{re.escape(expected)}\s*=\s*APIRouter\(", content, re.MULTILINE):
+            continue
+
+        m = _APIROUTER_ASSIGN.search(content)
+        if not m:
+            continue
+
+        actual = m.group(1).strip()
+        if actual == expected:
+            continue
+        if actual.endswith("_router") and actual != "router":
+            # Already a named router (e.g. auth_router) — don't clobber
+            continue
+
+        new_content = re.sub(rf"\b{re.escape(actual)}\b", expected, content)
+        if new_content != content:
+            rf.write_text(new_content, encoding="utf-8")
+            rename_pairs.append((resource, actual, expected))
+            patched += 1
+            print(f"  [patcher] Router: {actual} → {expected} in {rf.name}")
+
+    if rename_pairs and main_py.exists():
+        try:
+            main_content = main_py.read_text(encoding="utf-8", errors="replace")
+            changed = False
+            for resource, old_name, new_name in rename_pairs:
+                # Fix import: from app.routes.X_routes import <old_name>
+                new_main = re.sub(
+                    rf"(from\s+app\.routes\.{re.escape(resource)}_routes\s+import\s+){re.escape(old_name)}\b",
+                    rf"\g<1>{new_name}",
+                    main_content,
+                )
+                # Fix bare usage: include_router(<old_name>, ...)
+                new_main = re.sub(rf"\b{re.escape(old_name)}\b", new_name, new_main)
+                if new_main != main_content:
+                    main_content = new_main
+                    changed = True
+            if changed:
+                main_py.write_text(main_content, encoding="utf-8")
+                print(f"  [patcher] Updated main.py for {len(rename_pairs)} router rename(s)")
+        except Exception as e:
+            print(f"  [patcher] main.py router update failed: {e}")
+
+    return patched
+
+
 # ── Main entry point ──────────────────────────────────────────────────────────
 
 def run_deterministic_patches(project_path: str) -> int:
@@ -548,6 +628,9 @@ def run_deterministic_patches(project_path: str) -> int:
 
     # FK imports in main.py (must run after alias patch so class names are correct)
     _patch_main_fk_imports(root)
+
+    # Router names: `router` → `{resource}_router` (eliminates RouterExportMismatch)
+    _patch_router_names(root)
 
     if modified:
         print(f"  [patcher] Patched {modified} file(s) — passlib→bcrypt, async→sync, smart quotes")

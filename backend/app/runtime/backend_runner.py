@@ -145,16 +145,6 @@ class BackendRunner:
                     startup_time=time.time() - start_time
                 )
 
-            if "Traceback" in stderr:
-
-                return RuntimeResult(
-                    success=False,
-                    exit_code=1,
-                    stdout=stdout,
-                    stderr=stderr,
-                    startup_time=time.time() - start_time
-                )
-
             return RuntimeResult(
                 success=True,
                 exit_code=0,

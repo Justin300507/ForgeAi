@@ -4582,5 +4582,467 @@
     "forge_score": 61,
     "wall_time_s": 39.28,
     "timestamp": "2026-06-23T01:13:51"
+  },
+  {
+    "total_calls": 41,
+    "total_tokens": 226602,
+    "total_cost_usd": 0.135959,
+    "total_llm_time_s": 89.04,
+    "by_stage": {
+      "product_manager": {
+        "calls": 1,
+        "tokens": 2938,
+        "cost_usd": 0.001763,
+        "time_s": 2.89
+      },
+      "unknown": {
+        "calls": 35,
+        "tokens": 186957,
+        "cost_usd": 0.112172,
+        "time_s": 75.29999999999997
+      },
+      "tech_lead": {
+        "calls": 1,
+        "tokens": 9716,
+        "cost_usd": 0.00583,
+        "time_s": 2.03
+      },
+      "qa_review": {
+        "calls": 1,
+        "tokens": 4889,
+        "cost_usd": 0.002933,
+        "time_s": 1.87
+      },
+      "security_review": {
+        "calls": 1,
+        "tokens": 9485,
+        "cost_usd": 0.005691,
+        "time_s": 2.96
+      },
+      "code_review": {
+        "calls": 1,
+        "tokens": 6538,
+        "cost_usd": 0.003923,
+        "time_s": 2.04
+      },
+      "performance_review": {
+        "calls": 1,
+        "tokens": 6079,
+        "cost_usd": 0.003647,
+        "time_s": 1.95
+      }
+    },
+    "project_name": "expense_tracker_app",
+    "forge_score": 25,
+    "wall_time_s": 145.11,
+    "timestamp": "2026-06-27T14:11:56"
+  },
+  {
+    "total_calls": 38,
+    "total_tokens": 168784,
+    "total_cost_usd": 0.101272,
+    "total_llm_time_s": 74.67,
+    "by_stage": {
+      "product_manager": {
+        "calls": 1,
+        "tokens": 2628,
+        "cost_usd": 0.001577,
+        "time_s": 6.01
+      },
+      "unknown": {
+        "calls": 36,
+        "tokens": 155682,
+        "cost_usd": 0.093411,
+        "time_s": 65.14000000000001
+      },
+      "tech_lead": {
+        "calls": 1,
+        "tokens": 10474,
+        "cost_usd": 0.006284,
+        "time_s": 3.52
+      }
+    },
+    "project_name": "recipe_meal_planner",
+    "forge_score": 61,
+    "wall_time_s": 53.0,
+    "timestamp": "2026-06-27T19:20:28"
+  },
+  {
+    "total_calls": 37,
+    "total_tokens": 182219,
+    "total_cost_usd": 0.10933,
+    "total_llm_time_s": 64.5,
+    "by_stage": {
+      "product_manager": {
+        "calls": 1,
+        "tokens": 2814,
+        "cost_usd": 0.001688,
+        "time_s": 1.8
+      },
+      "unknown": {
+        "calls": 35,
+        "tokens": 168790,
+        "cost_usd": 0.101273,
+        "time_s": 60.81
+      },
+      "tech_lead": {
+        "calls": 1,
+        "tokens": 10615,
+        "cost_usd": 0.006369,
+        "time_s": 1.89
+      }
+    },
+    "project_name": "recipe_meal_planner",
+    "forge_score": 61,
+    "wall_time_s": 865.65,
+    "timestamp": "2026-06-27T19:34:54"
+  },
+  {
+    "total_calls": 36,
+    "total_tokens": 160790,
+    "total_cost_usd": 0.096474,
+    "total_llm_time_s": 62.32,
+    "by_stage": {
+      "product_manager": {
+        "calls": 1,
+        "tokens": 2472,
+        "cost_usd": 0.001483,
+        "time_s": 4.11
+      },
+      "unknown": {
+        "calls": 34,
+        "tokens": 148614,
+        "cost_usd": 0.08916899999999998,
+        "time_s": 55.830000000000005
+      },
+      "tech_lead": {
+        "calls": 1,
+        "tokens": 9704,
+        "cost_usd": 0.005822,
+        "time_s": 2.38
+      }
+    },
+    "project_name": "snakes_and_ladders_app",
+    "forge_score": 61,
+    "wall_time_s": 47.85,
+    "timestamp": "2026-06-27T20:20:03"
+  },
+  {
+    "total_calls": 43,
+    "total_tokens": 206100,
+    "total_cost_usd": 0.123661,
+    "total_llm_time_s": 72.45,
+    "by_stage": {
+      "product_manager": {
+        "calls": 1,
+        "tokens": 2319,
+        "cost_usd": 0.001391,
+        "time_s": 1.33
+      },
+      "unknown": {
+        "calls": 41,
+        "tokens": 194223,
+        "cost_usd": 0.11653499999999999,
+        "time_s": 69.58999999999999
+      },
+      "tech_lead": {
+        "calls": 1,
+        "tokens": 9558,
+        "cost_usd": 0.005735,
+        "time_s": 1.53
+      }
+    },
+    "project_name": "snake_ladders_game_app",
+    "forge_score": 61,
+    "wall_time_s": 209.94,
+    "timestamp": "2026-06-27T20:23:33"
+  },
+  {
+    "total_calls": 38,
+    "total_tokens": 181311,
+    "total_cost_usd": 0.108788,
+    "total_llm_time_s": 58.58,
+    "by_stage": {
+      "product_manager": {
+        "calls": 1,
+        "tokens": 2403,
+        "cost_usd": 0.001442,
+        "time_s": 3.54
+      },
+      "unknown": {
+        "calls": 36,
+        "tokens": 169634,
+        "cost_usd": 0.10178200000000001,
+        "time_s": 52.74000000000002
+      },
+      "tech_lead": {
+        "calls": 1,
+        "tokens": 9274,
+        "cost_usd": 0.005564,
+        "time_s": 2.3
+      }
+    },
+    "project_name": "snake_ladders_app",
+    "forge_score": 61,
+    "wall_time_s": 863.98,
+    "timestamp": "2026-06-27T20:45:34"
+  },
+  {
+    "total_calls": 41,
+    "total_tokens": 200773,
+    "total_cost_usd": 0.120466,
+    "total_llm_time_s": 68.81,
+    "by_stage": {
+      "product_manager": {
+        "calls": 1,
+        "tokens": 2767,
+        "cost_usd": 0.00166,
+        "time_s": 4.26
+      },
+      "unknown": {
+        "calls": 39,
+        "tokens": 188028,
+        "cost_usd": 0.11281899999999999,
+        "time_s": 62.410000000000025
+      },
+      "tech_lead": {
+        "calls": 1,
+        "tokens": 9978,
+        "cost_usd": 0.005987,
+        "time_s": 2.14
+      }
+    },
+    "project_name": "snake_ladders_game",
+    "forge_score": 61,
+    "wall_time_s": 108.53,
+    "timestamp": "2026-06-27T21:18:22"
+  },
+  {
+    "total_calls": 33,
+    "total_tokens": 154838,
+    "total_cost_usd": 0.092903,
+    "total_llm_time_s": 63.58,
+    "by_stage": {
+      "product_manager": {
+        "calls": 1,
+        "tokens": 2554,
+        "cost_usd": 0.001532,
+        "time_s": 3.59
+      },
+      "unknown": {
+        "calls": 31,
+        "tokens": 142712,
+        "cost_usd": 0.085628,
+        "time_s": 56.84000000000001
+      },
+      "tech_lead": {
+        "calls": 1,
+        "tokens": 9572,
+        "cost_usd": 0.005743,
+        "time_s": 3.15
+      }
+    },
+    "project_name": "snake_ladders_app",
+    "forge_score": 61,
+    "wall_time_s": 156.6,
+    "timestamp": "2026-06-27T21:23:38"
+  },
+  {
+    "total_calls": 34,
+    "total_tokens": 152113,
+    "total_cost_usd": 0.091269,
+    "total_llm_time_s": 55.79,
+    "by_stage": {
+      "product_manager": {
+        "calls": 1,
+        "tokens": 2335,
+        "cost_usd": 0.001401,
+        "time_s": 3.98
+      },
+      "unknown": {
+        "calls": 32,
+        "tokens": 140457,
+        "cost_usd": 0.08427500000000002,
+        "time_s": 49.669999999999995
+      },
+      "tech_lead": {
+        "calls": 1,
+        "tokens": 9321,
+        "cost_usd": 0.005593,
+        "time_s": 2.14
+      }
+    },
+    "project_name": "snake_ladders_app",
+    "forge_score": 79,
+    "wall_time_s": 242.88,
+    "timestamp": "2026-06-27T21:32:12"
+  },
+  {
+    "total_calls": 34,
+    "total_tokens": 166525,
+    "total_cost_usd": 0.099912,
+    "total_llm_time_s": 58.9,
+    "by_stage": {
+      "product_manager": {
+        "calls": 1,
+        "tokens": 2645,
+        "cost_usd": 0.001587,
+        "time_s": 4.21
+      },
+      "unknown": {
+        "calls": 32,
+        "tokens": 154321,
+        "cost_usd": 0.09259,
+        "time_s": 52.74999999999999
+      },
+      "tech_lead": {
+        "calls": 1,
+        "tokens": 9559,
+        "cost_usd": 0.005735,
+        "time_s": 1.94
+      }
+    },
+    "project_name": "snakes_and_ladders_app",
+    "forge_score": 61,
+    "wall_time_s": 326.03,
+    "timestamp": "2026-06-27T21:40:07"
+  },
+  {
+    "total_calls": 32,
+    "total_tokens": 156279,
+    "total_cost_usd": 0.093767,
+    "total_llm_time_s": 57.01,
+    "by_stage": {
+      "product_manager": {
+        "calls": 1,
+        "tokens": 2430,
+        "cost_usd": 0.001458,
+        "time_s": 3.82
+      },
+      "unknown": {
+        "calls": 30,
+        "tokens": 144424,
+        "cost_usd": 0.086654,
+        "time_s": 50.91000000000001
+      },
+      "tech_lead": {
+        "calls": 1,
+        "tokens": 9425,
+        "cost_usd": 0.005655,
+        "time_s": 2.28
+      }
+    },
+    "project_name": "snakes_and_ladders_app",
+    "forge_score": 61,
+    "wall_time_s": 59.85,
+    "timestamp": "2026-06-27T22:16:48"
+  },
+  {
+    "total_calls": 38,
+    "total_tokens": 170602,
+    "total_cost_usd": 0.102364,
+    "total_llm_time_s": 52.88,
+    "by_stage": {
+      "product_manager": {
+        "calls": 1,
+        "tokens": 2468,
+        "cost_usd": 0.001481,
+        "time_s": 1.74
+      },
+      "unknown": {
+        "calls": 36,
+        "tokens": 159006,
+        "cost_usd": 0.09540599999999999,
+        "time_s": 48.49000000000001
+      },
+      "tech_lead": {
+        "calls": 1,
+        "tokens": 9128,
+        "cost_usd": 0.005477,
+        "time_s": 2.65
+      }
+    },
+    "project_name": "snake_and_ladders_app",
+    "forge_score": 79,
+    "wall_time_s": 61.62,
+    "timestamp": "2026-06-27T22:17:50"
+  },
+  {
+    "total_calls": 41,
+    "total_tokens": 185352,
+    "total_cost_usd": 0.111212,
+    "total_llm_time_s": 64.14,
+    "by_stage": {
+      "product_manager": {
+        "calls": 1,
+        "tokens": 2866,
+        "cost_usd": 0.00172,
+        "time_s": 4.71
+      },
+      "unknown": {
+        "calls": 39,
+        "tokens": 172217,
+        "cost_usd": 0.10333099999999999,
+        "time_s": 57.739999999999995
+      },
+      "tech_lead": {
+        "calls": 1,
+        "tokens": 10269,
+        "cost_usd": 0.006161,
+        "time_s": 1.69
+      }
+    },
+    "project_name": "snake_ladders_app",
+    "forge_score": 61,
+    "wall_time_s": 407.48,
+    "timestamp": "2026-06-27T22:31:25"
+  },
+  {
+    "total_calls": 31,
+    "total_tokens": 147545,
+    "total_cost_usd": 0.088526,
+    "total_llm_time_s": 52.24,
+    "by_stage": {
+      "product_manager": {
+        "calls": 1,
+        "tokens": 2677,
+        "cost_usd": 0.001606,
+        "time_s": 3.17
+      },
+      "unknown": {
+        "calls": 29,
+        "tokens": 135496,
+        "cost_usd": 0.081297,
+        "time_s": 47.37
+      },
+      "tech_lead": {
+        "calls": 1,
+        "tokens": 9372,
+        "cost_usd": 0.005623,
+        "time_s": 1.7
+      }
+    },
+    "project_name": "personal_expense_tracker",
+    "forge_score": 61,
+    "wall_time_s": 38.77,
+    "timestamp": "2026-06-28T01:11:43"
+  },
+  {
+    "total_calls": 17,
+    "total_tokens": 85801,
+    "total_cost_usd": 0.051481,
+    "total_llm_time_s": 27.65,
+    "by_stage": {
+      "unknown": {
+        "calls": 17,
+        "tokens": 85801,
+        "cost_usd": 0.051481,
+        "time_s": 27.650000000000002
+      }
+    },
+    "project_name": "personal_expense_tracker",
+    "forge_score": 61,
+    "wall_time_s": 20.8,
+    "timestamp": "2026-06-28T01:12:04"
   }
 ]

@@ -28,7 +28,7 @@
       "last_seen": "2026-06-22T11:48:13.728754"
     },
     "NoReferencedTableError": {
-      "count": 5,
+      "count": 6,
       "examples": [
         {
           "project": "test_app",
@@ -52,7 +52,7 @@
         }
       ],
       "first_seen": "2026-06-21T20:43:34.977765",
-      "last_seen": "2026-06-22T11:15:06.174696"
+      "last_seen": "2026-06-27T14:53:33.736245"
     },
     "FrontendBuildError": {
       "count": 2,
@@ -97,7 +97,7 @@
       "last_seen": "2026-06-22T11:13:08.860100"
     },
     "SQLAlchemyError": {
-      "count": 7,
+      "count": 9,
       "examples": [
         {
           "project": "HR Onboarding System",
@@ -121,7 +121,7 @@
         }
       ],
       "first_seen": "2026-06-21T21:30:53.208370",
-      "last_seen": "2026-06-22T11:43:55.097028"
+      "last_seen": "2026-06-27T17:01:25.687774"
     },
     "ValidationError": {
       "count": 1,
@@ -146,7 +146,7 @@
       "last_seen": "2026-06-22T05:53:56.254146"
     },
     "ImportError": {
-      "count": 5,
+      "count": 8,
       "examples": [
         {
           "project": "inventory_system",
@@ -170,7 +170,7 @@
         }
       ],
       "first_seen": "2026-06-22T05:55:11.076646",
-      "last_seen": "2026-06-22T11:25:11.338884"
+      "last_seen": "2026-06-27T16:10:07.584058"
     },
     "MonolithicSchemaError": {
       "count": 1,
@@ -239,8 +239,19 @@
       ],
       "first_seen": "2026-06-22T10:44:11.605211",
       "last_seen": "2026-06-22T11:22:25.507048"
+    },
+    "RelationshipMissingError": {
+      "count": 1,
+      "examples": [
+        {
+          "project": "snake_ladders_app",
+          "error": "RelationshipMissingError"
+        }
+      ],
+      "first_seen": "2026-06-27T15:15:34.575254",
+      "last_seen": "2026-06-27T15:15:34.575276"
     }
   },
-  "total_runs": 178,
-  "last_updated": "2026-06-22T19:43:51.449411"
+  "total_runs": 193,
+  "last_updated": "2026-06-27T19:42:04.619688"
 }
