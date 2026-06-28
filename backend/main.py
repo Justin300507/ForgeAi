@@ -143,24 +143,12 @@ def _run_job(job_id: str, req: JobRequest):
     # Look up per-user deployment credentials and temporarily apply them as env vars
     _saved_env: dict = {}
     try:
-        _cred_db = SessionLocal()
-        try:
-            _job = _cred_db.query(GenerationJob).filter(GenerationJob.id == job_id).first()
-            _creds = (
-                _cred_db.query(UserCredentials)
-                .filter(UserCredentials.user_id == _job.user_id)
-                .first()
-            ) if _job else None
-        finally:
-            _cred_db.close()
-
-        # Merge DB credentials with env vars — DB values take priority,
-        # env vars are the fallback when the SQLite file was wiped by a redeploy.
+        _c = _merged_creds()
         _env_map = {
-            "GITHUB_TOKEN": (_creds and _creds.github_token) or os.getenv("GITHUB_TOKEN"),
-            "RAILWAY_TOKEN": (_creds and _creds.railway_token) or os.getenv("RAILWAY_TOKEN"),
-            "CLOUDFLARE_API_TOKEN": (_creds and _creds.cloudflare_api_token) or os.getenv("CLOUDFLARE_API_TOKEN"),
-            "CLOUDFLARE_ACCOUNT_ID": (_creds and _creds.cloudflare_account_id) or os.getenv("CLOUDFLARE_ACCOUNT_ID"),
+            "GITHUB_TOKEN": _c["github_token"],
+            "RAILWAY_TOKEN": _c["railway_token"],
+            "CLOUDFLARE_API_TOKEN": _c["cloudflare_api_token"],
+            "CLOUDFLARE_ACCOUNT_ID": _c["cloudflare_account_id"],
         }
         for _k, _v in _env_map.items():
             if _v:
@@ -1035,7 +1023,40 @@ def deploy_cloudflare(project_name: str, project_path: str, backend_url: str = "
     return {"success": res.success, "url": res.url, "error": res.error}
 
 
-# ── Per-user deployment credentials ──────────────────────────────────────────
+# ── Deployment credentials (no auth required — server-level config) ───────────
+# Stored in credentials.json so they survive DB wipes. Env vars are the
+# ultimate fallback so Railway-injected tokens always work.
+
+import json as _creds_json
+
+def _creds_path() -> str:
+    p = "/data/credentials.json" if os.path.isdir("/data") else os.path.join(os.path.dirname(__file__), "credentials.json")
+    return p
+
+def _load_creds() -> dict:
+    try:
+        with open(_creds_path(), encoding="utf-8") as f:
+            return _creds_json.load(f)
+    except Exception:
+        return {}
+
+def _save_creds(data: dict) -> None:
+    try:
+        with open(_creds_path(), "w", encoding="utf-8") as f:
+            _creds_json.dump(data, f)
+    except Exception:
+        pass
+
+def _merged_creds() -> dict:
+    """File values take priority; env vars are the fallback."""
+    stored = _load_creds()
+    return {
+        "github_token": stored.get("github_token") or os.getenv("GITHUB_TOKEN", ""),
+        "railway_token": stored.get("railway_token") or os.getenv("RAILWAY_TOKEN", ""),
+        "cloudflare_api_token": stored.get("cloudflare_api_token") or os.getenv("CLOUDFLARE_API_TOKEN", ""),
+        "cloudflare_account_id": stored.get("cloudflare_account_id") or os.getenv("CLOUDFLARE_ACCOUNT_ID", ""),
+    }
+
 
 class CredentialsRequest(BaseModel):
     github_token: str = ""
@@ -1045,50 +1066,34 @@ class CredentialsRequest(BaseModel):
 
 
 @app.get("/credentials", tags=["credentials"])
-def get_credentials(db: Session = Depends(get_db), current_user=Depends(get_current_user)):
-    creds = db.query(UserCredentials).filter(UserCredentials.user_id == current_user.id).first()
-    # Fall back to Railway env vars so the dashboard always shows connected
-    # even after a container restart wipes the SQLite file.
-    return {
-        "github_token": (creds and creds.github_token) or os.getenv("GITHUB_TOKEN", ""),
-        "railway_token": (creds and creds.railway_token) or os.getenv("RAILWAY_TOKEN", ""),
-        "cloudflare_api_token": (creds and creds.cloudflare_api_token) or os.getenv("CLOUDFLARE_API_TOKEN", ""),
-        "cloudflare_account_id": (creds and creds.cloudflare_account_id) or os.getenv("CLOUDFLARE_ACCOUNT_ID", ""),
-    }
+def get_credentials():
+    return _merged_creds()
 
 
 @app.post("/credentials", tags=["credentials"])
-def save_credentials(
-    req: CredentialsRequest,
-    db: Session = Depends(get_db),
-    current_user=Depends(get_current_user),
-):
-    creds = db.query(UserCredentials).filter(UserCredentials.user_id == current_user.id).first()
-    if not creds:
-        creds = UserCredentials(user_id=current_user.id)
-        db.add(creds)
-    creds.github_token = req.github_token or None
-    creds.railway_token = req.railway_token or None
-    creds.cloudflare_api_token = req.cloudflare_api_token or None
-    creds.cloudflare_account_id = req.cloudflare_account_id or None
-    db.commit()
+def save_credentials(req: CredentialsRequest):
+    existing = _load_creds()
+    existing.update({
+        "github_token": req.github_token or existing.get("github_token", ""),
+        "railway_token": req.railway_token or existing.get("railway_token", ""),
+        "cloudflare_api_token": req.cloudflare_api_token or existing.get("cloudflare_api_token", ""),
+        "cloudflare_account_id": req.cloudflare_account_id or existing.get("cloudflare_account_id", ""),
+    })
+    _save_creds(existing)
     return {"saved": True}
 
 
 @app.get("/credentials/status", tags=["credentials"])
-def credentials_status(db: Session = Depends(get_db), current_user=Depends(get_current_user)):
+def credentials_status():
     """Validate stored tokens against each service's API and return account info."""
     import urllib.request as _urlreq
     import json as _json
-    import requests as _requests
 
-    creds = db.query(UserCredentials).filter(UserCredentials.user_id == current_user.id).first()
-
-    # Merge DB values with env vars — env vars are the fallback when DB is wiped
-    github_token = (creds and creds.github_token) or os.getenv("GITHUB_TOKEN")
-    railway_token = (creds and creds.railway_token) or os.getenv("RAILWAY_TOKEN")
-    cloudflare_api_token = (creds and creds.cloudflare_api_token) or os.getenv("CLOUDFLARE_API_TOKEN")
-    cloudflare_account_id = (creds and creds.cloudflare_account_id) or os.getenv("CLOUDFLARE_ACCOUNT_ID")
+    c = _merged_creds()
+    github_token = c["github_token"]
+    railway_token = c["railway_token"]
+    cloudflare_api_token = c["cloudflare_api_token"]
+    cloudflare_account_id = c["cloudflare_account_id"]
 
     if not any([github_token, railway_token, cloudflare_api_token]):
         return {"github": None, "cloudflare": None, "railway": None}
