@@ -1145,10 +1145,12 @@ def credentials_status(db: Session = Depends(get_db), current_user=Depends(get_c
                 timeout=8,
             )
             data = resp.json()
+            # API tokens return me=null but no errors — still a valid token
+            valid = resp.status_code == 200 and not data.get("errors")
             me = (data.get("data") or {}).get("me") or {}
             out["railway"] = {
-                "connected": bool(me),
-                "name": me.get("name"),
+                "connected": valid,
+                "name": me.get("name") or "Connected",
                 "email": me.get("email"),
             }
         except Exception:
