@@ -94,6 +94,36 @@ def generate_project_v14(
         result["report"] = {"status": "failed", "reason": "Generation failed — no project path"}
         return result
 
+    # ── Deploy gate: never ship a broken app ──────────────────────────────────
+    # A 200 /health does NOT mean the app works — it just means uvicorn started.
+    # We only deploy when runtime smoke tests AND CRUD journey both passed.
+    if not runtime_passed and deploy_to != "none":
+        print(
+            "\n[V14] Runtime validation FAILED — blocking deployment.\n"
+            "      Fix the runtime errors above, then re-run to deploy.\n"
+            "      (A healthy /health endpoint is not enough — CRUD must pass too.)"
+        )
+        result["report"] = {
+            "status": "runtime_failed",
+            "reason": "Runtime validation did not pass — deployment blocked to prevent shipping a broken app",
+            "project_name": project_name,
+            "project_path": project_path,
+            "forge_score": v7_result.get("forge_score"),
+            "static_passed": static_passed,
+            "runtime_passed": False,
+            "github_url": None,
+            "backend_url": None,
+            "frontend_url": None,
+            "next_steps": [
+                "1. Review the runtime errors above",
+                "2. Click 'Fix & Retry' to re-run the repair + runtime loop",
+                "3. Once runtime passes, re-run V14 to deploy",
+            ],
+        }
+        result["total_time"] = round(time.time() - start, 2)
+        _print_report(result["report"])
+        return result
+
     # ── Step 2: Write deployment configs ─────────────────────────────────────
     print("\n[V14] Step 2/5 — Generating deployment configs...")
     config_results = generate_deployment_configs(project_path, project_name)

@@ -814,6 +814,260 @@ def _patch_auth_requirements(project_path: Path) -> None:
     req_file.write_text("\n".join(out) + "\n", encoding="utf-8")
 
 
+# ── 10. Auth routes injection ─────────────────────────────────────────────────
+# When the architect skips auth endpoints (common for simple apps), the patcher
+# injects a known-good auth_routes.py with signup/login/me.  Without this,
+# every CRUD endpoint that requires auth returns 401 and the journey fails entirely.
+
+_AUTH_ROUTES_TEMPLATE = '''\
+from fastapi import APIRouter, Depends, HTTPException
+from pydantic import BaseModel, Field
+from sqlalchemy.orm import Session
+
+from app.database import get_db
+from app.utils.auth import (
+    get_password_hash, verify_password, create_access_token, get_current_user,
+)
+
+auth_router = APIRouter()
+
+
+class SignupRequest(BaseModel):
+    email: str = Field(min_length=1)
+    password: str = Field(min_length=1)
+    display_name: str = ""
+
+
+class LoginRequest(BaseModel):
+    email: str = Field(min_length=1)
+    password: str = Field(min_length=1)
+
+
+def _get_user_model():
+    """Import User model by trying singular then plural name."""
+    try:
+        from app.models.user import User
+        return User
+    except ImportError:
+        from app.models.users import Users
+        return Users
+
+
+def _make_user(email: str, password: str, display_name: str = ""):
+    """Build a User instance regardless of which password field the model uses."""
+    User = _get_user_model()
+    cols = {c.name for c in User.__table__.columns}
+    kw: dict = {"email": email}
+    pwd_hash = get_password_hash(password)
+    for field in ("hashed_password", "password_hash", "password"):
+        if field in cols:
+            kw[field] = pwd_hash
+            break
+    if "display_name" in cols:
+        kw["display_name"] = display_name or email.split("@")[0]
+    if "username" in cols:
+        kw["username"] = email.split("@")[0]
+    if "is_active" in cols:
+        kw["is_active"] = True
+    if "role" in cols:
+        kw["role"] = "user"
+    return User(**kw)
+
+
+def _read_password(user) -> str | None:
+    for field in ("hashed_password", "password_hash", "password"):
+        val = getattr(user, field, None)
+        if val:
+            return val
+    return None
+
+
+@auth_router.post("/auth/signup")
+def signup(req: SignupRequest, db: Session = Depends(get_db)):
+    User = _get_user_model()
+    if db.query(User).filter(User.email == req.email).first():
+        raise HTTPException(status_code=400, detail="Email already registered")
+    user = _make_user(req.email, req.password, req.display_name)
+    db.add(user)
+    db.commit()
+    db.refresh(user)
+    token = create_access_token(data={"sub": user.email})
+    return {
+        "access_token": token,
+        "token_type": "bearer",
+        "user_id": user.id,
+        "email": user.email,
+        "display_name": getattr(user, "display_name", req.email.split("@")[0]),
+    }
+
+
+@auth_router.post("/auth/login")
+def login(req: LoginRequest, db: Session = Depends(get_db)):
+    User = _get_user_model()
+    user = db.query(User).filter(User.email == req.email).first()
+    stored = _read_password(user) if user else None
+    if not user or not stored or not verify_password(req.password, stored):
+        raise HTTPException(status_code=401, detail="Incorrect email or password")
+    token = create_access_token(data={"sub": user.email})
+    return {
+        "access_token": token,
+        "token_type": "bearer",
+        "user_id": user.id,
+        "email": user.email,
+        "display_name": getattr(user, "display_name", user.email.split("@")[0]),
+    }
+
+
+@auth_router.get("/auth/me")
+def me(current_user=Depends(get_current_user)):
+    return {
+        "id": current_user.id,
+        "email": current_user.email,
+        "display_name": getattr(current_user, "display_name", None),
+        "role": getattr(current_user, "role", None),
+    }
+'''
+
+
+def _patch_auth_routes(project_path: Path) -> None:
+    """
+    Inject a known-good auth_routes.py if the project has a User model but
+    no working auth endpoints.  Also wires the router into main.py.
+    """
+    routes_dir = project_path / "app" / "routes"
+    main_py = project_path / "app" / "main.py"
+    if not routes_dir.exists() or not main_py.exists():
+        return
+
+    # Only inject when a User-like model exists
+    models_dir = project_path / "app" / "models"
+    has_user_model = any(
+        (models_dir / name).exists() for name in ("user.py", "users.py")
+    ) if models_dir.exists() else False
+    if not has_user_model:
+        return
+
+    auth_routes_file = routes_dir / "auth_routes.py"
+    needs_inject = False
+
+    if not auth_routes_file.exists():
+        needs_inject = True
+    else:
+        try:
+            existing = auth_routes_file.read_text(encoding="utf-8", errors="replace")
+            # Re-inject if signup/login endpoints are missing
+            if "/auth/signup" not in existing and "/auth/login" not in existing:
+                needs_inject = True
+        except Exception:
+            needs_inject = True
+
+    if needs_inject:
+        auth_routes_file.write_text(_AUTH_ROUTES_TEMPLATE, encoding="utf-8")
+        print("  [patcher] Injected known-good app/routes/auth_routes.py")
+
+    # Ensure main.py imports and includes auth_router
+    try:
+        main_content = main_py.read_text(encoding="utf-8", errors="replace")
+        changed = False
+
+        import_line = "from app.routes.auth_routes import auth_router"
+        if import_line not in main_content:
+            # Insert after the last routes import, or at the top of import block
+            last_routes_import = None
+            for m in re.finditer(r"from app\.routes\.\w+ import \w+_router\n", main_content):
+                last_routes_import = m
+            if last_routes_import:
+                pos = last_routes_import.end()
+                main_content = main_content[:pos] + import_line + "\n" + main_content[pos:]
+            else:
+                main_content = import_line + "\n" + main_content
+            changed = True
+
+        include_line = "app.include_router(auth_router)"
+        if include_line not in main_content:
+            # Insert before Base.metadata.create_all or at end of include_router block
+            last_include = None
+            for m in re.finditer(r"app\.include_router\(\w+_router\)\n", main_content):
+                last_include = m
+            if last_include:
+                pos = last_include.end()
+                main_content = main_content[:pos] + include_line + "\n" + main_content[pos:]
+            else:
+                main_content = re.sub(
+                    r"(Base\.metadata\.create_all)",
+                    include_line + "\n" + r"\1",
+                    main_content,
+                    count=1,
+                )
+            changed = True
+
+        if changed:
+            main_py.write_text(main_content, encoding="utf-8")
+            print("  [patcher] Wired auth_router into main.py")
+    except Exception as e:
+        print(f"  [patcher] auth_routes main.py update failed: {e}")
+
+
+# ── 11. Seed IndexError guard ──────────────────────────────────────────────────
+# Seed scripts index queried lists like user_objs[0] assuming inserts succeeded.
+# If a required model field is missing, inserts fail silently and the list is empty,
+# causing IndexError.  Add a null guard after each list-building query.
+
+def _patch_seed_robustness(project_path: Path) -> int:
+    """
+    Add null guards before list[0] accesses in seed_routes.py.
+    Prevents IndexError when parent entity creation fails (e.g. missing required field).
+    """
+    seed_file = project_path / "app" / "routes" / "seed_routes.py"
+    if not seed_file.exists():
+        return 0
+    try:
+        content = seed_file.read_text(encoding="utf-8", errors="replace")
+    except Exception:
+        return 0
+    if "[0]" not in content:
+        return 0
+
+    # Find all variable names accessed with [0]
+    indexed_vars: set[str] = set(re.findall(r'\b([a-z_]\w*)\[0\]', content))
+    if not indexed_vars:
+        return 0
+
+    modified = False
+    for var in sorted(indexed_vars):
+        guard_check = f"if not {var}:"
+        if guard_check in content:
+            continue  # already guarded
+
+        # Find the last assignment to this variable before the first [0] usage
+        first_index_pos = content.find(f"{var}[0]")
+        if first_index_pos == -1:
+            continue
+
+        assign_pat = re.compile(rf'^([ \t]*){re.escape(var)}\s*=\s*', re.MULTILINE)
+        last_assign = None
+        for m in assign_pat.finditer(content, 0, first_index_pos):
+            last_assign = m
+
+        if last_assign is None:
+            continue
+
+        # Insert the guard right after the assignment line ends
+        line_end = content.find('\n', last_assign.start())
+        if line_end == -1:
+            continue
+        indent = last_assign.group(1)
+        guard = f"\n{indent}if not {var}:\n{indent}    return {{\"message\": \"Seed skipped: {var} is empty\"}}"
+        content = content[:line_end] + guard + content[line_end:]
+        modified = True
+        print(f"  [patcher] Added null guard for '{var}' in seed_routes.py")
+
+    if modified:
+        seed_file.write_text(content, encoding="utf-8")
+        return 1
+    return 0
+
+
 # ── Main entry point ──────────────────────────────────────────────────────────
 
 def run_deterministic_patches(project_path: str) -> int:
@@ -872,6 +1126,13 @@ def run_deterministic_patches(project_path: str) -> int:
     # Auth utils: inject known-good app/utils/auth.py (eliminates passlib/jose login crashes)
     _patch_auth_utils(root)
     _patch_auth_requirements(root)
+
+    # Auth routes: inject signup/login/me if project has a User model but no auth endpoints.
+    # Without this, every authenticated endpoint returns 401 and the journey fails entirely.
+    _patch_auth_routes(root)
+
+    # Seed robustness: guard against IndexError when parent entity inserts fail
+    _patch_seed_robustness(root)
 
     if modified:
         print(f"  [patcher] Patched {modified} file(s) — passlib→bcrypt, async→sync, smart quotes")
