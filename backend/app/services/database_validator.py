@@ -38,7 +38,8 @@ def validate_database(project_path, errors):
 
     exported = set()
 
-    for node in database_tree.body:
+    # Walk ALL nodes (not just top-level body) to catch assignments inside if/else blocks
+    for node in ast.walk(database_tree):
 
         if isinstance(node, ast.Assign):
 

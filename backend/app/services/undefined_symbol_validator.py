@@ -144,7 +144,13 @@ def validate_undefined_symbols(project_path, errors):
 
             undefined = used - defined - builtin_names
 
-            ignored = {"self", "cls"}
+            # Python module-level dunder attributes set by the import machinery
+            _module_dunders = {
+                "__file__", "__name__", "__doc__", "__package__",
+                "__spec__", "__loader__", "__builtins__", "__cached__",
+                "__all__", "__version__", "__author__",
+            }
+            ignored = {"self", "cls"} | _module_dunders
             undefined -= ignored
 
             for symbol in sorted(undefined):

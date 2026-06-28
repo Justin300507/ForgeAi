@@ -10,17 +10,20 @@ DATABASE_URL = os.getenv("DATABASE_URL", "sqlite:///./app.db")
 if DATABASE_URL.startswith("postgres://"):
     DATABASE_URL = DATABASE_URL.replace("postgres://", "postgresql://", 1)
 
-if DATABASE_URL.startswith("sqlite"):
-    engine = create_engine(DATABASE_URL, connect_args={"check_same_thread": False})
-else:
-    engine = create_engine(DATABASE_URL, pool_pre_ping=True, pool_recycle=300)
+# Top-level engine assignment so validators can detect the exported symbol
+_engine_kwargs = (
+    {"connect_args": {"check_same_thread": False}}
+    if DATABASE_URL.startswith("sqlite")
+    else {"pool_pre_ping": True, "pool_recycle": 300}
+)
+engine = create_engine(DATABASE_URL, **_engine_kwargs)
 
 SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
 
 Base = declarative_base()
 
 
-def _add_missing_columns() -> None:
+def _add_missing_columns():
     """ALTER TABLE ADD COLUMN for any mapped columns missing from existing tables."""
     try:
         from sqlalchemy import inspect as _inspect, text as _text
@@ -53,7 +56,8 @@ def _add_missing_columns() -> None:
 
 def create_tables():
     """Import every model in app/models/ then create all tables."""
-    models_dir = os.path.join(os.path.dirname(__file__), "models")
+    # Use CWD-relative path; uvicorn and pre-flight subprocess run from backend dir
+    models_dir = os.path.join("app", "models")
     if os.path.isdir(models_dir):
         for fname in sorted(os.listdir(models_dir)):
             if fname.endswith(".py") and fname not in ("__init__.py",):
