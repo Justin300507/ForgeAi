@@ -287,9 +287,34 @@ def run_user_journey(
 
     headers = {"Authorization": f"Bearer {token}"} if token else {}
 
-    # ── Step 3: Detect entity (informational) ───────────────────────────
-    steps.append(JourneyStep(name="Detect entity", passed=True,
-                              duration_ms=0, detail=entity_url))
+    # ── Step 3: Detect entity ────────────────────────────────────────────
+    # entity_url was computed from the architecture; verify it's reachable
+    # (pass auth headers in case all endpoints require JWT).
+    def do_detect_entity():
+        if not token:
+            return True, entity_url  # can't verify, proceed with architecture guess
+        r = requests.get(entity_url, headers=headers, timeout=4)
+        if r.status_code in (200, 201):
+            return True, entity_url
+        # Try other resources from the architecture before giving up
+        candidates = []
+        for ep in arch.get("api_endpoints", []):
+            p = ep.get("path", "")
+            m = ep.get("method", "").upper()
+            if m == "GET" and "{" not in p and "auth" not in p.lower():
+                url = f"{base}{p}"
+                if url != entity_url and url not in candidates:
+                    candidates.append(url)
+        for url in candidates[:6]:
+            r2 = requests.get(url, headers=headers, timeout=3)
+            if r2.status_code == 200:
+                return True, url
+        return True, entity_url  # fall through with best guess; CRUD steps will show real errors
+    detect_step = _step("Detect entity", do_detect_entity)
+    # Use the returned URL as entity_url for subsequent steps
+    if detect_step.passed and detect_step.detail.startswith("http"):
+        entity_url = detect_step.detail
+    steps.append(detect_step)
 
     # ── Step 4: Create entity ─────────────────────────────────────────
     def do_create():

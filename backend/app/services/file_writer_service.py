@@ -58,6 +58,47 @@ def _repair_backslash_syntax(content: str) -> str:
     return s1  # at least strip trailing whitespace
 
 
+def _fix_indent_error(content: str) -> str:
+    """Fix 'unexpected indent' SyntaxError by dedenting the offending block.
+
+    The LLM occasionally wraps module-level code (CORS setup, router includes)
+    inside an accidental indented block.  We detect the first bad indent and
+    remove it from that line onward until indent drops back to zero.
+    """
+    for _ in range(5):  # up to 5 passes for nested bad indents
+        try:
+            ast.parse(content)
+            return content
+        except SyntaxError as exc:
+            if "unexpected indent" not in str(exc) or not exc.lineno:
+                return content
+            lines = content.split("\n")
+            idx = exc.lineno - 1
+            if idx >= len(lines):
+                return content
+            bad_line = lines[idx]
+            indent = len(bad_line) - len(bad_line.lstrip())
+            if indent == 0:
+                return content
+            # Dedent the block: strip `indent` characters from this and following
+            # lines that are at the same or deeper level.
+            result = lines[:]
+            i = idx
+            while i < len(result):
+                ln = result[i]
+                if ln.strip() == "":
+                    i += 1
+                    continue
+                ln_indent = len(ln) - len(ln.lstrip())
+                if ln_indent >= indent:
+                    result[i] = ln[indent:]
+                    i += 1
+                else:
+                    break
+            content = "\n".join(result)
+    return content
+
+
 # Auth-only schema class names — should only appear in auth_routes.py or schemas/auth.py,
 # never in other schema files like user.py, candidate_profile.py, etc.
 _AUTH_SCHEMA_CLASSES = frozenset({
@@ -267,9 +308,26 @@ def _is_safe_to_write(path, content):
         return True
 
     except SyntaxError as e:
+        # Try auto-repair strategies before giving up
+        repaired = _repair_backslash_syntax(content)
+        if repaired != content:
+            try:
+                ast.parse(repaired)
+                return repaired   # caller receives fixed content
+            except SyntaxError:
+                pass
+
+        if "unexpected indent" in str(e):
+            fixed = _fix_indent_error(content)
+            try:
+                ast.parse(fixed)
+                print(f"  [file_writer] Auto-fixed indent error in {path}")
+                return fixed      # caller receives fixed content
+            except SyntaxError:
+                pass
+
         print(f"\n=== SKIPPING TRUNCATED/INVALID FILE: {path} ===")
         print(f"SyntaxError: {e}")
-        # Dump ALL lines with repr so we can see the actual characters
         lines = content.split("\n")
         start = max(0, (e.lineno or 1) - 3) if e.lineno else 0
         end = min(len(lines), (e.lineno or len(lines)) + 2) if e.lineno else min(10, len(lines))
@@ -277,7 +335,6 @@ def _is_safe_to_write(path, content):
             marker = " >>>" if i == e.lineno else "    "
             print(f"  {marker} L{i}: {repr(ln)}")
         if not e.lineno:
-            # No lineno — print first 15 lines to debug
             for i, ln in enumerate(lines[:15], start=1):
                 print(f"      L{i}: {repr(ln)}")
         return False
@@ -338,8 +395,11 @@ def write_files(project_name, files, frontend_target: str = "web"):
         content = _normalize_newlines(path, content)
         content = _ensure_create_all(path, content)
 
-        if not _is_safe_to_write(path, content):
+        safe = _is_safe_to_write(path, content)
+        if safe is False:
             continue
+        if isinstance(safe, str):  # auto-repaired content returned
+            content = safe
 
         full_path = os.path.join(
             base_dir,

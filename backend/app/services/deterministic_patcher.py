@@ -1018,8 +1018,10 @@ def _patch_auth_routes(project_path: Path) -> None:
 
 def _patch_seed_robustness(project_path: Path) -> int:
     """
-    Add null guards before list[0] accesses in seed_routes.py.
-    Prevents IndexError when parent entity creation fails (e.g. missing required field).
+    1. Wrap every _create_X(db, ...) helper in seed_routes.py with try/except
+       so that a TypeError (wrong User model kwargs) rolls back the DB session
+       instead of holding a SQLite write lock and cascading timeouts.
+    2. Add null guards before list[0] accesses.
     """
     seed_file = project_path / "app" / "routes" / "seed_routes.py"
     if not seed_file.exists():
@@ -1028,7 +1030,38 @@ def _patch_seed_robustness(project_path: Path) -> int:
         content = seed_file.read_text(encoding="utf-8", errors="replace")
     except Exception:
         return 0
+
+    original = content
+
+    # ── Fix 1: wrap every _create_* helper body in try/except + db.rollback() ──
+    # Matches: def _create_foo(db, ...) with a body that does NOT already have try:
+    def _wrap_create_helper(m: re.Match) -> str:
+        sig = m.group(1)          # 'def _create_...(db, ...):'
+        body_indent = m.group(2)  # base indent of body (e.g. '    ')
+        body = m.group(3)         # body lines (already stripped of one level)
+        if "try:" in body or "except" in body:
+            return m.group(0)     # already wrapped
+        wrapped = (
+            f"{sig}\n"
+            f"{body_indent}try:\n"
+            + "\n".join(f"{body_indent}    {ln}" if ln.strip() else ln
+                        for ln in body.rstrip("\n").split("\n"))
+            + f"\n{body_indent}except Exception:\n"
+            f"{body_indent}    db.rollback()\n"
+            f"{body_indent}    return None\n"
+        )
+        return wrapped
+
+    content = re.sub(
+        r"(def _create_\w+\([^)]*\):)\n([ \t]+)((?:(?!\ndef )[\s\S])*?)(?=\ndef |\Z)",
+        _wrap_create_helper,
+        content,
+    )
+
     if "[0]" not in content:
+        if content != original:
+            seed_file.write_text(content, encoding="utf-8")
+            return 1
         return 0
 
     # Find all variable names accessed with [0]
