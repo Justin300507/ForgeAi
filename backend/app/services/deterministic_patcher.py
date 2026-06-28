@@ -451,11 +451,19 @@ _RELATIONSHIP_STR = re.compile(r"""relationship\(['"]([\w]+)['"]\s*[,)]""")
 
 
 def _patch_relationship_string_aliases(project_path: Path) -> None:
+    """
+    Fix SQLAlchemy relationship() string references that use the wrong class name.
+
+    Python-level aliases (User = Users) do NOT work for SQLAlchemy string resolution
+    because the mapper registry is keyed by cls.__name__, not by variable names.
+    The only fix is to update the relationship string to match the actual class name.
+    e.g. relationship('User') → relationship('Users') when class is Users.
+    """
     models_dir = project_path / "app" / "models"
     if not models_dir.exists():
         return
 
-    # Build map: class_name → file path
+    # Build map: class_name → file path (actual class definitions only)
     class_to_file: dict[str, Path] = {}
     for mf in models_dir.glob("*.py"):
         if mf.name.startswith("_"):
@@ -467,7 +475,7 @@ def _patch_relationship_string_aliases(project_path: Path) -> None:
         for cls in re.findall(r"^class (\w+)\(", text, re.MULTILINE):
             class_to_file[cls] = mf
 
-    # Scan all model files for relationship('X') where X has no class
+    # Scan all model files for relationship('X') where X is not a real registered class
     for mf in models_dir.glob("*.py"):
         if mf.name.startswith("_"):
             continue
@@ -475,29 +483,32 @@ def _patch_relationship_string_aliases(project_path: Path) -> None:
             text = mf.read_text(encoding="utf-8", errors="replace")
         except Exception:
             continue
+
+        new_text = text
+        changed = False
         for name in _RELATIONSHIP_STR.findall(text):
             if name in class_to_file:
                 continue  # already resolvable
-            # Find closest match (e.g. Genre → Genres)
+            # Find closest match (e.g. User → Users, Genre → Genres)
             name_lower = name.lower()
             best = None
-            for cls in class_to_file:
+            for cls in sorted(class_to_file):
                 c = cls.lower()
                 if c == name_lower + "s" or c.rstrip("s") == name_lower.rstrip("s"):
                     best = cls
                     break
-            if best and best in class_to_file:
-                target_file = class_to_file[best]
-                try:
-                    target_text = target_file.read_text(encoding="utf-8", errors="replace")
-                    alias = f"{name} = {best}  # alias"
-                    if alias not in target_text:
-                        target_text = target_text.rstrip() + f"\n\n{alias}\n"
-                        target_file.write_text(target_text, encoding="utf-8")
-                        print(f"  [patcher] Added relationship alias {alias} in {target_file.name}")
-                        class_to_file[name] = target_file
-                except Exception:
-                    pass
+            if best:
+                # Replace the string in the relationship() call so SQLAlchemy can resolve it
+                new_text = re.sub(
+                    rf"""(relationship\(["']){re.escape(name)}(["'])""",
+                    rf"\g<1>{best}\2",
+                    new_text,
+                )
+                changed = True
+                print(f"  [patcher] Fixed relationship string '{name}' → '{best}' in {mf.name}")
+
+        if changed:
+            mf.write_text(new_text, encoding="utf-8")
 
 
 # ── 8. Route parameter order fix ─────────────────────────────────────────────

@@ -167,7 +167,7 @@ class CloudflareProvider(BaseDeploymentProvider):
 
             print(f"  [Cloudflare] Running npm install (npm={npm})...")
             install_result = self._run(
-                [npm, "install", "--no-fund", "--no-audit", "--legacy-peer-deps", "--no-optional", "--prefer-offline"],
+                [npm, "install", "--no-fund", "--no-audit", "--legacy-peer-deps"],
                 cwd, build_env,
             )
             logs.append(f"[npm install]\nstdout:\n{install_result.stdout}\nstderr:\n{install_result.stderr}")
