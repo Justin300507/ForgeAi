@@ -584,6 +584,31 @@ def validate_common_antipatterns(project_path, errors):
                 f"orm_mode=True in {rel_path} — use from_attributes=True (Pydantic v2)"
             )
 
+    # Check schema files for datetime fields typed as str (causes ResponseValidationError)
+    schemas_dir = os.path.join(project_path, "app", "schemas")
+    if os.path.isdir(schemas_dir):
+        _DT_FIELDS_RE = re.compile(
+            r'^\s+(created_at|updated_at|created|updated|timestamp\w*)\s*:\s*str\b',
+            re.MULTILINE
+        )
+        for fname in os.listdir(schemas_dir):
+            if not fname.endswith(".py"):
+                continue
+            fpath = os.path.join(schemas_dir, fname)
+            try:
+                content = open(fpath, encoding="utf-8").read()
+            except Exception:
+                continue
+            m = _DT_FIELDS_RE.search(content)
+            if m:
+                rel_path = rel(project_path, fpath)
+                errors.append(
+                    f"Schema datetime typed as str in {rel_path}: "
+                    f"'{m.group().strip()}' — use 'from datetime import datetime' "
+                    "and declare the field as 'datetime', not 'str'. "
+                    "Also ensure model_config = ConfigDict(from_attributes=True)."
+                )
+
 
 def validate_project(project_path):
 

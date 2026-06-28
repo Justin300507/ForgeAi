@@ -337,7 +337,11 @@ def _fix_fastapi_param_order(content: str) -> str:
                 first_yes = min(positions[p] for p in has_def)
                 if last_no > first_yes:
                     reordered = no_def + has_def
-                    new_sig = m.group(1) + ",".join(reordered) + m.group(3)
+                    # Preserve any trailing content after the regex match
+                    # (e.g. the '\n' after '):' — without it the function body
+                    # runs straight onto the same line as ':', causing a SyntaxError)
+                    trailing = sig[m.end():]
+                    new_sig = m.group(1) + ",".join(reordered) + m.group(3) + trailing
                     try:
                         # Validate with a dummy body since sig has no function body
                         ast.parse(new_sig.lstrip() + "\n    pass")
@@ -475,6 +479,18 @@ def _is_safe_to_write(path, content):
                 return fixed      # caller receives fixed content
             except SyntaxError:
                 pass
+
+        # Last resort: param ordering fix (catches cases where _normalize_newlines
+        # applied the fix but the whole-file ast.parse still failed for other reasons)
+        if "default" in str(e).lower():
+            fixed = _fix_fastapi_param_order(content)
+            if fixed != content:
+                try:
+                    ast.parse(fixed)
+                    print(f"  [file_writer] Auto-fixed param order in {path}")
+                    return fixed
+                except SyntaxError:
+                    pass
 
         print(f"\n=== SKIPPING TRUNCATED/INVALID FILE: {path} ===")
         print(f"SyntaxError: {e}")

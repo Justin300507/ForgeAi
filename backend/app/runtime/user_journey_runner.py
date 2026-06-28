@@ -502,9 +502,22 @@ def run_user_journey(
     def do_edit():
         if entity_id is None:
             return False, "no entity_id captured"
-        r = requests.put(f"{entity_url}/{entity_id}",
-                         json={"title": "Journey Test Item EDITED"},
-                         headers=headers, timeout=5)
+        # Try multiple update payloads — different entities use title vs name
+        for edit_payload in (
+            {"title": "Journey Test Item EDITED", "name": "Journey Test Item EDITED",
+             "description": "edited by V5.5 journey runner", "status": "active"},
+            {"title": "Journey Test Item EDITED", "name": "Journey Test Item EDITED"},
+            {"title": "Journey Test Item EDITED"},
+            {"name": "Journey Test Item EDITED"},
+        ):
+            r = requests.put(f"{entity_url}/{entity_id}",
+                             json=edit_payload,
+                             headers=headers, timeout=5)
+            if r.status_code in (200, 201, 204):
+                return True, f"{r.status_code}"
+            if r.status_code == 422:
+                continue  # try next payload
+            break  # 4xx/5xx non-422 — stop trying
         return r.status_code in (200, 201, 204), f"{r.status_code}"
     steps.append(_step("Edit entity", do_edit))
 

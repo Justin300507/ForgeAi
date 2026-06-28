@@ -54,6 +54,56 @@ ARCHITECTURE_ERROR_MARKERS = (
 )
 
 
+def _patch_arch_fix_routes_into_main(project_path: str, written_paths: list) -> None:
+    """After architecture repair, wire any newly written route files into main.py.
+
+    Architecture repair may generate route files that main.py doesn't import yet.
+    Without this patch the orphan validator deletes them on the next pass, creating
+    an infinite repair → delete → repair loop.
+    """
+    main_py = os.path.join(project_path, "app", "main.py")
+    if not os.path.exists(main_py):
+        return
+    try:
+        with open(main_py, "r", encoding="utf-8") as f:
+            content = f.read()
+        changed = False
+        for path in written_paths:
+            path_fwd = path.replace("\\", "/")
+            m = re.match(r"app/routes/(\w+)_routes\.py$", path_fwd)
+            if not m:
+                continue
+            resource = m.group(1)
+            router_name = f"{resource}_router"
+            module = f"app.routes.{resource}_routes"
+            import_line = f"from {module} import {router_name}"
+            include_line = f"app.include_router({router_name})"
+            if import_line not in content:
+                last = None
+                for lm in re.finditer(r"from app\.routes\.\w+ import \w+_router\n", content):
+                    last = lm
+                if last:
+                    content = content[:last.end()] + import_line + "\n" + content[last.end():]
+                else:
+                    content = import_line + "\n" + content
+                changed = True
+            if include_line not in content:
+                last = None
+                for lm in re.finditer(r"app\.include_router\(\w+_router\)\n", content):
+                    last = lm
+                if last:
+                    content = content[:last.end()] + include_line + "\n" + content[last.end():]
+                else:
+                    content += "\n" + include_line + "\n"
+                changed = True
+        if changed:
+            with open(main_py, "w", encoding="utf-8") as f:
+                f.write(content)
+            print("  [arch_fix] patched main.py to wire new route files")
+    except Exception as e:
+        print(f"  [arch_fix] main.py patch failed: {e}")
+
+
 def resolve_endpoint_file(error: str) -> str | None:
     """
     Resolve the file that should contain a missing endpoint.
@@ -563,6 +613,12 @@ def generate_project(idea: str, provider: str = "auto", use_tournament: bool = F
                     project_path,
                     file
                 )
+            # Wire any newly-written route files into main.py so they aren't
+            # treated as orphans on the next validation pass.
+            _patch_arch_fix_routes_into_main(
+                project_path,
+                [f["path"] for f in architecture_fix["files"]]
+            )
             validation = validate_project(
                 project_path
             )
@@ -622,7 +678,7 @@ def generate_project(idea: str, provider: str = "auto", use_tournament: bool = F
     #     redesign the architecture from scratch and try once more.
     # ------------------------------------------------------------------
     runtime_succeeded = runtime_result and runtime_result.get("success", False)
-    if not validation["passed"] or not runtime_succeeded:
+    if not validation["passed"] and not runtime_succeeded:
         print("\n=== AUTONOMOUS REGENERATION (V4) ===")
         print("All fix attempts exhausted — redesigning architecture and regenerating...")
         try:

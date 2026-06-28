@@ -60,19 +60,26 @@ def generate_content(
         print("Using Ollama")
         return _tracked("ollama", "local", prompt, ollama_generate, stage, max_tokens=max_tokens)
 
-    # Auto mode: Cerebras -> DeepSeek -> Groq -> OpenRouter -> Gemini -> Ollama
+    # Auto mode: Cerebras (retry on queue) -> Groq -> OpenRouter -> Gemini -> DeepSeek -> Ollama
+    # DeepSeek demoted to near-last: uses a slow reseller endpoint (aicredits.in, ~120s timeout)
+    # Cerebras retries up to 3× on queue_exceeded (transient high-traffic 429) with 5s back-off
 
-    try:
-        print("Using Cerebras")
-        return _tracked("cerebras", "gpt-oss-120b", prompt, cerebras_generate, stage, max_tokens=max_tokens)
-    except Exception as e:
-        print(f"Cerebras failed: {e}")
-
-    try:
-        print("Using DeepSeek")
-        return _tracked("deepseek", "deepseek-chat", prompt, deepseek_generate, stage, max_tokens=max_tokens)
-    except Exception as e:
-        print(f"DeepSeek failed: {e}")
+    last_cerebras_err = None
+    for _attempt in range(3):
+        try:
+            print("Using Cerebras" if _attempt == 0 else f"Using Cerebras (retry {_attempt})")
+            return _tracked("cerebras", "gpt-oss-120b", prompt, cerebras_generate, stage, max_tokens=max_tokens)
+        except Exception as e:
+            last_cerebras_err = e
+            err_str = str(e)
+            if "queue_exceeded" in err_str or "too_many_requests" in err_str:
+                print(f"Cerebras queue busy — waiting 5s before retry {_attempt + 1}/3...")
+                time.sleep(5)
+            else:
+                print(f"Cerebras failed: {e}")
+                break
+    else:
+        print(f"Cerebras failed after 3 retries: {last_cerebras_err}")
 
     try:
         print("Using Groq")
@@ -97,6 +104,12 @@ def generate_content(
         return _tracked("gemini", "gemini-2.5-flash", prompt, gemini_generate, stage, max_tokens=max_tokens)
     except Exception as e:
         print(f"Gemini failed: {e}")
+
+    try:
+        print("Using DeepSeek (slow fallback)")
+        return _tracked("deepseek", "deepseek-chat", prompt, deepseek_generate, stage, max_tokens=max_tokens)
+    except Exception as e:
+        print(f"DeepSeek failed: {e}")
 
     try:
         print("Using Ollama (final fallback)")

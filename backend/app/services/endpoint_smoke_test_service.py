@@ -32,7 +32,7 @@ def _build_synthetic_body(architecture, path):
     return body
 
 
-def run_endpoint_smoke_tests(architecture, base_url="http://127.0.0.1:8001", timeout=3):
+def run_endpoint_smoke_tests(architecture, base_url="http://127.0.0.1:8001", timeout=3, seed_timeout=15):
 
     results = []
     consecutive_timeouts = 0
@@ -59,21 +59,23 @@ def run_endpoint_smoke_tests(architecture, base_url="http://127.0.0.1:8001", tim
         url = base_url + url_path
 
         try:
+            # /seed is a bulk-insert operation — give it much longer
+            eff_timeout = seed_timeout if path.rstrip("/") == "/seed" else timeout
 
             if method == "GET":
-                response = requests.get(url, timeout=timeout)
+                response = requests.get(url, timeout=eff_timeout)
 
             elif method == "DELETE":
-                response = requests.delete(url, timeout=timeout)
+                response = requests.delete(url, timeout=eff_timeout)
 
             elif method in ("POST", "PUT"):
 
                 body = _build_synthetic_body(architecture, path)
 
                 if method == "POST":
-                    response = requests.post(url, json=body, timeout=timeout)
+                    response = requests.post(url, json=body, timeout=eff_timeout)
                 else:
-                    response = requests.put(url, json=body, timeout=timeout)
+                    response = requests.put(url, json=body, timeout=eff_timeout)
 
             else:
                 continue
@@ -98,7 +100,7 @@ def run_endpoint_smoke_tests(architecture, base_url="http://127.0.0.1:8001", tim
                 "method": method,
                 "path": path,
                 "status": None,
-                "issue": f"Request timed out after {timeout}s — handler may be hanging or extremely slow"
+                "issue": f"Request timed out after {eff_timeout}s — handler may be hanging or extremely slow"
             })
 
             if consecutive_timeouts >= _ABORT_AFTER_CONSECUTIVE_TIMEOUTS:

@@ -61,6 +61,8 @@ app/__init__.py
 app/routes/__init__.py
 app/models/__init__.py
 app/services/__init__.py
+app/utils/__init__.py
+app/utils/auth.py            ← MANDATORY: JWT auth helpers (see AUTH RULES below)
 app/routes/seed_routes.py    ← MANDATORY: POST /seed endpoint
 app/routes/stats_routes.py   ← MANDATORY: GET /stats/summary endpoint (or merge into relevant module)
 
@@ -101,6 +103,20 @@ def seed_database(db: Session = Depends(get_db)):
 
 Seed at LEAST 5 records per major entity. Use realistic values matching the app domain.
 
+CRITICAL: For DateTime/Date fields in seed data, use Python datetime objects — NEVER strings:
+```python
+from datetime import datetime, date, timedelta  # MUST import at top of file
+
+# Correct — Python datetime objects:
+start_time = datetime(2024, 1, 15, 9, 0, 0)
+end_time = datetime(2024, 1, 15, 11, 0, 0)
+start_date = date(2024, 1, 1)
+end_date = date(2024, 3, 31)
+
+# Wrong — causes StatementError at runtime:
+start_time = "2024-01-15T09:00:00"  # ← WRONG, never use strings for DateTime columns
+```
+
 ========================================
 STATS ROUTE RULES
 =================
@@ -108,17 +124,134 @@ STATS ROUTE RULES
 GET /stats/summary MUST return a dict with at LEAST 4 numeric metrics.
 Query them directly from the DB using db.query(Model).count() or func.sum().
 
-Example:
+Example (use your actual models — do NOT use Member/GymClass/Payment unless they are in your schema):
 ```python
 @stats_router.get("/stats/summary")
 def stats_summary(db: Session = Depends(get_db)):
     return {{
-        "total_members": db.query(Member).count(),
-        "active_members": db.query(Member).filter(Member.is_active == True).count(),
-        "classes_today": db.query(GymClass).filter(...).count(),
-        "revenue_this_month": db.query(func.sum(Payment.amount)).scalar() or 0,
+        "total_users": db.query(User).count(),
+        "active_users": db.query(User).filter(User.is_active == True).count(),
+        "total_projects": db.query(Project).count(),
+        "total_tasks": db.query(Task).count(),
     }}
 ```
+
+========================================
+AUTH RULES
+==========
+
+app/utils/auth.py MUST be generated. Use this EXACT template (fill in your SECRET_KEY):
+
+```python
+import os
+import bcrypt
+from datetime import datetime, timedelta
+from typing import Optional
+from fastapi import Depends, HTTPException, status
+from fastapi.security import OAuth2PasswordBearer
+from jose import JWTError, jwt
+from sqlalchemy.orm import Session
+from app.database import get_db
+
+SECRET_KEY: str = os.getenv("SECRET_KEY", "forgeai_secret_key_change_me")
+ALGORITHM: str = "HS256"
+ACCESS_TOKEN_EXPIRE_MINUTES: int = 30
+
+oauth2_scheme = OAuth2PasswordBearer(tokenUrl="/auth/login")
+
+def get_password_hash(password: str) -> str:
+    return bcrypt.hashpw(password.encode("utf-8"), bcrypt.gensalt()).decode("utf-8")
+
+def verify_password(plain_password: str, hashed_password: str) -> bool:
+    return bcrypt.checkpw(plain_password.encode("utf-8"), hashed_password.encode("utf-8"))
+
+def create_access_token(data: dict, expires_delta: Optional[timedelta] = None) -> str:
+    to_encode = data.copy()
+    expire = datetime.utcnow() + (expires_delta or timedelta(minutes=ACCESS_TOKEN_EXPIRE_MINUTES))
+    to_encode.update({{"exp": expire}})
+    return jwt.encode(to_encode, SECRET_KEY, algorithm=ALGORITHM)
+
+def get_current_user(token: str = Depends(oauth2_scheme), db: Session = Depends(get_db)):
+    credentials_exception = HTTPException(
+        status_code=status.HTTP_401_UNAUTHORIZED,
+        detail="Could not validate credentials",
+        headers={{"WWW-Authenticate": "Bearer"}},
+    )
+    try:
+        payload = jwt.decode(token, SECRET_KEY, algorithms=[ALGORITHM])
+        email: Optional[str] = payload.get("sub")
+        if email is None:
+            raise credentials_exception
+    except JWTError:
+        raise credentials_exception
+    from app.models.user import User
+    user = db.query(User).filter(User.email == email).first()
+    if user is None:
+        raise credentials_exception
+    return user
+```
+
+IMPORTANT: User model fields must match exactly. If the User model has `full_name`, use `full_name` — never `display_name` or any other alias.
+
+requirements.txt MUST include: fastapi, uvicorn, sqlalchemy, pydantic, python-jose[cryptography], bcrypt, python-multipart, email-validator
+
+========================================
+DATETIME SCHEMA RULES
+=====================
+
+NEVER use `str` for `created_at`, `updated_at`, or any DateTime field in a response schema.
+Use `datetime` from Python's `datetime` module instead. Add `from datetime import datetime` to every schema file with timestamp fields.
+
+ALL response schemas that return ORM objects MUST have `model_config = ConfigDict(from_attributes=True)`.
+
+Correct example:
+```python
+from datetime import datetime
+from typing import Optional
+from pydantic import BaseModel, ConfigDict
+
+class UserResponse(BaseModel):
+    model_config = ConfigDict(from_attributes=True)
+    id: int
+    email: str
+    full_name: Optional[str] = None
+    role: str
+    is_active: bool
+    created_at: datetime
+    updated_at: datetime
+```
+
+Wrong (causes ResponseValidationError at runtime):
+```python
+created_at: str  # ← WRONG — DB returns datetime objects
+updated_at: str  # ← WRONG
+```
+
+========================================
+OWNER/USER FK RULES
+===================
+
+Any entity with a field named `owner_id`, `user_id`, `created_by`, or similar FK to the users table
+MUST use this pattern in the POST (create) handler — auto-set from JWT, do NOT require the caller to send it:
+
+```python
+from app.utils.auth import get_current_user
+from app.models.user import User
+
+@item_router.post("/items", response_model=ItemResponse, status_code=201)
+def create_item(item_data: ItemCreate, db: Session = Depends(get_db),
+                current_user: User = Depends(get_current_user)):
+    item = Item(
+        **item_data.dict(),
+        owner_id=current_user.id,  # ← auto-set from JWT, never from request body
+    )
+    db.add(item)
+    db.commit()
+    db.refresh(item)
+    return item
+```
+
+ALSO: In the Pydantic create-schema, do NOT include `owner_id` / `user_id` / `created_by` — they are not accepted from the caller.
 
 ========================================
 SEARCH ROUTE RULES
