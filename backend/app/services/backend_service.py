@@ -80,13 +80,27 @@ def generate_backend(
                     else:
                         retry_provider = provider
                         print("Retrying LLM call...")
+                    # Groq has a 12K TPM limit — use reduced tokens to fit under it
+                    fallback_tokens = 8000 if retry_provider == "groq" else max_tokens
                     try:
-                        text = generate_content(prompt, retry_provider, max_tokens=max_tokens)
+                        text = generate_content(prompt, retry_provider, max_tokens=fallback_tokens)
                     except Exception as fe:
                         print(f"  fallback {retry_provider} failed: {fe} — trying next")
                         text = None
                     if not text:
-                        continue  # try next fallback on next attempt
+                        # Try the very next fallback immediately rather than loop with stale text
+                        if _fallback_idx < len(_fallback_providers):
+                            next_prov = _fallback_providers[_fallback_idx]
+                            _fallback_idx += 1
+                            next_tokens = 8000 if next_prov == "groq" else max_tokens
+                            print(f"  immediately trying {next_prov}...")
+                            try:
+                                text = generate_content(prompt, next_prov, max_tokens=next_tokens)
+                            except Exception as fe2:
+                                print(f"  fallback {next_prov} also failed: {fe2}")
+                                text = None
+                    if not text:
+                        continue  # no usable text yet — loop will retry last provider
                     clean_text = text.replace("```json", "").replace("```", "").strip()
                 else:
                     print("\nBackend Response Preview:")
