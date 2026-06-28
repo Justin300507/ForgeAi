@@ -82,10 +82,12 @@ def _patch_requirements(req_path: Path) -> None:
     req_path.write_text("\n".join(out) + "\n", encoding="utf-8")
 
 
-# ── 2a. Strip ALL back_populates / backref from model files ───────────────────
-# Wave 2.5 strips these from the files it processes, but misses cross-model
-# dangling references.  A back_populates on X pointing to a missing property on Y
-# makes SQLAlchemy mapper configuration fail on first query → ALL endpoints hang.
+# ── 2a. Strip ALL relationship() declarations from model files ─────────────────
+# relationship() calls that reference models with no FK path (e.g. many-to-many
+# without secondary=) crash the mapper at first query → ALL endpoints hang with
+# sqlalchemy.exc.NoForeignKeysError / InvalidRequestError.
+# Route handlers always use explicit .filter() queries, never ORM relationship
+# accessors, so stripping relationships is safe and prevents the crash.
 
 _BACK_POPULATES_RE = re.compile(
     r",\s*back_populates\s*=\s*['\"][^'\"]*['\"]",
@@ -112,6 +114,81 @@ def _patch_strip_back_populates(project_path: Path) -> int:
         if content != original:
             mf.write_text(content, encoding="utf-8")
             patched += 1
+    return patched
+
+
+def _patch_strip_relationships(project_path: Path) -> int:
+    """
+    Strip ALL relationship() attribute declarations from SQLAlchemy model files.
+
+    Even after stripping back_populates/backref, the base relationship("Target")
+    call remains — and if there is no FK path between the two tables (common with
+    many-to-many schemas where the LLM forgets secondary=), SQLAlchemy raises
+    NoForeignKeysError at mapper config time, which hangs every single endpoint.
+
+    Generated route handlers never use ORM relationship accessors; they query
+    with explicit .filter() calls.  So removing these declarations is always safe.
+    """
+    models_dir = project_path / "app" / "models"
+    if not models_dir.exists():
+        return 0
+
+    patched = 0
+    for mf in models_dir.glob("*.py"):
+        if mf.name.startswith("_"):
+            continue
+        try:
+            original = mf.read_text(encoding="utf-8", errors="replace")
+        except Exception:
+            continue
+
+        if "relationship(" not in original:
+            continue
+
+        # Remove relationship() attribute assignments — may span multiple lines
+        lines = original.split("\n")
+        new_lines: list[str] = []
+        i = 0
+        removed = 0
+        while i < len(lines):
+            line = lines[i]
+            stripped = line.lstrip()
+            if re.match(r'\w+\s*=\s*relationship\s*\(', stripped):
+                # Track parens to find the closing line
+                depth = 0
+                j = i
+                while j < len(lines):
+                    for ch in lines[j]:
+                        if ch == "(":
+                            depth += 1
+                        elif ch == ")":
+                            depth -= 1
+                    if depth <= 0:
+                        break
+                    j += 1
+                removed += 1
+                i = j + 1
+                continue
+            new_lines.append(line)
+            i += 1
+
+        if removed == 0:
+            continue
+
+        content = "\n".join(new_lines)
+
+        # Clean up 'relationship' from sqlalchemy.orm import lines
+        content = re.sub(r",\s*relationship\b", "", content)
+        content = re.sub(r"\brelationship\s*,\s*", "", content)
+        content = re.sub(
+            r"^from sqlalchemy\.orm import relationship\s*\n", "",
+            content, flags=re.MULTILINE,
+        )
+
+        mf.write_text(content, encoding="utf-8")
+        patched += 1
+        print(f"  [patcher] Stripped {removed} relationship() declaration(s) from {mf.name}")
+
     return patched
 
 
@@ -1212,8 +1289,12 @@ def run_deterministic_patches(project_path: str) -> int:
     for req in root.rglob("requirements.txt"):
         _patch_requirements(req)
 
-    # Strip ALL back_populates/backref first — prevents SQLAlchemy mapper crash
-    # that hangs ALL endpoints when one relationship points to a missing property
+    # Strip ALL relationship() declarations first — prevents SQLAlchemy mapper crash
+    # (NoForeignKeysError) that hangs ALL endpoints when FK path is missing/ambiguous.
+    # Must run before back_populates strip since we remove the whole statement.
+    _patch_strip_relationships(root)
+
+    # Also strip residual back_populates/backref kwargs (defensive, in case any remain)
     _patch_strip_back_populates(root)
 
     # Strip FKs to non-existent tables (prevents NoReferencedTableError at startup)
