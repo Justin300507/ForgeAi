@@ -1,4 +1,4 @@
-from app.prompts.shared_contract import FASTAPI_CONTRACT
+from app.prompts.shared_contract import FIXER_CONTRACT
 
 
 def build_fixer_prompt(
@@ -146,7 +146,7 @@ If repairing requirements.txt:
 
 Return the ENTIRE corrected requirements.txt content.
 
-{FASTAPI_CONTRACT}
+{FIXER_CONTRACT}
 
 REACT RULES
 

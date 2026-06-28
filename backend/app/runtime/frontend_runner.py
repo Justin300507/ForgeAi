@@ -136,6 +136,10 @@ class FrontendRunner:
         env = os.environ.copy()
         if node_dir and node_dir not in env.get("PATH", ""):
             env["PATH"] = node_dir + os.pathsep + env.get("PATH", "")
+        # Redirect npm cache to /tmp to avoid ENOENT on restricted filesystems
+        # (Railway /data volumes, Docker layers, etc.)
+        import tempfile
+        env["npm_config_cache"] = str(Path(tempfile.gettempdir()) / ".npm-forge-cache")
 
         t0 = time.time()
 

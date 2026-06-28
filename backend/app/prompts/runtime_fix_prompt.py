@@ -1,6 +1,6 @@
 import json
 
-from app.prompts.shared_contract import FASTAPI_CONTRACT
+from app.prompts.shared_contract import FIXER_CONTRACT
 
 
 def build_runtime_fix_prompt(
@@ -514,7 +514,7 @@ Do not rename files.
 
 Do not move files.
 
-{FASTAPI_CONTRACT}
+{FIXER_CONTRACT}
 
 ========================================
 CONSISTENCY RULES

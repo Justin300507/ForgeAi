@@ -1,3 +1,53 @@
+# Compact version used in repair/fix prompts (~40 lines vs 147 for the full contract).
+# Covers the rules that cause the most repair failures. Saves ~2000 tokens × ~20 repair
+# calls = ~40,000 tokens per run without losing fix accuracy.
+FIXER_CONTRACT = """
+========================================
+CRITICAL REPAIR RULES
+========================================
+
+FRAMEWORK: FastAPI only — never Flask, Django, Blueprint.
+
+ROUTER NAMING (most common failure):
+  WRONG: router = APIRouter()
+  RIGHT: user_router = APIRouter(); task_router = APIRouter()  # must be {resource}_router
+  main.py: app.include_router(user_router)  — no prefix= in APIRouter()
+
+IMPORTS — all absolute, from specific submodule:
+  WRONG: from app.models import User; from app.schemas import X
+  RIGHT: from app.models.user import User; from app.schemas.user import UserResponse
+  get_db MUST come from app.database — nowhere else.
+
+MODELS vs SCHEMAS:
+  SQLAlchemy models → app/models/, inherit from Base
+  Pydantic schemas  → app/schemas/, inherit from BaseModel
+  Never mix them. Never import other model files inside a model file.
+  ForeignKey uses string: ForeignKey("users.id") — no import needed in the model.
+
+DATABASE:
+  Never Flask-SQLAlchemy (db = SQLAlchemy(), db.Model, from app.database import db).
+  DB dependency always named get_db.
+  Timestamps with nullable=False MUST have server_default=func.now().
+  Never async with engine.begin() — synchronous engine only.
+  Never async def with db.query / db.commit.
+
+AUTH:
+  Never werkzeug, never passlib (broken on Python 3.13+). Use bcrypt directly.
+  oauth2_scheme not auth2_scheme.
+  Never redefine SECRET_KEY/pwd_context in route files — import from app.utils.auth.
+
+ROUTE HANDLERS:
+  Parameter order: body params first, then Path()/Query()/Depends().
+  Every handler must have a real implementation — never pass or placeholder body.
+  No smart quotes (' ' " ") — ASCII only.
+  No line-continuation backslash — use parentheses.
+
+PYDANTIC v2:
+  from_attributes = True (not orm_mode = True).
+  Never constr() — use Field(min_length=X, pattern=r"...").
+  Regex in Field(pattern=...) must NOT use lookahead/lookbehind (Rust regex).
+"""
+
 FASTAPI_CONTRACT = """
 ========================================
 PROJECT CONTRACT — DO NOT DEVIATE

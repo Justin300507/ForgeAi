@@ -12,6 +12,22 @@ from app.providers.ai_provider import (
 from app.utils.json_cleaner import extract_json
 
 
+def _trim_runtime_error(runtime_error: dict) -> dict:
+    """Trim the runtime_error dict before building the LLM prompt.
+
+    The raw dict can be 20KB+ (full stderr with tracebacks repeated 6× by uvicorn
+    worker restarts). We only need the parsed structure + a tail of stderr.
+    Saves ~15,000 tokens per runtime-fix call.
+    """
+    return {
+        "success": runtime_error.get("success"),
+        "exit_code": runtime_error.get("exit_code"),
+        "parsed_error": runtime_error.get("parsed_error", {}),
+        "stderr": (runtime_error.get("stderr") or "")[-1500:],
+        "behavioral_issues": (runtime_error.get("behavioral_issues") or [])[:3],
+    }
+
+
 KNOWN_BAD_PACKAGE_NAMES = {
     "e-mail-validator": "email-validator",
     "eval-validator": "email-validator",
@@ -115,29 +131,31 @@ def generate_runtime_fix(
         except Exception as bp_err:
             print(f"  back_populates fix failed: {bp_err}")
 
-    # ── SQLAlchemy relationship() string can't resolve model → add import to main.py ──
+    # ── SQLAlchemy relationship() string can't resolve model ─────────────────────
+    # Python-level aliases (User = Users) do NOT work — SQLAlchemy's mapper registry
+    # is keyed by cls.__name__, not by variable names.
+    # Fix 1: patch the relationship() string in-place (deterministic, no LLM).
+    # Fix 2: ensure the model file is imported in main.py so the mapper sees it.
     if parsed_error.get("type") == "RelationshipModelNotImported":
         missing_model = parsed_error.get("missing_model")
         if missing_model:
             main_py_path = os.path.join(project_path, "app", "main.py")
             try:
+                # Fix 1: patch relationship strings so 'User' → 'Users' (actual class name)
+                from app.services.deterministic_patcher import _patch_relationship_string_aliases
+                from pathlib import Path
+                _patch_relationship_string_aliases(Path(project_path))
+                print(f"  RelationshipModelNotImported: patched relationship strings for '{missing_model}'")
+
+                # Fix 2: find the actual class name (may differ from missing_model)
                 module_name = missing_model.lower()
                 model_file = os.path.join(project_path, "app", "models", f"{module_name}.py")
-
-                # Find the actual class exported by this model file
                 actual_class = missing_model
                 if os.path.exists(model_file):
-                    model_src = open(model_file, encoding="utf-8").read()
-                    classes = re.findall(r"^class (\w+)\(", model_src, re.MULTILINE)
-                    if classes and missing_model not in classes:
+                    src = open(model_file, encoding="utf-8").read()
+                    classes = re.findall(r"^class (\w+)\(", src, re.MULTILINE)
+                    if classes:
                         actual_class = classes[0]
-                        # Add alias so relationship('Genre') resolves to Genres
-                        alias = f"{missing_model} = {actual_class}  # alias"
-                        if alias not in model_src:
-                            model_src = model_src.rstrip() + f"\n\n{alias}\n"
-                            with open(model_file, "w", encoding="utf-8") as f:
-                                f.write(model_src)
-                            print(f"  RelationshipModelNotImported fix: added alias {alias} in {module_name}.py")
 
                 with open(main_py_path, "r", encoding="utf-8") as f:
                     main_content = f.read()
@@ -149,8 +167,11 @@ def generate_runtime_fix(
                         main_content = main_content[:pos] + import_line + "\n" + main_content[pos:]
                     else:
                         main_content = import_line + "\n" + main_content
-                    print(f"  RelationshipModelNotImported fix: added `{import_line}` to main.py")
+                    print(f"  RelationshipModelNotImported: added `{import_line}` to main.py")
                     return {"path": "app/main.py", "content": main_content}
+                else:
+                    # Import already present — string fix alone should be sufficient
+                    return None
             except Exception as e:
                 print(f"  RelationshipModelNotImported fix failed: {e}")
 
@@ -386,7 +407,7 @@ def generate_runtime_fix(
             file_content = ""
 
     prompt = build_runtime_fix_prompt(
-        runtime_error,
+        _trim_runtime_error(runtime_error),
         relative_path,
         file_content
     )

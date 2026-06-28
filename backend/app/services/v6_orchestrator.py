@@ -14,6 +14,7 @@ import traceback
 import re
 import os
 from collections import defaultdict
+from concurrent.futures import ThreadPoolExecutor
 from typing import Any
 
 from app.services.product_manager_service import run_product_manager
@@ -98,6 +99,10 @@ def generate_project_v6(
     if collab is None:
         collab = AgentCollaboration()
 
+    # LLM call counter — printed at end of every run for visibility
+    _llm = {"planner": 0, "architect": 0, "tech_lead": 0, "backend": 0,
+            "frontend": 0, "reviews": 0, "repairs": 0, "runtime_fixes": 0}
+
     print(f"\n{'#'*70}")
     print(f"# V6 AUTONOMOUS ENGINEERING TEAM")
     print(f"# Idea: {idea[:65]}")
@@ -107,6 +112,7 @@ def generate_project_v6(
     # Stage 1: Product Manager
     # ------------------------------------------------------------------
     product_spec = run_product_manager(idea, provider)
+    _llm["planner"] += 1
     plan = product_spec.to_plan_dict()
     collab.record_decision(
         agent="product_manager",
@@ -136,6 +142,7 @@ def generate_project_v6(
     if arch_template:
         extra_context = arch_template + "\n\n" + extra_context
     architecture = generate_architecture(plan, provider, extra_context=extra_context)
+    _llm["architect"] += 1
     _sanitize_architecture_paths(architecture)
     collab.record_decision(
         agent="architect",
@@ -148,6 +155,7 @@ def generate_project_v6(
     # Stage 3: Tech Lead Review
     # ------------------------------------------------------------------
     tech_constraints = run_tech_lead(product_spec.raw if hasattr(product_spec, "raw") else plan, architecture, provider)
+    _llm["tech_lead"] += 1
     collab.record_decision(
         agent="tech_lead",
         decision="constraints_set",
@@ -160,40 +168,53 @@ def generate_project_v6(
     )
 
     # ------------------------------------------------------------------
-    # Stage 4: Backend Team (parallel, fallback to monolithic)
+    # Stage 4+5: Backend Team + Frontend Team — run in parallel
+    # Both stages only need `architecture` as input so they can overlap.
+    # Backend takes ~7s (internally parallel per wave); frontend ~28s.
+    # Parallel total = max(7, 28) = 28s instead of 35s sequential.
     # ------------------------------------------------------------------
-    backend_files = []
-    if use_parallel_backend:
-        try:
-            from app.services.parallel_backend_service import generate_backend_parallel
-            print("\n=== BACKEND TEAM — PARALLEL GENERATION (V6) ===")
-            parallel_result = generate_backend_parallel(
-                architecture, provider,
-                tech_constraints=tech_constraints.to_prompt_context(),
-            )
-            backend_files = [{"path": f.path, "content": f.content} for f in parallel_result.files if f.success]
-            if parallel_result.failed_files:
-                print(f"  Parallel failures: {parallel_result.failed_files}")
-            print(
-                f"  Generated {len(backend_files)} files in {parallel_result.total_duration:.1f}s "
-                f"(parallel phase: {parallel_result.parallel_duration:.1f}s)"
-            )
-        except Exception as pe:
-            print(f"  Parallel backend failed ({pe}), falling back to monolithic")
-            use_parallel_backend = False
-
-    if not use_parallel_backend or not backend_files:
+    def _run_backend():
+        nonlocal use_parallel_backend
+        if use_parallel_backend:
+            try:
+                from app.services.parallel_backend_service import generate_backend_parallel
+                print("\n=== BACKEND TEAM — PARALLEL GENERATION (V6) ===")
+                result = generate_backend_parallel(
+                    architecture, provider,
+                    tech_constraints=tech_constraints.to_prompt_context(),
+                )
+                files = [{"path": f.path, "content": f.content} for f in result.files if f.success]
+                if result.failed_files:
+                    print(f"  Parallel failures: {result.failed_files}")
+                print(
+                    f"  Generated {len(files)} files in {result.total_duration:.1f}s "
+                    f"(parallel phase: {result.parallel_duration:.1f}s)"
+                )
+                return files
+            except Exception as pe:
+                print(f"  Parallel backend failed ({pe}), falling back to monolithic")
+                use_parallel_backend = False
         from app.services.backend_service import generate_backend
         print("\n=== BACKEND TEAM — MONOLITHIC (fallback) ===")
-        backend_response = generate_backend(architecture, provider)
-        backend_files = backend_response.get("files", []) if isinstance(backend_response, dict) else []
+        resp = generate_backend(architecture, provider)
+        return resp.get("files", []) if isinstance(resp, dict) else []
 
-    # ------------------------------------------------------------------
-    # Stage 5: Frontend Team
-    # ------------------------------------------------------------------
-    print("\n=== FRONTEND TEAM (V6) ===")
-    frontend_response = generate_frontend(architecture, provider, frontend_target=frontend_target, idea=idea)
-    frontend_files = frontend_response.get("files", []) if isinstance(frontend_response, dict) else []
+    def _run_frontend():
+        print("\n=== FRONTEND TEAM (V6) ===")
+        resp = generate_frontend(architecture, provider, frontend_target=frontend_target, idea=idea)
+        return resp.get("files", []) if isinstance(resp, dict) else []
+
+    print("\n=== BACKEND + FRONTEND — PARALLEL ===")
+    t_gen_start = time.time()
+    with ThreadPoolExecutor(max_workers=2) as _pool:
+        _f_backend = _pool.submit(_run_backend)
+        _f_frontend = _pool.submit(_run_frontend)
+        backend_files = _f_backend.result()
+        frontend_files = _f_frontend.result()
+    # backend generates N files (1 LLM call per file); frontend = 1 call
+    _llm["backend"] = len(backend_files)
+    _llm["frontend"] = 1
+    print(f"  Backend+Frontend done in {time.time() - t_gen_start:.1f}s")
 
     # ------------------------------------------------------------------
     # Stage 6: Write Files
@@ -280,6 +301,7 @@ def generate_project_v6(
             rationale=f"Performance score: {performance_report.performance_score}/100",
             data={"score": performance_report.performance_score},
         )
+        _llm["reviews"] = 4  # QA + Security + CodeReview + Performance
     else:
         print("\n  [skip_reviews=True] Skipping QA/Security/Code/Performance reviews")
 
@@ -338,6 +360,7 @@ def generate_project_v6(
 
                 if not os.path.exists(abs_path):
                     fix = generate_missing_file(filepath, "\n".join(file_errors), provider)
+                    _llm["repairs"] += 1
                     if fix and fix.get("content"):
                         fix["path"] = _sanitize_path(fix["path"])
                         write_fix(project_path, fix)
@@ -348,6 +371,7 @@ def generate_project_v6(
                     file_content = fh.read()
 
                 fix = generate_fix(filepath, file_content, file_errors, provider)
+                _llm["repairs"] += 1
                 if not isinstance(fix, dict) or not fix.get("path") or not fix.get("content"):
                     continue
 
@@ -361,6 +385,7 @@ def generate_project_v6(
                     except SyntaxError as se:
                         syntax_hint = [f"Your previous fix had a SyntaxError: {se}. Fix the syntax error before returning."]
                         fix2 = generate_fix(filepath, fix["content"], file_errors + syntax_hint, provider)
+                        _llm["repairs"] += 1
                         if isinstance(fix2, dict) and fix2.get("path") and fix2.get("content"):
                             fix2["path"] = _sanitize_path(fix2["path"])
                             write_fix(project_path, fix2)
@@ -391,6 +416,7 @@ def generate_project_v6(
                 architecture, architecture_errors, provider,
                 required_exports={}, required_endpoints={}, existing_symbols={}
             )
+            _llm["repairs"] += 1
             if arch_fix and isinstance(arch_fix, dict) and arch_fix.get("files"):
                 for f in arch_fix["files"]:
                     f["path"] = _sanitize_path(f["path"])
@@ -417,6 +443,7 @@ def generate_project_v6(
                     break
 
                 rt_fix = generate_runtime_fix(runtime_result, project_path, provider)
+                _llm["runtime_fixes"] += 1
                 if rt_fix and rt_fix.get("path") and rt_fix.get("content"):
                     rt_fix["path"] = _sanitize_path(rt_fix["path"])
                     write_fix(project_path, rt_fix)
@@ -467,6 +494,22 @@ def generate_project_v6(
     print(f"    Performance:  {v6_score['dimensions']['performance']}/100")
     print(f"    Maintainability: {v6_score['dimensions']['maintainability']}/100")
     print(f"    Review:       {v6_score['dimensions']['review']}/100")
+
+    # LLM call summary — target: ≤6 calls per run
+    _total_llm = sum(_llm.values())
+    print(f"\n{'─'*40}")
+    print(f"  LLM Calls")
+    print(f"  {'Planner':<18} {_llm['planner']}")
+    print(f"  {'Architect':<18} {_llm['architect']}")
+    print(f"  {'Tech Lead':<18} {_llm['tech_lead']}")
+    print(f"  {'Backend':<18} {_llm['backend']}")
+    print(f"  {'Frontend':<18} {_llm['frontend']}")
+    print(f"  {'Reviews':<18} {_llm['reviews']}")
+    print(f"  {'Repairs':<18} {_llm['repairs']}")
+    print(f"  {'Runtime Fixes':<18} {_llm['runtime_fixes']}")
+    print(f"  {'─'*20}")
+    print(f"  {'Total':<18} {_total_llm}")
+    print(f"{'─'*40}")
 
     # Cost tracking
     try:

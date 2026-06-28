@@ -1,6 +1,11 @@
 import requests
 import re
 
+# After this many consecutive timeouts we abort remaining smoke tests.
+# A hanging SQLAlchemy mapper blocks ALL endpoints, so there's no point
+# waiting 3s × (N-4) more endpoints when we already know the server is stuck.
+_ABORT_AFTER_CONSECUTIVE_TIMEOUTS = 4
+
 
 def _build_synthetic_body(architecture, path):
 
@@ -30,11 +35,25 @@ def _build_synthetic_body(architecture, path):
 def run_endpoint_smoke_tests(architecture, base_url="http://127.0.0.1:8001", timeout=3):
 
     results = []
+    consecutive_timeouts = 0
+    server_hanging = False
 
-    for endpoint in architecture.get("api_endpoints", []):
+    endpoints = architecture.get("api_endpoints", [])
+
+    for endpoint in endpoints:
 
         method = endpoint.get("method", "GET").upper()
         path = endpoint.get("path", "")
+
+        # Early abort: server is clearly hanging — fill remaining without waiting
+        if server_hanging:
+            results.append({
+                "method": method,
+                "path": path,
+                "status": None,
+                "issue": f"Request timed out after {timeout}s — handler may be hanging or extremely slow"
+            })
+            continue
 
         url_path = re.sub(r"\{[^}]+\}", "1", path)
         url = base_url + url_path
@@ -59,6 +78,7 @@ def run_endpoint_smoke_tests(architecture, base_url="http://127.0.0.1:8001", tim
             else:
                 continue
 
+            consecutive_timeouts = 0  # reset on any response
             status = response.status_code
 
             if status >= 500:
@@ -73,6 +93,7 @@ def run_endpoint_smoke_tests(architecture, base_url="http://127.0.0.1:8001", tim
 
         except requests.exceptions.Timeout:
 
+            consecutive_timeouts += 1
             results.append({
                 "method": method,
                 "path": path,
@@ -80,8 +101,13 @@ def run_endpoint_smoke_tests(architecture, base_url="http://127.0.0.1:8001", tim
                 "issue": f"Request timed out after {timeout}s — handler may be hanging or extremely slow"
             })
 
+            if consecutive_timeouts >= _ABORT_AFTER_CONSECUTIVE_TIMEOUTS:
+                print(f"  [smoke] {consecutive_timeouts} consecutive timeouts — server is hanging, aborting remaining tests")
+                server_hanging = True
+
         except requests.exceptions.RequestException as e:
 
+            consecutive_timeouts = 0
             results.append({
                 "method": method,
                 "path": path,
