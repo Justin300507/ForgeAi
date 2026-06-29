@@ -224,6 +224,10 @@ class CloudflareProvider(BaseDeploymentProvider):
                     deploy_id=None, provider="cloudflare",
                 )
 
+            # SPA routing: serve index.html for all unmatched paths so
+            # React Router handles /login, /dashboard, etc. without 404
+            (dist_dir / "_redirects").write_text("/* /index.html 200\n")
+
             # Ensure the Cloudflare Pages project exists (wrangler won't auto-create in CI mode)
             self._ensure_project_exists(slug, logs)
 

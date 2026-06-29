@@ -375,6 +375,13 @@ const PrivateRoute = ({{ children }}) =>
 ```
 Wrap every authenticated route: `<Route path="/dashboard" element={{<PrivateRoute><Layout><Dashboard /></Layout></PrivateRoute>}} />`
 
+ALWAYS add a root redirect as the LAST route so `/` never shows a 404:
+```jsx
+<Route path="/" element={{<Navigate to="/dashboard" replace />}} />
+<Route path="*" element={{<Navigate to="/dashboard" replace />}} />
+```
+(PrivateRoute will redirect unauthenticated users from /dashboard → /login automatically)
+
 2. LOGIN PAGE — POST JSON to /auth/login, store token + user info, redirect:
 ```jsx
 const res = await API.post('/auth/login', {{ email, password }});
@@ -458,4 +465,5 @@ Before returning:
 16. Verify signup does auto-login after account creation — NEVER redirect to /login after signup
 17. Verify login stores display_name, user_id, user_email in localStorage from response
 18. Verify logout clears ALL keys: token, display_name, user_id, user_email
+19. Verify App.jsx has <Route path="/" element={<Navigate to="/dashboard" replace />} /> and <Route path="*" element={<Navigate to="/dashboard" replace />} /> so the root URL never shows a 404
 """
