@@ -457,7 +457,7 @@ Before returning:
 8. Verify every form has placeholder text, a loading state on submit, and toast feedback
 9. Verify every data-fetching page has a loading skeleton
 10. Verify dashboard stats come from the /stats/summary API endpoint
-11. Verify src/api.js uses baseURL: '' (empty string — relative URLs, works with Vite proxy)
+11. Verify src/api.js uses baseURL: import.meta.env.VITE_API_URL || '' — this reads the Render backend URL when deployed to Cloudflare, and falls back to relative URLs for local dev with the Vite proxy
 12. Verify every auth error uses parseError() helper — never display raw detail or use plain || fallback
 13. Verify signup page validates password.length >= 8 before submitting, with visible hint text
 14. Verify App.jsx has PrivateRoute wrapping all authenticated routes

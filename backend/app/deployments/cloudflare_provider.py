@@ -169,6 +169,23 @@ class CloudflareProvider(BaseDeploymentProvider):
             print(f"  [Cloudflare] package.json: {'✓' if (build_dir / 'package.json').exists() else '✗ MISSING'}")
             print(f"  [Cloudflare] src/:         {'✓' if (build_dir / 'src').exists() else '✗ MISSING'}")
 
+            # Patch generated api.js/api.jsx BEFORE the build so the Render backend
+            # URL (VITE_API_URL) is actually used. LLMs sometimes generate baseURL:''
+            # which works on same-domain deploys but breaks Cloudflare+Render setups.
+            for api_file in list(build_dir.rglob("src/api.js")) + list(build_dir.rglob("src/api.jsx")):
+                try:
+                    text = api_file.read_text(encoding="utf-8")
+                    patched = re.sub(
+                        r"baseURL\s*:\s*['\"]['\"]",
+                        "baseURL: import.meta.env.VITE_API_URL || ''",
+                        text,
+                    )
+                    if patched != text:
+                        api_file.write_text(patched, encoding="utf-8")
+                        print(f"  [Cloudflare] Patched {api_file.name}: baseURL '' → VITE_API_URL")
+                except Exception as patch_err:
+                    print(f"  [Cloudflare] Warning: could not patch {api_file}: {patch_err}")
+
             print(f"  [Cloudflare] Running npm install (npm={npm})...")
             install_result = self._run(
                 [npm, "install", "--no-fund", "--no-audit", "--legacy-peer-deps"],
