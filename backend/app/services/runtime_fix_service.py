@@ -458,10 +458,44 @@ def generate_runtime_fix(
 
             file_content = ""
 
+    # For model-field errors, include the relevant SQLAlchemy model file(s)
+    # so the LLM knows the actual column names when fixing constructor calls
+    model_content = ""
+    error_type = parsed_error.get("type", "")
+    model_class = parsed_error.get("model_class") or parsed_error.get("missing_attr")
+
+    if error_type in (
+        "ModelFieldMismatchError", "RelationshipMissingError",
+        "AttributeError", "UserIdNotInjectedError", "NotNullViolationError",
+    ):
+        models_dir = os.path.join(project_path, "app", "models")
+        if os.path.isdir(models_dir):
+            model_parts = []
+            target_content = ""
+            for mf in sorted(os.listdir(models_dir)):
+                if not mf.endswith(".py") or mf == "__init__.py":
+                    continue
+                mf_path = os.path.join(models_dir, mf)
+                try:
+                    with open(mf_path, "r", encoding="utf-8") as f:
+                        mc = f.read()
+                    if model_class and f"class {model_class}" in mc:
+                        target_content = f"# {mf}\n{mc}"
+                    else:
+                        model_parts.append(f"# {mf}\n{mc}")
+                except Exception:
+                    pass
+            # Prefer the exact model file; fall back to all models (capped)
+            if target_content:
+                model_content = target_content
+            elif model_parts:
+                model_content = "\n\n".join(model_parts)[:4000]
+
     prompt = build_runtime_fix_prompt(
         _trim_runtime_error(runtime_error),
         relative_path,
-        file_content
+        file_content,
+        model_content=model_content,
     )
 
     from app.utils.llm_cache import get_cached, set_cached

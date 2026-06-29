@@ -158,3 +158,135 @@ def _patch_main_py_create_all(app_dir: Path) -> None:
     if text != original:
         main_file.write_text(text, encoding="utf-8")
         print(f"  [db_patcher] Patched main.py: create_all → create_tables()")
+
+
+# Common field-name synonyms: wrong_name → [possible_correct_names in priority order]
+_FIELD_SYNONYMS: dict[str, list[str]] = {
+    "title":       ["name", "title", "project_name", "task_name", "label_name"],
+    "name":        ["name", "title", "project_name", "task_name", "label_name", "full_name"],
+    "username":    ["email", "username", "user_handle", "name", "full_name"],
+    "content":     ["content", "body", "description", "text", "message"],
+    "body":        ["body", "content", "description", "text"],
+    "text":        ["text", "content", "body", "description"],
+    "description": ["description", "content", "body", "text", "summary"],
+    "label":       ["name", "label", "title", "tag"],
+    "tag":         ["name", "tag", "label", "title"],
+    "summary":     ["summary", "description", "content"],
+    "message":     ["message", "content", "body", "text"],
+}
+
+
+def patch_model_field_mismatches(project_path: str) -> int:
+    """
+    Scan route files for SQLAlchemy constructor calls that use field names not
+    present on the model, and rename them to the closest valid column name.
+    Returns the number of files patched.
+
+    Algorithm:
+    1. Parse app/models/*.py — extract {ClassName: {col_name, ...}} from Column() lines
+    2. Parse app/routes/*.py — find ModelClass(field=val, ...) constructor calls
+    3. For each field that doesn't exist on the model, try synonym mapping
+    4. Also fix obj.attr accesses where attr isn't a model column
+    """
+    import re
+
+    project = Path(project_path)
+    models_dir = project / "app" / "models"
+    routes_dir = project / "app" / "routes"
+
+    if not models_dir.exists() or not routes_dir.exists():
+        return 0
+
+    # ── Step 1: build {ClassName → frozenset(column_names)} ──────────────────
+    model_columns: dict[str, frozenset] = {}
+    class_re = re.compile(r"^class\s+(\w+)\s*\(", re.MULTILINE)
+    col_re = re.compile(r"^\s{4}(\w+)\s*=\s*Column\(", re.MULTILINE)
+
+    for mf in models_dir.glob("*.py"):
+        if mf.name == "__init__.py":
+            continue
+        try:
+            src = mf.read_text(encoding="utf-8", errors="replace")
+            for cls_name in class_re.findall(src):
+                if cls_name in ("Base", "Config", "Meta"):
+                    continue
+                cols = set(col_re.findall(src)) | {"id"}
+                model_columns[cls_name] = frozenset(cols)
+        except Exception:
+            pass
+
+    if not model_columns:
+        return 0
+
+    # ── Step 2: scan route files ──────────────────────────────────────────────
+    # Regex to find: SomeModel(\n    field=...,\n    field2=...\n)
+    # We match the opening `ClassName(` then capture the arg block up to matching `)`
+    patched = 0
+
+    for rf in routes_dir.glob("*.py"):
+        try:
+            src = rf.read_text(encoding="utf-8", errors="replace")
+            original = src
+
+            for cls_name, valid_cols in model_columns.items():
+                # Only process routes that actually reference this class
+                if cls_name not in src:
+                    continue
+
+                def _fix_constructor(m: re.Match) -> str:
+                    args_block = m.group(1)
+                    fixed_lines = []
+                    changed = False
+                    for part in re.split(r",\s*\n?", args_block):
+                        kv = part.strip()
+                        if "=" not in kv:
+                            fixed_lines.append(part)
+                            continue
+                        field, rest = kv.split("=", 1)
+                        field = field.strip()
+                        if not field or field.startswith("#") or field in valid_cols:
+                            fixed_lines.append(part)
+                            continue
+                        # Field is invalid — find best synonym
+                        candidates = _FIELD_SYNONYMS.get(field, [])
+                        replacement = next(
+                            (c for c in candidates if c in valid_cols and c != field),
+                            None,
+                        )
+                        if replacement:
+                            fixed_lines.append(
+                                part.replace(f"{field}=", f"{replacement}=", 1)
+                            )
+                            changed = True
+                        else:
+                            # Can't map it — leave as-is (LLM will handle it)
+                            fixed_lines.append(part)
+                    if changed:
+                        return f"{cls_name}(" + ", ".join(fixed_lines) + ")"
+                    return m.group(0)
+
+                # Match constructor calls (single-line only to avoid greedy issues)
+                src = re.sub(
+                    rf"\b{cls_name}\(([^)]+)\)",
+                    _fix_constructor,
+                    src,
+                    flags=re.DOTALL,
+                )
+
+                # Also fix: obj.bad_field → obj.good_field for attribute accesses
+                for bad, candidates in _FIELD_SYNONYMS.items():
+                    if bad in valid_cols:
+                        continue  # field is actually valid on this model
+                    best = next((c for c in candidates if c in valid_cols and c != bad), None)
+                    if best:
+                        src = re.sub(rf"(\w+)\.{re.escape(bad)}\b", rf"\1.{best}", src)
+
+            if src != original:
+                rf.write_text(src, encoding="utf-8")
+                patched += 1
+                print(f"  [field_patcher] Aligned model fields in {rf.name}")
+
+        except Exception as exc:
+            print(f"  [field_patcher] Skipped {rf.name}: {exc}")
+
+    return patched

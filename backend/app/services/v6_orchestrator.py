@@ -252,8 +252,11 @@ def generate_project_v6(
     # ------------------------------------------------------------------
     print("\n=== DETERMINISTIC PATCHER ===")
     run_deterministic_patches(project_path)
-    from app.services.database_patcher import patch_database_py
+    from app.services.database_patcher import patch_database_py, patch_model_field_mismatches
     patch_database_py(project_path)
+    _n_field_fixes = patch_model_field_mismatches(project_path)
+    if _n_field_fixes:
+        print(f"  [field_patcher] Fixed model-field mismatches in {_n_field_fixes} route file(s)")
 
     total_time_so_far = round(time.time() - start, 2)
     metadata_path = save_metadata(project_path, plan, architecture, provider, total_time_so_far)
@@ -469,6 +472,7 @@ def generate_project_v6(
                 # Re-run patcher so LLM fixes get cleaned up (response_model=ORM class,
                 # missing schema stubs, broken bcrypt, etc.) before next runtime check
                 run_deterministic_patches(project_path)
+                patch_model_field_mismatches(project_path)
                 # Re-inject database.py — the LLM fix may have overwritten it
                 patch_database_py(project_path)
         except Exception as re_err:
@@ -650,8 +654,9 @@ def repair_project(
     # Deterministic patches first
     print("\n=== DETERMINISTIC PATCHER ===")
     run_deterministic_patches(project_path)
-    from app.services.database_patcher import patch_database_py
+    from app.services.database_patcher import patch_database_py, patch_model_field_mismatches
     patch_database_py(project_path)
+    patch_model_field_mismatches(project_path)
 
     # Validation fix loop
     print("\n=== VALIDATION LOOP (REPAIR) ===")

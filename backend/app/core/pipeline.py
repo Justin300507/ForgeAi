@@ -316,9 +316,10 @@ class V15Pipeline:
         evt = ctx.begin_stage("deterministic-patch")
         try:
             from app.services.deterministic_patcher import run_deterministic_patches
-            from app.services.database_patcher import patch_database_py
+            from app.services.database_patcher import patch_database_py, patch_model_field_mismatches
             run_deterministic_patches(str(ctx.project_path))
             patch_database_py(str(ctx.project_path))
+            patch_model_field_mismatches(str(ctx.project_path))
             # Preflight registry: deterministic fixes that don't need LLM
             from app.repair.preflight import preflight
             preflight.run(ctx.project_path)

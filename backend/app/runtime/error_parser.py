@@ -179,6 +179,27 @@ def parse_runtime_error(stderr):
             "hint": "Synchronous SQLAlchemy engines don't support `async with`. Use `with engine.begin()` or call Base.metadata.create_all(bind=engine) at module level."
         }
 
+    # TypeError: 'field_name' is an invalid keyword argument for ModelClass
+    # This happens when a route passes a field that doesn't exist as a Column on the model
+    if "TypeError" in stderr and "invalid keyword argument" in stderr:
+        kwarg_m = re.search(
+            r"TypeError: '(.+?)' is an invalid keyword argument for (\w+)",
+            stderr
+        )
+        field_name = kwarg_m.group(1) if kwarg_m else None
+        model_class = kwarg_m.group(2) if kwarg_m else None
+        return {
+            "type": "ModelFieldMismatchError",
+            "missing_attr": field_name,
+            "model_class": model_class,
+            "error_file": error_file,
+            "hint": (
+                f"Route passes '{field_name}' to {model_class}() but that field is not a "
+                f"Column on the model. Check app/models/ for the actual column names on "
+                f"{model_class} and update the constructor call to use only valid columns."
+            ),
+        }
+
     if "ValidationError" in stderr:
 
         return {

@@ -6,8 +6,23 @@ from app.prompts.shared_contract import FIXER_CONTRACT
 def build_runtime_fix_prompt(
     runtime_error,
     file_path,
-    file_content
+    file_content,
+    model_content: str = "",
 ):
+    model_section = ""
+    if model_content:
+        model_section = f"""
+========================================
+MODEL FILE(S) — ACTUAL COLUMN DEFINITIONS
+========================================
+
+These are the REAL SQLAlchemy model definitions for this project.
+Use ONLY the column attribute names listed here when fixing constructor calls
+or attribute accesses. Do NOT invent field names that aren't declared as Column().
+
+{model_content}
+"""
+
     return f"""
 You are ForgeAI Runtime Fix Agent.
 
@@ -30,7 +45,7 @@ File Path:
 Current File Content:
 
 {file_content}
-
+{model_section}
 ========================================
 PARSED ERROR
 ========================================
@@ -185,6 +200,32 @@ If parsed_error contains:
 Return a complete corrected file with valid Python syntax.
 
 ========================================
+MODEL FIELD MISMATCH RULES
+========================================
+
+If parsed_error contains:
+
+{{
+    "type": "ModelFieldMismatchError",
+    "missing_attr": "title",
+    "model_class": "Projects"
+}}
+
+This means the route handler calls Projects(title=...) but "title" is NOT a Column on the model.
+
+CRITICAL: The "MODEL FILE(S)" section above shows the REAL column names.
+You MUST:
+1. Read the model file content to find the actual Column attribute names
+2. Replace invalid field names in the constructor call with the real column names
+   e.g. if model has "name" not "title": Projects(name=data.title or schema_field, ...)
+3. Also fix any .field_name attribute accesses that reference non-existent columns
+4. Never guess — only use column names that appear in the model file as `attr = Column(...)`
+
+Example:
+  WRONG: new_project = Projects(title=data.title, owner=data.owner)
+  CORRECT (if model has "name" and "owner_id"): new_project = Projects(name=data.title, owner_id=current_user.id)
+
+========================================
 ATTRIBUTE ERROR RULES
 ========================================
 
@@ -195,6 +236,8 @@ If parsed_error contains:
 }}
 
 Repair missing attributes, methods, exports, or references.
+If the error is `'ModelName' object has no attribute 'field'`, check the MODEL FILE(S)
+section above for the actual column names and use those instead.
 
 ========================================
 WERKZEUG IMPORT ERROR RULES
