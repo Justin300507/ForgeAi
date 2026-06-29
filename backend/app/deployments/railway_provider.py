@@ -177,25 +177,78 @@ class RailwayProvider(BaseDeploymentProvider):
         )
         return svc["serviceCreate"]["id"]
 
+    def _list_projects(self) -> list[dict]:
+        """Return all Railway projects for this account [{id, name, createdAt}]."""
+        try:
+            data = self._gql(
+                "query { projects { edges { node { id name createdAt } } } }"
+            )
+            edges = data.get("projects", {}).get("edges", [])
+            return [e["node"] for e in edges if "node" in e]
+        except Exception as exc:
+            print(f"  [Railway] Could not list projects: {exc}")
+            return []
+
+    def _delete_project(self, project_id: str) -> bool:
+        """Delete a Railway project by ID. Returns True on success."""
+        try:
+            self._gql(
+                "mutation D($id: String!) { projectDelete(id: $id) }",
+                {"id": project_id},
+            )
+            print(f"  [Railway] Deleted old project {project_id}")
+            return True
+        except Exception as exc:
+            print(f"  [Railway] Delete failed for {project_id}: {exc}")
+            return False
+
+    def _free_up_slot(self) -> bool:
+        """
+        Delete the oldest Railway project to make room for a new one.
+        Returns True if a project was deleted.
+        """
+        projects = self._list_projects()
+        if not projects:
+            return False
+        # Sort oldest first (Railway returns ISO-8601 strings)
+        projects.sort(key=lambda p: p.get("createdAt") or "")
+        oldest = projects[0]
+        print(f"  [Railway] Freeing slot — deleting oldest project: '{oldest.get('name')}' ({oldest['id']})")
+        return self._delete_project(oldest["id"])
+
     def _create_project(self, name: str) -> tuple[str, str]:
         """
         Get or create a Railway project + service.
         If a project is already linked via ~/.railway/config.json, reuse it.
         Otherwise create a fresh project via the GraphQL API (works with personal tokens).
+        On "limit exceeded" errors, auto-deletes the oldest project and retries once.
         Returns (project_id, service_id).
         """
         project_id, _ = self._default_ids()
         if not project_id:
             print(f"  [Railway] Creating new project '{name}'...")
-            data = self._gql_retry(
-                """mutation C($n: String!) {
-                    projectCreate(input: { name: $n, defaultEnvironmentName: "production" }) {
-                        id
-                        environments { edges { node { id name } } }
-                    }
-                }""",
-                {"n": name},
-            )
+            for attempt in range(2):  # up to 1 auto-cleanup retry
+                try:
+                    data = self._gql_retry(
+                        """mutation C($n: String!) {
+                            projectCreate(input: { name: $n, defaultEnvironmentName: "production" }) {
+                                id
+                                environments { edges { node { id name } } }
+                            }
+                        }""",
+                        {"n": name},
+                    )
+                    break  # success
+                except Exception as exc:
+                    err_str = str(exc)
+                    if "limit exceeded" in err_str.lower() and attempt == 0:
+                        print(f"  [Railway] Project limit hit — auto-cleaning oldest project...")
+                        freed = self._free_up_slot()
+                        if freed:
+                            print(f"  [Railway] Retrying project creation...")
+                            time.sleep(5)
+                            continue
+                    raise  # unrecoverable or already retried
             proj = data["projectCreate"]
             project_id = proj["id"]
             for edge in proj.get("environments", {}).get("edges", []):
