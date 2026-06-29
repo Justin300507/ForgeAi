@@ -76,10 +76,6 @@ app = FastAPI(title="ForgeAI", version="19.0")
 app.include_router(queue_router)
 
 
-@app.get("/", include_in_schema=False)
-def root():
-    return RedirectResponse(url="/docs")
-
 app.add_middleware(
     CORSMiddleware,
     allow_origins=["*"],
@@ -117,11 +113,6 @@ def login(form_data: OAuth2PasswordRequestForm = Depends(), db: Session = Depend
 @app.get("/me", tags=["auth"])
 def me(current_user=Depends(get_current_user)):
     return {"id": current_user.id, "email": current_user.email, "is_active": current_user.is_active}
-
-
-@app.get("/docs-redirect", include_in_schema=False)
-def root():
-    return RedirectResponse(url="/docs")
 
 
 # ── Job endpoints ─────────────────────────────────────────────────────────────
