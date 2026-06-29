@@ -366,6 +366,27 @@ def parse_runtime_error(stderr):
             "hint": "Replace `orm_mode = True` with `from_attributes = True` in all Pydantic Config classes."
         }
 
+    # PydanticSerializationError: route returns ORM object but schema lacks from_attributes
+    # The traceback points into pydantic internals, not the generated route — redirect to a route file.
+    if "PydanticSerializationError" in stderr and "Unable to serialize unknown type" in stderr:
+        model_match = re.search(r"Unable to serialize unknown type: <class '(.+?)'>", stderr)
+        orm_class = model_match.group(1) if model_match else None
+        all_files = re.findall(r'File "(.+?)", line \d+', stderr)
+        route_file = next((f for f in all_files if "generated_projects" in f and "/routes/" in f), None)
+        return {
+            "type": "PydanticSerializationError",
+            "orm_class": orm_class,
+            "error_file": route_file or error_file,
+            "hint": (
+                f"The response schema cannot serialize the SQLAlchemy ORM object ({orm_class}). "
+                "Fix: add 'model_config = ConfigDict(from_attributes=True)' to EVERY Pydantic "
+                "schema class in app/schemas/ that is used as a response_model. "
+                "Also verify the route's response_model is a Pydantic schema (e.g. TodoResponse), "
+                "not the SQLAlchemy model class (e.g. TodoItem). "
+                "Do NOT modify pydantic source files."
+            ),
+        }
+
     return {
         "type": "Unknown",
         "raw_error": stderr[:1000],
