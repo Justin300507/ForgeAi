@@ -479,7 +479,10 @@ def generate_project_v6(
                 # starts with a clean db instead of replaying a broken WAL
                 # (a failed db.commit() leaves the WAL in a dirty state; each busy_timeout
                 # retry during startup costs 5s, causing 30s+ startup hangs)
-                for _db_fname in ("app.db", "app.db-wal", "app.db-shm"):
+                for _db_fname in (
+                    "app.db", "app.db-wal", "app.db-shm",
+                    "forgeai.db", "forgeai.db-wal", "forgeai.db-shm",
+                ):
                     _db_path = os.path.join(project_path, _db_fname)
                     try:
                         if os.path.isfile(_db_path):

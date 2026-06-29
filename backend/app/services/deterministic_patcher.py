@@ -351,15 +351,20 @@ def _patch_main_fk_imports(project_path: Path) -> None:
 # ── 3. async def with sync SQLAlchemy ────────────────────────────────────────
 
 _ASYNC_DEF = re.compile(r"^async def (\w+)\(", re.MULTILINE)
-_ROUTER_DECORATOR = re.compile(r"^@\w+_router\.(get|post|put|delete|patch)\b", re.MULTILINE)
+# Match both `@router.` (before rename) and `@task_router.` (after rename)
+_ROUTER_DECORATOR = re.compile(r"^@(?:\w+_router|router)\.(get|post|put|delete|patch)\b", re.MULTILINE)
 _SYNC_ORM = re.compile(r"\bdb\.(query|add|commit|delete|refresh|execute|flush|rollback)\b")
 _DB_DEPENDS = re.compile(r"\bdb\s*:\s*Session\b")
 _AWAIT_USAGE = re.compile(r"\bawait\b")
 
 
-def _patch_async_sync(content: str) -> str:
+def _patch_async_sync(content: str, filepath: str = "") -> str:
     if "async def" not in content:
         return content
+
+    norm = filepath.replace("\\", "/")
+    # Route files: any async def without a real await blocks uvicorn's event loop
+    is_route_file = "/routes/" in norm or norm.endswith("_routes.py")
 
     lines = content.splitlines(keepends=True)
     result = []
@@ -385,14 +390,17 @@ def _patch_async_sync(content: str) -> str:
             body_only = "".join(body_lines[1:])
             has_sync_orm = _SYNC_ORM.search(body_text)
             has_real_await = _AWAIT_USAGE.search(body_only)
-            # Also strip if the signature has db: Session (sync SQLAlchemy dependency)
             has_db_depends = _DB_DEPENDS.search(line)
 
-            # Strip async if:
-            # - uses sync ORM calls (db.query/add/commit/etc.), OR
-            # - is a route handler with no real await, OR
-            # - has db: Session parameter (sync SQLAlchemy must NOT run in async context)
-            should_strip = has_sync_orm or has_db_depends or (is_route_handler and not has_real_await)
+            # In route files: strip async from ALL handlers that don't use real await.
+            # Any sync I/O (db.query, file I/O, etc.) inside async def blocks the uvicorn
+            # event loop and causes all subsequent requests to timeout.
+            # Outside route files: be conservative — only strip when we're sure it's wrong.
+            if is_route_file:
+                should_strip = not has_real_await
+            else:
+                should_strip = has_sync_orm or has_db_depends or (is_route_handler and not has_real_await)
+
             if should_strip:
                 body_text = body_text.replace("async def ", "def ", 1)
                 result.append(body_text)
@@ -402,6 +410,23 @@ def _patch_async_sync(content: str) -> str:
         i += 1
 
     return "".join(result)
+
+
+# ── 3b. Circular import prevention in schema files ────────────────────────────
+# Schema files importing from route files creates an import cycle that crashes
+# at startup: schemas import routes, routes import schemas.
+
+def _patch_circular_schema_imports(content: str, filepath: str = "") -> str:
+    """Remove any 'from app.routes.*' imports from schema files to break circular deps."""
+    norm = filepath.replace("\\", "/")
+    if "/schemas/" not in norm:
+        return content
+    if "from app.routes." not in content:
+        return content
+    patched = re.sub(r"from app\.routes\.\w+ import [^\n]+\n?", "", content)
+    if patched != content:
+        print(f"  [patcher] Removed circular route import from schema file: {norm.split('/')[-1]}")
+    return patched
 
 
 # ── 4. Model class name aliases (Games → Game, UserBadges → UserBadge, etc.) ─
@@ -1612,7 +1637,8 @@ def run_deterministic_patches(project_path: str) -> int:
         patched = _patch_passlib(patched)
         patched = _patch_pydantic_regex(patched)
         patched = _patch_pydantic_orm_mode(patched)
-        patched = _patch_async_sync(patched)
+        patched = _patch_async_sync(patched, filepath=rel)
+        patched = _patch_circular_schema_imports(patched, filepath=rel)
         patched = _patch_depends_body(patched, rel)
         patched = _patch_from_orm(patched)
         patched = _patch_orm_response_model(patched, rel)
