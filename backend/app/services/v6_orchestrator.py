@@ -466,6 +466,9 @@ def generate_project_v6(
                 if rt_fix and rt_fix.get("path") and rt_fix.get("content"):
                     rt_fix["path"] = _sanitize_path(rt_fix["path"])
                     write_fix(project_path, rt_fix)
+                # Re-run patcher so LLM fixes get cleaned up (response_model=ORM class,
+                # missing schema stubs, broken bcrypt, etc.) before next runtime check
+                run_deterministic_patches(project_path)
                 # Re-inject database.py — the LLM fix may have overwritten it
                 patch_database_py(project_path)
         except Exception as re_err:
@@ -755,6 +758,8 @@ def repair_project(
                 if rt_fix and rt_fix.get("path") and rt_fix.get("content"):
                     rt_fix["path"] = _sanitize_path(rt_fix["path"])
                     write_fix(project_path, rt_fix)
+                # Re-run patcher after each LLM runtime fix
+                run_deterministic_patches(project_path)
                 # Re-inject database.py — the LLM fix may have overwritten it
                 patch_database_py(project_path)
         except Exception as re_err:

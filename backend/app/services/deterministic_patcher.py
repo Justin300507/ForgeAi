@@ -1303,8 +1303,6 @@ def _patch_create_missing_schemas(project_path: Path) -> int:
     created = 0
     for module, needed_classes in schema_imports.items():
         schema_file = schemas_dir / f"{module}.py"
-        if schema_file.exists():
-            continue
 
         # Try to find the matching model file (handle list_member / listmember)
         model_file: Path | None = None
@@ -1323,6 +1321,31 @@ def _patch_create_missing_schemas(project_path: Path) -> int:
                 py_type = _TYPE_MAP.get(cm.group(2), "str")
                 if col_name not in ("id",):
                     columns.append((col_name, py_type))
+
+        if schema_file.exists():
+            # File exists — only add classes that are missing from it
+            existing_content = schema_file.read_text(encoding="utf-8", errors="replace")
+            existing_classes = set(re.findall(r"^class (\w+)\s*\(", existing_content, re.MULTILINE))
+            missing = sorted(needed_classes - existing_classes)
+            if not missing:
+                continue
+            additions = []
+            if "Optional" not in existing_content:
+                additions.append("from typing import Optional\n")
+            for cls_name in missing:
+                if columns:
+                    field_lines = "\n".join(
+                        f"    {name}: Optional[{typ}] = None" for name, typ in columns
+                    )
+                else:
+                    field_lines = "    pass"
+                additions.append(
+                    f"\n\nclass {cls_name}(BaseModel):\n{field_lines}\n    model_config = {{'from_attributes': True}}"
+                )
+            schema_file.write_text(existing_content.rstrip() + "\n" + "".join(additions) + "\n", encoding="utf-8")
+            created += 1
+            print(f"  [patcher] Added missing class(es) to existing {module}.py: {missing}")
+            continue
 
         base_name = "".join(w.capitalize() for w in module.split("_"))
 
