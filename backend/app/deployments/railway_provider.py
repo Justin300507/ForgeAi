@@ -245,8 +245,8 @@ class RailwayProvider(BaseDeploymentProvider):
                         print(f"  [Railway] Project limit hit — auto-cleaning oldest project...")
                         freed = self._free_up_slot()
                         if freed:
-                            print(f"  [Railway] Retrying project creation...")
-                            time.sleep(5)
+                            print(f"  [Railway] Retrying project creation (waiting 35s for rate limit)...")
+                            time.sleep(35)
                             continue
                     raise  # unrecoverable or already retried
             proj = data["projectCreate"]

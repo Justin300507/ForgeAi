@@ -118,7 +118,11 @@ class CloudflareProvider(BaseDeploymentProvider):
         }
         # npm cache in /tmp avoids permission failures on restricted filesystems
         npm_cache = str(Path(tempfile.gettempdir()) / ".npm-forge-cache")
-        build_env = {**os.environ, "npm_config_cache": npm_cache}
+        # Explicitly unset CI so Vite doesn't treat warnings as fatal errors.
+        # Railway (and most CI platforms) set CI=true in the process environment,
+        # which would be inherited by {**os.environ} and break the build.
+        build_env = {k: v for k, v in os.environ.items() if k != "CI"}
+        build_env["npm_config_cache"] = npm_cache
         if env_vars:
             wrangler_env.update(env_vars)
             build_env.update(env_vars)
@@ -192,8 +196,20 @@ class CloudflareProvider(BaseDeploymentProvider):
             logs.append(f"[npm build]\n{build_result.stdout[-500:]}\n{build_result.stderr[-300:]}")
 
             if build_result.returncode != 0:
-                build_err = build_result.stderr[-600:] or build_result.stdout[-400:]
-                print(f"  [Cloudflare] Frontend build failed — {build_err[:200]}")
+                # Vite writes errors to stdout; stderr has the JS stack trace.
+                # Combine both, but put stdout first so the actual error is visible.
+                combined_err = (
+                    (build_result.stdout or "").strip()
+                    + "\n"
+                    + (build_result.stderr or "").strip()
+                ).strip()
+                # Show the first 800 chars (actual error) plus last 400 (tail)
+                if len(combined_err) > 1200:
+                    build_err = combined_err[:800] + "\n...\n" + combined_err[-400:]
+                else:
+                    build_err = combined_err
+                print(f"  [Cloudflare] Frontend build failed (rc={build_result.returncode}):")
+                print(f"  {build_err[:600]}")
                 return DeploymentResult(
                     success=False, url=None, logs="\n".join(logs),
                     error=f"Frontend build failed: {build_err}",
