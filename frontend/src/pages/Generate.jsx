@@ -103,7 +103,6 @@ export default function Generate() {
   const logsEndRef = useRef(null)
   const wsRef = useRef(null)
   const currentStageRef = useRef(null)
-  const pollLogCountRef = useRef(0)
 
   useEffect(() => {
     logsEndRef.current?.scrollIntoView({ behavior: 'smooth' })
@@ -118,20 +117,20 @@ export default function Generate() {
   }, [])
 
   // Polling — sole source of log state. Runs every second while a job is active.
-  // WS handles stage indicators and done/error events; this handles all log display.
-  // Single log source prevents the race where WS appends and poll replaces simultaneously.
+  // Uses a local `lastCount` (not a ref) so it resets to 0 on every effect invocation —
+  // this prevents the stale-counter bug where a previous job's high count blocks new logs.
   useEffect(() => {
-    if (!jobId || done) { pollLogCountRef.current = 0; return; }
+    if (!jobId || done) return
+    let lastCount = 0
     const timer = setInterval(async () => {
       try {
         const r = await api.get(`/jobs/${jobId}`)
         const d = r.data
         const serverLogs = d.logs || []
-        if (serverLogs.length > pollLogCountRef.current) {
-          const newLines = serverLogs.slice(pollLogCountRef.current)
-          pollLogCountRef.current = serverLogs.length
-          setLogs(serverLogs) // server is single source of truth — no duplicates
-          // Stage detection from new log lines (fallback if WS stage detection missed it)
+        setLogs(serverLogs)
+        if (serverLogs.length > lastCount) {
+          const newLines = serverLogs.slice(lastCount)
+          lastCount = serverLogs.length
           for (const line of newLines) {
             const det = detectStage(line)
             if (det) {
@@ -197,14 +196,21 @@ export default function Generate() {
           // NOTE: log state is managed solely by the polling effect to prevent
           // race conditions where WS and polling overwrite each other's state.
         } else if (msg.type === 'done') {
-          setStages(prev => {
-            const next = { ...prev }
-            PIPELINE_STAGES.forEach(s => { if (next[s.key] !== 'error') next[s.key] = 'done' })
-            return next
+          // Final fetch ensures we capture all logs produced after the last poll interval
+          api.get(`/jobs/${jid}`).then(r => {
+            setLogs(r.data.logs || [])
+            setResult(r.data.live_result || msg.result)
+          }).catch(() => {
+            setResult(msg.result)
+          }).finally(() => {
+            setStages(prev => {
+              const next = { ...prev }
+              PIPELINE_STAGES.forEach(s => { if (next[s.key] !== 'error') next[s.key] = 'done' })
+              return next
+            })
+            setDone(true)
+            setSubmitting(false)
           })
-          setDone(true)
-          setResult(msg.result)
-          setSubmitting(false)
         } else if (msg.type === 'cancelled') {
           setError('')
           setDone(true)
@@ -232,6 +238,7 @@ export default function Generate() {
     setDone(false)
     setError('')
     setResult(null)
+    setJobId(null) // reset so polling effect re-runs with fresh lastCount=0 for new job
 
     // Mark first stage as running immediately
     setStages({ planner: 'running' })

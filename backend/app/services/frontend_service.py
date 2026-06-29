@@ -23,6 +23,47 @@ def _fix_jsx_brace_errors(content: str) -> str:
     return content
 
 
+def _fix_jsx_truncated_templates(content: str) -> str:
+    """
+    Fix JSX files where the LLM output was cut off mid-template-literal.
+
+    Two-pass fix:
+    1. Per-line: if a line has more \${  opens than } closes (after the first \${),
+       the expression was never closed — append closing characters.
+    2. File-level: if the total backtick count is odd, the last template literal
+       was never terminated — append a closing backtick.
+    """
+    lines = content.split('\n')
+    result_lines = []
+    for line in lines:
+        if '${' not in line:
+            result_lines.append(line)
+            continue
+        opens = line.count('${')
+        first_pos = line.find('${')
+        after_first = line[first_pos:]
+        closes = after_first.count('}')
+        unmatched = opens - closes
+        if unmatched > 0:
+            last_pos = line.rfind('${')
+            after_last = line[last_pos:]
+            suffix = ''
+            if after_last.count("'") % 2 == 1:
+                suffix += "'"
+            if after_last.count('"') % 2 == 1:
+                suffix += '"'
+            suffix += '}' * unmatched
+            line = line.rstrip() + suffix
+        result_lines.append(line)
+    content = '\n'.join(result_lines)
+
+    # Close a dangling backtick template literal left open by truncation
+    if sum(1 for c in content if c == '`') % 2 == 1:
+        content = content.rstrip() + '`'
+
+    return content
+
+
 def generate_frontend(
     architecture,
     provider="auto",
@@ -117,6 +158,7 @@ def generate_frontend(
             path = file["path"].strip()
             file["path"] = path
             content = _fix_jsx_brace_errors(file["content"])
+            content = _fix_jsx_truncated_templates(content)
             file["content"] = content
 
             if not content.strip():
