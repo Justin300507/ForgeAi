@@ -1,6 +1,7 @@
 import React, { useEffect, useRef, useState } from "react";
 import { useParams, Link, useNavigate } from "react-router-dom";
 import { jobsAPI } from "../api";
+import { buildWsUrl } from "../lib/api";
 import {
   ArrowLeft, Zap, CheckCircle, XCircle, Loader2,
   Clock, Download, ExternalLink, Github, RefreshCw, X, Wrench, Trash2
@@ -57,7 +58,7 @@ export default function JobDetail() {
     if (!job) return;
     if (job.status !== "pending" && job.status !== "running") return;
 
-    const proto = (import.meta.env.VITE_WS_URL ? import.meta.env.VITE_WS_URL.replace(/^http/, "ws") : (location.protocol === "https:" ? "wss" : "ws") + "://" + location.host); const ws = new WebSocket(`${proto}/ws/${id}`);
+    const ws = new WebSocket(buildWsUrl(id));
     wsRef.current = ws;
 
     ws.onmessage = (e) => {

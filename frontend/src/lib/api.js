@@ -25,8 +25,10 @@ api.interceptors.response.use(
 export default api
 
 export function buildWsUrl(jobId) {
-  const base = import.meta.env.VITE_WS_URL
-  if (base) return `${base}/ws/${jobId}`
+  if (import.meta.env.VITE_WS_URL)
+    return `${import.meta.env.VITE_WS_URL}/ws/${jobId}`
+  if (import.meta.env.VITE_API_URL)
+    return `${import.meta.env.VITE_API_URL.replace(/^http/, 'ws')}/ws/${jobId}`
   const proto = window.location.protocol === 'https:' ? 'wss' : 'ws'
   return `${proto}://${window.location.host}/ws/${jobId}`
 }

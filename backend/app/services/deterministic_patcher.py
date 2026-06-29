@@ -1471,6 +1471,124 @@ def _patch_response_schemas_optional(project_path: Path) -> int:
     return patched
 
 
+# ── 15. Pydantic v1 orm_mode → v2 from_attributes ────────────────────────────
+
+_ORM_MODE_CLS_CONFIG_RE = re.compile(
+    r'(class Config\s*:\s*\n(?:[ \t]+[^\n]*\n)*?)([ \t]+)orm_mode\s*=\s*True\s*\n',
+    re.MULTILINE,
+)
+_ORM_MODE_ASSIGN_RE = re.compile(r'\borm_mode\s*=\s*True')
+
+
+def _patch_pydantic_orm_mode(content: str) -> str:
+    """Replace Pydantic v1 orm_mode=True with v2 model_config from_attributes."""
+    if "orm_mode" not in content:
+        return content
+
+    # Replace class Config: orm_mode = True with model_config = ConfigDict(from_attributes=True)
+    def _replace_config_class(m: re.Match) -> str:
+        header = m.group(1)
+        indent = m.group(2)
+        # Check if there are other settings in class Config
+        remaining = re.sub(r'[ \t]+orm_mode\s*=\s*True\s*\n', '', header)
+        # If only orm_mode was there, the class body is now empty — drop the class
+        body_lines = [l for l in remaining.split('\n')[1:] if l.strip()]
+        if not body_lines:
+            return f"{indent}model_config = {{'from_attributes': True}}\n"
+        return remaining + f"{indent}model_config = {{'from_attributes': True}}\n"
+
+    content = _ORM_MODE_CLS_CONFIG_RE.sub(_replace_config_class, content)
+    # Also catch bare orm_mode = True outside class Config (LLM sometimes puts it at schema level)
+    content = _ORM_MODE_ASSIGN_RE.sub("model_config = {'from_attributes': True}", content)
+    return content
+
+
+# ── 16. SQLAlchemy ORM model used as Pydantic field type in route files ───────
+# When LLM defines `class TaskOut(BaseModel): labels: List[Label]` in a route
+# file and `Label` is imported from `app.models.labels` (SQLAlchemy model),
+# Pydantic v2 raises PydanticSchemaGenerationError at startup.
+# Fix: replace the ORM class type with `Any` (or `List[Any]`) in these fields.
+
+_PYDANTIC_CLASS_RE = re.compile(
+    r'^class (\w+)\s*\(BaseModel\)',
+    re.MULTILINE,
+)
+
+
+def _patch_orm_type_in_route_schemas(project_path: Path) -> int:
+    """
+    In route files, replace SQLAlchemy model types used inside Pydantic class
+    field annotations with Any to prevent PydanticSchemaGenerationError.
+    """
+    routes_dir = project_path / "app" / "routes"
+    models_dir = project_path / "app" / "models"
+    if not routes_dir.exists() or not models_dir.exists():
+        return 0
+
+    # Collect all SQLAlchemy model class names
+    orm_classes: set[str] = set()
+    for mf in models_dir.glob("*.py"):
+        if mf.name.startswith("_"):
+            continue
+        try:
+            text = mf.read_text(encoding="utf-8", errors="replace")
+        except Exception:
+            continue
+        for cls in re.findall(r"^class (\w+)\s*\(Base\)", text, re.MULTILINE):
+            orm_classes.add(cls)
+
+    if not orm_classes:
+        return 0
+
+    patched = 0
+    for rf in routes_dir.glob("*.py"):
+        if rf.name.startswith("_"):
+            continue
+        try:
+            content = rf.read_text(encoding="utf-8", errors="replace")
+        except Exception:
+            continue
+
+        if not _PYDANTIC_CLASS_RE.search(content):
+            continue  # no Pydantic models defined in this route file
+
+        changed = False
+        new_content = content
+        for orm_cls in orm_classes:
+            # List[OrmClass] → List[Any]
+            list_pat = re.compile(rf'\bList\[{re.escape(orm_cls)}\]')
+            if list_pat.search(new_content):
+                new_content = list_pat.sub("List[Any]", new_content)
+                changed = True
+            # Optional[OrmClass] → Optional[Any]
+            opt_pat = re.compile(rf'\bOptional\[{re.escape(orm_cls)}\]')
+            if opt_pat.search(new_content):
+                new_content = opt_pat.sub("Optional[Any]", new_content)
+                changed = True
+            # Field annotation: `name: OrmClass` (bare, not in List/Optional)
+            bare_pat = re.compile(rf'(\b\w+\s*:\s*){re.escape(orm_cls)}(\s*(?:=|#|\n))')
+            if bare_pat.search(new_content):
+                new_content = bare_pat.sub(r'\1Any\2', new_content)
+                changed = True
+
+        if changed:
+            # Ensure Any is imported
+            if "from typing import" in new_content:
+                if "Any" not in new_content:
+                    new_content = re.sub(
+                        r'(from typing import )([^\n]+)',
+                        lambda m: m.group(0) if "Any" in m.group(2) else f"{m.group(1)}{m.group(2)}, Any",
+                        new_content, count=1,
+                    )
+            else:
+                new_content = "from typing import Any\n" + new_content
+            rf.write_text(new_content, encoding="utf-8")
+            patched += 1
+            print(f"  [patcher] Fixed ORM types in route schema in {rf.name}")
+
+    return patched
+
+
 # ── Main entry point ──────────────────────────────────────────────────────────
 
 def run_deterministic_patches(project_path: str) -> int:
@@ -1493,6 +1611,7 @@ def run_deterministic_patches(project_path: str) -> int:
         patched = _patch_smart_quotes(patched)
         patched = _patch_passlib(patched)
         patched = _patch_pydantic_regex(patched)
+        patched = _patch_pydantic_orm_mode(patched)
         patched = _patch_async_sync(patched)
         patched = _patch_depends_body(patched, rel)
         patched = _patch_from_orm(patched)
@@ -1550,6 +1669,10 @@ def run_deterministic_patches(project_path: str) -> int:
     # Make Response schema fields Optional so ORM field-name mismatches don't crash
     # (e.g. UserResponse.username required but User model uses email only)
     _patch_response_schemas_optional(root)
+
+    # Fix SQLAlchemy ORM models used as Pydantic field types in route files
+    # (e.g. labels: List[Label] where Label is a SQLAlchemy model → List[Any])
+    _patch_orm_type_in_route_schemas(root)
 
     if modified:
         print(f"  [patcher] Patched {modified} file(s) — passlib→bcrypt, async→sync, smart quotes")
