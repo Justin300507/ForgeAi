@@ -25,40 +25,47 @@ def _fix_jsx_brace_errors(content: str) -> str:
 
 def _fix_jsx_truncated_templates(content: str) -> str:
     """
-    Fix JSX files where the LLM output was cut off mid-template-literal.
+    Fix JSX files where LLM output was cut off mid-template-literal.
 
-    Two-pass fix:
-    1. Per-line: if a line has more \${  opens than } closes (after the first \${),
-       the expression was never closed — append closing characters.
-    2. File-level: if the total backtick count is odd, the last template literal
-       was never terminated — append a closing backtick.
+    Three-pass fix:
+    1. Per-line ${...}: if a line has more ${ opens than } closes, close them.
+    2. Per-line backtick: if a line has an odd number of backticks, the template
+       literal was opened but never closed on that line — append a closing `.
+       This handles plain-string truncations like `transition-colo (no ${ at all).
+    3. File-level: if the total backtick count is still odd, append one at the end.
     """
     lines = content.split('\n')
     result_lines = []
     for line in lines:
-        if '${' not in line:
-            result_lines.append(line)
-            continue
-        opens = line.count('${')
-        first_pos = line.find('${')
-        after_first = line[first_pos:]
-        closes = after_first.count('}')
-        unmatched = opens - closes
-        if unmatched > 0:
-            last_pos = line.rfind('${')
-            after_last = line[last_pos:]
-            suffix = ''
-            if after_last.count("'") % 2 == 1:
-                suffix += "'"
-            if after_last.count('"') % 2 == 1:
-                suffix += '"'
-            suffix += '}' * unmatched
-            line = line.rstrip() + suffix
+        # Pass 1 — close unclosed ${...} expressions
+        if '${' in line:
+            opens = line.count('${')
+            first_pos = line.find('${')
+            after_first = line[first_pos:]
+            closes = after_first.count('}')
+            unmatched = opens - closes
+            if unmatched > 0:
+                last_pos = line.rfind('${')
+                after_last = line[last_pos:]
+                suffix = ''
+                if after_last.count("'") % 2 == 1:
+                    suffix += "'"
+                if after_last.count('"') % 2 == 1:
+                    suffix += '"'
+                suffix += '}' * unmatched
+                line = line.rstrip() + suffix
+
+        # Pass 2 — close unclosed backtick template literals on this line
+        # An odd backtick count means one template literal was opened but not closed.
+        if line.count('`') % 2 == 1:
+            line = line.rstrip() + '`'
+
         result_lines.append(line)
+
     content = '\n'.join(result_lines)
 
-    # Close a dangling backtick template literal left open by truncation
-    if sum(1 for c in content if c == '`') % 2 == 1:
+    # Pass 3 — file-level safety net
+    if content.count('`') % 2 == 1:
         content = content.rstrip() + '`'
 
     return content
