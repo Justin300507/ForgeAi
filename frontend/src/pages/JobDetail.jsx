@@ -143,6 +143,8 @@ export default function JobDetail() {
   const isActive = job.status === "pending" || job.status === "running";
   const isDone = job.status === "done";
   const isFailed = job.status === "error" || job.status === "cancelled";
+  // Low-score "done" job — runtime likely failed, score < 80, or no deployment
+  const needsFix = isDone && (job.forge_score == null || job.forge_score < 80 || !job.backend_url);
 
   return (
     <div className="min-h-screen bg-gray-950 text-white">
@@ -167,6 +169,13 @@ export default function JobDetail() {
               <button onClick={handleRetry} disabled={retrying}
                 className="flex items-center gap-1.5 text-sm text-indigo-400 hover:text-indigo-300 border border-indigo-500/30 px-3 py-1.5 rounded-lg transition-colors disabled:opacity-50">
                 <Wrench size={14} />{retrying ? "Fixing…" : "Fix Errors"}
+              </button>
+            )}
+            {needsFix && (
+              <button onClick={handleRetry} disabled={retrying}
+                className="flex items-center gap-1.5 text-sm font-medium text-orange-400 hover:text-orange-300 border border-orange-500/40 hover:border-orange-400/60 px-3 py-1.5 rounded-lg transition-colors disabled:opacity-50"
+                title={`Score ${job.forge_score ?? '?'}/100 — click to re-run fix loop and improve`}>
+                <Wrench size={14} />{retrying ? "Fixing…" : "Fix & Improve"}
               </button>
             )}
             {isDone && job?.backend_url && (
@@ -202,6 +211,16 @@ export default function JobDetail() {
               </div>
               <p className="text-gray-200">{job.idea}</p>
               {job.error && <p className="text-red-400 text-sm mt-2 bg-red-500/10 border border-red-500/20 rounded-lg px-3 py-2">{job.error}</p>}
+              {needsFix && !job.error && (
+                <div className="mt-3 flex items-start gap-2 text-sm bg-orange-500/10 border border-orange-500/20 rounded-lg px-3 py-2.5">
+                  <Wrench size={14} className="text-orange-400 mt-0.5 shrink-0" />
+                  <span className="text-orange-300">
+                    {job.forge_score != null && job.forge_score < 80
+                      ? `Score ${job.forge_score}/100 — runtime validation failed. Click "Fix & Improve" to re-run the fix loop on existing files.`
+                      : 'Deployment incomplete — click "Fix & Improve" to retry validation and deployment.'}
+                  </span>
+                </div>
+              )}
             </div>
             {isDone && job.forge_score != null && <ScoreBadge score={job.forge_score} />}
           </div>

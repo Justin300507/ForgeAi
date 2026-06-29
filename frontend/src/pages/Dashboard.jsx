@@ -2,7 +2,7 @@ import React, { useEffect, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { jobsAPI } from "../api";
 import NavBar from "../components/NavBar";
-import { Trash2 } from "lucide-react";
+import { Trash2, Wrench } from "lucide-react";
 
 const STATUS_STYLE = {
   pending:   {bg:"rgba(234,179,8,0.1)",   color:"#facc15", border:"rgba(234,179,8,0.2)"},
@@ -52,6 +52,17 @@ export default function Dashboard() {
     }
   };
 
+  const handleFix = async (e, jobId) => {
+    e.preventDefault();
+    e.stopPropagation();
+    try {
+      const res = await jobsAPI.retry(jobId);
+      navigate(`/projects/${res.data.job_id}`);
+    } catch (err) {
+      alert(err.response?.data?.detail || "Fix failed");
+    }
+  };
+
   const done = jobs.filter(j => j.status === "done");
   const running = jobs.filter(j => j.status === "running" || j.status === "pending").length;
   const avgScore = done.length ? Math.round(done.reduce((s, j) => s + (j.forge_score || 0), 0) / done.length) : null;
@@ -98,6 +109,8 @@ export default function Dashboard() {
             {jobs.map(job => {
               const s = STATUS_STYLE[job.status] || STATUS_STYLE.error;
               const isActive = job.status === "pending" || job.status === "running";
+              const isDone = job.status === "done";
+              const needsFix = isDone && (job.forge_score == null || job.forge_score < 80 || !job.backend_url);
               return (
                 <div key={job.id}
                   className="flex items-center gap-4 rounded-xl px-4 py-3.5 border border-white/5 hover:border-white/10 transition-all group cursor-pointer"
@@ -112,6 +125,14 @@ export default function Dashboard() {
                     {job.forge_score != null && <ScoreBadge score={job.forge_score} />}
                     <div className="text-xs text-gray-600 mt-0.5">{timeAgo(job.created_at)}</div>
                   </div>
+                  {needsFix && (
+                    <button
+                      onClick={(e) => handleFix(e, job.id)}
+                      title={`Score ${job.forge_score ?? '?'}/100 — click to fix and improve`}
+                      className="shrink-0 flex items-center gap-1 px-2 py-1 rounded-lg text-xs font-medium text-orange-400 border border-orange-500/30 hover:bg-orange-500/10 transition-colors">
+                      <Wrench size={12} /> Fix
+                    </button>
+                  )}
                   {!isActive && (
                     <button
                       onClick={(e) => handleDelete(e, job.id)}
