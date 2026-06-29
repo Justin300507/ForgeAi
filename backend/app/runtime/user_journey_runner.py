@@ -339,7 +339,11 @@ def run_user_journey(
                             return True, "400 (user already exists)"
 
                 # Route exists but schema is unknown — treat as soft pass so journey continues
-                return True, f"422 @ {url.split('/')[-1]} (server alive, schema mismatch)"
+                try:
+                    _422_detail = r.json().get("detail", "?")
+                except Exception:
+                    _422_detail = "?"
+                return True, f"422 @ {url.split('/')[-1]} (server alive, schema mismatch) detail={str(_422_detail)[:120]}"
         return False, "404 (no register/signup endpoint found)"
     steps.append(_step("Register", do_register))
 
