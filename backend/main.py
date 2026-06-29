@@ -75,6 +75,11 @@ app = FastAPI(title="ForgeAI", version="19.0")
 
 app.include_router(queue_router)
 
+
+@app.get("/", include_in_schema=False)
+def root():
+    return RedirectResponse(url="/docs")
+
 app.add_middleware(
     CORSMiddleware,
     allow_origins=["*"],
@@ -982,14 +987,15 @@ class V15Request(BaseModel):
 def project_v14(request: V14Request):
     """
     V14 — One-Click Deployment Platform.
-    Generates, validates, pushes to GitHub, deploys backend to Railway,
+    Generates, validates, pushes to GitHub, deploys backend to Render,
     deploys frontend to Cloudflare Pages, runs health checks, returns a report.
 
     deploy_to options:
       "none"       — generate + configs only (default, no credentials needed)
-      "railway"    — deploy backend to Railway (needs RAILWAY_TOKEN + GITHUB_TOKEN)
+      "render"     — deploy backend to Render (needs RENDER_API_KEY + GITHUB_TOKEN)
+      "railway"    — alias for "render" (Railway replaced due to free-plan limits)
       "cloudflare" — deploy frontend to Cloudflare Pages (needs CLOUDFLARE_API_TOKEN + CLOUDFLARE_ACCOUNT_ID)
-      "both"       — full stack deploy (needs all 4 credentials above)
+      "both"       — full stack deploy (needs RENDER_API_KEY + GITHUB_TOKEN + Cloudflare creds)
 
     Credentials come from the user's ForgeAI Deploy Settings page.
     """

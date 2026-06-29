@@ -1,0 +1,5 @@
+{"prompt_file": "golden/01_todo.txt", "name": "01_todo", "difficulty": "golden", "idea": "A todo list app", "forge_score": 92, "compile_success": true, "crashed": false}
+{"prompt_file": "golden/02_expense_tracker.txt", "name": "02_expense_tracker", "difficulty": "golden", "idea": "An expense tracker", "forge_score": 88, "compile_success": true, "crashed": false}
+{"prompt_file": "golden/03_gym_tracker.txt", "name": "03_gym_tracker", "difficulty": "golden", "idea": "A gym tracker", "forge_score": 45, "compile_success": false, "crashed": false}
+{"prompt_file": "golden/07_chat.txt", "name": "07_chat", "difficulty": "golden", "idea": "A chat app", "forge_score": 0, "compile_success": false, "crashed": true}
+{"prompt_file": "golden/12_dashboard.txt", "name": "12_dashboard", "difficulty": "golden", "idea": "A dashboard", "forge_score": 80, "compile_success": true, "crashed": false}

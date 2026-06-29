@@ -8,10 +8,10 @@ load_dotenv()
 client = OpenAI(
     api_key=os.getenv("CEREBRAS_API_KEY", "not-configured"),
     base_url="https://api.cerebras.ai/v1",
-    timeout=120
+    timeout=20
 )
 
-DEFAULT_MODEL = "gpt-oss-120b"
+DEFAULT_MODEL = "zai-glm-4.7"
 
 
 def generate(

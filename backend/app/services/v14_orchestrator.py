@@ -5,7 +5,7 @@ Pipeline:
   1. Generate + validate with V7 (FastAPI backend + React frontend)
   2. Write deterministic deployment configs (.env.example, GitHub Actions, wrangler.toml)
   3. Push to GitHub (creates repo automatically)
-  4. Deploy backend to Railway (via Railway GraphQL API + CLI)
+  4. Deploy backend to Render (via Render REST API)
   5. Deploy frontend to Cloudflare Pages (via Wrangler CLI)
   6. Health check both deployments
   7. Return full deployment status report
@@ -15,10 +15,11 @@ Each step fails gracefully — a GitHub failure doesn't block Cloudflare.
 
 Credentials come from the user's ForgeAI account (Deploy Settings page),
 injected as env vars before the job runs:
-  GITHUB_TOKEN         — Personal Access Token with repo scope
-  RAILWAY_TOKEN        — Railway personal token (railway.app/account/tokens)
-  CLOUDFLARE_API_TOKEN — From dash.cloudflare.com → Profile → API Tokens
-  CLOUDFLARE_ACCOUNT_ID — Your Cloudflare account ID
+  GITHUB_TOKEN           — Personal Access Token with repo scope
+  RENDER_API_KEY         — From dashboard.render.com → Account → API Keys
+  RENDER_OWNER_ID        — Your Render user/team ID (optional, auto-discovered)
+  CLOUDFLARE_API_TOKEN   — From dash.cloudflare.com → Profile → API Tokens
+  CLOUDFLARE_ACCOUNT_ID  — Your Cloudflare account ID
 """
 import time
 from typing import Any
@@ -30,7 +31,7 @@ from app.services.deployment_config_service import generate_deployment_configs
 def generate_project_v14(
     idea: str,
     provider: str = "auto",
-    deploy_to: str = "both",          # "railway" | "cloudflare" | "both" | "none"
+    deploy_to: str = "both",          # "render" | "cloudflare" | "both" | "none"  ("railway" accepted as alias for "render")
     run_improvement_cycle: bool = False,
     skip_reviews: bool = True,
     frontend_target: str = "web",
@@ -41,7 +42,8 @@ def generate_project_v14(
     Args:
         idea:                   plain-English project description
         provider:               LLM provider (auto/cerebras/groq/gemini/openai)
-        deploy_to:              where to deploy — "railway", "cloudflare", "both", or "none"
+        deploy_to:              where to deploy — "render", "cloudflare", "both", or "none"
+                                ("railway" is accepted as an alias for "render")
         run_improvement_cycle:  run V7 self-improvement after generation
         skip_reviews:           skip QA/Security reviews (faster, cheaper)
         frontend_target:        "web" (React+Tailwind) or "pwa" (installable PWA)
@@ -146,12 +148,13 @@ def generate_project_v14(
 
     github_repo_url = github_result.get("clone_url") or github_result.get("repo_url")
 
-    # ── Step 4: Deploy backend to Railway ────────────────────────────────────
+    # ── Step 4: Deploy backend to Render ─────────────────────────────────────
+    # "railway" is accepted as a legacy alias so existing API callers don't break.
     railway_result: dict = {"skipped": True}
-    if deploy_to in ("railway", "both"):
-        print("\n[V14] Step 4a/5 — Deploying backend to Railway...")
-        railway_result = _deploy_railway(project_path, project_name, github_repo_url)
-    result["railway"] = railway_result
+    if deploy_to in ("railway", "render", "both"):
+        print("\n[V14] Step 4a/5 — Deploying backend to Render...")
+        railway_result = _deploy_render(project_path, project_name, github_repo_url)
+    result["railway"] = railway_result  # key kept as "railway" for API compatibility
 
     backend_url = railway_result.get("url")
 
@@ -186,7 +189,7 @@ def generate_project_v14(
         and not cloudflare_result.get("success")
         and not frontend_deployed
     )
-    railway_failed = (
+    render_failed = (
         not result.get("railway", {}).get("skipped")
         and not backend_deployed
         and not result.get("railway", {}).get("success", True)
@@ -194,9 +197,9 @@ def generate_project_v14(
     if cloudflare_failed:
         forge_score_int = max(0, forge_score_int - 20)
         print(f"[Score] -20 Cloudflare deploy failed → adjusted score: {forge_score_int}")
-    if railway_failed:
+    if render_failed:
         forge_score_int = max(0, forge_score_int - 20)
-        print(f"[Score] -20 Railway deploy failed → adjusted score: {forge_score_int}")
+        print(f"[Score] -20 Render deploy failed → adjusted score: {forge_score_int}")
 
     result["report"] = {
         "status": "deployed" if deployed else "generated",
@@ -228,15 +231,18 @@ def _push_to_github(project_path: str, project_name: str, idea: str) -> dict:
         return {"success": False, "error": str(exc), "repo_url": None, "clone_url": None}
 
 
-def _deploy_railway(project_path: str, project_name: str, github_url: str | None = None) -> dict:
+def _deploy_render(project_path: str, project_name: str, github_url: str | None = None) -> dict:
     try:
-        from app.deployments.railway_provider import RailwayProvider
-        provider = RailwayProvider()
-        res = provider.deploy(project_path, project_name, github_url=github_url)
+        from app.deployments.render_provider import RenderProvider
+        provider = RenderProvider()
+        env_vars: dict = {}
+        if github_url:
+            env_vars["GITHUB_REPO_URL"] = github_url
+        res = provider.deploy(project_path, project_name, env_vars=env_vars or None)
         if not res.success:
-            print(f"  [Railway] Deploy failed: {(res.error or '')[:400]}")
+            print(f"  [Render] Deploy failed: {(res.error or '')[:400]}")
             if res.logs:
-                print(f"  [Railway] Logs: {res.logs[-300:]}")
+                print(f"  [Render] Logs: {res.logs[-300:]}")
         return {
             "success": res.success,
             "url": res.url,
@@ -245,7 +251,7 @@ def _deploy_railway(project_path: str, project_name: str, github_url: str | None
             "metadata": res.metadata,
         }
     except Exception as exc:
-        print(f"  [Railway] Exception: {exc}")
+        print(f"  [Render] Exception: {exc}")
         return {"success": False, "error": str(exc), "url": None}
 
 
@@ -279,8 +285,8 @@ def _run_health_checks(backend_url: str | None, frontend_url: str | None) -> dic
             r = requests.get(f"{backend_url}/health", timeout=8)
             health["backend"] = {"status": r.status_code, "ok": r.status_code == 200, "latency_ms": int(r.elapsed.total_seconds() * 1000)}
         except Exception:
-            # Railway backends take ~3 min to build — health fail here is expected
-            health["backend"] = {"ok": False, "note": "Railway backend building (~3 min) — URL is correct, check back soon"}
+            # Render free-tier backends take ~5 min to build — health fail here is expected
+            health["backend"] = {"ok": False, "note": "Render backend building (~5 min) — URL is correct, check back soon"}
 
     if frontend_url:
         try:
@@ -300,7 +306,7 @@ def _build_next_steps(project_name: str, backend_url: str | None, frontend_url: 
     if not github.get("success"):
         steps.append(f"1. Push to GitHub: cd generated_projects/{project_name} && git init && git push")
     if not backend_url:
-        steps.append("2. Deploy backend: go to railway.app → New Project → Deploy from GitHub repo")
+        steps.append("2. Deploy backend: add RENDER_API_KEY to .env, then re-run with deploy_to='render'")
     if not frontend_url:
         steps.append("3. Deploy frontend: cd your-project && wrangler pages deploy ./dist --project-name=" + slug)
     if backend_url and not frontend_url:
@@ -315,9 +321,9 @@ def _build_manual_deploy_instructions(project_name: str) -> list[str]:
     slug = project_name.lower().replace("_", "-")
     return [
         f"1. Push to GitHub: cd generated_projects/{project_name} && git init && git push",
-        "2. Deploy to Railway: go to railway.app → New Project → Deploy from GitHub repo",
+        "2. Deploy to Render: add RENDER_API_KEY (+ optionally RENDER_OWNER_ID) to .env, re-run with deploy_to='render'",
         f"3. Deploy frontend to Cloudflare: wrangler pages deploy ./dist --project-name={slug}",
-        "4. Connect GitHub, Cloudflare, and Railway in ForgeAI Deploy Settings for one-click deploy",
+        "4. Connect GitHub, Cloudflare, and Render in ForgeAI Deploy Settings for one-click deploy",
     ]
 
 

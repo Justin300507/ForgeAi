@@ -1,0 +1,38 @@
+[
+  {
+    "version": "v17",
+    "run_id": "test_sim_v17",
+    "label": "simulation",
+    "date": "2026-06-28",
+    "total": 20,
+    "passed": 15,
+    "weighted_score": 73.9,
+    "weighted_pass_rate": 0.656,
+    "avg_forge_score": 78.2,
+    "compile_rate": 0.95,
+    "runtime_rate": 0.75,
+    "crud_rate": 0.75,
+    "total_cost_usd": 1.1155,
+    "cost_per_success": 0.0744,
+    "avg_time_s": 129.4,
+    "provider": "cerebras"
+  },
+  {
+    "version": "v18",
+    "run_id": "test_sim_v18",
+    "label": "after-websocket-fix",
+    "date": "2026-06-28",
+    "total": 20,
+    "passed": 17,
+    "weighted_score": 77.8,
+    "weighted_pass_rate": 0.812,
+    "avg_forge_score": 80.7,
+    "compile_rate": 0.95,
+    "runtime_rate": 0.85,
+    "crud_rate": 0.85,
+    "total_cost_usd": 1.0328,
+    "cost_per_success": 0.0608,
+    "avg_time_s": 128.4,
+    "provider": "cerebras"
+  }
+]
