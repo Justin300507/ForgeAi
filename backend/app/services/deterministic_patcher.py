@@ -1638,6 +1638,152 @@ _PYDANTIC_CLASS_RE = re.compile(
 )
 
 
+_STAR_DICT_RE = re.compile(
+    r'\b([A-Z]\w+)\(\s*\*\*(\w+)\.(?:dict|model_dump)\(\)((?:[^)]*)?)\)',
+    re.DOTALL,
+)
+
+
+def _patch_star_dict_extra_fields(project_path: Path) -> int:
+    """Replace Model(**schema.dict(), ...) with filtered dict to prevent
+    TypeError when the Pydantic schema has extra fields the SQLAlchemy model lacks.
+
+    Example:
+        BEFORE: Task(**task_in.dict(), user_id=current_user.id)
+        AFTER:  Task(**{k: v for k, v in task_in.dict().items() if hasattr(Task, k)}, user_id=current_user.id)
+    """
+    routes_dir = project_path / "app" / "routes"
+    models_dir = project_path / "app" / "models"
+    if not routes_dir.exists():
+        return 0
+
+    # Collect all SQLAlchemy model class names (inherit from Base)
+    orm_classes: set = set()
+    if models_dir.exists():
+        for mf in models_dir.glob("*.py"):
+            if mf.name == "__init__.py":
+                continue
+            try:
+                for m in re.finditer(r'^class\s+(\w+)\s*\(', mf.read_text(encoding="utf-8", errors="replace"), re.MULTILINE):
+                    orm_classes.add(m.group(1))
+            except Exception:
+                pass
+    # Remove known non-ORM base classes
+    orm_classes -= {"Base", "BaseModel", "Config", "Meta"}
+
+    patched = 0
+    for rf in routes_dir.glob("*.py"):
+        try:
+            content = rf.read_text(encoding="utf-8", errors="replace")
+            original = content
+
+            def _replace_star_dict(m: re.Match) -> str:
+                cls_name = m.group(1)
+                schema_var = m.group(2)
+                extra_args = m.group(3)  # everything after dict() up to the closing )
+                if cls_name not in orm_classes:
+                    return m.group(0)
+                # Build filtered dict, preserve any extra kwargs
+                filtered = f"{{k: v for k, v in {schema_var}.dict().items() if hasattr({cls_name}, k)}}"
+                if extra_args.strip().strip(",").strip():
+                    return f"{cls_name}(**{filtered}{extra_args})"
+                return f"{cls_name}(**{filtered})"
+
+            content = _STAR_DICT_RE.sub(_replace_star_dict, content)
+            if content != original:
+                rf.write_text(content, encoding="utf-8")
+                patched += 1
+                print(f"  [patcher] Filtered **schema.dict() kwargs in {rf.name}")
+        except Exception:
+            pass
+    return patched
+
+
+_ATTR_ACCESS_RE = re.compile(r'\b(\w+)\.(\w+)\b')
+
+_FIELD_SYNONYMS_PATCHER = {
+    "username": ["email", "name", "full_name", "display_name"],
+    "user_handle": ["username", "email", "name"],
+    "display_name": ["full_name", "name", "username"],
+    "full_name": ["display_name", "name", "username"],
+    "status": ["state", "is_active", "is_done"],
+    "state": ["status", "is_active"],
+    "description": ["name", "title", "content", "body", "notes"],
+    "content": ["body", "description", "text", "notes"],
+    "title": ["name", "label", "heading"],
+    "label": ["name", "title", "tag"],
+    "priority": ["importance", "urgency", "level"],
+    "due_date": ["deadline", "due_at", "expires_at"],
+    "deadline": ["due_date", "due_at", "expires_at"],
+    "creator_id": ["owner_id", "user_id", "created_by"],
+    "author_id": ["owner_id", "user_id", "created_by"],
+}
+
+
+def _patch_attr_access_mismatches(project_path: Path) -> int:
+    """Fix route files that access obj.invalid_attr where invalid_attr doesn't exist
+    on the SQLAlchemy model (e.g. user.username when model only has email).
+
+    Specifically fixes dict literals and return statements that hard-code
+    attribute names not present on the model, using synonym mapping.
+    """
+    routes_dir = project_path / "app" / "routes"
+    models_dir = project_path / "app" / "models"
+    if not routes_dir.exists() or not models_dir.exists():
+        return 0
+
+    # Build {cls_name → frozenset(column_names)}
+    model_cols: dict[str, frozenset] = {}
+    for mf in models_dir.glob("*.py"):
+        if mf.name == "__init__.py":
+            continue
+        try:
+            src = mf.read_text(encoding="utf-8", errors="replace")
+            for cls_m in re.finditer(r'^class\s+(\w+)\s*\(', src, re.MULTILINE):
+                cls = cls_m.group(1)
+                if cls in ("Base", "BaseModel", "Config", "Meta"):
+                    continue
+                cols = set(re.findall(r'^\s{4}(\w+)\s*=\s*Column\(', src, re.MULTILINE)) | {"id"}
+                model_cols[cls] = frozenset(cols)
+        except Exception:
+            pass
+
+    if not model_cols:
+        return 0
+
+    patched = 0
+    for rf in routes_dir.glob("*.py"):
+        try:
+            content = rf.read_text(encoding="utf-8", errors="replace")
+            original = content
+
+            for cls_name, valid_cols in model_cols.items():
+                # Only process route files that reference this class
+                if cls_name not in content:
+                    continue
+                for bad_attr, candidates in _FIELD_SYNONYMS_PATCHER.items():
+                    if bad_attr in valid_cols:
+                        continue  # attribute exists, no fix needed
+                    good_attr = next((c for c in candidates if c in valid_cols), None)
+                    if not good_attr:
+                        continue
+                    # Replace .bad_attr with .good_attr only in attribute access context
+                    # Use word boundary to avoid replacing "username_field" etc.
+                    content = re.sub(
+                        r'(?<!\w)\.' + re.escape(bad_attr) + r'\b',
+                        '.' + good_attr,
+                        content,
+                    )
+
+            if content != original:
+                rf.write_text(content, encoding="utf-8")
+                patched += 1
+                print(f"  [patcher] Fixed attribute accesses in {rf.name}")
+        except Exception:
+            pass
+    return patched
+
+
 def _patch_orm_type_in_route_schemas(project_path: Path) -> int:
     """
     In route files, replace SQLAlchemy model types used inside Pydantic class
@@ -1797,6 +1943,15 @@ def run_deterministic_patches(project_path: str) -> int:
     # Inject model_config = {'from_attributes': True} into all Pydantic schemas
     # so FastAPI can serialize SQLAlchemy ORM objects returned from route handlers
     _patch_schemas_from_attributes(root)
+
+    # Filter **schema.dict() unpacking to remove fields not on the SQLAlchemy model.
+    # Prevents TypeError: 'status' is an invalid keyword argument for Task when the
+    # Pydantic schema has extra fields that don't exist as columns on the model.
+    _patch_star_dict_extra_fields(root)
+
+    # Fix attribute accesses (e.g. user.username when model only has email).
+    # The field_patcher fixes constructor calls; this fixes dict literals and returns.
+    _patch_attr_access_mismatches(root)
 
     # Fix SQLAlchemy ORM models used as Pydantic field types in route files
     # (e.g. labels: List[Label] where Label is a SQLAlchemy model → List[Any])

@@ -463,7 +463,6 @@ def generate_runtime_fix(
                 content,
                 model_content=model_content,
             )
-            from app.utils.json_cleaner import extract_json
             try:
                 text = generate_content(prompt, provider, max_tokens=6000)
                 if text:
