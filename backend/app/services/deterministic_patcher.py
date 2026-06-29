@@ -828,9 +828,12 @@ ACCESS_TOKEN_EXPIRE_MINUTES = 60 * 24 * 7
 
 oauth2_scheme = OAuth2PasswordBearer(tokenUrl="/auth/login")
 
+# rounds=4 keeps bcrypt fast (<10ms) so route handlers don't block uvicorn threads
+_BCRYPT_ROUNDS = 4
+
 
 def get_password_hash(password: str) -> str:
-    return bcrypt.hashpw(password.encode("utf-8"), bcrypt.gensalt()).decode("utf-8")
+    return bcrypt.hashpw(password.encode("utf-8"), bcrypt.gensalt(_BCRYPT_ROUNDS)).decode("utf-8")
 
 
 def verify_password(plain: str, hashed: str) -> bool:
@@ -1068,18 +1071,19 @@ def _patch_auth_routes(project_path: Path) -> None:
     else:
         try:
             existing = auth_routes_file.read_text(encoding="utf-8", errors="replace")
-            # Re-inject if /auth/signup is missing — the LLM often generates
-            # /auth/register instead, which breaks the journey and smoke tests.
-            # The known-good template uses dynamic field detection so it works
-            # with any User model regardless of field names.
-            if "/auth/signup" not in existing:
+            # Always inject our known-good template unless it's already there.
+            # The known-good template is identified by the _read_password sentinel.
+            # Generated auth_routes.py commonly uses user.password (wrong field name),
+            # user.hashed_password, or bcrypt with rounds=12 (blocks uvicorn threads).
+            # Our template detects the password field dynamically and uses rounds=4.
+            if "_read_password" not in existing:
                 needs_inject = True
         except Exception:
             needs_inject = True
 
     if needs_inject:
         auth_routes_file.write_text(_AUTH_ROUTES_TEMPLATE, encoding="utf-8")
-        print("  [patcher] Injected known-good app/routes/auth_routes.py (had /register not /signup)")
+        print("  [patcher] Injected known-good app/routes/auth_routes.py (dynamic password field + fast bcrypt)")
 
     # Ensure main.py imports and includes auth_router
     try:
@@ -1345,6 +1349,105 @@ def _patch_create_missing_schemas(project_path: Path) -> int:
     return created
 
 
+# ── 14. Make Response schema fields Optional so ORM mismatches don't crash ────
+# LLM-generated schemas like UserResponse often have fields (e.g. username: str)
+# that don't exist on the ORM model.  Pydantic v2 raises ValidationError when
+# model_validate() finds a required field missing.  Making all fields on
+# *Response/*Out/*Read schemas Optional[...] = None prevents the crash while
+# still returning whatever fields are present.
+
+_REQUIRED_FIELD_RE = re.compile(
+    r'^(\s{4,})(\w+)\s*:\s*(?!Optional\b)([^\n=#]+?)\s*$',
+    re.MULTILINE,
+)
+_OPTIONAL_IMPORT_RE = re.compile(r'from typing import ([^\n]+)')
+_RESPONSE_CLASS_RE = re.compile(
+    r'^class (\w+(?:Response|Out|Read|List|Detail|Schema)\w*)\s*\(BaseModel\)',
+    re.MULTILINE | re.IGNORECASE,
+)
+
+
+def _patch_response_schemas_optional(project_path: Path) -> int:
+    """
+    For every Pydantic class whose name ends in Response/Out/Read/Schema/List/Detail,
+    make all required fields Optional[T] = None.  This prevents ValidationError
+    when ORM objects are missing fields the schema declares as required.
+    """
+    schemas_dir = project_path / "app" / "schemas"
+    if not schemas_dir.exists():
+        return 0
+
+    patched = 0
+    for sf in schemas_dir.glob("*.py"):
+        if sf.name.startswith("_"):
+            continue
+        try:
+            content = sf.read_text(encoding="utf-8", errors="replace")
+        except Exception:
+            continue
+
+        if not _RESPONSE_CLASS_RE.search(content):
+            continue
+
+        # Find all Response-like class blocks and make their fields Optional
+        new_content = content
+
+        # Collect line ranges for each Response class body
+        lines = new_content.split("\n")
+        out_lines = list(lines)
+        in_response_class = False
+        class_indent = ""
+
+        for idx, line in enumerate(lines):
+            # Detect class declaration
+            cm = re.match(r'^(class \w+(?:Response|Out|Read|List|Detail|Schema)\w*\s*\(BaseModel\))', line, re.IGNORECASE)
+            if cm:
+                in_response_class = True
+                class_indent = ""
+                continue
+
+            if in_response_class:
+                # End of class when we hit a non-indented non-blank line that's a new definition
+                stripped = line.lstrip()
+                if line and not line[0].isspace() and stripped and not stripped.startswith("#"):
+                    in_response_class = False
+                    continue
+
+                # Skip special lines
+                if not stripped or stripped.startswith("#") or stripped.startswith("model_config") or stripped.startswith("class Config"):
+                    continue
+
+                # Match a field: "    fieldname: SomeType" with no default
+                fm = re.match(r'^(\s+)(\w+)\s*:\s*(?!Optional\b)([^\n=#]+?)\s*$', line)
+                if fm:
+                    indent = fm.group(1)
+                    fname = fm.group(2)
+                    ftype = fm.group(3).strip()
+                    # Skip if it already has Optional or a default
+                    if fname in ("id", "class", "pass") or ftype.startswith("ClassVar"):
+                        continue
+                    out_lines[idx] = f"{indent}{fname}: Optional[{ftype}] = None"
+
+        new_content = "\n".join(out_lines)
+
+        # Ensure Optional is imported
+        if "Optional" not in content and "Optional[" in new_content:
+            if _OPTIONAL_IMPORT_RE.search(new_content):
+                new_content = _OPTIONAL_IMPORT_RE.sub(
+                    lambda m: m.group(0).rstrip(")") + ", Optional)" if "Optional" not in m.group(1) else m.group(0),
+                    new_content, count=1,
+                )
+            else:
+                new_content = "from typing import Optional\n" + new_content
+
+        if new_content != content:
+            sf.write_text(new_content, encoding="utf-8")
+            patched += 1
+            print(f"  [patcher] Made Response schema fields Optional in {sf.name}")
+
+    return patched
+
+
 # ── Main entry point ──────────────────────────────────────────────────────────
 
 def run_deterministic_patches(project_path: str) -> int:
@@ -1420,6 +1523,10 @@ def run_deterministic_patches(project_path: str) -> int:
     # Create stub schema files for any route imports that point to missing modules
     # (common after architecture repair generates new route files)
     _patch_create_missing_schemas(root)
+
+    # Make Response schema fields Optional so ORM field-name mismatches don't crash
+    # (e.g. UserResponse.username required but User model uses email only)
+    _patch_response_schemas_optional(root)
 
     if modified:
         print(f"  [patcher] Patched {modified} file(s) — passlib→bcrypt, async→sync, smart quotes")
