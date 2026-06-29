@@ -278,7 +278,7 @@ class GenerationContext:
         self.frontend_port:   int                       = 5174
 
         # ── Provider rotation (for attempt 4: switch model) ───────────────
-        self._provider_seq:   list[str]                 = ["cerebras","groq","openrouter","gemini"]
+        self._provider_seq:   list[str]                 = ["groq","gemini","openrouter","cerebras"]
         self._provider_idx:   int                       = 0
         self.current_provider: str                      = "auto"
 

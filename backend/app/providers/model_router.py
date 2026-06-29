@@ -106,44 +106,44 @@ _SIGNALS: dict[str, int] = {
 # Stage-specific model preferences (stage → complexity_tier → provider)
 _STAGE_ROUTES: dict[str, dict[str, str]] = {
     "planning": {
-        "low":        "gemini",     # Fast + cheap for simple apps
-        "medium":     "cerebras",   # Balance for medium
-        "high":       "cerebras",   # Best planner for complex
+        "low":        "gemini",     # Fast + free for simple apps
+        "medium":     "groq",       # Free tier, fast
+        "high":       "groq",       # Free tier
         "enterprise": "openrouter", # Strongest for enterprise
     },
     "architecture": {
         "low":        "groq",
-        "medium":     "cerebras",
-        "high":       "cerebras",
+        "medium":     "groq",
+        "high":       "groq",
         "enterprise": "openrouter",
     },
     "backend": {
         "low":        "gemini",
-        "medium":     "cerebras",
-        "high":       "cerebras",
+        "medium":     "groq",
+        "high":       "groq",
         "enterprise": "openrouter",
     },
     "frontend": {
         "low":        "gemini",
         "medium":     "groq",
-        "high":       "cerebras",
+        "high":       "groq",
         "enterprise": "openrouter",
     },
     "fix_simple": {
         "low":        "gemini",     # import errors, syntax: cheap model enough
         "medium":     "gemini",
         "high":       "groq",
-        "enterprise": "cerebras",
+        "enterprise": "groq",
     },
     "fix_complex": {
         "low":        "groq",       # logic bugs, auth, DB: need more capability
-        "medium":     "cerebras",
-        "high":       "cerebras",
+        "medium":     "groq",
+        "high":       "groq",
         "enterprise": "openrouter",
     },
     "fix_nuclear": {
-        "low":        "cerebras",   # full regen: use strong models always
-        "medium":     "cerebras",
+        "low":        "groq",       # full regen: groq is fast + free
+        "medium":     "groq",
         "high":       "openrouter",
         "enterprise": "openrouter",
     },
@@ -233,7 +233,7 @@ def route(
     tier = tier_from_score(score)
 
     stage_map = _STAGE_ROUTES.get(stage, _STAGE_ROUTES["backend"])
-    chosen_provider = stage_map.get(tier, "cerebras")
+    chosen_provider = stage_map.get(tier, "groq")
 
     reasoning = (
         f"complexity={score} ({tier}) "

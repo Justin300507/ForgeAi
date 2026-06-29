@@ -57,9 +57,8 @@ def generate_backend(
         clean_text = clean_text.strip()
 
         # Fallback provider order for backend retries — if primary truncates, try next.
-        # Cerebras is first because it's the only provider with enough token budget.
-        # Reasoning token usage is non-deterministic — retrying Cerebras often succeeds.
-        _fallback_providers = ["cerebras", "groq", "openrouter", "gemini"]
+        # Groq + Gemini are free tier and fast; Cerebras is last resort.
+        _fallback_providers = ["groq", "gemini", "openrouter", "cerebras"]
         _fallback_idx = 0
 
         _max_attempts = len(_fallback_providers) + 1

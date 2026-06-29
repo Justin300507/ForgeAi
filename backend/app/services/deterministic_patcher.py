@@ -1547,58 +1547,62 @@ def _patch_response_schemas_optional(project_path: Path) -> int:
 
 def _patch_schemas_from_attributes(project_path: Path) -> int:
     """Inject model_config = {'from_attributes': True} into every Pydantic BaseModel
-    schema class in app/schemas/ that lacks it."""
-    schemas_dir = project_path / "app" / "schemas"
-    if not schemas_dir.exists():
+    schema class in app/schemas/, app/routes/, and app/services/ that lacks it."""
+    app_dir = project_path / "app"
+    if not app_dir.exists():
         return 0
 
+    # Scan schemas + routes + services (inline response schemas need from_attributes too)
+    scan_dirs = [app_dir / "schemas", app_dir / "routes", app_dir / "services"]
+
     patched = 0
-    for sf in schemas_dir.glob("*.py"):
-        if sf.name.startswith("_"):
+    for scan_dir in scan_dirs:
+        if not scan_dir.exists():
             continue
-        try:
-            content = sf.read_text(encoding="utf-8", errors="replace")
-        except Exception:
-            continue
-        if "BaseModel" not in content:
-            continue
-
-        lines = content.split('\n')
-        out = list(lines)
-        changed = False
-        inserted = 0  # track offset from inserted lines
-
-        for i, line in enumerate(lines):
-            if not re.match(r'^class \w+\s*\(.*BaseModel.*\)\s*:', line):
+        for sf in scan_dir.glob("*.py"):
+            if sf.name.startswith("_"):
                 continue
-            # Scan forward to check if this class already has model_config
-            j = i + 1
-            body_indent = '    '
-            has_config = False
-            while j < len(lines):
-                jline = lines[j]
-                stripped = jline.lstrip()
-                # End of class body (non-indented, non-empty, non-comment line)
-                if jline and not jline[0].isspace() and stripped and not stripped.startswith('#'):
-                    break
-                if 'model_config' in jline or 'from_attributes' in jline:
-                    has_config = True
-                    break
-                if stripped and body_indent == '    ':
-                    m = re.match(r'^(\s+)', jline)
-                    if m:
-                        body_indent = m.group(1)
-                j += 1
+            try:
+                content = sf.read_text(encoding="utf-8", errors="replace")
+            except Exception:
+                continue
+            if "BaseModel" not in content:
+                continue
 
-            if not has_config:
-                insert_at = (i + 1) + inserted
-                out.insert(insert_at, f'{body_indent}model_config = {{"from_attributes": True}}')
-                inserted += 1
-                changed = True
+            lines = content.split('\n')
+            out = list(lines)
+            changed = False
+            inserted = 0
 
-        if changed:
-            sf.write_text('\n'.join(out), encoding="utf-8")
-            patched += 1
+            for i, line in enumerate(lines):
+                if not re.match(r'^class \w+\s*\(.*BaseModel.*\)\s*:', line):
+                    continue
+                j = i + 1
+                body_indent = '    '
+                has_config = False
+                while j < len(lines):
+                    jline = lines[j]
+                    stripped = jline.lstrip()
+                    if jline and not jline[0].isspace() and stripped and not stripped.startswith('#'):
+                        break
+                    if 'model_config' in jline or 'from_attributes' in jline:
+                        has_config = True
+                        break
+                    if stripped and body_indent == '    ':
+                        m = re.match(r'^(\s+)', jline)
+                        if m:
+                            body_indent = m.group(1)
+                    j += 1
+
+                if not has_config:
+                    insert_at = (i + 1) + inserted
+                    out.insert(insert_at, f'{body_indent}model_config = {{"from_attributes": True}}')
+                    inserted += 1
+                    changed = True
+
+            if changed:
+                sf.write_text('\n'.join(out), encoding="utf-8")
+                patched += 1
 
     if patched:
         print(f"  [schema_patcher] Added from_attributes=True to {patched} schema file(s)")
