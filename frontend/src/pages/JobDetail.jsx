@@ -42,7 +42,6 @@ export default function JobDetail() {
   const [fixPollTimer, setFixPollTimer] = useState(null);
   const logsRef = useRef(null);
   const wsRef = useRef(null);
-  const wsActiveRef = useRef(false);
 
   // Scroll logs to bottom
   useEffect(() => {
@@ -64,46 +63,42 @@ export default function JobDetail() {
       .catch(() => setError("Job not found"));
   }, [id]);
 
-  // WebSocket for live logs — reconnects whenever status enters running/pending
+  // WebSocket — handles done/error/cancelled events for immediate response.
+  // Does NOT update log state (polling is the sole log source to prevent race conditions).
   useEffect(() => {
     if (!job) return;
     if (job.status !== "pending" && job.status !== "running") return;
 
-    setLogs([]); // clear; WS always sends from the beginning (sent=0 server-side)
     const ws = new WebSocket(buildWsUrl(id));
     wsRef.current = ws;
-    wsActiveRef.current = false;
 
-    ws.onopen = () => { wsActiveRef.current = true; };
     ws.onmessage = (e) => {
-      wsActiveRef.current = true;
-      const msg = JSON.parse(e.data);
-      if (msg.type === "log") {
-        setLogs(prev => [...prev, msg.message]);
-      } else if (msg.type === "done" || msg.type === "error" || msg.type === "cancelled") {
-        jobsAPI.get(id).then(r => { setJob(r.data); setLogs(r.data.logs || []); });
-        ws.close();
-      }
+      try {
+        const msg = JSON.parse(e.data);
+        if (msg.type === "done" || msg.type === "error" || msg.type === "cancelled") {
+          jobsAPI.get(id).then(r => { setJob(r.data); setLogs(r.data.logs || []); });
+          ws.close();
+        }
+        // "log" messages intentionally ignored — polling owns log state
+      } catch {}
     };
-    ws.onerror = () => { wsActiveRef.current = false; ws.close(); };
-    ws.onclose = () => { wsActiveRef.current = false; };
+    ws.onerror = () => {};
+    ws.onclose = () => {};
 
-    return () => { ws.close(); wsActiveRef.current = false; };
+    return () => { ws.close(); };
   }, [job?.status, id]);
 
-  // Polling fallback — kicks in every 2 s when WebSocket isn't delivering messages
+  // Polling — sole source of log state. Runs every second while job is active.
+  // Single writer prevents WS-append vs poll-replace race that made logs freeze.
   useEffect(() => {
     if (!job || (job.status !== "pending" && job.status !== "running")) return;
     const timer = setInterval(() => {
-      // If WebSocket is actively delivering messages, skip the poll
-      if (wsActiveRef.current) return;
       jobsAPI.get(id).then(r => {
         const d = r.data;
-        // Replace log list with server copy when WS has stalled
         setLogs(d.logs || []);
         if (d.status !== "pending" && d.status !== "running") setJob(d);
       }).catch(() => {});
-    }, 2000);
+    }, 1000);
     return () => clearInterval(timer);
   }, [id, job?.status]);
 

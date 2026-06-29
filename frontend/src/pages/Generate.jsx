@@ -117,8 +117,9 @@ export default function Generate() {
     api.get('/credentials/status').then(r => setConnStatus(r.data)).catch(() => {})
   }, [])
 
-  // Polling fallback — fires every 2 s while a job is running.
-  // Catches log lines and status updates if WebSocket drops or never connects.
+  // Polling — sole source of log state. Runs every second while a job is active.
+  // WS handles stage indicators and done/error events; this handles all log display.
+  // Single log source prevents the race where WS appends and poll replaces simultaneously.
   useEffect(() => {
     if (!jobId || done) { pollLogCountRef.current = 0; return; }
     const timer = setInterval(async () => {
@@ -129,7 +130,8 @@ export default function Generate() {
         if (serverLogs.length > pollLogCountRef.current) {
           const newLines = serverLogs.slice(pollLogCountRef.current)
           pollLogCountRef.current = serverLogs.length
-          setLogs(serverLogs)
+          setLogs(serverLogs) // server is single source of truth — no duplicates
+          // Stage detection from new log lines (fallback if WS stage detection missed it)
           for (const line of newLines) {
             const det = detectStage(line)
             if (det) {
@@ -163,7 +165,7 @@ export default function Generate() {
           setSubmitting(false)
         }
       } catch {}
-    }, 2000)
+    }, 1000)
     return () => clearInterval(timer)
   }, [jobId, done])
 
@@ -172,55 +174,53 @@ export default function Generate() {
     wsRef.current = ws
 
     ws.onmessage = (e) => {
-      const msg = JSON.parse(e.data)
-
-      if (msg.type === 'log') {
-        const line = msg.message
-        setLogs(prev => [...prev, line])
-
-        const detected = detectStage(line)
-        if (detected) {
-          setCurrentStage(detected)
-          currentStageRef.current = detected
+      try {
+        const msg = JSON.parse(e.data)
+        // Stage detection from WS for immediate indicator updates (lightweight, no log state)
+        if (msg.type === 'log') {
+          const detected = detectStage(msg.message)
+          if (detected) {
+            setCurrentStage(detected)
+            currentStageRef.current = detected
+            setStages(prev => {
+              const next = { ...prev }
+              let found = false
+              for (const s of PIPELINE_STAGES) {
+                if (found) break
+                if (s.key === detected) { found = true; next[s.key] = 'running' }
+                else if (!next[s.key] || next[s.key] === 'pending') next[s.key] = 'pending'
+                else if (next[s.key] === 'running') next[s.key] = 'done'
+              }
+              return next
+            })
+          }
+          // NOTE: log state is managed solely by the polling effect to prevent
+          // race conditions where WS and polling overwrite each other's state.
+        } else if (msg.type === 'done') {
           setStages(prev => {
             const next = { ...prev }
-            // Mark previous stages done
-            let found = false
-            for (const s of PIPELINE_STAGES) {
-              if (found) break
-              if (s.key === detected) { found = true; next[s.key] = 'running' }
-              else if (!next[s.key] || next[s.key] === 'pending') next[s.key] = 'pending'
-              else if (next[s.key] === 'running') next[s.key] = 'done'
-            }
+            PIPELINE_STAGES.forEach(s => { if (next[s.key] !== 'error') next[s.key] = 'done' })
             return next
           })
+          setDone(true)
+          setResult(msg.result)
+          setSubmitting(false)
+        } else if (msg.type === 'cancelled') {
+          setError('')
+          setDone(true)
+          setSubmitting(false)
+          navigate(`/projects/${jid}`)
+        } else if (msg.type === 'error') {
+          setError(msg.message || 'Generation failed')
+          const failedStage = currentStageRef.current
+          if (failedStage) setStages(prev => ({ ...prev, [failedStage]: 'error' }))
+          setDone(true)
+          setSubmitting(false)
         }
-      } else if (msg.type === 'done') {
-        setStages(prev => {
-          const next = { ...prev }
-          PIPELINE_STAGES.forEach(s => { if (next[s.key] !== 'error') next[s.key] = 'done' })
-          return next
-        })
-        setDone(true)
-        setResult(msg.result)
-        setSubmitting(false)
-      } else if (msg.type === 'cancelled') {
-        setError('')
-        setDone(true)
-        setSubmitting(false)
-        navigate(`/projects/${jid}`)
-      } else if (msg.type === 'error') {
-        setError(msg.message || 'Generation failed')
-        const failedStage = currentStageRef.current
-        if (failedStage) setStages(prev => ({ ...prev, [failedStage]: 'error' }))
-        setDone(true)
-        setSubmitting(false)
-      }
+      } catch {}
     }
 
-    ws.onerror = () => {
-      // Don't mark as failed — polling fallback will keep updating the UI
-    }
+    ws.onerror = () => {} // polling is the sole log source; WS failure is non-fatal
   }
 
   async function handleSubmit(e) {
