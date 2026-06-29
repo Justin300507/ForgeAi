@@ -11,7 +11,7 @@ client = OpenAI(
     timeout=20
 )
 
-DEFAULT_MODEL = "zai-glm-4.7"
+DEFAULT_MODEL = "gpt-oss-120b"
 
 
 def generate(

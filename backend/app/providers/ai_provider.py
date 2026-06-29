@@ -60,11 +60,18 @@ def generate_content(
         print("Using Ollama")
         return _tracked("ollama", "local", prompt, ollama_generate, stage, max_tokens=max_tokens)
 
-    # Auto mode: Cerebras (zai-glm-4.7) -> Groq -> Gemini -> OpenRouter -> DeepSeek -> Ollama
+    # Auto mode: Groq (free) -> Cerebras gpt-oss-120b (free) -> Gemini (free tier) -> OpenRouter -> DeepSeek
+    # Only free providers first — OpenRouter/DeepSeek cost money so come last
+
+    try:
+        print("Using Groq")
+        return _tracked("groq", "llama-3.3-70b", prompt, groq_generate, stage, max_tokens=max_tokens)
+    except Exception as e:
+        print(f"Groq failed: {e}")
 
     try:
         print("Using Cerebras")
-        return _tracked("cerebras", "zai-glm-4.7", prompt, cerebras_generate, stage, max_tokens=max_tokens)
+        return _tracked("cerebras", "gpt-oss-120b", prompt, cerebras_generate, stage, max_tokens=max_tokens)
     except Exception as e:
         print(f"Cerebras failed: {e}")
 
