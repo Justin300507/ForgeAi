@@ -204,17 +204,24 @@ class RailwayProvider(BaseDeploymentProvider):
 
     def _free_up_slot(self) -> bool:
         """
-        Delete the oldest Railway project to make room for a new one.
-        Returns True if a project was deleted.
+        Delete ALL existing Railway projects to make room for a new one.
+        Returns True if at least one project was deleted.
+
+        We delete everything because the free plan has a hard cap and the user
+        accumulates many ForgeAI test projects over time.  A single-delete
+        approach keeps failing when there are 3+ projects queued up.
         """
         projects = self._list_projects()
         if not projects:
             return False
-        # Sort oldest first (Railway returns ISO-8601 strings)
         projects.sort(key=lambda p: p.get("createdAt") or "")
-        oldest = projects[0]
-        print(f"  [Railway] Freeing slot — deleting oldest project: '{oldest.get('name')}' ({oldest['id']})")
-        return self._delete_project(oldest["id"])
+        deleted = 0
+        for proj in projects:
+            print(f"  [Railway] Deleting old project: '{proj.get('name')}' ({proj['id']})")
+            if self._delete_project(proj["id"]):
+                deleted += 1
+        print(f"  [Railway] Freed {deleted} project slot(s)")
+        return deleted > 0
 
     def _create_project(self, name: str) -> tuple[str, str]:
         """
@@ -227,28 +234,26 @@ class RailwayProvider(BaseDeploymentProvider):
         project_id, _ = self._default_ids()
         if not project_id:
             print(f"  [Railway] Creating new project '{name}'...")
-            for attempt in range(2):  # up to 1 auto-cleanup retry
+            _CREATE_MUTATION = """mutation C($n: String!) {
+                projectCreate(input: { name: $n, defaultEnvironmentName: "production" }) {
+                    id
+                    environments { edges { node { id name } } }
+                }
+            }"""
+            for attempt in range(3):  # up to 2 auto-cleanup rounds
                 try:
-                    data = self._gql_retry(
-                        """mutation C($n: String!) {
-                            projectCreate(input: { name: $n, defaultEnvironmentName: "production" }) {
-                                id
-                                environments { edges { node { id name } } }
-                            }
-                        }""",
-                        {"n": name},
-                    )
+                    data = self._gql_retry(_CREATE_MUTATION, {"n": name})
                     break  # success
                 except Exception as exc:
-                    err_str = str(exc)
-                    if "limit exceeded" in err_str.lower() and attempt == 0:
-                        print(f"  [Railway] Project limit hit — auto-cleaning oldest project...")
+                    err_str = str(exc).lower()
+                    if "limit exceeded" in err_str and attempt < 2:
+                        print(f"  [Railway] Project limit hit — clearing all old projects...")
                         freed = self._free_up_slot()
                         if freed:
                             print(f"  [Railway] Retrying project creation (waiting 35s for rate limit)...")
                             time.sleep(35)
                             continue
-                    raise  # unrecoverable or already retried
+                    raise  # unrecoverable or already exhausted retries
             proj = data["projectCreate"]
             project_id = proj["id"]
             for edge in proj.get("environments", {}).get("edges", []):
