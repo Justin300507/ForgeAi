@@ -415,15 +415,47 @@ def generate_runtime_fix(
     if parsed_error.get("type") == "JourneyCRUDFailure":
         failed_steps = parsed_error.get("failed_steps", [])
         routes_dir = os.path.join(project_path, "app", "routes")
-        # Try to find the route file for the resource that failed Create
+
+        # If the failure is "401 auth required" on Create, login never worked.
+        # Targeting the CRUD route file won't help — skip and let it pass through.
+        create_detail = next(
+            (detail for name, detail in failed_steps if name == "Create entity"), ""
+        )
+        if "401 (auth required" in create_detail:
+            print(
+                "  JourneyCRUDFailure: Create→401 means login failed — no CRUD route fix possible"
+            )
+            return None
+
+        # Detect the entity name from the journey Detect step (e.g. /projects → projects)
+        journey_data = runtime_error.get("journey") or {}
+        detected_entity = None
+        for step in journey_data.get("steps", []):
+            if step.get("name") == "Detect entity" and step.get("passed"):
+                detail = step.get("detail", "")
+                # detail is the entity_url, e.g. http://127.0.0.1:8001/projects
+                parts = [p for p in detail.rstrip("/").split("/") if p and not p.startswith("http")]
+                if parts:
+                    detected_entity = parts[-1]  # e.g. "projects"
+                break
+
+        # Try to find the route file for the detected entity
         candidate_route = None
+        route_files = []
         if os.path.isdir(routes_dir):
-            # Sort route files: prefer non-auth ones
             route_files = [
                 f for f in sorted(os.listdir(routes_dir))
                 if f.endswith("_routes.py") and f != "auth_routes.py"
             ]
-            if route_files:
+            if detected_entity and route_files:
+                # Try exact match first (projects → project_routes.py or projects_routes.py)
+                for rf in route_files:
+                    stem = rf.replace("_routes.py", "")
+                    if stem == detected_entity or stem == detected_entity.rstrip("s") or detected_entity.rstrip("s") == stem:
+                        candidate_route = os.path.join(routes_dir, rf)
+                        break
+            if not candidate_route and route_files:
+                # Fall back to first non-auth route file
                 candidate_route = os.path.join(routes_dir, route_files[0])
         if candidate_route and os.path.exists(candidate_route):
             rel = os.path.relpath(candidate_route, project_path).replace(os.sep, "/")

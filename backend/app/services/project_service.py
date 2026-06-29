@@ -636,6 +636,29 @@ def generate_project(idea: str, provider: str = "auto", use_tournament: bool = F
 
         try:
             for runtime_attempt in range(max_runtime_fix_attempts + 1):
+                # Re-inject auth_routes.py before every runtime attempt.
+                # The validation fix loop may have overwritten it with broken LLM code.
+                try:
+                    from app.services.deterministic_patcher import _patch_auth_routes
+                    from pathlib import Path as _Path
+                    _patch_auth_routes(_Path(project_path))
+                except Exception as _ar_err:
+                    print(f"  [pre-runtime] auth_routes re-inject failed: {_ar_err}")
+
+                # Clear stale SQLite DB so each runtime attempt starts with a clean
+                # state. Without this, a user created in a broken earlier run
+                # persists into the next attempt with a corrupted password hash,
+                # causing login to return 401 even after auth is fixed.
+                import os as _os
+                for _db_name in ("app.db", "test.db", "database.db"):
+                    _db_path = _os.path.join(project_path, _db_name)
+                    if _os.path.exists(_db_path):
+                        try:
+                            _os.remove(_db_path)
+                            print(f"  [pre-runtime] Cleared stale {_db_name}")
+                        except Exception:
+                            pass
+
                 runtime_result = validate_runtime(project_path, architecture=architecture)
                 print(f"Runtime Result: {runtime_result}")
 

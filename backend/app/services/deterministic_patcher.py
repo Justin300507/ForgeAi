@@ -1349,8 +1349,19 @@ def _patch_create_missing_schemas(project_path: Path) -> int:
             names = {n.strip() for n in m.group(2).split(",") if n.strip()}
             schema_imports.setdefault(module, set()).update(names)
 
+    # Classes defined in our injected auth_routes.py — never create stubs for these,
+    # as a stub with 'pass' body causes AttributeError when the route accesses .email/.password.
+    _AUTH_DEFINED_CLASSES = {
+        "SignupRequest", "LoginRequest", "TokenResponse", "TokenData",
+        "AuthResponse", "RegisterRequest", "RegisterResponse",
+    }
+
     created = 0
     for module, needed_classes in schema_imports.items():
+        # Filter out auth-defined classes before processing
+        needed_classes = needed_classes - _AUTH_DEFINED_CLASSES
+        if not needed_classes:
+            continue
         schema_file = schemas_dir / f"{module}.py"
 
         # Try to find the matching model file (handle list_member / listmember)
@@ -1376,7 +1387,7 @@ def _patch_create_missing_schemas(project_path: Path) -> int:
             existing_content = schema_file.read_text(encoding="utf-8", errors="replace")
             existing_classes = set(re.findall(r"^class (\w+)\s*\(", existing_content, re.MULTILINE))
             missing = sorted(
-                n for n in (needed_classes - existing_classes)
+                n for n in (needed_classes - existing_classes - _AUTH_DEFINED_CLASSES)
                 if n.isidentifier() and not keyword.iskeyword(n)
             )
             if not missing:
