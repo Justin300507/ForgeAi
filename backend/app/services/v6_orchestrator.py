@@ -452,7 +452,7 @@ def generate_project_v6(
         patch_database_py(project_path)
 
         print("\n=== RUNTIME VALIDATION (V6) ===")
-        max_runtime_attempts = 2
+        max_runtime_attempts = 3
         try:
             from app.services.runtime_fix_service import generate_runtime_fix
             for r_attempt in range(max_runtime_attempts + 1):

@@ -274,9 +274,22 @@ def patch_model_field_mismatches(project_path: str) -> int:
 
                 def _fix_constructor(m: re.Match) -> str:
                     args_block = m.group(1)
+                    parts = re.split(r",\s*\n?", args_block)
+
+                    # Collect fields already present and valid (to detect duplicates)
+                    existing_valid = set()
+                    for part in parts:
+                        kv = part.strip()
+                        if "=" in kv:
+                            f = kv.split("=", 1)[0].strip()
+                            if f in valid_cols:
+                                existing_valid.add(f)
+
                     fixed_lines = []
                     changed = False
-                    for part in re.split(r",\s*\n?", args_block):
+                    renamed_to: set = set()  # track replacements we've already applied
+
+                    for part in parts:
                         kv = part.strip()
                         if "=" not in kv:
                             fixed_lines.append(part)
@@ -293,9 +306,14 @@ def patch_model_field_mismatches(project_path: str) -> int:
                             None,
                         )
                         if replacement:
+                            # Drop this kwarg if its replacement already exists (prevents duplicates)
+                            if replacement in existing_valid or replacement in renamed_to:
+                                changed = True  # kwarg dropped
+                                continue
                             fixed_lines.append(
                                 part.replace(f"{field}=", f"{replacement}=", 1)
                             )
+                            renamed_to.add(replacement)
                             changed = True
                         else:
                             # Can't map it — leave as-is (LLM will handle it)
@@ -304,21 +322,15 @@ def patch_model_field_mismatches(project_path: str) -> int:
                         return f"{cls_name}(" + ", ".join(fixed_lines) + ")"
                     return m.group(0)
 
-                # Match constructor calls (single-line only to avoid greedy issues)
+                # Fix constructor calls only — never touch attribute accesses on other objects
+                # (e.g. list_in.name must not be renamed even if `name` is not on the model,
+                # because list_in is a Pydantic schema, not the SQLAlchemy model)
                 src = re.sub(
                     rf"\b{cls_name}\(([^)]+)\)",
                     _fix_constructor,
                     src,
                     flags=re.DOTALL,
                 )
-
-                # Also fix: obj.bad_field → obj.good_field for attribute accesses
-                for bad, candidates in _FIELD_SYNONYMS.items():
-                    if bad in valid_cols:
-                        continue  # field is actually valid on this model
-                    best = next((c for c in candidates if c in valid_cols and c != bad), None)
-                    if best:
-                        src = re.sub(rf"(\w+)\.{re.escape(bad)}\b", rf"\1.{best}", src)
 
             if src != original:
                 rf.write_text(src, encoding="utf-8")
