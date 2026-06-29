@@ -465,5 +465,5 @@ Before returning:
 16. Verify signup does auto-login after account creation — NEVER redirect to /login after signup
 17. Verify login stores display_name, user_id, user_email in localStorage from response
 18. Verify logout clears ALL keys: token, display_name, user_id, user_email
-19. Verify App.jsx has <Route path="/" element={<Navigate to="/dashboard" replace />} /> and <Route path="*" element={<Navigate to="/dashboard" replace />} /> so the root URL never shows a 404
+19. Verify App.jsx has a root redirect (path="/") and wildcard (path="*") pointing to /dashboard so the root URL never shows a 404
 """
