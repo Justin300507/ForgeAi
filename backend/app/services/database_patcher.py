@@ -12,7 +12,7 @@ from pathlib import Path
 _DATABASE_PY = '''\
 import importlib
 import os
-from sqlalchemy import create_engine
+from sqlalchemy import create_engine, event
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import sessionmaker
 
@@ -29,6 +29,18 @@ _engine_kwargs = (
     else {"pool_pre_ping": True, "pool_recycle": 300}
 )
 engine = create_engine(DATABASE_URL, **_engine_kwargs)
+
+# SQLite: enable WAL mode + 5s busy timeout to prevent write-lock hangs after any 500 error.
+# WAL allows concurrent reads while a write is in progress; busy_timeout retries the lock
+# instead of immediately raising "database is locked", preventing the cascade of timeouts
+# that occur when a failed db.commit() leaves the connection in a dirty state.
+if DATABASE_URL.startswith("sqlite"):
+    @event.listens_for(engine, "connect")
+    def _set_sqlite_pragmas(dbapi_conn, _record):
+        cursor = dbapi_conn.cursor()
+        cursor.execute("PRAGMA journal_mode=WAL")
+        cursor.execute("PRAGMA busy_timeout=5000")
+        cursor.close()
 
 SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
 
@@ -160,19 +172,46 @@ def _patch_main_py_create_all(app_dir: Path) -> None:
         print(f"  [db_patcher] Patched main.py: create_all → create_tables()")
 
 
-# Common field-name synonyms: wrong_name → [possible_correct_names in priority order]
+# Common field-name synonyms: wrong_name → [possible_correct_names in priority order].
+# When a route passes a field not on the model, we try each candidate in order
+# and use the first one that actually exists as a Column on the model.
 _FIELD_SYNONYMS: dict[str, list[str]] = {
-    "title":       ["name", "title", "project_name", "task_name", "label_name"],
-    "name":        ["name", "title", "project_name", "task_name", "label_name", "full_name"],
-    "username":    ["email", "username", "user_handle", "name", "full_name"],
-    "content":     ["content", "body", "description", "text", "message"],
-    "body":        ["body", "content", "description", "text"],
-    "text":        ["text", "content", "body", "description"],
-    "description": ["description", "content", "body", "text", "summary"],
+    # Primary string / label fields
+    "title":       ["name", "title", "project_name", "task_name", "label_name", "list_name"],
+    "name":        ["title", "name", "project_name", "task_name", "label_name", "list_name", "full_name"],
     "label":       ["name", "label", "title", "tag"],
     "tag":         ["name", "tag", "label", "title"],
-    "summary":     ["summary", "description", "content"],
-    "message":     ["message", "content", "body", "text"],
+
+    # Content / body fields
+    # "description" is the most commonly misused field — LLM adds it but model may only have "name"
+    "description": ["name", "title", "description", "content", "body", "text", "summary", "notes"],
+    "content":     ["content", "body", "description", "text", "message", "notes"],
+    "body":        ["body", "content", "description", "text", "notes"],
+    "text":        ["text", "content", "body", "description", "notes"],
+    "summary":     ["summary", "description", "content", "notes"],
+    "message":     ["message", "content", "body", "text", "description"],
+    "notes":       ["notes", "description", "content", "body", "text"],
+    "details":     ["description", "details", "content", "body", "notes"],
+
+    # User identity fields
+    "username":    ["email", "username", "user_handle", "name", "full_name"],
+    "user_handle": ["username", "email", "name", "user_handle"],
+    "display_name":["full_name", "display_name", "name", "username"],
+    "full_name":   ["full_name", "display_name", "name", "username"],
+
+    # Status / type / priority enums
+    "status":      ["status", "state", "is_done", "is_complete", "is_completed"],
+    "state":       ["state", "status", "is_done"],
+    "priority":    ["priority", "importance", "urgency"],
+
+    # Date / time fields
+    "due_date":    ["due_date", "deadline", "due_at", "expires_at"],
+    "deadline":    ["deadline", "due_date", "due_at", "expires_at"],
+
+    # Ownership / membership
+    "creator_id":  ["owner_id", "user_id", "creator_id", "created_by"],
+    "author_id":   ["owner_id", "user_id", "author_id", "created_by"],
+    "created_by":  ["owner_id", "user_id", "created_by", "creator_id"],
 }
 
 

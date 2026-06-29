@@ -225,6 +225,10 @@ Example:
   WRONG: new_project = Projects(title=data.title, owner=data.owner)
   CORRECT (if model has "name" and "owner_id"): new_project = Projects(name=data.title, owner_id=current_user.id)
 
+CRITICAL — NOT NULL columns: any Column defined without `nullable=True` MUST be set in the constructor.
+If the model has `name = Column(String, nullable=False)` then the route MUST pass `name=<value>`.
+Do NOT leave any NOT NULL column unset — it will cause IntegrityError and hang the server.
+
 ========================================
 ATTRIBUTE ERROR RULES
 ========================================
