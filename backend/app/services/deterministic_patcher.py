@@ -1795,6 +1795,92 @@ def _patch_attr_access_mismatches(project_path: Path) -> int:
     return patched
 
 
+def _patch_missing_pydantic_imports(project_path: Path) -> int:
+    """
+    Scan all .py files in app/schemas/ and ensure they import the pydantic symbols
+    they actually use (BaseModel, Field, Optional, List, Dict, Any, ConfigDict).
+    Prevents 'Undefined symbol BaseModel' static validation failures.
+    """
+    schemas_dir = project_path / "app" / "schemas"
+    if not schemas_dir.exists():
+        return 0
+
+    _PYDANTIC_SYMBOLS = {"BaseModel", "Field", "ConfigDict", "validator", "model_validator", "field_validator"}
+    _TYPING_SYMBOLS = {"Optional", "List", "Dict", "Any", "Union", "Tuple", "Set"}
+    patched = 0
+
+    for py_file in schemas_dir.rglob("*.py"):
+        try:
+            content = py_file.read_text(encoding="utf-8", errors="ignore")
+        except Exception:
+            continue
+
+        used_pydantic = {s for s in _PYDANTIC_SYMBOLS if re.search(r'\b' + s + r'\b', content)}
+        used_typing = {s for s in _TYPING_SYMBOLS if re.search(r'\b' + s + r'\b', content)}
+
+        if not used_pydantic and not used_typing:
+            continue
+
+        already_pydantic = set(re.findall(r'from pydantic import ([^\n]+)', content))
+        already_pydantic_flat: set[str] = set()
+        for line in already_pydantic:
+            already_pydantic_flat |= {s.strip() for s in line.split(',')}
+
+        already_typing = set(re.findall(r'from typing import ([^\n]+)', content))
+        already_typing_flat: set[str] = set()
+        for line in already_typing:
+            already_typing_flat |= {s.strip() for s in line.split(',')}
+
+        need_pydantic = used_pydantic - already_pydantic_flat
+        need_typing = used_typing - already_typing_flat
+
+        if not need_pydantic and not need_typing:
+            continue
+
+        lines = content.splitlines(keepends=True)
+        insert_at = 0
+        for i, line in enumerate(lines):
+            if line.startswith(('import ', 'from ')):
+                insert_at = i
+                break
+
+        inject = ""
+        if need_pydantic:
+            if already_pydantic_flat:
+                all_p = sorted(already_pydantic_flat | need_pydantic)
+                content = re.sub(
+                    r'from pydantic import [^\n]+',
+                    f'from pydantic import {", ".join(all_p)}',
+                    content, count=1
+                )
+            else:
+                inject += f'from pydantic import {", ".join(sorted(need_pydantic))}\n'
+        if need_typing:
+            if already_typing_flat:
+                all_t = sorted(already_typing_flat | need_typing)
+                content = re.sub(
+                    r'from typing import [^\n]+',
+                    f'from typing import {", ".join(all_t)}',
+                    content, count=1
+                )
+            else:
+                inject += f'from typing import {", ".join(sorted(need_typing))}\n'
+
+        if inject:
+            lines = content.splitlines(keepends=True)
+            lines.insert(insert_at, inject)
+            content = "".join(lines)
+
+        try:
+            py_file.write_text(content, encoding="utf-8")
+            patched += 1
+            print(f"  [patcher] Fixed pydantic imports in {py_file.name}: pydantic={need_pydantic or '{}'} typing={need_typing or '{}'}")
+        except Exception:
+            pass
+
+    return patched
+
+
 def _patch_orm_type_in_route_schemas(project_path: Path) -> int:
     """
     In route files, replace SQLAlchemy model types used inside Pydantic class
@@ -1967,6 +2053,9 @@ def run_deterministic_patches(project_path: str) -> int:
     # Fix SQLAlchemy ORM models used as Pydantic field types in route files
     # (e.g. labels: List[Label] where Label is a SQLAlchemy model → List[Any])
     _patch_orm_type_in_route_schemas(root)
+
+    # Ensure all schema files that use BaseModel/Field/Optional actually import them.
+    _patch_missing_pydantic_imports(root)
 
     if modified:
         print(f"  [patcher] Patched {modified} file(s) — passlib→bcrypt, async→sync, smart quotes")

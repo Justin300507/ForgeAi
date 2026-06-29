@@ -65,6 +65,9 @@ API DESIGN RULES
 
 Generate realistic REST APIs.
 
+FORBIDDEN endpoint methods: WS, WebSocket. ONLY use HTTP methods: GET, POST, PUT, PATCH, DELETE.
+DO NOT generate realtime_routes.py, websocket_routes.py, or ws_routes.py — they are not supported.
+
 Prefer CRUD operations.
 
 Every endpoint MUST include a "file" field stating exactly which
