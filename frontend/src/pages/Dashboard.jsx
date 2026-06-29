@@ -1,7 +1,8 @@
 import React, { useEffect, useState } from "react";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import { jobsAPI } from "../api";
 import NavBar from "../components/NavBar";
+import { Trash2 } from "lucide-react";
 
 const STATUS_STYLE = {
   pending:   {bg:"rgba(234,179,8,0.1)",   color:"#facc15", border:"rgba(234,179,8,0.2)"},
@@ -30,9 +31,26 @@ function timeAgo(iso) {
 export default function Dashboard() {
   const [jobs, setJobs] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [deleting, setDeleting] = useState(null);
+  const navigate = useNavigate();
 
-  const fetch = () => jobsAPI.list().then(r => setJobs(r.data.jobs || [])).catch(console.error).finally(() => setLoading(false));
-  useEffect(() => { fetch(); const t = setInterval(fetch, 4000); return () => clearInterval(t); }, []);
+  const fetchJobs = () => jobsAPI.list().then(r => setJobs(r.data.jobs || [])).catch(console.error).finally(() => setLoading(false));
+  useEffect(() => { fetchJobs(); const t = setInterval(fetchJobs, 4000); return () => clearInterval(t); }, []);
+
+  const handleDelete = async (e, jobId) => {
+    e.preventDefault();
+    e.stopPropagation();
+    if (!window.confirm("Delete this project and all its files? This cannot be undone.")) return;
+    setDeleting(jobId);
+    try {
+      await jobsAPI.delete(jobId);
+      setJobs(prev => prev.filter(j => j.id !== jobId));
+    } catch (err) {
+      alert(err.response?.data?.detail || "Delete failed");
+    } finally {
+      setDeleting(null);
+    }
+  };
 
   const done = jobs.filter(j => j.status === "done");
   const running = jobs.filter(j => j.status === "running" || j.status === "pending").length;
@@ -79,10 +97,12 @@ export default function Dashboard() {
           <div className="space-y-2">
             {jobs.map(job => {
               const s = STATUS_STYLE[job.status] || STATUS_STYLE.error;
+              const isActive = job.status === "pending" || job.status === "running";
               return (
-                <Link key={job.id} to={`/projects/${job.id}`}
-                  className="flex items-center gap-4 rounded-xl px-4 py-3.5 border border-white/5 hover:border-white/10 transition-all group"
-                  style={{background:"#12121f"}}>
+                <div key={job.id}
+                  className="flex items-center gap-4 rounded-xl px-4 py-3.5 border border-white/5 hover:border-white/10 transition-all group cursor-pointer"
+                  style={{background:"#12121f"}}
+                  onClick={() => navigate(`/projects/${job.id}`)}>
                   <span className="text-xs px-2.5 py-1 rounded-full font-medium shrink-0"
                     style={{background:s.bg, color:s.color, border:`1px solid ${s.border}`}}>
                     {job.status}
@@ -92,7 +112,16 @@ export default function Dashboard() {
                     {job.forge_score != null && <ScoreBadge score={job.forge_score} />}
                     <div className="text-xs text-gray-600 mt-0.5">{timeAgo(job.created_at)}</div>
                   </div>
-                </Link>
+                  {!isActive && (
+                    <button
+                      onClick={(e) => handleDelete(e, job.id)}
+                      disabled={deleting === job.id}
+                      title="Delete project"
+                      className="shrink-0 p-1.5 rounded-lg text-gray-600 hover:text-red-400 hover:bg-red-500/10 transition-colors disabled:opacity-40">
+                      <Trash2 size={15} />
+                    </button>
+                  )}
+                </div>
               );
             })}
           </div>

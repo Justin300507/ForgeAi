@@ -25,6 +25,7 @@ export const jobsAPI = {
   get: (id) => api.get(`/jobs/${id}`),
   cancel: (id) => api.post(`/jobs/${id}/cancel`),
   retry: (id) => api.post(`/jobs/${id}/retry`),
+  delete: (id) => api.delete(`/jobs/${id}`),
   checkDeployed: (id) => api.post(`/jobs/${id}/check-deployed`),
   checkStatus: (id) => api.get(`/jobs/${id}/check-status`),
 };

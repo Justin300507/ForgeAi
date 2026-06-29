@@ -1,9 +1,9 @@
 import React, { useEffect, useRef, useState } from "react";
-import { useParams, Link } from "react-router-dom";
+import { useParams, Link, useNavigate } from "react-router-dom";
 import { jobsAPI } from "../api";
 import {
   ArrowLeft, Zap, CheckCircle, XCircle, Loader2,
-  Clock, Download, ExternalLink, Github, RefreshCw, X
+  Clock, Download, ExternalLink, Github, RefreshCw, X, Wrench, Trash2
 } from "lucide-react";
 
 function ScoreBadge({ score }) {
@@ -30,11 +30,15 @@ const LOG_COLOR = (line) => {
 
 export default function JobDetail() {
   const { id } = useParams();
+  const navigate = useNavigate();
   const [job, setJob] = useState(null);
   const [logs, setLogs] = useState([]);
   const [error, setError] = useState("");
   const [cancelling, setCancelling] = useState(false);
   const [retrying, setRetrying] = useState(false);
+  const [deleting, setDeleting] = useState(false);
+  const [fixing, setFixing] = useState(false);
+  const [fixPollTimer, setFixPollTimer] = useState(null);
   const logsRef = useRef(null);
   const wsRef = useRef(null);
 
@@ -82,10 +86,47 @@ export default function JobDetail() {
       const res = await jobsAPI.retry(id);
       window.location.href = `/jobs/${res.data.job_id}`;
     } catch (e) {
-      alert(e.response?.data?.detail || "Retry failed");
+      alert(e.response?.data?.detail || "Fix failed");
       setRetrying(false);
     }
   };
+
+  const handleDelete = async () => {
+    if (!window.confirm("Delete this project and all its files? This cannot be undone.")) return;
+    setDeleting(true);
+    try {
+      await jobsAPI.delete(id);
+      navigate("/");
+    } catch (e) {
+      alert(e.response?.data?.detail || "Delete failed");
+      setDeleting(false);
+    }
+  };
+
+  const handleFixLive = async () => {
+    setFixing(true);
+    try {
+      await jobsAPI.checkDeployed(id);
+      // Poll for result
+      const poll = setInterval(async () => {
+        try {
+          const res = await jobsAPI.checkStatus(id);
+          const s = res.data.status;
+          if (s === "done" || s === "error") {
+            clearInterval(poll);
+            setFixing(false);
+            jobsAPI.get(id).then(r => setJob(r.data));
+          }
+        } catch { clearInterval(poll); setFixing(false); }
+      }, 2000);
+      setFixPollTimer(poll);
+    } catch (e) {
+      alert(e.response?.data?.detail || "Fix check failed");
+      setFixing(false);
+    }
+  };
+
+  useEffect(() => () => { if (fixPollTimer) clearInterval(fixPollTimer); }, [fixPollTimer]);
 
   if (error) return (
     <div className="min-h-screen bg-gray-950 flex items-center justify-center text-gray-400">
@@ -125,7 +166,19 @@ export default function JobDetail() {
             {isFailed && (
               <button onClick={handleRetry} disabled={retrying}
                 className="flex items-center gap-1.5 text-sm text-indigo-400 hover:text-indigo-300 border border-indigo-500/30 px-3 py-1.5 rounded-lg transition-colors disabled:opacity-50">
-                <RefreshCw size={14} />{retrying ? "Retrying…" : "Retry"}
+                <Wrench size={14} />{retrying ? "Fixing…" : "Fix Errors"}
+              </button>
+            )}
+            {isDone && job?.backend_url && (
+              <button onClick={handleFixLive} disabled={fixing}
+                className="flex items-center gap-1.5 text-sm text-yellow-400 hover:text-yellow-300 border border-yellow-500/30 px-3 py-1.5 rounded-lg transition-colors disabled:opacity-50">
+                <Wrench size={14} />{fixing ? "Checking…" : "Fix Live App"}
+              </button>
+            )}
+            {!isActive && (
+              <button onClick={handleDelete} disabled={deleting}
+                className="flex items-center gap-1.5 text-sm text-red-500 hover:text-red-400 border border-red-600/30 px-3 py-1.5 rounded-lg transition-colors disabled:opacity-50">
+                <Trash2 size={14} />{deleting ? "Deleting…" : "Delete"}
               </button>
             )}
           </div>
@@ -183,6 +236,44 @@ export default function JobDetail() {
             </div>
           )}
         </div>
+
+        {/* Fix Live App result */}
+        {(fixing || job?.check_status) && (
+          <div className="bg-gray-900 border border-gray-800 rounded-xl p-5">
+            <div className="flex items-center gap-2 mb-3">
+              {fixing || job?.check_status === "checking"
+                ? <Loader2 size={15} className="animate-spin text-yellow-400" />
+                : job?.check_status === "done"
+                  ? <CheckCircle size={15} className="text-green-400" />
+                  : <XCircle size={15} className="text-red-400" />}
+              <span className="text-sm font-medium text-gray-300">
+                {fixing || job?.check_status === "checking" ? "Scanning live app for errors…" : "Fix Live App — result"}
+              </span>
+            </div>
+            {job?.check_result && (
+              <div className="space-y-2 text-xs font-mono">
+                {job.check_result.errors?.length > 0 ? (
+                  <>
+                    <p className="text-red-400">{job.check_result.errors.length} error(s) found:</p>
+                    {job.check_result.errors.map((e, i) => (
+                      <p key={i} className="text-red-300 pl-3">• {e}</p>
+                    ))}
+                  </>
+                ) : (
+                  <p className="text-green-400">No errors detected — app is healthy.</p>
+                )}
+                {job.check_result.fixes?.length > 0 && (
+                  <div className="mt-2 pt-2 border-t border-gray-800">
+                    <p className="text-indigo-400 mb-1">Fixes applied:</p>
+                    {job.check_result.fixes.map((f, i) => (
+                      <p key={i} className="text-indigo-300 pl-3">• {f}</p>
+                    ))}
+                  </div>
+                )}
+              </div>
+            )}
+          </div>
+        )}
 
         {/* Live logs */}
         <div>

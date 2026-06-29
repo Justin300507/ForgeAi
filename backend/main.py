@@ -496,6 +496,39 @@ def list_jobs(db: Session = Depends(get_db), current_user=Depends(get_current_us
     return {"jobs": [_job_to_dict(j) for j in jobs]}
 
 
+@app.delete("/jobs/{job_id}", tags=["jobs"])
+def delete_job(
+    job_id: str,
+    db: Session = Depends(get_db),
+    current_user=Depends(get_current_user),
+):
+    """Delete a job and wipe its generated files from disk."""
+    import shutil
+
+    job = db.query(GenerationJob).filter(
+        GenerationJob.id == job_id,
+        GenerationJob.user_id == current_user.id,
+    ).first()
+    if not job:
+        raise HTTPException(status_code=404, detail="Job not found")
+    if job.status in ("pending", "running"):
+        raise HTTPException(status_code=400, detail="Cancel the job before deleting it")
+
+    if job.project_name:
+        proj_dir = os.path.join("generated_projects", job.project_name)
+        if os.path.isdir(proj_dir):
+            shutil.rmtree(proj_dir, ignore_errors=True)
+        zip_path = proj_dir + ".zip"
+        if os.path.isfile(zip_path):
+            os.remove(zip_path)
+
+    db.delete(job)
+    db.commit()
+    JOB_STORE.pop(job_id, None)
+    CHECK_STORE.pop(job_id, None)
+    return {"deleted": True}
+
+
 @app.get("/jobs/{job_id}", tags=["jobs"])
 def get_job(job_id: str, db: Session = Depends(get_db), current_user=Depends(get_current_user)):
     job = db.query(GenerationJob).filter(GenerationJob.id == job_id).first()
