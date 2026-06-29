@@ -475,6 +475,17 @@ def generate_project_v6(
                 patch_model_field_mismatches(project_path)
                 # Re-inject database.py — the LLM fix may have overwritten it
                 patch_database_py(project_path)
+                # Delete stale SQLite db + WAL files so the next uvicorn process
+                # starts with a clean db instead of replaying a broken WAL
+                # (a failed db.commit() leaves the WAL in a dirty state; each busy_timeout
+                # retry during startup costs 5s, causing 30s+ startup hangs)
+                for _db_fname in ("app.db", "app.db-wal", "app.db-shm"):
+                    _db_path = os.path.join(project_path, _db_fname)
+                    try:
+                        if os.path.isfile(_db_path):
+                            os.remove(_db_path)
+                    except Exception:
+                        pass
         except Exception as re_err:
             runtime_result = {"success": False, "error": str(re_err)}
             print(f"  Runtime validation error: {re_err}")

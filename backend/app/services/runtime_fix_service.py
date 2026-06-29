@@ -463,6 +463,9 @@ def generate_runtime_fix(
     model_content = ""
     error_type = parsed_error.get("type", "")
     model_class = parsed_error.get("model_class") or parsed_error.get("missing_attr")
+    # For NotNullViolationError the parsed error carries `table` (e.g. "todo_lists")
+    # but NOT `model_class`.  Use the table name to find the exact model file.
+    not_null_table = parsed_error.get("table", "") if error_type == "NotNullViolationError" else ""
 
     if error_type in (
         "ModelFieldMismatchError", "RelationshipMissingError",
@@ -479,7 +482,14 @@ def generate_runtime_fix(
                 try:
                     with open(mf_path, "r", encoding="utf-8") as f:
                         mc = f.read()
+                    # Prefer the file that defines the specific model class
                     if model_class and f"class {model_class}" in mc:
+                        target_content = f"# {mf}\n{mc}"
+                    # For NotNullViolationError, match by __tablename__
+                    elif not_null_table and (
+                        f'__tablename__ = "{not_null_table}"' in mc
+                        or f"__tablename__ = '{not_null_table}'" in mc
+                    ):
                         target_content = f"# {mf}\n{mc}"
                     else:
                         model_parts.append(f"# {mf}\n{mc}")

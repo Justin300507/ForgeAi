@@ -230,6 +230,43 @@ If the model has `name = Column(String, nullable=False)` then the route MUST pas
 Do NOT leave any NOT NULL column unset — it will cause IntegrityError and hang the server.
 
 ========================================
+NOT NULL CONSTRAINT VIOLATION RULES
+========================================
+
+If parsed_error contains:
+
+{{
+    "type": "NotNullViolationError",
+    "column": "todo_lists.name",
+    "table": "todo_lists"
+}}
+
+The route inserted a row without setting the required `name` column.
+
+LOOK at the MODEL FILE(S) section — find every Column defined WITHOUT nullable=True.
+
+FIX STRATEGY:
+1. Identify which NOT NULL columns are missing from the constructor call.
+2. For each missing column, find a synonym in what the schema already provides:
+   - `name` missing but `title` is set → add `name=schema_in.title`
+   - `title` missing but `name` is set → add `title=schema_in.name`
+   - `description` missing but `content`/`body`/`text` is set → add `description=schema_in.body`
+3. Do NOT remove existing fields — only ADD the missing ones.
+4. If the schema input has NO synonym for the missing column, use a sensible default
+   (e.g., `name="Untitled"` or `name=str(schema_in.id or "")`).
+
+Example (todo_lists model has BOTH `name` NOT NULL and optional `title`):
+  BEFORE: new_list = TodoList(title=list_in.title, owner_id=current_user.id)
+  AFTER:  new_list = TodoList(name=list_in.title, title=list_in.title, owner_id=current_user.id)
+
+Also add `db.rollback()` inside the except block after the commit fails,
+so subsequent requests are not blocked by a stale write-lock:
+  try:
+      db.add(obj); db.commit(); db.refresh(obj)
+  except Exception:
+      db.rollback(); raise HTTPException(status_code=500, detail="Database error")
+
+========================================
 ATTRIBUTE ERROR RULES
 ========================================
 
