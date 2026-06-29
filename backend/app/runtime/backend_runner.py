@@ -1,3 +1,4 @@
+import os
 import subprocess
 import time
 import sys
@@ -97,6 +98,12 @@ class BackendRunner:
 
         _free_port(port)
 
+        # Force generated projects to use a local SQLite DB, never the host's
+        # DATABASE_URL (which on Railway points to the platform's own PostgreSQL).
+        # Without this override every generated app shares Railway's PG database
+        # and schema mismatches from previous runs cause UndefinedColumn errors.
+        isolated_env = {**os.environ, "DATABASE_URL": "sqlite:///./app.db"}
+
         # Pre-flight DB init: run create_tables() BEFORE uvicorn starts so the
         # schema is complete regardless of import order in main.py.  create_tables()
         # scans app/models/, imports every model, then calls create_all() + ALTER TABLE.
@@ -111,6 +118,7 @@ class BackendRunner:
                 capture_output=True,
                 text=True,
                 timeout=20,
+                env=isolated_env,
             )
             if "DB schema ready" in pre_db.stdout:
                 print(f"  [runner] Pre-flight DB init: OK")
@@ -126,6 +134,7 @@ class BackendRunner:
             stdout=subprocess.PIPE,
             stderr=subprocess.PIPE,
             text=True,
+            env=isolated_env,
         )
 
         max_wait = 5
