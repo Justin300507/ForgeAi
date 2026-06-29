@@ -68,12 +68,19 @@ class RailwayProvider(BaseDeploymentProvider):
 
     def _gql_retry(self, query: str, variables: dict | None = None, retries: int = 3) -> dict:
         last_err = None
-        for _ in range(retries):
+        for attempt in range(retries):
             try:
                 return self._gql(query, variables)
             except Exception as e:
                 last_err = e
-                time.sleep(3)
+                err_str = str(e)
+                # Railway rate-limits project creation to 1 per 30s — wait and retry
+                if "too quickly" in err_str or "per 30 seconds" in err_str:
+                    wait = 35
+                    print(f"  [Railway] Rate limited — waiting {wait}s before retry ({attempt+1}/{retries})...")
+                    time.sleep(wait)
+                else:
+                    time.sleep(3)
         raise last_err
 
     def _default_ids(self) -> tuple[str | None, str | None]:
