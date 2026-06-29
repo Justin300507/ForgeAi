@@ -103,6 +103,7 @@ export default function Generate() {
   const logsEndRef = useRef(null)
   const wsRef = useRef(null)
   const currentStageRef = useRef(null)
+  const pollLogCountRef = useRef(0)
 
   useEffect(() => {
     logsEndRef.current?.scrollIntoView({ behavior: 'smooth' })
@@ -115,6 +116,56 @@ export default function Generate() {
   useEffect(() => {
     api.get('/credentials/status').then(r => setConnStatus(r.data)).catch(() => {})
   }, [])
+
+  // Polling fallback — fires every 2 s while a job is running.
+  // Catches log lines and status updates if WebSocket drops or never connects.
+  useEffect(() => {
+    if (!jobId || done) { pollLogCountRef.current = 0; return; }
+    const timer = setInterval(async () => {
+      try {
+        const r = await api.get(`/jobs/${jobId}`)
+        const d = r.data
+        const serverLogs = d.logs || []
+        if (serverLogs.length > pollLogCountRef.current) {
+          const newLines = serverLogs.slice(pollLogCountRef.current)
+          pollLogCountRef.current = serverLogs.length
+          setLogs(serverLogs)
+          for (const line of newLines) {
+            const det = detectStage(line)
+            if (det) {
+              setCurrentStage(det)
+              currentStageRef.current = det
+              setStages(prev => {
+                const next = { ...prev }
+                let found = false
+                for (const s of PIPELINE_STAGES) {
+                  if (found) break
+                  if (s.key === det) { found = true; next[s.key] = 'running' }
+                  else if (next[s.key] === 'running') next[s.key] = 'done'
+                }
+                return next
+              })
+            }
+          }
+        }
+        if (d.status === 'done' && !done) {
+          setResult(d.live_result || null)
+          setStages(prev => {
+            const next = { ...prev }
+            PIPELINE_STAGES.forEach(s => { if (next[s.key] !== 'error') next[s.key] = 'done' })
+            return next
+          })
+          setDone(true)
+          setSubmitting(false)
+        } else if (d.status === 'error' && !done) {
+          setError(d.error || 'Generation failed')
+          setDone(true)
+          setSubmitting(false)
+        }
+      } catch {}
+    }, 2000)
+    return () => clearInterval(timer)
+  }, [jobId, done])
 
   function connectWs(jid) {
     const ws = new WebSocket(buildWsUrl(jid))
@@ -168,9 +219,7 @@ export default function Generate() {
     }
 
     ws.onerror = () => {
-      setError('Connection lost. Check the project page for results.')
-      setDone(true)
-      setSubmitting(false)
+      // Don't mark as failed — polling fallback will keep updating the UI
     }
   }
 

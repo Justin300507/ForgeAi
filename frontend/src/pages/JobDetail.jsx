@@ -42,37 +42,70 @@ export default function JobDetail() {
   const [fixPollTimer, setFixPollTimer] = useState(null);
   const logsRef = useRef(null);
   const wsRef = useRef(null);
+  const wsActiveRef = useRef(false);
 
   // Scroll logs to bottom
   useEffect(() => {
     if (logsRef.current) logsRef.current.scrollTop = logsRef.current.scrollHeight;
   }, [logs]);
 
-  // Load initial job state
+  // Load initial job state — for completed jobs load logs from API;
+  // for running jobs leave logs empty so WebSocket owns the list from scratch
   useEffect(() => {
-    jobsAPI.get(id).then(r => { setJob(r.data); setLogs(r.data.logs || []); }).catch(() => setError("Job not found"));
+    jobsAPI.get(id)
+      .then(r => {
+        const d = r.data;
+        setJob(d);
+        if (d.status !== "pending" && d.status !== "running") {
+          setLogs(d.logs || []);
+        }
+        // else: WebSocket will stream all logs (avoids duplicates)
+      })
+      .catch(() => setError("Job not found"));
   }, [id]);
 
-  // WebSocket for live logs
+  // WebSocket for live logs — reconnects whenever status enters running/pending
   useEffect(() => {
     if (!job) return;
     if (job.status !== "pending" && job.status !== "running") return;
 
+    setLogs([]); // clear; WS always sends from the beginning (sent=0 server-side)
     const ws = new WebSocket(buildWsUrl(id));
     wsRef.current = ws;
+    wsActiveRef.current = false;
 
+    ws.onopen = () => { wsActiveRef.current = true; };
     ws.onmessage = (e) => {
+      wsActiveRef.current = true;
       const msg = JSON.parse(e.data);
-      if (msg.type === "log") setLogs(prev => [...prev, msg.message]);
-      else if (msg.type === "done" || msg.type === "error" || msg.type === "cancelled") {
-        jobsAPI.get(id).then(r => setJob(r.data));
+      if (msg.type === "log") {
+        setLogs(prev => [...prev, msg.message]);
+      } else if (msg.type === "done" || msg.type === "error" || msg.type === "cancelled") {
+        jobsAPI.get(id).then(r => { setJob(r.data); setLogs(r.data.logs || []); });
         ws.close();
       }
     };
-    ws.onerror = () => ws.close();
+    ws.onerror = () => { wsActiveRef.current = false; ws.close(); };
+    ws.onclose = () => { wsActiveRef.current = false; };
 
-    return () => ws.close();
+    return () => { ws.close(); wsActiveRef.current = false; };
   }, [job?.status, id]);
+
+  // Polling fallback — kicks in every 2 s when WebSocket isn't delivering messages
+  useEffect(() => {
+    if (!job || (job.status !== "pending" && job.status !== "running")) return;
+    const timer = setInterval(() => {
+      // If WebSocket is actively delivering messages, skip the poll
+      if (wsActiveRef.current) return;
+      jobsAPI.get(id).then(r => {
+        const d = r.data;
+        // Replace log list with server copy when WS has stalled
+        setLogs(d.logs || []);
+        if (d.status !== "pending" && d.status !== "running") setJob(d);
+      }).catch(() => {});
+    }, 2000);
+    return () => clearInterval(timer);
+  }, [id, job?.status]);
 
   const handleCancel = async () => {
     setCancelling(true);
