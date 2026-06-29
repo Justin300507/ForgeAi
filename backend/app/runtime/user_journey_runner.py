@@ -455,8 +455,38 @@ def run_user_journey(
         schema_fields = _get_openapi_fields(requests, base, entity_path)
         enriched_payload = dict(base_payload)
         for field_name in schema_fields:
-            if field_name not in enriched_payload and field_name in _FIELD_DEFAULTS:
+            if field_name in enriched_payload:
+                continue
+            fl = field_name.lower()
+            if field_name in _FIELD_DEFAULTS:
                 enriched_payload[field_name] = _FIELD_DEFAULTS[field_name]
+            # Name/title-like fields with entity prefix (team_name, task_title, etc.)
+            elif any(fl == s or fl.endswith(f"_{s}") for s in ("name", "title", "label", "heading", "subject", "caption")):
+                enriched_payload[field_name] = "Journey Test Item"
+            # Description-like fields
+            elif any(fl == s or fl.endswith(f"_{s}") for s in ("description", "desc", "details", "notes", "content", "body", "text", "message", "summary", "about", "bio")):
+                enriched_payload[field_name] = "Journey runner test"
+            # Foreign-key-like fields not already covered
+            elif fl.endswith("_id") and fl != "id":
+                enriched_payload[field_name] = 1
+            # Boolean flags
+            elif any(fl.startswith(p) for p in ("is_", "has_", "can_", "allow_", "enable_")) or fl in ("active", "enabled", "visible", "public", "completed", "done"):
+                enriched_payload[field_name] = True
+            # Numeric fields
+            elif any(fl == s or fl.endswith(f"_{s}") for s in ("count", "num", "number", "amount", "price", "quantity", "total", "score", "rating", "rank", "age", "size", "order", "limit", "max", "min", "hours", "minutes", "duration")):
+                enriched_payload[field_name] = 1
+            # Date/time fields
+            elif any(fl == s or fl.endswith(f"_{s}") for s in ("date", "time", "at", "on", "deadline", "due", "expires")):
+                enriched_payload[field_name] = "2026-01-01"
+            # Email fields
+            elif "email" in fl:
+                enriched_payload[field_name] = "journey@test.com"
+            # URL fields
+            elif any(fl == s or fl.endswith(f"_{s}") for s in ("url", "link", "href", "src", "image", "avatar", "photo", "icon")):
+                enriched_payload[field_name] = "https://example.com"
+            # Fallback: non-empty string so the field is present
+            else:
+                enriched_payload[field_name] = "journey-test"
 
         # Try enriched payload first, then minimal — stop immediately on 5xx
         last_r = None
