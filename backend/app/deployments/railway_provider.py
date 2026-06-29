@@ -177,58 +177,11 @@ class RailwayProvider(BaseDeploymentProvider):
         )
         return svc["serviceCreate"]["id"]
 
-    def _list_projects(self) -> list[dict]:
-        """Return all Railway projects for this account [{id, name, createdAt}]."""
-        try:
-            data = self._gql(
-                "query { projects { edges { node { id name createdAt } } } }"
-            )
-            edges = data.get("projects", {}).get("edges", [])
-            return [e["node"] for e in edges if "node" in e]
-        except Exception as exc:
-            print(f"  [Railway] Could not list projects: {exc}")
-            return []
-
-    def _delete_project(self, project_id: str) -> bool:
-        """Delete a Railway project by ID. Returns True on success."""
-        try:
-            self._gql(
-                "mutation D($id: String!) { projectDelete(id: $id) }",
-                {"id": project_id},
-            )
-            print(f"  [Railway] Deleted old project {project_id}")
-            return True
-        except Exception as exc:
-            print(f"  [Railway] Delete failed for {project_id}: {exc}")
-            return False
-
-    def _free_up_slot(self) -> bool:
-        """
-        Delete ALL existing Railway projects to make room for a new one.
-        Returns True if at least one project was deleted.
-
-        We delete everything because the free plan has a hard cap and the user
-        accumulates many ForgeAI test projects over time.  A single-delete
-        approach keeps failing when there are 3+ projects queued up.
-        """
-        projects = self._list_projects()
-        if not projects:
-            return False
-        projects.sort(key=lambda p: p.get("createdAt") or "")
-        deleted = 0
-        for proj in projects:
-            print(f"  [Railway] Deleting old project: '{proj.get('name')}' ({proj['id']})")
-            if self._delete_project(proj["id"]):
-                deleted += 1
-        print(f"  [Railway] Freed {deleted} project slot(s)")
-        return deleted > 0
-
     def _create_project(self, name: str) -> tuple[str, str]:
         """
         Get or create a Railway project + service.
         If a project is already linked via ~/.railway/config.json, reuse it.
         Otherwise create a fresh project via the GraphQL API (works with personal tokens).
-        On "limit exceeded" errors, auto-deletes the oldest project and retries once.
         Returns (project_id, service_id).
         """
         project_id, _ = self._default_ids()
@@ -240,20 +193,17 @@ class RailwayProvider(BaseDeploymentProvider):
                     environments { edges { node { id name } } }
                 }
             }"""
-            for attempt in range(3):  # up to 2 auto-cleanup rounds
-                try:
-                    data = self._gql_retry(_CREATE_MUTATION, {"n": name})
-                    break  # success
-                except Exception as exc:
-                    err_str = str(exc).lower()
-                    if "limit exceeded" in err_str and attempt < 2:
-                        print(f"  [Railway] Project limit hit — clearing all old projects...")
-                        freed = self._free_up_slot()
-                        if freed:
-                            print(f"  [Railway] Retrying project creation (waiting 35s for rate limit)...")
-                            time.sleep(35)
-                            continue
-                    raise  # unrecoverable or already exhausted retries
+            try:
+                data = self._gql_retry(_CREATE_MUTATION, {"n": name})
+            except Exception as exc:
+                err_str = str(exc).lower()
+                if "limit exceeded" in err_str:
+                    raise RuntimeError(
+                        "Railway free plan limit reached. "
+                        "Go to railway.app → your dashboard → delete old projects, "
+                        "then re-run. Or upgrade your Railway plan."
+                    ) from exc
+                raise
             proj = data["projectCreate"]
             project_id = proj["id"]
             for edge in proj.get("environments", {}).get("edges", []):
