@@ -410,6 +410,69 @@ def generate_runtime_fix(
             except Exception as nrte:
                 print(f"NoReferencedTableError dangling-FK fix failed: {nrte}")
 
+    # JourneyCRUDFailure: server runs fine but CRUD steps fail (e.g. 422 on Create).
+    # Identify the route file from the failed step name and pass it to the LLM fixer.
+    if parsed_error.get("type") == "JourneyCRUDFailure":
+        failed_steps = parsed_error.get("failed_steps", [])
+        routes_dir = os.path.join(project_path, "app", "routes")
+        # Try to find the route file for the resource that failed Create
+        candidate_route = None
+        if os.path.isdir(routes_dir):
+            # Sort route files: prefer non-auth ones
+            route_files = [
+                f for f in sorted(os.listdir(routes_dir))
+                if f.endswith("_routes.py") and f != "auth_routes.py"
+            ]
+            if route_files:
+                candidate_route = os.path.join(routes_dir, route_files[0])
+        if candidate_route and os.path.exists(candidate_route):
+            rel = os.path.relpath(candidate_route, project_path).replace(os.sep, "/")
+            content = ""
+            try:
+                with open(candidate_route, encoding="utf-8") as f:
+                    content = f.read()
+            except Exception:
+                pass
+            print(f"  JourneyCRUDFailure: targeting {rel} for runtime fix")
+            model_content = ""
+            models_dir = os.path.join(project_path, "app", "models")
+            if os.path.isdir(models_dir):
+                parts = []
+                for mf in sorted(os.listdir(models_dir)):
+                    if mf.endswith(".py") and mf != "__init__.py" and "user" not in mf:
+                        try:
+                            with open(os.path.join(models_dir, mf), encoding="utf-8") as f:
+                                parts.append(f"# {mf}\n{f.read()}")
+                        except Exception:
+                            pass
+                model_content = "\n\n".join(parts)[:3000]
+            # Also read the schemas dir for the resource
+            schemas_dir = os.path.join(project_path, "app", "schemas")
+            schema_stem = route_files[0].replace("_routes.py", "") if route_files else ""
+            if schema_stem:
+                schema_file = os.path.join(schemas_dir, f"{schema_stem}.py")
+                if os.path.exists(schema_file):
+                    try:
+                        with open(schema_file, encoding="utf-8") as f:
+                            model_content = f"# schemas/{schema_stem}.py\n{f.read()}\n\n" + model_content
+                    except Exception:
+                        pass
+            prompt = build_runtime_fix_prompt(
+                _trim_runtime_error(runtime_error),
+                rel,
+                content,
+                model_content=model_content,
+            )
+            from app.utils.json_cleaner import extract_json
+            try:
+                text = generate_content(prompt, provider, max_tokens=6000)
+                if text:
+                    clean = text.replace("```json", "").replace("```", "").strip()
+                    return extract_json(clean)
+            except Exception as e:
+                print(f"  JourneyCRUDFailure LLM fix failed: {e}")
+        return None
+
     relative_path = ""
     absolute_path = ""
     file_content = ""

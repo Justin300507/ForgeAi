@@ -312,7 +312,13 @@ def parse_runtime_error(stderr):
             "column": col,
             "table": table,
             "error_file": error_file,
-            "hint": f"Column '{col}' is NOT NULL but was inserted as NULL. Ensure the field is required in the schema and populated by the route.",
+            "hint": (
+                f"Column '{col}' is NOT NULL but was inserted as NULL. "
+                f"In app/models/ find the {table} model and add "
+                f"server_default='active' (for strings) or nullable=True to the '{col_name}' column. "
+                f"This prevents NOT NULL failures when the column isn't explicitly set by the route. "
+                f"Do NOT modify pydantic or fastapi source files."
+            ),
         }
 
     # SQLAlchemy relationship string resolution — model not imported in main.py

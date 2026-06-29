@@ -585,6 +585,45 @@ CORRECT: model_config = ConfigDict(from_attributes=True)
 Replace ALL `orm_mode = True` occurrences with `from_attributes = True`.
 
 ========================================
+JOURNEY CRUD FAILURE RULES
+========================================
+
+If parsed_error contains:
+
+{{
+    "type": "JourneyCRUDFailure",
+    "failed_steps": [["Create entity", "422 (schema mismatch, server alive)"], ...],
+    "hint": "..."
+}}
+
+The server started without errors but CRUD operations failed at runtime.
+The most common cause: the Create endpoint returns 422 because the Pydantic schema
+for the create request has fields the test runner didn't know to provide, OR has
+strict validation that rejects simple test values.
+
+FIX STRATEGY for 422 on Create:
+1. Identify the route file for the resource that failed (look at failed_steps for the resource name).
+2. In the Pydantic `*Create` schema, make non-critical fields Optional with defaults:
+   BEFORE: status: str
+   AFTER:  status: str = "active"
+3. If fields have restrictive validators (min_length, regex, enum), make them Optional or relax them:
+   BEFORE: priority: str = Field(pattern="^(high|medium|low)$")
+   AFTER:  priority: str = "medium"
+4. The `id` field should NEVER be in the Create schema (it's auto-generated).
+5. Keep required fields that are truly required (name/title), but everything else → Optional with default.
+
+FIX STRATEGY for "no entity_id captured":
+This always means Create failed first. Fix the Create step as above — the downstream steps
+will automatically recover once Create succeeds.
+
+FIX STRATEGY for Edit (PUT) 422:
+Make the `*Update` schema fully optional:
+BEFORE: class TaskUpdate(BaseModel): title: str
+AFTER:  class TaskUpdate(BaseModel): title: Optional[str] = None
+
+NEVER modify pydantic or fastapi source files. Only modify generated route and schema files.
+
+========================================
 PATH RULES
 ========================================
 

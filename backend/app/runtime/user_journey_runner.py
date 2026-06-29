@@ -506,10 +506,52 @@ def run_user_journey(
                 # Auth required and we don't have a token — skip CRUD cleanly
                 return False, "401 (auth required, no valid token)"
 
-        r = last_r
-        if r.status_code == 422:
-            return True, f"422 (schema mismatch, server alive)"
-        return False, f"{r.status_code}"
+        # Attempt 3: parse 422 detail to build a targeted payload fixing specific errors
+        if last_r is not None and last_r.status_code == 422:
+            try:
+                detail = last_r.json().get("detail", [])
+                if isinstance(detail, list) and detail:
+                    targeted = dict(enriched_payload)
+                    changed = False
+                    for err in detail:
+                        loc = err.get("loc", [])
+                        if not (isinstance(loc, list) and len(loc) >= 2 and loc[0] == "body"):
+                            continue
+                        field_name = str(loc[-1])
+                        msg_type = err.get("type", "")
+                        msg = err.get("msg", "").lower()
+                        if "missing" in msg or msg_type == "missing":
+                            if field_name not in targeted:
+                                fl = field_name.lower()
+                                if field_name in _FIELD_DEFAULTS:
+                                    targeted[field_name] = _FIELD_DEFAULTS[field_name]
+                                elif "email" in fl:
+                                    targeted[field_name] = "journey@test.com"
+                                elif fl.endswith("_id"):
+                                    targeted[field_name] = 1
+                                elif any(fl.startswith(p) for p in ("is_", "has_", "can_")):
+                                    targeted[field_name] = True
+                                else:
+                                    targeted[field_name] = "journey-test"
+                                changed = True
+                        elif "extra" in msg or "extra_forbidden" in msg_type or "not_permitted" in msg_type:
+                            if field_name in targeted:
+                                del targeted[field_name]
+                                changed = True
+                    if changed:
+                        r3 = requests.post(entity_url, json=targeted, headers=headers, timeout=5)
+                        if r3.status_code in (200, 201):
+                            try:
+                                data = r3.json()
+                                entity_id = data.get("id") or (data[0].get("id") if isinstance(data, list) else None)
+                            except Exception:
+                                pass
+                            return True, f"{r3.status_code} id={entity_id} (422-fixed)"
+            except Exception:
+                pass
+            return True, "422 (schema mismatch, server alive)"
+
+        return False, f"{last_r.status_code if last_r else '?'}"
     steps.append(_step("Create entity", do_create))
 
     # ── Step 5: List entities ─────────────────────────────────────────

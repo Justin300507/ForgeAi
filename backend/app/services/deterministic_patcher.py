@@ -11,6 +11,7 @@ Fixes known LLM failure patterns that the contract can't fully prevent:
 
 All fixes are regex/AST-free pattern matching — deterministic, fast, no LLM cost.
 """
+import keyword
 import re
 from pathlib import Path
 
@@ -1012,6 +1013,29 @@ def _make_user(email: str, password: str, display_name: str = ""):
         kw["is_active"] = True
     if "role" in cols:
         kw["role"] = "user"
+    # Fill any remaining NOT NULL columns that have no default so injected auth
+    # routes work even when the LLM adds custom non-nullable columns (e.g. status).
+    _COL_STR_DEFAULTS = {
+        "status": "active", "state": "active", "type": "user",
+        "gender": "other", "plan": "free", "tier": "basic",
+        "account_type": "standard", "subscription": "free",
+    }
+    for col in User.__table__.columns:
+        if col.name in kw or col.primary_key:
+            continue
+        if col.nullable or col.default is not None or col.server_default is not None:
+            continue
+        col_type = type(col.type).__name__.lower()
+        if col.name in _COL_STR_DEFAULTS:
+            kw[col.name] = _COL_STR_DEFAULTS[col.name]
+        elif any(t in col_type for t in ("str", "text", "char", "varchar")):
+            kw[col.name] = "active"
+        elif any(t in col_type for t in ("int", "float", "numeric", "decimal")):
+            kw[col.name] = 0
+        elif "bool" in col_type:
+            kw[col.name] = True
+        else:
+            kw[col.name] = ""
     return User(**kw)
 
 
@@ -1351,7 +1375,10 @@ def _patch_create_missing_schemas(project_path: Path) -> int:
             # File exists — only add classes that are missing from it
             existing_content = schema_file.read_text(encoding="utf-8", errors="replace")
             existing_classes = set(re.findall(r"^class (\w+)\s*\(", existing_content, re.MULTILINE))
-            missing = sorted(needed_classes - existing_classes)
+            missing = sorted(
+                n for n in (needed_classes - existing_classes)
+                if n.isidentifier() and not keyword.iskeyword(n)
+            )
             if not missing:
                 continue
             additions = []
@@ -1374,8 +1401,14 @@ def _patch_create_missing_schemas(project_path: Path) -> int:
 
         base_name = "".join(w.capitalize() for w in module.split("_"))
 
+        valid_classes = sorted(
+            n for n in needed_classes
+            if n.isidentifier() and not keyword.iskeyword(n)
+        )
+        if not valid_classes:
+            continue
         lines = ["from typing import Optional", "from pydantic import BaseModel", "", ""]
-        for cls_name in sorted(needed_classes):
+        for cls_name in valid_classes:
             if columns:
                 field_lines = "\n".join(
                     f"    {name}: Optional[{typ}] = None" for name, typ in columns
