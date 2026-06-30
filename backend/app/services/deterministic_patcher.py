@@ -508,7 +508,7 @@ _FROM_MODELS_IMPORT = re.compile(r"^from app\.models\.\w+ import ([\w,\s]+)", re
 _RESPONSE_MODEL_ATTR = re.compile(r"\bresponse_model\s*=\s*(List\[)?(\w+)(])?")
 
 
-def _patch_orm_response_model(content: str, filepath: str) -> str:
+def _patch_orm_response_model(content: str, filepath: str, project_path: Path = None) -> str:
     norm = filepath.replace("\\", "/")
     if "response_model" not in content or ("/routes/" not in norm and not norm.startswith("app/routes")):
         return content
@@ -522,13 +522,57 @@ def _patch_orm_response_model(content: str, filepath: str) -> str:
     if not orm_classes:
         return content
 
-    def _replace_rm(m: re.Match) -> str:
-        cls_name = m.group(2)
-        if cls_name in orm_classes:
-            return "response_model=None"
-        return m.group(0)
+    # Build a map of orm_class_name -> (schema_class_name, schema_module) from app/schemas/
+    # e.g. "User" -> ("UserResponse", "app.schemas.user") or ("UserSchema", "app.schemas.user")
+    schema_map: dict[str, tuple[str, str]] = {}
+    if project_path:
+        schemas_dir = project_path / "app" / "schemas"
+        if schemas_dir.exists():
+            for sf in schemas_dir.glob("*.py"):
+                if sf.name.startswith("_"):
+                    continue
+                try:
+                    sc = sf.read_text(encoding="utf-8", errors="ignore")
+                except Exception:
+                    continue
+                module_name = f"app.schemas.{sf.stem}"
+                for cls_m in re.finditer(r"^class (\w+)\s*\(.*BaseModel.*\)", sc, re.MULTILINE):
+                    schema_cls = cls_m.group(1)
+                    # Match: UserResponse -> User, UserSchema -> User, UserBase -> User, etc.
+                    for orm_cls in orm_classes:
+                        base = orm_cls.rstrip("s")  # "Users" -> "User", "User" -> "User"
+                        if schema_cls.startswith(base) and schema_cls != orm_cls:
+                            if orm_cls not in schema_map:
+                                schema_map[orm_cls] = (schema_cls, module_name)
 
-    return _RESPONSE_MODEL_ATTR.sub(_replace_rm, content)
+    def _replace_rm(m: re.Match) -> str:
+        prefix = m.group(1) or ""   # "List[" or ""
+        cls_name = m.group(2)
+        suffix = m.group(3) or ""   # "]" or ""
+        if cls_name not in orm_classes:
+            return m.group(0)
+        if cls_name in schema_map:
+            schema_cls, _ = schema_map[cls_name]
+            return f"response_model={prefix}{schema_cls}{suffix}"
+        return f"response_model={prefix}dict{suffix}"  # fallback: dict serializes fine
+
+    new_content = _RESPONSE_MODEL_ATTR.sub(_replace_rm, content)
+
+    # Add imports for any schema classes we substituted in
+    for orm_cls, (schema_cls, module_name) in schema_map.items():
+        if orm_cls in orm_classes and schema_cls in new_content:
+            import_line = f"from {module_name} import {schema_cls}"
+            if import_line not in new_content:
+                # Insert after the last "from app." import line
+                last_import_end = 0
+                for im in re.finditer(r"^from app\.[^\n]+\n", new_content, re.MULTILINE):
+                    last_import_end = im.end()
+                if last_import_end:
+                    new_content = new_content[:last_import_end] + import_line + "\n" + new_content[last_import_end:]
+                else:
+                    new_content = import_line + "\n" + new_content
+
+    return new_content
 
 
 # ── 5. Pydantic v2: regex= → pattern= in Field() calls ──────────────────────
@@ -1986,7 +2030,7 @@ def run_deterministic_patches(project_path: str) -> int:
         patched = _patch_circular_schema_imports(patched, filepath=rel)
         patched = _patch_depends_body(patched, rel)
         patched = _patch_from_orm(patched)
-        patched = _patch_orm_response_model(patched, rel)
+        patched = _patch_orm_response_model(patched, rel, project_path=root)
 
         if patched != original:
             py_file.write_text(patched, encoding="utf-8")
