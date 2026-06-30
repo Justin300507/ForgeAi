@@ -500,6 +500,30 @@ def _patch_model_aliases(project_path: Path) -> None:
             content = content.rstrip() + "\n\n" + "\n".join(aliases_to_add) + "\n"
             model_file.write_text(content, encoding="utf-8")
             print(f"  [patcher] Added aliases in {module}.py: {aliases_to_add}")
+        elif names - defined:
+            # No suitable alias found. If the file has no class at all (e.g. uses Table()),
+            # inject stub Base classes for each missing name so the import doesn't fail.
+            if not defined:
+                stubs = []
+                for name in sorted(names):
+                    # Derive a table name from the module name (e.g. task_tags)
+                    tbl = module.replace("-", "_")
+                    stubs.append(
+                        f"\nclass {name}(Base):  # stub: patcher\n"
+                        f"    __tablename__ = '{tbl}'\n"
+                        f"    id = Column(Integer, primary_key=True)\n"
+                    )
+                if stubs:
+                    # Ensure imports exist
+                    needs = []
+                    if "Column" not in content:
+                        needs.append("from sqlalchemy import Column, Integer")
+                    if "from app.database import Base" not in content:
+                        needs.append("from app.database import Base")
+                    prefix = "\n".join(needs) + "\n" if needs else ""
+                    content = prefix + content.rstrip() + "\n" + "".join(stubs)
+                    model_file.write_text(content, encoding="utf-8")
+                    print(f"  [patcher] Added stub class(es) in {module}.py: {sorted(names - defined)}")
 
 
 # ── 5. response_model using SQLAlchemy model instead of Pydantic schema ──────
