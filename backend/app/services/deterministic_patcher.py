@@ -526,6 +526,61 @@ def _patch_model_aliases(project_path: Path) -> None:
                     print(f"  [patcher] Added stub class(es) in {module}.py: {sorted(names - defined)}")
 
 
+def _patch_deduplicate_models(project_path: Path) -> int:
+    """
+    When both user.py and users.py (or task.py and tasks.py) exist in app/models/
+    and both define the same class name, keep the file with more content and delete
+    the other. Adds an alias in the kept file so all import variants resolve.
+    """
+    models_dir = project_path / "app" / "models"
+    if not models_dir.exists():
+        return 0
+
+    removed = 0
+    py_files = {f.stem: f for f in models_dir.glob("*.py") if not f.name.startswith("_")}
+
+    # Look for singular/plural pairs, e.g. user + users
+    checked: set[str] = set()
+    for stem, fpath in list(py_files.items()):
+        if stem in checked:
+            continue
+        # Check if plural/singular counterpart exists
+        partner = stem.rstrip("s") if stem.endswith("s") else stem + "s"
+        if partner not in py_files or partner in checked:
+            continue
+        checked.add(stem)
+        checked.add(partner)
+
+        f1, f2 = fpath, py_files[partner]
+        try:
+            c1 = f1.read_text(encoding="utf-8", errors="ignore")
+            c2 = f2.read_text(encoding="utf-8", errors="ignore")
+        except Exception:
+            continue
+
+        classes1 = set(re.findall(r"^class (\w+)\s*\(", c1, re.MULTILINE))
+        classes2 = set(re.findall(r"^class (\w+)\s*\(", c2, re.MULTILINE))
+        shared = classes1 & classes2
+        if not shared:
+            continue
+
+        # Keep the file with more content; delete the other, add alias
+        keep, drop = (f1, f2) if len(c1) >= len(c2) else (f2, f1)
+        keep_content = keep.read_text(encoding="utf-8", errors="ignore")
+        for cls in sorted(shared):
+            # Add alias for the drop-file's stem (so both imports resolve)
+            alias_line = f"{cls} = {cls}  # deduplicated from {drop.stem}"
+            if alias_line not in keep_content and f"\n{cls} = " not in keep_content:
+                keep_content = keep_content.rstrip() + f"\n# Removed duplicate {drop.name}\n"
+                break
+        keep.write_text(keep_content, encoding="utf-8")
+        drop.unlink()
+        print(f"  [patcher] Removed duplicate model {drop.name} (kept {keep.name}), shared classes: {shared}")
+        removed += 1
+
+    return removed
+
+
 # ── 5. response_model using SQLAlchemy model instead of Pydantic schema ──────
 
 _FROM_MODELS_IMPORT = re.compile(r"^from app\.models\.\w+ import ([\w,\s]+)", re.MULTILINE)
@@ -2074,6 +2129,9 @@ def run_deterministic_patches(project_path: str) -> int:
 
     # Strip FKs to non-existent tables (prevents NoReferencedTableError at startup)
     _patch_dangling_foreign_keys(root)
+
+    # Deduplicate model files (user.py + users.py both having class User → keep larger)
+    _patch_deduplicate_models(root)
 
     # Model class aliases (Games→Game etc) — run before FK import patcher
     _patch_model_aliases(root)

@@ -410,6 +410,18 @@ def generate_project_v6(
             except Exception as e:
                 print(f"  Fix failed for {filepath}: {e}")
 
+        # Re-run key patchers so LLM-regenerated files get aliases/from_attributes injected
+        try:
+            from pathlib import Path as _Path
+            from app.services.deterministic_patcher import (
+                _patch_model_aliases, _patch_schemas_from_attributes, _patch_missing_pydantic_imports
+            )
+            _patch_model_aliases(_Path(project_path))
+            _patch_schemas_from_attributes(_Path(project_path))
+            _patch_missing_pydantic_imports(_Path(project_path))
+        except Exception as _pe:
+            print(f"  [post-fix patcher] {_pe}")
+
         validation = validate_project(project_path)
         print(f"  Post-fix {attempt + 1}: {'PASS' if validation['passed'] else 'FAIL'} — {len(validation['errors'])} errors")
 
@@ -733,6 +745,18 @@ def repair_project(
                 save_fix_log(project_path, "\n".join(file_errors), fix)
             except Exception as e:
                 print(f"  Fix failed for {filepath}: {e}")
+
+        # Re-run key patchers so LLM-regenerated files get aliases/from_attributes injected
+        try:
+            from pathlib import Path as _Path
+            from app.services.deterministic_patcher import (
+                _patch_model_aliases, _patch_schemas_from_attributes, _patch_missing_pydantic_imports
+            )
+            _patch_model_aliases(_Path(project_path))
+            _patch_schemas_from_attributes(_Path(project_path))
+            _patch_missing_pydantic_imports(_Path(project_path))
+        except Exception as _pe:
+            print(f"  [post-fix patcher] {_pe}")
 
         validation = validate_project(project_path)
         print(f"  Post-fix {attempt + 1}: {'PASS' if validation['passed'] else 'FAIL'} — {len(validation['errors'])} errors")
