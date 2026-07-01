@@ -1535,10 +1535,32 @@ def _patch_create_missing_schemas(project_path: Path) -> int:
     # as a stub with 'pass' body causes AttributeError when the route accesses .email/.password.
     _AUTH_DEFINED_CLASSES = AUTH_DEFINED_CLASSES
 
+    # A class already defined in ANY schema file must never get a second,
+    # incompatible stub definition elsewhere. Without this, if a route imports
+    # `from app.schemas.workout import ExerciseCreate` while ExerciseCreate
+    # actually (and correctly) lives in app/schemas/exercise.py, this patcher
+    # used to see it "missing" from workout.py and create a duplicate --
+    # directly recreating "Duplicate class definition" errors that a prior fix
+    # attempt had just resolved by removing the duplicate from workout.py.
+    class_owner: dict[str, str] = {}
+    for sf in schemas_dir.glob("*.py"):
+        try:
+            sf_content = sf.read_text(encoding="utf-8", errors="replace")
+        except Exception:
+            continue
+        for cls_name in re.findall(r"^class (\w+)\s*\(", sf_content, re.MULTILINE):
+            class_owner.setdefault(cls_name, sf.stem)
+
     created = 0
     for module, needed_classes in schema_imports.items():
         # Filter out auth-defined classes before processing
         needed_classes = needed_classes - _AUTH_DEFINED_CLASSES
+        already_elsewhere = {n for n in needed_classes if class_owner.get(n) not in (None, module)}
+        if already_elsewhere:
+            print(f"  [patcher] Skipping stub for {sorted(already_elsewhere)} in {module}.py "
+                  f"— already defined in {sorted({class_owner[n] for n in already_elsewhere})}.py "
+                  f"(import path may need fixing, but no duplicate stub created)")
+            needed_classes = needed_classes - already_elsewhere
         if not needed_classes:
             continue
         schema_file = schemas_dir / f"{module}.py"
