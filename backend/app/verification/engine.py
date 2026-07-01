@@ -152,6 +152,21 @@ def _run_frontend_build(ctx: GenerationContext) -> VerificationResult:
         for err in (result.errors or [])[:10]:
             diagnostics.append(_diag("frontend_build", err, ErrorSeverity.HIGH, ErrorCategory.BROWSER,
                                      hint="Fix the Vite/React build error in the referenced file"))
+        if not diagnostics:
+            # _parse_vite_errors's regexes didn't match anything in this
+            # build's output, but the build genuinely failed (non-zero exit).
+            # Without a diagnostic here the fix loop has literally nothing to
+            # group/act on, so a broken build with an unrecognized error format
+            # would silently never get fixed. Fall back to raw output so
+            # there's at least something for the LLM to work from.
+            raw = (result.stderr or result.stdout or "").strip()
+            diagnostics.append(_diag(
+                "frontend_build",
+                f"Vite build failed (exit {result.exit_code}) with an unrecognized error format: "
+                f"{raw[-500:] if raw else 'no output captured'}",
+                ErrorSeverity.HIGH, ErrorCategory.BROWSER,
+                hint="Inspect the raw build output for the actual error and fix the referenced file",
+            ))
 
     status = StageStatus.PASSED if result.success else StageStatus.FAILED
     return VerificationResult(stage="frontend_build", status=status, diagnostics=diagnostics,

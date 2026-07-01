@@ -155,7 +155,13 @@ class BackendRunner:
             env=isolated_env,
         )
 
-        max_wait = 5
+        # 5s was too tight on constrained/shared compute (e.g. Railway): a
+        # backend that's genuinely fine but just slow to import/init would be
+        # misdiagnosed as "failed to start" with zero error detail, burning a
+        # full LLM fix attempt on a problem that doesn't exist. 15s costs
+        # wall-clock time on truly-broken apps (cheap) to avoid that (costs
+        # real $ per wasted attempt).
+        max_wait = 15
         healthy = False
 
         for _ in range(max_wait):
