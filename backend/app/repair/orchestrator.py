@@ -176,7 +176,14 @@ def _apply_fix_group(
         provider = cfg.provider
 
     try:
-        raw = generate_content(prompt, provider=provider, max_tokens=8000)
+        # thinking_budget gives Gemini a dedicated reasoning channel instead of
+        # zero -- without it, any "thinking" it wants to do has nowhere to go
+        # but directly into the visible response, which showed up as pages of
+        # narrated reasoning written as comments inside the generated file
+        # content (thousands of wasted tokens per fix call). architecture_fix_
+        # service.py already does this (thinking_budget=512); this call site
+        # never did.
+        raw = generate_content(prompt, provider=provider, max_tokens=8000, thinking_budget=512)
     except Exception as exc:
         # A specifically-routed provider (e.g. model_router picked "groq") has
         # no fallback of its own -- only provider="auto" does. Retry through
@@ -185,7 +192,7 @@ def _apply_fix_group(
         if provider != "auto":
             print(f"    [fix] {provider} failed ({exc}) — retrying via auto-fallback chain")
             try:
-                raw = generate_content(prompt, provider="auto", max_tokens=8000)
+                raw = generate_content(prompt, provider="auto", max_tokens=8000, thinking_budget=512)
             except Exception as exc2:
                 print(f"    [fix] LLM call failed for group {group.group_id}: {exc2}")
                 return [], {}
