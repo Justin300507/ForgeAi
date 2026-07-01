@@ -275,6 +275,9 @@ def generate_project_v6(
     print(f"  Validation: {'PASS' if validation['passed'] else 'FAIL'} — {len(validation['errors'])} errors")
 
     fix_attempts_used = 0
+    # Files whose cache-hit fix didn't resolve errors — bypass cache next round
+    _bypass_cache_files: set[str] = set()
+
     for attempt in range(4):
         if validation["passed"]:
             break
@@ -340,7 +343,8 @@ def generate_project_v6(
                 with open(abs_path, "r", encoding="utf-8") as fh:
                     file_content = fh.read()
 
-                fix = generate_fix(filepath, file_content, file_errors, provider)
+                fix = generate_fix(filepath, file_content, file_errors, provider,
+                                   bypass_cache=filepath in _bypass_cache_files)
                 _llm["repairs"] += 1
                 if not isinstance(fix, dict) or not fix.get("path") or not fix.get("content"):
                     continue
@@ -379,6 +383,15 @@ def generate_project_v6(
 
         validation = validate_project(project_path)
         print(f"  Post-fix {attempt + 1}: {'PASS' if validation['passed'] else 'FAIL'} — {len(validation['errors'])} errors")
+
+        # Track files that still have errors after this attempt — if those errors were
+        # handled via a cache hit, bypass the cache next attempt to get a fresh fix.
+        still_broken: set[str] = set()
+        for err in validation["errors"]:
+            m = re.search(r"(app[\\/][^\s:]+?\.py)", err)
+            if m:
+                still_broken.add(m.group(1).replace("\\", "/"))
+        _bypass_cache_files = still_broken & errors_by_file.keys()
 
     # Architecture-level repair
     architecture_errors = [

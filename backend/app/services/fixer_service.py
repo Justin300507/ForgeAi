@@ -9,7 +9,8 @@ def generate_fix(
     file_path,
     file_content,
     errors,
-    provider="auto"
+    provider="auto",
+    bypass_cache: bool = False,
 ):
 
     if len(file_content) > 15000:
@@ -22,10 +23,11 @@ def generate_fix(
     )
 
     _cache_payload = {"prompt": prompt}
-    _cached = get_cached("fix", _cache_payload)
-    if _cached is not None:
-        print(f"      [fix cache hit] {file_path}")
-        return _cached
+    if not bypass_cache:
+        _cached = get_cached("fix", _cache_payload)
+        if _cached is not None:
+            print(f"      [fix cache hit] {file_path}")
+            return _cached
 
     text = generate_content(
         prompt,
