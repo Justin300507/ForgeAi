@@ -155,6 +155,12 @@ def group_diagnostics(
 
     raw_groups.sort(key=group_priority)
 
+    if len(raw_groups) > max_groups:
+        dropped = len(raw_groups) - max_groups
+        dropped_diag_count = sum(len(diags) for _, diags in raw_groups[max_groups:])
+        print(f"  [fix] {dropped} lower-priority group(s) ({dropped_diag_count} diagnostic(s)) "
+              f"dropped this round due to max_groups={max_groups} cap")
+
     # ── Phase 5: build DiagnosticGroup objects ─────────────────────────────
     groups: list[DiagnosticGroup] = []
     seen_ids: set[str] = set()
