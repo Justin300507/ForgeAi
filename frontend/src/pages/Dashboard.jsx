@@ -32,6 +32,7 @@ export default function Dashboard() {
   const [jobs, setJobs] = useState([]);
   const [loading, setLoading] = useState(true);
   const [deleting, setDeleting] = useState(null);
+  const [deletingAll, setDeletingAll] = useState(false);
   const navigate = useNavigate();
 
   const fetchJobs = () => jobsAPI.list().then(r => setJobs(r.data.jobs || [])).catch(console.error).finally(() => setLoading(false));
@@ -49,6 +50,26 @@ export default function Dashboard() {
       alert(err.response?.data?.detail || "Delete failed");
     } finally {
       setDeleting(null);
+    }
+  };
+
+  const handleDeleteAll = async () => {
+    const deletableCount = jobs.filter(j => j.status !== "pending" && j.status !== "running").length;
+    if (!deletableCount) return;
+    if (!window.confirm(
+      `Delete all ${deletableCount} project${deletableCount === 1 ? "" : "s"} and their files? This cannot be undone.`
+    )) return;
+    setDeletingAll(true);
+    try {
+      const res = await jobsAPI.deleteAll();
+      if (res.data.skipped) {
+        alert(`Deleted ${res.data.deleted} project(s). ${res.data.skipped} running/pending job(s) were skipped — cancel them first to delete.`);
+      }
+      await fetchJobs();
+    } catch (err) {
+      alert(err.response?.data?.detail || "Delete all failed");
+    } finally {
+      setDeletingAll(false);
     }
   };
 
@@ -87,11 +108,21 @@ export default function Dashboard() {
 
         <div className="flex items-center justify-between mb-4">
           <h1 className="font-bold text-lg text-white">Your Projects</h1>
-          {running > 0 && (
-            <span className="text-xs px-2.5 py-1 rounded-full border" style={{background:"rgba(99,102,241,0.1)",color:"#818cf8",borderColor:"rgba(99,102,241,0.2)"}}>
-              ● {running} running
-            </span>
-          )}
+          <div className="flex items-center gap-2">
+            {running > 0 && (
+              <span className="text-xs px-2.5 py-1 rounded-full border" style={{background:"rgba(99,102,241,0.1)",color:"#818cf8",borderColor:"rgba(99,102,241,0.2)"}}>
+                ● {running} running
+              </span>
+            )}
+            {jobs.some(j => j.status !== "pending" && j.status !== "running") && (
+              <button
+                onClick={handleDeleteAll}
+                disabled={deletingAll}
+                className="flex items-center gap-1.5 text-xs px-2.5 py-1 rounded-full border text-gray-500 border-white/10 hover:text-red-400 hover:border-red-500/30 hover:bg-red-500/10 transition-colors disabled:opacity-40">
+                <Trash2 size={12} /> {deletingAll ? "Deleting…" : "Delete all"}
+              </button>
+            )}
+          </div>
         </div>
 
         {loading ? (

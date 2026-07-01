@@ -525,6 +525,44 @@ def delete_job(
     return {"deleted": True}
 
 
+@app.delete("/jobs", tags=["jobs"])
+def delete_all_jobs(
+    db: Session = Depends(get_db),
+    current_user=Depends(get_current_user),
+):
+    """Delete every non-active job for the current user and wipe their
+    generated files from disk. Pending/running jobs are skipped — cancel
+    them first, same rule as the single-job delete."""
+    import shutil
+
+    jobs = db.query(GenerationJob).filter(
+        GenerationJob.user_id == current_user.id,
+    ).all()
+
+    deleted = 0
+    skipped = 0
+    for job in jobs:
+        if job.status in ("pending", "running"):
+            skipped += 1
+            continue
+
+        if job.project_name:
+            proj_dir = os.path.join("generated_projects", job.project_name)
+            if os.path.isdir(proj_dir):
+                shutil.rmtree(proj_dir, ignore_errors=True)
+            zip_path = proj_dir + ".zip"
+            if os.path.isfile(zip_path):
+                os.remove(zip_path)
+
+        db.delete(job)
+        JOB_STORE.pop(job.id, None)
+        CHECK_STORE.pop(job.id, None)
+        deleted += 1
+
+    db.commit()
+    return {"deleted": deleted, "skipped": skipped}
+
+
 @app.get("/jobs/{job_id}", tags=["jobs"])
 def get_job(job_id: str, db: Session = Depends(get_db), current_user=Depends(get_current_user)):
     job = db.query(GenerationJob).filter(GenerationJob.id == job_id).first()
