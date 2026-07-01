@@ -2393,6 +2393,107 @@ def _patch_create_missing_service_stubs(project_path: Path) -> int:
     return created
 
 
+# ── Auto-wire orphan routers into main.py ─────────────────────────────────────
+
+def _patch_wire_orphan_routers(project_path: Path) -> None:
+    """
+    Scan app/routes/*.py for every *_router = APIRouter(...) definition.
+    For any router not already imported and included in main.py, inject:
+      from app.routes.<module> import <router_name>
+      app.include_router(<router_name>)
+    Eliminates 'Orphan file: X is not imported by main.py' errors.
+    """
+    routes_dir = project_path / "app" / "routes"
+    main_py = project_path / "app" / "main.py"
+    if not routes_dir.exists() or not main_py.exists():
+        return
+
+    try:
+        main_content = main_py.read_text(encoding="utf-8", errors="replace")
+    except Exception:
+        return
+
+    router_def_re = re.compile(r"^(\w+_router)\s*=\s*APIRouter\b", re.MULTILINE)
+    original = main_content
+    added: list[str] = []
+
+    for route_file in sorted(routes_dir.glob("*.py")):
+        if route_file.name == "__init__.py":
+            continue
+        try:
+            content = route_file.read_text(encoding="utf-8", errors="replace")
+        except Exception:
+            continue
+
+        module = route_file.stem  # e.g. "team_routes"
+
+        for m in router_def_re.finditer(content):
+            router_name = m.group(1)  # e.g. "team_router"
+            import_line = f"from app.routes.{module} import {router_name}"
+            include_line = f"app.include_router({router_name})"
+
+            import_present = import_line in main_content
+            include_present = f"app.include_router({router_name}" in main_content
+
+            if import_present and include_present:
+                continue
+
+            if not import_present:
+                # Insert after the last "from app.routes.* import *_router" line
+                last_routes_end = 0
+                for im in re.finditer(
+                    r"^from app\.routes\.\w+ import \w+_router\n", main_content, re.MULTILINE
+                ):
+                    last_routes_end = im.end()
+
+                if last_routes_end:
+                    main_content = (
+                        main_content[:last_routes_end]
+                        + import_line + "\n"
+                        + main_content[last_routes_end:]
+                    )
+                else:
+                    # Insert after first "from app." import
+                    m2 = re.search(r"^from app\.", main_content, re.MULTILINE)
+                    if m2:
+                        eol = main_content.index("\n", m2.start()) + 1
+                        main_content = main_content[:eol] + import_line + "\n" + main_content[eol:]
+                    else:
+                        main_content = import_line + "\n" + main_content
+
+            if not include_present:
+                # Insert after the last "app.include_router(...)" call
+                last_include_end = 0
+                for im in re.finditer(
+                    r"^app\.include_router\([^)]+\)\n", main_content, re.MULTILINE
+                ):
+                    last_include_end = im.end()
+
+                if last_include_end:
+                    main_content = (
+                        main_content[:last_include_end]
+                        + include_line + "\n"
+                        + main_content[last_include_end:]
+                    )
+                else:
+                    # Before first @app. decorator, or at end
+                    m3 = re.search(r"^@app\.", main_content, re.MULTILINE)
+                    if m3:
+                        main_content = (
+                            main_content[:m3.start()]
+                            + include_line + "\n\n"
+                            + main_content[m3.start():]
+                        )
+                    else:
+                        main_content = main_content.rstrip() + f"\n{include_line}\n"
+
+            added.append(router_name)
+
+    if main_content != original:
+        main_py.write_text(main_content, encoding="utf-8")
+        print(f"  [router_patcher] Wired {len(added)} orphan router(s) into main.py: {', '.join(added)}")
+
+
 # ── Main entry point ──────────────────────────────────────────────────────────
 
 def run_deterministic_patches(project_path: str) -> int:
@@ -2467,6 +2568,10 @@ def run_deterministic_patches(project_path: str) -> int:
     # Auth routes: inject signup/login/me if project has a User model but no auth endpoints.
     # Without this, every authenticated endpoint returns 401 and the journey fails entirely.
     _patch_auth_routes(root)
+
+    # Wire ALL routers into main.py — runs after auth_routes injection so auth_router
+    # is already in main.py; this catches every other generated router.
+    _patch_wire_orphan_routers(root)
 
     # Seed robustness: guard against IndexError when parent entity inserts fail
     _patch_seed_robustness(root)

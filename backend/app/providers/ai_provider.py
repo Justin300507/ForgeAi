@@ -30,6 +30,7 @@ def generate_content(
     provider="auto",
     max_tokens=4000,
     stage: str = "unknown",
+    thinking_budget: int = 0,
 ):
 
     if provider == "deepseek":
@@ -50,7 +51,8 @@ def generate_content(
 
     if provider == "gemini":
         print("Using Gemini")
-        return _tracked("gemini", "gemini-2.5-flash", prompt, gemini_generate, stage, max_tokens=max_tokens)
+        return _tracked("gemini", "gemini-2.5-flash", prompt, gemini_generate, stage,
+                        max_tokens=max_tokens, thinking_budget=thinking_budget)
 
     if provider == "openai":
         print("Using OpenAI")
@@ -65,7 +67,8 @@ def generate_content(
     # which writes partial code and makes errors worse). DeepSeek removed for same reason.
     try:
         print("Using Gemini")
-        return _tracked("gemini", "gemini-2.5-flash", prompt, gemini_generate, stage, max_tokens=max_tokens)
+        return _tracked("gemini", "gemini-2.5-flash", prompt, gemini_generate, stage,
+                        max_tokens=max_tokens, thinking_budget=thinking_budget)
     except Exception as e:
         print(f"Gemini failed: {e}")
 

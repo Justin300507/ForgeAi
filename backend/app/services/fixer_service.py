@@ -11,6 +11,7 @@ def generate_fix(
     errors,
     provider="auto",
     bypass_cache: bool = False,
+    thinking_budget: int = 512,
 ):
 
     if len(file_content) > 15000:
@@ -32,7 +33,8 @@ def generate_fix(
     text = generate_content(
         prompt,
         provider,
-        max_tokens=12000
+        max_tokens=12000,
+        thinking_budget=thinking_budget,
     )
 
     try:

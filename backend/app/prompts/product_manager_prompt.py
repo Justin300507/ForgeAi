@@ -1,10 +1,39 @@
 from app.prompts.shared_contract import FASTAPI_CONTRACT
 
 
+_COMPLEX_IDEA_KEYWORDS = {
+    "team", "teams", "multi-user", "multiuser", "collaborat", "organization",
+    "organisation", "workspace", "enterprise", "tenant", "multi-tenant",
+    "role", "roles", "permission", "admin", "member", "members",
+}
+
+
+def _is_complex_idea(idea: str) -> bool:
+    idea_lower = idea.lower()
+    return any(kw in idea_lower for kw in _COMPLEX_IDEA_KEYWORDS)
+
+
 def build_product_manager_prompt(idea: str) -> str:
+    if _is_complex_idea(idea):
+        scope_rules = """SCOPE RULES:
+- Include teams/roles/collaboration as the idea requires
+- Cap at 4 entities maximum — keep the data model lean
+- Only include features explicitly mentioned in the idea"""
+    else:
+        scope_rules = """SCOPE RULES — STRICTLY ENFORCED:
+- Cap at 2-3 data entities (e.g. User + the main resource, nothing else)
+- DO NOT add: teams, organizations, workspaces, comments, files, tags, audit logs,
+  notifications, categories, labels, priorities, user-teams junction tables,
+  or any feature not explicitly mentioned in the idea
+- DO NOT add collaboration/multi-tenancy/roles unless the idea text explicitly says so
+- api_modules: auth + 1 or 2 core resource modules ONLY
+- Keep it simple — a focused 3-endpoint CRUD app is better than a broken 30-endpoint one"""
+
     return f"""You are the ForgeAI Product Manager. Your job is to transform a vague idea into a precise product specification that an engineering team can build from.
 
 Think like a senior PM at a top tech company. Define the product clearly, identify the users, write real user stories, and set acceptance criteria that can be validated.
+
+{scope_rules}
 
 IDEA:
 {idea}

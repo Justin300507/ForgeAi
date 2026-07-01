@@ -8,11 +8,11 @@ from google import genai as _genai
 _MODEL = "gemini-2.5-flash"
 
 
-def generate(prompt: str, max_tokens: int = 8000) -> str:
+def generate(prompt: str, max_tokens: int = 8000, thinking_budget: int = 0) -> str:
     config = _genai.types.GenerateContentConfig(
         max_output_tokens=max_tokens,
         temperature=0.2,
-        thinking_config=_genai.types.ThinkingConfig(thinking_budget=0),
+        thinking_config=_genai.types.ThinkingConfig(thinking_budget=thinking_budget),
     )
     response = client.models.generate_content(
         model=_MODEL,

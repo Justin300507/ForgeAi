@@ -278,6 +278,9 @@ def generate_project_v6(
     fix_attempts_used = 0
     # Files whose cache-hit fix didn't resolve errors — bypass cache next round
     _bypass_cache_files: set[str] = set()
+    # Bug 3: track the error set from the last completed attempt; if it's identical
+    # after a revert, there's no point retrying the same approach.
+    _last_pre_attempt_errors: frozenset = frozenset()
 
     # Print initial errors for visibility
     if not validation["passed"] and validation.get("errors"):
@@ -288,6 +291,14 @@ def generate_project_v6(
     for attempt in range(4):
         if validation["passed"]:
             break
+
+        # Bug 3: if the error set is identical to the last completed attempt, no LLM
+        # approach will make progress — skip straight to Architecture Repair.
+        _curr_errors = frozenset(validation["errors"])
+        if attempt > 0 and _curr_errors == _last_pre_attempt_errors:
+            print(f"  [fix loop] Error set unchanged after revert — skipping to Architecture Repair")
+            break
+        _last_pre_attempt_errors = _curr_errors
 
         fix_attempts_used = attempt + 1
         _prev_err_count = len(validation["errors"])
@@ -353,8 +364,10 @@ def generate_project_v6(
                 abs_path = os.path.join(project_path, safe_path)
 
                 if any("Orphan file:" in e for e in file_errors):
-                    if os.path.exists(abs_path):
-                        os.remove(abs_path)
+                    # Wire the orphan router into main.py instead of deleting it —
+                    # deleting removes all its endpoints, turning 1 error into many.
+                    from app.services.deterministic_patcher import _patch_wire_orphan_routers
+                    _patch_wire_orphan_routers(Path(project_path))
                     continue
 
                 # Never LLM-fix patcher-injected files — the patcher owns these
@@ -435,6 +448,7 @@ def generate_project_v6(
                 _patch_model_aliases, _patch_schemas_from_attributes,
                 _patch_missing_pydantic_imports, _patch_attr_access_mismatches,
                 _patch_response_schemas_optional, _patch_create_missing_service_stubs,
+                _patch_wire_orphan_routers,
             )
             _patch_model_aliases(_Path(project_path))
             _patch_schemas_from_attributes(_Path(project_path))
@@ -442,6 +456,7 @@ def generate_project_v6(
             _patch_attr_access_mismatches(_Path(project_path))
             _patch_response_schemas_optional(_Path(project_path))
             _patch_create_missing_service_stubs(_Path(project_path))
+            _patch_wire_orphan_routers(_Path(project_path))
         except Exception as _pe:
             print(f"  [post-fix patcher] {_pe}")
 
@@ -834,8 +849,8 @@ def repair_project(
                 safe_path = _sanitize_path(filepath)
                 abs_path = os.path.join(project_path, safe_path)
                 if any("Orphan file:" in e for e in file_errors):
-                    if os.path.exists(abs_path):
-                        os.remove(abs_path)
+                    from app.services.deterministic_patcher import _patch_wire_orphan_routers
+                    _patch_wire_orphan_routers(Path(project_path))
                     continue
                 if not os.path.exists(abs_path):
                     fix = generate_missing_file(filepath, "\n".join(file_errors), provider)
