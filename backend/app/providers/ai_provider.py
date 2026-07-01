@@ -60,8 +60,9 @@ def generate_content(
         print("Using Ollama")
         return _tracked("ollama", "local", prompt, ollama_generate, stage, max_tokens=max_tokens)
 
-    # Auto mode: Gemini primary for everything (consistent quality, no rate-limit issues)
-    # Groq was used for small tasks but hits 100k TPD limit too often — demoted to last resort
+    # Auto mode: Gemini → Groq → Cerebras → Ollama
+    # OpenRouter removed (out of credits — 402 wastes a fix slot then falls through to DeepSeek
+    # which writes partial code and makes errors worse). DeepSeek removed for same reason.
     try:
         print("Using Gemini")
         return _tracked("gemini", "gemini-2.5-flash", prompt, gemini_generate, stage, max_tokens=max_tokens)
@@ -69,31 +70,19 @@ def generate_content(
         print(f"Gemini failed: {e}")
 
     try:
-        print("Using OpenRouter")
-        return _tracked("openrouter", "auto", prompt, openrouter_generate, stage, max_tokens=max_tokens)
-    except Exception as e:
-        print(f"OpenRouter failed: {e}")
-
-    try:
-        print("Using DeepSeek")
-        return _tracked("deepseek", "deepseek-chat", prompt, deepseek_generate, stage, max_tokens=max_tokens)
-    except Exception as e:
-        print(f"DeepSeek failed: {e}")
-
-    try:
-        print("Using Groq (fallback — may be rate limited)")
+        print("Using Groq (fallback)")
         return _tracked("groq", "llama-3.3-70b", prompt, groq_generate, stage, max_tokens=max_tokens)
     except Exception as e:
         print(f"Groq failed: {e}")
 
     try:
-        print("Using Cerebras ($1 left — last resort)")
+        print("Using Cerebras (last resort)")
         return _tracked("cerebras", "gpt-oss-120b", prompt, cerebras_generate, stage, max_tokens=max_tokens)
     except Exception as e:
         print(f"Cerebras failed: {e}")
 
     try:
-        print("Using Ollama (final fallback)")
+        print("Using Ollama (offline fallback)")
         return _tracked("ollama", "local", prompt, ollama_generate, stage, max_tokens=max_tokens)
     except Exception as e:
         print(f"Ollama failed: {e}")
