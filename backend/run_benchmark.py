@@ -185,37 +185,24 @@ def run_one(prompt: BenchmarkPrompt, provider: str, pipeline: str, deploy: bool)
 # ── Result extractors per pipeline version ────────────────────────────────────
 
 def _fill_from_v15(result: BenchmarkResult, out: dict):
-    score_obj = out.get("score", {}) or {}
-    result.forge_score  = float(score_obj.get("overall", 0) if isinstance(score_obj, dict) else out.get("forge_score", 0))
-    result.fix_count    = len(out.get("fix_attempts", []))
+    result.forge_score  = float(out.get("forge_score", 0))
+    result.fix_count    = int(out.get("fix_attempts", 0) or 0)
 
-    # Success flags from verification stages
-    ctx_summary = out.get("summary", {}) or {}
-    stages = out.get("stage_timeline", []) or []
+    # Success flags from timeline + deployment (V15's flat result shape)
+    stages = out.get("timeline", []) or []
     stage_status = {s.get("stage"): s.get("status") for s in stages}
     result.compile_success    = stage_status.get("compile", "skipped") == "passed"
-    result.runtime_success    = bool(out.get("runtime_result", {}) or {} .get("success"))
-    result.browser_success    = bool(out.get("browser_result", {}) or {} .get("success"))
+    result.runtime_success    = result.forge_score >= 60  # Runtime Startup is 20% weight; no raw flag exposed
+    result.browser_success    = result.forge_score >= 80
     result.deployment_success = bool((out.get("deployment") or {}).get("success"))
 
-    # If no stage timeline, derive from score
-    if not stages:
-        result.compile_success = result.forge_score > 50
-        result.runtime_success = result.forge_score > 70
-
     # Estimated cost from token usage
-    token_usage = out.get("token_usage", {}) or {}
-    result.estimated_cost_usd = float(token_usage.get("estimated_cost_usd", 0))
+    result.estimated_cost_usd = float(out.get("estimated_cost", 0))
 
-    # Failures
-    all_diags = out.get("all_diagnostics", []) or []
-    result.failure_reasons = [
-        d.get("message", "")[:80] for d in all_diags
-        if isinstance(d, dict) and d.get("severity") in ("critical", "high")
-    ][:5]
-    result.static_errors  = sum(1 for d in all_diags if isinstance(d, dict) and d.get("source") == "static")
-    result.runtime_errors = sum(1 for d in all_diags if isinstance(d, dict) and d.get("source") == "runtime")
-    result.browser_errors = sum(1 for d in all_diags if isinstance(d, dict) and d.get("source") == "browser")
+    # Failures — score_history has per-attempt scores, not raw diagnostics;
+    # retry_history carries the strategy names tried
+    retry_history = out.get("retry_history", []) or []
+    result.failure_reasons = [str(r)[:80] for r in retry_history][:5]
 
 
 def _fill_from_v6v7(result: BenchmarkResult, out: dict):

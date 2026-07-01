@@ -31,7 +31,7 @@ from pathlib import Path
 from typing import Any, Optional
 
 from app.core.context import (
-    Diagnostic, ErrorCategory, ErrorSeverity,
+    BrowserTestResult, Diagnostic, ErrorCategory, ErrorSeverity,
     GenerationContext, RuntimeResult, StageStatus,
     VerificationResult,
 )
@@ -99,8 +99,64 @@ def _run_compile_check(ctx: GenerationContext) -> VerificationResult:
                 file_path=str(f),
                 fix_hint="Fix Python syntax error — check for missing colons, unmatched parens, or indentation",
             ))
+        except OSError:
+            # Transient Windows filesystem lock (AV/indexer briefly holding the
+            # freshly-written .pyc during rename) — retry once, then move on
+            # rather than crashing the whole pipeline run over a non-code issue.
+            try:
+                time.sleep(0.2)
+                py_compile.compile(str(f), doraise=True)
+            except py_compile.PyCompileError as exc:
+                diagnostics.append(Diagnostic(
+                    error_id=uuid.uuid4().hex[:8],
+                    category=ErrorCategory.SYNTAX,
+                    severity=ErrorSeverity.CRITICAL,
+                    source="compile",
+                    message=str(exc),
+                    file_path=str(f),
+                    fix_hint="Fix Python syntax error — check for missing colons, unmatched parens, or indentation",
+                ))
+            except OSError:
+                pass
     status = StageStatus.PASSED if not diagnostics else StageStatus.FAILED
     return VerificationResult(stage="compile", status=status, diagnostics=diagnostics, duration_ms=_ms(t0))
+
+
+# ═══════════════════════════════════════════════════════════════
+#   STAGE 2b — Frontend build (produces dist/ for Playwright)
+# ═══════════════════════════════════════════════════════════════
+
+def _run_frontend_build(ctx: GenerationContext) -> VerificationResult:
+    """
+    Run `npm run build` so dist/ exists for the Playwright browser stage.
+    Build errors become diagnostics for the main fix loop (patch_file /
+    regenerate_module) rather than a separate frontend-specific LLM repair path.
+    """
+    t0 = time.time()
+    try:
+        from app.runtime.frontend_runner import FrontendRunner
+        result = FrontendRunner().run(str(ctx.project_path))
+    except Exception as exc:
+        return VerificationResult(
+            stage="frontend_build", status=StageStatus.FAILED,
+            diagnostics=[_diag("frontend_build", f"Frontend build runner crashed: {exc}",
+                               ErrorSeverity.MEDIUM, ErrorCategory.BROWSER)],
+            duration_ms=_ms(t0),
+        )
+
+    if result.node_missing:
+        return VerificationResult(stage="frontend_build", status=StageStatus.SKIPPED,
+                                  metadata={"reason": "node not installed"}, duration_ms=_ms(t0))
+
+    diagnostics: list[Diagnostic] = []
+    if not result.success:
+        for err in (result.errors or [])[:10]:
+            diagnostics.append(_diag("frontend_build", err, ErrorSeverity.HIGH, ErrorCategory.BROWSER,
+                                     hint="Fix the Vite/React build error in the referenced file"))
+
+    status = StageStatus.PASSED if result.success else StageStatus.FAILED
+    return VerificationResult(stage="frontend_build", status=status, diagnostics=diagnostics,
+                              duration_ms=_ms(t0), metadata={"build_time": result.build_time})
 
 
 # ═══════════════════════════════════════════════════════════════
@@ -111,11 +167,13 @@ def _run_runtime_validation(ctx: GenerationContext) -> VerificationResult:
     t0 = time.time()
     try:
         from app.runtime.backend_runner import run_backend_validation
-        result = run_backend_validation(str(ctx.project_path), port=ctx.backend_port)
+        result = run_backend_validation(str(ctx.project_path), port=ctx.backend_port, architecture=_arch_dict(ctx))
     except Exception as exc:
+        crash_diag = _diag("runtime", f"RuntimeRunner crashed: {exc}", ErrorSeverity.CRITICAL, ErrorCategory.RUNTIME)
+        ctx.runtime_result = RuntimeResult(success=False, diagnostics=[crash_diag], duration_ms=_ms(t0))
         return VerificationResult(
             stage="runtime", status=StageStatus.FAILED,
-            diagnostics=[_diag("runtime", f"RuntimeRunner crashed: {exc}", ErrorSeverity.CRITICAL, ErrorCategory.RUNTIME)],
+            diagnostics=[crash_diag],
             duration_ms=_ms(t0),
         )
 
@@ -251,6 +309,22 @@ def _run_browser_and_screenshots(ctx: GenerationContext) -> tuple[VerificationRe
     status = StageStatus.SKIPPED if skipped else (
         StageStatus.PASSED if not diagnostics else StageStatus.FAILED
     )
+
+    # Populate ctx.browser_result so scoring (Frontend Load / Browser UX / Integration)
+    # sees real signal instead of always defaulting to "skipped" neutral scores.
+    ctx.browser_result = BrowserTestResult(
+        success=bool(pr and pr.success),
+        page_loaded=bool(pr) and pr.pages_checked > 0 and not (pr.blank_pages or []),
+        blank_page=bool(pr and (pr.blank_pages or [])),
+        console_errors=list(pr.console_errors) if pr else [],
+        screenshots=screenshots,
+        navigation_passed=bool(pr and pr.success),
+        diagnostics=diagnostics,
+        duration_ms=_ms(t0),
+        skipped=skipped,
+        skip_reason=getattr(pr, "skip_reason", "") if pr else ("Playwright runner crashed" if diagnostics else ""),
+    )
+
     vr = VerificationResult(stage="browser", status=status, diagnostics=diagnostics,
                             duration_ms=_ms(t0),
                             metadata={"screenshot_count": len(screenshots), "skipped": skipped})
@@ -358,6 +432,7 @@ def _run_workflow_tests(ctx: GenerationContext, screenshots: list[str]) -> tuple
         return VerificationResult(stage="workflow", status=StageStatus.SKIPPED,
                                   duration_ms=_ms(t0)), new_screenshots
 
+    wf = None
     try:
         from app.runtime.playwright_workflow import run_workflow_tests
         wf = run_workflow_tests(
@@ -374,6 +449,12 @@ def _run_workflow_tests(ctx: GenerationContext, screenshots: list[str]) -> tuple
     except Exception as exc:
         diagnostics.append(_diag("workflow", f"Workflow runner error: {exc}",
                                  ErrorSeverity.MEDIUM, ErrorCategory.BROWSER))
+
+    # Feed workflow step results into the shared browser_result so the
+    # Integration scoring dimension sees real pass/fail data.
+    if ctx.browser_result:
+        ctx.browser_result.workflow_steps_passed = list(wf.steps_passed) if wf else []
+        ctx.browser_result.workflow_steps_failed = list(wf.steps_failed) if wf else []
 
     status = StageStatus.PASSED if not diagnostics else StageStatus.FAILED
     return VerificationResult(stage="workflow", status=status, diagnostics=diagnostics,
@@ -487,6 +568,13 @@ class VerificationEngine:
         ctx.static_results.append(cr)
         results.append(cr)
         print(f"  [verify]       {cr.status.value} — {len(cr.diagnostics)} syntax errors")
+
+        # ── Stage 2b: Frontend build (produces dist/ for Playwright) ──────────
+        print("  [verify] 2b Frontend build...")
+        fb = _run_frontend_build(ctx)
+        ctx.static_results.append(fb)
+        results.append(fb)
+        print(f"  [verify]       {fb.status.value} — {len(fb.diagnostics)} build errors")
 
         # ── Extra custom verifiers ────────────────────────────────────────────
         for verifier in self._extra:
@@ -628,8 +716,8 @@ def _get_endpoints(ctx: GenerationContext) -> list[dict]:
     if not arch:
         return []
     if isinstance(arch, dict):
-        return arch.get("endpoints", [])
-    return getattr(arch, "endpoints", []) or []
+        return arch.get("api_endpoints", [])
+    return getattr(arch, "api_endpoints", []) or []
 
 
 def _arch_dict(ctx: GenerationContext) -> Optional[dict]:

@@ -34,7 +34,7 @@ def _build_fix_prompt(
     improve: bool = False,
 ) -> str:
     """Build a targeted fix prompt for a single DiagnosticGroup."""
-    from app.prompts.shared_contract import SHARED_CONTRACT
+    from app.prompts.shared_contract import FIXER_CONTRACT as SHARED_CONTRACT
 
     errors_txt = "\n".join(
         f"  [{d.severity.value.upper()}] {d.category.value}: {d.message}"
@@ -242,7 +242,6 @@ def _regenerate_architecture(ctx: GenerationContext, cfg: StrategyConfig) -> lis
         result = generate_project_v6(
             ctx.idea,
             provider=cfg.provider,
-            output_path=str(ctx.project_path.parent),
         )
         # If successful, update context with new generation outputs
         if result.get("project_path"):

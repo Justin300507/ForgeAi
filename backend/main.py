@@ -124,8 +124,38 @@ class JobRequest(BaseModel):
     frontend_target: str = "web"
 
 
+def _normalize_v15_result(result: dict) -> dict:
+    """
+    Bridge V15Pipeline's flat result shape into the report/generation nested
+    shape the job-status code below expects (matching V14's structure).
+    V15 has no GitHub-push step yet, so github_url is always None.
+    """
+    deployment = result.get("deployment") or {}
+    deployed = bool(result.get("deployed"))
+    if result.get("status") == "error":
+        mapped_status = "failed"
+    elif deployed:
+        mapped_status = "deployed"
+    else:
+        mapped_status = "generated_only"
+
+    report = {
+        "status": mapped_status,
+        "project_name": result.get("project_name"),
+        "forge_score": result.get("forge_score"),
+        "backend_url": deployment.get("backend_url") or result.get("backend_url"),
+        "frontend_url": deployment.get("frontend_url") or result.get("frontend_url"),
+        "github_url": None,
+    }
+    return {
+        **result,
+        "report": report,
+        "generation": {"zip_path": (result.get("v6_result") or {}).get("zip_path")},
+    }
+
+
 def _run_job(job_id: str, req: JobRequest):
-    """Runs the V14 pipeline in a background thread."""
+    """Runs the V14 (default) or V15 (FORGE_PIPELINE_VERSION=v15) pipeline in a background thread."""
     import os
     from app.services.v14_orchestrator import generate_project_v14
 
@@ -155,13 +185,29 @@ def _run_job(job_id: str, req: JobRequest):
         print(f"[credentials] lookup failed: {_ce}")
 
     try:
-        result = generate_project_v14(
-            idea=req.idea,
-            provider=req.provider,
-            deploy_to=req.deploy_to,
-            frontend_target=req.frontend_target,
-        )
+        pipeline_version = os.environ.get("FORGE_PIPELINE_VERSION", "v14")
+        if pipeline_version == "v15":
+            from app.services.v15_orchestrator import generate_project_v15
+            result = generate_project_v15(
+                idea=req.idea,
+                provider=req.provider,
+                deploy=req.deploy_to != "none",
+                deploy_to=req.deploy_to if req.deploy_to != "none" else "both",
+                job_id=job_id,
+            )
+            result = _normalize_v15_result(result)
+        else:
+            result = generate_project_v14(
+                idea=req.idea,
+                provider=req.provider,
+                deploy_to=req.deploy_to,
+                frontend_target=req.frontend_target,
+            )
         report = result.get("report", {})
+        # V15 can report failure as a normal return (no exception raised) — treat
+        # that the same as the except-block failure path below.
+        if report.get("status") == "failed" and pipeline_version == "v15":
+            raise RuntimeError(result.get("error") or "V15 generation failed")
         # Only mark done if not already cancelled by user
         if not store["cancel_event"].is_set():
             store["status"] = "done"

@@ -311,3 +311,39 @@ class BackendRunner:
             total_endpoints=total_endpoints,
             endpoint_pass_rate=0.0,
         )
+
+
+def run_backend_validation(project_path: str, port: int = 8001, architecture: dict | None = None) -> dict:
+    """
+    Dict-returning adapter over BackendRunner for callers (V15's VerificationEngine)
+    that expect a plain dict rather than the RuntimeResult dataclass.
+    """
+    from app.runtime.error_parser import parse_runtime_error
+
+    rr = BackendRunner().run(project_path, architecture=architecture, port=port)
+
+    parsed_error: dict = {}
+    if not rr.success and rr.stderr:
+        try:
+            parsed_error = parse_runtime_error(rr.stderr) or {}
+        except Exception:
+            parsed_error = {}
+
+    endpoint_results: dict = {}
+    if rr.total_endpoints:
+        failed = {(i.get("method", "GET"), i.get("path", "")) for i in (rr.behavioral_issues or [])}
+        for method, path in failed:
+            endpoint_results[f"{method} {path}"] = {"status_code": 500}
+        for i in range(max(0, rr.total_endpoints - len(failed))):
+            endpoint_results[f"_passed_{i}"] = {"status_code": 200}
+
+    return {
+        "success": rr.success,
+        "started": rr.success or bool(rr.stdout),
+        "health_passed": rr.success,
+        "stderr": rr.stderr,
+        "stdout": rr.stdout,
+        "parsed_error": parsed_error,
+        "crash_reason": parsed_error.get("type") if parsed_error else None,
+        "endpoint_results": endpoint_results,
+    }

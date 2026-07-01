@@ -297,7 +297,9 @@ class V15Pipeline:
             from app.services.v6_orchestrator import generate_project_v6
             kwargs: dict[str, Any] = {"idea": idea, "provider": provider}
             if output_dir:
-                kwargs["output_path"] = output_dir
+                # generate_project_v6 has no output-path override — it always
+                # writes under generated_projects/<project_name>.
+                print(f"[V15] output_dir requested but not supported by v6_orchestrator — ignoring: {output_dir}")
             if arch_template_injection:
                 kwargs["arch_template"] = arch_template_injection
 
