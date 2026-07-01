@@ -56,6 +56,18 @@ def validate_duplicate_class_definitions(project_path, errors):
             if layers == {"models", "schemas"}:
                 continue
 
+            # The deterministic patcher always injects a known-good, self-contained
+            # app/routes/auth_routes.py that defines its own inline request/response
+            # classes (LoginRequest, SignupRequest, ...) and never imports them from
+            # app/schemas/ — see _AUTH_DEFINED_CLASSES in deterministic_patcher.py.
+            # An LLM-generated app/schemas/auth.py defining a class with the same
+            # name is not a real conflict: neither file ever imports the other's
+            # version.
+            if "app/routes/auth_routes.py" in locations:
+                from app.services.deterministic_patcher import AUTH_DEFINED_CLASSES
+                if class_name in AUTH_DEFINED_CLASSES:
+                    continue
+
             errors.append(
                 f"Duplicate class definition: '{class_name}' is defined "
                 f"in multiple files ({', '.join(locations)}) — this "

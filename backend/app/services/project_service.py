@@ -11,6 +11,7 @@ from app.services.architect_service import generate_architecture
 from app.services.backend_service import generate_backend
 from app.services.frontend_service import generate_frontend
 from app.services.file_writer_service import write_files
+from app.services.frontend_scaffold_service import ensure_app_jsx
 from app.services.zip_service import create_zip
 from app.services.metadata_service import save_metadata
 from app.services.validator_service import validate_project
@@ -401,6 +402,8 @@ def generate_project(idea: str, provider: str = "auto", use_tournament: bool = F
     # ------------------------------------------------------------------
     project_path = write_files(plan["project_name"], all_files)
     initialize_git(project_path)
+    if ensure_app_jsx(project_path):
+        print("  [scaffold] Synthesized missing src/App.jsx from existing pages")
 
     total_time = round(time.time() - start, 2)
     metadata_path = save_metadata(project_path, plan, architecture, provider, total_time)
@@ -728,6 +731,8 @@ def generate_project(idea: str, provider: str = "auto", use_tournament: bool = F
             all_files = backend_response.get("files", []) + frontend_response.get("files", [])
             project_path = write_files(plan["project_name"], all_files)
             print(f"Regenerated {len(all_files)} files")
+            if ensure_app_jsx(project_path):
+                print("  [scaffold] Synthesized missing src/App.jsx from existing pages")
 
             # One more validation + runtime pass
             validation = validate_project(project_path)

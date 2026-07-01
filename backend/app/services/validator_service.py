@@ -72,25 +72,41 @@ def validate_backend_imports(project_path, errors):
             except Exception:
                 continue
 
+            # Generalized over any depth ("app.config", "app.services.foo",
+            # "app.services.foo.bar") instead of a fixed folder whitelist — a
+            # single-segment top-level import like "from app.config import
+            # settings" previously matched no whitelisted folder and silently
+            # bypassed every static check, only surfacing as a runtime
+            # ModuleNotFoundError.
             imports = re.findall(
-                r"^from\s+app\.(services|models|routes|schemas|utils|core)\.(\w+)\s+import",
+                r"^from\s+app\.([\w.]+)\s+import",
                 content,
                 re.MULTILINE,
             )
 
-            for folder, module in imports:
+            for dotted in imports:
+
+                segments = dotted.split(".")
 
                 expected = os.path.join(
                     project_path,
                     "app",
-                    folder,
-                    f"{module}.py"
+                    *segments[:-1],
+                    f"{segments[-1]}.py"
                 )
 
-                if not os.path.exists(expected):
+                if os.path.exists(expected):
+                    continue
 
-                    errors.append(
-    f"Missing backend import target: app/{folder}/{module}.py"
+                package_init = os.path.join(
+                    project_path, "app", *segments, "__init__.py"
+                )
+
+                if os.path.exists(package_init):
+                    continue
+
+                errors.append(
+    f"Missing backend import target: app/{'/'.join(segments)}.py"
 )
 
 def validate_imported_symbols(

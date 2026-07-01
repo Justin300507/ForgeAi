@@ -7,6 +7,7 @@ Fixes:
   - pool_pre_ping=True for PostgreSQL (prevents dead connection errors)
   - Always exports get_db, Base, SessionLocal, engine (deterministic API)
 """
+import re
 from pathlib import Path
 
 _DATABASE_PY = '''\
@@ -346,3 +347,215 @@ def patch_model_field_mismatches(project_path: str) -> int:
             print(f"  [field_patcher] Skipped {rf.name}: {exc}")
 
     return patched
+
+
+# Column-name pattern → (SQLAlchemy type, default clause, extra sqlalchemy
+# import needed for the default). Checked in order (first match wins).
+# nullable=False + a default is used (not nullable=True) for two reasons:
+# it satisfies schema_model_validator's separate "required field on a
+# nullable column" check as well as this file's own "field doesn't exist"
+# check, and it matches this project's own documented convention for
+# exactly this pattern (see shared_contract.py: "RIGHT: created_at =
+# Column(DateTime, server_default=func.now(), nullable=False)").
+_COLUMN_TYPE_RULES: list[tuple] = [
+    (re.compile(r"^(is_|has_)"), "Boolean", "default=False", None),
+    (re.compile(r"(_at|_date|_on|deadline|expires)$"), "DateTime", "server_default=func.now()", "func"),
+    (re.compile(r"_id$"), "Integer", "default=0", None),
+    (re.compile(r"(count|qty|quantity|amount|_num|number|order|rank|priority)$"), "Integer", "default=0", None),
+]
+
+
+def _infer_column_spec(field_name: str) -> tuple:
+    """Returns (sql_type, default_clause, extra_import_or_None)."""
+    for pattern, sql_type, default_clause, extra_import in _COLUMN_TYPE_RULES:
+        if pattern.search(field_name):
+            return sql_type, default_clause, extra_import
+    return "String", "server_default=''", None
+
+
+def patch_add_missing_model_columns(project_path: str) -> int:
+    """
+    Route constructors sometimes pass a field the model genuinely has no
+    column for (not a misnaming — patch_model_field_mismatches already
+    handles renames via _FIELD_SYNONYMS). Left alone, this crashes every
+    request that hits the constructor with a TypeError, and depending on the
+    runtime-fix LLM call to add the column reliably is a single point of
+    failure. This deterministically adds a nullable column instead.
+
+    Must run AFTER patch_model_field_mismatches — any field still not on the
+    model at that point has no synonym and is a genuine gap, not a rename.
+    """
+    project = Path(project_path)
+    models_dir = project / "app" / "models"
+    routes_dir = project / "app" / "routes"
+
+    if not models_dir.exists() or not routes_dir.exists():
+        return 0
+
+    class_re = re.compile(r"^class\s+(\w+)\s*\(", re.MULTILINE)
+    col_re = re.compile(r"^\s{4}(\w+)\s*=\s*Column\(", re.MULTILINE)
+
+    # ClassName -> (file path, frozenset(existing columns))
+    model_info: dict[str, tuple] = {}
+    for mf in models_dir.glob("*.py"):
+        if mf.name == "__init__.py":
+            continue
+        try:
+            src = mf.read_text(encoding="utf-8", errors="replace")
+            for cls_name in class_re.findall(src):
+                if cls_name in ("Base", "Config", "Meta"):
+                    continue
+                cols = set(col_re.findall(src)) | {"id"}
+                model_info[cls_name] = (mf, frozenset(cols))
+        except Exception:
+            pass
+
+    if not model_info:
+        return 0
+
+    # ClassName -> {missing field names}
+    missing_by_class: dict[str, set] = {}
+    for rf in routes_dir.glob("*.py"):
+        try:
+            src = rf.read_text(encoding="utf-8", errors="replace")
+        except Exception:
+            continue
+
+        for cls_name, (_mf, valid_cols) in model_info.items():
+            if cls_name not in src:
+                continue
+
+            for m in re.finditer(rf"\b{cls_name}\(([^)]+)\)", src, flags=re.DOTALL):
+                for part in re.split(r",\s*\n?", m.group(1)):
+                    kv = part.strip()
+                    if "=" not in kv:
+                        continue
+                    field = kv.split("=", 1)[0].strip()
+                    if not field or field.startswith("#") or not field.isidentifier():
+                        continue
+                    if field in valid_cols:
+                        continue
+                    missing_by_class.setdefault(cls_name, set()).add(field)
+
+    # A field required by a response_model schema but entirely absent from
+    # the model is a guaranteed ResponseValidationError at request time (not
+    # a constructor TypeError — FastAPI can't serialize a field that doesn't
+    # exist on the ORM instance). Scoped to response_model schemas only:
+    # Create/Update input schemas legitimately have fields with no column
+    # (e.g. `password` on a UserCreate).
+    schemas_dir = project / "app" / "schemas"
+    if schemas_dir.exists():
+        import ast as _ast
+        from app.services.schema_model_validator import (
+            _is_optional_annotation, _collect_response_model_schemas,
+        )
+
+        response_model_schemas = _collect_response_model_schemas(str(project))
+
+        def _is_list_annotation(annotation) -> bool:
+            # List[...]-shaped fields (e.g. completions: List[HabitCompletionRead])
+            # represent a relationship, not a scalar column — a synthesized
+            # scalar default (e.g. "") fails Pydantic's list validation just
+            # as badly as the missing field did. Leave these for the LLM fix
+            # loop, which can add a real relationship() or hybrid property.
+            base = annotation.value if isinstance(annotation, _ast.Subscript) else None
+            if isinstance(base, _ast.Name) and base.id in ("List", "list"):
+                return True
+            if isinstance(base, _ast.Attribute) and base.attr in ("List", "list"):
+                return True
+            return False
+
+        for sf in schemas_dir.glob("*.py"):
+            if sf.name == "__init__.py":
+                continue
+            try:
+                src = sf.read_text(encoding="utf-8", errors="replace")
+                tree = _ast.parse(src)
+            except Exception:
+                continue
+
+            for node in tree.body:
+                if not isinstance(node, _ast.ClassDef):
+                    continue
+                if node.name not in response_model_schemas:
+                    continue
+
+                # Match this schema to a model by the same prefix convention
+                # used in schema_model_validator.py (TaskRead -> Task).
+                cls_name = next(
+                    (m for m in model_info if node.name.lower().startswith(m.lower())),
+                    None,
+                )
+                if not cls_name:
+                    continue
+                _mf, valid_cols = model_info[cls_name]
+
+                for child in node.body:
+                    if not isinstance(child, _ast.AnnAssign):
+                        continue
+                    if not isinstance(child.target, _ast.Name):
+                        continue
+                    field = child.target.id
+                    if field in valid_cols:
+                        continue
+                    if _is_optional_annotation(child.annotation):
+                        continue
+                    if _is_list_annotation(child.annotation):
+                        continue
+                    missing_by_class.setdefault(cls_name, set()).add(field)
+
+    patched_files = set()
+
+    for cls_name, fields in missing_by_class.items():
+        mf, valid_cols = model_info[cls_name]
+        try:
+            src = mf.read_text(encoding="utf-8", errors="replace")
+        except Exception:
+            continue
+        original = src
+
+        # Bound this class's body: from "class ClassName(" to the next
+        # top-level "class " (or EOF).
+        start_m = re.search(rf"^class\s+{cls_name}\s*\(", src, re.MULTILINE)
+        if not start_m:
+            continue
+        next_class_m = re.search(r"^class\s+\w+\s*\(", src[start_m.end():], re.MULTILINE)
+        body_end = start_m.end() + next_class_m.start() if next_class_m else len(src)
+        class_body = src[start_m.end():body_end]
+
+        # Insert after the last existing "    field = Column(...)" line in
+        # this class; fall back to right after the class header.
+        col_matches = list(re.finditer(r"^\s{4}\w+\s*=\s*Column\([^\n]*\)\n", class_body, re.MULTILINE))
+        insert_at = (
+            start_m.end() + col_matches[-1].end() if col_matches
+            else src.index("\n", start_m.end()) + 1
+        )
+
+        needed_types = set()
+        new_lines = []
+        for field in sorted(fields):
+            sql_type, default_clause, extra_import = _infer_column_spec(field)
+            needed_types.add(sql_type)
+            if extra_import:
+                needed_types.add(extra_import)
+            new_lines.append(f"    {field} = Column({sql_type}, {default_clause}, nullable=False)\n")
+
+        src = src[:insert_at] + "".join(new_lines) + src[insert_at:]
+
+        # Ensure the inferred types are imported from sqlalchemy.
+        import_m = re.search(r"^from sqlalchemy import ([^\n]+)$", src, re.MULTILINE)
+        if import_m:
+            existing = {n.strip() for n in import_m.group(1).split(",")}
+            missing_types = needed_types - existing
+            if missing_types:
+                new_import_list = import_m.group(1).rstrip() + ", " + ", ".join(sorted(missing_types))
+                src = src[:import_m.start(1)] + new_import_list + src[import_m.end(1):]
+        else:
+            src = f"from sqlalchemy import Column, {', '.join(sorted(needed_types))}\n" + src
+
+        if src != original:
+            mf.write_text(src, encoding="utf-8")
+            patched_files.add(mf.name)
+            print(f"  [field_patcher] Added missing column(s) {sorted(fields)} to {cls_name} in {mf.name}")
+
+    return len(patched_files)

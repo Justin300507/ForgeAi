@@ -23,6 +23,7 @@ from app.services.tech_lead_service import run_tech_lead
 from app.services.architect_service import generate_architecture
 from app.services.frontend_service import generate_frontend
 from app.services.file_writer_service import write_files
+from app.services.frontend_scaffold_service import ensure_app_jsx
 from app.services.validator_service import validate_project
 from app.services.fixer_service import generate_fix
 from app.services.missing_file_service import generate_missing_file
@@ -253,11 +254,16 @@ def generate_project_v6(
     # ------------------------------------------------------------------
     print("\n=== DETERMINISTIC PATCHER ===")
     run_deterministic_patches(project_path)
-    from app.services.database_patcher import patch_database_py, patch_model_field_mismatches
+    from app.services.database_patcher import (
+        patch_database_py, patch_model_field_mismatches, patch_add_missing_model_columns,
+    )
     patch_database_py(project_path)
     _n_field_fixes = patch_model_field_mismatches(project_path)
     if _n_field_fixes:
         print(f"  [field_patcher] Fixed model-field mismatches in {_n_field_fixes} route file(s)")
+    patch_add_missing_model_columns(project_path)
+    if ensure_app_jsx(project_path):
+        print("  [scaffold] Synthesized missing src/App.jsx from existing pages")
 
     total_time_so_far = round(time.time() - start, 2)
     metadata_path = save_metadata(project_path, plan, architecture, provider, total_time_so_far)
@@ -640,9 +646,13 @@ def generate_project_v6(
 
                 # Stagnation guard: if failure signature is identical to last attempt,
                 # further LLM calls will produce the same broken fix — stop early.
+                # .get("journey", {}) only substitutes {} when the key is absent —
+                # when the runner completes but never reaches the CRUD journey (e.g.
+                # health check failed first), "journey" is present and explicitly
+                # None, so .get(..., {}) still returns None and crashes on .get("steps").
                 _rt_sig = frozenset(
                     (s.get("name", ""), s.get("passed", False), str(s.get("detail", "")))
-                    for s in runtime_result.get("journey", {}).get("steps", [])
+                    for s in (runtime_result.get("journey") or {}).get("steps", [])
                 )
                 if r_attempt > 0 and _rt_sig == _last_rt_sig:
                     print("  [runtime fix] Failure signature unchanged — stopping retries")
@@ -658,6 +668,7 @@ def generate_project_v6(
                 # missing schema stubs, broken bcrypt, etc.) before next runtime check
                 run_deterministic_patches(project_path)
                 patch_model_field_mismatches(project_path)
+                patch_add_missing_model_columns(project_path)
                 # Re-inject database.py — the LLM fix may have overwritten it
                 patch_database_py(project_path)
                 # Delete stale SQLite db + WAL files so the next uvicorn process
@@ -853,9 +864,14 @@ def repair_project(
     # Deterministic patches first
     print("\n=== DETERMINISTIC PATCHER ===")
     run_deterministic_patches(project_path)
-    from app.services.database_patcher import patch_database_py, patch_model_field_mismatches
+    from app.services.database_patcher import (
+        patch_database_py, patch_model_field_mismatches, patch_add_missing_model_columns,
+    )
     patch_database_py(project_path)
     patch_model_field_mismatches(project_path)
+    patch_add_missing_model_columns(project_path)
+    if ensure_app_jsx(project_path):
+        print("  [scaffold] Synthesized missing src/App.jsx from existing pages")
 
     # Validation fix loop
     print("\n=== VALIDATION LOOP (REPAIR) ===")

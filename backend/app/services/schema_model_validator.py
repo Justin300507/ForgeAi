@@ -1,5 +1,37 @@
 import ast
 import os
+import re
+
+
+_RESPONSE_MODEL_RE = re.compile(
+    r"response_model\s*=\s*(?:List\[|list\[)?(\w+)\]?"
+)
+
+
+def _collect_response_model_schemas(project_path):
+    """Schema class names actually used as `response_model=` in a route —
+    only these are serialized directly from an ORM instance, so only these
+    can raise ResponseValidationError for a field the model lacks entirely.
+    Create/Update input schemas routinely have fields with no matching
+    column (e.g. `password` on a UserCreate) and must not be flagged."""
+
+    names = set()
+    routes_dir = os.path.join(project_path, "app", "routes")
+
+    if not os.path.isdir(routes_dir):
+        return names
+
+    for file in os.listdir(routes_dir):
+        if not file.endswith(".py"):
+            continue
+        try:
+            with open(os.path.join(routes_dir, file), "r", encoding="utf-8") as f:
+                content = f.read()
+        except Exception:
+            continue
+        names.update(_RESPONSE_MODEL_RE.findall(content))
+
+    return names
 
 
 def _is_optional_annotation(annotation):
@@ -147,6 +179,8 @@ def validate_schema_model_consistency(
                         "fields": fields
                     }
 
+    response_model_schemas = _collect_response_model_schemas(project_path)
+
     for model_name, model_fields in models.items():
 
         for schema_name, schema_info in schemas.items():
@@ -173,3 +207,23 @@ def validate_schema_model_consistency(
                         f"Schema mismatch: {schema_file}: "
                         f"{schema_name}.{field} required but model allows NULL"
                     )
+
+            # A field required by a response_model schema but entirely absent
+            # from the model is a guaranteed ResponseValidationError at
+            # request time (FastAPI can't serialize a field that doesn't
+            # exist on the ORM instance) — not just a nullable/required
+            # mismatch. Scoped to response_model schemas only: Create/Update
+            # input schemas legitimately have fields with no column (e.g.
+            # `password` on a UserCreate).
+            if schema_name in response_model_schemas:
+
+                for field, required in schema_fields.items():
+
+                    if required and field not in model_fields:
+
+                        errors.append(
+                            f"Schema mismatch: {schema_file}: "
+                            f"{schema_name}.{field} is required in the response "
+                            f"schema but '{field}' does not exist as a column on "
+                            f"the {model_name} model"
+                        )

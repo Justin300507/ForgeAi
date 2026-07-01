@@ -17,6 +17,16 @@ import re
 from pathlib import Path
 
 
+# Classes always defined inline by the injected app/routes/auth_routes.py
+# template (_AUTH_ROUTES_TEMPLATE below) — never imported from app/schemas/.
+# Shared by _patch_create_missing_schemas (don't stub these over) and
+# duplicate_class_validator (don't flag these as a real conflict).
+AUTH_DEFINED_CLASSES = {
+    "SignupRequest", "LoginRequest", "TokenResponse", "TokenData",
+    "AuthResponse", "RegisterRequest", "RegisterResponse",
+}
+
+
 # ── 0. wrong auth module → app.utils.auth ────────────────────────────────────
 
 # LLMs sometimes invent app.utils.jwt_utils, app.utils.jose, app.utils.security etc.
@@ -1523,10 +1533,7 @@ def _patch_create_missing_schemas(project_path: Path) -> int:
 
     # Classes defined in our injected auth_routes.py — never create stubs for these,
     # as a stub with 'pass' body causes AttributeError when the route accesses .email/.password.
-    _AUTH_DEFINED_CLASSES = {
-        "SignupRequest", "LoginRequest", "TokenResponse", "TokenData",
-        "AuthResponse", "RegisterRequest", "RegisterResponse",
-    }
+    _AUTH_DEFINED_CLASSES = AUTH_DEFINED_CLASSES
 
     created = 0
     for module, needed_classes in schema_imports.items():
