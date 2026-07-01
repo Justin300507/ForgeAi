@@ -2,6 +2,64 @@
 
 import ast
 import os
+import re
+
+
+_FLASK_SQLALCHEMY_IMPORT = re.compile(
+    r"^\s*(?:from\s+flask_sqlalchemy\s+import|import\s+flask_sqlalchemy)\b",
+    re.MULTILINE,
+)
+_FLASK_SQLALCHEMY_INIT = re.compile(
+    r"\b\w+\s*=\s*SQLAlchemy\s*\(",
+)
+_FLASK_MODEL_BASE = re.compile(
+    r"class\s+\w+\s*\(\s*(?:\w+\.)?db\.Model\b",
+)
+
+
+def validate_no_flask_sqlalchemy(project_path, errors):
+    """The project contract requires plain SQLAlchemy (Base = declarative_base()),
+    never Flask-SQLAlchemy (`db = SQLAlchemy()`, `class X(db.Model)`). An LLM
+    occasionally hallucinates the Flask-SQLAlchemy API into a FastAPI project —
+    this crashes at import time (flask_sqlalchemy isn't installed / wrong API)
+    with no static check previously catching it before that runtime failure."""
+
+    for root, _, files in os.walk(project_path):
+
+        for file in files:
+
+            if not file.endswith(".py"):
+                continue
+
+            file_path = os.path.join(root, file)
+
+            try:
+                with open(file_path, "r", encoding="utf-8") as f:
+                    content = f.read()
+            except Exception:
+                continue
+
+            rel = os.path.relpath(file_path, project_path).replace(os.sep, "/")
+
+            if _FLASK_SQLALCHEMY_IMPORT.search(content):
+                errors.append(
+                    f"Flask-SQLAlchemy usage: {rel} imports flask_sqlalchemy — "
+                    f"this project must use plain SQLAlchemy (Base = declarative_base())"
+                )
+                continue
+
+            if _FLASK_SQLALCHEMY_INIT.search(content):
+                errors.append(
+                    f"Flask-SQLAlchemy usage: {rel} calls SQLAlchemy(...) — "
+                    f"this project must use plain SQLAlchemy, not Flask-SQLAlchemy"
+                )
+                continue
+
+            if _FLASK_MODEL_BASE.search(content):
+                errors.append(
+                    f"Flask-SQLAlchemy usage: {rel} defines a class inheriting from "
+                    f"db.Model — models must inherit from Base (app.database.Base)"
+                )
 
 
 def _get_class_bases(file_path):

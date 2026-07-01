@@ -151,7 +151,11 @@ def validate_schema_model_consistency(
 
         for schema_name, schema_info in schemas.items():
 
-            if model_name.lower() not in schema_name.lower():
+            # Schemas are always named as the model name plus a suffix (TaskCreate,
+            # TaskUpdate, ...) per the project's naming contract — require a prefix
+            # match, not a bare substring, or e.g. model "Item" wrongly pairs with
+            # unrelated schemas like "LineItemRead" or "WorkItemBase".
+            if not schema_name.lower().startswith(model_name.lower()):
                 continue
 
             schema_fields = schema_info["fields"]

@@ -34,7 +34,14 @@ def validate_session_management(project_path, errors):
 
                 # Original check: direct SessionLocal() with no close
                 if "SessionLocal()" in func_source:
-                    has_close = ".close()" in func_source or "with " in func_source
+                    # "with SessionLocal()" is the actual auto-closing context-manager
+                    # pattern; a bare "with " anywhere in the function (e.g. "with
+                    # open(...) as f:") is unrelated and previously suppressed real
+                    # leaks whenever the function happened to contain any with-block.
+                    has_close = (
+                        ".close()" in func_source
+                        or "with SessionLocal()" in func_source
+                    )
                     if not has_close:
                         errors.append(
                             f"Session leak risk in "

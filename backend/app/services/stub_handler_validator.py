@@ -43,7 +43,20 @@ def validate_stub_handlers(project_path, errors):
             ):
                 body = body[1:]
 
-            is_stub = len(body) == 1 and isinstance(body[0], ast.Pass)
+            # A docstring-only body (nothing left after stripping it) or an
+            # Ellipsis (`...`) placeholder body fall through and return None
+            # exactly like bare `pass` — all three crash identically against
+            # a declared response_model.
+            is_stub = (
+                len(body) == 0
+                or (len(body) == 1 and isinstance(body[0], ast.Pass))
+                or (
+                    len(body) == 1
+                    and isinstance(body[0], ast.Expr)
+                    and isinstance(body[0].value, ast.Constant)
+                    and body[0].value.value is Ellipsis
+                )
+            )
 
             if not is_stub:
                 continue

@@ -339,13 +339,24 @@ def generate_project_v6(
             m = re.search(r"Missing frontend import target:\s+(\S+)", err)
             if m:
                 imp = m.group(1)
-                name = os.path.basename(imp.replace(".jsx", ""))
-                for subdir in ("components", "pages"):
-                    if subdir in imp:
-                        errors_by_file[f"src/{subdir}/{name}.jsx"].append(err)
-                        break
+                # Preserve the import's own subdirectory (e.g. "./contexts/AuthContext"
+                # -> "src/contexts/AuthContext.jsx") instead of collapsing everything
+                # to a flat components/pages guess — the missing file must be created
+                # at the exact path the bundler will actually resolve.
+                imp_rel = imp
+                while imp_rel.startswith("../") or imp_rel.startswith("./"):
+                    imp_rel = imp_rel[3:] if imp_rel.startswith("../") else imp_rel[2:]
+                imp_rel = imp_rel.replace(".jsx", "").replace(".js", "")
+                if "/" in imp_rel:
+                    errors_by_file[f"src/{imp_rel}.jsx"].append(err)
                 else:
-                    errors_by_file[f"src/{name}.jsx"].append(err)
+                    name = imp_rel
+                    for subdir in ("components", "pages"):
+                        if subdir in imp:
+                            errors_by_file[f"src/{subdir}/{name}.jsx"].append(err)
+                            break
+                    else:
+                        errors_by_file[f"src/{name}.jsx"].append(err)
 
         # Save current contents so we can revert if the fixes make things worse
         _saved_for_revert: dict[str, str] = {}
@@ -357,6 +368,29 @@ def generate_project_v6(
                         _saved_for_revert[_ap] = _fh.read()
                 except Exception:
                     pass
+
+        # app/main.py has no error of its own but is rewritten in-place by the
+        # post-fix patcher batch below (orphan-router wiring, service-stub creation,
+        # etc.) — snapshot it unconditionally so a revert can restore it too.
+        _main_py_path = os.path.join(project_path, "app", "main.py")
+        if os.path.exists(_main_py_path) and _main_py_path not in _saved_for_revert:
+            try:
+                with open(_main_py_path, "r", encoding="utf-8") as _fh:
+                    _saved_for_revert[_main_py_path] = _fh.read()
+            except Exception:
+                pass
+
+        # Full file-path snapshot so a revert can also delete files newly created
+        # during this attempt (by write_fix/generate_missing_file or by the post-fix
+        # patcher batch) — otherwise a "reverted" attempt still leaves orphaned files
+        # (dangling imports, duplicate classes, mis-wired routers) that corrupt the
+        # next fix iteration.
+        _EXCLUDE_DIRS = {"node_modules", ".git", "__pycache__", "venv", ".venv"}
+        _pre_attempt_paths: set[str] = set()
+        for _root, _dirs, _fnames in os.walk(project_path):
+            _dirs[:] = [d for d in _dirs if d not in _EXCLUDE_DIRS]
+            for _fn in _fnames:
+                _pre_attempt_paths.add(os.path.normpath(os.path.join(_root, _fn)))
 
         for filepath, file_errors in errors_by_file.items():
             try:
@@ -468,6 +502,16 @@ def generate_project_v6(
         # Happens when a fallback provider (DeepSeek, Groq) writes partial/wrong code.
         if _new_err_count > _prev_err_count + 1:
             print(f"  [revert] Errors jumped {_prev_err_count}→{_new_err_count} — reverting bad fixes")
+            _post_attempt_paths: set[str] = set()
+            for _root, _dirs, _fnames in os.walk(project_path):
+                _dirs[:] = [d for d in _dirs if d not in _EXCLUDE_DIRS]
+                for _fn in _fnames:
+                    _post_attempt_paths.add(os.path.normpath(os.path.join(_root, _fn)))
+            for _new_path in _post_attempt_paths - _pre_attempt_paths:
+                try:
+                    os.remove(_new_path)
+                except Exception:
+                    pass
             for _ap, _content in _saved_for_revert.items():
                 try:
                     with open(_ap, "w", encoding="utf-8") as _fh:
@@ -851,13 +895,20 @@ def repair_project(
             m = re.search(r"Missing frontend import target:\s+(\S+)", err)
             if m:
                 imp = m.group(1)
-                name = os.path.basename(imp.replace(".jsx", ""))
-                for subdir in ("components", "pages"):
-                    if subdir in imp:
-                        errors_by_file[f"src/{subdir}/{name}.jsx"].append(err)
-                        break
+                imp_rel = imp
+                while imp_rel.startswith("../") or imp_rel.startswith("./"):
+                    imp_rel = imp_rel[3:] if imp_rel.startswith("../") else imp_rel[2:]
+                imp_rel = imp_rel.replace(".jsx", "").replace(".js", "")
+                if "/" in imp_rel:
+                    errors_by_file[f"src/{imp_rel}.jsx"].append(err)
                 else:
-                    errors_by_file[f"src/{name}.jsx"].append(err)
+                    name = imp_rel
+                    for subdir in ("components", "pages"):
+                        if subdir in imp:
+                            errors_by_file[f"src/{subdir}/{name}.jsx"].append(err)
+                            break
+                    else:
+                        errors_by_file[f"src/{name}.jsx"].append(err)
 
         for filepath, file_errors in errors_by_file.items():
             try:

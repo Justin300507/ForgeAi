@@ -60,7 +60,12 @@ def validate_router_exports(
 
         found = False
 
-        for node in ast.walk(tree):
+        # Module-level only (tree.body) — a router variable assigned inside a
+        # nested function is not a module-level export, so `from ... import
+        # {expected_router}` would raise ImportError even though this check
+        # (previously ast.walk, which descends into function bodies) considered
+        # it "found".
+        for node in tree.body:
 
             if isinstance(node, ast.Assign):
 

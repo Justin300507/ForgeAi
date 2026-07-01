@@ -10,7 +10,8 @@ from app.services.architecture_validator import (
     load_metadata
 )
 from app.services.orm_validator import (
-    validate_orm_usage
+    validate_orm_usage,
+    validate_no_flask_sqlalchemy
 )
 from app.services.endpoint_validator import (
     validate_endpoints,
@@ -72,7 +73,7 @@ def validate_backend_imports(project_path, errors):
                 continue
 
             imports = re.findall(
-                r"^from\s+app\.(services|models|routes)\.(\w+)\s+import",
+                r"^from\s+app\.(services|models|routes|schemas|utils|core)\.(\w+)\s+import",
                 content,
                 re.MULTILINE,
             )
@@ -358,40 +359,53 @@ def validate_frontend_imports(project_path, errors):
                     imp.replace(".jsx", "").replace(".js", "")
                 )
 
-                possible_paths.append(
-                    os.path.join(
-                        src_path,
-                        "pages",
-                        f"{filename}.jsx"
-                    )
-                )
+                # An import like "./contexts/AuthContext" specifies an exact
+                # subdirectory — a real bundler resolves it literally, with no
+                # fuzzy fallback. Only fall back to guessing pages/components/
+                # utils/src-root locations for flat imports (e.g. "./AuthContext")
+                # where the LLM may have put the file in a conventional folder
+                # without matching the import path exactly.
+                _imp_rel = imp
+                while _imp_rel.startswith("../") or _imp_rel.startswith("./"):
+                    _imp_rel = _imp_rel[3:] if _imp_rel.startswith("../") else _imp_rel[2:]
+                has_explicit_subdir = "/" in _imp_rel
 
-                possible_paths.append(
-                    os.path.join(
-                        src_path,
-                        "components",
-                        f"{filename}.jsx"
-                    )
-                )
+                if not has_explicit_subdir:
 
-                possible_paths.append(
-                    os.path.join(
-                        src_path,
-                        filename,
-                        "index.jsx"
+                    possible_paths.append(
+                        os.path.join(
+                            src_path,
+                            "pages",
+                            f"{filename}.jsx"
+                        )
                     )
-                )
 
-                # Check src/utils/ — JS utilities provided by templates
-                possible_paths.append(
-                    os.path.join(src_path, "utils", f"{filename}.js")
-                )
-                possible_paths.append(
-                    os.path.join(src_path, "utils", f"{filename}.jsx")
-                )
-                # Check src-root for files generated at the top level
-                possible_paths.append(os.path.join(src_path, f"{filename}.jsx"))
-                possible_paths.append(os.path.join(src_path, f"{filename}.js"))
+                    possible_paths.append(
+                        os.path.join(
+                            src_path,
+                            "components",
+                            f"{filename}.jsx"
+                        )
+                    )
+
+                    possible_paths.append(
+                        os.path.join(
+                            src_path,
+                            filename,
+                            "index.jsx"
+                        )
+                    )
+
+                    # Check src/utils/ — JS utilities provided by templates
+                    possible_paths.append(
+                        os.path.join(src_path, "utils", f"{filename}.js")
+                    )
+                    possible_paths.append(
+                        os.path.join(src_path, "utils", f"{filename}.jsx")
+                    )
+                    # Check src-root for files generated at the top level
+                    possible_paths.append(os.path.join(src_path, f"{filename}.jsx"))
+                    possible_paths.append(os.path.join(src_path, f"{filename}.js"))
 
                 exists = any(
                     os.path.exists(path)
@@ -705,6 +719,10 @@ def validate_project(project_path):
     errors
 )
     validate_orm_usage(
+        project_path,
+        errors
+    )
+    validate_no_flask_sqlalchemy(
         project_path,
         errors
     )

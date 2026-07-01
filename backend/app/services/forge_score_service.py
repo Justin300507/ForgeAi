@@ -18,6 +18,7 @@ def calculate_forge_score(
         "No endpoints found": 8,
         "Database symbol": 8,
         "ORM violation": 10,
+        "Flask-SQLAlchemy usage": 15,
         "Syntax error": 10,
         "Stub handler risk": 8,
         "Self-shadowing recursion risk": 10,
@@ -34,6 +35,7 @@ def calculate_forge_score(
     category_caps = {
         "Schema mismatch": 16,
         "ORM violation": 20,
+        "Flask-SQLAlchemy usage": 20,
         "Undefined symbol": 15,
         "Missing symbol": 15,
         "Database symbol": 16,

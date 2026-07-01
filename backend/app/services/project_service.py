@@ -463,8 +463,18 @@ def generate_project(idea: str, provider: str = "auto", use_tournament: bool = F
             )
             if frontend_match:
                 imp = frontend_match.group(1)
-                # Convert relative import like ../components/Footer -> src/components/Footer.jsx
-                name = os.path.basename(imp.replace(".jsx", ""))
+                # Preserve the import's own subdirectory (e.g. "./contexts/AuthContext"
+                # -> "src/contexts/AuthContext.jsx") instead of collapsing everything to a
+                # flat components/pages guess — the missing file must be created at the
+                # exact path the bundler will actually resolve.
+                imp_rel = imp
+                while imp_rel.startswith("../") or imp_rel.startswith("./"):
+                    imp_rel = imp_rel[3:] if imp_rel.startswith("../") else imp_rel[2:]
+                imp_rel = imp_rel.replace(".jsx", "").replace(".js", "")
+                if "/" in imp_rel:
+                    grouped_errors[f"src/{imp_rel}.jsx"].append(error)
+                    continue
+                name = imp_rel
                 for subdir in ("components", "pages"):
                     if subdir in imp:
                         grouped_errors[f"src/{subdir}/{name}.jsx"].append(error)
