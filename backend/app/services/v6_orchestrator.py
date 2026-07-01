@@ -14,6 +14,7 @@ import traceback
 import re
 import os
 from collections import defaultdict
+from pathlib import Path
 from concurrent.futures import ThreadPoolExecutor
 from typing import Any
 
@@ -323,12 +324,18 @@ def generate_project_v6(
                         os.remove(abs_path)
                     continue
 
-                # Never LLM-fix database.py — patch_database_py() injects a
-                # known-good version after this loop.  LLM fixes cache incorrectly
-                # and overwrite the template with broken versions.
+                # Never LLM-fix patcher-injected files — the patcher owns these
+                # and always injects known-good templates.  A cached LLM fix would
+                # overwrite the template with a potentially broken version.
                 if filepath in ("app/database.py", "app\\database.py"):
                     from app.services.database_patcher import patch_database_py
                     patch_database_py(project_path)
+                    continue
+                if filepath in ("app/routes/auth_routes.py", "app\\routes\\auth_routes.py",
+                                "app/utils/auth.py", "app\\utils\\auth.py"):
+                    from app.services.deterministic_patcher import _patch_auth_routes, _patch_auth_utils
+                    _patch_auth_utils(Path(project_path))
+                    _patch_auth_routes(Path(project_path))
                     continue
 
                 if not os.path.exists(abs_path):

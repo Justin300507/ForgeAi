@@ -60,18 +60,8 @@ def generate_content(
         print("Using Ollama")
         return _tracked("ollama", "local", prompt, ollama_generate, stage, max_tokens=max_tokens)
 
-    # Auto mode: token-aware routing
-    # Groq (free, limited) — only for small tasks (reviews, planner, main.py) <= 4000 tokens
-    # Gemini (₹1000 credits) — primary for all real code generation
-    _GROQ_THRESHOLD = 4000
-
-    if max_tokens <= _GROQ_THRESHOLD:
-        try:
-            print("Using Groq (small task)")
-            return _tracked("groq", "llama-3.3-70b", prompt, groq_generate, stage, max_tokens=max_tokens)
-        except Exception as e:
-            print(f"Groq failed: {e}")
-
+    # Auto mode: Gemini primary for everything (consistent quality, no rate-limit issues)
+    # Groq was used for small tasks but hits 100k TPD limit too often — demoted to last resort
     try:
         print("Using Gemini")
         return _tracked("gemini", "gemini-2.5-flash", prompt, gemini_generate, stage, max_tokens=max_tokens)
@@ -85,16 +75,16 @@ def generate_content(
         print(f"OpenRouter failed: {e}")
 
     try:
-        print("Using OpenAI")
-        return _tracked("openai", "gpt-4o-mini", prompt, openai_generate, stage, max_tokens=max_tokens)
-    except Exception as e:
-        print(f"OpenAI failed: {e}")
-
-    try:
-        print("Using DeepSeek (slow fallback)")
+        print("Using DeepSeek")
         return _tracked("deepseek", "deepseek-chat", prompt, deepseek_generate, stage, max_tokens=max_tokens)
     except Exception as e:
         print(f"DeepSeek failed: {e}")
+
+    try:
+        print("Using Groq (fallback — may be rate limited)")
+        return _tracked("groq", "llama-3.3-70b", prompt, groq_generate, stage, max_tokens=max_tokens)
+    except Exception as e:
+        print(f"Groq failed: {e}")
 
     try:
         print("Using Cerebras ($1 left — last resort)")
