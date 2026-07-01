@@ -2110,6 +2110,148 @@ def _patch_orm_type_in_route_schemas(project_path: Path) -> int:
     return patched
 
 
+# ── Fix: paginated response_model=List[X] mismatch ───────────────────────────
+# LLMs often generate a route that returns {"items": [...], "total": N}
+# but decorates it with response_model=List[TaskResponse]. FastAPI then raises
+# ResponseValidationError: Input should be a valid list.
+# Fix: when a handler returns a dict with "items" key, strip List[] response_model.
+
+def _patch_list_response_model_mismatch(project_path: Path) -> int:
+    routes_dir = project_path / "app" / "routes"
+    if not routes_dir.exists():
+        return 0
+
+    patched = 0
+    for rf in routes_dir.glob("*.py"):
+        if rf.name.startswith("_"):
+            continue
+        try:
+            content = rf.read_text(encoding="utf-8", errors="replace")
+        except Exception:
+            continue
+
+        if "response_model=List[" not in content or '"items"' not in content:
+            continue
+
+        lines = content.split("\n")
+        out = list(lines)
+        changed = False
+        i = 0
+        while i < len(lines):
+            line = lines[i]
+            if re.search(r"@\w+_router\.\w+\(", line) and "response_model=List[" in line:
+                # Find the def line (may be next line or after multi-line decorator)
+                j = i + 1
+                while j < len(lines) and not lines[j].lstrip().startswith("def "):
+                    j += 1
+                # Scan function body for return {"items":
+                k = j + 1
+                found = False
+                while k < len(lines):
+                    kl = lines[k].strip()
+                    if re.match(r"@\w+_router", kl) or kl.startswith("def "):
+                        break
+                    if re.search(r'return\s*\{[^}]*["\']items["\']', kl):
+                        found = True
+                        break
+                    k += 1
+                if found:
+                    new_line = re.sub(r",?\s*response_model\s*=\s*List\[[\w\[\], ]+\]", "", out[i])
+                    if new_line != out[i]:
+                        out[i] = new_line
+                        changed = True
+            i += 1
+
+        if changed:
+            rf.write_text("\n".join(out), encoding="utf-8")
+            patched += 1
+            print(f"  [patcher] Removed mismatched List response_model in {rf.name}")
+
+    return patched
+
+
+# ── Fix: missing npm packages in frontend package.json ───────────────────────
+# LLMs import @mui/material, react-router-dom etc. in JSX but forget to add
+# them to package.json. The Cloudflare/Vite build then fails with
+# "Rollup failed to resolve import @mui/material".
+
+_FRONTEND_PKG_PEERS: dict[str, list[str]] = {
+    "@mui/material": ["@mui/material", "@emotion/react", "@emotion/styled"],
+    "@mui/icons-material": ["@mui/icons-material", "@emotion/react", "@emotion/styled"],
+    "@mui/x-date-pickers": ["@mui/x-date-pickers", "dayjs"],
+    "@tanstack/react-query": ["@tanstack/react-query"],
+    "react-query": ["react-query"],
+    "react-router-dom": ["react-router-dom"],
+    "axios": ["axios"],
+    "react-hook-form": ["react-hook-form"],
+    "recharts": ["recharts"],
+    "react-chartjs-2": ["react-chartjs-2", "chart.js"],
+    "chart.js": ["chart.js"],
+    "date-fns": ["date-fns"],
+    "dayjs": ["dayjs"],
+    "zod": ["zod"],
+    "react-toastify": ["react-toastify"],
+    "react-hot-toast": ["react-hot-toast"],
+    "framer-motion": ["framer-motion"],
+    "lucide-react": ["lucide-react"],
+    "clsx": ["clsx"],
+}
+
+_JSX_IMPORT_RE = re.compile(
+    r"""(?:from|import)\s+['"](@?[\w][\w.-]*/[\w.-]+|@?[\w][\w.-]*)['"]"""
+)
+
+
+def _patch_frontend_package_json(project_path: Path) -> bool:
+    """
+    Scan src/*.jsx for npm package imports and add any missing packages to
+    package.json so Vite can resolve them at build time.
+    """
+    import json as _json
+
+    pkg_json = project_path / "package.json"
+    src_dir = project_path / "src"
+    if not pkg_json.exists() or not src_dir.exists():
+        return False
+
+    try:
+        pkg = _json.loads(pkg_json.read_text(encoding="utf-8"))
+    except Exception:
+        return False
+
+    all_installed: set[str] = set(pkg.get("dependencies", {}).keys()) | set(pkg.get("devDependencies", {}).keys())
+
+    imported: set[str] = set()
+    for jsfile in list(src_dir.rglob("*.jsx")) + list(src_dir.rglob("*.js")) + list(src_dir.rglob("*.tsx")):
+        try:
+            text = jsfile.read_text(encoding="utf-8", errors="replace")
+        except Exception:
+            continue
+        for m in _JSX_IMPORT_RE.finditer(text):
+            name = m.group(1)
+            if not name.startswith(".") and not name.startswith("/"):
+                imported.add(name)
+
+    to_add: set[str] = set()
+    for name in imported:
+        if name not in all_installed:
+            # Expand to peer deps (e.g. @mui/material → also @emotion/react)
+            extras = _FRONTEND_PKG_PEERS.get(name, [name])
+            to_add.update(e for e in extras if e not in all_installed)
+
+    if not to_add:
+        return False
+
+    if "dependencies" not in pkg:
+        pkg["dependencies"] = {}
+    for name in sorted(to_add):
+        pkg["dependencies"][name] = "latest"
+
+    pkg_json.write_text(_json.dumps(pkg, indent=2), encoding="utf-8")
+    print(f"  [patcher] Added missing frontend packages to package.json: {sorted(to_add)}")
+    return True
+
+
 # ── Main entry point ──────────────────────────────────────────────────────────
 
 def run_deterministic_patches(project_path: str) -> int:
@@ -2215,6 +2357,14 @@ def run_deterministic_patches(project_path: str) -> int:
 
     # Ensure all schema files that use BaseModel/Field/Optional actually import them.
     _patch_missing_pydantic_imports(root)
+
+    # Fix response_model=List[X] on handlers that return {"items": ..., "total": N}
+    # → strip the List[] response_model so FastAPI passes the dict through unvalidated.
+    _patch_list_response_model_mismatch(root)
+
+    # Fix frontend package.json: add any npm packages imported in JSX but missing
+    # from dependencies (e.g. @mui/material → also adds @emotion/react, @emotion/styled)
+    _patch_frontend_package_json(root)
 
     if modified:
         print(f"  [patcher] Patched {modified} file(s) — passlib→bcrypt, async→sync, smart quotes")
