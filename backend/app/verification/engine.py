@@ -166,7 +166,9 @@ def _run_runtime_validation(ctx: GenerationContext) -> VerificationResult:
     t0 = time.time()
     try:
         from app.runtime.backend_runner import run_backend_validation
-        result = run_backend_validation(str(ctx.project_path), port=ctx.backend_port, architecture=_arch_dict(ctx))
+        result = run_backend_validation(str(ctx.project_path), port=ctx.backend_port,
+                                        architecture=_arch_dict(ctx), keep_alive=True)
+        ctx._backend_runner = result.get("_runner")  # stopped at the end of VerificationEngine.run()
     except Exception as exc:
         crash_diag = _diag("runtime", f"RuntimeRunner crashed: {exc}", ErrorSeverity.CRITICAL, ErrorCategory.RUNTIME)
         ctx.runtime_result = RuntimeResult(success=False, diagnostics=[crash_diag], duration_ms=_ms(t0))
@@ -547,10 +549,20 @@ class VerificationEngine:
         return self
 
     def run(self, ctx: GenerationContext) -> list[VerificationResult]:
+        # A prior run() may have left a backend alive (keep_alive=True) for its
+        # own later stages -- stop it before starting a fresh one on the same port.
+        prior_runner = getattr(ctx, "_backend_runner", None)
+        if prior_runner:
+            try:
+                prior_runner.stop()
+            except Exception:
+                pass
+
         results: list[VerificationResult] = []
         ctx.static_results  = []
         ctx.runtime_result  = None
         ctx.browser_result  = None
+        ctx._backend_runner = None
         all_screenshots:  list[str] = []
 
         # ── Stage 1: Static ───────────────────────────────────────────────────
@@ -687,6 +699,15 @@ class VerificationEngine:
             print(f"  [verify] {graph.explain()[:300]}")
             # Store graph on ctx for the fix orchestrator to use
             ctx.failure_graph = graph  # type: ignore[attr-defined]
+
+        # All stages that needed a live backend (HTTP/browser/perf/workflow) are
+        # done -- stop the server kept alive by _run_runtime_validation.
+        if getattr(ctx, "_backend_runner", None):
+            try:
+                ctx._backend_runner.stop()
+            except Exception:
+                pass
+            ctx._backend_runner = None
 
         return results
 

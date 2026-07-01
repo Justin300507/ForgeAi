@@ -68,7 +68,25 @@ def _free_port(port: int) -> None:
 
 
 class BackendRunner:
-    def run(self, backend_path: str, architecture: dict | None = None, port: int = 8001) -> RuntimeResult:
+    def __init__(self):
+        self.process: subprocess.Popen | None = None
+
+    def stop(self) -> None:
+        """Terminate a server left running via run(..., keep_alive=True)."""
+        if self.process is None or self.process.poll() is not None:
+            return
+        try:
+            self.process.terminate()
+            self.process.communicate(timeout=8)
+        except subprocess.TimeoutExpired:
+            self.process.kill()
+            self.process.communicate()
+        except Exception:
+            pass
+        self.process = None
+
+    def run(self, backend_path: str, architecture: dict | None = None, port: int = 8001,
+            keep_alive: bool = False) -> RuntimeResult:
 
         backend_dir = Path(backend_path)
 
@@ -235,24 +253,31 @@ class BackendRunner:
                 f"{timeout_count} timeouts, {error_count} errors)"
             )
 
-        # Terminate the server — be aggressive to avoid port conflicts on retry
-        if process.poll() is None:
-            try:
-                process.terminate()
-                stdout, stderr = process.communicate(timeout=8)
-            except subprocess.TimeoutExpired:
-                process.kill()
-                stdout, stderr = process.communicate()
+        if keep_alive and healthy:
+            # Leave the server running for later stages (HTTP/browser/perf/workflow
+            # tests) that need a live backend at ctx.backend_url. Caller is
+            # responsible for calling self.stop() once those stages are done.
+            self.process = process
+            stdout, stderr = "", ""
         else:
-            try:
-                stdout, stderr = process.communicate(timeout=2)
-            except Exception:
-                stdout, stderr = "", ""
+            # Terminate the server — be aggressive to avoid port conflicts on retry
+            if process.poll() is None:
+                try:
+                    process.terminate()
+                    stdout, stderr = process.communicate(timeout=8)
+                except subprocess.TimeoutExpired:
+                    process.kill()
+                    stdout, stderr = process.communicate()
+            else:
+                try:
+                    stdout, stderr = process.communicate(timeout=2)
+                except Exception:
+                    stdout, stderr = "", ""
 
-        # Force-free the port after process death so the next runtime attempt
-        # can bind cleanly — Windows TIME_WAIT can hold the socket briefly.
-        _free_port(port)
-        time.sleep(2)  # Give OS time to fully release the socket
+            # Force-free the port after process death so the next runtime attempt
+            # can bind cleanly — Windows TIME_WAIT can hold the socket briefly.
+            _free_port(port)
+            time.sleep(2)  # Give OS time to fully release the socket
 
         if not healthy:
             return RuntimeResult(
@@ -313,14 +338,20 @@ class BackendRunner:
         )
 
 
-def run_backend_validation(project_path: str, port: int = 8001, architecture: dict | None = None) -> dict:
+def run_backend_validation(project_path: str, port: int = 8001, architecture: dict | None = None,
+                            keep_alive: bool = False) -> dict:
     """
     Dict-returning adapter over BackendRunner for callers (V15's VerificationEngine)
     that expect a plain dict rather than the RuntimeResult dataclass.
+
+    keep_alive=True leaves the server running so later stages (HTTP/browser/perf/
+    workflow) that need a live backend can reach it. The BackendRunner instance
+    is returned under "_runner" so the caller can stop() it when done.
     """
     from app.runtime.error_parser import parse_runtime_error
 
-    rr = BackendRunner().run(project_path, architecture=architecture, port=port)
+    runner = BackendRunner()
+    rr = runner.run(project_path, architecture=architecture, port=port, keep_alive=keep_alive)
 
     parsed_error: dict = {}
     if not rr.success and rr.stderr:
@@ -346,4 +377,5 @@ def run_backend_validation(project_path: str, port: int = 8001, architecture: di
         "parsed_error": parsed_error,
         "crash_reason": parsed_error.get("type") if parsed_error else None,
         "endpoint_results": endpoint_results,
+        "_runner": runner if (keep_alive and rr.success) else None,
     }
