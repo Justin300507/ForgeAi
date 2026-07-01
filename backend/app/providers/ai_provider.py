@@ -60,25 +60,23 @@ def generate_content(
         print("Using Ollama")
         return _tracked("ollama", "local", prompt, ollama_generate, stage, max_tokens=max_tokens)
 
-    # Auto mode: Groq (free, fast) -> Gemini (free) -> Cerebras -> OpenRouter -> DeepSeek
+    # Auto mode: token-aware routing
+    # Groq (free, limited) — only for small tasks (reviews, planner, main.py) <= 4000 tokens
+    # Gemini (₹1000 credits) — primary for all real code generation
+    _GROQ_THRESHOLD = 4000
 
-    try:
-        print("Using Groq")
-        return _tracked("groq", "llama-3.3-70b", prompt, groq_generate, stage, max_tokens=max_tokens)
-    except Exception as e:
-        print(f"Groq failed: {e}")
+    if max_tokens <= _GROQ_THRESHOLD:
+        try:
+            print("Using Groq (small task)")
+            return _tracked("groq", "llama-3.3-70b", prompt, groq_generate, stage, max_tokens=max_tokens)
+        except Exception as e:
+            print(f"Groq failed: {e}")
 
     try:
         print("Using Gemini")
         return _tracked("gemini", "gemini-2.5-flash", prompt, gemini_generate, stage, max_tokens=max_tokens)
     except Exception as e:
         print(f"Gemini failed: {e}")
-
-    try:
-        print("Using Cerebras")
-        return _tracked("cerebras", "gpt-oss-120b", prompt, cerebras_generate, stage, max_tokens=max_tokens)
-    except Exception as e:
-        print(f"Cerebras failed: {e}")
 
     try:
         print("Using OpenRouter")
@@ -97,6 +95,12 @@ def generate_content(
         return _tracked("deepseek", "deepseek-chat", prompt, deepseek_generate, stage, max_tokens=max_tokens)
     except Exception as e:
         print(f"DeepSeek failed: {e}")
+
+    try:
+        print("Using Cerebras ($1 left — last resort)")
+        return _tracked("cerebras", "gpt-oss-120b", prompt, cerebras_generate, stage, max_tokens=max_tokens)
+    except Exception as e:
+        print(f"Cerebras failed: {e}")
 
     try:
         print("Using Ollama (final fallback)")

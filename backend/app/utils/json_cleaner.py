@@ -139,6 +139,89 @@ def try_repair_truncated(text: str) -> dict | None:
     return None
 
 
+def _escape_inner_quotes(text: str) -> str:
+    """
+    Walk the JSON character-by-character and escape any unescaped double quotes
+    that appear *inside* a string value (not at string boundaries).
+
+    Closing-quote heuristics (after a '"' while in_string):
+      ':' or '}' or end  → always closing
+      ',' followed by \\n  → JSON field separator, so closing
+      ',' followed by space/text → English prose comma, so inner quote (escape)
+      ']' followed by \\n or '}' → JSON array end, so closing
+      ']' followed by space/text → Python indexer e.g. obj["key"], so inner (escape)
+      anything else → inner quote, escape it
+    """
+    out = []
+    i = 0
+    n = len(text)
+    in_string = False
+    escaped = False
+
+    while i < n:
+        ch = text[i]
+
+        if escaped:
+            out.append(ch)
+            escaped = False
+            i += 1
+            continue
+
+        if ch == '\\':
+            out.append(ch)
+            if in_string:
+                escaped = True
+            i += 1
+            continue
+
+        if ch == '"':
+            if not in_string:
+                in_string = True
+                out.append(ch)
+                i += 1
+                continue
+
+            # Inside a string — peek ahead (skip only spaces, not newlines)
+            j = i + 1
+            while j < n and text[j] == ' ':
+                j += 1
+            next_ch = text[j] if j < n else ''
+
+            is_closing = False
+            if next_ch in (':', '}', ''):
+                is_closing = True
+            elif next_ch == ',':
+                # Closing only if comma is immediately followed by newline (JSON separator)
+                k = j + 1
+                while k < n and text[k] == ' ':
+                    k += 1
+                after_comma = text[k] if k < n else ''
+                is_closing = after_comma in ('\n', '\r', '')
+            elif next_ch == ']':
+                # Closing only if ] is followed by newline or } (JSON array end)
+                k = j + 1
+                while k < n and text[k] == ' ':
+                    k += 1
+                after_bracket = text[k] if k < n else ''
+                is_closing = after_bracket in ('\n', '\r', ',', '}', '')
+            elif next_ch in ('\n', '\r'):
+                is_closing = True
+
+            if is_closing:
+                in_string = False
+                out.append(ch)
+            else:
+                out.append('\\')
+                out.append('"')
+            i += 1
+            continue
+
+        out.append(ch)
+        i += 1
+
+    return ''.join(out)
+
+
 def extract_json(text: str):
 
     text = text.strip()
@@ -178,6 +261,11 @@ def extract_json(text: str):
         return json.loads(sanitized, strict=False)
 
     except json.JSONDecodeError:
+        # Try escaping unescaped inner quotes (common when LLM embeds code in descriptions)
+        try:
+            return json.loads(_escape_inner_quotes(json_text), strict=False)
+        except json.JSONDecodeError:
+            pass
         # Last resort: try to salvage complete file objects from truncated output
         repaired = try_repair_truncated(text)
         if repaired:

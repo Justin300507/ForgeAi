@@ -11,11 +11,21 @@ from pathlib import Path
 
 _COST_LOG = Path(__file__).parent.parent.parent / "failure_memory" / "cost_log.json"
 
-# Approximate cost per 1M tokens (input/output averaged) in USD
-_COST_PER_1M_TOKENS = {
+# Cost per 1M tokens in USD — input and output tracked separately where known.
+# Gemini 2.5 Flash: $0.15/1M input, $0.60/1M output (thinking disabled, was $3.50/1M thinking)
+# Groq free tier: $0.00 (daily rate-limited, not billed)
+_COST_PER_1M_INPUT = {
+    "gemini": 0.15,
     "cerebras": 0.60,
-    "groq": 0.10,
-    "gemini": 0.35,
+    "groq": 0.00,
+    "openrouter": 1.00,
+    "ollama": 0.00,
+    "auto": 0.60,
+}
+_COST_PER_1M_OUTPUT = {
+    "gemini": 0.60,
+    "cerebras": 0.60,
+    "groq": 0.00,
     "openrouter": 1.00,
     "ollama": 0.00,
     "auto": 0.60,
@@ -34,8 +44,10 @@ def record_llm_call(
 ):
     """Call this after every LLM API call to track usage."""
     total_tokens = prompt_tokens + completion_tokens
-    cost_per_1m = _COST_PER_1M_TOKENS.get(provider.lower(), 1.00)
-    estimated_cost = (total_tokens / 1_000_000) * cost_per_1m
+    prov = provider.lower()
+    in_rate = _COST_PER_1M_INPUT.get(prov, 1.00)
+    out_rate = _COST_PER_1M_OUTPUT.get(prov, 1.00)
+    estimated_cost = (prompt_tokens / 1_000_000) * in_rate + (completion_tokens / 1_000_000) * out_rate
 
     _session_calls.append({
         "stage": stage,

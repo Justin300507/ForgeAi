@@ -271,10 +271,11 @@ def route_for_fix(
 
 
 # ── Cost estimator ─────────────────────────────────────────────────────────────
-# Rough cost per 1M tokens (input + output average), USD
+# Gemini 2.5 Flash: $0.15/1M input, $0.60/1M output (thinking disabled)
+# Groq free tier: $0.00 (rate-limited, not billed)
 _COST_PER_M_TOKENS: dict[str, float] = {
-    "gemini":      0.15,   # Gemini 2.0 Flash
-    "groq":        0.05,   # Groq Llama 3.3 70B (very cheap)
+    "gemini":      0.38,   # Gemini 2.5 Flash avg ($0.15 in / $0.60 out, ~60% input)
+    "groq":        0.00,   # Groq free tier
     "cerebras":    0.60,   # Cerebras gpt-oss-120b
     "openrouter":  3.00,   # premium model via OpenRouter
     "deepseek":    0.27,

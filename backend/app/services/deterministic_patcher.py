@@ -8,12 +8,29 @@ Fixes known LLM failure patterns that the contract can't fully prevent:
   2. FK table imports missing from main.py  (NoReferencedTableError at startup)
   3. async def with sync SQLAlchemy calls  (RuntimeError: no running event loop)
   4. requirements.txt: ensure bcrypt present, remove passlib
+  5. jwt_utils / jose → app.utils.auth  (LLMs invent non-existent auth modules)
 
 All fixes are regex/AST-free pattern matching — deterministic, fast, no LLM cost.
 """
 import keyword
 import re
 from pathlib import Path
+
+
+# ── 0. wrong auth module → app.utils.auth ────────────────────────────────────
+
+# LLMs sometimes invent app.utils.jwt_utils, app.utils.jose, app.utils.security etc.
+# Rewrite them all to the known-good app.utils.auth module.
+_WRONG_AUTH_MODULE = re.compile(
+    r'from app\.utils\.(jwt_utils|jose|security|auth_utils|jwt|token_utils)\s+import\s+([^\n]+)',
+    re.MULTILINE,
+)
+
+
+def _patch_wrong_auth_module(content: str) -> str:
+    if not _WRONG_AUTH_MODULE.search(content):
+        return content
+    return _WRONG_AUTH_MODULE.sub(r'from app.utils.auth import \2', content)
 
 
 # ── 1. passlib → bcrypt ──────────────────────────────────────────────────────
@@ -460,7 +477,7 @@ def _patch_model_aliases(project_path: Path) -> None:
         for m in _FROM_MODELS_ANY.finditer(content):
             module = m.group(1)
             for raw in m.group(2).split(","):
-                name = raw.strip().split(" as ")[0].strip()
+                name = raw.strip().split("#")[0].strip().split(" as ")[0].strip()
                 if name:
                     needed.setdefault(module, set()).add(name)
 
@@ -504,8 +521,19 @@ def _patch_model_aliases(project_path: Path) -> None:
             # No suitable alias found. If the file has no class at all (e.g. uses Table()),
             # inject stub Base classes for each missing name so the import doesn't fail.
             if not defined:
+                # Collect names already available via import (don't stub those)
+                already_imported: set[str] = set()
+                for m in re.finditer(r'^from\s+\S+\s+import\s+([^\n]+)', content, re.MULTILINE):
+                    for n in m.group(1).split(","):
+                        already_imported.add(n.strip().split(" as ")[-1].strip())
+                for m in re.finditer(r'^import\s+([^\n]+)', content, re.MULTILINE):
+                    for n in m.group(1).split(","):
+                        already_imported.add(n.strip().split(" as ")[-1].strip())
+
                 stubs = []
                 for name in sorted(names):
+                    if name in already_imported:
+                        continue  # already importable — don't create a duplicate stub
                     # Derive a table name from the module name (e.g. task_tags)
                     tbl = module.replace("-", "_")
                     stubs.append(
@@ -2102,6 +2130,7 @@ def run_deterministic_patches(project_path: str) -> int:
         rel = str(py_file.relative_to(root)).replace("\\", "/")
         patched = original
         patched = _patch_smart_quotes(patched)
+        patched = _patch_wrong_auth_module(patched)
         patched = _patch_passlib(patched)
         patched = _patch_pydantic_regex(patched)
         patched = _patch_pydantic_orm_mode(patched)

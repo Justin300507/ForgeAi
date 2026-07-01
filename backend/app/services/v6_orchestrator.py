@@ -261,59 +261,14 @@ def generate_project_v6(
     total_time_so_far = round(time.time() - start, 2)
     metadata_path = save_metadata(project_path, plan, architecture, provider, total_time_so_far)
 
-    # ------------------------------------------------------------------
-    # Stage 7-10: Review Agents (QA, Security, Code Review, Performance)
-    # Skip when skip_reviews=True to save ~14% token cost per app
-    # ------------------------------------------------------------------
+    # Reviews run after validation (Stage 11) — see below.
     qa_report = None
     security_report = None
     code_review_report = None
     performance_report = None
 
-    if not skip_reviews:
-        qa_report = run_qa_review(
-            project_path,
-            product_spec.raw if hasattr(product_spec, "raw") and product_spec.raw else plan,
-            architecture,
-            provider,
-        )
-        collab.record_decision(
-            agent="qa",
-            decision="qa_review_complete",
-            rationale=f"QA score: {qa_report.qa_score}/100",
-            data={"score": qa_report.qa_score, "blockers": qa_report.blockers},
-        )
-
-        security_report = run_security_review(project_path, provider)
-        print_security_report(security_report)
-        collab.record_decision(
-            agent="security",
-            decision="security_review_complete",
-            rationale=f"Security score: {security_report.security_score}/100",
-            data={"score": security_report.security_score},
-        )
-
-        code_review_report = run_code_review(project_path, architecture, provider)
-        collab.record_decision(
-            agent="code_review",
-            decision="code_review_complete",
-            rationale=f"Maintainability: {code_review_report.maintainability_score}/100",
-            data={"maintainability_score": code_review_report.maintainability_score},
-        )
-
-        performance_report = run_performance_review(project_path, architecture, provider)
-        collab.record_decision(
-            agent="performance",
-            decision="performance_review_complete",
-            rationale=f"Performance score: {performance_report.performance_score}/100",
-            data={"score": performance_report.performance_score},
-        )
-        _llm["reviews"] = 4  # QA + Security + CodeReview + Performance
-    else:
-        print("\n  [skip_reviews=True] Skipping QA/Security/Code/Performance reviews")
-
     # ------------------------------------------------------------------
-    # Stage 11: Validation Loop (up to 4 fix attempts)
+    # Stage 7: Validation Loop (up to 4 fix attempts)
     # ------------------------------------------------------------------
     print("\n=== VALIDATION LOOP (V6) ===")
     validation = validate_project(project_path)
@@ -452,6 +407,56 @@ def generate_project_v6(
                 run_deterministic_patches(project_path)
                 validation = validate_project(project_path)
                 print(f"  Post-arch-repair: {'PASS' if validation['passed'] else 'FAIL'}")
+
+    # ------------------------------------------------------------------
+    # Stage 8-11: Review Agents — only run on validated code
+    # Skipped if validation still fails after all fix attempts (broken code
+    # would produce stale review findings that get thrown away anyway).
+    # ------------------------------------------------------------------
+    if validation["passed"] and not skip_reviews:
+        print("\n=== REVIEWS (QA / Security / Code / Performance) ===")
+        qa_report = run_qa_review(
+            project_path,
+            product_spec.raw if hasattr(product_spec, "raw") and product_spec.raw else plan,
+            architecture,
+            provider,
+        )
+        collab.record_decision(
+            agent="qa",
+            decision="qa_review_complete",
+            rationale=f"QA score: {qa_report.qa_score}/100",
+            data={"score": qa_report.qa_score, "blockers": qa_report.blockers},
+        )
+
+        security_report = run_security_review(project_path, provider)
+        print_security_report(security_report)
+        collab.record_decision(
+            agent="security",
+            decision="security_review_complete",
+            rationale=f"Security score: {security_report.security_score}/100",
+            data={"score": security_report.security_score},
+        )
+
+        code_review_report = run_code_review(project_path, architecture, provider)
+        collab.record_decision(
+            agent="code_review",
+            decision="code_review_complete",
+            rationale=f"Maintainability: {code_review_report.maintainability_score}/100",
+            data={"maintainability_score": code_review_report.maintainability_score},
+        )
+
+        performance_report = run_performance_review(project_path, architecture, provider)
+        collab.record_decision(
+            agent="performance",
+            decision="performance_review_complete",
+            rationale=f"Performance score: {performance_report.performance_score}/100",
+            data={"score": performance_report.performance_score},
+        )
+        _llm["reviews"] = 4
+    elif skip_reviews:
+        print("\n  [skip_reviews=True] Skipping QA/Security/Code/Performance reviews")
+    else:
+        print("\n  [skip_reviews] Validation failed — skipping reviews to save credits")
 
     # ------------------------------------------------------------------
     # Stage 12: Runtime Validation

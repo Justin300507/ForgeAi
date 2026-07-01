@@ -74,7 +74,7 @@ def _fix_jsx_truncated_templates(content: str) -> str:
 def generate_frontend(
     architecture,
     provider="auto",
-    max_tokens=24000,
+    max_tokens=14000,
     frontend_target: str = "web",
     idea: str = "",
 ):
