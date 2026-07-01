@@ -1256,6 +1256,13 @@ def me(current_user=Depends(get_current_user)):
         "display_name": getattr(current_user, "display_name", None),
         "role": getattr(current_user, "role", None),
     }
+
+
+@auth_router.post("/auth/logout")
+def logout(current_user=Depends(get_current_user)):
+    # JWTs are stateless — logout is handled client-side by discarding the token.
+    # This endpoint confirms the user is authenticated and acknowledges the request.
+    return {"message": "Successfully logged out"}
 '''
 
 
@@ -2500,10 +2507,14 @@ def _patch_wire_orphan_routers(project_path: Path) -> None:
 
 # ── Main entry point ──────────────────────────────────────────────────────────
 
-def run_deterministic_patches(project_path: str) -> int:
+def run_deterministic_patches(project_path: str, skip_protected_injections: bool = False) -> int:
     """
     Run all deterministic patches on a generated project.
     Returns the number of files modified.
+
+    skip_protected_injections=True: skip auth_routes.py and auth_utils.py injection.
+    Pass True when calling after Architecture Repair so the repair's output is not
+    overwritten by the static template.
     """
     root = Path(project_path)
     modified = 0
@@ -2565,13 +2576,13 @@ def run_deterministic_patches(project_path: str) -> int:
     # Parameter ordering: Path(...) before body param → SyntaxError → reorder
     _patch_param_order(root)
 
-    # Auth utils: inject known-good app/utils/auth.py (eliminates passlib/jose login crashes)
-    _patch_auth_utils(root)
-    _patch_auth_requirements(root)
-
-    # Auth routes: inject signup/login/me if project has a User model but no auth endpoints.
-    # Without this, every authenticated endpoint returns 401 and the journey fails entirely.
-    _patch_auth_routes(root)
+    # Auth utils / routes: inject known-good templates on initial generation.
+    # skip_protected_injections=True when called after Architecture Repair — the repair's
+    # output is authoritative and must not be clobbered by the static template.
+    if not skip_protected_injections:
+        _patch_auth_utils(root)
+        _patch_auth_requirements(root)
+        _patch_auth_routes(root)
 
     # Wire ALL routers into main.py — runs after auth_routes injection so auth_router
     # is already in main.py; this catches every other generated router.

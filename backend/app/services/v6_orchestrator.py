@@ -512,8 +512,11 @@ def generate_project_v6(
                 for f in arch_fix["files"]:
                     f["path"] = _sanitize_path(f["path"])
                     write_fix(project_path, f)
-                # Re-run patcher so any new route files get schema stubs created
-                run_deterministic_patches(project_path)
+                # Re-run patchers after arch repair — but skip auth_routes/auth_utils
+                # injection so the repair's output is not overwritten by the static template.
+                run_deterministic_patches(project_path, skip_protected_injections=True)
+                from app.services.database_patcher import patch_database_py
+                patch_database_py(project_path)
                 validation = validate_project(project_path)
                 print(f"  Post-arch-repair: {'PASS' if validation['passed'] else 'FAIL'}")
 
@@ -905,8 +908,9 @@ def repair_project(
             for f in arch_fix["files"]:
                 f["path"] = _sanitize_path(f["path"])
                 write_fix(project_path, f)
-            # Re-run patcher so any new route files get schema stubs created
-            run_deterministic_patches(project_path)
+            run_deterministic_patches(project_path, skip_protected_injections=True)
+            from app.services.database_patcher import patch_database_py as _pdb2
+            _pdb2(project_path)
             validation = validate_project(project_path)
             print(f"  Post-arch-repair: {'PASS' if validation['passed'] else 'FAIL'}")
 
