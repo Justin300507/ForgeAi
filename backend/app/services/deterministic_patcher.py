@@ -1045,6 +1045,19 @@ def get_current_user(token: str = Depends(oauth2_scheme), db: Session = Depends(
     if not user:
         raise credentials_exception
     return user
+
+
+def authenticate_user(db: Session, email: str, password: str):
+    """Convenience helper — LLM-generated routes commonly import this."""
+    from app.models.user import User
+    user = db.query(User).filter(User.email == email).first()
+    if not user:
+        return None
+    for field in ("hashed_password", "password_hash", "password"):
+        stored = getattr(user, field, None)
+        if stored and verify_password(password, stored):
+            return user
+    return None
 '''
 
 

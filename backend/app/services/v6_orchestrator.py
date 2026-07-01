@@ -298,6 +298,21 @@ def generate_project_v6(
                     errors_by_file[m.group(1).replace("\\", "/")].append(err)
                     continue
 
+            # "Missing symbol 'X' in PROTECTED_FILE (imported from SOURCE_FILE)"
+            # Re-attribute to the importing file — fixing a protected file via LLM
+            # is blocked, so the fix must go to the file that has the bad import.
+            _PROTECTED = {"app/utils/auth.py", "app/routes/auth_routes.py", "app/database.py"}
+            ms = re.search(
+                r"Missing symbol .+ in (app[\\/][^\s:]+?\.py) \(imported from (app[\\/][^\s:]+?\.py)\)",
+                err,
+            )
+            if ms:
+                target = ms.group(1).replace("\\", "/")
+                source = ms.group(2).replace("\\", "/")
+                attributed = source if target in _PROTECTED else target
+                errors_by_file[attributed].append(err)
+                continue
+
             m = re.search(r"(app[\\/][^\s:]+?\.(?:py|txt))", err)
             if m:
                 errors_by_file[m.group(1).replace("\\", "/")].append(err)
@@ -376,15 +391,22 @@ def generate_project_v6(
             except Exception as e:
                 print(f"  Fix failed for {filepath}: {e}")
 
-        # Re-run key patchers so LLM-regenerated files get aliases/from_attributes injected
+        # Re-run key patchers so LLM-regenerated files get common issues fixed immediately.
+        # This prevents "fix makes things worse" cascades where the LLM introduces
+        # wrong field names, missing Optional fields, or missing service stubs.
         try:
             from pathlib import Path as _Path
             from app.services.deterministic_patcher import (
-                _patch_model_aliases, _patch_schemas_from_attributes, _patch_missing_pydantic_imports
+                _patch_model_aliases, _patch_schemas_from_attributes,
+                _patch_missing_pydantic_imports, _patch_attr_access_mismatches,
+                _patch_response_schemas_optional, _patch_create_missing_service_stubs,
             )
             _patch_model_aliases(_Path(project_path))
             _patch_schemas_from_attributes(_Path(project_path))
             _patch_missing_pydantic_imports(_Path(project_path))
+            _patch_attr_access_mismatches(_Path(project_path))
+            _patch_response_schemas_optional(_Path(project_path))
+            _patch_create_missing_service_stubs(_Path(project_path))
         except Exception as _pe:
             print(f"  [post-fix patcher] {_pe}")
 
@@ -730,6 +752,16 @@ def repair_project(
                 if m:
                     errors_by_file[m.group(1).replace("\\", "/")].append(err)
                     continue
+            _PROTECTED2 = {"app/utils/auth.py", "app/routes/auth_routes.py", "app/database.py"}
+            ms2 = re.search(
+                r"Missing symbol .+ in (app[\\/][^\s:]+?\.py) \(imported from (app[\\/][^\s:]+?\.py)\)",
+                err,
+            )
+            if ms2:
+                target2 = ms2.group(1).replace("\\", "/")
+                source2 = ms2.group(2).replace("\\", "/")
+                errors_by_file[source2 if target2 in _PROTECTED2 else target2].append(err)
+                continue
             m = re.search(r"(app[\\/][^\s:]+?\.(?:py|txt))", err)
             if m:
                 errors_by_file[m.group(1).replace("\\", "/")].append(err)
@@ -771,15 +803,20 @@ def repair_project(
             except Exception as e:
                 print(f"  Fix failed for {filepath}: {e}")
 
-        # Re-run key patchers so LLM-regenerated files get aliases/from_attributes injected
+        # Re-run key patchers so LLM-regenerated files get common issues fixed immediately.
         try:
             from pathlib import Path as _Path
             from app.services.deterministic_patcher import (
-                _patch_model_aliases, _patch_schemas_from_attributes, _patch_missing_pydantic_imports
+                _patch_model_aliases, _patch_schemas_from_attributes,
+                _patch_missing_pydantic_imports, _patch_passlib_references,
+                _patch_field_alignment, _patch_create_missing_service_stubs,
             )
             _patch_model_aliases(_Path(project_path))
             _patch_schemas_from_attributes(_Path(project_path))
             _patch_missing_pydantic_imports(_Path(project_path))
+            _patch_passlib_references(_Path(project_path))
+            _patch_field_alignment(_Path(project_path))
+            _patch_create_missing_service_stubs(_Path(project_path))
         except Exception as _pe:
             print(f"  [post-fix patcher] {_pe}")
 
