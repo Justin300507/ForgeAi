@@ -121,10 +121,12 @@ def _apply_fix_group(
     group: DiagnosticGroup,
     ctx: GenerationContext,
     cfg: StrategyConfig,
-) -> list[str]:
+) -> tuple[list[str], dict[str, str]]:
     """
     Fix a DiagnosticGroup: check fix cache first, then LLM if no cache hit.
-    Returns list of file paths modified.
+    Returns (file paths modified, {path: content} of what was written this
+    call) -- the caller decides whether to actually commit this to the fix
+    cache, only after verification confirms the fix helped.
     """
     from app.providers.ai_provider import generate_content
     from app.utils.json_cleaner import extract_json
@@ -146,7 +148,7 @@ def _apply_fix_group(
                     print(f"    [fix] (cache) Patched: {rel_path}")
                 except Exception as exc:
                     print(f"    [fix] (cache) Write failed for {rel_path}: {exc}")
-            return modified
+            return modified, dict(cache_hit.fix_content)
     except Exception:
         pass  # cache unavailable — fall through to LLM
 
@@ -181,10 +183,10 @@ def _apply_fix_group(
                 raw = generate_content(prompt, provider="auto", max_tokens=8000)
             except Exception as exc2:
                 print(f"    [fix] LLM call failed for group {group.group_id}: {exc2}")
-                return []
+                return [], {}
         else:
             print(f"    [fix] LLM call failed for group {group.group_id}: {exc}")
-            return []
+            return [], {}
 
     try:
         patches = extract_json(raw)
@@ -192,7 +194,7 @@ def _apply_fix_group(
             patches = [patches]
     except Exception as exc:
         print(f"    [fix] JSON parse failed: {exc}")
-        return []
+        return [], {}
 
     modified: list[str] = []
     fix_content_map: dict[str, str] = {}
@@ -211,25 +213,22 @@ def _apply_fix_group(
         except Exception as exc:
             print(f"    [fix] Write failed for {rel_path}: {exc}")
 
-    # Store in fix cache (will be promoted to confirmed hit after re-verification)
-    if fix_content_map:
-        try:
-            from app.knowledge.failure_db import fix_cache
-            fix_cache.store(group.diagnostics, fix_content_map, idea=getattr(ctx, "idea", ""))
-        except Exception:
-            pass
-
-    return modified
+    # NOTE: fix cache commit happens in FixOrchestrator.run_attempt(), only
+    # after verification confirms this attempt actually succeeded -- see the
+    # comment there for why storing eagerly here was a real bug.
+    return modified, fix_content_map
 
 
 def _regenerate_module(
     group: DiagnosticGroup,
     ctx: GenerationContext,
     cfg: StrategyConfig,
-) -> list[str]:
+) -> tuple[list[str], dict[str, str]]:
     """
     Regenerate all files in the affected module group using the existing
-    backend/frontend generation services.
+    backend/frontend generation services. Returns (modified paths, {path:
+    content}) -- same contract as _apply_fix_group, see there for why the
+    fix cache is committed by the caller, not here.
     """
     affected = group.affected_files
     if not affected:
@@ -240,6 +239,7 @@ def _regenerate_module(
     is_frontend = any(f.endswith((".jsx", ".tsx", ".js", ".ts")) for f in affected)
 
     modified: list[str] = []
+    fix_content_map: dict[str, str] = {}
 
     if is_backend:
         # Use the architecture fix service to regenerate the affected route files
@@ -259,15 +259,16 @@ def _regenerate_module(
                     target.parent.mkdir(parents=True, exist_ok=True)
                     target.write_text(content, encoding="utf-8")
                     modified.append(rel)
+                    fix_content_map[rel] = content
         except Exception as exc:
             print(f"    [fix] Module regen failed: {exc}")
             # Fall back to patch strategy
-            modified = _apply_fix_group(group, ctx, cfg)
+            modified, fix_content_map = _apply_fix_group(group, ctx, cfg)
 
     if is_frontend and not modified:
-        modified = _apply_fix_group(group, ctx, cfg)
+        modified, fix_content_map = _apply_fix_group(group, ctx, cfg)
 
-    return modified
+    return modified, fix_content_map
 
 
 def _regenerate_architecture(ctx: GenerationContext, cfg: StrategyConfig) -> list[str]:
@@ -414,6 +415,9 @@ class FixOrchestrator:
         snapshot = _ProjectSnapshot(ctx.project_path)
 
         all_modified: list[str] = []
+        # (group, fix_content) pairs generated this attempt -- only committed
+        # to the fix cache at the end, if this attempt actually succeeds.
+        group_fix_contents: list[tuple[DiagnosticGroup, dict[str, str]]] = []
 
         # 3. Fix each group
         for g in groups:
@@ -423,10 +427,12 @@ class FixOrchestrator:
                 all_modified.extend(modified)
                 break  # full regen covers all groups
             elif cfg.strategy == FixStrategy.REGENERATE_MODULE:
-                modified = _regenerate_module(g, ctx, cfg)
+                modified, fix_content = _regenerate_module(g, ctx, cfg)
             else:
-                modified = _apply_fix_group(g, ctx, cfg)
+                modified, fix_content = _apply_fix_group(g, ctx, cfg)
             all_modified.extend(modified)
+            if fix_content:
+                group_fix_contents.append((g, fix_content))
 
         # 4. Apply deterministic + preflight patches on top of LLM fixes
         if all_modified:
@@ -476,6 +482,20 @@ class FixOrchestrator:
         se.print_report(score_after_obj)
 
         success = score_after > score_before and not regression_detected
+
+        # 8. Only now commit fixes to the cache -- after we know they actually
+        # helped. Storing eagerly (the old behavior) meant a fix that failed
+        # or got reverted was replayed unchanged on every subsequent attempt
+        # ("Cache HIT ... skipping LLM"), burning the remaining escalation
+        # strategies on a patch already confirmed not to work.
+        if success and group_fix_contents:
+            try:
+                from app.knowledge.failure_db import fix_cache
+                for g, fix_content in group_fix_contents:
+                    fix_cache.store(g.diagnostics, fix_content, idea=getattr(ctx, "idea", ""))
+            except Exception:
+                pass
+
         elapsed = (time.time() - t0) * 1000
 
         attempt = FixAttempt(
