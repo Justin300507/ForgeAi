@@ -222,6 +222,41 @@ def _escape_inner_quotes(text: str) -> str:
     return ''.join(out)
 
 
+def _find_matching_close_brace(text: str, open_pos: int) -> int:
+    """
+    Given the index of a '{' in text, walk forward tracking string/escape
+    state to find the index of its MATCHING '}' -- correctly skipping braces
+    inside string literals, and stopping at the actual end of the JSON object
+    rather than grabbing a LATER '}' that happens to appear in trailing
+    non-JSON text the LLM appended after a complete, valid object (the
+    "Extra data" class of json.JSONDecodeError). Returns -1 if unmatched
+    (truncated response).
+    """
+    depth = 0
+    in_string = False
+    escape_next = False
+    for i in range(open_pos, len(text)):
+        ch = text[i]
+        if escape_next:
+            escape_next = False
+            continue
+        if ch == '\\' and in_string:
+            escape_next = True
+            continue
+        if ch == '"':
+            in_string = not in_string
+            continue
+        if in_string:
+            continue
+        if ch == '{':
+            depth += 1
+        elif ch == '}':
+            depth -= 1
+            if depth == 0:
+                return i
+    return -1
+
+
 def extract_json(text: str):
 
     text = text.strip()
@@ -235,9 +270,13 @@ def extract_json(text: str):
     text = _fix_triple_quoted_content(text)
 
     start = text.find("{")
-    end = text.rfind("}")
+    if start == -1:
+        raise ValueError("No JSON found in response")
 
-    if start == -1 or end == -1:
+    end = _find_matching_close_brace(text, start)
+    if end == -1:
+        end = text.rfind("}")  # fallback: truncated/malformed, let downstream repair try
+    if end == -1:
         raise ValueError("No JSON found in response")
 
     json_text = text[start:end + 1]
