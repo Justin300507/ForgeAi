@@ -142,6 +142,34 @@ def _swap_passlib(project_path: Path, diagnostics: list) -> bool:
     return True
 
 
+@preflight.register("fix_config_missing_settings_instance", priority=13)
+def _fix_config_missing_settings_instance(project_path: Path, diagnostics: list) -> bool:
+    """
+    Ensure app/config.py exports a module-level `settings` instance if it
+    defines a Config/Settings class but never instantiated it under that
+    exact name -- app/main.py and other files import `settings` by
+    convention. This recurs often enough across generations (seen live,
+    costing 1-2 otherwise-avoidable LLM fix calls each time) to fix for free.
+    Must run before fix_config_missing_attrs (priority 14), which assumes
+    the `settings = Config()` line already exists.
+    """
+    config_file = project_path / "app" / "config.py"
+    if not config_file.exists():
+        return False
+    content = config_file.read_text(encoding="utf-8", errors="replace")
+
+    if re.search(r'^settings\s*=', content, re.MULTILINE):
+        return False  # already has a top-level `settings` name
+
+    m = re.search(r'^class (Config|Settings)\b', content, re.MULTILINE)
+    if not m:
+        return False  # no class to instantiate
+
+    class_name = m.group(1)
+    config_file.write_text(content.rstrip() + f"\n\nsettings = {class_name}()\n", encoding="utf-8")
+    return True
+
+
 @preflight.register("fix_postgres_url", priority=15)
 def _fix_postgres_url(project_path: Path, diagnostics: list) -> bool:
     """Fix postgres:// → postgresql:// in database.py (SQLAlchemy 1.4+ requirement)."""
