@@ -28,6 +28,29 @@ from app.retry.manager import RetryManager, StrategyConfig
 
 # ── Group → LLM fix dispatch ──────────────────────────────────────────────────
 
+def _required_endpoints_for_files(ctx: GenerationContext, files: list[str]) -> str:
+    """
+    List endpoints (from the architecture plan) that live in the given files,
+    so a full-file regeneration has an explicit checklist instead of silently
+    dropping endpoints it wasn't focused on fixing.
+    """
+    arch = ctx.architecture
+    if not arch:
+        return ""
+    endpoints = arch.get("api_endpoints", []) if isinstance(arch, dict) else getattr(arch, "api_endpoints", [])
+    if not endpoints:
+        return ""
+    relevant = [ep for ep in endpoints if ep.get("file") in files]
+    if not relevant:
+        return ""
+    lines = "\n".join(f"  {ep.get('method')} {ep.get('path')}" for ep in relevant)
+    return (
+        "\nREQUIRED ENDPOINTS (these MUST still exist in the affected file(s) after your "
+        "fix -- do not drop any of them while fixing the errors above):\n"
+        f"{lines}\n"
+    )
+
+
 def _build_fix_prompt(
     group: DiagnosticGroup,
     ctx: GenerationContext,
@@ -53,6 +76,8 @@ def _build_fix_prompt(
             except Exception:
                 pass
 
+    required_endpoints = _required_endpoints_for_files(ctx, group.affected_files[:3])
+
     extra_context = ""
     if improve:
         extra_context = (
@@ -73,6 +98,7 @@ ERRORS TO FIX:
 
 AFFECTED FILES:
 {file_contents}
+{required_endpoints}
 {extra_context}
 
 Return a JSON array of file patches. Each patch must be:
@@ -86,6 +112,8 @@ Rules:
 - Write COMPLETE file content, not snippets
 - Fix ALL errors listed above
 - Do not break any existing working functionality
+- If a REQUIRED ENDPOINTS list is present above, every one of those routes must
+  still be defined in your rewritten file -- do not drop, rename, or merge them
 """
 
 
