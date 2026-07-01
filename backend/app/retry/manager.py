@@ -58,7 +58,13 @@ _ESCALATION_PLAN: list[StrategyConfig] = [
     StrategyConfig(
         attempt=4,
         strategy=FixStrategy.SWITCH_MODEL,
-        provider="openrouter",           # switch to a different/stronger provider
+        # NOT a hardcoded provider: OpenRouter is out of credits (see
+        # ai_provider.py's auto chain, which already excludes it for that
+        # reason) and Groq's free tier hits its daily quota fast. "auto" lets
+        # the live fallback chain (Gemini -> Groq -> Cerebras -> Ollama) pick
+        # whichever provider actually has room, instead of always calling a
+        # provider already known to fail.
+        provider="auto",
         model_hint="strongest",
         improve_prompt=True,
         description="Switch to strongest available model and patch",
@@ -66,7 +72,7 @@ _ESCALATION_PLAN: list[StrategyConfig] = [
     StrategyConfig(
         attempt=5,
         strategy=FixStrategy.REGENERATE_ARCH,
-        provider="openrouter",
+        provider="auto",
         model_hint="strongest",
         improve_prompt=True,
         regen_arch=True,

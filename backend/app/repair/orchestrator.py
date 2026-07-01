@@ -143,8 +143,20 @@ def _apply_fix_group(
     try:
         raw = generate_content(prompt, provider=provider, max_tokens=8000)
     except Exception as exc:
-        print(f"    [fix] LLM call failed for group {group.group_id}: {exc}")
-        return []
+        # A specifically-routed provider (e.g. model_router picked "groq") has
+        # no fallback of its own -- only provider="auto" does. Retry through
+        # the auto chain once rather than losing this entire fix attempt to
+        # one exhausted provider's rate limit / credit error.
+        if provider != "auto":
+            print(f"    [fix] {provider} failed ({exc}) — retrying via auto-fallback chain")
+            try:
+                raw = generate_content(prompt, provider="auto", max_tokens=8000)
+            except Exception as exc2:
+                print(f"    [fix] LLM call failed for group {group.group_id}: {exc2}")
+                return []
+        else:
+            print(f"    [fix] LLM call failed for group {group.group_id}: {exc}")
+            return []
 
     try:
         patches = extract_json(raw)
