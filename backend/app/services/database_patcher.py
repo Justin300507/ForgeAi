@@ -95,6 +95,11 @@ def create_tables():
         _add_missing_columns()
 
 
+def get_db_url() -> str:
+    """Return the active database URL (exported so main.py can import it)."""
+    return DATABASE_URL
+
+
 def get_db():
     db = SessionLocal()
     try:

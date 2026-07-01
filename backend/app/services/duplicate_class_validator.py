@@ -39,6 +39,22 @@ def validate_duplicate_class_definitions(project_path, errors):
     for class_name, locations in class_locations.items():
 
         if len(locations) > 1:
+            # Common base classes appear everywhere by design — skip them
+            if class_name in ("Base", "Config", "Meta", "Settings"):
+                continue
+
+            # models/ vs schemas/ is intentional in FastAPI: SQLAlchemy model and
+            # Pydantic schema can share a name (e.g. User). Skip this cross-layer pair.
+            def _layer(p: str) -> str:
+                if "app/models/" in p:
+                    return "models"
+                if "app/schemas/" in p:
+                    return "schemas"
+                return p
+
+            layers = {_layer(loc) for loc in locations}
+            if layers == {"models", "schemas"}:
+                continue
 
             errors.append(
                 f"Duplicate class definition: '{class_name}' is defined "

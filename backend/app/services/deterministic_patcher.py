@@ -1212,6 +1212,7 @@ def _read_password(user) -> str | None:
 
 
 @auth_router.post("/auth/signup")
+@auth_router.post("/auth/register")
 def signup(req: SignupRequest, db: Session = Depends(get_db)):
     User = _get_user_model()
     if db.query(User).filter(User.email == req.email).first():
