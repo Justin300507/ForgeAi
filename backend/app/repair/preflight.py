@@ -172,6 +172,53 @@ def _fix_postgres_url(project_path: Path, diagnostics: list) -> bool:
     return False
 
 
+@preflight.register("fix_config_missing_attrs", priority=14)
+def _fix_config_missing_attrs(project_path: Path, diagnostics: list) -> bool:
+    """
+    Ensure commonly-referenced settings attributes (DATABASE_URL, SECRET_KEY,
+    etc.) always exist on the config/settings object, even if the LLM's
+    generated Config/Settings class forgot to define one of them. Appends a
+    runtime guard after the class body rather than parsing/editing it, so it
+    works regardless of whether Config is a plain class, dataclass, or
+    pydantic BaseSettings -- and is a no-op if everything is already defined.
+
+    Root cause this addresses: `AttributeError: 'Config' object has no
+    attribute 'DATABASE_URL'` recurring across generations because
+    app/main.py does `create_engine(settings.DATABASE_URL)` but the
+    generated Config class sometimes omits that field.
+    """
+    config_file = project_path / "app" / "config.py"
+    if not config_file.exists():
+        return False
+    content = config_file.read_text(encoding="utf-8", errors="replace")
+
+    m = re.search(r'^(\w+)\s*=\s*(?:Config|Settings)\s*\(\s*\)', content, re.MULTILINE)
+    if not m:
+        return False
+    instance_name = m.group(1)
+
+    defaults = {
+        "DATABASE_URL": 'os.getenv("DATABASE_URL", "sqlite:///./app.db")',
+        "SECRET_KEY": 'os.getenv("SECRET_KEY", "dev-secret-key-change-in-production")',
+        "ALGORITHM": 'os.getenv("ALGORITHM", "HS256")',
+        "ACCESS_TOKEN_EXPIRE_MINUTES": 'int(os.getenv("ACCESS_TOKEN_EXPIRE_MINUTES", "10080"))',
+    }
+    missing = {attr: expr for attr, expr in defaults.items() if not re.search(rf'\b{attr}\b', content)}
+    if not missing:
+        return False
+
+    guard_lines = []
+    if not re.search(r'^import os\b', content, re.MULTILINE):
+        guard_lines.append("import os")
+    guard_lines.append("\n# Preflight patch: ensure commonly-referenced settings attributes always exist")
+    for attr, expr in missing.items():
+        guard_lines.append(f'if not hasattr({instance_name}, "{attr}"):')
+        guard_lines.append(f'    {instance_name}.{attr} = {expr}')
+
+    config_file.write_text(content.rstrip() + "\n" + "\n".join(guard_lines) + "\n", encoding="utf-8")
+    return True
+
+
 @preflight.register("fix_missing_init", priority=20)
 def _fix_missing_init(project_path: Path, diagnostics: list) -> bool:
     """Add missing __init__.py files in app/ subdirectories."""
