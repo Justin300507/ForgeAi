@@ -25,64 +25,34 @@ def _tracked(provider_name: str, model: str, prompt: str, fn, stage: str = "unkn
     return result
 
 
-def generate_content(
-    prompt,
-    provider="auto",
-    max_tokens=4000,
-    stage: str = "unknown",
-    thinking_budget: int = 0,
-):
+def _auto_chain(prompt, stage, max_tokens, thinking_budget, skip: frozenset = frozenset()):
+    """
+    Gemini → Groq → Cerebras → Ollama. OpenRouter/DeepSeek removed (out of
+    credits — a 402 wastes a slot then falls through to DeepSeek, which
+    writes partial code and makes errors worse). `skip` excludes a provider
+    a caller already tried directly, so we don't retry the same failure.
+    """
+    if "gemini" not in skip:
+        try:
+            print("Using Gemini")
+            return _tracked("gemini", "gemini-2.5-flash", prompt, gemini_generate, stage,
+                            max_tokens=max_tokens, thinking_budget=thinking_budget)
+        except Exception as e:
+            print(f"Gemini failed: {e}")
 
-    if provider == "deepseek":
-        print("Using DeepSeek")
-        return _tracked("deepseek", "deepseek-chat", prompt, deepseek_generate, stage, max_tokens=max_tokens)
+    if "groq" not in skip:
+        try:
+            print("Using Groq (fallback)")
+            return _tracked("groq", "llama-3.3-70b", prompt, groq_generate, stage, max_tokens=max_tokens)
+        except Exception as e:
+            print(f"Groq failed: {e}")
 
-    if provider == "cerebras":
-        print("Using Cerebras")
-        return _tracked("cerebras", "gpt-oss-120b", prompt, cerebras_generate, stage, max_tokens=max_tokens)
-
-    if provider == "groq":
-        print("Using Groq")
-        return _tracked("groq", "llama-3.3-70b", prompt, groq_generate, stage, max_tokens=max_tokens)
-
-    if provider == "openrouter":
-        print("Using OpenRouter")
-        return _tracked("openrouter", "auto", prompt, openrouter_generate, stage, max_tokens=max_tokens)
-
-    if provider == "gemini":
-        print("Using Gemini")
-        return _tracked("gemini", "gemini-2.5-flash", prompt, gemini_generate, stage,
-                        max_tokens=max_tokens, thinking_budget=thinking_budget)
-
-    if provider == "openai":
-        print("Using OpenAI")
-        return _tracked("openai", "gpt-4o-mini", prompt, openai_generate, stage, max_tokens=max_tokens)
-
-    if provider == "ollama":
-        print("Using Ollama")
-        return _tracked("ollama", "local", prompt, ollama_generate, stage, max_tokens=max_tokens)
-
-    # Auto mode: Gemini → Groq → Cerebras → Ollama
-    # OpenRouter removed (out of credits — 402 wastes a fix slot then falls through to DeepSeek
-    # which writes partial code and makes errors worse). DeepSeek removed for same reason.
-    try:
-        print("Using Gemini")
-        return _tracked("gemini", "gemini-2.5-flash", prompt, gemini_generate, stage,
-                        max_tokens=max_tokens, thinking_budget=thinking_budget)
-    except Exception as e:
-        print(f"Gemini failed: {e}")
-
-    try:
-        print("Using Groq (fallback)")
-        return _tracked("groq", "llama-3.3-70b", prompt, groq_generate, stage, max_tokens=max_tokens)
-    except Exception as e:
-        print(f"Groq failed: {e}")
-
-    try:
-        print("Using Cerebras (last resort)")
-        return _tracked("cerebras", "gpt-oss-120b", prompt, cerebras_generate, stage, max_tokens=max_tokens)
-    except Exception as e:
-        print(f"Cerebras failed: {e}")
+    if "cerebras" not in skip:
+        try:
+            print("Using Cerebras (last resort)")
+            return _tracked("cerebras", "gpt-oss-120b", prompt, cerebras_generate, stage, max_tokens=max_tokens)
+        except Exception as e:
+            print(f"Cerebras failed: {e}")
 
     try:
         print("Using Ollama (offline fallback)")
@@ -91,3 +61,74 @@ def generate_content(
         print(f"Ollama failed: {e}")
 
     raise RuntimeError("All providers failed")
+
+
+def generate_content(
+    prompt,
+    provider="auto",
+    max_tokens=4000,
+    stage: str = "unknown",
+    thinking_budget: int = 0,
+):
+    # Specific-provider requests (e.g. the model router picking "gemini" for a
+    # whole pipeline run) used to have NO fallback: a single transient error
+    # (rate limit, 503 high-demand, etc.) on that one provider would abort the
+    # entire generation, discarding every stage that already succeeded. Now
+    # each specific request falls back through the auto chain (skipping the
+    # provider that just failed) instead of raising straight through.
+
+    if provider == "deepseek":
+        try:
+            print("Using DeepSeek")
+            return _tracked("deepseek", "deepseek-chat", prompt, deepseek_generate, stage, max_tokens=max_tokens)
+        except Exception as e:
+            print(f"DeepSeek failed ({e}) — falling back to auto chain")
+            return _auto_chain(prompt, stage, max_tokens, thinking_budget)
+
+    if provider == "cerebras":
+        try:
+            print("Using Cerebras")
+            return _tracked("cerebras", "gpt-oss-120b", prompt, cerebras_generate, stage, max_tokens=max_tokens)
+        except Exception as e:
+            print(f"Cerebras failed ({e}) — falling back to auto chain")
+            return _auto_chain(prompt, stage, max_tokens, thinking_budget, skip=frozenset({"cerebras"}))
+
+    if provider == "groq":
+        try:
+            print("Using Groq")
+            return _tracked("groq", "llama-3.3-70b", prompt, groq_generate, stage, max_tokens=max_tokens)
+        except Exception as e:
+            print(f"Groq failed ({e}) — falling back to auto chain")
+            return _auto_chain(prompt, stage, max_tokens, thinking_budget, skip=frozenset({"groq"}))
+
+    if provider == "openrouter":
+        try:
+            print("Using OpenRouter")
+            return _tracked("openrouter", "auto", prompt, openrouter_generate, stage, max_tokens=max_tokens)
+        except Exception as e:
+            print(f"OpenRouter failed ({e}) — falling back to auto chain")
+            return _auto_chain(prompt, stage, max_tokens, thinking_budget)
+
+    if provider == "gemini":
+        try:
+            print("Using Gemini")
+            return _tracked("gemini", "gemini-2.5-flash", prompt, gemini_generate, stage,
+                            max_tokens=max_tokens, thinking_budget=thinking_budget)
+        except Exception as e:
+            print(f"Gemini failed ({e}) — falling back to auto chain")
+            return _auto_chain(prompt, stage, max_tokens, thinking_budget, skip=frozenset({"gemini"}))
+
+    if provider == "openai":
+        try:
+            print("Using OpenAI")
+            return _tracked("openai", "gpt-4o-mini", prompt, openai_generate, stage, max_tokens=max_tokens)
+        except Exception as e:
+            print(f"OpenAI failed ({e}) — falling back to auto chain")
+            return _auto_chain(prompt, stage, max_tokens, thinking_budget)
+
+    if provider == "ollama":
+        print("Using Ollama")
+        return _tracked("ollama", "local", prompt, ollama_generate, stage, max_tokens=max_tokens)
+
+    # Auto mode
+    return _auto_chain(prompt, stage, max_tokens, thinking_budget)
