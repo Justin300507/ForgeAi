@@ -25,7 +25,6 @@ Execution order:
 from __future__ import annotations
 
 import time
-import uuid
 from concurrent.futures import ThreadPoolExecutor, as_completed
 from pathlib import Path
 from typing import Any, Optional
@@ -55,7 +54,7 @@ def _run_static_validators(ctx: GenerationContext) -> VerificationResult:
 
     diagnostics = [
         Diagnostic(
-            error_id=uuid.uuid4().hex[:8],
+            error_id=Diagnostic.make_id("static", _categorise_static(err), err),
             category=_categorise_static(err),
             severity=_severity_static(err),
             source="static",
@@ -91,7 +90,7 @@ def _run_compile_check(ctx: GenerationContext) -> VerificationResult:
             py_compile.compile(str(f), doraise=True)
         except py_compile.PyCompileError as exc:
             diagnostics.append(Diagnostic(
-                error_id=uuid.uuid4().hex[:8],
+                error_id=Diagnostic.make_id("compile", ErrorCategory.SYNTAX, str(exc), str(f)),
                 category=ErrorCategory.SYNTAX,
                 severity=ErrorSeverity.CRITICAL,
                 source="compile",
@@ -108,7 +107,7 @@ def _run_compile_check(ctx: GenerationContext) -> VerificationResult:
                 py_compile.compile(str(f), doraise=True)
             except py_compile.PyCompileError as exc:
                 diagnostics.append(Diagnostic(
-                    error_id=uuid.uuid4().hex[:8],
+                    error_id=Diagnostic.make_id("compile", ErrorCategory.SYNTAX, str(exc), str(f)),
                     category=ErrorCategory.SYNTAX,
                     severity=ErrorSeverity.CRITICAL,
                     source="compile",
@@ -189,7 +188,8 @@ def _run_runtime_validation(ctx: GenerationContext) -> VerificationResult:
                    "SyntaxError": ErrorCategory.SYNTAX,
                    "ImportError": ErrorCategory.IMPORT}
         diagnostics.append(Diagnostic(
-            error_id=uuid.uuid4().hex[:8],
+            error_id=Diagnostic.make_id("runtime", cat_map.get(err_type, ErrorCategory.RUNTIME),
+                                        f"[{err_type}] {message}", parsed.get("error_file")),
             category=cat_map.get(err_type, ErrorCategory.RUNTIME),
             severity=ErrorSeverity.CRITICAL,
             source="runtime",
@@ -507,7 +507,7 @@ def _run_llm_judge(
                "medium": ErrorSeverity.MEDIUM, "low": ErrorSeverity.LOW}
     if judgment.assessment and judgment.severity not in ("info", ""):
         diagnostics.append(Diagnostic(
-            error_id=uuid.uuid4().hex[:8],
+            error_id=Diagnostic.make_id("llm_judge", ErrorCategory.BROWSER, judgment.assessment),
             category=ErrorCategory.BROWSER,
             severity=sev_map.get(judgment.severity, ErrorSeverity.MEDIUM),
             source="llm_judge",
@@ -702,7 +702,7 @@ def _ms(t0: float) -> float:
 def _diag(source: str, msg: str, sev: ErrorSeverity, cat: ErrorCategory,
           hint: Optional[str] = None) -> Diagnostic:
     return Diagnostic(
-        error_id=uuid.uuid4().hex[:8],
+        error_id=Diagnostic.make_id(source, cat, msg),
         category=cat,
         severity=sev,
         source=source,

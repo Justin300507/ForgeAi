@@ -156,8 +156,25 @@ def parse_runtime_error(stderr):
                 "hint": "Synchronous SQLAlchemy engines don't support `async with`. Use `with engine.begin()` or call Base.metadata.create_all(bind=engine) at module level."
             }
 
+        # Specific: a Settings/Config object is missing an attribute referenced
+        # elsewhere (e.g. settings.DATABASE_URL when the class never defines it)
+        config_attr_m = re.search(r"'(Settings|Config)' object has no attribute '(.+?)'", stderr)
+        if config_attr_m:
+            class_name, missing_attr = config_attr_m.group(1), config_attr_m.group(2)
+            return {
+                "type": "ConfigAttributeError",
+                "missing_attr": missing_attr,
+                "config_class": class_name,
+                "error_file": error_file,
+                "hint": (
+                    f"'{class_name}' is missing the '{missing_attr}' attribute referenced elsewhere "
+                    f"(e.g. settings.{missing_attr}). Add '{missing_attr}' as a field on the {class_name} "
+                    f"class in app/config.py, typically loaded from an environment variable."
+                ),
+            }
+
         # Specific: joinedload on non-relationship attribute
-        if "joinedload" in stderr or "has no attribute" in stderr:
+        if "joinedload" in stderr and "has no attribute" in stderr:
             attr_m = re.search(r"has no attribute '(.+?)'", stderr)
             return {
                 "type": "RelationshipMissingError",

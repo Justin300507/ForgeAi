@@ -6,7 +6,6 @@ mutable verification/score data accumulates across the fix loop.
 """
 from __future__ import annotations
 
-import uuid
 from dataclasses import dataclass, field
 from datetime import datetime
 from enum import Enum
@@ -72,8 +71,19 @@ class Diagnostic:
     metadata:      dict[str,Any] = field(default_factory=dict)
 
     @staticmethod
-    def make_id() -> str:
-        return uuid.uuid4().hex[:8]
+    def make_id(source: str, category: "ErrorCategory", message: str, file_path: Optional[str] = None) -> str:
+        """
+        Content-derived, not random -- the SAME persisting error must keep the
+        SAME id across verification runs, since detect_regression() diffs
+        error_id sets to tell "still broken from before" apart from "newly
+        broken by this fix". A random id here means every re-verification
+        looks like an all-new set of errors, so any partial fix (even one that
+        made real progress) gets falsely flagged as introducing a regression
+        and reverted.
+        """
+        import hashlib
+        key = f"{source}|{category}|{file_path or ''}|{message[:200]}"
+        return hashlib.sha256(key.encode()).hexdigest()[:12]
 
 
 @dataclass
