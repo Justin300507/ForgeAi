@@ -23,6 +23,17 @@ def _fix_jsx_brace_errors(content: str) -> str:
     return content
 
 
+def _fix_empty_template_expressions(content: str) -> str:
+    """
+    Fix the LLM JSX bug where a template literal has an empty interpolation:
+    `... ${}` — a syntax error (esbuild: 'Unexpected "}"'). The intended
+    expression is unrecoverable, so strip the interpolation entirely rather
+    than guess — this trades a build-breaking syntax error for a blank
+    substring, which is always safe.
+    """
+    return re.sub(r"\$\{\s*\}", "", content)
+
+
 def _fix_jsx_truncated_templates(content: str) -> str:
     """
     Fix JSX files where LLM output was cut off mid-template-literal.
@@ -166,6 +177,7 @@ def generate_frontend(
             file["path"] = path
             content = _fix_jsx_brace_errors(file["content"])
             content = _fix_jsx_truncated_templates(content)
+            content = _fix_empty_template_expressions(content)
             file["content"] = content
 
             if not content.strip():
