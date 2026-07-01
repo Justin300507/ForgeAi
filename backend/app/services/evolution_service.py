@@ -6,12 +6,12 @@ Analyzes live deployment metrics with an LLM and generates an evolution plan:
   - What's erroring
   - What to improve in the next generation
 """
-import json
 from typing import Any
 
 from app.providers.ai_provider import generate_content
 from app.prompts.evolution_prompt import build_evolution_prompt
 from app.prompts.shared_contract import FASTAPI_CONTRACT
+from app.utils.json_cleaner import extract_json
 
 
 def generate_evolution_plan(
@@ -46,15 +46,7 @@ def generate_evolution_plan(
 
     try:
         raw = generate_content(prompt, provider=provider, stage="evolution")
-        # Strip markdown code fences if present
-        cleaned = raw.strip()
-        if cleaned.startswith("```"):
-            cleaned = cleaned.split("```", 2)[1]
-            if cleaned.startswith("json"):
-                cleaned = cleaned[4:]
-            cleaned = cleaned.rsplit("```", 1)[0].strip()
-
-        plan = json.loads(cleaned)
+        plan = extract_json(raw)
         print(f"  [V12] Evolution plan: {plan.get('summary', '')[:100]}")
         return plan
 

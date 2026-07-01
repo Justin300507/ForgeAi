@@ -14,10 +14,11 @@ Uses the Anthropic API directly since it needs multimodal input.
 import base64
 import json
 import os
-import re
 import time
 from dataclasses import dataclass, field
 from pathlib import Path
+
+from app.utils.json_cleaner import extract_json
 
 
 @dataclass
@@ -137,30 +138,27 @@ def _call_vision_api(screenshots: list[dict]) -> dict:
     if anthropic_key:
         try:
             raw = _call_via_anthropic_sdk(screenshots, anthropic_key)
-            clean = re.sub(r"```[a-z]*\n?", "", raw).strip()
-            m = re.search(r"\{[\s\S]+\}", clean)
-            if m:
-                return json.loads(m.group(0))
+            parsed = extract_json(raw)
+            if parsed:
+                return parsed
         except Exception as e:
             last_err = e
 
     if openrouter_key:
         try:
             raw = _call_via_openrouter(screenshots, openrouter_key)
-            clean = re.sub(r"```[a-z]*\n?", "", raw).strip()
-            m = re.search(r"\{[\s\S]+\}", clean)
-            if m:
-                return json.loads(m.group(0))
+            parsed = extract_json(raw)
+            if parsed:
+                return parsed
         except Exception as e:
             last_err = e
 
     if gemini_key:
         try:
             raw = _call_via_gemini(screenshots, gemini_key)
-            clean = re.sub(r"```[a-z]*\n?", "", raw).strip()
-            m = re.search(r"\{[\s\S]+\}", clean)
-            if m:
-                return json.loads(m.group(0))
+            parsed = extract_json(raw)
+            if parsed:
+                return parsed
         except Exception as e:
             last_err = e
 

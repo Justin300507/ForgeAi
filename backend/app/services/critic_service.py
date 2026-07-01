@@ -5,12 +5,11 @@ returns a structured critique with a confidence score (0-100).
 Runs after the static validator passes, before runtime validation.
 If confidence is below RETRY_THRESHOLD the pipeline can decide to regenerate.
 """
-import json
 import os
-import re
 from pathlib import Path
 
 from app.providers.ai_provider import generate_content
+from app.utils.json_cleaner import extract_json
 
 RETRY_THRESHOLD = 40  # below this score, caller should consider full retry
 
@@ -102,14 +101,7 @@ def run_critic(project_path: str, provider: str = "auto") -> dict:
         if not raw:
             raise ValueError("Empty response")
 
-        # Strip markdown fences if present
-        clean = re.sub(r"```[a-z]*\n?", "", raw).strip()
-        # Find JSON object
-        m = re.search(r"\{[\s\S]+\}", clean)
-        if not m:
-            raise ValueError("No JSON object in response")
-
-        result = json.loads(m.group(0))
+        result = extract_json(raw)
         score = int(result.get("score", 50))
         return {
             "score": max(0, min(100, score)),

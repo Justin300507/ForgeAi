@@ -68,12 +68,14 @@ def run_code_review(
             skipped=True, skip_reason="No Python files found",
         )
 
+    raw_text = ""
     try:
         prompt = build_code_review_prompt(files, architecture)
         raw_text = generate_content(prompt, provider, max_tokens=3000, stage="code_review")
         data = extract_json(raw_text)
     except Exception as e:
         print(f"  Code review failed: {e}")
+        print(f"  === RAW RESPONSE ===\n{raw_text[:2000] or '<no response captured>'}\n====================")
         return CodeReviewReport(
             naming_score=70, architecture_score=70,
             maintainability_score=70, tech_debt_score=70, overall_score=70,

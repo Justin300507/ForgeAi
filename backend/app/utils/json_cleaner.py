@@ -14,7 +14,7 @@ def _fix_path_backslashes(match):
 
 
 TRIPLE_QUOTE_PATTERN = re.compile(
-    r'("content"\s*:\s*)"""(.*?)"""',
+    r'("[a-zA-Z_][a-zA-Z0-9_]*"\s*:\s*)"""(.*?)"""',
     re.DOTALL
 )
 
@@ -261,9 +261,14 @@ def extract_json(text: str):
         return json.loads(sanitized, strict=False)
 
     except json.JSONDecodeError:
-        # Try escaping unescaped inner quotes (common when LLM embeds code in descriptions)
+        # Try escaping unescaped inner quotes (common when LLM embeds code in
+        # descriptions), THEN re-run the newline/tab repair on top of that --
+        # a single field often has both problems (a quoted identifier AND a
+        # raw newline), and fixing only one still leaves the JSON unparsable.
         try:
-            return json.loads(_escape_inner_quotes(json_text), strict=False)
+            quote_fixed = _escape_inner_quotes(json_text)
+            quote_fixed = re.sub(r'"(?:[^"\\]|\\.)*"', _repair_string_token, quote_fixed, flags=re.DOTALL)
+            return json.loads(quote_fixed, strict=False)
         except json.JSONDecodeError:
             pass
         # Last resort: try to salvage complete file objects from truncated output
