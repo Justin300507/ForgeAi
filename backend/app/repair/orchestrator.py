@@ -444,22 +444,35 @@ class FixOrchestrator:
         ve = self._get_ve()
         ve.run(ctx)
 
-        # 6. Check for regressions
+        # 6. Score the (unreverted) post-fix state
+        se = self._get_se()
+        score_after_obj = se.score(ctx, attempt_number=cfg.attempt)
+        score_after = score_after_obj.overall
+
+        # 7. Check for regressions -- diagnostic-based AND score-based.
+        # Diagnostic comparison now covers static/runtime/browser/http/perf/
+        # accessibility/workflow, but LLM Judge is deliberately excluded (its
+        # free-text wording varies between calls) and there may be other gaps.
+        # A fix that measurably drops the score should never be kept just
+        # because nothing tripped the diagnostic comparison.
         regressions = ctx.detect_regression()
         regression_detected = False
         if regressions:
             print(f"  [fix] REGRESSION: {len(regressions)} new error(s) introduced")
             for r in regressions[:3]:
                 print(f"       ↳ {r.message[:80]}")
-            snapshot.revert()
-            # Re-run verification on reverted state
-            ve.run(ctx)
+            regression_detected = True
+        elif score_after < score_before:
+            print(f"  [fix] REGRESSION: score dropped {score_before:.1f} -> {score_after:.1f} "
+                  f"with no new diagnostics detected -- reverting anyway")
             regression_detected = True
 
-        # 7. Score new state
-        se = self._get_se()
-        score_after_obj = se.score(ctx, attempt_number=cfg.attempt)
-        score_after = score_after_obj.overall
+        if regression_detected:
+            snapshot.revert()
+            ve.run(ctx)
+            score_after_obj = se.score(ctx, attempt_number=cfg.attempt)
+            score_after = score_after_obj.overall
+
         se.print_report(score_after_obj)
 
         success = score_after > score_before and not regression_detected

@@ -562,6 +562,7 @@ class VerificationEngine:
         ctx.static_results  = []
         ctx.runtime_result  = None
         ctx.browser_result  = None
+        ctx.extra_results   = []
         ctx._backend_runner = None
         all_screenshots:  list[str] = []
 
@@ -661,16 +662,25 @@ class VerificationEngine:
 
             ctx.end_stage(evt, StageStatus.PASSED)
 
-            for stage_result in [http_vr, browser_vr, perf_vr, a11y_vr]:
+            # http/performance/accessibility diagnostics used to only live in the
+            # local `results` list (used for printing) and were never visible to
+            # the fix loop or regression detection -- ctx.extra_results fixes that.
+            for stage_result in [http_vr, perf_vr, a11y_vr]:
                 if stage_result:
                     results.append(stage_result)
+                    ctx.extra_results.append(stage_result)
                     print(f"  [verify]       {stage_result.stage}: {stage_result.status.value} "
                           f"— {len(stage_result.diagnostics)} issues")
+            if browser_vr:
+                results.append(browser_vr)
+                print(f"  [verify]       {browser_vr.stage}: {browser_vr.status.value} "
+                      f"— {len(browser_vr.diagnostics)} issues")
 
             # ── Stage 10: Workflow (sequential, needs browser to be done) ────
             print("  [verify] 10/11 Workflow tests...")
             wf_vr, all_screenshots = _run_workflow_tests(ctx, all_screenshots)
             results.append(wf_vr)
+            ctx.extra_results.append(wf_vr)
             print(f"  [verify]       {wf_vr.status.value}")
 
         else:
@@ -681,6 +691,11 @@ class VerificationEngine:
                 print(f"  [verify] SKIPPED {stage}: {skip_reason}")
 
         # ── Stage 11: LLM Judge (sequential, needs all previous results) ─────
+        # Deliberately NOT added to ctx.extra_results: its diagnostic message is
+        # free-form LLM text that varies in wording between calls even for the
+        # same underlying issue, so content-hashing it for regression detection
+        # would make almost every judge comment look "new" and falsely revert
+        # real improvements. It stays informational (printed) only.
         print("  [verify] 11/11 LLM Judge...")
         all_pre_judge_diags = [d for r in results for d in r.diagnostics]
         judge_vr = _run_llm_judge(ctx, all_pre_judge_diags, all_screenshots)

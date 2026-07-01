@@ -264,6 +264,12 @@ class GenerationContext:
         self.static_results:  list[VerificationResult] = []
         self.runtime_result:  Optional[RuntimeResult]  = None
         self.browser_result:  Optional[BrowserTestResult] = None
+        # HTTP/performance/accessibility/workflow/LLM-judge results -- these
+        # used to be computed and printed but never persisted anywhere
+        # all_diagnostics()/detect_regression() could see, so the fix loop was
+        # completely blind to them and a fix that broke one of them (e.g. made
+        # workflow tests start failing) was never caught as a regression.
+        self.extra_results:   list[VerificationResult] = []
 
         # ── Scoring ───────────────────────────────────────────────────────
         self.score_history:   list[QualityScore]        = []
@@ -319,6 +325,8 @@ class GenerationContext:
             out.extend(self.runtime_result.diagnostics)
         if self.browser_result:
             out.extend(self.browser_result.diagnostics)
+        for r in self.extra_results:
+            out.extend(r.diagnostics)
         return out
 
     def critical_errors(self) -> list[Diagnostic]:
