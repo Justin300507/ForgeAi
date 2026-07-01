@@ -2191,7 +2191,7 @@ def _patch_list_response_model_mismatch(project_path: Path) -> int:
 
 _FRONTEND_PKG_PEERS: dict[str, list[str]] = {
     "@mui/material": ["@mui/material", "@emotion/react", "@emotion/styled"],
-    "@mui/icons-material": ["@mui/icons-material", "@emotion/react", "@emotion/styled"],
+    "@mui/icons-material": ["@mui/icons-material", "@mui/material", "@emotion/react", "@emotion/styled"],
     "@mui/x-date-pickers": ["@mui/x-date-pickers", "dayjs"],
     "@tanstack/react-query": ["@tanstack/react-query"],
     "react-query": ["react-query"],
@@ -2245,12 +2245,16 @@ def _patch_frontend_package_json(project_path: Path) -> bool:
             name = m.group(1)
             if name.startswith(".") or name.startswith("/"):
                 continue
-            # Skip subpath exports of already-installed packages
-            # e.g. react-dom/client → react-dom, react/jsx-runtime → react
+            # Always resolve subpath imports to the root package:
+            # @mui/icons-material/Menu → @mui/icons-material
+            # react-dom/client → react-dom
+            # @tanstack/react-query/devtools → @tanstack/react-query
             pkg_root = name.split("/")[0] if not name.startswith("@") else "/".join(name.split("/")[:2])
-            if pkg_root != name and pkg_root in all_installed:
+            # Skip if the root package is already installed
+            if pkg_root in all_installed:
                 continue
-            imported.add(name)
+            # Always add the root package (not the subpath) so peer lookup works
+            imported.add(pkg_root)
 
     to_add: set[str] = set()
     for name in imported:
