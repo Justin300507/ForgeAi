@@ -114,6 +114,11 @@ Rules:
 - Do not break any existing working functionality
 - If a REQUIRED ENDPOINTS list is present above, every one of those routes must
   still be defined in your rewritten file -- do not drop, rename, or merge them
+- Do NOT write out your reasoning, alternatives you considered, or a running
+  commentary as comments inside the file content. Decide the fix silently and
+  write only the final, correct code (plus comments that would normally
+  belong in the file, if any). Verbose reasoning-as-comments wastes tokens on
+  every fix call and this system runs on a tight budget.
 """
 
 
