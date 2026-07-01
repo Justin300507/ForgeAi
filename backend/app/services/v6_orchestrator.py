@@ -584,6 +584,7 @@ def generate_project_v6(
         max_runtime_attempts = 3
         try:
             from app.services.runtime_fix_service import generate_runtime_fix
+            _last_rt_sig: object = None
             for r_attempt in range(max_runtime_attempts + 1):
                 runtime_result = validate_runtime(project_path, architecture=architecture)
                 print(f"  Runtime: {'PASS' if runtime_result.get('success') else 'FAIL'}")
@@ -592,6 +593,17 @@ def generate_project_v6(
                     break
                 if r_attempt == max_runtime_attempts:
                     break
+
+                # Stagnation guard: if failure signature is identical to last attempt,
+                # further LLM calls will produce the same broken fix — stop early.
+                _rt_sig = frozenset(
+                    (s.get("name", ""), s.get("passed", False), str(s.get("detail", "")))
+                    for s in runtime_result.get("journey", {}).get("steps", [])
+                )
+                if r_attempt > 0 and _rt_sig == _last_rt_sig:
+                    print("  [runtime fix] Failure signature unchanged — stopping retries")
+                    break
+                _last_rt_sig = _rt_sig
 
                 rt_fix = generate_runtime_fix(runtime_result, project_path, provider)
                 _llm["runtime_fixes"] += 1

@@ -2404,6 +2404,65 @@ def _patch_create_missing_service_stubs(project_path: Path) -> int:
     return created
 
 
+# ── Inject missing db.refresh() after db.commit() ────────────────────────────
+# LLMs frequently forget db.refresh(obj) after db.commit() in POST handlers.
+# Without it the in-memory SQLAlchemy object still has id=None even though the
+# row was persisted with a real autoincrement id, so the response body returns
+# {"id": null, ...} and every downstream CRUD step (Edit/Delete/Verify) fails.
+
+_ADD_COMMIT_RE = re.compile(
+    r"([ \t]*)db\.add\((\w+)\)\n(\1db\.commit\(\)\n)",
+    re.MULTILINE,
+)
+
+
+def _patch_missing_db_refresh(project_path: Path) -> int:
+    """
+    For every POST/create route handler that calls db.add(obj) + db.commit()
+    without an immediately following db.refresh(obj), inject the refresh call.
+    """
+    routes_dir = project_path / "app" / "routes"
+    if not routes_dir.exists():
+        return 0
+
+    patched = 0
+    for rf in sorted(routes_dir.glob("*.py")):
+        if rf.name == "__init__.py":
+            continue
+        try:
+            src = rf.read_text(encoding="utf-8", errors="replace")
+        except Exception:
+            continue
+
+        if "db.add(" not in src or "db.commit()" not in src:
+            continue
+
+        original = src
+        result: list[str] = []
+        pos = 0
+
+        for m in _ADD_COMMIT_RE.finditer(src):
+            result.append(src[pos:m.end()])
+            indent = m.group(1)
+            varname = m.group(2)
+            # Check whether refresh is already present in the next 3 lines
+            after = src[m.end():]
+            next_lines = after.split("\n")[:3]
+            if not any(f"db.refresh({varname})" in ln for ln in next_lines):
+                result.append(f"{indent}db.refresh({varname})\n")
+            pos = m.end()
+
+        result.append(src[pos:])
+        new_src = "".join(result)
+
+        if new_src != original:
+            rf.write_text(new_src, encoding="utf-8")
+            patched += 1
+            print(f"  [refresh_patcher] Injected db.refresh() in {rf.name}")
+
+    return patched
+
+
 # ── Auto-wire orphan routers into main.py ─────────────────────────────────────
 
 def _patch_wire_orphan_routers(project_path: Path) -> None:
@@ -2626,6 +2685,10 @@ def run_deterministic_patches(project_path: str, skip_protected_injections: bool
     # Create service stubs when route files import from app.services.X that doesn't exist.
     # LLMs sometimes generate a service layer but only generate routes, not services.
     _patch_create_missing_service_stubs(root)
+
+    # Inject db.refresh(obj) after db.commit() where missing — LLMs forget this, causing
+    # POST handlers to return id=None because the ORM object isn't re-bound to the DB row.
+    _patch_missing_db_refresh(root)
 
     # Fix frontend package.json: add any npm packages imported in JSX but missing
     # from dependencies (e.g. @mui/material → also adds @emotion/react, @emotion/styled)
