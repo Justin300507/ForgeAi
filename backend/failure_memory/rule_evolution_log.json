@@ -98,5 +98,35 @@
     "improvement": 0.0,
     "promoted": false,
     "timestamp": "2026-06-27T13:59:42"
+  },
+  {
+    "pattern_key": "RouterExportMismatch",
+    "rule": "Every route module MUST define and export a variable named exactly <resource>_router (e.g. user_router). WRONG: router = APIRouter(); __all__ = [] . RIGHT: user_router = APIRouter(); __all__ = [\"user_router\"]. This guarantees the main app can import the router without silent failures.",
+    "quality_score": 8.5,
+    "old_pass_rate": 0.6666666666666666,
+    "new_pass_rate": 0.3333333333333333,
+    "improvement": -0.3333333333333333,
+    "promoted": false,
+    "timestamp": "2026-06-30T05:57:35"
+  },
+  {
+    "pattern_key": "ModuleNotFoundError",
+    "rule": "All imports must be absolute within the project package and any third‑party library used must be listed in requirements.txt. WRONG: import foo (where foo is a local file not in PYTHONPATH). RIGHT: from app.utils import foo and ensure \"foo\" is in requirements.txt if external. This prevents missing‑module crashes at runtime.",
+    "quality_score": 7.3,
+    "old_pass_rate": 0.6666666666666666,
+    "new_pass_rate": 1.0,
+    "improvement": 0.33333333333333337,
+    "promoted": true,
+    "timestamp": "2026-06-30T05:57:35"
+  },
+  {
+    "pattern_key": "SQLAlchemyError",
+    "rule": "Wrap every direct SQLAlchemy session operation in a try/except block that catches SQLAlchemyError and raises an HTTPException with status_code=500 and a concise message. WRONG: db.add(obj); db.commit(). RIGHT: try: db.add(obj); db.commit() except SQLAlchemyError as e: db.rollback(); raise HTTPException(status_code=500, detail=\"Database error\") . This prevents uncaught DB errors from bubbling up as 500 crashes.",
+    "quality_score": 8.0,
+    "old_pass_rate": 0.6666666666666666,
+    "new_pass_rate": 0.6666666666666666,
+    "improvement": 0.0,
+    "promoted": false,
+    "timestamp": "2026-06-30T05:57:35"
   }
 ]

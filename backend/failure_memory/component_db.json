@@ -1,74 +1,74 @@
 {
   "bcrypt_hash": {
     "name": "bcrypt_hash",
-    "seen": 19,
-    "successes": 11,
-    "failures": 8,
-    "total_score": 1471.0,
-    "last_seen": "2026-06-28T21:38:16Z",
-    "avg_score": 77.4
+    "seen": 50,
+    "successes": 30,
+    "failures": 20,
+    "total_score": 4036.0,
+    "last_seen": "2026-06-30T00:48:14Z",
+    "avg_score": 80.7
   },
   "chat": {
     "name": "chat",
-    "seen": 18,
-    "successes": 11,
-    "failures": 7,
-    "total_score": 1446.0,
-    "last_seen": "2026-06-28T21:38:16Z",
-    "avg_score": 80.3
+    "seen": 49,
+    "successes": 30,
+    "failures": 19,
+    "total_score": 4011.0,
+    "last_seen": "2026-06-30T00:48:14Z",
+    "avg_score": 81.9
   },
   "crud_rest": {
     "name": "crud_rest",
-    "seen": 19,
-    "successes": 11,
-    "failures": 8,
-    "total_score": 1471.0,
-    "last_seen": "2026-06-28T21:38:16Z",
-    "avg_score": 77.4
+    "seen": 50,
+    "successes": 30,
+    "failures": 20,
+    "total_score": 4036.0,
+    "last_seen": "2026-06-30T00:48:14Z",
+    "avg_score": 80.7
   },
   "env_config": {
     "name": "env_config",
-    "seen": 19,
-    "successes": 11,
-    "failures": 8,
-    "total_score": 1471.0,
-    "last_seen": "2026-06-28T21:38:16Z",
-    "avg_score": 77.4
+    "seen": 50,
+    "successes": 30,
+    "failures": 20,
+    "total_score": 4036.0,
+    "last_seen": "2026-06-30T00:48:14Z",
+    "avg_score": 80.7
   },
   "jwt_auth": {
     "name": "jwt_auth",
-    "seen": 19,
-    "successes": 11,
-    "failures": 8,
-    "total_score": 1471.0,
-    "last_seen": "2026-06-28T21:38:16Z",
-    "avg_score": 77.4
+    "seen": 50,
+    "successes": 30,
+    "failures": 20,
+    "total_score": 4036.0,
+    "last_seen": "2026-06-30T00:48:14Z",
+    "avg_score": 80.7
   },
   "pagination": {
     "name": "pagination",
-    "seen": 19,
-    "successes": 11,
-    "failures": 8,
-    "total_score": 1471.0,
-    "last_seen": "2026-06-28T21:38:16Z",
-    "avg_score": 77.4
+    "seen": 50,
+    "successes": 30,
+    "failures": 20,
+    "total_score": 4036.0,
+    "last_seen": "2026-06-30T00:48:14Z",
+    "avg_score": 80.7
   },
   "search_filter": {
     "name": "search_filter",
-    "seen": 19,
-    "successes": 11,
-    "failures": 8,
-    "total_score": 1471.0,
-    "last_seen": "2026-06-28T21:38:16Z",
-    "avg_score": 77.4
+    "seen": 50,
+    "successes": 30,
+    "failures": 20,
+    "total_score": 4036.0,
+    "last_seen": "2026-06-30T00:48:14Z",
+    "avg_score": 80.7
   },
   "soft_delete": {
     "name": "soft_delete",
-    "seen": 19,
-    "successes": 11,
-    "failures": 8,
-    "total_score": 1471.0,
-    "last_seen": "2026-06-28T21:38:16Z",
-    "avg_score": 77.4
+    "seen": 49,
+    "successes": 30,
+    "failures": 19,
+    "total_score": 3966.0,
+    "last_seen": "2026-06-30T00:48:14Z",
+    "avg_score": 80.9
   }
 }

@@ -1,27 +1,27 @@
 {
-  "project_name": "TaskFlow Pro",
-  "description": "A collaborative productivity platform for teams to manage projects, track tasks, log time, and visualize progress through kanban boards and analytics dashboards.",
+  "project_name": "RecipeMaster",
+  "description": "A comprehensive recipe management platform that lets users create, organize, and explore recipes, manage ingredients with nutritional data, categorize meals, generate shopping lists, and gain nutrition insights.",
   "target_users": [
-    "Project managers",
-    "Team leads",
-    "Developers",
-    "Freelancers",
-    "Small business owners"
+    "Home cooks",
+    "Food enthusiasts",
+    "Meal planners",
+    "Dietitians"
   ],
   "core_features": [
-    "Project creation with milestones, deadlines, and owner assignment",
-    "Task management with assignee, priority, due dates, and kanban status flow (Backlog → In Progress → Review → Done)",
-    "Team member invitation and role-based access control",
-    "Time tracking per task with start/stop timers and manual entry",
-    "Real-time activity feed showing recent task updates and time logs",
-    "Analytics dashboard with project velocity, burndown charts, and individual productivity stats"
+    "Recipe creation & editing with ingredients, steps, cooking time, servings, and difficulty levels",
+    "Ingredient catalog with unit conversion, nutritional information, and pantry stock tracking",
+    "Category and tag system for organizing recipes by cuisine, meal type, and dietary restrictions",
+    "Advanced search & filter across recipes by name, ingredients, categories, dietary tags, and cooking time",
+    "Shopping list generation from selected recipes, consolidating ingredient quantities and units",
+    "Nutrition summary dashboard showing average calories, macro distribution, and top nutrient sources across saved recipes",
+    "User favorites and personal collections for quick access to preferred recipes"
   ],
   "future_features": [
-    "Calendar integration (Google, Outlook)",
-    "Slack and email notifications for task changes",
-    "Custom workflow templates per team",
-    "Advanced reporting with export to CSV/PDF",
-    "Mobile app for iOS and Android"
+    "Meal planning calendar with drag‑and‑drop recipe scheduling",
+    "Bulk import/export of recipes via CSV or JSON",
+    "Community sharing with public recipe galleries and comments",
+    "AI‑powered recipe suggestions based on pantry ingredients",
+    "Integration with grocery delivery services"
   ],
   "tech_stack": [
     "FastAPI",
@@ -35,53 +35,86 @@
       "name": "User",
       "fields": [
         "id",
+        "username",
         "email",
         "password_hash",
-        "full_name",
-        "role",
         "is_active",
         "created_at",
         "updated_at"
       ]
     },
     {
-      "name": "Project",
+      "name": "Recipe",
+      "fields": [
+        "id",
+        "user_id",
+        "title",
+        "description",
+        "cooking_time_minutes",
+        "servings",
+        "difficulty",
+        "is_public",
+        "created_at",
+        "updated_at"
+      ]
+    },
+    {
+      "name": "Ingredient",
+      "fields": [
+        "id",
+        "name",
+        "unit",
+        "calories_per_unit",
+        "protein_per_unit",
+        "carbs_per_unit",
+        "fats_per_unit",
+        "created_at",
+        "updated_at"
+      ]
+    },
+    {
+      "name": "Category",
       "fields": [
         "id",
         "name",
         "description",
-        "status",
-        "start_date",
-        "end_date",
-        "owner_id",
+        "parent_category_id",
         "created_at",
         "updated_at"
       ]
     },
     {
-      "name": "Task",
+      "name": "RecipeIngredient",
       "fields": [
         "id",
-        "title",
-        "description",
-        "status",
-        "priority",
-        "due_date",
-        "assignee_id",
-        "project_id",
+        "recipe_id",
+        "ingredient_id",
+        "quantity",
+        "unit",
+        "order_index",
         "created_at",
         "updated_at"
       ]
     },
     {
-      "name": "TimeEntry",
+      "name": "ShoppingList",
       "fields": [
         "id",
-        "task_id",
         "user_id",
-        "start_time",
-        "end_time",
-        "duration_minutes",
+        "name",
+        "is_completed",
+        "created_at",
+        "updated_at"
+      ]
+    },
+    {
+      "name": "ShoppingListItem",
+      "fields": [
+        "id",
+        "shopping_list_id",
+        "ingredient_id",
+        "quantity",
+        "unit",
         "created_at",
         "updated_at"
       ]
@@ -93,7 +126,7 @@
       "endpoints": [
         "POST /auth/register",
         "POST /auth/login",
-        "POST /auth/logout"
+        "POST /auth/refresh"
       ]
     },
     {
@@ -107,43 +140,55 @@
       ]
     },
     {
-      "name": "projects",
+      "name": "recipes",
       "endpoints": [
-        "GET /projects?search=&status=&limit=&offset=",
-        "GET /projects/{id}",
-        "POST /projects",
-        "PUT /projects/{id}",
-        "DELETE /projects/{id}"
+        "GET /recipes?search=&category=&diet=&limit=&offset=",
+        "GET /recipes/{id}",
+        "POST /recipes",
+        "PUT /recipes/{id}",
+        "DELETE /recipes/{id}",
+        "GET /recipes/{id}/ingredients"
       ]
     },
     {
-      "name": "tasks",
+      "name": "ingredients",
       "endpoints": [
-        "GET /tasks?search=&status=&priority=&limit=&offset=",
-        "GET /tasks/{id}",
-        "POST /tasks",
-        "PUT /tasks/{id}",
-        "DELETE /tasks/{id}"
+        "GET /ingredients?search=&unit=&limit=&offset=",
+        "GET /ingredients/{id}",
+        "POST /ingredients",
+        "PUT /ingredients/{id}",
+        "DELETE /ingredients/{id}"
       ]
     },
     {
-      "name": "time_entries",
+      "name": "categories",
       "endpoints": [
-        "GET /time-entries?user_id=&task_id=&date=&limit=&offset=",
-        "GET /time-entries/{id}",
-        "POST /time-entries",
-        "PUT /time-entries/{id}",
-        "DELETE /time-entries/{id}"
+        "GET /categories?search=&parent=&limit=&offset=",
+        "GET /categories/{id}",
+        "POST /categories",
+        "PUT /categories/{id}",
+        "DELETE /categories/{id}"
       ]
     },
     {
-      "name": "analytics",
+      "name": "shopping",
+      "endpoints": [
+        "GET /shopping-lists?status=&limit=&offset=",
+        "GET /shopping-lists/{id}",
+        "POST /shopping-lists",
+        "POST /shopping-lists/{id}/items",
+        "PUT /shopping-lists/{id}",
+        "DELETE /shopping-lists/{id}",
+        "DELETE /shopping-lists/{id}/items/{item_id}"
+      ]
+    },
+    {
+      "name": "stats",
       "endpoints": [
         "GET /stats/summary",
-        "GET /projects/velocity",
-        "GET /tasks/burndown",
-        "GET /activity/recent",
-        "GET /search?q="
+        "GET /stats/nutrition",
+        "GET /recipes/popular",
+        "GET /activity/recent"
       ]
     }
   ],
@@ -151,57 +196,55 @@
     "Login",
     "Register",
     "Dashboard",
-    "Projects",
-    "Project Details",
-    "Tasks",
-    "Task Board",
-    "Time Tracker",
-    "Reports",
-    "Settings"
+    "Recipe Library",
+    "Recipe Editor",
+    "Ingredient Catalog",
+    "Shopping List",
+    "Category Management",
+    "Nutrition Insights"
   ],
   "backend_modules": [
     "auth_service",
     "user_service",
-    "project_service",
-    "task_service",
-    "time_entry_service",
-    "analytics_service"
+    "recipe_service",
+    "ingredient_service",
+    "category_service",
+    "shopping_service",
+    "stats_service"
   ],
-  "seed_data_description": "Seed 8 users (2 admins, 3 managers, 3 regular members) with realistic names and emails. Create 5 projects owned by different users, each with a mix of statuses (planned, active, completed) and defined start/end dates. For each project, generate 12 tasks covering all kanban statuses, assign tasks to users, set priorities (low, medium, high) and realistic due dates. Add 20 time entries logging work on various tasks by different users, with start/end timestamps and calculated durations. Populate recent activity records linking users to task updates and time logs to showcase the activity feed.",
+  "seed_data_description": "Seed 10 users (mix of regular and admin roles), 20 categories (e.g., Italian, Mexican, Breakfast, Dessert, Vegan, Gluten‑Free) with parent‑child relationships, 30 ingredients (e.g., tomato, olive oil, chicken breast, quinoa, almond flour) each with realistic calories, protein, carbs, and fats per unit, 15 recipes each linked to a random user and assigned 2‑4 categories, each recipe containing 5‑8 RecipeIngredient entries referencing the seeded ingredients with varied quantities and units, 5 shopping lists per user named \"Weekly Plan\" or \"Weekend BBQ\" each marked incomplete, and ShoppingListItem records that consolidate ingredient quantities from the recipes added to those lists. All timestamps are set to recent dates to simulate active usage.",
   "analytics_endpoints": [
     "GET /stats/summary",
-    "GET /projects/velocity",
-    "GET /tasks/burndown"
+    "GET /stats/nutrition",
+    "GET /recipes/popular"
   ],
   "roadmap": [
     {
-      "phase": "Phase 1: MVP",
+      "phase": "MVP",
       "milestones": [
-        "User authentication and role management",
-        "Project CRUD with owner assignment",
-        "Task CRUD with kanban status flow",
-        "Basic time entry logging",
-        "Initial dashboard with task counts"
+        "Implement user authentication and role management",
+        "CRUD operations for recipes, ingredients, and categories",
+        "Search and filter functionality across recipes and ingredients",
+        "Basic shopping list generation from selected recipes",
+        "Initial nutrition summary calculations"
       ]
     },
     {
-      "phase": "Phase 2: Enhanced Collaboration",
+      "phase": "Enhanced Features",
       "milestones": [
-        "Team invitation and role-based permissions",
-        "Real-time activity feed",
-        "Bulk time entry import/export",
-        "Search across projects and tasks",
-        "Responsive UI improvements"
+        "Nutrition dashboard with macro distribution charts",
+        "User favorites and personal collections",
+        "Bulk import/export of recipes (CSV/JSON)",
+        "Advanced ingredient unit conversion and pantry stock tracking"
       ]
     },
     {
-      "phase": "Phase 3: Advanced Analytics",
+      "phase": "Scaling & Community",
       "milestones": [
-        "Project velocity and burndown charts",
-        "Individual productivity reports",
-        "Custom date range analytics",
-        "Export analytics to CSV/PDF",
-        "Integration with external calendar services"
+        "Public recipe sharing with comments and ratings",
+        "AI‑driven recipe suggestions based on pantry contents",
+        "Integration with grocery delivery APIs",
+        "Performance optimizations and mobile‑responsive UI"
       ]
     }
   ]

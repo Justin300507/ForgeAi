@@ -667,5 +667,252 @@
       "expected_delta": "+8% pass rate"
     },
     "summary": "The benchmark shows a modest upward trend, driven by recent 100‑score runs, but recurring import and naming errors still dominate failures. Root causes are largely procedural—missing imports, inconsistent naming, and incomplete FK handling. Targeted validators and stricter prompt rules are expected to deliver the biggest gains in pass rate."
+  },
+  {
+    "timestamp": "2026-06-30T05:10:41",
+    "trend": "declining",
+    "trend_explanation": "The first four runs achieved perfect scores (100) but subsequent runs dropped to the 70‑80 range with occasional 100s. The average score fell from 100 to ~84.6, indicating a regression after the initial stable period.",
+    "regression_detected": true,
+    "regression_details": "Around 2026-06-23 a new set of validation rules (e.g., stricter import checks) was introduced. While intended to catch missing imports, it caused a cascade of SQLAlchemy and routing errors, lowering scores and pass rates.",
+    "root_causes": [
+      {
+        "cause": "LLM does not consistently follow router naming convention",
+        "evidence": "RouterExportMismatch appears in 8 out of 20 runs (40%)",
+        "fix_type": "prompt_rule"
+      },
+      {
+        "cause": "Generated code references models or modules that are not imported",
+        "evidence": "ModuleNotFoundError (8 runs) and NoReferencedTableError (6 runs) together account for 70% of failures",
+        "fix_type": "validator_addition"
+      },
+      {
+        "cause": "Foreign‑key relationships are defined without ensuring the target model is imported before Base.metadata.create_all()",
+        "evidence": "SQLAlchemyError occurs in 9 runs (45%) and is always accompanied by missing import errors",
+        "fix_type": "architecture_change"
+      },
+      {
+        "cause": "Endpoint definitions missing or mismatched with architecture plan",
+        "evidence": "MissingEndpoint appears in 6 runs (30%) and often co‑occurs with RouterExportMismatch",
+        "fix_type": "prompt_rule"
+      },
+      {
+        "cause": "Front‑end JSX quoting misuse leading to build failures",
+        "evidence": "FrontEndBuildError appears in 4 runs (20%) and correlates with ValidationError in 2 runs",
+        "fix_type": "validator_addition"
+      }
+    ],
+    "pattern_clusters": [
+      {
+        "name": "Import & ORM failures",
+        "patterns": [
+          "ModuleNotFoundError",
+          "NoReferencedTableError",
+          "SQLAlchemyError"
+        ],
+        "frequency": 0.55,
+        "insight": "These errors co‑occur because main.py imports route modules before the models they reference are generated, causing missing‑module and foreign‑key metadata failures."
+      },
+      {
+        "name": "Routing contract violations",
+        "patterns": [
+          "RouterExportMismatch",
+          "MissingEndpoint"
+        ],
+        "frequency": 0.35,
+        "insight": "Both stem from the LLM not enforcing the architecture's naming and endpoint requirements, leading to mismatched routers and absent routes."
+      },
+      {
+        "name": "Frontend validation issues",
+        "patterns": [
+          "FrontEndBuildError",
+          "ValidationError"
+        ],
+        "frequency": 0.15,
+        "insight": "Incorrect JSX quoting propagates to response schema mismatches, indicating a lack of front‑end linting in the generation pipeline."
+      }
+    ],
+    "top_improvements": [
+      {
+        "rank": 1,
+        "improvement": "Insert a static analysis validator that checks every import in app/ exists and that all SQLAlchemy models are imported before Base.metadata.create_all()",
+        "expected_impact": "+15% pass rate",
+        "effort": "low",
+        "type": "validator"
+      },
+      {
+        "rank": 2,
+        "improvement": "Enforce router naming via a prompt rule and add a post‑generation linter that verifies a variable named <resource>_router is exported in each route file",
+        "expected_impact": "+12% pass rate",
+        "effort": "medium",
+        "type": "prompt_rule"
+      },
+      {
+        "rank": 3,
+        "improvement": "Generate a manifest of required endpoints from the architecture plan and automatically compare it to the produced route files, failing early if any are missing",
+        "expected_impact": "+10% pass rate",
+        "effort": "medium",
+        "type": "validator"
+      }
+    ],
+    "hypothesis": {
+      "statement": "Adding a pre‑generation import manifest validation step will cut ModuleNotFoundError and related SQLAlchemy errors by at least 50%, raising the overall pass rate by ~10 points.",
+      "test_method": "Run 10 benchmark projects with the new validator enabled and compare pass rates to the last 10 runs without it.",
+      "expected_delta": "+8% pass rate"
+    },
+    "summary": "Scores have regressed after an early perfect streak, driven mainly by import‑related ORM errors and routing contract violations. The root cause is inconsistent LLM adherence to architecture constraints. Introducing import validation, stricter router naming rules, and endpoint manifest checks should yield the biggest gains in pass rate."
+  },
+  {
+    "timestamp": "2026-06-30T05:37:00",
+    "trend": "declining",
+    "trend_explanation": "Early runs (June 27) clustered around scores of 74‑80 with occasional 100s, while the latest batch (June 30) contains many 50‑point runs, pulling the average down and indicating a regression in overall quality.",
+    "regression_detected": false,
+    "regression_details": "",
+    "root_causes": [
+      {
+        "cause": "LLM does not consistently follow router naming conventions",
+        "evidence": "RouterExportMismatch appears in 8 out of 20 runs (40%) and often coincides with MissingEndpoint failures.",
+        "fix_type": "prompt_rule"
+      },
+      {
+        "cause": "Generated code imports modules that have not been created or referenced models are missing",
+        "evidence": "ModuleNotFoundError (8 runs) and NoReferencedTableError (6 runs) together affect ~60% of runs, showing a systemic import‑order problem.",
+        "fix_type": "validator_addition"
+      },
+      {
+        "cause": "SQLAlchemy models lack required relationship declarations and server defaults for timestamps",
+        "evidence": "SQLAlchemyError (9 runs) and TimestampNotNullError (1 run) stem from missing foreign‑key imports and nullable timestamp columns without defaults.",
+        "fix_type": "architecture_change"
+      }
+    ],
+    "pattern_clusters": [
+      {
+        "name": "Import & Model Definition Failures",
+        "patterns": [
+          "ModuleNotFoundError",
+          "NoReferencedTableError",
+          "SQLAlchemyError"
+        ],
+        "frequency": 0.6,
+        "insight": "These errors co‑occur because main.py imports route files and models before they are generated; fixing import ordering will likely resolve multiple patterns at once."
+      },
+      {
+        "name": "Router & Endpoint Mismatches",
+        "patterns": [
+          "RouterExportMismatch",
+          "MissingEndpoint"
+        ],
+        "frequency": 0.4,
+        "insight": "When the router variable name is wrong, the generated endpoint list cannot be wired, leading to both export and missing‑endpoint failures."
+      }
+    ],
+    "top_improvements": [
+      {
+        "rank": 1,
+        "improvement": "Add a pre‑generation validator that checks every import path in main.py exists and that all referenced SQLAlchemy models are generated before Base.metadata.create_all() is called.",
+        "expected_impact": "+15% pass rate",
+        "effort": "low",
+        "type": "validator"
+      },
+      {
+        "rank": 2,
+        "improvement": "Enforce router naming via a strict prompt rule and post‑generation lint step that renames or flags any router variable that does not match the {resource}_router pattern.",
+        "expected_impact": "+12% pass rate",
+        "effort": "medium",
+        "type": "prompt_rule"
+      },
+      {
+        "rank": 3,
+        "improvement": "Standardize SQLAlchemy model generation to always include relationship() declarations for foreign keys and server_default values for timestamp columns.",
+        "expected_impact": "+10% pass rate",
+        "effort": "medium",
+        "type": "architecture_change"
+      }
+    ],
+    "hypothesis": {
+      "statement": "Introducing a pre‑generation import validator will cut ModuleNotFoundError and NoReferencedTableError occurrences by at least 50%, raising the overall pass rate by ~8 points.",
+      "test_method": "Run two sets of 10 benchmark projects each – one with the validator enabled and one without – and compare failure pattern frequencies and pass rates.",
+      "expected_delta": "+8% pass rate"
+    },
+    "summary": "Recent benchmark runs show a declining trend driven by a surge of low‑scoring projects with import and router naming errors. The main root causes are inconsistent router naming, missing imports/models, and incomplete SQLAlchemy definitions. Adding import validation, enforcing router naming, and standardizing model generation are the highest‑impact improvements, and a targeted validator is hypothesized to boost pass rates by roughly 8%."
+  },
+  {
+    "timestamp": "2026-06-30T05:57:34",
+    "trend": "declining",
+    "trend_explanation": "Early runs (June 27) showed scores 80-100 with high pass rates, but after June 30 the majority of runs dropped to 50-68. The surge of low scores aligns with a rise in import‑related and routing errors, indicating a regression in code generation consistency.",
+    "regression_detected": true,
+    "regression_details": "A recent change that tightened router naming validation introduced more strict import checks, which exposed missing model imports and broken foreign‑key definitions, causing a drop in overall scores.",
+    "root_causes": [
+      {
+        "cause": "LLM does not reliably follow router naming conventions",
+        "evidence": "RouterExportMismatch appears in 8 of 20 runs (40%) and spikes after the latest validation rule was added.",
+        "fix_type": "prompt_rule"
+      },
+      {
+        "cause": "Incomplete import graph for SQLAlchemy models",
+        "evidence": "SQLAlchemyError, ModuleNotFoundError, and NoReferencedTableError together account for 20 occurrences, often in the same run.",
+        "fix_type": "validator_addition"
+      },
+      {
+        "cause": "Missing endpoint implementations relative to the architecture plan",
+        "evidence": "MissingEndpoint appears in 6 runs (30%) and frequently co‑occurs with RouterExportMismatch, suggesting the generator stops after a naming failure.",
+        "fix_type": "architecture_change"
+      },
+      {
+        "cause": "Frontend JSX quoting mistakes",
+        "evidence": "FrontEndBuildError shows up in 5 runs (25%) and is unrelated to backend failures, indicating a separate templating issue.",
+        "fix_type": "prompt_rule"
+      }
+    ],
+    "pattern_clusters": [
+      {
+        "name": "Import failures",
+        "patterns": [
+          "ModuleNotFoundError",
+          "SQLAlchemyError",
+          "NoReferencedTableError"
+        ],
+        "frequency": 0.45,
+        "insight": "These errors co‑occur because main.py imports route modules before the generated models are present, leading to missing tables and broken foreign keys."
+      },
+      {
+        "name": "Routing contract violations",
+        "patterns": [
+          "RouterExportMismatch",
+          "MissingEndpoint",
+          "InvalidDependsType"
+        ],
+        "frequency": 0.35,
+        "insight": "When the router variable name is wrong, the generator often skips endpoint scaffolding, causing downstream missing‑endpoint and Depends errors."
+      }
+    ],
+    "top_improvements": [
+      {
+        "rank": 1,
+        "improvement": "Introduce a pre‑generation validator that parses main.py and ensures every imported module/file exists and is imported before metadata creation.",
+        "expected_impact": "+15% pass rate",
+        "effort": "low",
+        "type": "validator"
+      },
+      {
+        "rank": 2,
+        "improvement": "Add explicit prompt rules and a post‑generation linter to enforce that each route file exports a variable named <resource>_router and that all declared endpoints are present.",
+        "expected_impact": "+12% pass rate",
+        "effort": "medium",
+        "type": "prompt_rule"
+      },
+      {
+        "rank": 3,
+        "improvement": "Generate a unified import block that automatically imports every SQLAlchemy model before calling Base.metadata.create_all(), and add relationship() definitions for all foreign keys.",
+        "expected_impact": "+10% pass rate",
+        "effort": "medium",
+        "type": "architecture_change"
+      }
+    ],
+    "hypothesis": {
+      "statement": "Adding a pre‑generation import validator will cut ModuleNotFoundError, SQLAlchemyError, and NoReferencedTableError by at least 50%, raising the overall pass rate by ~8‑10 points.",
+      "test_method": "Run 10 benchmark projects with the validator enabled and 10 without; compare failure counts and pass rates.",
+      "expected_delta": "+8% pass rate"
+    },
+    "summary": "Scores have fallen sharply after June 30 due to a surge in import‑related and routing errors. The core issues are inconsistent router naming, missing model imports, and incomplete endpoint scaffolding. Implementing import validation, stricter router naming enforcement, and unified model imports should collectively lift the pass rate by 30% or more."
   }
 ]

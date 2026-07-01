@@ -701,5 +701,1529 @@
     "success_count": 1,
     "generation_id": "c255d3fe15",
     "timestamp": "2026-06-28T21:03:27Z"
+  },
+  "blog_cms": {
+    "category": "blog_cms",
+    "idea": "A blog with posts, comments, and author profiles",
+    "architecture": {
+      "api_endpoints": [
+        {
+          "method": "POST",
+          "path": "/auth/login",
+          "description": "Authenticate user and return JWT token",
+          "file": "app\\routes\\auth_routes.py"
+        },
+        {
+          "method": "POST",
+          "path": "/auth/register",
+          "description": "Create a new user account",
+          "file": "app\\routes\\auth_routes.py"
+        },
+        {
+          "method": "POST",
+          "path": "/auth/logout",
+          "description": "Invalidate user session or token",
+          "file": "app\\routes\\auth_routes.py"
+        },
+        {
+          "method": "GET",
+          "path": "/users",
+          "description": "List users with optional search, status filter, pagination",
+          "file": "app\\routes\\user_routes.py"
+        },
+        {
+          "method": "GET",
+          "path": "/users/{id}",
+          "description": "Retrieve a single user by ID",
+          "file": "app\\routes\\user_routes.py"
+        },
+        {
+          "method": "POST",
+          "path": "/users",
+          "description": "Create a new user profile",
+          "file": "app\\routes\\user_routes.py"
+        },
+        {
+          "method": "PUT",
+          "path": "/users/{id}",
+          "description": "Update an existing user profile",
+          "file": "app\\routes\\user_routes.py"
+        },
+        {
+          "method": "DELETE",
+          "path": "/users/{id}",
+          "description": "Delete a user account",
+          "file": "app\\routes\\user_routes.py"
+        },
+        {
+          "method": "GET",
+          "path": "/posts",
+          "description": "List posts with search, status and tag filters, pagination",
+          "file": "app\\routes\\post_routes.py"
+        },
+        {
+          "method": "GET",
+          "path": "/posts/{id}",
+          "description": "Retrieve a single post by ID",
+          "file": "app\\routes\\post_routes.py"
+        },
+        {
+          "method": "POST",
+          "path": "/posts",
+          "description": "Create a new blog post",
+          "file": "app\\routes\\post_routes.py"
+        },
+        {
+          "method": "PUT",
+          "path": "/posts/{id}",
+          "description": "Update an existing blog post",
+          "file": "app\\routes\\post_routes.py"
+        },
+        {
+          "method": "DELETE",
+          "path": "/posts/{id}",
+          "description": "Delete a blog post",
+          "file": "app\\routes\\post_routes.py"
+        },
+        {
+          "method": "GET",
+          "path": "/posts/stats",
+          "description": "Return post-related statistics for dashboard",
+          "file": "app\\routes\\post_routes.py"
+        },
+        {
+          "method": "GET",
+          "path": "/comments",
+          "description": "List comments with post filter, status filter, pagination",
+          "file": "app\\routes\\comment_routes.py"
+        },
+        {
+          "method": "GET",
+          "path": "/comments/{id}",
+          "description": "Retrieve a single comment by ID",
+          "file": "app\\routes\\comment_routes.py"
+        },
+        {
+          "method": "POST",
+          "path": "/comments",
+          "description": "Create a new comment or reply",
+          "file": "app\\routes\\comment_routes.py"
+        },
+        {
+          "method": "PUT",
+          "path": "/comments/{id}",
+          "description": "Update an existing comment",
+          "file": "app\\routes\\comment_routes.py"
+        },
+        {
+          "method": "DELETE",
+          "path": "/comments/{id}",
+          "description": "Delete a comment",
+          "file": "app\\routes\\comment_routes.py"
+        },
+        {
+          "method": "GET",
+          "path": "/comments/recent",
+          "description": "Get recent approved comments for moderation overview",
+          "file": "app\\routes\\comment_routes.py"
+        },
+        {
+          "method": "GET",
+          "path": "/categories",
+          "description": "List categories with optional search and pagination",
+          "file": "app\\routes\\category_routes.py"
+        },
+        {
+          "method": "GET",
+          "path": "/categories/{id}",
+          "description": "Retrieve a single category by ID",
+          "file": "app\\routes\\category_routes.py"
+        },
+        {
+          "method": "POST",
+          "path": "/categories",
+          "description": "Create a new category",
+          "file": "app\\routes\\category_routes.py"
+        },
+        {
+          "method": "PUT",
+          "path": "/categories/{id}",
+          "description": "Update an existing category",
+          "file": "app\\routes\\category_routes.py"
+        },
+        {
+          "method": "DELETE",
+          "path": "/categories/{id}",
+          "description": "Delete a category",
+          "file": "app\\routes\\category_routes.py"
+        },
+        {
+          "method": "GET",
+          "path": "/stats/summary",
+          "description": "Return aggregate counts and key metrics for dashboard",
+          "file": "app\\routes\\stats_routes.py"
+        },
+        {
+          "method": "GET",
+          "path": "/search",
+          "description": "Global search across posts, comments, and authors with optional type filter",
+          "file": "app\\routes\\search_routes.py"
+        },
+        {
+          "method": "POST",
+          "path": "/seed",
+          "description": "Populate the database with demo data for all tables",
+          "file": "app\\routes\\seed_routes.py"
+        }
+      ],
+      "database_schema": [
+        {
+          "table_name": "users",
+          "columns": [
+            {
+              "name": "id",
+              "type": "INTEGER",
+              "is_primary_key": true,
+              "is_nullable": false
+            },
+            {
+              "name": "username",
+              "type": "VARCHAR(150)",
+              "is_primary_key": false,
+              "is_nullable": false
+            },
+            {
+              "name": "email",
+              "type": "VARCHAR(255)",
+              "is_primary_key": false,
+              "is_nullable": false
+            },
+            {
+              "name": "display_name",
+              "type": "VARCHAR(150)",
+              "is_primary_key": false,
+              "is_nullable": true
+            },
+            {
+              "name": "bio",
+              "type": "TEXT",
+              "is_primary_key": false,
+              "is_nullable": true
+            },
+            {
+              "name": "role",
+              "type": "VARCHAR(50)",
+              "is_primary_key": false,
+              "is_nullable": false
+            },
+            {
+              "name": "profile_image_url",
+              "type": "VARCHAR(255)",
+              "is_primary_key": false,
+              "is_nullable": true
+            },
+            {
+              "name": "created_at",
+              "type": "DATETIME",
+              "is_primary_key": false,
+              "is_nullable": false
+            },
+            {
+              "name": "updated_at",
+              "type": "DATETIME",
+              "is_primary_key": false,
+              "is_nullable": false
+            },
+            {
+              "name": "is_active",
+              "type": "BOOLEAN",
+              "is_primary_key": false,
+              "is_nullable": false
+            }
+          ]
+        },
+        {
+          "table_name": "posts",
+          "columns": [
+            {
+              "name": "id",
+              "type": "INTEGER",
+              "is_primary_key": true,
+              "is_nullable": false
+            },
+            {
+              "name": "title",
+              "type": "VARCHAR(250)",
+              "is_primary_key": false,
+              "is_nullable": false
+            },
+            {
+              "name": "slug",
+              "type": "VARCHAR(250)",
+              "is_primary_key": false,
+              "is_nullable": false
+            },
+            {
+              "name": "content",
+              "type": "TEXT",
+              "is_primary_key": false,
+              "is_nullable": false
+            },
+            {
+              "name": "status",
+              "type": "VARCHAR(20)",
+              "is_primary_key": false,
+              "is_nullable": false
+            },
+            {
+              "name": "author_id",
+              "type": "INTEGER",
+              "is_primary_key": false,
+              "is_nullable": false
+            },
+            {
+              "name": "view_count",
+              "type": "INTEGER",
+              "is_primary_key": false,
+              "is_nullable": false
+            },
+            {
+              "name": "created_at",
+              "type": "DATETIME",
+              "is_primary_key": false,
+              "is_nullable": false
+            },
+            {
+              "name": "updated_at",
+              "type": "DATETIME",
+              "is_primary_key": false,
+              "is_nullable": false
+            }
+          ]
+        },
+        {
+          "table_name": "comments",
+          "columns": [
+            {
+              "name": "id",
+              "type": "INTEGER",
+              "is_primary_key": true,
+              "is_nullable": false
+            },
+            {
+              "name": "post_id",
+              "type": "INTEGER",
+              "is_primary_key": false,
+              "is_nullable": false
+            },
+            {
+              "name": "author_id",
+              "type": "INTEGER",
+              "is_primary_key": false,
+              "is_nullable": false
+            },
+            {
+              "name": "content",
+              "type": "TEXT",
+              "is_primary_key": false,
+              "is_nullable": false
+            },
+            {
+              "name": "status",
+              "type": "VARCHAR(20)",
+              "is_primary_key": false,
+              "is_nullable": false
+            },
+            {
+              "name": "parent_comment_id",
+              "type": "INTEGER",
+              "is_primary_key": false,
+              "is_nullable": true
+            },
+            {
+              "name": "is_flagged",
+              "type": "BOOLEAN",
+              "is_primary_key": false,
+              "is_nullable": false
+            },
+            {
+              "name": "created_at",
+              "type": "DATETIME",
+              "is_primary_key": false,
+              "is_nullable": false
+            },
+            {
+              "name": "updated_at",
+              "type": "DATETIME",
+              "is_primary_key": false,
+              "is_nullable": false
+            }
+          ]
+        },
+        {
+          "table_name": "categories",
+          "columns": [
+            {
+              "name": "id",
+              "type": "INTEGER",
+              "is_primary_key": true,
+              "is_nullable": false
+            },
+            {
+              "name": "name",
+              "type": "VARCHAR(150)",
+              "is_primary_key": false,
+              "is_nullable": false
+            },
+            {
+              "name": "slug",
+              "type": "VARCHAR(150)",
+              "is_primary_key": false,
+              "is_nullable": false
+            },
+            {
+              "name": "description",
+              "type": "TEXT",
+              "is_primary_key": false,
+              "is_nullable": true
+            },
+            {
+              "name": "created_at",
+              "type": "DATETIME",
+              "is_primary_key": false,
+              "is_nullable": false
+            },
+            {
+              "name": "updated_at",
+              "type": "DATETIME",
+              "is_primary_key": false,
+              "is_nullable": false
+            }
+          ]
+        },
+        {
+          "table_name": "tags",
+          "columns": [
+            {
+              "name": "id",
+              "type": "INTEGER",
+              "is_primary_key": true,
+              "is_nullable": false
+            },
+            {
+              "name": "name",
+              "type": "VARCHAR(100)",
+              "is_primary_key": false,
+              "is_nullable": false
+            },
+            {
+              "name": "slug",
+              "type": "VARCHAR(100)",
+              "is_primary_key": false,
+              "is_nullable": false
+            }
+          ]
+        },
+        {
+          "table_name": "post_tags",
+          "columns": [
+            {
+              "name": "post_id",
+              "type": "INTEGER",
+              "is_primary_key": true,
+              "is_nullable": false
+            },
+            {
+              "name": "tag_id",
+              "type": "INTEGER",
+              "is_primary_key": true,
+              "is_nullable": false
+            }
+          ]
+        }
+      ],
+      "folder_structure": {
+        "backend": [
+          "app/models",
+          "app/schemas",
+          "app/services",
+          "app/routes",
+          "app/utils",
+          "app/main.py"
+        ]
+      },
+      "frontend_structure": {
+        "pages": [
+          "Login",
+          "Register",
+          "Dashboard",
+          "Posts List",
+          "Post Detail",
+          "Author Profile",
+          "New Post",
+          "Edit Post",
+          "Comment Moderation",
+          "Category Management",
+          "Search Results"
+        ],
+        "components": [
+          "Header",
+          "Footer",
+          "PostCard",
+          "PostEditor",
+          "CommentThread",
+          "CommentForm",
+          "UserProfile",
+          "CategoryList",
+          "SearchBar",
+          "Pagination",
+          "DashboardStats",
+          "TagBadge",
+          "Avatar",
+          "Modal",
+          "Notification"
+        ]
+      }
+    },
+    "plan": {
+      "project_name": "BlogSphere",
+      "description": "A modern blogging platform with rich author profiles, organized content, threaded comments, and analytics for authors and editors.",
+      "target_users": [
+        "Independent writers",
+        "Content editors",
+        "Blog readers",
+        "Site administrators"
+      ],
+      "core_features": [
+        "Author profiles with bio, avatar, social links, and role‑based permissions",
+        "Post creation with markdown editor, tagging, scheduled publishing, and draft management",
+        "Threaded comment system with moderation workflow (pending, approved, spam) and reply threading",
+        "Category and tag taxonomy for organizing posts and enabling filtered discovery",
+        "Dashboard showing total posts, comments, active authors, top categories, and recent activity",
+        "Global search across posts, comments, and authors with filters for status, date range, and tags"
+      ],
+      "future_features": [
+        "Like and reaction system for posts and comments",
+        "Email newsletter integration for new post notifications",
+        "Content recommendation engine based on reader behavior",
+        "Multi‑language support and translation workflow",
+        "Exportable analytics reports (CSV, PDF)"
+      ],
+      "tech_stack": [
+        "FastAPI",
+        "React",
+        "SQLite",
+        "Pydantic",
+        "SQLAlchemy"
+      ],
+      "database_entities": [
+        {
+          "name": "User",
+          "fields": [
+            "id",
+            "username",
+            "email",
+            "display_name",
+            "bio",
+            "role",
+            "profile_image_url",
+            "created_at",
+            "updated_at",
+            "is_active"
+          ]
+        },
+        {
+          "name": "Post",
+          "fields": [
+            "id",
+            "title",
+            "slug",
+            "content",
+            "status",
+            "author_id",
+            "tags",
+            "view_count",
+            "created_at",
+            "updated_at"
+          ]
+        },
+        {
+          "name": "Comment",
+          "fields": [
+            "id",
+            "post_id",
+            "author_id",
+            "content",
+            "status",
+            "parent_comment_id",
+            "created_at",
+            "updated_at",
+            "is_flagged"
+          ]
+        },
+        {
+          "name": "Category",
+          "fields": [
+            "id",
+            "name",
+            "slug",
+            "description",
+            "created_at",
+            "updated_at"
+          ]
+        }
+      ],
+      "api_modules": [
+        {
+          "name": "AuthModule",
+          "endpoints": [
+            "POST /auth/login",
+            "POST /auth/register",
+            "POST /auth/logout"
+          ]
+        },
+        {
+          "name": "UsersModule",
+          "endpoints": [
+            "GET /users?search=&status=&limit=&offset=",
+            "GET /users/{id}",
+            "POST /users",
+            "PUT /users/{id}",
+            "DELETE /users/{id}"
+          ]
+        },
+        {
+          "name": "PostsModule",
+          "endpoints": [
+            "GET /posts?search=&status=&tag=&limit=&offset=",
+            "GET /posts/{id}",
+            "POST /posts",
+            "PUT /posts/{id}",
+            "DELETE /posts/{id}"
+          ]
+        },
+        {
+          "name": "CommentsModule",
+          "endpoints": [
+            "GET /comments?post_id=&status=&limit=&offset=",
+            "GET /comments/{id}",
+            "POST /comments",
+            "PUT /comments/{id}",
+            "DELETE /comments/{id}"
+          ]
+        },
+        {
+          "name": "CategoriesModule",
+          "endpoints": [
+            "GET /categories?search=&limit=&offset=",
+            "GET /categories/{id}",
+            "POST /categories",
+            "PUT /categories/{id}",
+            "DELETE /categories/{id}"
+          ]
+        },
+        {
+          "name": "AnalyticsModule",
+          "endpoints": [
+            "GET /stats/summary",
+            "GET /posts/stats",
+            "GET /comments/recent",
+            "GET /search?q=",
+            "POST /seed"
+          ]
+        }
+      ],
+      "pages": [
+        "Login",
+        "Register",
+        "Dashboard",
+        "Posts List",
+        "Post Detail",
+        "Author Profile",
+        "New Post",
+        "Edit Post",
+        "Comment Moderation",
+        "Category Management",
+        "Search Results"
+      ],
+      "backend_modules": [
+        "auth_service",
+        "user_service",
+        "post_service",
+        "comment_service",
+        "category_service",
+        "analytics_service"
+      ],
+      "roadmap": [
+        {
+          "phase": "Phase 1 – Foundations",
+          "milestones": [
+            "Set up FastAPI backend with SQLite and SQLAlchemy models",
+            "Implement authentication (login, register, JWT)",
+            "Create CRUD APIs for Users, Posts, Comments, and Categories",
+            "Basic React UI with routing and pages for login, register, and post list"
+          ]
+        },
+        {
+          "phase": "Phase 2 – Core Features",
+          "milestones": [
+            "Rich author profile page with edit capability",
+            "Markdown post editor with tag selection and scheduled publishing",
+            "Threaded comment UI with moderation controls",
+            "Category and tag navigation components",
+            "Dashboard analytics (summary stats, recent activity)"
+          ]
+        },
+        {
+          "phase": "Phase 3 – Enhancements",
+          "milestones": [
+            "Global search endpoint and UI",
+            "Advanced filters for posts and comments",
+            "Seed data endpoint for demo environment",
+            "Responsive design and performance optimizations"
+          ]
+        },
+        {
+          "phase": "Phase 4 – Future Expansion",
+          "milestones": [
+            "Implement like/reaction system",
+            "Email newsletter integration",
+            "Exportable analytics reports",
+            "Multi‑language support"
+          ]
+        }
+      ]
+    },
+    "score": 100,
+    "success_count": 1,
+    "generation_id": "39e0164d42",
+    "timestamp": "2026-06-29T23:44:20Z"
+  },
+  "food_restaurant": {
+    "category": "food_restaurant",
+    "idea": "A recipe manager with ingredients and categories",
+    "architecture": {
+      "api_endpoints": [
+        {
+          "method": "POST",
+          "path": "/auth/register",
+          "description": "Register a new user",
+          "file": "app\\routes\\auth_routes.py"
+        },
+        {
+          "method": "POST",
+          "path": "/auth/login",
+          "description": "Authenticate user and return JWT",
+          "file": "app\\routes\\auth_routes.py"
+        },
+        {
+          "method": "POST",
+          "path": "/seed",
+          "description": "Populate database with demo data",
+          "file": "app\\routes\\seed_routes.py"
+        },
+        {
+          "method": "GET",
+          "path": "/stats/summary",
+          "description": "Return aggregate counts and key metrics for dashboard",
+          "file": "app\\routes\\stats_routes.py"
+        },
+        {
+          "method": "GET",
+          "path": "/users?search=&status=&limit=&offset=",
+          "description": "Search and list users with optional status filter",
+          "file": "app\\routes\\user_routes.py"
+        },
+        {
+          "method": "GET",
+          "path": "/users/{id}",
+          "description": "Retrieve user by ID",
+          "file": "app\\routes\\user_routes.py"
+        },
+        {
+          "method": "POST",
+          "path": "/users",
+          "description": "Create a new user",
+          "file": "app\\routes\\user_routes.py"
+        },
+        {
+          "method": "PUT",
+          "path": "/users/{id}",
+          "description": "Update user details",
+          "file": "app\\routes\\user_routes.py"
+        },
+        {
+          "method": "DELETE",
+          "path": "/users/{id}",
+          "description": "Delete a user",
+          "file": "app\\routes\\user_routes.py"
+        },
+        {
+          "method": "GET",
+          "path": "/recipes?search=&category=&diet=&limit=&offset=",
+          "description": "Search and list recipes with filters",
+          "file": "app\\routes\\recipe_routes.py"
+        },
+        {
+          "method": "GET",
+          "path": "/recipes/{id}",
+          "description": "Get recipe details",
+          "file": "app\\routes\\recipe_routes.py"
+        },
+        {
+          "method": "POST",
+          "path": "/recipes",
+          "description": "Create a new recipe",
+          "file": "app\\routes\\recipe_routes.py"
+        },
+        {
+          "method": "PUT",
+          "path": "/recipes/{id}",
+          "description": "Update recipe",
+          "file": "app\\routes\\recipe_routes.py"
+        },
+        {
+          "method": "DELETE",
+          "path": "/recipes/{id}",
+          "description": "Delete recipe",
+          "file": "app\\routes\\recipe_routes.py"
+        },
+        {
+          "method": "GET",
+          "path": "/ingredients?search=&unit=&limit=&offset=",
+          "description": "Search and list ingredients",
+          "file": "app\\routes\\ingredient_routes.py"
+        },
+        {
+          "method": "GET",
+          "path": "/ingredients/{id}",
+          "description": "Get ingredient details",
+          "file": "app\\routes\\ingredient_routes.py"
+        },
+        {
+          "method": "POST",
+          "path": "/ingredients",
+          "description": "Create ingredient",
+          "file": "app\\routes\\ingredient_routes.py"
+        },
+        {
+          "method": "PUT",
+          "path": "/ingredients/{id}",
+          "description": "Update ingredient",
+          "file": "app\\routes\\ingredient_routes.py"
+        },
+        {
+          "method": "DELETE",
+          "path": "/ingredients/{id}",
+          "description": "Delete ingredient",
+          "file": "app\\routes\\ingredient_routes.py"
+        },
+        {
+          "method": "GET",
+          "path": "/categories?search=&parent=&limit=&offset=",
+          "description": "Search and list categories",
+          "file": "app\\routes\\category_routes.py"
+        },
+        {
+          "method": "GET",
+          "path": "/categories/{id}",
+          "description": "Get category details",
+          "file": "app\\routes\\category_routes.py"
+        },
+        {
+          "method": "POST",
+          "path": "/categories",
+          "description": "Create category",
+          "file": "app\\routes\\category_routes.py"
+        },
+        {
+          "method": "PUT",
+          "path": "/categories/{id}",
+          "description": "Update category",
+          "file": "app\\routes\\category_routes.py"
+        },
+        {
+          "method": "DELETE",
+          "path": "/categories/{id}",
+          "description": "Delete category",
+          "file": "app\\routes\\category_routes.py"
+        },
+        {
+          "method": "GET",
+          "path": "/shopping-lists?status=&limit=&offset=",
+          "description": "List shopping lists with status filter",
+          "file": "app\\routes\\shoppinglist_routes.py"
+        },
+        {
+          "method": "GET",
+          "path": "/shopping-lists/{id}",
+          "description": "Get shopping list details",
+          "file": "app\\routes\\shoppinglist_routes.py"
+        },
+        {
+          "method": "POST",
+          "path": "/shopping-lists",
+          "description": "Create a new shopping list",
+          "file": "app\\routes\\shoppinglist_routes.py"
+        },
+        {
+          "method": "PUT",
+          "path": "/shopping-lists/{id}",
+          "description": "Update shopping list",
+          "file": "app\\routes\\shoppinglist_routes.py"
+        },
+        {
+          "method": "DELETE",
+          "path": "/shopping-lists/{id}",
+          "description": "Delete shopping list",
+          "file": "app\\routes\\shoppinglist_routes.py"
+        },
+        {
+          "method": "POST",
+          "path": "/shopping-lists/{id}/items",
+          "description": "Add item to shopping list",
+          "file": "app\\routes\\shoppinglist_routes.py"
+        }
+      ],
+      "database_schema": [
+        {
+          "table_name": "users",
+          "columns": [
+            {
+              "name": "id",
+              "type": "INTEGER",
+              "is_primary_key": true,
+              "is_nullable": false
+            },
+            {
+              "name": "username",
+              "type": "VARCHAR(150)",
+              "is_primary_key": false,
+              "is_nullable": false
+            },
+            {
+              "name": "email",
+              "type": "VARCHAR(255)",
+              "is_primary_key": false,
+              "is_nullable": false
+            },
+            {
+              "name": "password_hash",
+              "type": "VARCHAR(255)",
+              "is_primary_key": false,
+              "is_nullable": false
+            },
+            {
+              "name": "is_active",
+              "type": "BOOLEAN",
+              "is_primary_key": false,
+              "is_nullable": false
+            },
+            {
+              "name": "created_at",
+              "type": "DATETIME",
+              "is_primary_key": false,
+              "is_nullable": false
+            },
+            {
+              "name": "updated_at",
+              "type": "DATETIME",
+              "is_primary_key": false,
+              "is_nullable": false
+            }
+          ]
+        },
+        {
+          "table_name": "recipes",
+          "columns": [
+            {
+              "name": "id",
+              "type": "INTEGER",
+              "is_primary_key": true,
+              "is_nullable": false
+            },
+            {
+              "name": "user_id",
+              "type": "INTEGER",
+              "is_primary_key": false,
+              "is_nullable": false
+            },
+            {
+              "name": "title",
+              "type": "VARCHAR(200)",
+              "is_primary_key": false,
+              "is_nullable": false
+            },
+            {
+              "name": "description",
+              "type": "TEXT",
+              "is_primary_key": false,
+              "is_nullable": true
+            },
+            {
+              "name": "cooking_time_minutes",
+              "type": "INTEGER",
+              "is_primary_key": false,
+              "is_nullable": true
+            },
+            {
+              "name": "servings",
+              "type": "INTEGER",
+              "is_primary_key": false,
+              "is_nullable": true
+            },
+            {
+              "name": "difficulty",
+              "type": "VARCHAR(50)",
+              "is_primary_key": false,
+              "is_nullable": true
+            },
+            {
+              "name": "is_public",
+              "type": "BOOLEAN",
+              "is_primary_key": false,
+              "is_nullable": false
+            },
+            {
+              "name": "created_at",
+              "type": "DATETIME",
+              "is_primary_key": false,
+              "is_nullable": false
+            },
+            {
+              "name": "updated_at",
+              "type": "DATETIME",
+              "is_primary_key": false,
+              "is_nullable": false
+            }
+          ]
+        },
+        {
+          "table_name": "ingredients",
+          "columns": [
+            {
+              "name": "id",
+              "type": "INTEGER",
+              "is_primary_key": true,
+              "is_nullable": false
+            },
+            {
+              "name": "name",
+              "type": "VARCHAR(150)",
+              "is_primary_key": false,
+              "is_nullable": false
+            },
+            {
+              "name": "unit",
+              "type": "VARCHAR(50)",
+              "is_primary_key": false,
+              "is_nullable": false
+            },
+            {
+              "name": "calories_per_unit",
+              "type": "FLOAT",
+              "is_primary_key": false,
+              "is_nullable": true
+            },
+            {
+              "name": "protein_per_unit",
+              "type": "FLOAT",
+              "is_primary_key": false,
+              "is_nullable": true
+            },
+            {
+              "name": "carbs_per_unit",
+              "type": "FLOAT",
+              "is_primary_key": false,
+              "is_nullable": true
+            },
+            {
+              "name": "fats_per_unit",
+              "type": "FLOAT",
+              "is_primary_key": false,
+              "is_nullable": true
+            },
+            {
+              "name": "created_at",
+              "type": "DATETIME",
+              "is_primary_key": false,
+              "is_nullable": false
+            },
+            {
+              "name": "updated_at",
+              "type": "DATETIME",
+              "is_primary_key": false,
+              "is_nullable": false
+            }
+          ]
+        },
+        {
+          "table_name": "categories",
+          "columns": [
+            {
+              "name": "id",
+              "type": "INTEGER",
+              "is_primary_key": true,
+              "is_nullable": false
+            },
+            {
+              "name": "name",
+              "type": "VARCHAR(150)",
+              "is_primary_key": false,
+              "is_nullable": false
+            },
+            {
+              "name": "description",
+              "type": "TEXT",
+              "is_primary_key": false,
+              "is_nullable": true
+            },
+            {
+              "name": "parent_category_id",
+              "type": "INTEGER",
+              "is_primary_key": false,
+              "is_nullable": true
+            },
+            {
+              "name": "created_at",
+              "type": "DATETIME",
+              "is_primary_key": false,
+              "is_nullable": false
+            },
+            {
+              "name": "updated_at",
+              "type": "DATETIME",
+              "is_primary_key": false,
+              "is_nullable": false
+            }
+          ]
+        },
+        {
+          "table_name": "recipe_ingredients",
+          "columns": [
+            {
+              "name": "id",
+              "type": "INTEGER",
+              "is_primary_key": true,
+              "is_nullable": false
+            },
+            {
+              "name": "recipe_id",
+              "type": "INTEGER",
+              "is_primary_key": false,
+              "is_nullable": false
+            },
+            {
+              "name": "ingredient_id",
+              "type": "INTEGER",
+              "is_primary_key": false,
+              "is_nullable": false
+            },
+            {
+              "name": "quantity",
+              "type": "FLOAT",
+              "is_primary_key": false,
+              "is_nullable": false
+            },
+            {
+              "name": "unit",
+              "type": "VARCHAR(50)",
+              "is_primary_key": false,
+              "is_nullable": false
+            },
+            {
+              "name": "order_index",
+              "type": "INTEGER",
+              "is_primary_key": false,
+              "is_nullable": true
+            },
+            {
+              "name": "created_at",
+              "type": "DATETIME",
+              "is_primary_key": false,
+              "is_nullable": false
+            },
+            {
+              "name": "updated_at",
+              "type": "DATETIME",
+              "is_primary_key": false,
+              "is_nullable": false
+            }
+          ]
+        },
+        {
+          "table_name": "shopping_lists",
+          "columns": [
+            {
+              "name": "id",
+              "type": "INTEGER",
+              "is_primary_key": true,
+              "is_nullable": false
+            },
+            {
+              "name": "user_id",
+              "type": "INTEGER",
+              "is_primary_key": false,
+              "is_nullable": false
+            },
+            {
+              "name": "name",
+              "type": "VARCHAR(200)",
+              "is_primary_key": false,
+              "is_nullable": false
+            },
+            {
+              "name": "is_completed",
+              "type": "BOOLEAN",
+              "is_primary_key": false,
+              "is_nullable": false
+            },
+            {
+              "name": "created_at",
+              "type": "DATETIME",
+              "is_primary_key": false,
+              "is_nullable": false
+            },
+            {
+              "name": "updated_at",
+              "type": "DATETIME",
+              "is_primary_key": false,
+              "is_nullable": false
+            }
+          ]
+        },
+        {
+          "table_name": "shopping_list_items",
+          "columns": [
+            {
+              "name": "id",
+              "type": "INTEGER",
+              "is_primary_key": true,
+              "is_nullable": false
+            },
+            {
+              "name": "shopping_list_id",
+              "type": "INTEGER",
+              "is_primary_key": false,
+              "is_nullable": false
+            },
+            {
+              "name": "ingredient_id",
+              "type": "INTEGER",
+              "is_primary_key": false,
+              "is_nullable": false
+            },
+            {
+              "name": "quantity",
+              "type": "FLOAT",
+              "is_primary_key": false,
+              "is_nullable": false
+            },
+            {
+              "name": "unit",
+              "type": "VARCHAR(50)",
+              "is_primary_key": false,
+              "is_nullable": false
+            },
+            {
+              "name": "created_at",
+              "type": "DATETIME",
+              "is_primary_key": false,
+              "is_nullable": false
+            },
+            {
+              "name": "updated_at",
+              "type": "DATETIME",
+              "is_primary_key": false,
+              "is_nullable": false
+            }
+          ]
+        }
+      ],
+      "folder_structure": {
+        "backend": [
+          "app/models",
+          "app/schemas",
+          "app/services",
+          "app/routes",
+          "app/utils",
+          "app/config"
+        ]
+      },
+      "frontend_structure": {
+        "pages": [
+          "Login",
+          "Register",
+          "Dashboard",
+          "Recipe Library",
+          "Recipe Editor",
+          "Ingredient Catalog",
+          "Shopping List",
+          "Category Management",
+          "Nutrition Insights"
+        ],
+        "components": [
+          "Navbar",
+          "Footer",
+          "RecipeCard",
+          "RecipeForm",
+          "IngredientTable",
+          "ShoppingListItem",
+          "CategoryTree",
+          "SearchBar",
+          "StatsSummary",
+          "Pagination"
+        ]
+      }
+    },
+    "plan": {
+      "project_name": "RecipeMaster",
+      "description": "A comprehensive recipe management platform that lets users create, organize, and explore recipes, manage ingredients with nutritional data, categorize meals, generate shopping lists, and gain nutrition insights.",
+      "target_users": [
+        "Home cooks",
+        "Food enthusiasts",
+        "Meal planners",
+        "Dietitians"
+      ],
+      "core_features": [
+        "Recipe creation & editing with ingredients, steps, cooking time, servings, and difficulty levels",
+        "Ingredient catalog with unit conversion, nutritional information, and pantry stock tracking",
+        "Category and tag system for organizing recipes by cuisine, meal type, and dietary restrictions",
+        "Advanced search & filter across recipes by name, ingredients, categories, dietary tags, and cooking time",
+        "Shopping list generation from selected recipes, consolidating ingredient quantities and units",
+        "Nutrition summary dashboard showing average calories, macro distribution, and top nutrient sources across saved recipes",
+        "User favorites and personal collections for quick access to preferred recipes"
+      ],
+      "future_features": [
+        "Meal planning calendar with drag‑and‑drop recipe scheduling",
+        "Bulk import/export of recipes via CSV or JSON",
+        "Community sharing with public recipe galleries and comments",
+        "AI‑powered recipe suggestions based on pantry ingredients",
+        "Integration with grocery delivery services"
+      ],
+      "tech_stack": [
+        "FastAPI",
+        "React",
+        "SQLite",
+        "Pydantic",
+        "SQLAlchemy"
+      ],
+      "database_entities": [
+        {
+          "name": "User",
+          "fields": [
+            "id",
+            "username",
+            "email",
+            "password_hash",
+            "is_active",
+            "created_at",
+            "updated_at"
+          ]
+        },
+        {
+          "name": "Recipe",
+          "fields": [
+            "id",
+            "user_id",
+            "title",
+            "description",
+            "cooking_time_minutes",
+            "servings",
+            "difficulty",
+            "is_public",
+            "created_at",
+            "updated_at"
+          ]
+        },
+        {
+          "name": "Ingredient",
+          "fields": [
+            "id",
+            "name",
+            "unit",
+            "calories_per_unit",
+            "protein_per_unit",
+            "carbs_per_unit",
+            "fats_per_unit",
+            "created_at",
+            "updated_at"
+          ]
+        },
+        {
+          "name": "Category",
+          "fields": [
+            "id",
+            "name",
+            "description",
+            "parent_category_id",
+            "created_at",
+            "updated_at"
+          ]
+        },
+        {
+          "name": "RecipeIngredient",
+          "fields": [
+            "id",
+            "recipe_id",
+            "ingredient_id",
+            "quantity",
+            "unit",
+            "order_index",
+            "created_at",
+            "updated_at"
+          ]
+        },
+        {
+          "name": "ShoppingList",
+          "fields": [
+            "id",
+            "user_id",
+            "name",
+            "is_completed",
+            "created_at",
+            "updated_at"
+          ]
+        },
+        {
+          "name": "ShoppingListItem",
+          "fields": [
+            "id",
+            "shopping_list_id",
+            "ingredient_id",
+            "quantity",
+            "unit",
+            "created_at",
+            "updated_at"
+          ]
+        }
+      ],
+      "api_modules": [
+        {
+          "name": "auth",
+          "endpoints": [
+            "POST /auth/register",
+            "POST /auth/login",
+            "POST /auth/refresh"
+          ]
+        },
+        {
+          "name": "users",
+          "endpoints": [
+            "GET /users?search=&status=&limit=&offset=",
+            "GET /users/{id}",
+            "POST /users",
+            "PUT /users/{id}",
+            "DELETE /users/{id}"
+          ]
+        },
+        {
+          "name": "recipes",
+          "endpoints": [
+            "GET /recipes?search=&category=&diet=&limit=&offset=",
+            "GET /recipes/{id}",
+            "POST /recipes",
+            "PUT /recipes/{id}",
+            "DELETE /recipes/{id}",
+            "GET /recipes/{id}/ingredients"
+          ]
+        },
+        {
+          "name": "ingredients",
+          "endpoints": [
+            "GET /ingredients?search=&unit=&limit=&offset=",
+            "GET /ingredients/{id}",
+            "POST /ingredients",
+            "PUT /ingredients/{id}",
+            "DELETE /ingredients/{id}"
+          ]
+        },
+        {
+          "name": "categories",
+          "endpoints": [
+            "GET /categories?search=&parent=&limit=&offset=",
+            "GET /categories/{id}",
+            "POST /categories",
+            "PUT /categories/{id}",
+            "DELETE /categories/{id}"
+          ]
+        },
+        {
+          "name": "shopping",
+          "endpoints": [
+            "GET /shopping-lists?status=&limit=&offset=",
+            "GET /shopping-lists/{id}",
+            "POST /shopping-lists",
+            "POST /shopping-lists/{id}/items",
+            "PUT /shopping-lists/{id}",
+            "DELETE /shopping-lists/{id}",
+            "DELETE /shopping-lists/{id}/items/{item_id}"
+          ]
+        },
+        {
+          "name": "stats",
+          "endpoints": [
+            "GET /stats/summary",
+            "GET /stats/nutrition",
+            "GET /recipes/popular",
+            "GET /activity/recent"
+          ]
+        }
+      ],
+      "pages": [
+        "Login",
+        "Register",
+        "Dashboard",
+        "Recipe Library",
+        "Recipe Editor",
+        "Ingredient Catalog",
+        "Shopping List",
+        "Category Management",
+        "Nutrition Insights"
+      ],
+      "backend_modules": [
+        "auth_service",
+        "user_service",
+        "recipe_service",
+        "ingredient_service",
+        "category_service",
+        "shopping_service",
+        "stats_service"
+      ],
+      "roadmap": [
+        {
+          "phase": "MVP",
+          "milestones": [
+            "Implement user authentication and role management",
+            "CRUD operations for recipes, ingredients, and categories",
+            "Search and filter functionality across recipes and ingredients",
+            "Basic shopping list generation from selected recipes",
+            "Initial nutrition summary calculations"
+          ]
+        },
+        {
+          "phase": "Enhanced Features",
+          "milestones": [
+            "Nutrition dashboard with macro distribution charts",
+            "User favorites and personal collections",
+            "Bulk import/export of recipes (CSV/JSON)",
+            "Advanced ingredient unit conversion and pantry stock tracking"
+          ]
+        },
+        {
+          "phase": "Scaling & Community",
+          "milestones": [
+            "Public recipe sharing with comments and ratings",
+            "AI‑driven recipe suggestions based on pantry contents",
+            "Integration with grocery delivery APIs",
+            "Performance optimizations and mobile‑responsive UI"
+          ]
+        }
+      ]
+    },
+    "score": 100,
+    "success_count": 1,
+    "generation_id": "60e8e2c108",
+    "timestamp": "2026-06-30T00:11:38Z"
   }
 }

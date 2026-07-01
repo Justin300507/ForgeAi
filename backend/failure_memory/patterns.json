@@ -55,7 +55,7 @@
       "last_seen": "2026-06-27T14:53:33.736245"
     },
     "FrontendBuildError": {
-      "count": 4,
+      "count": 7,
       "examples": [
         {
           "project": "test_app2",
@@ -72,10 +72,14 @@
         {
           "project": "TaskFlow Pro",
           "error": "vite build failed"
+        },
+        {
+          "project": "RecipeMaster",
+          "error": "vite build failed"
         }
       ],
       "first_seen": "2026-06-21T20:43:34.978774",
-      "last_seen": "2026-06-28T21:25:53.237969"
+      "last_seen": "2026-06-30T00:47:12.165282"
     },
     "ModuleNotFoundError": {
       "count": 8,
@@ -158,7 +162,7 @@
       "last_seen": "2026-06-22T05:53:56.254146"
     },
     "ImportError": {
-      "count": 8,
+      "count": 10,
       "examples": [
         {
           "project": "inventory_system",
@@ -182,7 +186,7 @@
         }
       ],
       "first_seen": "2026-06-22T05:55:11.076646",
-      "last_seen": "2026-06-27T16:10:07.584058"
+      "last_seen": "2026-06-30T00:48:14.728752"
     },
     "MonolithicSchemaError": {
       "count": 1,
@@ -273,8 +277,65 @@
       ],
       "first_seen": "2026-06-28T21:05:09.324006",
       "last_seen": "2026-06-28T21:05:09.324044"
+    },
+    "PydanticSerializationError": {
+      "count": 3,
+      "examples": [
+        {
+          "project": "blog_platform",
+          "error": "PydanticSerializationError"
+        },
+        {
+          "project": "recipe_share",
+          "error": "PydanticSerializationError"
+        },
+        {
+          "project": "recipe_share",
+          "error": "PydanticSerializationError"
+        }
+      ],
+      "first_seen": "2026-06-29T23:39:46.755253",
+      "last_seen": "2026-06-30T00:02:25.376156"
+    },
+    "JourneyCRUDFailure": {
+      "count": 9,
+      "examples": [
+        {
+          "project": "BlogSphere",
+          "error": "JourneyCRUDFailure"
+        },
+        {
+          "project": "recipe_share",
+          "error": "JourneyCRUDFailure"
+        },
+        {
+          "project": "recipe_share",
+          "error": "JourneyCRUDFailure"
+        },
+        {
+          "project": "BlogSphere",
+          "error": "JourneyCRUDFailure"
+        },
+        {
+          "project": "BlogSphere",
+          "error": "JourneyCRUDFailure"
+        }
+      ],
+      "first_seen": "2026-06-29T23:47:06.584012",
+      "last_seen": "2026-07-01T10:10:27.014389"
+    },
+    "InvalidDependsType": {
+      "count": 1,
+      "examples": [
+        {
+          "project": "PriorityTodo",
+          "error": "InvalidDependsType"
+        }
+      ],
+      "first_seen": "2026-06-30T00:08:24.188295",
+      "last_seen": "2026-06-30T00:08:24.188317"
     }
   },
-  "total_runs": 212,
-  "last_updated": "2026-06-28T21:38:16.040794"
+  "total_runs": 271,
+  "last_updated": "2026-07-01T10:39:55.158771"
 }
