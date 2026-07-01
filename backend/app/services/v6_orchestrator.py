@@ -788,6 +788,8 @@ def generate_project_v6(
         "project_path": project_path,
         "zip_path": zip_path,
         "metadata_path": metadata_path,
+        "plan": plan,
+        "architecture": architecture,
         "product_spec": {
             "display_name": product_spec.display_name,
             "tagline": product_spec.tagline,
