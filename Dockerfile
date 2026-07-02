@@ -15,6 +15,12 @@ RUN apt-get update && apt-get install -y --no-install-recommends git curl lsof p
 WORKDIR /app/backend
 COPY backend/requirements.txt ./
 RUN pip install --no-cache-dir -r requirements.txt
+# playwright is a pip dependency but its browser binaries are a SEPARATE
+# download this never ran -- every browser-dependent verification stage
+# (Playwright page load, workflow tests) crashed with "Executable doesn't
+# exist" the moment dist/ actually built successfully, and the regression
+# guard (correctly) reverted every fix that got that far, in an endless loop.
+RUN playwright install --with-deps chromium
 COPY backend/ ./
 COPY --from=frontend-builder /app/frontend/dist /app/frontend/dist
 COPY start.sh /start.sh
