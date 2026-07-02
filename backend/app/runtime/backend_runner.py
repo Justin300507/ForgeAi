@@ -101,18 +101,19 @@ class BackendRunner:
         if requirements_file.exists():
             print(f"Skipping pip install (packages pre-installed): {requirements_file}")
 
-        # Delete stale SQLite DBs — schema may have changed since last run
-        for stale_db in backend_dir.rglob("*.db"):
-            try:
-                stale_db.unlink()
-                print(f"  [runner] Deleted stale DB: {stale_db.name}")
-            except Exception:
-                pass
-        for stale_db in backend_dir.rglob("*.sqlite3"):
-            try:
-                stale_db.unlink()
-            except Exception:
-                pass
+        # Delete stale SQLite DBs — schema may have changed since last run.
+        # Also delete WAL/SHM sidecar files: SQLite's write-ahead-log mode
+        # creates *.db-wal / *.db-shm alongside the main file, and deleting
+        # only the main file while leaving these behind can let stale schema
+        # state (e.g. an index from a previous run) resurface against the
+        # "fresh" db, causing spurious "already exists" errors on init.
+        for pattern in ("*.db", "*.sqlite3", "*.db-wal", "*.db-shm", "*.sqlite3-wal", "*.sqlite3-shm"):
+            for stale_db in backend_dir.rglob(pattern):
+                try:
+                    stale_db.unlink()
+                    print(f"  [runner] Deleted stale DB: {stale_db.name}")
+                except Exception:
+                    pass
 
         _free_port(port)
 
