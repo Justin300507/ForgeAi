@@ -2948,6 +2948,152 @@ Disc Disc2 Disc3 Radio Cast Airplay Bluetooth Cable Plug Plug2 PlugZap Usb
 """.split())
 
 
+def _module_dotted(project_root: Path, py_file: Path) -> str | None:
+    """app/routes/auth_routes.py -> 'app.routes.auth_routes' (None if outside app/)."""
+    try:
+        rel = py_file.relative_to(project_root)
+    except ValueError:
+        return None
+    parts = rel.with_suffix("").parts
+    if not parts or parts[0] != "app":
+        return None
+    return ".".join(parts)
+
+
+def _backend_module_exists(project_root: Path, dotted: str) -> bool:
+    segments = dotted.split(".")
+    # app.routes.auth_routes -> app/routes/auth_routes.py  OR  app/routes/auth_routes/__init__.py
+    mod = project_root / Path(*segments).with_suffix(".py")
+    pkg = project_root / Path(*segments) / "__init__.py"
+    return mod.exists() or pkg.exists()
+
+
+def _patch_redirect_missing_backend_imports(project_path: Path) -> int:
+    """Redirect `from app.X import ...` when app/X doesn't exist but the imported
+    symbols live in a real module elsewhere.
+
+    The fix-loop LLM habitually rewrites main.py to
+    `from app.routers.auth import auth_router` or `from app.api.seed import ...`
+    when the real modules are `app/routes/auth_routes.py` etc. That's a hard
+    ModuleNotFoundError at startup — the backend never boots, so auth 404s and
+    every fix attempt regresses and reverts (seen on habit_forge: stuck at 75,
+    'No module named app.routers'). This is the backend twin of the frontend
+    missing-import scaffold. We resolve it by pointing the import at the module
+    that actually defines the symbols; if none is found, a re-export shim is
+    created so the import at least resolves."""
+    import re
+    root = project_path.resolve()
+    app_dir = root / "app"
+    if not app_dir.exists():
+        return 0
+
+    py_files = [p for p in app_dir.rglob("*.py") if "__pycache__" not in p.parts]
+
+    # Symbol index: top-level name -> [dotted module paths that define it]
+    sym_index: dict[str, list[str]] = {}
+    def_re = re.compile(r"^(?:def|class)\s+(\w+)", re.MULTILINE)
+    assign_re = re.compile(r"^(\w+)\s*=", re.MULTILINE)
+    for pf in py_files:
+        dotted = _module_dotted(root, pf)
+        if not dotted:
+            continue
+        try:
+            src = pf.read_text(encoding="utf-8", errors="replace")
+        except Exception:
+            continue
+        for name in set(def_re.findall(src)) | set(assign_re.findall(src)):
+            sym_index.setdefault(name, [])
+            if dotted not in sym_index[name]:
+                sym_index[name].append(dotted)
+
+    import_re = re.compile(r"^from\s+app\.([\w.]+)\s+import\s+([^\n(]+)", re.MULTILINE)
+    patched = 0
+
+    for pf in py_files:
+        try:
+            src = pf.read_text(encoding="utf-8", errors="replace")
+        except Exception:
+            continue
+        original = src
+
+        def _fix(m: re.Match) -> str:
+            dotted = m.group(1)
+            names_raw = m.group(2).split("#")[0]  # drop any inline comment
+            if _backend_module_exists(root, f"app.{dotted}"):
+                return m.group(0)  # target exists — leave it
+            specs = [n.strip() for n in names_raw.split(",") if n.strip() and n.strip() != "*"]
+            base_names = [s.split(" as ")[0].strip() for s in specs]
+            if not base_names:
+                return m.group(0)
+            # Find a real module defining the MOST of the imported names.
+            candidates: dict[str, int] = {}
+            for n in base_names:
+                for modpath in sym_index.get(n, []):
+                    if modpath == f"app.{dotted}":
+                        continue
+                    candidates[modpath] = candidates.get(modpath, 0) + 1
+            if not candidates:
+                return m.group(0)  # can't resolve here; shim pass handles it
+            best = max(candidates, key=lambda k: candidates[k])
+            # Only redirect if the best module covers all names (safe, unambiguous).
+            if candidates[best] < len(base_names):
+                return m.group(0)
+            return f"from {best} import {', '.join(specs)}"
+
+        src = import_re.sub(_fix, src)
+        if src != original:
+            try:
+                pf.write_text(src, encoding="utf-8")
+                patched += 1
+                print(f"  [patcher] Redirected missing backend import(s) in {pf.name}")
+            except Exception:
+                pass
+
+    # Shim pass: any still-missing `from app.X import ...` where we couldn't
+    # redirect — create a re-export shim module so startup doesn't crash.
+    for pf in py_files:
+        try:
+            src = pf.read_text(encoding="utf-8", errors="replace")
+        except Exception:
+            continue
+        for m in import_re.finditer(src):
+            dotted = m.group(1)
+            if _backend_module_exists(root, f"app.{dotted}"):
+                continue
+            names = [n.strip().split(" as ")[0].strip()
+                     for n in m.group(2).split("#")[0].split(",") if n.strip() and n.strip() != "*"]
+            # Resolve each name to a real module for the shim body.
+            shim_lines = ["# Auto-generated shim: re-exports symbols from their real modules.\n"]
+            resolved_any = False
+            for n in names:
+                mods = [x for x in sym_index.get(n, []) if x != f"app.{dotted}"]
+                if mods:
+                    shim_lines.append(f"from {mods[0]} import {n}\n")
+                    resolved_any = True
+            if not resolved_any:
+                continue
+            segments = dotted.split(".")
+            shim_path = root / Path("app", *segments).with_suffix(".py")
+            if shim_path.exists():
+                continue
+            try:
+                shim_path.parent.mkdir(parents=True, exist_ok=True)
+                # ensure package __init__.py files exist along the path
+                pkg = root / "app"
+                for seg in segments[:-1]:
+                    pkg = pkg / seg
+                    init = pkg / "__init__.py"
+                    if not init.exists():
+                        init.write_text("", encoding="utf-8")
+                shim_path.write_text("".join(shim_lines), encoding="utf-8")
+                patched += 1
+                print(f"  [patcher] Created re-export shim app/{'/'.join(segments)}.py")
+            except Exception:
+                pass
+
+    return patched
+
+
 def _patch_missing_icon_imports(project_path: Path) -> int:
     """Add lucide-react icons that are USED in JSX but never imported.
 
@@ -3094,6 +3240,12 @@ def run_deterministic_patches(project_path: str, skip_protected_injections: bool
         _patch_auth_utils(root)
         _patch_auth_requirements(root)
         _patch_auth_routes(root)
+
+    # Redirect `from app.routers.auth import ...` (and similar wrong paths) to the
+    # module that actually defines the symbols — must run before router wiring so
+    # main.py's imports resolve. Prevents the ModuleNotFoundError that made auth
+    # 404 and every fix attempt regress-and-revert.
+    _patch_redirect_missing_backend_imports(root)
 
     # Wire ALL routers into main.py — runs after auth_routes injection so auth_router
     # is already in main.py; this catches every other generated router.
