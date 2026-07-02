@@ -287,6 +287,25 @@ _FIELD_SYNONYMS: dict[str, list[str]] = {
     "state":       ["state", "status", "is_done"],
     "priority":    ["priority", "importance", "urgency"],
 
+    # Boolean-state flags. The LLM freely mixes the bare adjective (completed,
+    # done, active) with the is_-prefixed column (is_complete, is_active), across
+    # model / schema / route / stats files. When the model column and the code
+    # disagree, .filter(Model.completed == True) raises AttributeError -> 500
+    # (seen live: /stats/summary on a todo app). Map both directions so the
+    # attribute-access fixer can rename to whichever name is the real column.
+    "completed":    ["is_complete", "is_completed", "completed", "is_done", "done"],
+    "complete":     ["is_complete", "is_completed", "completed"],
+    "is_complete":  ["is_complete", "completed", "is_completed", "is_done"],
+    "is_completed": ["is_completed", "is_complete", "completed"],
+    "done":         ["is_done", "done", "is_complete", "is_completed", "completed"],
+    "is_done":      ["is_done", "done", "is_complete", "completed"],
+    "active":       ["is_active", "active"],
+    "is_active":    ["is_active", "active"],
+    "archived":     ["is_archived", "archived"],
+    "is_archived":  ["is_archived", "archived"],
+    "published":    ["is_published", "published"],
+    "is_published": ["is_published", "published"],
+
     # Date / time fields
     "due_date":    ["due_date", "deadline", "due_at", "expires_at"],
     "deadline":    ["deadline", "due_date", "due_at", "expires_at"],
@@ -295,6 +314,18 @@ _FIELD_SYNONYMS: dict[str, list[str]] = {
     "creator_id":  ["owner_id", "user_id", "creator_id", "created_by"],
     "author_id":   ["owner_id", "user_id", "author_id", "created_by"],
     "created_by":  ["owner_id", "user_id", "created_by", "creator_id"],
+}
+
+
+# SQLAlchemy / ORM class-level attributes that are NOT columns — the
+# attribute-access fixer must never rewrite these even though they aren't in the
+# model's column set (they're methods/descriptors on the mapped class).
+_ORM_CLASS_ATTRS = {
+    "query", "metadata", "c", "columns", "count", "filter", "filter_by",
+    "all", "first", "one", "one_or_none", "get", "order_by", "group_by",
+    "join", "outerjoin", "options", "delete", "update", "insert", "select",
+    "where", "having", "limit", "offset", "distinct", "subquery", "alias",
+    "registry", "mro", "id",
 }
 
 
@@ -405,14 +436,40 @@ def patch_model_field_mismatches(project_path: str) -> int:
                         return f"{cls_name}(" + ", ".join(fixed_lines) + ")"
                     return m.group(0)
 
-                # Fix constructor calls only — never touch attribute accesses on other objects
-                # (e.g. list_in.name must not be renamed even if `name` is not on the model,
-                # because list_in is a Pydantic schema, not the SQLAlchemy model)
+                # Fix constructor calls: ClassName(field=...) with an unknown kwarg.
+                # This only touches the ClassName(...) call, so it can't rename an
+                # attribute on a Pydantic schema object (e.g. list_in.name).
                 src = re.sub(
                     rf"\b{cls_name}\(([^)]+)\)",
                     _fix_constructor,
                     src,
                     flags=re.DOTALL,
+                )
+
+                # Fix CLASS-level attribute accesses: ClassName.field used in
+                # queries — .filter(Todo.completed == True), .order_by(Todo.done),
+                # func.count(Habit.completed), etc. If `field` isn't a real column
+                # but has a synonym that is, rename it. This is class-level only
+                # (literal model name . attr), so an instance access like
+                # `todo_in.completed` on a Pydantic schema is never touched — the
+                # regex anchors on the model class name, not an arbitrary variable.
+                def _fix_class_attr(m: re.Match) -> str:
+                    attr = m.group(1)
+                    if attr in valid_cols or attr in _ORM_CLASS_ATTRS or attr.startswith("__"):
+                        return m.group(0)
+                    candidates = _FIELD_SYNONYMS.get(attr, [])
+                    replacement = next(
+                        (c for c in candidates if c in valid_cols and c != attr),
+                        None,
+                    )
+                    if replacement:
+                        return f"{cls_name}.{replacement}"
+                    return m.group(0)
+
+                src = re.sub(
+                    rf"(?<![\w.]){cls_name}\.(\w+)",
+                    _fix_class_attr,
+                    src,
                 )
 
             if src != original:
