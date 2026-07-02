@@ -148,10 +148,18 @@ class RenderProvider(BaseDeploymentProvider):
         return None
 
     def _trigger_deploy(self, service_id: str) -> Optional[str]:
+        # Render's POST /deploys returns 202 Accepted with an EMPTY body (not
+        # JSON) -- resp.json() on that raises JSONDecodeError even though the
+        # deploy was accepted. Only parse JSON when there's actually content.
         resp = self._post(f"/services/{service_id}/deploys", {"clearCache": "do_not_clear"})
         if resp.ok:
-            deploy = resp.json()
-            return deploy.get("id")
+            if not resp.content:
+                return None
+            try:
+                deploy = resp.json()
+                return deploy.get("id")
+            except ValueError:
+                return None
         return None
 
     def _poll_service_url(self, service_id: str, attempts: int = 4, wait: int = 2) -> Optional[str]:

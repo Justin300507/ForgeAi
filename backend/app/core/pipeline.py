@@ -366,12 +366,26 @@ class V15Pipeline:
         """Deploy to Render (backend) + Cloudflare (frontend) via V14 helpers."""
         try:
             from app.services.v14_orchestrator import (
+                _push_to_github,
                 _deploy_render,
                 _deploy_cloudflare,
                 _run_health_checks,
             )
+            # Push the freshly-generated code to GitHub first. Without this,
+            # _deploy_render finds a same-named Render service from a PRIOR
+            # run (e.g. a repeat "todo app" idea) and just re-triggers a
+            # deploy of whatever commit is already on that repo -- silently
+            # serving stale/broken code from an earlier run while reporting
+            # success for this one.
+            github_result = _push_to_github(str(ctx.project_path), ctx.project_name, ctx.idea)
+            if not github_result.get("success"):
+                print(f"[V15] GitHub push failed: {github_result.get('error')} "
+                      f"-- Render deploy will be skipped (no repo to deploy from)")
+
             # Deploy backend
-            render_result    = _deploy_render(str(ctx.project_path), ctx.project_name, ctx.idea)
+            render_result    = _deploy_render(
+                str(ctx.project_path), ctx.project_name, github_result.get("repo_url")
+            )
             backend_url      = render_result.get("backend_url") or render_result.get("url")
 
             # Deploy frontend
@@ -388,6 +402,7 @@ class V15Pipeline:
                 "success":      bool(backend_url),
                 "backend_url":  backend_url,
                 "frontend_url": frontend_url,
+                "github":       github_result,
                 "render":       render_result,
                 "cloudflare":   cloudflare_result,
                 "health":       health,
