@@ -179,17 +179,35 @@ def _dim_security(ctx: GenerationContext) -> ScoreDimension:
     """No hardcoded secrets, CORS configured, auth in place."""
     static_diags = [d for r in ctx.static_results for d in r.diagnostics]
     sec_issues   = [d for d in static_diags if d.category == ErrorCategory.SECURITY]
-    # Heuristic: check for CORS header in runtime result
+
+    # Server responding is the precondition for judging anything here — key
+    # off HEALTH, not full runtime success: a failing CRUD journey is not a
+    # security problem, but it used to drop this dimension from 80 to 50.
     rr = ctx.runtime_result
-    cors_ok = rr is not None and rr.success  # if backend runs we at least have a chance
+    server_up = rr is not None and (rr.health_passed or rr.success)
+
+    # Actually check for CORS middleware instead of inferring it from an
+    # unrelated runtime flag.
+    cors_configured = False
+    try:
+        main_py = ctx.project_path / "app" / "main.py"
+        cors_configured = main_py.exists() and "CORSMiddleware" in main_py.read_text(
+            encoding="utf-8", errors="replace")
+    except Exception:
+        pass
 
     penalty = len(sec_issues) * 15
-    base    = 80 if cors_ok else 50
-    score   = max(0.0, base - penalty)
+    if server_up and cors_configured:
+        base = 100.0   # previously capped at 80, making a 100 overall impossible
+    elif server_up or cors_configured:
+        base = 80.0
+    else:
+        base = 50.0
+    score = max(0.0, base - penalty)
     return ScoreDimension(
         name="Security", score=score, weight=0.05,
         passed=score >= 70,
-        details=f"security_issues={len(sec_issues)} cors_likely={cors_ok}",
+        details=f"security_issues={len(sec_issues)} cors={cors_configured} server_up={server_up}",
     )
 
 

@@ -1542,7 +1542,10 @@ _TYPE_MAP = {
     "Float": "float", "Numeric": "float",
     "String": "str", "Text": "str", "VARCHAR": "str",
     "Boolean": "bool",
-    "DateTime": "Optional[str]", "Date": "Optional[str]", "Time": "Optional[str]",
+    # Real datetime types, NOT str: the ORM hands pydantic datetime objects,
+    # and a str annotation raised ResponseValidationError (500) on every
+    # request that returned a row with created_at/updated_at.
+    "DateTime": "datetime", "Date": "date", "Time": "time",
 }
 
 
@@ -1612,15 +1615,21 @@ def _patch_create_missing_schemas(project_path: Path) -> int:
                 model_file = mf
                 break
 
-        # Build field lines from model columns
+        # Build field lines from model columns. id MUST be included: these
+        # stubs are used as response_model, and a schema without id serializes
+        # every response with the id stripped — the CRUD journey then can't
+        # capture an entity_id and edit/delete/persistence all fail.
         columns: list[tuple[str, str]] = []
         if model_file and model_file.exists():
             model_text = model_file.read_text(encoding="utf-8", errors="replace")
             for cm in _COL_RE.finditer(model_text):
                 col_name = cm.group(1)
                 py_type = _TYPE_MAP.get(cm.group(2), "str")
-                if col_name not in ("id",):
-                    columns.append((col_name, py_type))
+                columns.append((col_name, py_type))
+            if not any(n == "id" for n, _ in columns):
+                columns.insert(0, ("id", "int"))
+
+        _dt_names = sorted({t for _, t in columns if t in ("datetime", "date", "time")})
 
         if schema_file.exists():
             # File exists — only add classes that are missing from it
@@ -1635,6 +1644,8 @@ def _patch_create_missing_schemas(project_path: Path) -> int:
             additions = []
             if "Optional" not in existing_content:
                 additions.append("from typing import Optional\n")
+            if _dt_names and "from datetime import" not in existing_content:
+                additions.append(f"from datetime import {', '.join(_dt_names)}\n")
             for cls_name in missing:
                 if columns:
                     field_lines = "\n".join(
@@ -1658,7 +1669,10 @@ def _patch_create_missing_schemas(project_path: Path) -> int:
         )
         if not valid_classes:
             continue
-        lines = ["from typing import Optional", "from pydantic import BaseModel", "", ""]
+        lines = ["from typing import Optional", "from pydantic import BaseModel"]
+        if _dt_names:
+            lines.append(f"from datetime import {', '.join(_dt_names)}")
+        lines += ["", ""]
         for cls_name in valid_classes:
             if columns:
                 field_lines = "\n".join(
@@ -2745,6 +2759,150 @@ def _patch_schema_nullable_required_mismatch(project_path: Path) -> int:
     return patched
 
 
+_DT_COLUMN_TYPES = {"DateTime": "datetime", "Date": "date", "Time": "time"}
+
+
+def _patch_response_schema_id_and_datetimes(project_path: Path) -> int:
+    """
+    Two guaranteed-broken response patterns, fixed deterministically:
+
+    1. A response-ish schema (used as response_model, or named *Response/*Out/
+       *Read) with NO `id` field — FastAPI strips id from every response, the
+       CRUD journey can't capture an entity_id, and edit/delete/persistence
+       all fail ("201 id=None"). Inject `id: Optional[int] = None`.
+
+    2. A schema field annotated str/Optional[str] whose model column is
+       DateTime/Date/Time — the ORM hands pydantic a datetime object, raising
+       ResponseValidationError (500) on every row returned. Retype to the
+       real datetime type (pydantic still accepts ISO strings on input).
+    """
+    import ast as _ast
+    from app.services.schema_model_validator import _collect_response_model_schemas
+
+    models_dir = project_path / "app" / "models"
+    schemas_dir = project_path / "app" / "schemas"
+    if not models_dir.exists() or not schemas_dir.exists():
+        return 0
+
+    # ModelName -> {column: sqlalchemy type name}
+    model_cols: dict[str, dict] = {}
+    for mf in models_dir.glob("*.py"):
+        try:
+            tree = _ast.parse(mf.read_text(encoding="utf-8", errors="replace"))
+        except Exception:
+            continue
+        for node in _ast.walk(tree):
+            if not isinstance(node, _ast.ClassDef):
+                continue
+            cols = {}
+            for child in node.body:
+                if (isinstance(child, _ast.Assign) and isinstance(child.value, _ast.Call)
+                        and getattr(child.value.func, "id", "") == "Column"):
+                    tname = ""
+                    if child.value.args:
+                        a0 = child.value.args[0]
+                        if isinstance(a0, _ast.Name):
+                            tname = a0.id
+                        elif isinstance(a0, _ast.Call) and isinstance(a0.func, _ast.Name):
+                            tname = a0.func.id
+                    for t in child.targets:
+                        if isinstance(t, _ast.Name):
+                            cols[t.id] = tname
+            if cols:
+                model_cols[node.name] = cols
+
+    if not model_cols:
+        return 0
+
+    response_schemas = _collect_response_model_schemas(str(project_path))
+    patched = 0
+
+    for sf in schemas_dir.glob("*.py"):
+        if sf.name == "__init__.py":
+            continue
+        try:
+            src = sf.read_text(encoding="utf-8", errors="replace")
+            tree = _ast.parse(src)
+        except Exception:
+            continue
+
+        lines = src.splitlines()
+        inserts: list[tuple[int, str]] = []
+        changes: list[str] = []
+        need_dt: set = set()
+        need_optional = False
+
+        for node in tree.body:
+            if not isinstance(node, _ast.ClassDef) or not node.body:
+                continue
+            model = next((m for m in model_cols if node.name.lower().startswith(m.lower())), None)
+            if not model:
+                continue
+            cols = model_cols[model]
+            fields = {c.target.id: c for c in node.body
+                      if isinstance(c, _ast.AnnAssign) and isinstance(c.target, _ast.Name)}
+
+            is_responseish = (node.name in response_schemas
+                              or re.search(r"(Response|Out|Read)$", node.name))
+            if is_responseish and "id" in cols and "id" not in fields:
+                first = node.body[0]
+                if (isinstance(first, _ast.Expr) and isinstance(first.value, _ast.Constant)
+                        and isinstance(first.value.value, str)):
+                    # skip past the docstring
+                    insert_at = first.end_lineno
+                else:
+                    insert_at = first.lineno - 1
+                inserts.append((insert_at, "    id: Optional[int] = None"))
+                need_optional = True
+                changes.append(f"{node.name}.id")
+
+            for fname, child in fields.items():
+                py_dt = _DT_COLUMN_TYPES.get(cols.get(fname, ""))
+                if not py_dt or child.lineno != child.end_lineno:
+                    continue
+                ann = _ast.get_source_segment(src, child.annotation) or ""
+                if ann == "str":
+                    new_ann = py_dt
+                elif ann == "Optional[str]":
+                    new_ann = f"Optional[{py_dt}]"
+                else:
+                    continue
+                i = child.lineno - 1
+                lines[i] = lines[i].replace(f": {ann}", f": {new_ann}", 1)
+                need_dt.add(py_dt)
+                changes.append(f"{node.name}.{fname}:{py_dt}")
+
+        if not changes:
+            continue
+
+        for idx, text in sorted(inserts, reverse=True):
+            lines.insert(idx, text)
+        new_src = "\n".join(lines) + ("\n" if src.endswith("\n") else "")
+
+        if need_dt:
+            m = re.search(r"^from datetime import ([^\n]+)$", new_src, re.MULTILINE)
+            if m:
+                existing = {n.strip() for n in m.group(1).split(",")}
+                missing = sorted(need_dt - existing)
+                if missing:
+                    new_src = (new_src[:m.end(1)] + ", " + ", ".join(missing) + new_src[m.end(1):])
+            else:
+                new_src = f"from datetime import {', '.join(sorted(need_dt))}\n" + new_src
+        if need_optional and not re.search(r"^from typing import [^\n]*\bOptional\b", new_src, re.MULTILINE):
+            m = re.search(r"^from typing import ([^\n]+)$", new_src, re.MULTILINE)
+            if m:
+                new_src = new_src[:m.start(1)] + m.group(1).rstrip() + ", Optional" + new_src[m.end(1):]
+            else:
+                new_src = "from typing import Optional\n" + new_src
+
+        sf.write_text(new_src, encoding="utf-8")
+        patched += 1
+        print(f"  [patcher] Response schema id/datetime fixes in {sf.name}: "
+              f"{', '.join(changes[:6])}")
+
+    return patched
+
+
 def run_deterministic_patches(project_path: str, skip_protected_injections: bool = False) -> int:
     """
     Run all deterministic patches on a generated project.
@@ -2840,6 +2998,10 @@ def run_deterministic_patches(project_path: str, skip_protected_injections: bool
     # Required schema fields on nullable model columns → Optional[T] = None
     # (kills the recurring "required but model allows NULL" validator error)
     _patch_schema_nullable_required_mismatch(root)
+
+    # Response schemas must expose id (journey/frontends need it) and must
+    # type DateTime columns as datetime, not str (else 500 on every row)
+    _patch_response_schema_id_and_datetimes(root)
 
     # Inject model_config = {'from_attributes': True} into all Pydantic schemas
     # so FastAPI can serialize SQLAlchemy ORM objects returned from route handlers

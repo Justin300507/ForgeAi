@@ -205,9 +205,21 @@ def _run_runtime_validation(ctx: GenerationContext) -> VerificationResult:
         parsed = result.get("parsed_error", {})
         err_type = parsed.get("type", "RuntimeError")
         message = parsed.get("message") or (stderr[:400] if stderr else "Backend failed to start")
+        # A CRUD-journey failure on a HEALTHY backend used to fall through to
+        # the "Backend failed to start" fallback (its parsed_error has no
+        # "message" key and stderr is just uvicorn INFO noise) — the fix LLM
+        # then chased a nonexistent startup crash instead of the actual
+        # failing journey steps.
+        if err_type == "JourneyCRUDFailure":
+            failed_steps = parsed.get("failed_steps") or []
+            steps_txt = "; ".join(f"{s[0]}: {s[1]}" for s in failed_steps[:4]
+                                  if isinstance(s, (list, tuple)) and len(s) >= 2)
+            message = (f"Backend healthy but CRUD journey failed — {steps_txt}"
+                       if steps_txt else "Backend healthy but CRUD journey failed")
         cat_map = {"ModuleNotFoundError": ErrorCategory.DEPENDENCY,
                    "SyntaxError": ErrorCategory.SYNTAX,
-                   "ImportError": ErrorCategory.IMPORT}
+                   "ImportError": ErrorCategory.IMPORT,
+                   "JourneyCRUDFailure": ErrorCategory.API}
         diagnostics.append(Diagnostic(
             error_id=Diagnostic.make_id("runtime", cat_map.get(err_type, ErrorCategory.RUNTIME),
                                         f"[{err_type}] {message}", parsed.get("error_file")),
