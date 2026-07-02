@@ -2065,7 +2065,30 @@ def _patch_missing_pydantic_imports(project_path: Path) -> int:
 
     _PYDANTIC_SYMBOLS = {"BaseModel", "Field", "ConfigDict", "validator", "model_validator", "field_validator"}
     _TYPING_SYMBOLS = {"Optional", "List", "Dict", "Any", "Union", "Tuple", "Set"}
+    # stdlib types the LLM annotates with but forgets to import. Each maps to its
+    # canonical import. Missing these produced 'Undefined symbol datetime' —
+    # which, when the fix loop's LLM added a datetime field, regressed and
+    # reverted an otherwise-good habits fix on every attempt.
+    _STDLIB_IMPORTS = {
+        "datetime": "from datetime import datetime",
+        "date":     "from datetime import date",
+        "time":     "from datetime import time",
+        "timedelta":"from datetime import timedelta",
+        "Decimal":  "from decimal import Decimal",
+        "UUID":     "from uuid import UUID",
+        "Enum":     "from enum import Enum",
+    }
     patched = 0
+
+    def _symbol_available(content: str, sym: str) -> bool:
+        # imported (from X import ... sym ... / import sym) or defined locally
+        if re.search(rf'^\s*from\s+\S+\s+import\s+[^\n]*\b{sym}\b', content, re.MULTILINE):
+            return True
+        if re.search(rf'^\s*import\s+[^\n]*\b{sym}\b', content, re.MULTILINE):
+            return True
+        if re.search(rf'^\s*(?:class|def)\s+{sym}\b', content, re.MULTILINE):
+            return True
+        return False
 
     for py_file in schemas_dir.rglob("*.py"):
         try:
@@ -2092,7 +2115,13 @@ def _patch_missing_pydantic_imports(project_path: Path) -> int:
         need_pydantic = used_pydantic - already_pydantic_flat
         need_typing = used_typing - already_typing_flat
 
-        if not need_pydantic and not need_typing:
+        # stdlib type names used but neither imported nor locally defined.
+        need_stdlib = [
+            sym for sym in _STDLIB_IMPORTS
+            if re.search(r'\b' + sym + r'\b', content) and not _symbol_available(content, sym)
+        ]
+
+        if not need_pydantic and not need_typing and not need_stdlib:
             continue
 
         lines = content.splitlines(keepends=True)
@@ -2123,6 +2152,8 @@ def _patch_missing_pydantic_imports(project_path: Path) -> int:
                 )
             else:
                 inject += f'from typing import {", ".join(sorted(need_typing))}\n'
+        for sym in sorted(need_stdlib):
+            inject += _STDLIB_IMPORTS[sym] + "\n"
 
         if inject:
             lines = content.splitlines(keepends=True)
@@ -2132,7 +2163,8 @@ def _patch_missing_pydantic_imports(project_path: Path) -> int:
         try:
             py_file.write_text(content, encoding="utf-8")
             patched += 1
-            print(f"  [patcher] Fixed pydantic imports in {py_file.name}: pydantic={need_pydantic or '{}'} typing={need_typing or '{}'}")
+            _extra = f" stdlib={need_stdlib}" if need_stdlib else ""
+            print(f"  [patcher] Fixed pydantic imports in {py_file.name}: pydantic={need_pydantic or '{}'} typing={need_typing or '{}'}{_extra}")
         except Exception:
             pass
 
