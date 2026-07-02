@@ -217,20 +217,52 @@ class FrontendRunner:
                 pass
 
         # ── npm run build ────────────────────────────────────────────────
-        print("Running vite build...")
-        build = subprocess.run(
-            [npm, "run", "build"],
-            cwd=project_dir,
-            capture_output=True,
-            text=True,
-            timeout=120,
-            env=env,
-        )
+        # Cap the V8 heap explicitly: on small containers (Railway) vite/rollup
+        # with Node's default heap sizing died with exit 134 (V8 fatal OOM)
+        # right after a fresh npm install, and the parser reported "0 errors".
+        if "--max-old-space-size" not in env.get("NODE_OPTIONS", ""):
+            env["NODE_OPTIONS"] = (env.get("NODE_OPTIONS", "") + " --max-old-space-size=1536").strip()
+
+        def _is_oom(rc: int, out: str, err: str) -> bool:
+            combined = out + err
+            return (rc in (134, 137, -6, -9)
+                    or "heap out of memory" in combined
+                    or "V8::Fatal" in combined
+                    or "V8::FatalProcessOutOfMemory" in combined)
+
+        for build_try in (1, 2):
+            print("Running vite build...")
+            build = subprocess.run(
+                [npm, "run", "build"],
+                cwd=project_dir,
+                capture_output=True,
+                text=True,
+                timeout=120,
+                env=env,
+            )
+            if build.returncode != 0 and _is_oom(build.returncode, build.stdout, build.stderr) and build_try == 1:
+                # Memory pressure right after npm install is often transient —
+                # retry once before reporting a build failure.
+                print(f"[Frontend] build hit OOM (exit {build.returncode}) — retrying once...")
+                continue
+            break
         build_time = round(time.time() - t0, 2)
 
         errors = _parse_vite_errors(build.stderr, build.stdout)
 
         if build.returncode != 0:
+            # A failed build must NEVER report zero errors — an empty error
+            # list made the fix loop patch unrelated files while the real
+            # cause (e.g. the OOM crash) stayed invisible.
+            if not errors:
+                if _is_oom(build.returncode, build.stdout, build.stderr):
+                    errors = [f"vite build ran out of memory (exit {build.returncode}) — "
+                              "the build machine is memory-constrained; this is an "
+                              "environment issue, not a code bug"]
+                else:
+                    tail = _strip_ansi((build.stderr or build.stdout or "")).strip().splitlines()
+                    errors = [f"vite build failed (exit {build.returncode}): "
+                              + " | ".join(tail[-5:])]
             print(f"Frontend build FAILED in {build_time}s — {len(errors)} errors")
             return FrontendBuildResult(
                 success=False,

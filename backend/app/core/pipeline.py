@@ -88,6 +88,15 @@ class V15Pipeline:
         """
         job_id = job_id or uuid.uuid4().hex
 
+        # Start run-level token/cost accounting from zero (see get_run_totals:
+        # V6's flush_to_log clears the per-session log mid-run, which used to
+        # zero the final report's token count).
+        try:
+            from app.utils.cost_tracker import reset_session
+            reset_session()
+        except Exception:
+            pass
+
         # ── Stage 1: Generate ─────────────────────────────────────────────
         self.bus.emit(Events.STAGE_START, {"stage": "generation"})
         gen_start = time.time()
@@ -161,6 +170,14 @@ class V15Pipeline:
         max_stalled = int(os.environ.get("FORGE_MAX_STALLED_FIX_ATTEMPTS", "2"))
         stalled = 0
 
+        # Best-state safety net: keep a file snapshot of the highest-scoring
+        # state seen so far. If a later attempt degrades things (even through
+        # a revert gap), we restore the best state at the end instead of
+        # shipping/reporting whatever the last attempt left behind.
+        from app.repair.orchestrator import _ProjectSnapshot
+        best_score    = ctx.latest_score
+        best_snapshot = None
+
         while not ctx.is_deployment_ready and not rm.exhausted:
             if stalled >= max_stalled:
                 print(f"[V15] {stalled} consecutive fix attempts with no score "
@@ -185,6 +202,10 @@ class V15Pipeline:
             else:
                 stalled += 1
 
+            if (fix_attempt.score_after or 0) > best_score:
+                best_score    = fix_attempt.score_after or 0
+                best_snapshot = _ProjectSnapshot(ctx.project_path)
+
             self.bus.emit(Events.SCORE_UPDATE, {
                 "score": ctx.latest_score,
                 "grade": ctx.current_score.grade if ctx.current_score else "F",
@@ -202,6 +223,20 @@ class V15Pipeline:
                 "score_before": fix_attempt.score_before,
                 "score_after":  fix_attempt.score_after,
                 "files_modified": len(fix_attempt.files_modified),
+            })
+
+        # Restore the best-scoring state if the loop ended on a worse one
+        # (e.g. a final attempt regressed in a way the revert didn't fully
+        # undo). Re-verify so the score/diagnostics reflect the restored files.
+        if best_snapshot is not None and ctx.latest_score < best_score:
+            print(f"[V15] Final state ({ctx.latest_score:.1f}) is worse than best "
+                  f"attempt ({best_score:.1f}) — restoring best state")
+            best_snapshot.revert()
+            self._verify_and_score(ctx, attempt=len(ctx.fix_attempts))
+            self.bus.emit(Events.SCORE_UPDATE, {
+                "score": ctx.latest_score,
+                "grade": ctx.current_score.grade if ctx.current_score else "F",
+                "deployment_ready": ctx.is_deployment_ready,
             })
 
         # ── Stage 5: Deploy (only if score ≥ 95) ─────────────────────────
@@ -233,6 +268,24 @@ class V15Pipeline:
             "score":        ctx.latest_score,
             "fix_attempts": len(ctx.fix_attempts),
         })
+
+        # ── Sync run-level token/cost totals into the context ──────────────
+        # ctx.token_usage previously relied on v6_result["token_usage"], a key
+        # the V6 orchestrator never returns — so the final report always said
+        # "Total Tokens: 0" while the cost summary showed 100k+.
+        try:
+            from app.utils.cost_tracker import get_run_totals
+            totals = get_run_totals()
+            spent = totals["total_tokens"] - ctx.token_usage.total_tokens
+            if spent > 0:
+                ctx.token_usage.add(
+                    "run",
+                    totals["prompt_tokens"] - ctx.token_usage.prompt_tokens,
+                    totals["completion_tokens"] - ctx.token_usage.completion_tokens,
+                    totals["cost_usd"] - ctx.token_usage.estimated_cost_usd,
+                )
+        except Exception:
+            pass
 
         # ── Deployment confidence ──────────────────────────────────────────
         try:

@@ -129,7 +129,52 @@ def patch_database_py(project_path: str) -> bool:
 
     # Patch main.py to call create_tables() instead of Base.metadata.create_all()
     _patch_main_py_create_all(db_file.parent.parent)
+    _patch_main_py_duplicate_engine(db_file.parent.parent)
     return True
+
+
+# Matches a call's argument list including ONE level of nested parens, e.g.
+# create_engine(settings.DATABASE_URL, connect_args={"check_same_thread": False})
+_CALL_BODY = r"\((?:[^()]|\([^()]*\))*\)"
+
+
+def _patch_main_py_duplicate_engine(app_dir: Path) -> None:
+    """
+    Strip module-level engine/SessionLocal/Base duplicates from main.py and
+    re-point them at app/database.py.
+
+    Generated main.py files often do their own
+    `engine = create_engine(settings.DATABASE_URL)` alongside the known-good
+    app/database.py. That second engine (a) crashes startup when Config lacks
+    DATABASE_URL, and (b) has none of the SQLite WAL/busy-timeout pragmas —
+    one 500 mid-transaction on it held the write lock forever and every
+    subsequent request timed out, wedging the whole app.
+    """
+    main_file = app_dir / "main.py"
+    if not main_file.exists():
+        return
+
+    text = main_file.read_text(encoding="utf-8", errors="replace")
+    original = text
+
+    replacements = [
+        (re.compile(rf"^engine\s*=\s*create_engine\s*{_CALL_BODY}", re.MULTILINE),
+         "from app.database import engine  # db_patcher: use the single shared engine"),
+        (re.compile(rf"^SessionLocal\s*=\s*sessionmaker\s*{_CALL_BODY}", re.MULTILINE),
+         "from app.database import SessionLocal  # db_patcher: use the shared sessionmaker"),
+        (re.compile(rf"^Base\s*=\s*declarative_base\s*{_CALL_BODY}", re.MULTILINE),
+         "from app.database import Base  # db_patcher: single metadata registry"),
+    ]
+    stripped = []
+    for pattern, replacement in replacements:
+        text, n = pattern.subn(replacement, text)
+        if n:
+            stripped.append(replacement.split("import ")[1].split(" ")[0])
+
+    if text != original:
+        main_file.write_text(text, encoding="utf-8")
+        print(f"  [db_patcher] Stripped duplicate {', '.join(stripped)} from main.py "
+              f"(now imported from app.database)")
 
 
 def _patch_main_py_create_all(app_dir: Path) -> None:

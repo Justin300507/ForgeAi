@@ -215,33 +215,67 @@ def _fix_config_missing_attrs(project_path: Path, diagnostics: list) -> bool:
     app/main.py does `create_engine(settings.DATABASE_URL)` but the
     generated Config class sometimes omits that field.
     """
-    config_file = project_path / "app" / "config.py"
-    if not config_file.exists():
-        return False
-    content = config_file.read_text(encoding="utf-8", errors="replace")
-
-    m = re.search(r'^(\w+)\s*=\s*(?:Config|Settings)\s*\(\s*\)', content, re.MULTILINE)
-    if not m:
-        return False
-    instance_name = m.group(1)
-
     defaults = {
         "DATABASE_URL": 'os.getenv("DATABASE_URL", "sqlite:///./app.db")',
         "SECRET_KEY": 'os.getenv("SECRET_KEY", "dev-secret-key-change-in-production")',
         "ALGORITHM": 'os.getenv("ALGORITHM", "HS256")',
         "ACCESS_TOKEN_EXPIRE_MINUTES": 'int(os.getenv("ACCESS_TOKEN_EXPIRE_MINUTES", "10080"))',
     }
-    missing = {attr: expr for attr, expr in defaults.items() if not re.search(rf'\b{attr}\b', content)}
-    if not missing:
-        return False
 
+    config_file = project_path / "app" / "config.py"
+
+    # config.py referenced but missing entirely → write a known-good one.
+    # (The LLM fix loop used to handle this; it sometimes wrote a Config
+    # class without DATABASE_URL, crashing startup one stage later.)
+    if not config_file.exists():
+        referenced = any(
+            "from app.config import" in f.read_text(encoding="utf-8", errors="replace")
+            or "from app import config" in f.read_text(encoding="utf-8", errors="replace")
+            for f in (project_path / "app").rglob("*.py")
+        )
+        if not referenced:
+            return False
+        body = "\n".join(f"    {attr} = {expr}" for attr, expr in defaults.items())
+        config_file.write_text(
+            "import os\n\n\nclass Settings:\n"
+            '    PROJECT_NAME = os.getenv("PROJECT_NAME", "Generated App")\n'
+            f"{body}\n\n\nsettings = Settings()\nConfig = Settings\n",
+            encoding="utf-8",
+        )
+        return True
+
+    content = config_file.read_text(encoding="utf-8", errors="replace")
+
+    _MARKER = "# Preflight patch: ensure commonly-referenced settings attributes always exist"
+    if _MARKER in content:
+        return False  # guard already appended on a previous pass
+
+    # Any instance of a *Config*/*Settings*-named class, with or without args,
+    # with or without a type annotation. The old exact-match regex
+    # (`settings = Config()` only) silently skipped `config = AppSettings(...)`
+    # variants, leaving the AttributeError crash in place.
+    m = re.search(
+        r'^(\w+)\s*(?::\s*[\w\[\], .]+)?=\s*\w*(?:Config|Settings)\w*\s*\(',
+        content, re.MULTILINE,
+    )
+    if not m:
+        return False
+    instance_name = m.group(1)
+
+    # Always append the hasattr guard for every default: it is a runtime
+    # no-op when the attribute exists, and checking mere TEXT presence of
+    # the name (the old behavior) was fooled by comments and module-level
+    # variables while the Config CLASS still lacked the attribute.
     guard_lines = []
     if not re.search(r'^import os\b', content, re.MULTILINE):
         guard_lines.append("import os")
-    guard_lines.append("\n# Preflight patch: ensure commonly-referenced settings attributes always exist")
-    for attr, expr in missing.items():
+    guard_lines.append("\n" + _MARKER)
+    for attr, expr in defaults.items():
         guard_lines.append(f'if not hasattr({instance_name}, "{attr}"):')
-        guard_lines.append(f'    {instance_name}.{attr} = {expr}')
+        guard_lines.append(f'    try:')
+        guard_lines.append(f'        {instance_name}.{attr} = {expr}')
+        guard_lines.append(f'    except Exception:')
+        guard_lines.append(f'        object.__setattr__({instance_name}, "{attr}", {expr})')
 
     config_file.write_text(content.rstrip() + "\n" + "\n".join(guard_lines) + "\n", encoding="utf-8")
     return True

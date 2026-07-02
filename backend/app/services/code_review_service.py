@@ -52,6 +52,48 @@ def _load_python_files(project_path: str, max_files: int = 20) -> dict:
     return files
 
 
+def _salvage_truncated_json(raw: str):
+    """
+    Recover a dict from an LLM response whose JSON was cut off mid-array.
+    Trims back to the last complete object boundary, then closes whatever
+    brackets are still open. Returns None if nothing parseable remains.
+    """
+    import json as _json
+    if not raw:
+        return None
+    start = raw.find("{")
+    if start == -1:
+        return None
+    text = raw[start:]
+    last = text.rfind("}")
+    if last == -1:
+        return None
+    text = text[:last + 1]
+    stack, in_str, esc = [], False, False
+    for ch in text:
+        if esc:
+            esc = False
+            continue
+        if ch == "\\":
+            esc = True
+            continue
+        if ch == '"':
+            in_str = not in_str
+            continue
+        if in_str:
+            continue
+        if ch in "[{":
+            stack.append(ch)
+        elif ch in "]}" and stack:
+            stack.pop()
+    text += "".join("]" if b == "[" else "}" for b in reversed(stack))
+    try:
+        result = _json.loads(text)
+        return result if isinstance(result, dict) else None
+    except Exception:
+        return None
+
+
 def run_code_review(
     project_path: str,
     architecture: dict,
@@ -71,16 +113,23 @@ def run_code_review(
     raw_text = ""
     try:
         prompt = build_code_review_prompt(files, architecture)
-        raw_text = generate_content(prompt, provider, max_tokens=3000, stage="code_review")
+        # 3000 tokens was routinely too small for the issues array — reviews
+        # died mid-JSON ("Expecting ',' delimiter") and the whole dimension
+        # fell back to a flat 70.
+        raw_text = generate_content(prompt, provider, max_tokens=6000, stage="code_review")
         data = extract_json(raw_text)
     except Exception as e:
-        print(f"  Code review failed: {e}")
-        print(f"  === RAW RESPONSE ===\n{raw_text[:2000] or '<no response captured>'}\n====================")
-        return CodeReviewReport(
-            naming_score=70, architecture_score=70,
-            maintainability_score=70, tech_debt_score=70, overall_score=70,
-            skipped=True, skip_reason=str(e),
-        )
+        data = _salvage_truncated_json(raw_text)
+        if data is None:
+            print(f"  Code review failed: {e}")
+            print(f"  === RAW RESPONSE ===\n{raw_text[:2000] or '<no response captured>'}\n====================")
+            return CodeReviewReport(
+                naming_score=70, architecture_score=70,
+                maintainability_score=70, tech_debt_score=70, overall_score=70,
+                skipped=True, skip_reason=str(e),
+            )
+        print(f"  Code review response was truncated — salvaged partial JSON "
+              f"({len(data.get('issues', []))} issue(s) recovered)")
 
     issues = [
         CodeIssue(

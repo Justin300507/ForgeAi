@@ -33,6 +33,15 @@ _COST_PER_1M_OUTPUT = {
 
 _session_calls: list[dict] = []  # in-memory log for the current run
 
+# Run-level cumulative totals. Unlike _session_calls, these survive
+# flush_to_log() — V6 flushes (and clears) the session log at ITS end, which
+# zeroed out V15's final report even though 100k+ tokens were spent. Cleared
+# only by reset_session(), which V15 calls at the start of each run.
+_run_totals = {
+    "calls": 0, "prompt_tokens": 0, "completion_tokens": 0,
+    "total_tokens": 0, "cost_usd": 0.0,
+}
+
 
 def record_llm_call(
     stage: str,
@@ -59,6 +68,16 @@ def record_llm_call(
         "estimated_cost_usd": round(estimated_cost, 6),
         "duration_s": round(duration_s, 2),
     })
+    _run_totals["calls"] += 1
+    _run_totals["prompt_tokens"] += prompt_tokens
+    _run_totals["completion_tokens"] += completion_tokens
+    _run_totals["total_tokens"] += total_tokens
+    _run_totals["cost_usd"] += estimated_cost
+
+
+def get_run_totals() -> dict:
+    """Cumulative totals for the whole run — unaffected by flush_to_log()."""
+    return dict(_run_totals)
 
 
 def get_session_summary() -> dict:
@@ -113,8 +132,10 @@ def flush_to_log(project_name: str, forge_score: int, total_wall_time_s: float) 
 
 
 def reset_session() -> None:
-    """Clear in-memory call log for a new generation."""
+    """Clear in-memory call log AND run totals for a new generation."""
     _session_calls.clear()
+    for k in _run_totals:
+        _run_totals[k] = 0.0 if k == "cost_usd" else 0
 
 
 def print_session_cost():

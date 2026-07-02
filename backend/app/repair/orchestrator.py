@@ -345,34 +345,58 @@ def _regenerate_architecture(ctx: GenerationContext, cfg: StrategyConfig) -> lis
 
 class _ProjectSnapshot:
     """
-    Snapshot of all project files before a fix.
+    Snapshot of all project source files before a fix.
     Can revert to this state if a regression is detected.
     """
+
+    # Everything an LLM fix or patcher can plausibly write. The old snapshot
+    # only covered .py/.jsx, so a reverted attempt silently KEPT its changes
+    # to package.json, .js/.ts modules, css, configs -- the "reverted" state
+    # was actually a half-applied mix of before and after.
+    _EXTS = {".py", ".jsx", ".js", ".ts", ".tsx", ".json", ".css", ".html",
+             ".toml", ".yaml", ".yml", ".txt", ".env", ".md"}
+    _SKIP_DIRS = {"node_modules", "dist", "build", "__pycache__", ".git",
+                  "venv", ".venv"}
 
     def __init__(self, project_path: Path):
         self.project_path = project_path
         self._snap: dict[str, bytes] = {}
         self._take()
 
+    def _iter_files(self):
+        for root, dirs, files in os.walk(self.project_path):
+            dirs[:] = [d for d in dirs if d not in self._SKIP_DIRS]
+            for name in files:
+                f = Path(root) / name
+                if f.suffix.lower() in self._EXTS:
+                    yield f
+
     def _take(self):
-        for f in self.project_path.rglob("*.py"):
-            try:
-                self._snap[str(f.relative_to(self.project_path))] = f.read_bytes()
-            except Exception:
-                pass
-        for f in self.project_path.rglob("*.jsx"):
+        for f in self._iter_files():
             try:
                 self._snap[str(f.relative_to(self.project_path))] = f.read_bytes()
             except Exception:
                 pass
 
     def revert(self):
+        # Restore every snapshotted file...
         for rel, data in self._snap.items():
             target = self.project_path / rel
             try:
+                target.parent.mkdir(parents=True, exist_ok=True)
                 target.write_bytes(data)
             except Exception:
                 pass
+        # ...and remove source files the failed fix newly created, which the
+        # old revert left behind (e.g. a broken new route module that main.py
+        # doesn't import but py_compile still trips over).
+        for f in list(self._iter_files()):
+            rel = str(f.relative_to(self.project_path))
+            if rel not in self._snap:
+                try:
+                    f.unlink()
+                except Exception:
+                    pass
         print("    [fix] Reverted to pre-fix snapshot")
 
 
@@ -495,16 +519,23 @@ class FixOrchestrator:
         score_after_obj = se.score(ctx, attempt_number=cfg.attempt)
         score_after = score_after_obj.overall
 
-        # 7. Check for regressions -- diagnostic-based AND score-based.
-        # Diagnostic comparison now covers static/runtime/browser/http/perf/
-        # accessibility/workflow, but LLM Judge is deliberately excluded (its
-        # free-text wording varies between calls) and there may be other gaps.
-        # A fix that measurably drops the score should never be kept just
-        # because nothing tripped the diagnostic comparison.
+        # 7. Check for regressions -- the SCORE is the arbiter, the diagnostic
+        # diff is only a tiebreaker. When the pre-fix backend never started,
+        # the http/browser/endpoint/journey stages were SKIPPED and produced
+        # zero diagnostics; a fix that gets the server up makes those checks
+        # run for the first time, so their findings are newly-VISIBLE, not
+        # newly-INTRODUCED. Treating them as regressions reverted a
+        # 42.5 -> 63 improvement and pinned runs at F: any fix good enough to
+        # start the backend was guaranteed to be thrown away.
         regressions = ctx.detect_regression()
         regression_detected = False
-        if regressions:
-            print(f"  [fix] REGRESSION: {len(regressions)} new error(s) introduced")
+        if score_after > score_before:
+            if regressions:
+                print(f"  [fix] {len(regressions)} newly-visible diagnostic(s), but score "
+                      f"improved {score_before:.1f} -> {score_after:.1f} — keeping fix")
+        elif regressions:
+            print(f"  [fix] REGRESSION: {len(regressions)} new error(s) with no score "
+                  f"improvement ({score_before:.1f} -> {score_after:.1f})")
             for r in regressions[:3]:
                 print(f"       ↳ {r.message[:80]}")
             regression_detected = True
