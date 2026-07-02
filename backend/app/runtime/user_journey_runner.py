@@ -575,8 +575,10 @@ def run_user_journey(
 
         # Attempt 3: parse 422 detail to build a targeted payload fixing specific errors
         if last_r is not None and last_r.status_code == 422:
+            _422_detail = "?"
             try:
                 detail = last_r.json().get("detail", [])
+                _422_detail = detail
                 if isinstance(detail, list) and detail:
                     targeted = dict(enriched_payload)
                     changed = False
@@ -605,6 +607,16 @@ def run_user_journey(
                             if field_name in targeted:
                                 del targeted[field_name]
                                 changed = True
+                        else:
+                            # Field WAS provided but rejected (bad enum choice, wrong
+                            # type, regex/length constraint...) -- our first guess for
+                            # this field was wrong. If the schema declares an enum,
+                            # its first member is guaranteed valid; that's the one
+                            # case we can fix blind without knowing the constraint.
+                            enum_values = (schema_props.get(field_name) or {}).get("enum")
+                            if enum_values and targeted.get(field_name) != enum_values[0]:
+                                targeted[field_name] = enum_values[0]
+                                changed = True
                     if changed:
                         r3 = requests.post(entity_url, json=targeted, headers=headers, timeout=5)
                         if r3.status_code in (200, 201):
@@ -614,9 +626,17 @@ def run_user_journey(
                             except Exception:
                                 pass
                             return True, f"{r3.status_code} id={entity_id} (422-fixed)"
+                        if r3.status_code == 422:
+                            try:
+                                _422_detail = r3.json().get("detail", _422_detail)
+                            except Exception:
+                                pass
             except Exception:
                 pass
-            return True, "422 (schema mismatch, server alive)"
+            # Surface the actual validation error instead of a content-free
+            # "schema mismatch" -- otherwise diagnosing a 422 here means
+            # re-running the whole pipeline just to see what field failed.
+            return True, f"422 (schema mismatch, server alive) detail={str(_422_detail)[:200]}"
 
         return False, f"{last_r.status_code if last_r else '?'}"
     steps.append(_step("Create entity", do_create))
