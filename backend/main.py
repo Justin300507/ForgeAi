@@ -1277,7 +1277,9 @@ def credentials_status():
 
 @app.get("/health")
 def health():
-    return {"status": "ok", "version": "14.0"}
+    # Keep in sync with FastAPI(version=...) above — this is how deployed
+    # instances are checked for code freshness.
+    return {"status": "ok", "version": app.version}
 
 
 # ── Serve React frontend (production) ─────────────────────────────────────────
