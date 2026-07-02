@@ -210,13 +210,44 @@ def _run_runtime_validation(ctx: GenerationContext) -> VerificationResult:
         # "message" key and stderr is just uvicorn INFO noise) — the fix LLM
         # then chased a nonexistent startup crash instead of the actual
         # failing journey steps.
-        if err_type == "JourneyCRUDFailure":
-            failed_steps = parsed.get("failed_steps") or []
+        #
+        # In practice parse_runtime_error() (app/runtime/error_parser.py) never
+        # produces type=="JourneyCRUDFailure" — that type is only built by the
+        # separate legacy runtime_validator_service.py path. And when keep_alive=True
+        # and the server is healthy, backend_runner.py deliberately blanks stdout/
+        # stderr (lines ~263-268) so the live process can be handed to later
+        # verification stages — so `parsed` stays `{}` here even though the journey
+        # runner (result["journey"]) already recorded exactly which step failed and
+        # why. Without this, every such failure collapsed to the same contentless
+        # "Backend failed to start" message, which (a) sent the fix LLM chasing a
+        # nonexistent startup crash and (b) — since FixCache hashes on message text —
+        # made unrelated projects share one FixCache entry, silently replaying a
+        # stale, irrelevant cached patch instead of getting a real diagnosis.
+        journey = result.get("journey") or {}
+        journey_failed = bool(journey) and not journey.get("skipped") and journey.get("success") is False
+        if err_type == "JourneyCRUDFailure" or journey_failed:
+            failed_steps = parsed.get("failed_steps") or [
+                (s.get("name"), s.get("detail")) for s in journey.get("steps", []) if not s.get("passed")
+            ]
             steps_txt = "; ".join(f"{s[0]}: {s[1]}" for s in failed_steps[:4]
                                   if isinstance(s, (list, tuple)) and len(s) >= 2)
             message = (f"Backend healthy but CRUD journey failed — {steps_txt}"
                        if steps_txt else "Backend healthy but CRUD journey failed")
+            err_type = "JourneyCRUDFailure"
+        elif not journey_failed and message == "Backend failed to start":
+            # Not a journey failure either — likely the endpoint-smoke-test pass
+            # rate tripped runtime_success = False. Surface that instead of the
+            # contentless fallback so the message (and FixCache hash) carries signal.
+            pass_rate = result.get("endpoint_pass_rate")
+            issues = result.get("behavioral_issues") or []
+            if pass_rate is not None and issues:
+                issues_txt = "; ".join(
+                    f"{i.get('method')} {i.get('path')} -> {i.get('issue')}" for i in issues[:4]
+                )
+                message = f"Endpoint pass rate {pass_rate:.0%} — {issues_txt}"
+                err_type = "EndpointSmokeFailure"
         cat_map = {"ModuleNotFoundError": ErrorCategory.DEPENDENCY,
+                   "EndpointSmokeFailure": ErrorCategory.API,
                    "SyntaxError": ErrorCategory.SYNTAX,
                    "ImportError": ErrorCategory.IMPORT,
                    "JourneyCRUDFailure": ErrorCategory.API}

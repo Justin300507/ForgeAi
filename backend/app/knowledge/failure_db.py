@@ -53,6 +53,30 @@ def _diagnostic_hash(diagnostics: list) -> str:
     return hashlib.sha256("\n".join(msgs).encode()).hexdigest()[:16]
 
 
+# Messages carrying zero project-specific signal. If a diagnostic message is
+# exactly one of these (verbatim, no extra detail appended), it's identical
+# across every unrelated project that happens to hit the same generic
+# fallback path — e.g. app/verification/engine.py falling back to
+# "Backend failed to start" when the real crash detail wasn't captured.
+# Hashing purely on message text would then make FixCache.lookup() return a
+# HIT for a totally different underlying bug, silently replaying a stale,
+# irrelevant patch instead of asking the LLM to diagnose the real problem.
+# Skip the cache entirely for these so every occurrence gets a fresh look.
+_GENERIC_MESSAGES = {
+    "[RuntimeError] Backend failed to start",
+    "[JourneyCRUDFailure] Backend healthy but CRUD journey failed",
+}
+
+
+def _is_cacheable(diagnostics: list) -> bool:
+    """False if every diagnostic in the set carries a known contentless message."""
+    for d in diagnostics:
+        msg = d.get("message", str(d)) if isinstance(d, dict) else getattr(d, "message", str(d))
+        if msg not in _GENERIC_MESSAGES:
+            return True
+    return False
+
+
 class FixCache:
     """
     Hash-based lookup: same failure pattern → reuse the fix that worked before.
@@ -84,7 +108,7 @@ class FixCache:
 
     def lookup(self, diagnostics: list) -> Optional[CachedFix]:
         """Return cached fix if we've seen this failure pattern before."""
-        if not diagnostics:
+        if not diagnostics or not _is_cacheable(diagnostics):
             return None
         h = _diagnostic_hash(diagnostics)
         entry = self._data.get(h)
@@ -100,6 +124,8 @@ class FixCache:
         Record a successful fix for this failure pattern.
         Returns the hash key.
         """
+        if not diagnostics or not _is_cacheable(diagnostics):
+            return ""
         h = _diagnostic_hash(diagnostics)
         ts = time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime())
         existing = self._data.get(h)

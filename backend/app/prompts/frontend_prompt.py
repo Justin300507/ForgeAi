@@ -249,17 +249,20 @@ FORM PAGES — MUST contain:
   - Success/error toast feedback after submit
 
 TOAST NOTIFICATIONS — add to every page that mutates data:
+- Keep this EXACTLY as shown — do not nest a ternary inside a template literal inside a JSX
+  attribute expression, that is the #1 cause of "Expected '}}' but found ..." build failures.
+  Compute the color class as its own plain variable BEFORE the return statement instead.
 ```jsx
 const [toast, setToast] = React.useState(null);
 const showToast = (msg, type = 'success') => {{
   setToast({{ msg, type }});
   setTimeout(() => setToast(null), 3000);
 }};
+// Inside the component, before the return statement:
+const toastColorClass = toast && toast.type === 'success' ? 'bg-emerald-600' : 'bg-red-600';
 // In JSX:
 {{toast && (
-  <div className={{`fixed bottom-4 right-4 px-4 py-3 rounded-xl shadow-lg text-sm font-medium text-white z-50 ${{
-    toast.type === 'success' ? 'bg-emerald-600' : 'bg-red-600'
-  }}`}}>
+  <div className={{`fixed bottom-4 right-4 px-4 py-3 rounded-xl shadow-lg text-sm font-medium text-white z-50 ${{toastColorClass}}`}}>
     {{toast.msg}}
   </div>
 )}}
