@@ -659,10 +659,29 @@ class FixOrchestrator:
         # or got reverted was replayed unchanged on every subsequent attempt
         # ("Cache HIT ... skipping LLM"), burning the remaining escalation
         # strategies on a patch already confirmed not to work.
+        #
+        # Even on a successful attempt, only SOME groups are usually fixed. The
+        # overall score is the success gate, but it can't tell which group's
+        # patch earned the improvement. Caching every group's patch on any
+        # score gain poisons the cache: a group's no-op patch gets recorded as
+        # "the fix", and every later attempt replays it via a cache HIT instead
+        # of re-diagnosing with the LLM. Seen on habit_forge — attempt 1 rose
+        # 49->65 purely from the frontend-build fix, but the CRUD-500 group's
+        # useless app/database.py patch got cached too, so attempts 2-3 replayed
+        # it and the loop stalled at 65. Gate per-group on the group's own
+        # errors actually clearing: error_id is content-derived (stable across
+        # runs), so a group whose error_ids are gone from the post-fix
+        # diagnostics is genuinely resolved; one whose errors persist is not.
         if success and group_fix_contents:
             try:
                 from app.knowledge.failure_db import fix_cache
+                post_fix_ids = {d.error_id for d in ctx.all_diagnostics()}
                 for g, fix_content in group_fix_contents:
+                    group_ids = {d.error_id for d in g.diagnostics}
+                    if group_ids & post_fix_ids:
+                        # At least one of this group's errors is still present —
+                        # this patch did NOT resolve the group; don't cache it.
+                        continue
                     fix_cache.store(g.diagnostics, fix_content, idea=getattr(ctx, "idea", ""))
             except Exception:
                 pass

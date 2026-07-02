@@ -70,17 +70,71 @@ def _free_port(port: int) -> None:
 class BackendRunner:
     def __init__(self):
         self.process: subprocess.Popen | None = None
+        self._stdout_buffer: list[str] = []
+        self._stderr_buffer: list[str] = []
+        self._drain_threads: list = []
+
+    def _start_output_drains(self, process: subprocess.Popen) -> None:
+        """Drain the process's stdout AND stderr into buffers via daemon threads.
+
+        Two problems this solves, both seen live:
+        1. HANG: with stdout/stderr as PIPEs left unread (the keep_alive case),
+           the OS pipe buffer (~64KB) fills as uvicorn logs every request — and a
+           500 dumps a multi-KB traceback. Once full, uvicorn BLOCKS on its next
+           write and the whole server hangs, so every later request times out
+           (the "7% endpoint pass rate, 13 timeouts" cascade). Continuously
+           draining the pipes keeps the server responsive.
+        2. LOST TRACEBACK: keep_alive used to discard stderr entirely, so a
+           handler 500 during the CRUD journey left the fix loop with only
+           "Create entity: 500" and no root cause. The buffer preserves it.
+        """
+        import threading
+        self._stdout_buffer = []
+        self._stderr_buffer = []
+
+        def _drain(stream, buf):
+            try:
+                for line in iter(stream.readline, ""):
+                    if not line:
+                        break
+                    buf.append(line)
+                    if len(buf) > 3000:      # bound memory on a chatty/looping server
+                        del buf[:1500]
+            except Exception:
+                pass
+
+        self._drain_threads = []
+        for stream, buf in ((process.stdout, self._stdout_buffer),
+                            (process.stderr, self._stderr_buffer)):
+            if stream is None:
+                continue
+            t = threading.Thread(target=_drain, args=(stream, buf), daemon=True)
+            t.start()
+            self._drain_threads.append(t)
+
+    def _captured_stdout(self) -> str:
+        return "".join(self._stdout_buffer)
+
+    def _captured_stderr(self) -> str:
+        return "".join(self._stderr_buffer)
 
     def stop(self) -> None:
         """Terminate a server left running via run(..., keep_alive=True)."""
         if self.process is None or self.process.poll() is not None:
+            self.process = None
             return
+        # The drain threads own the stdout/stderr pipes, so wait() — not
+        # communicate() — is the correct reaper here (communicate would race the
+        # threads for the pipes).
         try:
             self.process.terminate()
-            self.process.communicate(timeout=8)
+            self.process.wait(timeout=8)
         except subprocess.TimeoutExpired:
             self.process.kill()
-            self.process.communicate()
+            try:
+                self.process.wait(timeout=5)
+            except Exception:
+                pass
         except Exception:
             pass
         self.process = None
@@ -155,6 +209,12 @@ class BackendRunner:
             text=True,
             env=isolated_env,
         )
+        # Drain stdout/stderr continuously from here on so the pipes never fill
+        # (which would block and hang uvicorn) and so any 500 traceback is
+        # captured even when the server is kept alive. Replaces the later
+        # communicate() calls, which would otherwise deadlock against these
+        # threads.
+        self._start_output_drains(process)
 
         # 5s was too tight on constrained/shared compute (e.g. Railway): a
         # backend that's genuinely fine but just slow to import/init would be
@@ -264,22 +324,33 @@ class BackendRunner:
             # Leave the server running for later stages (HTTP/browser/perf/workflow
             # tests) that need a live backend at ctx.backend_url. Caller is
             # responsible for calling self.stop() once those stages are done.
+            # Output is captured from the drain threads (snapshot so far) — this
+            # now includes any 500 traceback logged during the CRUD journey.
             self.process = process
-            stdout, stderr = "", ""
+            stdout, stderr = self._captured_stdout(), self._captured_stderr()
         else:
-            # Terminate the server — be aggressive to avoid port conflicts on retry
+            # Terminate the server — be aggressive to avoid port conflicts on retry.
+            # The drain threads own the pipes, so use wait() (not communicate())
+            # and then read the captured buffers.
             if process.poll() is None:
                 try:
                     process.terminate()
-                    stdout, stderr = process.communicate(timeout=8)
+                    process.wait(timeout=8)
                 except subprocess.TimeoutExpired:
                     process.kill()
-                    stdout, stderr = process.communicate()
-            else:
-                try:
-                    stdout, stderr = process.communicate(timeout=2)
+                    try:
+                        process.wait(timeout=5)
+                    except Exception:
+                        pass
                 except Exception:
-                    stdout, stderr = "", ""
+                    pass
+            # Give the drain threads a beat to flush the last lines after exit.
+            for t in self._drain_threads:
+                try:
+                    t.join(timeout=2)
+                except Exception:
+                    pass
+            stdout, stderr = self._captured_stdout(), self._captured_stderr()
 
             # Force-free the port after process death so the next runtime attempt
             # can bind cleanly — Windows TIME_WAIT can hold the socket briefly.

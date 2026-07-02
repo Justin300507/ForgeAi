@@ -225,12 +225,31 @@ def _run_runtime_validation(ctx: GenerationContext) -> VerificationResult:
         # stale, irrelevant cached patch instead of getting a real diagnosis.
         journey = result.get("journey") or {}
         journey_failed = bool(journey) and not journey.get("skipped") and journey.get("success") is False
-        if err_type == "JourneyCRUDFailure" or journey_failed:
-            failed_steps = parsed.get("failed_steps") or [
-                (s.get("name"), s.get("detail")) for s in journey.get("steps", []) if not s.get("passed")
-            ]
-            steps_txt = "; ".join(f"{s[0]}: {s[1]}" for s in failed_steps[:4]
-                                  if isinstance(s, (list, tuple)) and len(s) >= 2)
+        failed_steps = parsed.get("failed_steps") or [
+            (s.get("name"), s.get("detail")) for s in journey.get("steps", []) if not s.get("passed")
+        ]
+        steps_txt = "; ".join(f"{s[0]}: {s[1]}" for s in failed_steps[:4]
+                              if isinstance(s, (list, tuple)) and len(s) >= 2)
+
+        # backend_runner now drains stderr even in keep_alive mode, so a handler
+        # 500 during the CRUD journey yields a REAL parsed error (type + hint +
+        # file) from the traceback. That is far more actionable than the generic
+        # journey-steps message, so prefer it and just append which flow tripped
+        # it. Only fall back to the journey/endpoint message when the parse was
+        # generic ("Unknown"/"RuntimeError") or empty.
+        has_specific = bool(parsed) and parsed.get("type") not in (None, "Unknown", "RuntimeError")
+        if has_specific:
+            # The actual exception is at the TAIL of the traceback, not the head.
+            tail = ""
+            for line in reversed((stderr or "").splitlines()):
+                s = line.strip()
+                if s and ("Error" in s or "Exception" in s or "constraint failed" in s):
+                    tail = s
+                    break
+            message = tail or parsed.get("hint") or parsed.get("type")
+            if steps_txt:
+                message = f"{message}  [CRUD journey failed — {steps_txt}]"
+        elif err_type == "JourneyCRUDFailure" or journey_failed:
             message = (f"Backend healthy but CRUD journey failed — {steps_txt}"
                        if steps_txt else "Backend healthy but CRUD journey failed")
             err_type = "JourneyCRUDFailure"
@@ -259,7 +278,9 @@ def _run_runtime_validation(ctx: GenerationContext) -> VerificationResult:
             source="runtime",
             message=f"[{err_type}] {message}",
             file_path=parsed.get("error_file"),
-            stack_trace=stderr[:800] if stderr else None,
+            # The exception + its frames are at the END of the captured stderr;
+            # the head is just uvicorn's startup banner. Give the fix LLM the tail.
+            stack_trace=stderr[-1500:] if stderr else None,
             fix_hint=parsed.get("hint"),
             metadata={"parsed_error": parsed},
         ))
