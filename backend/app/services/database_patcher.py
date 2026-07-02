@@ -404,6 +404,17 @@ def patch_model_field_mismatches(project_path: str) -> int:
 # Column(DateTime, server_default=func.now(), nullable=False)").
 _COLUMN_TYPE_RULES: list[tuple] = [
     (re.compile(r"^(is_|has_)"), "Boolean", "default=False", None),
+    # Common boolean field names with no is_/has_ prefix. Without this, a
+    # field like "completed" fell through to the String default below,
+    # producing Column(String, server_default='') -- every response then
+    # tried to serialize '' as the schema's `completed: bool`, raising
+    # FastAPI's ResponseValidationError ("bool_parsing", input='') on every
+    # single row. Seen live on a todo app: POST /todos 500'd on every call.
+    (re.compile(r"^(completed|done|active|enabled|verified|published|"
+                r"archived|cancell?ed|finished|resolved|closed|confirmed|"
+                r"approved|deleted|visible|featured|locked|paid|seen|"
+                r"read|starred|pinned|favou?rite[d]?|blocked|banned)$"),
+     "Boolean", "default=False", None),
     (re.compile(r"(_at|_date|_on|deadline|expires)$"), "DateTime", "server_default=func.now()", "func"),
     (re.compile(r"_id$"), "Integer", "default=0", None),
     (re.compile(r"(count|qty|quantity|amount|_num|number|order|rank|priority)$"), "Integer", "default=0", None),

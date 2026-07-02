@@ -820,6 +820,7 @@ def _build_graph(diagnostics: list[Diagnostic]):
 def _categorise_static(err: str) -> ErrorCategory:
     e = err.lower()
     if "syntax" in e:                         return ErrorCategory.SYNTAX
+    if "auth field mismatch" in e:            return ErrorCategory.CONTRACT
     if "import" in e or "module" in e:        return ErrorCategory.IMPORT
     if "orm" in e or "flask" in e:            return ErrorCategory.CONTRACT
     if "router" in e or "apirouter" in e:     return ErrorCategory.CONTRACT
@@ -839,6 +840,11 @@ def _severity_static(err: str) -> ErrorSeverity:
     if "orm violation" in e:                  return ErrorSeverity.HIGH
     if "router export" in e:                  return ErrorSeverity.HIGH
     if "undefined symbol" in e:               return ErrorSeverity.HIGH
+    # 100%-repro, no other check catches it: the journey runner builds its
+    # request from the OpenAPI schema, not the actual frontend form, so a
+    # broken register form passes every existing runtime/journey check while
+    # every real user's signup 422s.
+    if "auth field mismatch" in e:            return ErrorSeverity.HIGH
     if "session leak" in e:                   return ErrorSeverity.MEDIUM
     if "stub handler" in e:                   return ErrorSeverity.MEDIUM
     return ErrorSeverity.MEDIUM

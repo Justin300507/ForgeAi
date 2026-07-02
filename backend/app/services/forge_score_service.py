@@ -29,6 +29,7 @@ def calculate_forge_score(
         "Missing backend import target": 6,
         "Missing frontend import target": 6,
         "Frontend raw fetch": 6,
+        "Frontend auth field mismatch": 20,
         "Import style mismatch": 6,
         "Orphan file": 3,
     }
@@ -41,6 +42,7 @@ def calculate_forge_score(
         "Missing symbol": 15,
         "Database symbol": 16,
         "Frontend raw fetch": 18,
+        "Frontend auth field mismatch": 20,
         "Import style mismatch": 12,
     }
 

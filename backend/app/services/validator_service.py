@@ -520,6 +520,159 @@ def validate_frontend_api_client(project_path, errors):
                 )
 
 
+_AUTH_POST_RE = re.compile(
+    r"""\.post\(\s*[`'"][^`'"]*(?:register|signup)[^`'"]*[`'"]\s*,\s*(\{)""",
+    re.IGNORECASE,
+)
+
+
+def _extract_object_literal(content, open_brace_pos):
+    """
+    From the position of an opening '{', return the full literal span up to
+    its matching '}', tracking string literals so braces inside strings
+    don't throw off the depth count. Returns None if unbalanced.
+    """
+    depth = 0
+    i = open_brace_pos
+    in_str = None  # None | "'" | '"' | '`'
+    n = len(content)
+    while i < n:
+        ch = content[i]
+        if in_str:
+            if ch == "\\":
+                i += 2
+                continue
+            if ch == in_str:
+                in_str = None
+        elif ch in ("'", '"', "`"):
+            in_str = ch
+        elif ch == "{":
+            depth += 1
+        elif ch == "}":
+            depth -= 1
+            if depth == 0:
+                return content[open_brace_pos:i + 1]
+        i += 1
+    return None
+
+
+def _top_level_object_keys(literal):
+    """
+    Parse an object-literal string (including outer braces) into its
+    top-level key names, handling both `key: value` and ES6 shorthand
+    `{ key }` forms -- shorthand is exactly what the frontend prompt tells
+    the generator to write (`{ email, password, display_name: displayName }`),
+    so treating only `key: value` as a "key" would flag every correctly
+    generated call as missing its fields.
+    """
+    inner = literal.strip()
+    if inner.startswith("{"):
+        inner = inner[1:]
+    if inner.endswith("}"):
+        inner = inner[:-1]
+
+    segments = []
+    depth = 0
+    in_str = None
+    start = 0
+    i = 0
+    n = len(inner)
+    while i < n:
+        ch = inner[i]
+        if in_str:
+            if ch == "\\":
+                i += 2
+                continue
+            if ch == in_str:
+                in_str = None
+        elif ch in ("'", '"', "`"):
+            in_str = ch
+        elif ch in "{[(":
+            depth += 1
+        elif ch in "}])":
+            depth -= 1
+        elif ch == "," and depth == 0:
+            segments.append(inner[start:i])
+            start = i + 1
+        i += 1
+    segments.append(inner[start:])
+
+    keys = set()
+    for seg in segments:
+        seg = seg.strip()
+        if not seg or seg.startswith("..."):
+            continue
+        colon = seg.find(":")
+        key_part = seg[:colon] if colon != -1 else seg
+        key_part = key_part.strip().strip("'\"")
+        if key_part.isidentifier():
+            keys.add(key_part)
+    return keys
+
+
+def validate_frontend_auth_fields(project_path, errors):
+    """
+    Flag a Register/Signup form that POSTs a payload missing the 'email'
+    field the backend requires.
+
+    Every generated backend's auth contract (shared_contract.py + the
+    known-good injected app/routes/auth_routes.py) uses `email` as the
+    mandatory identity field for POST /auth/register|signup, no matter what
+    the frontend generator produced. When the LLM instead builds the
+    register form around `username` (a real, observed deviation), the
+    request 422s with "email: field required" on every single submission —
+    a live-breaking bug that no runtime check catches, because the journey
+    runner builds its request body dynamically from the OpenAPI schema
+    instead of reading the actual frontend form.
+    """
+    auth_routes = os.path.join(project_path, "app", "routes", "auth_routes.py")
+    if not os.path.exists(auth_routes):
+        return
+    try:
+        with open(auth_routes, "r", encoding="utf-8") as f:
+            backend_uses_email = "email" in f.read()
+    except Exception:
+        return
+    if not backend_uses_email:
+        return  # this project's auth contract isn't email-based — don't assume
+
+    src_path = os.path.join(project_path, "src")
+    if not os.path.exists(src_path):
+        return
+
+    _SKIP_DIRS = {"node_modules", "dist", ".git"}
+    for root, dirs, files in os.walk(src_path):
+        dirs[:] = [d for d in dirs if d not in _SKIP_DIRS]
+        for file in files:
+            if not file.endswith((".jsx", ".js", ".tsx", ".ts")):
+                continue
+            file_path = os.path.join(root, file)
+            try:
+                with open(file_path, "r", encoding="utf-8") as f:
+                    content = f.read()
+            except Exception:
+                continue
+
+            for m in _AUTH_POST_RE.finditer(content):
+                literal = _extract_object_literal(content, m.start(1))
+                if literal is None:
+                    continue
+                if "..." in literal:
+                    continue  # spread payload — can't statically verify, don't guess
+                keys = _top_level_object_keys(literal)
+                if not keys or "email" in keys:
+                    continue
+                errors.append(
+                    f"Frontend auth field mismatch: {rel(project_path, file_path)} "
+                    f"POSTs to a register/signup endpoint with fields "
+                    f"{sorted(keys)} but no 'email' — the backend's signup "
+                    f"schema requires email (per project contract), so every "
+                    f"registration will fail with a 422 and the UI will hang "
+                    f"on its loading state. Add an email input and send "
+                    f"{{ email, password, display_name }} in the POST body."
+                )
+
+
 def validate_route_quality(
     project_path,
     errors
@@ -802,6 +955,10 @@ def validate_project(project_path):
         errors
     )
     validate_frontend_api_client(
+        project_path,
+        errors
+    )
+    validate_frontend_auth_fields(
         project_path,
         errors
     )
