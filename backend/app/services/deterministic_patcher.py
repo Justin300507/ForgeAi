@@ -145,6 +145,79 @@ def _patch_strip_back_populates(project_path: Path) -> int:
     return patched
 
 
+def _build_model_index(models_dir: Path) -> dict:
+    """Index every model class -> {module, tablename, fks:{ref_table: column}}.
+    Used to turn a stripped relationship('Target') into a real scoped query."""
+    index: dict[str, dict] = {}
+    for mf in models_dir.glob("*.py"):
+        if mf.name.startswith("_"):
+            continue
+        try:
+            src = mf.read_text(encoding="utf-8", errors="replace")
+        except Exception:
+            continue
+        module = mf.stem
+        # split into class blocks
+        for cm in re.finditer(r"^class\s+(\w+)\s*\(", src, re.MULTILINE):
+            cls = cm.group(1)
+            start = cm.start()
+            nxt = re.search(r"^class\s+\w+\s*\(", src[cm.end():], re.MULTILINE)
+            body = src[start: cm.end() + nxt.start()] if nxt else src[start:]
+            tbl_m = re.search(r"__tablename__\s*=\s*['\"](\w+)['\"]", body)
+            fks: dict[str, str] = {}
+            for fkm in re.finditer(r"^\s*(\w+)\s*=\s*Column\([^\n]*ForeignKey\(\s*['\"](\w+)\.", body, re.MULTILINE):
+                col, ref_table = fkm.group(1), fkm.group(2)
+                fks.setdefault(ref_table, col)
+            index[cls] = {"module": module, "table": tbl_m.group(1) if tbl_m else None, "fks": fks}
+    return index
+
+
+def _inject_relationship_property(content: str, owning_class: str, attr: str,
+                                  target: str, model_index: dict) -> str:
+    """Insert a @property named `attr` into `owning_class` that returns the
+    related rows via the object's session (empty list if unresolvable)."""
+    my_table = model_index.get(owning_class, {}).get("table")
+    tgt = model_index.get(target)
+    fk_col = tgt["fks"].get(my_table) if (tgt and my_table) else None
+
+    if tgt and fk_col:
+        body = (
+            f"    @property\n"
+            f"    def {attr}(self):\n"
+            f"        from sqlalchemy import inspect as _sa_inspect\n"
+            f"        _sess = _sa_inspect(self).session\n"
+            f"        if _sess is None:\n"
+            f"            return []\n"
+            f"        from app.models.{tgt['module']} import {target}\n"
+            f"        return _sess.query({target}).filter({target}.{fk_col} == self.id).all()\n"
+        )
+    else:
+        # Can't resolve the target/FK — degrade to empty list so the accessor
+        # never raises AttributeError (better a missing list than a 500).
+        body = (
+            f"    @property\n"
+            f"    def {attr}(self):\n"
+            f"        return []\n"
+        )
+
+    # Insert after the last "    col = Column(...)" line in the owning class, or
+    # right after the class header if there are none.
+    start_m = re.search(rf"^class\s+{owning_class}\s*\([^\n]*\)\s*:", content, re.MULTILINE)
+    if not start_m:
+        return content
+    nxt = re.search(r"^class\s+\w+\s*\(", content[start_m.end():], re.MULTILINE)
+    class_end = start_m.end() + nxt.start() if nxt else len(content)
+    class_body = content[start_m.end():class_end]
+
+    col_matches = list(re.finditer(r"^\s{4}\w+\s*=\s*Column\([^\n]*\n", class_body, re.MULTILINE))
+    if col_matches:
+        insert_at = start_m.end() + col_matches[-1].end()
+    else:
+        nl = content.index("\n", start_m.end())
+        insert_at = nl + 1
+    return content[:insert_at] + "\n" + body + content[insert_at:]
+
+
 def _patch_strip_relationships(project_path: Path) -> int:
     """
     Strip ALL relationship() attribute declarations from SQLAlchemy model files.
@@ -154,12 +227,20 @@ def _patch_strip_relationships(project_path: Path) -> int:
     many-to-many schemas where the LLM forgets secondary=), SQLAlchemy raises
     NoForeignKeysError at mapper config time, which hangs every single endpoint.
 
-    Generated route handlers never use ORM relationship accessors; they query
-    with explicit .filter() calls.  So removing these declarations is always safe.
+    Removing the mapper-level relationship is necessary, but route handlers DO
+    sometimes use the accessor (e.g. `any(c.completion_date == today for c in
+    habit.completions)`), so a blanket strip turns those into
+    AttributeError -> 500. To keep both properties (no mapper crash AND the
+    accessor still works), each stripped relationship is replaced with a plain
+    Python @property that queries the related rows through the object's own
+    session, scoped by the target's foreign key back to this table. Falls back to
+    an empty list when the target/FK can't be resolved.
     """
     models_dir = project_path / "app" / "models"
     if not models_dir.exists():
         return 0
+
+    model_index = _build_model_index(models_dir)
 
     patched = 0
     for mf in models_dir.glob("*.py"):
@@ -173,14 +254,22 @@ def _patch_strip_relationships(project_path: Path) -> int:
         if "relationship(" not in original:
             continue
 
-        # Remove relationship() attribute assignments — may span multiple lines
+        # Remove relationship() assignments; track which class each belonged to
+        # and the target it referenced so we can re-add a query property.
         lines = original.split("\n")
         new_lines: list[str] = []
         i = 0
         removed = 0
+        current_class: str | None = None
+        # {owning_class: [(attr, target_class)]}
+        stripped_rels: dict[str, list[tuple[str, str]]] = {}
         while i < len(lines):
             line = lines[i]
+            cls_m = re.match(r'class\s+(\w+)\s*\(', line)
+            if cls_m:
+                current_class = cls_m.group(1)
             stripped = line.lstrip()
+            rel_m = re.match(r'(\w+)\s*=\s*relationship\s*\(\s*[\'"]?(\w+)', stripped)
             if re.match(r'\w+\s*=\s*relationship\s*\(', stripped):
                 # Track parens to find the closing line
                 depth = 0
@@ -194,6 +283,10 @@ def _patch_strip_relationships(project_path: Path) -> int:
                     if depth <= 0:
                         break
                     j += 1
+                if rel_m and current_class:
+                    stripped_rels.setdefault(current_class, []).append(
+                        (rel_m.group(1), rel_m.group(2))
+                    )
                 removed += 1
                 i = j + 1
                 continue
@@ -212,6 +305,14 @@ def _patch_strip_relationships(project_path: Path) -> int:
             r"^from sqlalchemy\.orm import relationship\s*\n", "",
             content, flags=re.MULTILINE,
         )
+
+        # Re-add each stripped relationship as a session-backed query property so
+        # `obj.<attr>` keeps working in route handlers.
+        for owning_class, rels in stripped_rels.items():
+            for attr, target in rels:
+                content = _inject_relationship_property(
+                    content, owning_class, attr, target, model_index
+                )
 
         mf.write_text(content, encoding="utf-8")
         patched += 1
