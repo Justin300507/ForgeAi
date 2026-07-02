@@ -26,6 +26,7 @@ V7 also adds self-healing regeneration: if static + runtime both fail after
 all fix attempts, it uses the Research Agent's root cause analysis to
 redesign the architecture before retrying.
 """
+import os
 import time
 import hashlib
 from typing import Any
@@ -85,7 +86,11 @@ def generate_project_v7(
     runtime_passed = bool(
         v6_result.get("runtime") and v6_result["runtime"].get("success")
     )
-    if not runtime_passed and not v6_result.get("validation", {}).get("passed"):
+    # Self-healing re-runs the ENTIRE V6 pipeline (plan → architect → backend
+    # → frontend → validation) — it roughly doubles the LLM cost of a failed
+    # run. FORGE_SELF_HEAL=0 disables it when running on a tight credit budget.
+    self_heal_enabled = os.environ.get("FORGE_SELF_HEAL", "1") != "0"
+    if not runtime_passed and not v6_result.get("validation", {}).get("passed") and self_heal_enabled:
         v6_result = _attempt_self_healing(idea, provider, v6_result, run_id, skip_reviews=skip_reviews, frontend_target=frontend_target)
         runtime_passed = bool(
             v6_result.get("runtime") and v6_result["runtime"].get("success")

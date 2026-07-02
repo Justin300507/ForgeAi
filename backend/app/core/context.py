@@ -6,7 +6,12 @@ mutable verification/score data accumulates across the fix loop.
 """
 from __future__ import annotations
 
+import os
 from dataclasses import dataclass, field
+
+from dotenv import load_dotenv
+
+load_dotenv()  # FORGE_DEPLOY_THRESHOLD is read at import time below
 from datetime import datetime
 from enum import Enum
 from pathlib import Path
@@ -242,7 +247,9 @@ class GenerationContext:
     Passed by reference through every stage and fix loop iteration.
     """
 
-    DEPLOY_THRESHOLD = 95.0   # score required for deployment
+    # Score required for deployment. Overridable via FORGE_DEPLOY_THRESHOLD so
+    # a user can ship an 80-score app instead of never deploying anything.
+    DEPLOY_THRESHOLD = float(os.environ.get("FORGE_DEPLOY_THRESHOLD", "95"))
 
     def __init__(
         self,

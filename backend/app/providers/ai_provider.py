@@ -27,18 +27,20 @@ def _tracked(provider_name: str, model: str, prompt: str, fn, stage: str = "unkn
 
 def _auto_chain(prompt, stage, max_tokens, thinking_budget, skip: frozenset = frozenset()):
     """
-    Gemini → Groq → Cerebras → Ollama. OpenRouter/DeepSeek removed (out of
-    credits — a 402 wastes a slot then falls through to DeepSeek, which
-    writes partial code and makes errors worse). `skip` excludes a provider
-    a caller already tried directly, so we don't retry the same failure.
+    Cerebras → Groq → Gemini → Ollama. Free-tier providers first: Gemini is
+    the only one here that bills per token, so it is the paid fallback, not
+    the default (it was burning the entire Gemini credit balance on every
+    auto call). OpenRouter/DeepSeek removed (out of credits — a 402 wastes a
+    slot then falls through to DeepSeek, which writes partial code and makes
+    errors worse). `skip` excludes a provider a caller already tried
+    directly, so we don't retry the same failure.
     """
-    if "gemini" not in skip:
+    if "cerebras" not in skip:
         try:
-            print("Using Gemini")
-            return _tracked("gemini", "gemini-2.5-flash", prompt, gemini_generate, stage,
-                            max_tokens=max_tokens, thinking_budget=thinking_budget)
+            print("Using Cerebras")
+            return _tracked("cerebras", "gpt-oss-120b", prompt, cerebras_generate, stage, max_tokens=max_tokens)
         except Exception as e:
-            print(f"Gemini failed: {e}")
+            print(f"Cerebras failed: {e}")
 
     if "groq" not in skip:
         try:
@@ -47,12 +49,13 @@ def _auto_chain(prompt, stage, max_tokens, thinking_budget, skip: frozenset = fr
         except Exception as e:
             print(f"Groq failed: {e}")
 
-    if "cerebras" not in skip:
+    if "gemini" not in skip:
         try:
-            print("Using Cerebras (last resort)")
-            return _tracked("cerebras", "gpt-oss-120b", prompt, cerebras_generate, stage, max_tokens=max_tokens)
+            print("Using Gemini (paid fallback)")
+            return _tracked("gemini", "gemini-2.5-flash", prompt, gemini_generate, stage,
+                            max_tokens=max_tokens, thinking_budget=thinking_budget)
         except Exception as e:
-            print(f"Cerebras failed: {e}")
+            print(f"Gemini failed: {e}")
 
     try:
         print("Using Ollama (offline fallback)")

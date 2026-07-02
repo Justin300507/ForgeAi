@@ -104,34 +104,38 @@ _SIGNALS: dict[str, int] = {
 }
 
 # Stage-specific model preferences (stage → complexity_tier → provider)
+# Only free-tier providers are routed to directly: Gemini bills per token
+# (reserved as the auto-chain's paid fallback) and OpenRouter is out of
+# credits (routing to it guarantees a failed call before the fallback kicks
+# in). Cerebras gpt-oss-120b is free-tier and produced the 87-92 score runs.
 _STAGE_ROUTES: dict[str, dict[str, str]] = {
     "planning": {
-        "low":        "gemini",     # Fast + free for simple apps
+        "low":        "cerebras",
         "medium":     "groq",       # Free tier, fast
         "high":       "groq",       # Free tier
-        "enterprise": "openrouter", # Strongest for enterprise
+        "enterprise": "cerebras",
     },
     "architecture": {
         "low":        "groq",
         "medium":     "groq",
         "high":       "groq",
-        "enterprise": "openrouter",
+        "enterprise": "cerebras",
     },
     "backend": {
-        "low":        "gemini",
+        "low":        "cerebras",
         "medium":     "groq",
         "high":       "groq",
-        "enterprise": "openrouter",
+        "enterprise": "cerebras",
     },
     "frontend": {
-        "low":        "gemini",
+        "low":        "cerebras",
         "medium":     "groq",
         "high":       "groq",
-        "enterprise": "openrouter",
+        "enterprise": "cerebras",
     },
     "fix_simple": {
-        "low":        "gemini",     # import errors, syntax: cheap model enough
-        "medium":     "gemini",
+        "low":        "cerebras",   # import errors, syntax: cheap model enough
+        "medium":     "cerebras",
         "high":       "groq",
         "enterprise": "groq",
     },
@@ -139,13 +143,13 @@ _STAGE_ROUTES: dict[str, dict[str, str]] = {
         "low":        "groq",       # logic bugs, auth, DB: need more capability
         "medium":     "groq",
         "high":       "groq",
-        "enterprise": "openrouter",
+        "enterprise": "cerebras",
     },
     "fix_nuclear": {
         "low":        "groq",       # full regen: groq is fast + free
         "medium":     "groq",
-        "high":       "openrouter",
-        "enterprise": "openrouter",
+        "high":       "cerebras",
+        "enterprise": "cerebras",
     },
 }
 

@@ -10,7 +10,12 @@ missed — it means something real is still broken.
 from __future__ import annotations
 
 import math
+import os
 from datetime import datetime
+
+from dotenv import load_dotenv
+
+load_dotenv()  # FORGE_DEPLOY_THRESHOLD is read at import time below
 from typing import Optional
 
 from app.core.context import (
@@ -19,7 +24,8 @@ from app.core.context import (
     VerificationResult,
 )
 
-DEPLOY_THRESHOLD = 95.0
+# Overridable via FORGE_DEPLOY_THRESHOLD (must match GenerationContext.DEPLOY_THRESHOLD)
+DEPLOY_THRESHOLD = float(os.environ.get("FORGE_DEPLOY_THRESHOLD", "95"))
 
 
 # ── Dimension calculators ─────────────────────────────────────────────────────

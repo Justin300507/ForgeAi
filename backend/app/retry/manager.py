@@ -61,7 +61,7 @@ _ESCALATION_PLAN: list[StrategyConfig] = [
         # NOT a hardcoded provider: OpenRouter is out of credits (see
         # ai_provider.py's auto chain, which already excludes it for that
         # reason) and Groq's free tier hits its daily quota fast. "auto" lets
-        # the live fallback chain (Gemini -> Groq -> Cerebras -> Ollama) pick
+        # the live fallback chain (Cerebras -> Groq -> Gemini -> Ollama) pick
         # whichever provider actually has room, instead of always calling a
         # provider already known to fail.
         provider="auto",

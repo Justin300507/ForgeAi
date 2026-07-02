@@ -14,6 +14,7 @@ Design principle: NEVER assume code works. Always execute → verify → score �
 """
 from __future__ import annotations
 
+import os
 import time
 import uuid
 from datetime import datetime
@@ -151,7 +152,21 @@ class V15Pipeline:
         # ── Stage 4: Fix loop (up to 5 attempts) ─────────────────────────
         rm = self.retry_manager
 
+        # Early-stop: after N consecutive attempts with no score improvement,
+        # stop escalating. Attempts 3-5 (module regen, model switch, full
+        # architecture regen) are the most expensive LLM calls in the whole
+        # pipeline, and the benchmark history shows that when attempts 1-2
+        # both fail to move the score, the later attempts almost never do
+        # either -- they just burn API credits.
+        max_stalled = int(os.environ.get("FORGE_MAX_STALLED_FIX_ATTEMPTS", "2"))
+        stalled = 0
+
         while not ctx.is_deployment_ready and not rm.exhausted:
+            if stalled >= max_stalled:
+                print(f"[V15] {stalled} consecutive fix attempts with no score "
+                      f"improvement — stopping fix loop to save API credits "
+                      f"(set FORGE_MAX_STALLED_FIX_ATTEMPTS to change)")
+                break
             cfg = rm.next_strategy(ctx)
             if cfg is None:
                 break
@@ -164,6 +179,11 @@ class V15Pipeline:
 
             fix_attempt = self.fix_orchestrator.run_attempt(ctx, cfg)
             rm.record_result(cfg, fix_attempt.score_before, fix_attempt.score_after or 0)
+
+            if (fix_attempt.score_after or 0) > fix_attempt.score_before:
+                stalled = 0
+            else:
+                stalled += 1
 
             self.bus.emit(Events.SCORE_UPDATE, {
                 "score": ctx.latest_score,
