@@ -1282,6 +1282,55 @@ def health():
     return {"status": "ok", "version": app.version}
 
 
+@app.get("/api/download/{job_id}", tags=["jobs"])
+def download_zip(job_id: str, db: Session = Depends(get_db)):
+    """Serve the generated project's zip. The frontend links to this with a plain
+    <a href>, so no Authorization header is sent — auth is intentionally not
+    required here (it's the user's own generated source). Without this route the
+    request fell through to the SPA catch-all and just re-rendered the dashboard,
+    which is exactly what 'download zip goes to dashboard' was."""
+    import os as _os2
+    job = db.query(GenerationJob).filter(GenerationJob.id == job_id).first()
+    if not job:
+        raise HTTPException(status_code=404, detail="Job not found")
+
+    here = _os2.path.dirname(_os2.path.abspath(__file__))
+    proj = getattr(job, "project_name", None)
+
+    # Resolve an existing zip: stored path first, then the conventional locations.
+    candidates = []
+    if getattr(job, "zip_path", None):
+        candidates.append(job.zip_path)
+    if proj:
+        candidates.append(_os2.path.join("generated_projects", f"{proj}.zip"))
+        candidates.append(_os2.path.join(here, "generated_projects", f"{proj}.zip"))
+    zip_file = next((c for c in candidates if c and _os2.path.isfile(c)), None)
+
+    # No zip on disk (common when the run scored < deploy threshold, since the
+    # pipeline only zips on runtime success) — build it on demand from the
+    # project directory so the user can still download the generated code.
+    if not zip_file and proj:
+        for proj_dir in (
+            _os2.path.join("generated_projects", proj),
+            _os2.path.join(here, "generated_projects", proj),
+        ):
+            if _os2.path.isdir(proj_dir):
+                try:
+                    from app.services.zip_service import create_zip
+                    zip_file = create_zip(proj_dir)
+                    break
+                except Exception as exc:
+                    raise HTTPException(status_code=500, detail=f"Could not build zip: {exc}")
+
+    if not zip_file or not _os2.path.isfile(zip_file):
+        raise HTTPException(
+            status_code=404,
+            detail="No generated code found for this job (it may have been overwritten by a later run).",
+        )
+
+    return FileResponse(zip_file, media_type="application/zip", filename=f"{proj or 'project'}.zip")
+
+
 # ── Serve React frontend (production) ─────────────────────────────────────────
 import os as _os
 
