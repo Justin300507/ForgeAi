@@ -65,7 +65,7 @@ def _run_single(idea: str, provider: str, job_id: str) -> BatchJobResult:
         from app.services.validator_service import validate_project
         from app.services.runtime_validator_service import validate_runtime
         from app.services.forge_score_service import calculate_forge_score, build_pipeline_metrics
-        from app.services.zip_service import create_zip
+        from app.services.zip_service import create_zip, write_debug_report
         from app.services.git_service import initialize_git
         from app.knowledge.arch_db import arch_db
 
@@ -106,9 +106,11 @@ def _run_single(idea: str, provider: str, job_id: str) -> BatchJobResult:
 
         result.pipeline_metrics = build_pipeline_metrics(validation, runtime_result, None, None)
 
-        # Export
-        if result.runtime_passed:
-            result.zip_path = create_zip(project_path) or ""
+        # Export — always zip, even on failure, with a build report so the
+        # run can be inspected from the zip alone
+        if not result.runtime_passed:
+            write_debug_report(project_path, validation=validation, runtime_result=runtime_result)
+        result.zip_path = create_zip(project_path) or ""
 
         # Continuous learning
         try:

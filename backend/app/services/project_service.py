@@ -12,7 +12,7 @@ from app.services.backend_service import generate_backend
 from app.services.frontend_service import generate_frontend
 from app.services.file_writer_service import write_files
 from app.services.frontend_scaffold_service import ensure_app_jsx
-from app.services.zip_service import create_zip
+from app.services.zip_service import create_zip, write_debug_report
 from app.services.metadata_service import save_metadata
 from app.services.validator_service import validate_project
 from app.services.fixer_service import generate_fix
@@ -835,7 +835,6 @@ def generate_project(idea: str, provider: str = "auto", use_tournament: bool = F
     # ------------------------------------------------------------------
     # 10. Packaging (zip) if everything succeeded
     # ------------------------------------------------------------------
-    zip_path = None
     can_export = (
         validation["passed"]
         and runtime_result
@@ -844,13 +843,12 @@ def generate_project(idea: str, provider: str = "auto", use_tournament: bool = F
             False
         )
     )
-    if can_export:
-        zip_path = create_zip(
-            project_path
-        )
-    else:
-        print("\nExport Blocked")
-        print("Validation or Runtime Failed")
+    if not can_export:
+        print("\nRuntime/validation failed — zipping anyway with a build report for debugging")
+        write_debug_report(project_path, validation=validation, runtime_result=runtime_result)
+    zip_path = create_zip(
+        project_path
+    )
 
     # ------------------------------------------------------------------
     # 10a. Docker Deployment Validation (V5.1)

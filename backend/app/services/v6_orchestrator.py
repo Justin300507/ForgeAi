@@ -29,7 +29,7 @@ from app.services.fixer_service import generate_fix
 from app.services.missing_file_service import generate_missing_file
 from app.services.fix_writer_service import write_fix
 from app.services.fix_log_service import save_fix_log
-from app.services.zip_service import create_zip
+from app.services.zip_service import create_zip, write_debug_report
 from app.services.forge_score_service import calculate_forge_score
 from app.services.security_reviewer_service import run_security_review, print_security_report
 from app.services.qa_reviewer_service import run_qa_review
@@ -697,10 +697,11 @@ def generate_project_v6(
         and runtime_result
         and runtime_result.get("success", False)
     )
-    zip_path = None
+    if not can_export:
+        write_debug_report(project_path, validation=validation, runtime_result=runtime_result)
+    zip_path = create_zip(project_path)
+    print(f"\n  ZIP: {zip_path}")
     if can_export:
-        zip_path = create_zip(project_path)
-        print(f"\n  ZIP: {zip_path}")
         try:
             from app.services.repo_intelligence_service import generate_repo_docs
             generate_repo_docs(project_path, plan, architecture)
@@ -1025,9 +1026,9 @@ def repair_project(
 
     # Export
     can_export = validation["passed"] and runtime_result and runtime_result.get("success", False)
-    zip_path = None
-    if can_export:
-        zip_path = create_zip(project_path)
+    if not can_export:
+        write_debug_report(project_path, validation=validation, runtime_result=runtime_result)
+    zip_path = create_zip(project_path)
 
     forge_score = calculate_forge_score(
         validation, runtime_result,
