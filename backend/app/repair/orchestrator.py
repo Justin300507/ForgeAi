@@ -173,6 +173,63 @@ def _scaffold_missing_local_imports(
     return created
 
 
+_MISSING_BACKEND_IMPORT_RE = re.compile(r"Missing backend import target:\s*(\S+\.py)")
+
+
+def _synthesize_missing_backend_files(
+    ctx: GenerationContext, diags: list[Diagnostic], provider: str,
+) -> tuple[list[str], set[str]]:
+    """
+    Directly create files a "Missing backend import target" diagnostic points
+    at, using the same generate_missing_file() LLM call the V6 generation
+    loop already uses for this exact diagnostic category.
+
+    The repair loop's group-based dispatch has no equivalent: _apply_fix_group
+    patches the file that HAS the broken import, not the missing target
+    itself, and _regenerate_module only ever produces route/model rewrites
+    from architecture context, not an arbitrary missing schema file. Either
+    way the target import is never actually created, so the diagnostic just
+    persists (or a later attempt reintroduces it) until the fix loop gives up
+    and reverts -- this is what stalled seed.py-related fixes at 78.8/100.
+
+    Returns (paths written, error_ids of diagnostics this handled) so the
+    caller can drop those diagnostics before grouping the rest.
+    """
+    from app.services.missing_file_service import generate_missing_file
+
+    by_path: dict[str, list[Diagnostic]] = {}
+    for d in diags:
+        m = _MISSING_BACKEND_IMPORT_RE.search(d.message)
+        if not m:
+            continue
+        by_path.setdefault(m.group(1), []).append(d)
+
+    written: list[str] = []
+    handled_ids: set[str] = set()
+    for rel_path, path_diags in by_path.items():
+        target = _safe_patch_target(ctx.project_path, rel_path)
+        if target is None or target.exists():
+            continue
+        error_text = "\n".join(d.message for d in path_diags)
+        try:
+            fix = generate_missing_file(rel_path, error_text, provider)
+        except Exception as exc:
+            print(f"    [fix] Missing-file synthesis failed for {rel_path}: {exc}")
+            continue
+        if not fix or not fix.get("content"):
+            continue
+        try:
+            target.parent.mkdir(parents=True, exist_ok=True)
+            target.write_text(fix["content"], encoding="utf-8")
+            written.append(rel_path)
+            handled_ids.update(d.error_id for d in path_diags)
+            print(f"    [fix] Synthesized missing file: {rel_path}")
+        except Exception as exc:
+            print(f"    [fix] Write failed for {rel_path}: {exc}")
+
+    return written, handled_ids
+
+
 # ── Group → LLM fix dispatch ──────────────────────────────────────────────────
 
 def _required_endpoints_for_files(ctx: GenerationContext, files: list[str]) -> str:
@@ -476,21 +533,31 @@ def _regenerate_module(
         # Use the architecture fix service to regenerate the affected route files
         try:
             from app.services.architecture_fix_service import generate_architecture_fix
-            from app.services.fix_writer_service import write_fix
+            # Signature is (architecture, validation_errors, provider, ...) --
+            # passing project_path/architecture in the wrong slots used to
+            # hand a dict to generate_content()'s `provider` param, and the
+            # response is always {"files": [...]} (see the prompt in
+            # architecture_fix_service.py), never a bare {"path", "content"}
+            # object. Together those meant this strategy either crashed
+            # straight into the except-fallback below or silently wrote
+            # nothing, on every call.
             fix_data = generate_architecture_fix(
-                str(ctx.project_path),
-                [d.message for d in group.diagnostics],
                 ctx.architecture,
+                [d.message for d in group.diagnostics],
+                cfg.provider,
             )
-            if fix_data:
-                rel = fix_data.get("path", "")
-                content = fix_data.get("content", "")
-                if rel and content:
-                    target = ctx.project_path / rel
-                    target.parent.mkdir(parents=True, exist_ok=True)
-                    target.write_text(content, encoding="utf-8")
-                    modified.append(rel)
-                    fix_content_map[rel] = content
+            for f in (fix_data or {}).get("files", []):
+                rel = f.get("path", "")
+                content = f.get("content", "")
+                if not rel or not content:
+                    continue
+                target = _safe_patch_target(ctx.project_path, rel)
+                if target is None:
+                    continue
+                target.parent.mkdir(parents=True, exist_ok=True)
+                target.write_text(content, encoding="utf-8")
+                modified.append(rel)
+                fix_content_map[rel] = content
         except Exception as exc:
             print(f"    [fix] Module regen failed: {exc}")
             # Fall back to patch strategy
@@ -662,14 +729,22 @@ class FixOrchestrator:
                       f"skipping {failure_graph.suppressed_count} downstream symptom(s)")
                 all_diags = root_diags
 
-        groups = group_diagnostics(all_diags, max_groups=6)
+        # Missing-file diagnostics need a file created from scratch, not a
+        # patch to some other file that imports it -- handle those directly
+        # before grouping so neither dispatch path below silently no-ops on
+        # them (see _synthesize_missing_backend_files docstring).
+        synthesized, handled_ids = _synthesize_missing_backend_files(ctx, all_diags, cfg.provider)
+        if handled_ids:
+            all_diags = [d for d in all_diags if d.error_id not in handled_ids]
+
+        groups = group_diagnostics(all_diags, max_groups=6) if all_diags else []
         print(f"  [fix] {len(all_diags)} diagnostics → {len(groups)} groups")
 
         # 2. Take pre-fix snapshot for regression protection
         ctx.snapshot_passing()
         snapshot = _ProjectSnapshot(ctx.project_path)
 
-        all_modified: list[str] = []
+        all_modified: list[str] = list(synthesized)
         # (group, fix_content) pairs generated this attempt -- only committed
         # to the fix cache at the end, if this attempt actually succeeds.
         group_fix_contents: list[tuple[DiagnosticGroup, dict[str, str]]] = []

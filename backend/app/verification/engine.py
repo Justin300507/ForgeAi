@@ -577,8 +577,16 @@ def _run_llm_judge(
 
     try:
         from app.verification.llm_judge import judge_screenshot
+        # screenshots accumulate in capture order: the initial route sweep
+        # (/login, /register, ...) first, then the CRUD workflow's navigation
+        # steps. journey/workflow failures happen deep into that sequence
+        # (post-login, mid-CRUD) -- judging screenshots[0] means the judge is
+        # almost always looking at the login page while the diagnostics it's
+        # asked to explain are about a completely different screen. The last
+        # screenshot is the one closest to whatever state the failures above
+        # actually describe.
         judgment = judge_screenshot(
-            screenshot_b64=screenshots[0] if screenshots else None,
+            screenshot_b64=screenshots[-1] if screenshots else None,
             console_errors=console_errors,
             network_failures=network_failures,
             workflow_failures=workflow_failures,

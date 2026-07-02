@@ -222,6 +222,48 @@ def _escape_inner_quotes(text: str) -> str:
     return ''.join(out)
 
 
+def _extract_single_file_object(text: str):
+    """
+    Robustly extract {"path": "...", "content": "..."} when the content value
+    contains unescaped quotes the LLM forgot to escape -- e.g. an embedded
+    Python dict literal like `model_config = {"from_attributes": True}`.
+
+    The generic string-token regex (and the quote/colon heuristic in
+    _escape_inner_quotes) both treat `"from_attributes":` as if it were a
+    real JSON key boundary and truncate/corrupt the content field. This
+    exploits a known invariant instead: the fixer/missing-file/runtime-fix
+    prompts always return exactly this two-key shape with "content" as the
+    LAST field, so its closing quote is the last unescaped `"` before the
+    object's closing brace -- no character-by-character guessing needed.
+    """
+    # Bail out on the multi-file {"files": [...]} shape -- this extractor
+    # assumes exactly one "path"/"content" pair in the whole text and would
+    # otherwise splice content across file boundaries.
+    if '"files"' in text:
+        return None
+
+    path_m = re.search(r'"path"\s*:\s*"((?:[^"\\]|\\.)*)"', text)
+    content_key_m = re.search(r'"content"\s*:\s*"', text)
+    if not path_m or not content_key_m:
+        return None
+
+    content_start = content_key_m.end()
+    close_brace = text.rfind("}")
+    if close_brace == -1 or close_brace < content_start:
+        return None
+
+    tail = text[content_start:close_brace]
+    last_quote = tail.rfind('"')
+    if last_quote == -1:
+        return None
+
+    raw_content = tail[:last_quote]
+    # Undo the "path" backslash-doubling _fix_path_backslashes already applied
+    path_value = path_m.group(1).replace('\\\\', '\\').replace('\\"', '"')
+
+    return {"path": path_value, "content": raw_content}
+
+
 def _find_matching_close_brace(text: str, open_pos: int) -> int:
     """
     Given the index of a '{' in text, walk forward tracking string/escape
@@ -300,6 +342,13 @@ def extract_json(text: str):
         return json.loads(sanitized, strict=False)
 
     except json.JSONDecodeError:
+        # For the common single-file {"path", "content"} shape, extracting by
+        # known field position sidesteps quote-boundary guessing entirely --
+        # try it before the heuristic repairs below.
+        single_file = _extract_single_file_object(json_text)
+        if single_file is not None:
+            return single_file
+
         # Try escaping unescaped inner quotes (common when LLM embeds code in
         # descriptions), THEN re-run the newline/tab repair on top of that --
         # a single field often has both problems (a quoted identifier AND a

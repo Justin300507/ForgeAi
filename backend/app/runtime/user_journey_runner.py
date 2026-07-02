@@ -97,6 +97,52 @@ def _get_openapi_fields(requests_mod, base_url: str, path: str) -> set:
         return set()
 
 
+def _get_openapi_schema_props(requests_mod, base_url: str, path: str) -> dict:
+    """
+    Query /openapi.json and return {field_name: resolved_property_schema} for a
+    POST endpoint's request body, resolving $ref (including Optional[Enum]'s
+    anyOf wrapper) so enum/type constraints are visible to the caller.
+
+    _get_openapi_fields only returns field NAMES, so callers had no way to
+    know a field like "frequency" is a Literal/Enum and must guess a value —
+    almost always wrong, causing a 422 the generic name-based heuristics
+    can't recover from. Returns {} on any failure.
+    """
+    try:
+        r = requests_mod.get(f"{base_url}/openapi.json", timeout=3)
+        if r.status_code != 200:
+            return {}
+        spec = r.json()
+        components = spec.get("components", {}).get("schemas", {})
+        ep_spec = spec.get("paths", {}).get(path, {}).get("post", {})
+        body_schema = (ep_spec
+                       .get("requestBody", {})
+                       .get("content", {})
+                       .get("application/json", {})
+                       .get("schema", {}))
+        if "$ref" in body_schema:
+            schema_name = body_schema["$ref"].split("/")[-1]
+            body_schema = components.get(schema_name, {})
+        props = body_schema.get("properties", {})
+
+        def _resolve(prop_schema):
+            if "$ref" in prop_schema:
+                name = prop_schema["$ref"].split("/")[-1]
+                return components.get(name, {})
+            for key in ("anyOf", "allOf", "oneOf"):
+                if key in prop_schema and prop_schema[key]:
+                    for sub in prop_schema[key]:
+                        resolved = _resolve(sub)
+                        if resolved.get("enum") or resolved.get("type"):
+                            return resolved
+                    return _resolve(prop_schema[key][0])
+            return prop_schema
+
+        return {name: _resolve(schema) for name, schema in props.items()}
+    except Exception:
+        return {}
+
+
 _PASSWORD_VARIANTS = {"password", "password_hash", "hashed_password", "passwd", "pwd"}
 _EMAIL_VARIANTS = {"email", "email_address"}
 _USERNAME_VARIANTS = {"username", "user_name", "login"}
@@ -456,13 +502,29 @@ def run_user_journey(
 
         # Query OpenAPI schema to discover required fields we might be missing
         entity_path = entity_url[len(base):]
-        schema_fields = _get_openapi_fields(requests, base, entity_path)
+        schema_props = _get_openapi_schema_props(requests, base, entity_path)
+        schema_fields = set(schema_props.keys()) or _get_openapi_fields(requests, base, entity_path)
         enriched_payload = dict(base_payload)
         for field_name in schema_fields:
             if field_name in enriched_payload:
                 continue
             fl = field_name.lower()
-            if field_name in _FIELD_DEFAULTS:
+            prop_schema = schema_props.get(field_name) or {}
+            enum_values = prop_schema.get("enum")
+            prop_type = prop_schema.get("type")
+            if enum_values:
+                # A Literal/Enum field — any name-based guess is almost
+                # certainly not a member and 422s with no recovery path.
+                enriched_payload[field_name] = enum_values[0]
+            elif prop_type == "boolean":
+                enriched_payload[field_name] = True
+            elif prop_type == "integer":
+                enriched_payload[field_name] = 1
+            elif prop_type == "number":
+                enriched_payload[field_name] = 1.0
+            elif prop_type == "array":
+                enriched_payload[field_name] = []
+            elif field_name in _FIELD_DEFAULTS:
                 enriched_payload[field_name] = _FIELD_DEFAULTS[field_name]
             # Name/title-like fields with entity prefix (team_name, task_title, etc.)
             elif any(fl == s or fl.endswith(f"_{s}") for s in ("name", "title", "label", "heading", "subject", "caption")):
