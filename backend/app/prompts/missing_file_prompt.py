@@ -104,6 +104,15 @@ Generate:
 - React component
 - Default export
 - Valid JSX
+- ALL HTTP calls MUST use the shared axios client: import API from '../api'
+  (src/api.js). NEVER use raw fetch() with relative URLs — the frontend is
+  deployed on a different domain (Cloudflare Pages) than the backend (Render),
+  so fetch('/todos') 404s in production. src/api.js reads VITE_API_URL and
+  attaches the Authorization header automatically.
+- Auth token in localStorage is ALWAYS 'access_token' (never 'token').
+- List endpoints return {{"items": [...], "total": n}} — read response.data.items.
+- Use the EXACT field names from the backend schemas/routes referenced in the
+  validation error — never guess synonyms (e.g. 'done' vs 'completed').
 
 ========================================
 FRONTEND COMPONENT RULES
@@ -118,6 +127,11 @@ Generate:
 - Reusable React component
 - Default export
 - Valid JSX
+- HTTP calls (if any) use the shared axios client: import API from '../api' —
+  never raw fetch() with relative URLs.
+- Layout/wrapper components (Navbar, Layout, Sidebar) that pages are nested
+  inside as <Navbar><Page/></Navbar> MUST accept and render {{children}} —
+  otherwise every page renders blank.
 
 ========================================
 CONSISTENCY RULES

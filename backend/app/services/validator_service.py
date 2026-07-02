@@ -474,6 +474,52 @@ def validate_frontend_imports(project_path, errors):
                             )
 
 
+def validate_frontend_api_client(project_path, errors):
+    """
+    Flag raw fetch() calls with relative URLs in src/ files.
+
+    Relative fetch('/todos') works in local dev (Vite proxies to the backend)
+    but 404s in production because the frontend (Cloudflare Pages) and backend
+    (Render) live on different domains. Every HTTP call must go through the
+    shared axios client in src/api.js, which reads VITE_API_URL and attaches
+    the auth header. This bug shipped a fully-blank production app (simple_todo,
+    2026-07-02): 7 repair-generated pages all used raw fetch().
+    """
+    src_path = os.path.join(project_path, "src")
+    if not os.path.exists(src_path):
+        return
+
+    _SKIP_DIRS = {"node_modules", "dist", ".git"}
+    for root, dirs, files in os.walk(src_path):
+        dirs[:] = [d for d in dirs if d not in _SKIP_DIRS]
+        for file in files:
+            if not file.endswith((".jsx", ".js")):
+                continue
+            if file == "api.js":
+                continue  # the shared client itself may use whatever it wants
+            file_path = os.path.join(root, file)
+            try:
+                with open(file_path, "r", encoding="utf-8") as f:
+                    content = f.read()
+            except Exception:
+                continue
+
+            # fetch("/x"...), fetch(`/x/${id}`...) — relative URL as the first arg
+            raw_fetches = re.findall(
+                r"""fetch\(\s*(?:["']/|`/)""",
+                content,
+            )
+            if raw_fetches:
+                errors.append(
+                    f"Frontend raw fetch: {rel(project_path, file_path)} makes "
+                    f"{len(raw_fetches)} HTTP call(s) via fetch() with a relative "
+                    f"URL — must use the shared axios client instead "
+                    f"(import API from '../api'; API.get('/todos')). Relative "
+                    f"fetch() 404s in production because the frontend and "
+                    f"backend are deployed on different domains."
+                )
+
+
 def validate_route_quality(
     project_path,
     errors
@@ -752,6 +798,10 @@ def validate_project(project_path):
     )
 
     validate_frontend_imports(
+        project_path,
+        errors
+    )
+    validate_frontend_api_client(
         project_path,
         errors
     )

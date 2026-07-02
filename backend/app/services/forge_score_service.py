@@ -28,6 +28,7 @@ def calculate_forge_score(
         "Router export mismatch": 5,
         "Missing backend import target": 6,
         "Missing frontend import target": 6,
+        "Frontend raw fetch": 6,
         "Import style mismatch": 6,
         "Orphan file": 3,
     }
@@ -39,6 +40,7 @@ def calculate_forge_score(
         "Undefined symbol": 15,
         "Missing symbol": 15,
         "Database symbol": 16,
+        "Frontend raw fetch": 18,
         "Import style mismatch": 12,
     }
 

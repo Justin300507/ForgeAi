@@ -72,11 +72,14 @@ def validate_undefined_symbols(project_path, errors):
                             or alias.name
                         )
 
-                elif isinstance(node, ast.FunctionDef):
+                elif isinstance(node, (ast.FunctionDef, ast.AsyncFunctionDef)):
 
                     defined.add(node.name)
 
                     for arg in node.args.args:
+                        defined.add(arg.arg)
+
+                    for arg in node.args.posonlyargs:
                         defined.add(arg.arg)
 
                     for arg in node.args.kwonlyargs:
@@ -88,14 +91,10 @@ def validate_undefined_symbols(project_path, errors):
                     if node.args.kwarg:
                         defined.add(node.args.kwarg.arg)
 
-                elif isinstance(node, ast.AsyncFunctionDef):
+                elif isinstance(node, ast.Lambda):
 
-                    defined.add(node.name)
-
-                    for arg in node.args.args:
-                        defined.add(arg.arg)
-
-                    for arg in node.args.kwonlyargs:
+                    for arg in (node.args.args + node.args.posonlyargs
+                                + node.args.kwonlyargs):
                         defined.add(arg.arg)
 
                     if node.args.vararg:
@@ -118,7 +117,7 @@ def validate_undefined_symbols(project_path, errors):
                     if isinstance(node.target, ast.Name):
                         defined.add(node.target.id)
 
-                elif isinstance(node, ast.For):
+                elif isinstance(node, (ast.For, ast.AsyncFor)):
 
                     _collect_target_names(node.target, defined)
 
@@ -126,7 +125,7 @@ def validate_undefined_symbols(project_path, errors):
 
                     _collect_target_names(node.target, defined)
 
-                elif isinstance(node, ast.With):
+                elif isinstance(node, (ast.With, ast.AsyncWith)):
 
                     for item in node.items:
 
@@ -134,6 +133,20 @@ def validate_undefined_symbols(project_path, errors):
                             _collect_target_names(
                                 item.optional_vars, defined
                             )
+
+                elif isinstance(node, ast.ExceptHandler):
+
+                    # `except Exception as exc:` binds exc — previously missed,
+                    # causing false "Undefined symbol 'exc'" errors on the
+                    # common `raise HTTPException(...) from exc` pattern.
+                    if node.name:
+                        defined.add(node.name)
+
+                elif isinstance(node, ast.NamedExpr):
+
+                    # walrus operator: (x := ...) binds x
+                    if isinstance(node.target, ast.Name):
+                        defined.add(node.target.id)
 
             for node in ast.walk(tree):
 

@@ -46,6 +46,17 @@ PYDANTIC v2:
   from_attributes = True (not orm_mode = True).
   Never constr() — use Field(min_length=X, pattern=r"...").
   Regex in Field(pattern=...) must NOT use lookahead/lookbehind (Rust regex).
+
+FRONTEND (src/*.jsx, src/*.js) — deployed on a DIFFERENT domain than the backend:
+  ALL HTTP calls use the shared axios client: import API from '../api' (src/api.js).
+  NEVER raw fetch() with relative URLs (fetch('/todos') 404s in production —
+  frontend is on Cloudflare Pages, backend on Render; src/api.js reads
+  VITE_API_URL and attaches the auth header).
+  localStorage auth token key is ALWAYS 'access_token' — never 'token'.
+  List endpoints return {"items": [...], "total": n} — read response.data.items.
+  Use the EXACT field names from the backend schemas — never guess synonyms
+  (the todo done flag is 'done', not 'completed').
+  Layout components used as <Navbar><Page/></Navbar> MUST render {children}.
 """
 
 FASTAPI_CONTRACT = """
