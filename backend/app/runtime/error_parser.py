@@ -229,6 +229,43 @@ def parse_runtime_error(stderr):
             ),
         }
 
+    # FastAPI ResponseValidationError: the handler returned an object the
+    # response_model can't serialize. The traceback lists each failing field as a
+    # {'type':..., 'loc': ('response', ..., '<field>'), 'msg':...} dict. Extract
+    # the field names + error kinds so the fix targets the exact schema/model
+    # fields instead of chasing a generic "ValidationError". (stderr is now
+    # captured even in keep_alive mode thanks to the backend_runner drain.)
+    if "ResponseValidationError" in stderr:
+        # last path element of each loc tuple = the field name
+        fields = re.findall(r"'loc':\s*\(([^)]*)\)", stderr)
+        field_names: list[str] = []
+        for loc in fields:
+            parts = [p.strip().strip("'\"") for p in loc.split(",") if p.strip()]
+            leaf = next((p for p in reversed(parts) if p and p not in ("response",) and not p.isdigit()), None)
+            if leaf and leaf not in field_names:
+                field_names.append(leaf)
+        kinds = sorted(set(re.findall(r"'type':\s*'([^']+)'", stderr)))
+        # locate the response route file from the traceback
+        all_files = re.findall(r'File "(.+?)", line \d+', stderr)
+        route_file = next((f for f in all_files if "generated_projects" in f and ("/routes/" in f or "\\routes\\" in f)), None)
+        flds = ", ".join(field_names[:8]) if field_names else "(unparsed)"
+        missing = any(k in ("missing", "int_parsing", "string_type", "model_attributes_type") for k in kinds)
+        return {
+            "type": "ResponseValidationError",
+            "fields": field_names,
+            "error_kinds": kinds,
+            "error_file": route_file or error_file,
+            "hint": (
+                f"The response_model rejected the returned object on field(s): {flds} "
+                f"(error kinds: {', '.join(kinds) or '?'}). Fix options, in order: "
+                f"(1) if the field isn't a real column on the SQLAlchemy model, add it "
+                f"to the model in app/models/ OR make it Optional[...] = None in the "
+                f"response schema in app/schemas/; (2) if it's a type mismatch, align the "
+                f"schema field type to the model column type. Do NOT modify pydantic/fastapi "
+                f"source. The response_model must be a Pydantic schema, not a SQLAlchemy model."
+            ),
+        }
+
     if "ValidationError" in stderr:
 
         return {

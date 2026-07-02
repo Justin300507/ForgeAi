@@ -1708,7 +1708,7 @@ _REQUIRED_FIELD_RE = re.compile(
 )
 _OPTIONAL_IMPORT_RE = re.compile(r'from typing import ([^\n]+)')
 _RESPONSE_CLASS_RE = re.compile(
-    r'^class (\w+(?:Response|Out|Read|List|Detail|Schema)\w*)\s*\(BaseModel\)',
+    r'^class (\w+(?:Response|Out|Read|List|Detail|Schema)\w*)\s*\([^)]*\)',
     re.MULTILINE | re.IGNORECASE,
 )
 
@@ -1745,8 +1745,14 @@ def _patch_response_schemas_optional(project_path: Path) -> int:
         class_indent = ""
 
         for idx, line in enumerate(lines):
-            # Detect class declaration
-            cm = re.match(r'^(class \w+(?:Response|Out|Read|List|Detail|Schema)\w*\s*\(BaseModel\))', line, re.IGNORECASE)
+            # Detect class declaration. Match ANY base (not just BaseModel) so a
+            # response class that inherits from a shared base schema
+            # (class HabitResponse(HabitBase)) still gets its fields made
+            # Optional[...] = None — otherwise its required fields slip through and
+            # a missing/None value on the ORM object 500s with ResponseValidationError.
+            # Still gated on the Response/Out/Read/List/Detail/Schema naming, so
+            # input schemas (Create/Update) keep their required fields.
+            cm = re.match(r'^(class \w+(?:Response|Out|Read|List|Detail|Schema)\w*\s*\([^)]*\))', line, re.IGNORECASE)
             if cm:
                 in_response_class = True
                 class_indent = ""
