@@ -13,6 +13,7 @@ from pathlib import Path
 _DATABASE_PY = '''\
 import importlib
 import os
+import threading
 from sqlalchemy import create_engine, event
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import sessionmaker
@@ -101,7 +102,38 @@ def get_db_url() -> str:
     return DATABASE_URL
 
 
+# Lazy, one-time schema creation on the SAME engine the request handlers use.
+# This is the safety net that makes deployment work regardless of what main.py
+# does. Generated main.py files frequently create their own throwaway engine
+# (e.g. sqlite:///./sql_app.db) and run Base.metadata.create_all against THAT,
+# so on a real deployment (where DATABASE_URL points at Postgres) the tables get
+# created on the wrong database and every handler query hits an empty one —
+# "relation does not exist" / "no such table" 500s on the very first request.
+# Locally this is masked by an out-of-band pre-flight create_tables() that does
+# not run on Render/Heroku. Creating the tables here, bound to `engine`
+# (== SessionLocal's bind), guarantees the schema exists on the database the
+# handlers actually query. create_all is idempotent (checkfirst=True), so this
+# is a no-op when the tables already exist.
+_tables_ready = False
+_tables_lock = threading.Lock()
+
+
+def _ensure_tables_once():
+    global _tables_ready
+    if _tables_ready:
+        return
+    with _tables_lock:
+        if _tables_ready:
+            return
+        try:
+            create_tables()
+        except Exception:
+            pass
+        _tables_ready = True
+
+
 def get_db():
+    _ensure_tables_once()
     db = SessionLocal()
     try:
         yield db
@@ -220,7 +252,7 @@ def _patch_main_py_create_all(app_dir: Path) -> None:
 
     if text != original:
         main_file.write_text(text, encoding="utf-8")
-        print(f"  [db_patcher] Patched main.py: create_all → create_tables()")
+        print(f"  [db_patcher] Patched main.py: create_all -> create_tables()")
 
 
 # Common field-name synonyms: wrong_name → [possible_correct_names in priority order].
