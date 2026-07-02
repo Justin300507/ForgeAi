@@ -540,10 +540,44 @@ def _patch_model_aliases(project_path: Path) -> None:
                     for n in m.group(1).split(","):
                         already_imported.add(n.strip().split(" as ")[-1].strip())
 
+                # Before stubbing, look for the REAL model in a sibling module
+                # (user.py needing User while users.py defines Users). An empty
+                # stub shadows the real model: auth then queries the stub and
+                # crashes with "type object 'User' has no attribute 'email'".
+                # A re-export shim gives routes the actual class instead.
+                sibling_classes: dict[str, str] = {}  # class name -> module
+                for sibling in models_dir.glob("*.py"):
+                    if sibling.stem in (module, "__init__"):
+                        continue
+                    try:
+                        sib_content = sibling.read_text(encoding="utf-8", errors="replace")
+                    except Exception:
+                        continue
+                    for cls in _CLASS_IN_FILE.findall(sib_content):
+                        sibling_classes.setdefault(cls, sibling.stem)
+
                 stubs = []
+                reexports = []
                 for name in sorted(names):
                     if name in already_imported:
                         continue  # already importable — don't create a duplicate stub
+                    name_lower = name.lower()
+                    real = None
+                    for cls in sorted(sibling_classes):
+                        c = cls.lower()
+                        if (c == name_lower or c == name_lower + "s"
+                                or c + "s" == name_lower
+                                or (c.rstrip("s") == name_lower.rstrip("s")
+                                    and abs(len(c) - len(name_lower)) <= 2)):
+                            real = cls
+                            break
+                    if real:
+                        src_module = sibling_classes[real]
+                        as_clause = f" as {name}" if real != name else ""
+                        reexports.append(
+                            f"from app.models.{src_module} import {real}{as_clause}  # re-export: patcher\n"
+                        )
+                        continue
                     # Derive a table name from the module name (e.g. task_tags)
                     tbl = module.replace("-", "_")
                     stubs.append(
@@ -551,6 +585,11 @@ def _patch_model_aliases(project_path: Path) -> None:
                         f"    __tablename__ = '{tbl}'\n"
                         f"    id = Column(Integer, primary_key=True)\n"
                     )
+                if reexports:
+                    content = "".join(reexports) + content
+                    model_file.write_text(content, encoding="utf-8")
+                    print(f"  [patcher] Re-exported real model(s) in {module}.py: "
+                          f"{[r.strip() for r in reexports]}")
                 if stubs:
                     # Ensure imports exist
                     needs = []

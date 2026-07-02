@@ -104,52 +104,52 @@ _SIGNALS: dict[str, int] = {
 }
 
 # Stage-specific model preferences (stage → complexity_tier → provider)
-# Only free-tier providers are routed to directly: Gemini bills per token
-# (reserved as the auto-chain's paid fallback) and OpenRouter is out of
-# credits (routing to it guarantees a failed call before the fallback kicks
-# in). Cerebras gpt-oss-120b is free-tier and produced the 87-92 score runs.
+# Gemini is the primary (user choice); its per-token cost is offset by the
+# global response cache in ai_provider.generate_content. OpenRouter is out
+# of credits (routing to it guarantees a failed call before the fallback
+# kicks in) — its former slots go to Cerebras (free tier, gpt-oss-120b).
 _STAGE_ROUTES: dict[str, dict[str, str]] = {
     "planning": {
-        "low":        "cerebras",
-        "medium":     "groq",       # Free tier, fast
-        "high":       "groq",       # Free tier
-        "enterprise": "cerebras",
+        "low":        "gemini",
+        "medium":     "gemini",
+        "high":       "gemini",
+        "enterprise": "gemini",
     },
     "architecture": {
-        "low":        "groq",
-        "medium":     "groq",
-        "high":       "groq",
-        "enterprise": "cerebras",
+        "low":        "gemini",
+        "medium":     "gemini",
+        "high":       "gemini",
+        "enterprise": "gemini",
     },
     "backend": {
-        "low":        "cerebras",
-        "medium":     "groq",
-        "high":       "groq",
-        "enterprise": "cerebras",
+        "low":        "gemini",
+        "medium":     "gemini",
+        "high":       "gemini",
+        "enterprise": "gemini",
     },
     "frontend": {
-        "low":        "cerebras",
-        "medium":     "groq",
-        "high":       "groq",
-        "enterprise": "cerebras",
+        "low":        "gemini",
+        "medium":     "gemini",
+        "high":       "gemini",
+        "enterprise": "gemini",
     },
     "fix_simple": {
-        "low":        "cerebras",   # import errors, syntax: cheap model enough
-        "medium":     "cerebras",
-        "high":       "groq",
-        "enterprise": "groq",
+        "low":        "gemini",     # import errors, syntax: cheap model enough
+        "medium":     "gemini",
+        "high":       "gemini",
+        "enterprise": "gemini",
     },
     "fix_complex": {
-        "low":        "groq",       # logic bugs, auth, DB: need more capability
-        "medium":     "groq",
-        "high":       "groq",
-        "enterprise": "cerebras",
+        "low":        "gemini",     # logic bugs, auth, DB: need more capability
+        "medium":     "gemini",
+        "high":       "gemini",
+        "enterprise": "gemini",
     },
     "fix_nuclear": {
-        "low":        "groq",       # full regen: groq is fast + free
-        "medium":     "groq",
-        "high":       "cerebras",
-        "enterprise": "cerebras",
+        "low":        "gemini",     # full regen
+        "medium":     "gemini",
+        "high":       "gemini",
+        "enterprise": "gemini",
     },
 }
 

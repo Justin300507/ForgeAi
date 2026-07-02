@@ -1,3 +1,4 @@
+import os
 import time
 
 from app.providers.deepseek_provider import generate as deepseek_generate
@@ -27,17 +28,26 @@ def _tracked(provider_name: str, model: str, prompt: str, fn, stage: str = "unkn
 
 def _auto_chain(prompt, stage, max_tokens, thinking_budget, skip: frozenset = frozenset()):
     """
-    Cerebras → Groq → Gemini → Ollama. Free-tier providers first: Gemini is
-    the only one here that bills per token, so it is the paid fallback, not
-    the default (it was burning the entire Gemini credit balance on every
-    auto call). OpenRouter/DeepSeek removed (out of credits — a 402 wastes a
-    slot then falls through to DeepSeek, which writes partial code and makes
-    errors worse). `skip` excludes a provider a caller already tried
-    directly, so we don't retry the same failure.
+    Gemini → Cerebras → Groq → Ollama. Gemini is the primary (user choice —
+    quality); its per-token cost is offset by the response cache in
+    generate_content, which short-circuits every repeated prompt before any
+    provider is called. Cerebras/Groq are the free-tier fallbacks. OpenRouter/
+    DeepSeek removed (out of credits — a 402 wastes a slot then falls through
+    to DeepSeek, which writes partial code and makes errors worse). `skip`
+    excludes a provider a caller already tried directly, so we don't retry
+    the same failure.
     """
+    if "gemini" not in skip:
+        try:
+            print("Using Gemini")
+            return _tracked("gemini", "gemini-2.5-flash", prompt, gemini_generate, stage,
+                            max_tokens=max_tokens, thinking_budget=thinking_budget)
+        except Exception as e:
+            print(f"Gemini failed: {e}")
+
     if "cerebras" not in skip:
         try:
-            print("Using Cerebras")
+            print("Using Cerebras (fallback)")
             return _tracked("cerebras", "gpt-oss-120b", prompt, cerebras_generate, stage, max_tokens=max_tokens)
         except Exception as e:
             print(f"Cerebras failed: {e}")
@@ -49,14 +59,6 @@ def _auto_chain(prompt, stage, max_tokens, thinking_budget, skip: frozenset = fr
         except Exception as e:
             print(f"Groq failed: {e}")
 
-    if "gemini" not in skip:
-        try:
-            print("Using Gemini (paid fallback)")
-            return _tracked("gemini", "gemini-2.5-flash", prompt, gemini_generate, stage,
-                            max_tokens=max_tokens, thinking_budget=thinking_budget)
-        except Exception as e:
-            print(f"Gemini failed: {e}")
-
     try:
         print("Using Ollama (offline fallback)")
         return _tracked("ollama", "local", prompt, ollama_generate, stage, max_tokens=max_tokens)
@@ -67,6 +69,42 @@ def _auto_chain(prompt, stage, max_tokens, thinking_budget, skip: frozenset = fr
 
 
 def generate_content(
+    prompt,
+    provider="auto",
+    max_tokens=4000,
+    stage: str = "unknown",
+    thinking_budget: int = 0,
+):
+    # ── Global response cache ─────────────────────────────────────────────
+    # Every call is cached by prompt hash, not just planner/architect. With a
+    # cached architect output, the backend/frontend/fix prompts for a repeated
+    # idea are byte-identical too — so a re-run of "todo app" costs $0 in
+    # provider tokens instead of re-billing Gemini for ~40 calls. Identical
+    # prompt == identical inputs, so serving the cached response is safe.
+    # Disable with FORGE_LLM_CACHE=0.
+    cache_enabled = os.environ.get("FORGE_LLM_CACHE", "1") != "0"
+    if cache_enabled:
+        try:
+            from app.utils.llm_cache import get_cached, set_cached
+            cache_payload = {"prompt": prompt, "max_tokens": max_tokens}
+            cached = get_cached("llm", cache_payload)
+            if cached and cached.get("response"):
+                print(f"[LLM cache] HIT ({stage}) — 0 tokens billed")
+                return cached["response"]
+        except Exception:
+            cache_enabled = False
+
+    result = _generate_uncached(prompt, provider, max_tokens, stage, thinking_budget)
+
+    if cache_enabled and result:
+        try:
+            set_cached("llm", cache_payload, {"response": result, "stage": stage})
+        except Exception:
+            pass
+    return result
+
+
+def _generate_uncached(
     prompt,
     provider="auto",
     max_tokens=4000,

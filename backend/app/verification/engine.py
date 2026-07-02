@@ -217,7 +217,9 @@ def _run_runtime_validation(ctx: GenerationContext) -> VerificationResult:
             metadata={"parsed_error": parsed},
         ))
 
-    if success:
+    # The URL is valid whenever the server answered its health check — even
+    # if the CRUD journey failed — so later HTTP/browser stages can run.
+    if result.get("health_passed") or success:
         ctx.backend_url = f"http://127.0.0.1:{ctx.backend_port}"
 
     ctx.runtime_result = RuntimeResult(
@@ -637,7 +639,15 @@ class VerificationEngine:
             results.append(VerificationResult(stage="runtime", status=StageStatus.SKIPPED))
 
         # ── Stages 4–9: Parallel post-runtime ────────────────────────────────
-        runtime_ok = ctx.runtime_result and ctx.runtime_result.success
+        # Gate on the server being ALIVE (health passed), not on full runtime
+        # success: a failing CRUD journey used to skip every browser/HTTP/
+        # integration stage even though the server was up, silently capping
+        # the score around 59 and making deployment unreachable.
+        runtime_ok = bool(
+            ctx.runtime_result
+            and (ctx.runtime_result.health_passed or ctx.runtime_result.success)
+            and getattr(ctx, "_backend_runner", None)
+        )
 
         if runtime_ok and self.run_browser:
             print("  [verify] 4-9: Running HTTP / Browser / Performance / Accessibility in parallel...")

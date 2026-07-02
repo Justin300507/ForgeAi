@@ -16,7 +16,19 @@ def _extract_error_file(stderr):
         if "generated_projects" in match:
             return match
 
-    return matches[-1]
+    # NEVER fall back to a third-party/stdlib frame. A response-serialization
+    # error (e.g. PydanticSerializationError) has only pydantic/fastapi frames
+    # in its traceback; returning matches[-1] told the fix LLM the buggy file
+    # was pydantic's own type_adapter.py — it then burned a full fix attempt
+    # trying to rewrite pydantic source (blocked by write_fix's path guard,
+    # but ~8k tokens wasted per occurrence). Returning None makes the fix
+    # prompt rely on the parsed hint (which names the project schemas to fix).
+    _THIRD_PARTY = ("site-packages", "dist-packages", "/usr/local/lib/", "/usr/lib/", "\\lib\\")
+    for match in reversed(matches):
+        if not any(marker in match for marker in _THIRD_PARTY):
+            return match
+
+    return None
 
 
 def parse_runtime_error(stderr):

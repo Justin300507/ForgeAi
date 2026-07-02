@@ -26,6 +26,23 @@ from app.repair.grouper import group_diagnostics
 from app.retry.manager import RetryManager, StrategyConfig
 
 
+def _safe_patch_target(project_path: Path, rel_path: str) -> Optional[Path]:
+    """Resolve a patch path and refuse anything outside the project root.
+    LLM fixes occasionally emit '../..' paths (one tried to overwrite
+    pydantic's site-packages source) — those must never be written."""
+    norm = os.path.normpath(rel_path)
+    if norm.startswith("..") or os.path.isabs(norm):
+        print(f"    [fix] BLOCKED patch outside project root: {rel_path!r}")
+        return None
+    target = (project_path / norm).resolve()
+    try:
+        target.relative_to(project_path.resolve())
+    except ValueError:
+        print(f"    [fix] BLOCKED patch outside project root: {rel_path!r}")
+        return None
+    return target
+
+
 # ── Group → LLM fix dispatch ──────────────────────────────────────────────────
 
 def _required_endpoints_for_files(ctx: GenerationContext, files: list[str]) -> str:
@@ -145,7 +162,9 @@ def _apply_fix_group(
                   f"(seen {cache_hit.success_count}x before) — skipping LLM")
             modified: list[str] = []
             for rel_path, content in cache_hit.fix_content.items():
-                target = ctx.project_path / rel_path
+                target = _safe_patch_target(ctx.project_path, rel_path)
+                if target is None:
+                    continue
                 try:
                     target.parent.mkdir(parents=True, exist_ok=True)
                     target.write_text(content, encoding="utf-8")
@@ -215,7 +234,9 @@ def _apply_fix_group(
         content  = patch.get("content", "")
         if not rel_path or not content:
             continue
-        target = ctx.project_path / rel_path
+        target = _safe_patch_target(ctx.project_path, rel_path)
+        if target is None:
+            continue
         try:
             target.parent.mkdir(parents=True, exist_ok=True)
             target.write_text(content, encoding="utf-8")

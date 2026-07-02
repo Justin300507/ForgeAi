@@ -289,6 +289,7 @@ class BackendRunner:
         if not healthy:
             return RuntimeResult(
                 success=False,
+                healthy=False,
                 exit_code=1,
                 stdout=stdout,
                 stderr=stderr + "\nHealth Check Failed",
@@ -320,6 +321,7 @@ class BackendRunner:
 
         return RuntimeResult(
             success=runtime_success,
+            healthy=True,
             exit_code=0,
             stdout=stdout,
             stderr=stderr,
@@ -336,6 +338,7 @@ class BackendRunner:
         stdout, stderr = process.communicate()
         return RuntimeResult(
             success=False,
+            healthy=False,
             exit_code=process.returncode,
             stdout=stdout,
             stderr=stderr,
@@ -375,14 +378,24 @@ def run_backend_validation(project_path: str, port: int = 8001, architecture: di
         for i in range(max(0, rr.total_endpoints - len(failed))):
             endpoint_results[f"_passed_{i}"] = {"status_code": 200}
 
+    # health/started come from rr.healthy, NOT rr.success: success also
+    # requires the CRUD journey and smoke tests to pass. Reporting
+    # health_passed=rr.success made a journey failure look like a server
+    # that never started (Runtime Startup dimension scored 0) and dropped
+    # the still-running server (_runner=None), so every browser/HTTP/
+    # integration stage skipped with "backend not running". A healthy
+    # server with a failing journey must stay alive for those stages.
     return {
         "success": rr.success,
-        "started": rr.success or bool(rr.stdout),
-        "health_passed": rr.success,
+        "started": rr.healthy or bool(rr.stdout),
+        "health_passed": rr.healthy,
         "stderr": rr.stderr,
         "stdout": rr.stdout,
         "parsed_error": parsed_error,
         "crash_reason": parsed_error.get("type") if parsed_error else None,
         "endpoint_results": endpoint_results,
-        "_runner": runner if (keep_alive and rr.success) else None,
+        "journey": rr.journey,
+        "endpoint_pass_rate": rr.endpoint_pass_rate,
+        "behavioral_issues": rr.behavioral_issues,
+        "_runner": runner if (keep_alive and rr.healthy) else None,
     }
