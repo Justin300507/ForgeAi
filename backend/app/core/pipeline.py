@@ -31,6 +31,19 @@ from app.scoring.engine import ScoringEngine
 from app.verification.engine import VerificationEngine
 
 
+def _frontend_build_ok(ctx: GenerationContext) -> bool:
+    """
+    True unless verification just proved `npm run build` fails. A missing
+    frontend (no package.json) or an environment without node is NOT a
+    failure here -- only a genuine build FAILURE should hold up the fix loop
+    or block a Cloudflare deploy attempt that's guaranteed to repeat it.
+    """
+    for r in ctx.static_results:
+        if r.stage == "frontend_build":
+            return r.status != StageStatus.FAILED
+    return True  # stage hasn't run yet — don't block on it
+
+
 class V15Pipeline:
     """
     Plugin-based autonomous generation pipeline.
@@ -178,7 +191,15 @@ class V15Pipeline:
         best_score    = ctx.latest_score
         best_snapshot = None
 
-        while not ctx.is_deployment_ready and not rm.exhausted:
+        # Score alone is not sufficient to stop fixing: Frontend Load/Browser
+        # UX/Integration only cost 35% combined and default to a neutral 50
+        # when skipped, so a backend-only project can clear DEPLOY_THRESHOLD
+        # with a frontend that flat-out fails to build. That happened live
+        # (score 80.8, deploy triggered, Cloudflare's build failed on the
+        # exact error already visible in verification) -- the loop must get
+        # a chance to fix a known-broken frontend build even once the score
+        # already clears the gate.
+        while (not ctx.is_deployment_ready or not _frontend_build_ok(ctx)) and not rm.exhausted:
             if stalled >= max_stalled:
                 print(f"[V15] {stalled} consecutive fix attempts with no score "
                       f"improvement — stopping fix loop to save API credits "
@@ -442,24 +463,49 @@ class V15Pipeline:
             )
             backend_url      = render_result.get("backend_url") or render_result.get("url")
 
-            # Deploy frontend
+            # Deploy frontend — but not if verification already proved the
+            # build fails: Cloudflare runs the identical `npm run build` and
+            # would just reproduce the same error, wasting the deploy call
+            # and leaving deployment_result looking like a fresh failure
+            # instead of the already-diagnosed one.
             cloudflare_result = {"skipped": True}
             if self.deploy_to in ("cloudflare", "both"):
-                cloudflare_result = _deploy_cloudflare(
-                    str(ctx.project_path), ctx.project_name, backend_url
-                )
+                if _frontend_build_ok(ctx):
+                    cloudflare_result = _deploy_cloudflare(
+                        str(ctx.project_path), ctx.project_name, backend_url
+                    )
+                else:
+                    cloudflare_result = {
+                        "skipped": True,
+                        "reason": "frontend build already failing in verification — "
+                                  "see the frontend_build diagnostic for the real error",
+                    }
+                    print("[V15] Skipping Cloudflare deploy: frontend build is known-broken "
+                          "(would fail identically)")
 
             frontend_url = cloudflare_result.get("url")
             health       = _run_health_checks(backend_url, frontend_url)
 
+            # "success" historically meant "backend is live" -- kept for
+            # backward compat with callers reading deployment_result. Callers
+            # that care whether the WHOLE app (frontend included) deployed
+            # must check frontend_deployed, not success alone: a project can
+            # have a live backend and a build-failed frontend at the same time.
+            frontend_deployed = bool(frontend_url)
+            if bool(backend_url) and not frontend_deployed:
+                print(f"[V15] PARTIAL DEPLOY: backend is live at {backend_url}, "
+                      f"but the frontend did NOT deploy "
+                      f"({cloudflare_result.get('reason') or cloudflare_result.get('error') or 'see cloudflare result'})")
+
             return {
-                "success":      bool(backend_url),
-                "backend_url":  backend_url,
-                "frontend_url": frontend_url,
-                "github":       github_result,
-                "render":       render_result,
-                "cloudflare":   cloudflare_result,
-                "health":       health,
+                "success":            bool(backend_url),
+                "frontend_deployed":  frontend_deployed,
+                "backend_url":        backend_url,
+                "frontend_url":       frontend_url,
+                "github":             github_result,
+                "render":             render_result,
+                "cloudflare":         cloudflare_result,
+                "health":             health,
             }
         except Exception as exc:
             print(f"[V15] Deploy error: {exc}")

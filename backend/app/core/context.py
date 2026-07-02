@@ -395,6 +395,7 @@ class GenerationContext:
             "forge_score":    self.latest_score,
             "grade":          self.current_score.grade if self.current_score else "F",
             "deployed":       bool(self.deployment_result and self.deployment_result.get("success")),
+            "frontend_deployed": bool(self.deployment_result and self.deployment_result.get("frontend_deployed")),
             "backend_url":    (self.deployment_result or {}).get("backend_url"),
             "frontend_url":   (self.deployment_result or {}).get("frontend_url"),
             "fix_attempts":   len(self.fix_attempts),

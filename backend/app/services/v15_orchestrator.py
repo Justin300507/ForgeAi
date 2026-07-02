@@ -144,9 +144,14 @@ def _print_final_report(result: dict):
     print(f"{'='*70}")
     print(f"  Project:       {result.get('project_name','?')}")
     print(f"  Forge Score:   {score:.1f}/100  ({grade})")
-    print(f"  Deployed:      {'YES' if deployed else 'NO'}")
-    if result.get("backend_url"):
-        print(f"  Backend URL:   {result['backend_url']}")
+    backend_url  = result.get("backend_url")
+    frontend_dep = result.get("frontend_deployed", False)
+    if deployed and backend_url and not frontend_dep:
+        print(f"  Deployed:      PARTIAL (backend only — frontend build failed, see log above)")
+    else:
+        print(f"  Deployed:      {'YES' if deployed else 'NO'}")
+    if backend_url:
+        print(f"  Backend URL:   {backend_url}")
     if result.get("frontend_url"):
         print(f"  Frontend URL:  {result['frontend_url']}")
     print(f"  Fix Attempts:  {fixes}/5")
