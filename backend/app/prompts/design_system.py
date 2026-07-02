@@ -204,7 +204,18 @@ TAILWIND GRADIENT (use on the sidebar logo/brand area or hero header):
   className="bg-gradient-to-br {ds['gradient']} ..."
 
 EXAMPLE SIDEBAR (complete — adapt nav links to your pages):
+IMPORTANT: define navClass as a plain named function that returns ONE of two
+full class strings via a simple ternary. Do NOT inline a template literal with a
+nested `${{isActive ? ...}}` inside the JSX className attribute — that extra
+brace nesting is the #1 cause of "Expected '}}' but found isActive" build
+failures. `className={{navClass}}` must contain nothing but the identifier.
 ```jsx
+// Define ONCE inside the component, before the return statement:
+const navClass = ({{ isActive }}) =>
+  isActive
+    ? 'flex items-center gap-2.5 px-3 py-2 rounded-lg text-sm font-medium transition-colors {ds['sidebar_active']}'
+    : 'flex items-center gap-2.5 px-3 py-2 rounded-lg text-sm font-medium transition-colors {ds['sidebar_idle']}';
+
 <aside className="w-56 {ds['sidebar']} {ds['sidebar_text']} flex flex-col px-3 py-4 fixed h-full">
   <div className="flex items-center gap-2 px-2 mb-6">
     <div className="w-7 h-7 rounded-lg bg-gradient-to-br {ds['gradient']} flex items-center justify-center">
@@ -213,7 +224,7 @@ EXAMPLE SIDEBAR (complete — adapt nav links to your pages):
     <span className="font-bold text-white text-sm">AppName</span>
   </div>
   <nav className="flex-1 space-y-0.5">
-    <NavLink to="/dashboard" className={{({{isActive}}) => `flex items-center gap-2.5 px-3 py-2 rounded-lg text-sm font-medium transition-colors ${{isActive ? '{ds['sidebar_active']}' : '{ds['sidebar_idle']}'}}`}}>
+    <NavLink to="/dashboard" className={{navClass}}>
       <LayoutDashboard size={{16}} /> Dashboard
     </NavLink>
   </nav>
