@@ -70,6 +70,13 @@ def _parse_vite_errors(stderr: str, stdout: str) -> list[str]:
             errors.append(line)
         elif "SyntaxError" in line:
             errors.append(line)
+        # Rollup/vite unresolved import — the most common generated-frontend
+        # failure (a page imports a package missing from package.json):
+        # [vite]: Rollup failed to resolve import "react-hot-toast" from "src/pages/X.jsx"
+        elif "failed to resolve import" in line.lower() or "could not resolve" in line.lower():
+            errors.append(line)
+        elif line.startswith("RollupError") or line.startswith("[vite]"):
+            errors.append(line)
 
     # De-duplicate while preserving order
     seen: set[str] = set()
@@ -148,8 +155,20 @@ class FrontendRunner:
         vite_bin = node_modules / ".bin" / "vite"
         vite_bin_cmd = node_modules / ".bin" / "vite.cmd"
         vite_present = vite_bin.exists() or vite_bin_cmd.exists()
-        if not node_modules.exists() or not vite_present:
-            if node_modules.exists():
+        # package.json newer than node_modules ⇒ a patcher added a dependency
+        # after the last install (e.g. react-hot-toast). Skipping install here
+        # made that fix a no-op: the build kept failing on the same unresolved
+        # import while every retry printed "node_modules exists — skipping".
+        pkg_changed = False
+        try:
+            if node_modules.exists() and package_json.exists():
+                pkg_changed = package_json.stat().st_mtime > node_modules.stat().st_mtime
+        except Exception:
+            pass
+        if not node_modules.exists() or not vite_present or pkg_changed:
+            if pkg_changed:
+                print("[Frontend] package.json changed since last install — re-running npm install...")
+            elif node_modules.exists():
                 print("[Frontend] node_modules exists but vite missing — reinstalling...")
             else:
                 print("[Frontend] Installing dependencies (npm install)...")

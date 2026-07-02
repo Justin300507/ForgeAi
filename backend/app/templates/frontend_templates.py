@@ -23,7 +23,8 @@ PACKAGE_JSON = """{
     "axios": "^1.6.8",
     "lucide-react": "^0.263.1",
     "recharts": "^2.10.3",
-    "clsx": "^2.1.0"
+    "clsx": "^2.1.0",
+    "react-hot-toast": "^2.4.1"
   },
   "devDependencies": {
     "@vitejs/plugin-react": "^4.2.1",

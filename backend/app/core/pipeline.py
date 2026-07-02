@@ -220,11 +220,12 @@ class V15Pipeline:
             })
         elif not ctx.is_deployment_ready:
             best = rm.best_score()
-            print(f"\n[V15] Score {ctx.latest_score:.1f} < 95 — deployment skipped")
+            threshold = ctx.DEPLOY_THRESHOLD
+            print(f"\n[V15] Score {ctx.latest_score:.1f} < {threshold:.0f} — deployment skipped")
             print(f"[V15] Best score across attempts: {best:.1f}")
             deploy_result = {
                 "skipped": True,
-                "reason":  f"Score {ctx.latest_score:.1f} did not reach deployment threshold (95)",
+                "reason":  f"Score {ctx.latest_score:.1f} did not reach deployment threshold ({threshold:.0f})",
             }
 
         self.bus.emit(Events.PIPELINE_DONE, {

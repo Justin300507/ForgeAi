@@ -29,14 +29,21 @@ from app.retry.manager import RetryManager, StrategyConfig
 def _safe_patch_target(project_path: Path, rel_path: str) -> Optional[Path]:
     """Resolve a patch path and refuse anything outside the project root.
     LLM fixes occasionally emit '../..' paths (one tried to overwrite
-    pydantic's site-packages source) — those must never be written."""
-    norm = os.path.normpath(rel_path)
-    if norm.startswith("..") or os.path.isabs(norm):
-        print(f"    [fix] BLOCKED patch outside project root: {rel_path!r}")
-        return None
-    target = (project_path / norm).resolve()
+    pydantic's site-packages source) — those must never be written.
+    Absolute paths are fine IF they point inside the project: fix prompts
+    show diagnostics with absolute file paths, and the LLM often echoes
+    them back verbatim (e.g. '/app/generated_projects/x/src/App.jsx')."""
+    root = project_path.resolve()
+    if os.path.isabs(rel_path):
+        target = Path(rel_path).resolve()
+    else:
+        norm = os.path.normpath(rel_path)
+        if norm.startswith(".."):
+            print(f"    [fix] BLOCKED patch outside project root: {rel_path!r}")
+            return None
+        target = (project_path / norm).resolve()
     try:
-        target.relative_to(project_path.resolve())
+        target.relative_to(root)
     except ValueError:
         print(f"    [fix] BLOCKED patch outside project root: {rel_path!r}")
         return None

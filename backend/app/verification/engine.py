@@ -159,11 +159,15 @@ def _run_frontend_build(ctx: GenerationContext) -> VerificationResult:
             # group/act on, so a broken build with an unrecognized error format
             # would silently never get fixed. Fall back to raw output so
             # there's at least something for the LLM to work from.
-            raw = (result.stderr or result.stdout or "").strip()
+            # Vite/Rollup print the actual error near the START of the output;
+            # the tail is just the node stack trace ("...:7) at file://...").
+            # Showing raw[-500:] gave the fix LLM only the useless stack tail.
+            raw = ((result.stderr or "") + "\n" + (result.stdout or "")).strip()
+            excerpt = raw[:700] + ("\n...\n" + raw[-200:] if len(raw) > 900 else "")
             diagnostics.append(_diag(
                 "frontend_build",
                 f"Vite build failed (exit {result.exit_code}) with an unrecognized error format: "
-                f"{raw[-500:] if raw else 'no output captured'}",
+                f"{excerpt if raw else 'no output captured'}",
                 ErrorSeverity.HIGH, ErrorCategory.BROWSER,
                 hint="Inspect the raw build output for the actual error and fix the referenced file",
             ))
