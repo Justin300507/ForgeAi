@@ -12,6 +12,7 @@ from __future__ import annotations
 
 import copy
 import os
+import re
 import shutil
 import time
 import uuid
@@ -48,6 +49,59 @@ def _safe_patch_target(project_path: Path, rel_path: str) -> Optional[Path]:
         print(f"    [fix] BLOCKED patch outside project root: {rel_path!r}")
         return None
     return target
+
+
+def _maybe_redirect_model_sibling(project_path: Path, target: Path) -> Path:
+    """
+    If an LLM patch targets a NEW models/schemas file whose singular/plural
+    sibling already exists (app/models/user.py vs users.py), redirect the
+    patch to the existing file. Writing the new sibling used to trigger the
+    duplicate-model dedupe patcher, which deleted whichever file OTHER modules
+    still imported — NoReferencedTableError / missing-import chaos.
+    """
+    if target.suffix != ".py" or target.exists():
+        return target
+    if target.parent.name not in ("models", "schemas"):
+        return target
+    stem = target.stem
+    sibling_stem = stem[:-1] if stem.endswith("s") else stem + "s"
+    sibling = target.with_name(sibling_stem + ".py")
+    if sibling.exists():
+        print(f"    [fix] Redirecting patch {target.name} -> existing sibling {sibling.name}")
+        return sibling
+    return target
+
+
+_REL_IMPORT_RE = re.compile(r"""(?:from|import)\s+['"](\.{1,2}/[^'"]+)['"]""")
+
+
+def _missing_local_imports(
+    project_path: Path, target: Path, content: str, patch_rel_paths: set[str],
+) -> list[str]:
+    """Relative JS/JSX imports in `content` that resolve neither to a file on
+    disk nor to another patch in the same fix response."""
+    missing: list[str] = []
+    root = project_path.resolve()
+    for m in _REL_IMPORT_RE.finditer(content):
+        spec = m.group(1)
+        base = (target.parent / spec).resolve()
+        if base.suffix:
+            candidates = [base]
+        else:
+            candidates = [base.with_suffix(ext) for ext in (".jsx", ".js", ".tsx", ".ts")]
+            candidates += [base / "index.jsx", base / "index.js"]
+        if any(c.exists() for c in candidates):
+            continue
+        rel_candidates = set()
+        for c in candidates:
+            try:
+                rel_candidates.add(str(c.relative_to(root)).replace("\\", "/"))
+            except ValueError:
+                pass
+        if rel_candidates & patch_rel_paths:
+            continue
+        missing.append(spec)
+    return missing
 
 
 # ── Group → LLM fix dispatch ──────────────────────────────────────────────────
@@ -102,6 +156,28 @@ def _build_fix_prompt(
 
     required_endpoints = _required_endpoints_for_files(ctx, group.affected_files[:3])
 
+    # When fixing frontend files, tell the model exactly which local modules
+    # exist. Fix rewrites repeatedly imported ../components/TaskCard etc. that
+    # were never generated — each such patch broke the build and got reverted,
+    # stalling the whole loop.
+    frontend_files_ctx = ""
+    if any(f.endswith((".jsx", ".js", ".tsx", ".ts")) for f in group.affected_files):
+        src_dir = ctx.project_path / "src"
+        if src_dir.exists():
+            existing = sorted(
+                str(p.relative_to(ctx.project_path)).replace("\\", "/")
+                for p in src_dir.rglob("*")
+                if p.suffix in (".jsx", ".js", ".tsx", ".ts", ".css")
+            )
+            if existing:
+                frontend_files_ctx = (
+                    "\nEXISTING FRONTEND FILES (the ONLY local modules you may import):\n"
+                    + "\n".join(f"  {f}" for f in existing[:60])
+                    + "\nDo NOT import any local file that is not in this list. If a new "
+                    "component is genuinely needed, include it as an additional patch in "
+                    "your JSON array — otherwise inline the JSX directly in the page.\n"
+                )
+
     extra_context = ""
     if improve:
         extra_context = (
@@ -123,6 +199,7 @@ ERRORS TO FIX:
 AFFECTED FILES:
 {file_contents}
 {required_endpoints}
+{frontend_files_ctx}
 {extra_context}
 
 Return a JSON array of file patches. Each patch must be:
@@ -234,8 +311,11 @@ def _apply_fix_group(
         print(f"    [fix] JSON parse failed: {exc}")
         return [], {}
 
-    modified: list[str] = []
-    fix_content_map: dict[str, str] = {}
+    # Resolve every patch target first so imports of files provided IN THIS
+    # SAME response count as satisfied when validating each patch below.
+    root = ctx.project_path.resolve()
+    resolved: list[tuple[str, Path, str]] = []
+    patch_rel_paths: set[str] = set()
     for patch in patches:
         rel_path = patch.get("path", "")
         content  = patch.get("content", "")
@@ -244,6 +324,26 @@ def _apply_fix_group(
         target = _safe_patch_target(ctx.project_path, rel_path)
         if target is None:
             continue
+        target = _maybe_redirect_model_sibling(ctx.project_path, target)
+        resolved.append((rel_path, target, content))
+        try:
+            patch_rel_paths.add(str(target.relative_to(root)).replace("\\", "/"))
+        except ValueError:
+            pass
+
+    modified: list[str] = []
+    fix_content_map: dict[str, str] = {}
+    for rel_path, target, content in resolved:
+        # A frontend patch that imports local modules that don't exist (and
+        # aren't part of this patch set) is guaranteed to break the vite
+        # build — reject it up front instead of burning a full verify cycle
+        # discovering the regression and reverting.
+        if target.suffix in (".jsx", ".js", ".tsx", ".ts"):
+            missing = _missing_local_imports(ctx.project_path, target, content, patch_rel_paths)
+            if missing:
+                print(f"    [fix] REJECTED patch for {rel_path}: imports nonexistent "
+                      f"local file(s): {', '.join(missing[:5])}")
+                continue
         try:
             target.parent.mkdir(parents=True, exist_ok=True)
             target.write_text(content, encoding="utf-8")

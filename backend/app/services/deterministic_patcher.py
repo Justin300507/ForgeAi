@@ -2634,6 +2634,117 @@ def _patch_wire_orphan_routers(project_path: Path) -> None:
 
 # ── Main entry point ──────────────────────────────────────────────────────────
 
+def _patch_schema_nullable_required_mismatch(project_path: Path) -> int:
+    """
+    Deterministic fix for the recurring 'SchemaX.field required but model
+    allows NULL' validator error. Mirrors schema_model_validator exactly:
+    for each schema class prefix-matched to a model, any required
+    (non-Optional-annotated) field whose model column is nullable=True gets
+    rewritten to `Optional[T] = None`, per the project contract.
+
+    The LLM fix loop handled this badly in practice — it kept "fixing" the
+    model side by writing a NEW model file (user.py next to users.py),
+    triggering duplicate-model cleanup and FK breakage. One line of schema
+    change is the correct, safe direction.
+    """
+    import ast as _ast
+    from app.services.schema_model_validator import _is_optional_annotation
+
+    models_dir = project_path / "app" / "models"
+    schemas_dir = project_path / "app" / "schemas"
+    if not models_dir.exists() or not schemas_dir.exists():
+        return 0
+
+    # ModelName -> {column: nullable}
+    models: dict[str, dict] = {}
+    for mf in models_dir.glob("*.py"):
+        try:
+            tree = _ast.parse(mf.read_text(encoding="utf-8", errors="replace"))
+        except Exception:
+            continue
+        for node in _ast.walk(tree):
+            if not isinstance(node, _ast.ClassDef):
+                continue
+            fields = {}
+            for child in node.body:
+                if (isinstance(child, _ast.Assign) and isinstance(child.value, _ast.Call)
+                        and getattr(child.value.func, "id", "") == "Column"):
+                    nullable = False
+                    for kw in child.value.keywords:
+                        if kw.arg == "nullable" and isinstance(kw.value, _ast.Constant):
+                            nullable = kw.value.value
+                    for t in child.targets:
+                        if isinstance(t, _ast.Name):
+                            fields[t.id] = nullable
+            if fields:
+                models[node.name] = fields
+
+    if not models:
+        return 0
+
+    patched = 0
+    for sf in schemas_dir.glob("*.py"):
+        if sf.name == "__init__.py":
+            continue
+        try:
+            src = sf.read_text(encoding="utf-8", errors="replace")
+            tree = _ast.parse(src)
+        except Exception:
+            continue
+
+        lines = src.splitlines()
+        changed_fields = []
+        for node in tree.body:
+            if not isinstance(node, _ast.ClassDef):
+                continue
+            model = next((m for m in models if node.name.lower().startswith(m.lower())), None)
+            if not model:
+                continue
+            for child in node.body:
+                if not (isinstance(child, _ast.AnnAssign) and isinstance(child.target, _ast.Name)):
+                    continue
+                field = child.target.id
+                if models[model].get(field) is not True:
+                    continue  # column not nullable (or doesn't exist) — leave alone
+                if _is_optional_annotation(child.annotation):
+                    continue
+                if child.lineno != child.end_lineno:
+                    continue  # multi-line annotation — too risky to rewrite textually
+                ann_src = _ast.get_source_segment(src, child.annotation) or ""
+                if not ann_src:
+                    continue
+                i = child.lineno - 1
+                indent = lines[i][:len(lines[i]) - len(lines[i].lstrip())]
+                if child.value is not None:
+                    val_src = _ast.get_source_segment(src, child.value) or "None"
+                    # Field(..., ...) keeps the field pydantic-required even
+                    # with an Optional annotation — swap the Ellipsis default.
+                    val_src = re.sub(r"^Field\(\s*\.\.\.", "Field(None", val_src)
+                    lines[i] = f"{indent}{field}: Optional[{ann_src}] = {val_src}"
+                else:
+                    lines[i] = f"{indent}{field}: Optional[{ann_src}] = None"
+                changed_fields.append(f"{node.name}.{field}")
+
+        if not changed_fields:
+            continue
+
+        new_src = "\n".join(lines) + ("\n" if src.endswith("\n") else "")
+        # Make sure Optional is importable
+        if not re.search(r"^from typing import [^\n]*\bOptional\b", new_src, re.MULTILINE):
+            m = re.search(r"^from typing import ([^\n]+)$", new_src, re.MULTILINE)
+            if m:
+                new_src = new_src[:m.start(1)] + m.group(1).rstrip() + ", Optional" + new_src[m.end(1):]
+            else:
+                new_src = "from typing import Optional\n" + new_src
+
+        sf.write_text(new_src, encoding="utf-8")
+        patched += 1
+        print(f"  [patcher] Made nullable-column schema fields Optional in {sf.name}: "
+              f"{', '.join(changed_fields[:5])}")
+
+    return patched
+
+
 def run_deterministic_patches(project_path: str, skip_protected_injections: bool = False) -> int:
     """
     Run all deterministic patches on a generated project.
@@ -2725,6 +2836,10 @@ def run_deterministic_patches(project_path: str, skip_protected_injections: bool
     # Make Response schema fields Optional so ORM field-name mismatches don't crash
     # (e.g. UserResponse.username required but User model uses email only)
     _patch_response_schemas_optional(root)
+
+    # Required schema fields on nullable model columns → Optional[T] = None
+    # (kills the recurring "required but model allows NULL" validator error)
+    _patch_schema_nullable_required_mismatch(root)
 
     # Inject model_config = {'from_attributes': True} into all Pydantic schemas
     # so FastAPI can serialize SQLAlchemy ORM objects returned from route handlers

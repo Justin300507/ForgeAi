@@ -609,6 +609,10 @@ class VerificationEngine:
         ctx.static_results.append(fb)
         results.append(fb)
         print(f"  [verify]       {fb.status.value} — {len(fb.diagnostics)} build errors")
+        # Print the actual error text — logs used to say "failed — 1 build
+        # errors" for entire runs without ever showing WHAT failed.
+        for d in fb.diagnostics[:5]:
+            print(f"  [verify]         ↳ {d.message[:200]}")
 
         # ── Extra custom verifiers ────────────────────────────────────────────
         for verifier in self._extra:
