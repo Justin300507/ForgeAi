@@ -267,6 +267,7 @@ class BackendRunner:
                     "persistence_verified": journey_result.persistence_verified,
                     "skipped": journey_result.skipped,
                     "skip_reason": getattr(journey_result, "skip_reason", ""),
+                    "entity": getattr(journey_result, "entity", ""),
                     "steps": [
                         {"name": s.name, "passed": s.passed, "detail": s.detail}
                         for s in journey_result.steps

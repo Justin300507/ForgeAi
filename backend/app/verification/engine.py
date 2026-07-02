@@ -181,6 +181,37 @@ def _run_frontend_build(ctx: GenerationContext) -> VerificationResult:
 #   STAGE 3 — Runtime
 # ═══════════════════════════════════════════════════════════════
 
+def _find_route_file_for_entity(project_path: str, entity: str) -> Optional[str]:
+    """
+    Resolve the on-disk route file (relative path) for a CRUD entity name
+    (e.g. "habits" -> "app/routes/habit_routes.py").
+
+    A JourneyCRUDFailure diagnostic has no file of its own -- the server
+    started fine, only a CRUD step failed. Without a file_path, the fix
+    prompt has zero project-specific grounding (no file content, no
+    required-endpoints list) and the LLM falls back to the FastAPI tutorial's
+    canonical example (app/routers/items.py, ItemResponse) instead of
+    touching the real project files -- three wasted, reverted fix attempts
+    chasing a nonexistent app/routers/ directory. Mirrors the equivalent
+    lookup already used by runtime_fix_service.py's JourneyCRUDFailure path.
+    """
+    if not entity:
+        return None
+    import os
+    routes_dir = os.path.join(project_path, "app", "routes")
+    if not os.path.isdir(routes_dir):
+        return None
+    route_files = [
+        f for f in sorted(os.listdir(routes_dir))
+        if f.endswith("_routes.py") and f != "auth_routes.py"
+    ]
+    for rf in route_files:
+        stem = rf.replace("_routes.py", "")
+        if stem == entity or stem == entity.rstrip("s") or entity.rstrip("s") == stem:
+            return os.path.join("app", "routes", rf).replace(os.sep, "/")
+    return None
+
+
 def _run_runtime_validation(ctx: GenerationContext) -> VerificationResult:
     t0 = time.time()
     try:
@@ -270,14 +301,17 @@ def _run_runtime_validation(ctx: GenerationContext) -> VerificationResult:
                    "SyntaxError": ErrorCategory.SYNTAX,
                    "ImportError": ErrorCategory.IMPORT,
                    "JourneyCRUDFailure": ErrorCategory.API}
+        error_file = parsed.get("error_file")
+        if not error_file and err_type == "JourneyCRUDFailure":
+            error_file = _find_route_file_for_entity(str(ctx.project_path), journey.get("entity", ""))
         diagnostics.append(Diagnostic(
             error_id=Diagnostic.make_id("runtime", cat_map.get(err_type, ErrorCategory.RUNTIME),
-                                        f"[{err_type}] {message}", parsed.get("error_file")),
+                                        f"[{err_type}] {message}", error_file),
             category=cat_map.get(err_type, ErrorCategory.RUNTIME),
             severity=ErrorSeverity.CRITICAL,
             source="runtime",
             message=f"[{err_type}] {message}",
-            file_path=parsed.get("error_file"),
+            file_path=error_file,
             # The exception + its frames are at the END of the captured stderr;
             # the head is just uvicorn's startup banner. Give the fix LLM the tail.
             stack_trace=stderr[-1500:] if stderr else None,

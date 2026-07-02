@@ -30,6 +30,7 @@ class JourneyResult:
     steps_failed: int = 0
     skipped: bool = False
     skip_reason: str = ""
+    entity: str = ""
 
 
 _CRITICAL_STEPS = {"Login", "Create entity", "List entities", "Edit entity", "Delete entity"}
@@ -749,4 +750,5 @@ def run_user_journey(
         persistence_verified=persistence_verified,
         steps_passed=passed,
         steps_failed=failed,
+        entity=entity,
     )
