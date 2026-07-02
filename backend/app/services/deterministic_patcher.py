@@ -2903,6 +2903,121 @@ def _patch_response_schema_id_and_datetimes(project_path: Path) -> int:
     return patched
 
 
+# Curated set of REAL lucide-react icon names the LLM commonly uses. Only names
+# in this set are ever auto-added to an import, so the patcher can never
+# introduce a non-existent export that would break the vite build.
+_LUCIDE_ICONS = frozenset("""
+Plus Minus X Check CheckCircle CheckCircle2 CheckSquare Circle XCircle Search
+Filter SlidersHorizontal ChevronRight ChevronLeft ChevronDown ChevronUp
+ChevronsRight ChevronsLeft ChevronsUpDown ArrowRight ArrowLeft ArrowUp ArrowDown
+ArrowUpRight ArrowDownRight Menu Home User Users UserPlus UserCircle UserCircle2
+UserCheck LogOut LogIn Settings Settings2 Bell BellOff Calendar CalendarDays
+CalendarCheck CalendarClock Clock Clock3 AlertCircle AlertTriangle Info
+HelpCircle Trash Trash2 Edit Edit2 Edit3 Pencil PenTool PenLine Save Copy
+Clipboard ClipboardCheck ClipboardList Download Upload Share Share2 Eye EyeOff
+Lock Unlock Mail MailOpen Phone MapPin Map Navigation Compass Star Heart
+Bookmark Tag Tags Flag Folder FolderOpen FolderPlus File FileText FilePlus
+FileCheck Image ImagePlus Video Music List ListTodo ListChecks ListFilter
+Grid Grid2x2 Grid3x3 LayoutDashboard LayoutGrid LayoutList Layers Package
+PackageOpen ShoppingCart ShoppingBag CreditCard DollarSign Wallet Receipt Coins
+Banknote TrendingUp TrendingDown BarChart BarChart2 BarChart3 BarChart4
+PieChart LineChart AreaChart Activity Zap Award Target Flame Trophy Medal
+Rocket Lightbulb Sun Moon Cloud CloudRain Droplet Wind Umbrella Thermometer
+RefreshCw RefreshCcw RotateCw RotateCcw Repeat Repeat2 Shuffle MoreHorizontal
+MoreVertical ExternalLink Link Link2 Paperclip Send SendHorizontal MessageCircle
+MessageSquare Smile ThumbsUp ThumbsDown Play Pause Square StopCircle PlayCircle
+PauseCircle Loader Loader2 LoaderCircle Sparkles Gift Coffee Book BookOpen
+BookMarked Briefcase Building Building2 Globe Globe2 Wifi WifiOff Battery Camera
+Mic MicOff Volume2 Volume1 VolumeX Power Palette Grip GripVertical GripHorizontal
+Dot Hash AtSign Percent Timer Watch Sunrise Sunset Maximize Maximize2 Minimize
+Minimize2 ZoomIn ZoomOut Move Crosshair Key KeyRound Shield ShieldCheck
+ShieldAlert ShieldX Fingerprint Scan QrCode Calculator Archive ArchiveRestore
+Inbox Undo Undo2 Redo Redo2 Printer Scissors Type Bold Italic Underline
+AlignLeft AlignCenter AlignRight AlignJustify Quote Code Code2 Terminal Command
+Cpu Database Server HardDrive Monitor Smartphone Tablet Laptop Headphones
+Speaker Radio Tv Gamepad Gamepad2 Puzzle Component Dumbbell Apple Utensils
+Pizza Wine Beer Cake Carrot Salad Soup Egg Fish Beef Sandwich IceCream Cookie
+Milk CupSoda Croissant Donut Popcorn Cherry Grape Banana Bird Cat Dog Rabbit
+Leaf Trees TreePine Flower Flower2 Sprout Bug Sun Snowflake CloudSun CloudMoon
+Star Bookmark Heart HeartPulse Stethoscope Pill Syringe Activity Brain Bone Eye
+Ear Hand Footprints Baby Accessibility Bike Car Bus Train Plane Ship Truck
+Anchor Fuel ParkingCircle TrafficCone Construction Wrench Hammer Ruler Scale
+Paintbrush Brush Eraser Highlighter Feather Pin PinOff Bookmark Sticker Note
+StickyNote NotebookPen Notebook Newspaper Rss Podcast Mic2 Music2 Music3 Music4
+Disc Disc2 Disc3 Radio Cast Airplay Bluetooth Cable Plug Plug2 PlugZap Usb
+""".split())
+
+
+def _patch_missing_icon_imports(project_path: Path) -> int:
+    """Add lucide-react icons that are USED in JSX but never imported.
+
+    LLMs routinely render <ChevronRight/> (or another icon) without importing it.
+    The vite build passes — an undefined JSX identifier is valid *syntax* — but at
+    runtime it's a ReferenceError that unmounts React and shows a BLANK PAGE.
+    Nothing else in the pipeline catches this (build is green, the page just
+    silently dies). Seen live: /tasks rendered blank because ChevronRight wasn't
+    imported. This adds any such icon (restricted to the known-real _LUCIDE_ICONS
+    set, so it can never introduce a bad export) to the file's lucide import,
+    creating the import line if the file has none.
+    """
+    import re
+    src_dir = project_path / "src"
+    if not src_dir.exists():
+        return 0
+
+    patched = 0
+    lucide_import_re = re.compile(r"import\s*\{([^}]*)\}\s*from\s*['\"]lucide-react['\"]\s*;?")
+
+    for jf in src_dir.rglob("*.jsx"):
+        try:
+            src = jf.read_text(encoding="utf-8", errors="replace")
+        except Exception:
+            continue
+
+        # Names already imported (any import) or defined locally as components.
+        known: set[str] = set()
+        for m in re.finditer(r"import\s+(?:(\w+)\s*,?\s*)?(?:\{([^}]*)\})?\s*from", src):
+            if m.group(1):
+                known.add(m.group(1))
+            if m.group(2):
+                for n in m.group(2).split(","):
+                    n = n.strip().split(" as ")[-1].strip()
+                    if n:
+                        known.add(n)
+        for m in re.finditer(r"(?:const|function|let|class)\s+([A-Z]\w+)", src):
+            known.add(m.group(1))
+
+        used = set(re.findall(r"<([A-Z]\w+)[\s/>]", src))
+        missing = sorted((used - known) & _LUCIDE_ICONS)
+        if not missing:
+            continue
+
+        m = lucide_import_re.search(src)
+        if m:
+            existing = [n.strip() for n in m.group(1).split(",") if n.strip()]
+            merged = existing + [n for n in missing if n not in existing]
+            new_import = "import { " + ", ".join(merged) + " } from 'lucide-react';"
+            src = src[:m.start()] + new_import + src[m.end():]
+        else:
+            # No lucide import in this file — add one after the first import line
+            # (or at the very top if there are none).
+            new_import = "import { " + ", ".join(missing) + " } from 'lucide-react';\n"
+            first_import = re.search(r"^import .*\n", src, re.MULTILINE)
+            if first_import:
+                src = src[:first_import.end()] + new_import + src[first_import.end():]
+            else:
+                src = new_import + src
+
+        try:
+            jf.write_text(src, encoding="utf-8")
+            patched += 1
+            print(f"  [patcher] Added missing icon import(s) {missing} to {jf.name}")
+        except Exception:
+            pass
+
+    return patched
+
+
 def run_deterministic_patches(project_path: str, skip_protected_injections: bool = False) -> int:
     """
     Run all deterministic patches on a generated project.
@@ -3038,6 +3153,10 @@ def run_deterministic_patches(project_path: str, skip_protected_injections: bool
     # Fix frontend package.json: add any npm packages imported in JSX but missing
     # from dependencies (e.g. @mui/material → also adds @emotion/react, @emotion/styled)
     _patch_frontend_package_json(root)
+
+    # Add lucide-react icons used in JSX but never imported (undefined identifier
+    # -> runtime ReferenceError -> blank page; the build stays green).
+    _patch_missing_icon_imports(root)
 
     if modified:
         print(f"  [patcher] Patched {modified} file(s) — passlib→bcrypt, async→sync, smart quotes")
