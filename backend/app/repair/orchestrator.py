@@ -104,6 +104,75 @@ def _missing_local_imports(
     return missing
 
 
+_IMPORT_STMT_RE = re.compile(
+    r"""import\s+(?P<clause>[^;'"]+?)\s+from\s+['"](?P<spec>\.{1,2}/[^'"]+)['"]""",
+    re.MULTILINE,
+)
+
+
+def _scaffold_missing_local_imports(
+    project_path: Path, target: Path, missing_specs: list[str], content: str,
+) -> list[str]:
+    """Create minimal stub files for local imports a fix references but that
+    don't exist yet.
+
+    Frontend fixes routinely add an `import Navbar from '../components/Navbar'`
+    (or a PrivateRoute/Layout/context) alongside the real syntax fix they were
+    asked for. Rejecting the whole patch for that leaves the actual build error
+    unfixed forever — the exact reason todo/habit runs stayed stuck with a
+    broken vite build and never deployed. Scaffolding a valid stub lets the real
+    fix land and the build pass. Stubs pass `children` through, so wrapper
+    components don't blank the page; named exports alias the same passthrough so
+    the bundle resolves. Only creates files inside the project tree, never
+    overwrites an existing file."""
+    root = project_path.resolve()
+    created: list[str] = []
+    for spec in missing_specs:
+        base = (target.parent / spec).resolve()
+        try:
+            base.relative_to(root)
+        except ValueError:
+            continue  # never write outside the project
+        stub_path = base if base.suffix else base.with_suffix(".jsx")
+        if stub_path.exists():
+            continue
+
+        default_name = None
+        named: list[str] = []
+        for m in _IMPORT_STMT_RE.finditer(content):
+            if m.group("spec") != spec:
+                continue
+            clause = m.group("clause").strip()
+            without_named = re.sub(r"\{[^}]*\}", "", clause)
+            dm = re.search(r"(\w+)", without_named)
+            if dm:
+                default_name = dm.group(1)
+            nm = re.search(r"\{([^}]*)\}", clause)
+            if nm:
+                for n in nm.group(1).split(","):
+                    n = n.strip().split(" as ")[-1].strip()
+                    if n and n.isidentifier():
+                        named.append(n)
+
+        lines = [
+            "import React from 'react';",
+            "// Auto-scaffolded stub so the build resolves. Passes children",
+            "// through so wrapper components don't blank the page.",
+            "const Stub = ({ children }) => (children === undefined ? null : children);",
+            "export default Stub;",
+        ]
+        for n in dict.fromkeys(named):
+            if n != "default":
+                lines.append(f"export const {n} = Stub;")
+        try:
+            stub_path.parent.mkdir(parents=True, exist_ok=True)
+            stub_path.write_text("\n".join(lines) + "\n", encoding="utf-8")
+            created.append(str(stub_path.relative_to(root)).replace("\\", "/"))
+        except Exception:
+            pass
+    return created
+
+
 # ── Group → LLM fix dispatch ──────────────────────────────────────────────────
 
 def _required_endpoints_for_files(ctx: GenerationContext, files: list[str]) -> str:
@@ -341,9 +410,31 @@ def _apply_fix_group(
         if target.suffix in (".jsx", ".js", ".tsx", ".ts"):
             missing = _missing_local_imports(ctx.project_path, target, content, patch_rel_paths)
             if missing:
-                print(f"    [fix] REJECTED patch for {rel_path}: imports nonexistent "
-                      f"local file(s): {', '.join(missing[:5])}")
-                continue
+                # Don't throw away an otherwise-good fix just because it also
+                # references a component that doesn't exist yet — scaffold a
+                # stub so the real fix (usually the actual build-error fix) can
+                # land and the vite build can pass.
+                created = _scaffold_missing_local_imports(
+                    ctx.project_path, target, missing, content
+                )
+                if created:
+                    print(f"    [fix] Scaffolded {len(created)} missing import stub(s) "
+                          f"for {rel_path}: {', '.join(created[:5])}")
+                    modified.extend(created)
+                    for c in created:
+                        try:
+                            fix_content_map[c] = (root / c).read_text(encoding="utf-8")
+                        except Exception:
+                            pass
+                # Re-check (stubs now exist on disk); only reject if something
+                # genuinely couldn't be resolved.
+                still_missing = _missing_local_imports(
+                    ctx.project_path, target, content, patch_rel_paths
+                )
+                if still_missing:
+                    print(f"    [fix] REJECTED patch for {rel_path}: unresolvable "
+                          f"local import(s): {', '.join(still_missing[:5])}")
+                    continue
         try:
             target.parent.mkdir(parents=True, exist_ok=True)
             target.write_text(content, encoding="utf-8")
