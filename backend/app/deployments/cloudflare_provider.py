@@ -245,8 +245,15 @@ class CloudflareProvider(BaseDeploymentProvider):
             # React Router handles /login, /dashboard, etc. without 404
             (dist_dir / "_redirects").write_text("/* /index.html 200\n")
 
-            # Ensure the Cloudflare Pages project exists (wrangler won't auto-create in CI mode)
-            self._ensure_project_exists(slug, logs)
+            # Ensure the Cloudflare Pages project exists (wrangler won't auto-create in CI mode).
+            # Bail out here with a clear reason instead of running a wrangler deploy that's
+            # guaranteed to fail with an opaque "Project not found" if this didn't work.
+            if not self._ensure_project_exists(slug, logs):
+                return DeploymentResult(
+                    success=False, url=None, logs="\n".join(logs),
+                    error=f"Could not create or confirm Cloudflare Pages project '{slug}' — see logs above",
+                    deploy_id=None, provider="cloudflare",
+                )
 
             print(f"  [Cloudflare] Deploying {slug} to Pages...")
             wrangler = shutil.which("wrangler") or "wrangler"
@@ -280,9 +287,20 @@ class CloudflareProvider(BaseDeploymentProvider):
             if build_dir and build_dir.exists():
                 shutil.rmtree(str(build_dir), ignore_errors=True)
 
-    def _ensure_project_exists(self, slug: str, logs: list) -> None:
+    def _ensure_project_exists(self, slug: str, logs: list) -> bool:
         """Create the Cloudflare Pages project via REST API if it doesn't exist yet.
-        Wrangler in CI mode (CI=true) will NOT auto-create projects, so we do it here."""
+        Wrangler in CI mode (CI=true) will NOT auto-create projects, so we do it here.
+
+        Returns True iff the project is confirmed to exist (already did, or was
+        just created) by this point. The Cloudflare Pages API returns HTTP 200
+        with a JSON `{"success": false, ...}` envelope for a nonexistent
+        project on this endpoint rather than a 4xx status — relying on the
+        HTTP status alone (the previous behavior) meant a genuinely-missing
+        project read as "already exists", skipped creation, and the deploy
+        below failed with wrangler's opaque "Project not found", with the
+        only trace of why buried in an internal `logs` list nothing ever
+        printed to the console. Every branch below is loud on purpose.
+        """
         try:
             import urllib.request
             import json as _json
@@ -291,28 +309,54 @@ class CloudflareProvider(BaseDeploymentProvider):
                 "Authorization": f"Bearer {self.api_token}",
                 "Content-Type": "application/json",
             }
+
+            def _read_success(resp) -> bool:
+                try:
+                    return bool(_json.loads(resp.read().decode("utf-8", errors="replace")).get("success"))
+                except Exception:
+                    return False
+
             # Check if project exists
             req = urllib.request.Request(f"{api_base}/{slug}", headers=headers)
             try:
-                urllib.request.urlopen(req, timeout=15)
-                logs.append(f"[CF API] Project '{slug}' already exists")
-                return  # exists — nothing to do
+                resp = urllib.request.urlopen(req, timeout=15)
+                if _read_success(resp):
+                    msg = f"[CF API] Project '{slug}' already exists"
+                    print(f"  {msg}")
+                    logs.append(msg)
+                    return True
+                # HTTP 200 but success=false — project doesn't actually exist; fall through to create
             except urllib.error.HTTPError as e:
                 if e.code != 404:
-                    logs.append(f"[CF API] Unexpected status {e.code} checking project")
-                    return
-            # 404 → create it
+                    msg = f"[CF API] Unexpected status {e.code} checking project '{slug}'"
+                    print(f"  {msg}")
+                    logs.append(msg)
+                    return False
+
+            # Doesn't exist → create it
             body = _json.dumps({"name": slug, "production_branch": "main"}).encode()
             create_req = urllib.request.Request(api_base, data=body, headers=headers, method="POST")
             try:
-                urllib.request.urlopen(create_req, timeout=15)
-                print(f"  [Cloudflare] Created Pages project '{slug}'")
-                logs.append(f"[CF API] Created project '{slug}'")
+                resp = urllib.request.urlopen(create_req, timeout=15)
+                if _read_success(resp):
+                    print(f"  [Cloudflare] Created Pages project '{slug}'")
+                    logs.append(f"[CF API] Created project '{slug}'")
+                    return True
+                msg = f"[CF API] Create returned HTTP 200 but success=false for '{slug}'"
+                print(f"  {msg}")
+                logs.append(msg)
+                return False
             except urllib.error.HTTPError as e:
                 err = e.read().decode("utf-8", errors="replace")[:200]
-                logs.append(f"[CF API] Could not create project: {e.code} {err}")
+                msg = f"[CF API] Could not create project '{slug}': {e.code} {err}"
+                print(f"  {msg}")
+                logs.append(msg)
+                return False
         except Exception as ex:
-            logs.append(f"[CF API] _ensure_project_exists error: {ex}")
+            msg = f"[CF API] _ensure_project_exists error: {ex}"
+            print(f"  {msg}")
+            logs.append(msg)
+            return False
 
     def get_logs(self, deploy_id: str) -> str:
         return "Use the Cloudflare dashboard to view deployment logs."
