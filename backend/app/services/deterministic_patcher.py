@@ -3369,6 +3369,58 @@ def _patch_redirect_missing_backend_imports(project_path: Path) -> int:
     return patched
 
 
+_AUTH_USERNAME_PAIR_RE = re.compile(
+    r"([\w.]+)\.username([^\n]{0,60}localStorage\.setItem\(\s*['\"]display_name['\"]\s*,\s*)\1\.username"
+)
+_AUTH_ID_PAIR_RE = re.compile(
+    r"([\w.]+)\.id([^\n]{0,60}localStorage\.setItem\(\s*['\"]user_id['\"]\s*,\s*(?:String\()?)\1\.id"
+)
+
+
+def _patch_frontend_auth_field_names(project_path: Path) -> int:
+    """Fix LoginPage/RegisterPage reading `.username`/`.id` off the auth response.
+
+    The backend's known-good injected app/routes/auth_routes.py (_patch_auth_routes,
+    below) always responds to /auth/login and /auth/register with
+    {access_token, token_type, user_id, email, display_name} -- there is no
+    `username` or `id` field, ever. LLM-generated auth pages routinely assume
+    the generic {id, username} shape anyway, so
+    `if (res.data.username) localStorage.setItem('display_name', res.data.username)`
+    silently never fires (the guard is always falsy) and the dashboard falls
+    back to "Hello, User!" forever, with user_id never stored either. Scoped
+    to the exact guard+setItem pair so it can't touch an unrelated `.id`/
+    `.username` elsewhere in the file.
+    """
+    src_dir = project_path / "src"
+    if not src_dir.exists():
+        return 0
+
+    patched = 0
+    for jf in src_dir.rglob("*.jsx"):
+        try:
+            content = jf.read_text(encoding="utf-8", errors="replace")
+        except Exception:
+            continue
+        if "/auth/login" not in content and "/auth/register" not in content:
+            continue
+
+        new_content = _AUTH_USERNAME_PAIR_RE.sub(
+            lambda m: f"{m.group(1)}.display_name{m.group(2)}{m.group(1)}.display_name",
+            content,
+        )
+        new_content = _AUTH_ID_PAIR_RE.sub(
+            lambda m: f"{m.group(1)}.user_id{m.group(2)}{m.group(1)}.user_id",
+            new_content,
+        )
+
+        if new_content != content:
+            jf.write_text(new_content, encoding="utf-8")
+            patched += 1
+            print(f"  [patcher] Fixed auth response field names (username -> display_name, id -> user_id) in {jf.name}")
+
+    return patched
+
+
 def _patch_missing_icon_imports(project_path: Path) -> int:
     """Add lucide-react icons that are USED in JSX but never imported.
 
@@ -3590,6 +3642,11 @@ def run_deterministic_patches(project_path: str, skip_protected_injections: bool
     # Add lucide-react icons used in JSX but never imported (undefined identifier
     # -> runtime ReferenceError -> blank page; the build stays green).
     _patch_missing_icon_imports(root)
+
+    # Fix LoginPage/RegisterPage reading the wrong field names off the auth
+    # response (username/id instead of the guaranteed display_name/user_id) --
+    # otherwise the dashboard greeting is stuck on "Hello, User!" forever.
+    _patch_frontend_auth_field_names(root)
 
     if modified:
         print(f"  [patcher] Patched {modified} file(s) — passlib→bcrypt, async→sync, smart quotes")
