@@ -271,6 +271,18 @@ const toastColorClass = toast && toast.type === 'success' ? 'bg-emerald-600' : '
 )}}
 ```
 
+GENERAL RULE — this is not just the NavLink/toast cases above. The SAME bug
+appears anywhere: a streak/badge color class, a progress bar width, a status
+label, a conditional icon, etc. NEVER write a ternary or another `${{...}}`
+directly inside a template literal that is itself inside a JSX `{{...}}`
+expression (className, style, or anywhere else) — that nested-brace pattern
+is what breaks the build, regardless of which value it's computing. The fix
+is always the same: compute the ENTIRE interpolated/conditional string as its
+own plain `const` on the line before `return`, then reference only that
+identifier inside the JSX expression. If you find yourself writing a `${{`
+inside a `` {{`...`}} `` that is itself inside a JSX attribute, stop and pull
+it out into a variable first.
+
 LOADING STATES — every useEffect data fetch MUST show a skeleton:
 ```jsx
 const [loading, setLoading] = React.useState(true);

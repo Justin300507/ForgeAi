@@ -366,9 +366,18 @@ def _run_http_tests(ctx: GenerationContext) -> VerificationResult:
                 r = httpx.request(method, url, timeout=5)
                 # 4xx/5xx that aren't 404/405 are failures
                 if r.status_code not in (200, 201, 204, 400, 401, 403, 404, 405, 422):
+                    # Ground the diagnostic in the endpoint's real implementing
+                    # file (already known from the architecture plan) instead
+                    # of leaving file_path unset -- an ungrounded diagnostic
+                    # gets no file content or required-endpoints context in
+                    # the fix prompt, and the LLM falls back to a generic
+                    # FastAPI-tutorial file (app/routers/admin.py, task.py)
+                    # that doesn't exist in this project. Same failure mode
+                    # already fixed for JourneyCRUDFailure above.
                     diagnostics.append(_diag("http",
                         f"{method} {path} returned {r.status_code}",
-                        ErrorSeverity.HIGH, ErrorCategory.API))
+                        ErrorSeverity.HIGH, ErrorCategory.API,
+                        file_path=ep.get("file")))
                     failed += 1
                 else:
                     passed += 1
@@ -875,13 +884,14 @@ def _ms(t0: float) -> float:
 
 
 def _diag(source: str, msg: str, sev: ErrorSeverity, cat: ErrorCategory,
-          hint: Optional[str] = None) -> Diagnostic:
+          hint: Optional[str] = None, file_path: Optional[str] = None) -> Diagnostic:
     return Diagnostic(
-        error_id=Diagnostic.make_id(source, cat, msg),
+        error_id=Diagnostic.make_id(source, cat, msg, file_path),
         category=cat,
         severity=sev,
         source=source,
         message=msg,
+        file_path=file_path,
         fix_hint=hint,
     )
 
