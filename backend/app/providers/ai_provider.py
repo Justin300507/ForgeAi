@@ -10,6 +10,38 @@ from app.providers.ollama_provider import generate as ollama_generate
 from app.providers.openai_provider import generate as openai_generate
 
 
+# Providers currently returning 402 Payment Required (dead billing, not a
+# transient rate limit) get benched for a cooldown instead of being retried
+# on every single call. A 402 means the account itself is out of credits --
+# retrying immediately can't ever succeed, so hitting it anyway just wastes
+# the timeout window that could go to a provider that might actually work,
+# and on a request with only 2 healthy providers left in the chain, that
+# wasted attempt is the difference between success and "All providers
+# failed". Module-level (resets on process restart) and 1 hour is long
+# enough to stop hammering a dead account but short enough to self-recover
+# if billing gets fixed without needing a redeploy.
+_provider_cooldown_until: dict = {}
+_COOLDOWN_SECONDS = 3600
+
+
+def _is_payment_required(exc: Exception) -> bool:
+    if getattr(exc, "status_code", None) == 402:
+        return True
+    msg = str(exc).lower()
+    return "402" in msg and ("payment" in msg or "quota" in msg or "billing" in msg)
+
+
+def _note_provider_result(provider_name: str, exc: Exception) -> None:
+    if _is_payment_required(exc):
+        _provider_cooldown_until[provider_name] = time.time() + _COOLDOWN_SECONDS
+        print(f"  [{provider_name}] 402 Payment Required — benching for {_COOLDOWN_SECONDS // 60} min")
+
+
+def _on_cooldown(provider_name: str) -> bool:
+    until = _provider_cooldown_until.get(provider_name)
+    return bool(until and time.time() < until)
+
+
 def _tracked(provider_name: str, model: str, prompt: str, fn, stage: str = "unknown", **kwargs) -> str:
     """Wrap a provider call with cost tracking."""
     t0 = time.time()
@@ -37,27 +69,32 @@ def _auto_chain(prompt, stage, max_tokens, thinking_budget, skip: frozenset = fr
     excludes a provider a caller already tried directly, so we don't retry
     the same failure.
     """
-    if "gemini" not in skip:
+    if "gemini" not in skip and not _on_cooldown("gemini"):
         try:
             print("Using Gemini")
             return _tracked("gemini", "gemini-2.5-flash", prompt, gemini_generate, stage,
                             max_tokens=max_tokens, thinking_budget=thinking_budget)
         except Exception as e:
             print(f"Gemini failed: {e}")
+            _note_provider_result("gemini", e)
 
-    if "cerebras" not in skip:
+    if "cerebras" not in skip and not _on_cooldown("cerebras"):
         try:
             print("Using Cerebras (fallback)")
             return _tracked("cerebras", "gpt-oss-120b", prompt, cerebras_generate, stage, max_tokens=max_tokens)
         except Exception as e:
             print(f"Cerebras failed: {e}")
+            _note_provider_result("cerebras", e)
+    elif "cerebras" not in skip:
+        print("Skipping Cerebras (on cooldown from a recent 402)")
 
-    if "groq" not in skip:
+    if "groq" not in skip and not _on_cooldown("groq"):
         try:
             print("Using Groq (fallback)")
             return _tracked("groq", "llama-3.3-70b", prompt, groq_generate, stage, max_tokens=max_tokens)
         except Exception as e:
             print(f"Groq failed: {e}")
+            _note_provider_result("groq", e)
 
     try:
         print("Using Ollama (offline fallback)")
@@ -127,19 +164,27 @@ def _generate_uncached(
             return _auto_chain(prompt, stage, max_tokens, thinking_budget)
 
     if provider == "cerebras":
+        if _on_cooldown("cerebras"):
+            print("Cerebras on cooldown from a recent 402 — going straight to auto chain")
+            return _auto_chain(prompt, stage, max_tokens, thinking_budget, skip=frozenset({"cerebras"}))
         try:
             print("Using Cerebras")
             return _tracked("cerebras", "gpt-oss-120b", prompt, cerebras_generate, stage, max_tokens=max_tokens)
         except Exception as e:
             print(f"Cerebras failed ({e}) — falling back to auto chain")
+            _note_provider_result("cerebras", e)
             return _auto_chain(prompt, stage, max_tokens, thinking_budget, skip=frozenset({"cerebras"}))
 
     if provider == "groq":
+        if _on_cooldown("groq"):
+            print("Groq on cooldown from a recent 402 — going straight to auto chain")
+            return _auto_chain(prompt, stage, max_tokens, thinking_budget, skip=frozenset({"groq"}))
         try:
             print("Using Groq")
             return _tracked("groq", "llama-3.3-70b", prompt, groq_generate, stage, max_tokens=max_tokens)
         except Exception as e:
             print(f"Groq failed ({e}) — falling back to auto chain")
+            _note_provider_result("groq", e)
             return _auto_chain(prompt, stage, max_tokens, thinking_budget, skip=frozenset({"groq"}))
 
     if provider == "openrouter":
@@ -151,12 +196,16 @@ def _generate_uncached(
             return _auto_chain(prompt, stage, max_tokens, thinking_budget)
 
     if provider == "gemini":
+        if _on_cooldown("gemini"):
+            print("Gemini on cooldown from a recent 402 — going straight to auto chain")
+            return _auto_chain(prompt, stage, max_tokens, thinking_budget, skip=frozenset({"gemini"}))
         try:
             print("Using Gemini")
             return _tracked("gemini", "gemini-2.5-flash", prompt, gemini_generate, stage,
                             max_tokens=max_tokens, thinking_budget=thinking_budget)
         except Exception as e:
             print(f"Gemini failed ({e}) — falling back to auto chain")
+            _note_provider_result("gemini", e)
             return _auto_chain(prompt, stage, max_tokens, thinking_budget, skip=frozenset({"gemini"}))
 
     if provider == "openai":
