@@ -384,6 +384,19 @@ setLoading(false);
 ```
 Show `status` text in indigo below the form while retrying.
 
+DASHBOARD/PROTECTED-PAGE DATA FETCHES ALSO NEED THIS RETRY — not just login.
+Render's free tier puts the backend to sleep after ~15 minutes idle; EVERY
+deploy also cold-starts the same way on its first request. A user who logs
+in successfully (auth can differ in timing from the first data fetch) and
+then lands on Dashboard/Habits/etc. can still hit a cold backend on that
+page's useEffect — and unlike login, these pages have no retry, so the raw
+error (e.g. a literal "Not Found" from the platform's own routing while the
+container is still starting, not from your API) gets shown directly to the
+user, which looks like the app is broken when it just needs ~30-50s. Wrap
+the initial data-fetching effect on every protected page in the SAME
+attempt/sleep(15000) retry loop shown above (3 attempts), showing a friendly
+"Waking up the server…" status instead of a raw error while retrying.
+
 AUTH RULES — mandatory for every app with authentication:
 
 1. PRIVATE ROUTE — add to App.jsx to protect all authenticated pages:
