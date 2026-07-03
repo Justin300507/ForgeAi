@@ -704,3 +704,178 @@ def patch_add_missing_model_columns(project_path: str) -> int:
             print(f"  [field_patcher] Added missing column(s) {sorted(fields)} to {cls_name} in {mf.name}")
 
     return len(patched_files)
+
+
+# Field-name pattern -> Pydantic annotation (all Optional so a missing input
+# field never becomes a NEW 422 for the client). Same intent as
+# _COLUMN_TYPE_RULES above but scoped to the schema side of this bug class.
+_SCHEMA_FIELD_TYPE_RULES: list[tuple] = [
+    (re.compile(r"^(is_|has_)"), "Optional[bool] = None"),
+    (re.compile(r"^(completed|done|active|enabled|verified|published|"
+                r"archived|cancell?ed|finished|resolved|closed|confirmed|"
+                r"approved|deleted|visible|featured|locked|paid|seen|"
+                r"read|starred|pinned|favou?rite[d]?|blocked|banned)$"),
+     "Optional[bool] = None"),
+    (re.compile(r"_id$"), "Optional[int] = None"),
+    (re.compile(r"(count|qty|quantity|amount|_num|number|order|rank|priority|value)$"),
+     "Optional[int] = None"),
+]
+
+# Pydantic BaseModel attributes/methods a naive `var.attr` scan must not
+# mistake for a missing schema field.
+_PYDANTIC_BUILTIN_ATTRS = {
+    "dict", "json", "copy", "model_dump", "model_dump_json", "model_copy",
+    "model_fields", "model_config", "model_construct", "model_validate",
+    "model_validate_json", "schema", "schema_json", "parse_obj", "parse_raw",
+    "construct", "validate", "Config", "fields", "__fields__", "__dict__",
+}
+
+
+def _infer_schema_field_spec(field_name: str) -> str:
+    for pattern, annotation in _SCHEMA_FIELD_TYPE_RULES:
+        if pattern.search(field_name):
+            return annotation
+    return "Optional[str] = None"
+
+
+def patch_add_missing_schema_fields(project_path: str) -> int:
+    """
+    Route handlers routinely read `habit_in.target_unit` off a Create/Update
+    Pydantic schema whose class never declared that field -- a distinct bug
+    from patch_add_missing_model_columns above (that one fixes the SQLAlchemy
+    model constructor call; this fixes the schema attribute the route reads
+    to build that call in the first place). Left alone this crashes every
+    request to the endpoint with AttributeError, and the resulting 500 has no
+    file_path to ground a fix on (see engine.py's JourneyCRUDFailure
+    handling) -- the run stays broken through the whole retry budget.
+
+    Deterministically adds the missing field as Optional[...] = None so it
+    never introduces a NEW required-field 422 for existing clients.
+    """
+    project = Path(project_path)
+    schemas_dir = project / "app" / "schemas"
+    routes_dir = project / "app" / "routes"
+    if not schemas_dir.exists() or not routes_dir.exists():
+        return 0
+
+    import ast
+
+    # class_name -> (file, {own field names}, {base class names})
+    schema_info: dict[str, tuple] = {}
+    for sf in schemas_dir.glob("*.py"):
+        if sf.name == "__init__.py":
+            continue
+        try:
+            tree = ast.parse(sf.read_text(encoding="utf-8", errors="replace"))
+        except Exception:
+            continue
+        for node in tree.body:
+            if not isinstance(node, ast.ClassDef):
+                continue
+            fields = {
+                child.target.id for child in node.body
+                if isinstance(child, ast.AnnAssign) and isinstance(child.target, ast.Name)
+            }
+            bases = {b.id for b in node.bases if isinstance(b, ast.Name)}
+            schema_info[node.name] = (sf, fields, bases)
+
+    if not schema_info:
+        return 0
+
+    def _all_fields(cls_name: str, seen: set) -> set:
+        if cls_name not in schema_info or cls_name in seen:
+            return set()
+        seen.add(cls_name)
+        _mf, fields, bases = schema_info[cls_name]
+        result = set(fields)
+        for base in bases:
+            result |= _all_fields(base, seen)
+        return result
+
+    param_re = re.compile(r"\bdef\s+\w+\([^)]*\)", re.DOTALL)
+    # missing field -> class name -> set of field names
+    missing_by_class: dict[str, set] = {}
+
+    for rf in routes_dir.glob("*.py"):
+        try:
+            src = rf.read_text(encoding="utf-8", errors="replace")
+            tree = ast.parse(src)
+        except Exception:
+            continue
+
+        for func in ast.walk(tree):
+            if not isinstance(func, (ast.FunctionDef, ast.AsyncFunctionDef)):
+                continue
+
+            # param_name -> schema class, only for params typed as a known schema
+            param_schema: dict[str, str] = {}
+            for arg in func.args.args:
+                if arg.annotation is None:
+                    continue
+                ann = arg.annotation
+                cls_name = ann.id if isinstance(ann, ast.Name) else None
+                if cls_name in schema_info:
+                    param_schema[arg.arg] = cls_name
+
+            if not param_schema:
+                continue
+
+            for sub in ast.walk(func):
+                if not isinstance(sub, ast.Attribute):
+                    continue
+                if not isinstance(sub.value, ast.Name):
+                    continue
+                param = sub.value.id
+                if param not in param_schema:
+                    continue
+                attr = sub.attr
+                if attr.startswith("_") or attr in _PYDANTIC_BUILTIN_ATTRS:
+                    continue
+                cls_name = param_schema[param]
+                if attr in _all_fields(cls_name, set()):
+                    continue
+                missing_by_class.setdefault(cls_name, set()).add(attr)
+
+    patched_files = set()
+    for cls_name, fields in missing_by_class.items():
+        mf, _own_fields, _bases = schema_info[cls_name]
+        try:
+            src = mf.read_text(encoding="utf-8", errors="replace")
+        except Exception:
+            continue
+        original = src
+
+        start_m = re.search(rf"^class\s+{cls_name}\s*\(", src, re.MULTILINE)
+        if not start_m:
+            continue
+        next_class_m = re.search(r"^class\s+\w+\s*\(", src[start_m.end():], re.MULTILINE)
+        body_end = start_m.end() + next_class_m.start() if next_class_m else len(src)
+        class_body = src[start_m.end():body_end]
+
+        field_matches = list(re.finditer(r"^\s{4}\w+\s*:[^\n]*\n", class_body, re.MULTILINE))
+        insert_at = (
+            start_m.end() + field_matches[-1].end() if field_matches
+            else src.index("\n", start_m.end()) + 1
+        )
+
+        new_lines = [
+            f"    {field}: {_infer_schema_field_spec(field)}\n"
+            for field in sorted(fields)
+        ]
+        src = src[:insert_at] + "".join(new_lines) + src[insert_at:]
+
+        typing_m = re.search(r"^from typing import ([^\n]+)$", src, re.MULTILINE)
+        if typing_m:
+            existing = {n.strip() for n in typing_m.group(1).split(",")}
+            if "Optional" not in existing:
+                new_list = typing_m.group(1).rstrip() + ", Optional"
+                src = src[:typing_m.start(1)] + new_list + src[typing_m.end(1):]
+        else:
+            src = "from typing import Optional\n" + src
+
+        if src != original:
+            mf.write_text(src, encoding="utf-8")
+            patched_files.add(mf.name)
+            print(f"  [field_patcher] Added missing schema field(s) {sorted(fields)} to {cls_name} in {mf.name}")
+
+    return len(patched_files)
