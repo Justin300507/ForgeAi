@@ -304,6 +304,34 @@ def _build_fix_prompt(
                     "your JSON array — otherwise inline the JSX directly in the page.\n"
                 )
 
+    # When a diagnostic group has no grounded affected_files at all (e.g. an
+    # integration/workflow-test failure carries no file_path — see
+    # engine.py's _run_workflow_tests / _diag), the model gets zero context
+    # about this project's actual layout and invents a plausible-looking path
+    # from training data (e.g. "app/routers/seed.py" for a project that
+    # actually uses "app/routes/seed_routes.py"). That orphan file then trips
+    # a "Missing backend import target" regression on the next verify pass,
+    # burning a fix attempt without ever touching the real bug -- this is
+    # what stalled habit_forge's seed-endpoint fix loop at 78.7/100.
+    backend_files_ctx = ""
+    if not group.affected_files:
+        app_dir = ctx.project_path / "app"
+        if app_dir.exists():
+            existing = sorted(
+                str(p.relative_to(ctx.project_path)).replace("\\", "/")
+                for p in app_dir.rglob("*.py")
+                if "__pycache__" not in p.parts
+            )
+            if existing:
+                backend_files_ctx = (
+                    "\nEXISTING BACKEND FILES (this project's real layout -- fix code "
+                    "that already lives in one of these; do NOT invent a new path or "
+                    "naming convention like app/routers/x.py unless none of these are "
+                    "relevant to the errors above):\n"
+                    + "\n".join(f"  {f}" for f in existing[:80])
+                    + "\n"
+                )
+
     extra_context = ""
     if improve:
         extra_context = (
@@ -326,6 +354,7 @@ AFFECTED FILES:
 {file_contents}
 {required_endpoints}
 {frontend_files_ctx}
+{backend_files_ctx}
 {extra_context}
 
 Return a JSON array of file patches. Each patch must be:
