@@ -3369,6 +3369,53 @@ def _patch_redirect_missing_backend_imports(project_path: Path) -> int:
     return patched
 
 
+_STATUS_PARAGRAPH_RE = re.compile(r"\{status && <p[^>]*>\{status\}</p>\}\n?[ \t]*")
+
+
+def _patch_hidden_loading_status(project_path: Path) -> int:
+    """Hoist a retry/wake-up status message out of the *not-loading* branch.
+
+    Generated pages that poll a cold-starting backend follow a 3-attempt
+    retry loop with a `status` message ("Waking up the server... retrying
+    (2/3)") -- but the full-page skeleton pattern renders it only inside
+    `{loading ? (<skeleton/>) : (... {status && <p>{status}</p>} ...)}`.
+    Since `status` is set *while* `loading` is still true, the message is
+    invisible for the entire retry window it exists to explain: the user
+    just sees a bare gray skeleton with no indication anything is happening
+    (reported live on habit-forge's dashboard). Move it so it renders
+    unconditionally, above the ternary.
+    """
+    src_dir = project_path / "src"
+    if not src_dir.exists():
+        return 0
+
+    patched = 0
+    for jf in src_dir.rglob("*.jsx"):
+        try:
+            content = jf.read_text(encoding="utf-8", errors="replace")
+        except Exception:
+            continue
+        if "{status && <p" not in content or "{loading ? (" not in content:
+            continue
+
+        m = _STATUS_PARAGRAPH_RE.search(content)
+        if not m:
+            continue
+        status_block = m.group(0).rstrip()
+        without = content[: m.start()] + content[m.end():]
+        idx = without.find("{loading ? (")
+        if idx == -1:
+            continue
+        new_content = without[:idx] + status_block + "\n      " + without[idx:]
+
+        if new_content != content:
+            jf.write_text(new_content, encoding="utf-8")
+            patched += 1
+            print(f"  [patcher] Hoisted retry-status message above the loading skeleton in {jf.name}")
+
+    return patched
+
+
 _AUTH_USERNAME_PAIR_RE = re.compile(
     r"([\w.]+)\.username([^\n]{0,60}localStorage\.setItem\(\s*['\"]display_name['\"]\s*,\s*)\1\.username"
 )
@@ -3647,6 +3694,11 @@ def run_deterministic_patches(project_path: str, skip_protected_injections: bool
     # response (username/id instead of the guaranteed display_name/user_id) --
     # otherwise the dashboard greeting is stuck on "Hello, User!" forever.
     _patch_frontend_auth_field_names(root)
+
+    # Hoist retry/wake-up status text above the loading skeleton so users see
+    # "Waking up the server..." instead of a bare gray skeleton with no
+    # explanation during a Render cold start.
+    _patch_hidden_loading_status(root)
 
     if modified:
         print(f"  [patcher] Patched {modified} file(s) — passlib→bcrypt, async→sync, smart quotes")
