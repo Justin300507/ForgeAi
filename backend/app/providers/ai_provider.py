@@ -64,36 +64,41 @@ _GEMINI_RETRY_BACKOFF_SECONDS = 5
 
 def _auto_chain(prompt, stage, max_tokens, thinking_budget, skip: frozenset = frozenset()):
     """
-    Gemini only, by user request — Cerebras is dead (402 Payment Required,
-    confirmed via direct provider test) and Groq turned out unreliable
-    enough on real generation-sized prompts that having it in the chain was
-    producing MORE "All providers failed" cascades than it was preventing.
-    Rather than silently reintroduce a fallback provider, retry Gemini
-    itself a few times with a short backoff — the "high demand" 503s seen
-    throughout this session are transient and usually clear within seconds,
-    so a short retry recovers most of what the multi-provider chain used to
-    catch, without depending on a provider whose reliability we don't
-    control.
+    Gemini (with retries) → Groq. Cerebras is dead (402 Payment Required,
+    confirmed via direct provider test) and stays excluded/benched. Groq was
+    ALSO removed in an earlier pass on the theory it was unreliable, but that
+    was never actually confirmed — a direct test showed Groq working fine,
+    and removing it meant every one of Gemini's "high demand" 503s (which
+    ran unusually long in one stretch) became an outright stage failure
+    instead of falling through, which is what tanked a run from 95 to 44.
+    Gemini still gets a few retries first since most of its 503s really are
+    short-lived, but Groq is back as the real fallback for when they aren't.
     """
-    if "gemini" in skip or _on_cooldown("gemini"):
-        raise RuntimeError("Gemini unavailable (skipped or on cooldown) and no other providers are configured")
+    if "gemini" not in skip and not _on_cooldown("gemini"):
+        last_exc: Exception | None = None
+        for attempt in range(1, _GEMINI_RETRY_ATTEMPTS + 1):
+            try:
+                print(f"Using Gemini{'' if attempt == 1 else f' (retry {attempt}/{_GEMINI_RETRY_ATTEMPTS})'}")
+                return _tracked("gemini", "gemini-2.5-flash", prompt, gemini_generate, stage,
+                                max_tokens=max_tokens, thinking_budget=thinking_budget)
+            except Exception as e:
+                last_exc = e
+                print(f"Gemini failed: {e}")
+                _note_provider_result("gemini", e)
+                if _on_cooldown("gemini"):
+                    break  # 402 — retrying can't help, stop immediately
+                if attempt < _GEMINI_RETRY_ATTEMPTS:
+                    time.sleep(_GEMINI_RETRY_BACKOFF_SECONDS)
 
-    last_exc: Exception | None = None
-    for attempt in range(1, _GEMINI_RETRY_ATTEMPTS + 1):
+    if "groq" not in skip and not _on_cooldown("groq"):
         try:
-            print(f"Using Gemini{'' if attempt == 1 else f' (retry {attempt}/{_GEMINI_RETRY_ATTEMPTS})'}")
-            return _tracked("gemini", "gemini-2.5-flash", prompt, gemini_generate, stage,
-                            max_tokens=max_tokens, thinking_budget=thinking_budget)
+            print("Using Groq (fallback)")
+            return _tracked("groq", "llama-3.3-70b", prompt, groq_generate, stage, max_tokens=max_tokens)
         except Exception as e:
-            last_exc = e
-            print(f"Gemini failed: {e}")
-            _note_provider_result("gemini", e)
-            if _on_cooldown("gemini"):
-                break  # 402 — retrying can't help, stop immediately
-            if attempt < _GEMINI_RETRY_ATTEMPTS:
-                time.sleep(_GEMINI_RETRY_BACKOFF_SECONDS)
+            print(f"Groq failed: {e}")
+            _note_provider_result("groq", e)
 
-    raise RuntimeError(f"Gemini failed after {_GEMINI_RETRY_ATTEMPTS} attempts: {last_exc}")
+    raise RuntimeError("Gemini (after retries) and Groq both failed")
 
 
 def generate_content(
