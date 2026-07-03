@@ -474,6 +474,88 @@ def validate_frontend_imports(project_path, errors):
                             )
 
 
+_NAV_TARGET_RE = re.compile(
+    r'(?:to|href)="(/[a-zA-Z][a-zA-Z0-9/_-]*)"|navigate\(\s*[\'"](/[a-zA-Z][a-zA-Z0-9/_-]*)[\'"]'
+)
+_SKIP_NAV_TARGETS = {"/", "/login", "/register", "/dashboard", "/logout"}
+
+
+def _page_name_for_path(path):
+    """/weekly-report -> WeeklyReportPage (mirrors frontend_scaffold_service's
+    reverse conversion, so a synthesized page lands where ensure_app_jsx and
+    the orphan-route patcher both expect to find it)."""
+    stem = path.rstrip("/").split("/")[-1]
+    words = re.split(r"[-_]", stem)
+    return "".join(w.capitalize() for w in words if w) + "Page"
+
+
+def validate_frontend_nav_targets(project_path, errors):
+    """
+    A page can be truncated out of the LLM's frontend response (hits its
+    token limit after Dashboard/Login/Register, a big page or two, and never
+    gets to the rest) while the pages that DID generate still link to it —
+    Header/Sidebar nav items pointing at /habits, /badges, /settings etc.
+    with no corresponding page file anywhere. validate_frontend_imports only
+    catches missing `import` targets; a <Link to="/badges"> or
+    navigate('/badges') isn't an import at all, so a page silently missing
+    like this produces zero validation errors and the dead link only shows
+    up as "click Badges, land back on Dashboard" in the deployed app.
+
+    Emits errors in the exact "Missing frontend import target: X" format
+    validate_frontend_imports already uses so this flows through the
+    existing missing-file fix dispatch (see v6_orchestrator.py's regex on
+    that exact string) without needing new wiring — the fix loop already
+    knows how to turn that message into a real generate_missing_file() call.
+    """
+    src_path = os.path.join(project_path, "src")
+    if not os.path.exists(src_path):
+        return
+
+    app_jsx = os.path.join(src_path, "App.jsx")
+    routed_paths = set()
+    if os.path.exists(app_jsx):
+        try:
+            with open(app_jsx, "r", encoding="utf-8") as f:
+                routed_paths = set(re.findall(r'<Route\s+path="([^"]+)"', f.read()))
+        except Exception:
+            pass
+
+    pages_dir = os.path.join(src_path, "pages")
+    existing_pages = set()
+    if os.path.isdir(pages_dir):
+        existing_pages = {
+            os.path.splitext(f)[0] for f in os.listdir(pages_dir)
+            if f.endswith((".jsx", ".js"))
+        }
+
+    nav_targets = set()
+    for root, _dirs, files in os.walk(src_path):
+        for file in files:
+            if not file.endswith(".jsx"):
+                continue
+            try:
+                with open(os.path.join(root, file), "r", encoding="utf-8") as f:
+                    content = f.read()
+            except Exception:
+                continue
+            for m in _NAV_TARGET_RE.finditer(content):
+                target = m.group(1) or m.group(2)
+                if target:
+                    nav_targets.add(target)
+
+    reported = set()
+    for target in sorted(nav_targets - _SKIP_NAV_TARGETS - routed_paths):
+        last_seg = target.rstrip("/").split("/")[-1].replace("-", "").replace("_", "").lower()
+        if any(last_seg in p.lower() or p.lower().replace("page", "") in last_seg
+               for p in existing_pages):
+            continue  # a page that plausibly serves this route already exists on disk
+        page_name = _page_name_for_path(target)
+        if page_name in reported:
+            continue
+        reported.add(page_name)
+        errors.append(f"Missing frontend import target: ./pages/{page_name}")
+
+
 def validate_frontend_api_client(project_path, errors):
     """
     Flag raw fetch() calls with relative URLs in src/ files.
@@ -951,6 +1033,10 @@ def validate_project(project_path):
     )
 
     validate_frontend_imports(
+        project_path,
+        errors
+    )
+    validate_frontend_nav_targets(
         project_path,
         errors
     )
