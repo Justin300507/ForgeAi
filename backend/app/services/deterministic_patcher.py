@@ -2785,6 +2785,106 @@ def _patch_wire_orphan_routers(project_path: Path) -> None:
         print(f"  [router_patcher] Wired {len(added)} orphan router(s) into main.py: {', '.join(added)}")
 
 
+def _patch_wire_orphan_frontend_routes(project_path: Path) -> None:
+    """
+    Frontend mirror of _patch_wire_orphan_routers above: App.jsx routinely
+    imports every page component it generates, but the LLM sometimes forgets
+    to give one a <Route> entry. The page exists, the sidebar links to it,
+    but navigating there matches nothing and falls through to the mandatory
+    wildcard "*" -> /dashboard redirect -- every automated check (compile,
+    CRUD journey, endpoint smoke tests) passes because none of them click
+    through the app's own navigation. Only visible by actually using it.
+    """
+    app_jsx = project_path / "src" / "App.jsx"
+    if not app_jsx.exists():
+        return
+    try:
+        content = app_jsx.read_text(encoding="utf-8", errors="replace")
+    except Exception:
+        return
+    original = content
+
+    # Page components imported into App.jsx: import X from './pages/Y'
+    import_re = re.compile(r"^import\s+(\w+)\s+from\s+['\"]\./pages/\w+['\"]", re.MULTILINE)
+    imported = import_re.findall(content)
+    if not imported:
+        return
+
+    # A component is "routed" if it appears as a JSX tag anywhere (self-closing
+    # or with props) -- App.jsx never renders a page component except inside a
+    # <Route element={...}>.
+    orphans = [name for name in imported if not re.search(rf"<{name}[\s/>]", content)]
+    if not orphans:
+        return
+
+    routed_paths = set(re.findall(r'<Route\s+path="([^"]+)"', content))
+
+    # Candidate URL paths: every to="/..." link anywhere under src/ (sidebar,
+    # nav, etc.) that isn't already routed -- these are the LLM's own stated
+    # intent for where each page should live, more reliable than guessing
+    # from the component name alone.
+    nav_paths: set[str] = set()
+    src_dir = project_path / "src"
+    for jf in src_dir.rglob("*.jsx"):
+        try:
+            t = jf.read_text(encoding="utf-8", errors="replace")
+        except Exception:
+            continue
+        nav_paths |= set(re.findall(r'to="(/[a-zA-Z0-9/_-]*)"', t))
+    candidate_paths = sorted(nav_paths - routed_paths)
+
+    # Clone an existing authenticated route's wrapper (PrivateRoute/Layout/...)
+    # so the new route matches this project's own auth-guarding convention
+    # instead of guessing at one.
+    template_m = None
+    for anchor_path in ("/dashboard", "/habits"):
+        template_m = re.search(
+            rf'(\s*)<Route\s+path="{re.escape(anchor_path)}"\s+element=\{{(.*?)\}}\s*/>',
+            content, re.DOTALL,
+        )
+        if template_m:
+            break
+    if not template_m:
+        return
+    indent, template_element = template_m.groups()
+
+    def _kebab_path(name: str) -> str:
+        s = re.sub(r"(?<!^)(?=[A-Z])", "-", name).lower().replace("-page", "")
+        return "/" + s
+
+    added: list[tuple] = []
+    for comp_name in orphans:
+        comp_key = comp_name.lower().replace("page", "")
+        target_path = None
+        for p in candidate_paths:
+            last_seg = p.rstrip("/").split("/")[-1].replace("-", "")
+            if last_seg and (last_seg in comp_key or comp_key in last_seg):
+                target_path = p
+                break
+        if target_path is None:
+            target_path = _kebab_path(comp_name)
+        if target_path in routed_paths:
+            continue
+
+        new_element = re.sub(r"<\w+\s*/>", f"<{comp_name} />", template_element, count=1)
+        new_route = f'{indent}<Route path="{target_path}" element={{{new_element}}} />'
+
+        wildcard_m = re.search(r'\n(\s*)<Route\s+path="\*"', content)
+        if wildcard_m:
+            content = content[:wildcard_m.start()] + "\n" + new_route + content[wildcard_m.start():]
+        else:
+            content = content.rstrip() + "\n" + new_route + "\n"
+
+        routed_paths.add(target_path)
+        candidate_paths = [p for p in candidate_paths if p != target_path]
+        added.append((comp_name, target_path))
+
+    if content != original:
+        app_jsx.write_text(content, encoding="utf-8")
+        summary = ", ".join(f"{c} -> {p}" for c, p in added)
+        print(f"  [route_patcher] Wired {len(added)} orphan page(s) into App.jsx: {summary}")
+
+
 # ── Main entry point ──────────────────────────────────────────────────────────
 
 def _patch_schema_nullable_required_mismatch(project_path: Path) -> int:
@@ -3389,6 +3489,11 @@ def run_deterministic_patches(project_path: str, skip_protected_injections: bool
     # Wire ALL routers into main.py — runs after auth_routes injection so auth_router
     # is already in main.py; this catches every other generated router.
     _patch_wire_orphan_routers(root)
+
+    # Frontend mirror: wire any page component App.jsx imports but never
+    # mounted on a <Route> (see docstring for why this is invisible to
+    # every other automated check).
+    _patch_wire_orphan_frontend_routes(root)
 
     # Seed robustness: guard against IndexError when parent entity inserts fail
     _patch_seed_robustness(root)
