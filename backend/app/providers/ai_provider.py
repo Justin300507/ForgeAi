@@ -58,51 +58,42 @@ def _tracked(provider_name: str, model: str, prompt: str, fn, stage: str = "unkn
     return result
 
 
+_GEMINI_RETRY_ATTEMPTS = 3
+_GEMINI_RETRY_BACKOFF_SECONDS = 5
+
+
 def _auto_chain(prompt, stage, max_tokens, thinking_budget, skip: frozenset = frozenset()):
     """
-    Gemini → Cerebras → Groq → Ollama. Gemini is the primary (user choice —
-    quality); its per-token cost is offset by the response cache in
-    generate_content, which short-circuits every repeated prompt before any
-    provider is called. Cerebras/Groq are the free-tier fallbacks. OpenRouter/
-    DeepSeek removed (out of credits — a 402 wastes a slot then falls through
-    to DeepSeek, which writes partial code and makes errors worse). `skip`
-    excludes a provider a caller already tried directly, so we don't retry
-    the same failure.
+    Gemini only, by user request — Cerebras is dead (402 Payment Required,
+    confirmed via direct provider test) and Groq turned out unreliable
+    enough on real generation-sized prompts that having it in the chain was
+    producing MORE "All providers failed" cascades than it was preventing.
+    Rather than silently reintroduce a fallback provider, retry Gemini
+    itself a few times with a short backoff — the "high demand" 503s seen
+    throughout this session are transient and usually clear within seconds,
+    so a short retry recovers most of what the multi-provider chain used to
+    catch, without depending on a provider whose reliability we don't
+    control.
     """
-    if "gemini" not in skip and not _on_cooldown("gemini"):
+    if "gemini" in skip or _on_cooldown("gemini"):
+        raise RuntimeError("Gemini unavailable (skipped or on cooldown) and no other providers are configured")
+
+    last_exc: Exception | None = None
+    for attempt in range(1, _GEMINI_RETRY_ATTEMPTS + 1):
         try:
-            print("Using Gemini")
+            print(f"Using Gemini{'' if attempt == 1 else f' (retry {attempt}/{_GEMINI_RETRY_ATTEMPTS})'}")
             return _tracked("gemini", "gemini-2.5-flash", prompt, gemini_generate, stage,
                             max_tokens=max_tokens, thinking_budget=thinking_budget)
         except Exception as e:
+            last_exc = e
             print(f"Gemini failed: {e}")
             _note_provider_result("gemini", e)
+            if _on_cooldown("gemini"):
+                break  # 402 — retrying can't help, stop immediately
+            if attempt < _GEMINI_RETRY_ATTEMPTS:
+                time.sleep(_GEMINI_RETRY_BACKOFF_SECONDS)
 
-    if "cerebras" not in skip and not _on_cooldown("cerebras"):
-        try:
-            print("Using Cerebras (fallback)")
-            return _tracked("cerebras", "gpt-oss-120b", prompt, cerebras_generate, stage, max_tokens=max_tokens)
-        except Exception as e:
-            print(f"Cerebras failed: {e}")
-            _note_provider_result("cerebras", e)
-    elif "cerebras" not in skip:
-        print("Skipping Cerebras (on cooldown from a recent 402)")
-
-    if "groq" not in skip and not _on_cooldown("groq"):
-        try:
-            print("Using Groq (fallback)")
-            return _tracked("groq", "llama-3.3-70b", prompt, groq_generate, stage, max_tokens=max_tokens)
-        except Exception as e:
-            print(f"Groq failed: {e}")
-            _note_provider_result("groq", e)
-
-    try:
-        print("Using Ollama (offline fallback)")
-        return _tracked("ollama", "local", prompt, ollama_generate, stage, max_tokens=max_tokens)
-    except Exception as e:
-        print(f"Ollama failed: {e}")
-
-    raise RuntimeError("All providers failed")
+    raise RuntimeError(f"Gemini failed after {_GEMINI_RETRY_ATTEMPTS} attempts: {last_exc}")
 
 
 def generate_content(
