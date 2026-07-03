@@ -841,6 +841,42 @@ def _patch_pydantic_regex(content: str) -> str:
     return re.sub(r"\bregex\s*=\s*(r?['\"])", r"pattern=\1", content)
 
 
+# ── 5b. SQLAlchemy func().name(...) → func().label(...) ─────────────────────
+# LLMs regularly confuse the read-only `.name` attribute on a Function element
+# (holds the SQL function's own name, e.g. "count") with `.label()`, the method
+# for aliasing a query column. `func.count(x).name("y")` calls a string as if
+# it were a function — `TypeError: 'str' object is not callable` — which
+# raises on every request that touches the query and surfaces as a bare 500.
+
+_FUNC_CALL_RE = re.compile(r"func\.\w+\(")
+
+
+def _patch_func_name_vs_label(content: str) -> str:
+    if "func." not in content or ".name(" not in content:
+        return content
+
+    replacements = []
+    n = len(content)
+    for m in _FUNC_CALL_RE.finditer(content):
+        depth = 1
+        j = m.end()
+        while j < n and depth > 0:
+            if content[j] == "(":
+                depth += 1
+            elif content[j] == ")":
+                depth -= 1
+            j += 1
+        if content[j:j + 6] == ".name(":
+            replacements.append((j, j + 5))  # span of ".name" (keep the "(")
+
+    if not replacements:
+        return content
+    patched = content
+    for start, end in sorted(replacements, key=lambda t: -t[0]):
+        patched = patched[:start] + ".label" + patched[end:]
+    return patched
+
+
 # ── 6. Smart quotes → ASCII quotes ───────────────────────────────────────────
 
 _SMART_QUOTE_MAP = str.maketrans({
@@ -3428,6 +3464,7 @@ def run_deterministic_patches(project_path: str, skip_protected_injections: bool
         patched = _patch_wrong_auth_module(patched)
         patched = _patch_passlib(patched)
         patched = _patch_pydantic_regex(patched)
+        patched = _patch_func_name_vs_label(patched)
         patched = _patch_pydantic_orm_mode(patched)
         patched = _patch_async_sync(patched, filepath=rel)
         patched = _patch_circular_schema_imports(patched, filepath=rel)
