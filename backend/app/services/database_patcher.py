@@ -189,12 +189,16 @@ def _patch_main_py_duplicate_engine(app_dir: Path) -> None:
     text = main_file.read_text(encoding="utf-8", errors="replace")
     original = text
 
+    # [ \t]* tolerates indentation (a rewritten main.py from the LLM fix loop
+    # sometimes lands this inside an if/try block instead of at module level)
+    # -- the original `^name\s*=` required column 0 exactly and silently
+    # stopped matching the moment formatting shifted even slightly.
     replacements = [
-        (re.compile(rf"^engine\s*=\s*create_engine\s*{_CALL_BODY}", re.MULTILINE),
+        (re.compile(rf"^[ \t]*engine\s*=\s*create_engine\s*{_CALL_BODY}", re.MULTILINE),
          "from app.database import engine  # db_patcher: use the single shared engine"),
-        (re.compile(rf"^SessionLocal\s*=\s*sessionmaker\s*{_CALL_BODY}", re.MULTILINE),
+        (re.compile(rf"^[ \t]*SessionLocal\s*=\s*sessionmaker\s*{_CALL_BODY}", re.MULTILINE),
          "from app.database import SessionLocal  # db_patcher: use the shared sessionmaker"),
-        (re.compile(rf"^Base\s*=\s*declarative_base\s*{_CALL_BODY}", re.MULTILINE),
+        (re.compile(rf"^[ \t]*Base\s*=\s*declarative_base\s*{_CALL_BODY}", re.MULTILINE),
          "from app.database import Base  # db_patcher: single metadata registry"),
     ]
     stripped = []

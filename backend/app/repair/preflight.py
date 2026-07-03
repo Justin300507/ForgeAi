@@ -250,12 +250,17 @@ def _fix_config_missing_attrs(project_path: Path, diagnostics: list) -> bool:
     if _MARKER in content:
         return False  # guard already appended on a previous pass
 
-    # Any instance of a *Config*/*Settings*-named class, with or without args,
-    # with or without a type annotation. The old exact-match regex
-    # (`settings = Config()` only) silently skipped `config = AppSettings(...)`
-    # variants, leaving the AttributeError crash in place.
+    # The settings/config instance, however it was constructed. Used to
+    # require the RHS to look like `SomeConfig(` or `SomeSettings(` -- missed
+    # the equally common Flask-style factory-function pattern
+    # `settings = get_config()` (lowercase "config" inside a function name
+    # doesn't match a literal `Config`/`Settings`), which left main.py's
+    # `settings.DATABASE_URL` crash completely unpatched. The actual
+    # invariant we need is just "there's a module-level `settings` or
+    # `config` name to attach a hasattr guard to" -- how it was built
+    # doesn't matter.
     m = re.search(
-        r'^(\w+)\s*(?::\s*[\w\[\], .]+)?=\s*\w*(?:Config|Settings)\w*\s*\(',
+        r'^(settings|config)\s*(?::\s*[\w\[\], .]+)?\s*=\s*\S',
         content, re.MULTILINE,
     )
     if not m:
