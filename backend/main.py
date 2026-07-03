@@ -422,6 +422,61 @@ def retry_job(
 
 # ── Post-deploy error checker ─────────────────────────────────────────────────
 
+def _resync_frontend(project_path: str, project_name: str, backend_url: str | None, creds: dict) -> dict:
+    """
+    Re-run the frontend deterministic patches against the on-disk project and,
+    if anything changed, rebuild + redeploy to Cloudflare Pages.
+
+    deployed_checker only tests the backend -- it has no concept of a frontend
+    bug, so a frontend-only fix (e.g. the auth-field-name / hidden-loading-status
+    patches) had no path to ever reach the live site: Cloudflare Pages here is a
+    direct-upload deploy, not git-connected, so pushing a fix to GitHub alone
+    never triggers a rebuild. This closes that loop using the same
+    CloudflareProvider + project slug the original generation deployed with, so
+    it updates the existing Pages project in place instead of creating a new one.
+    """
+    from pathlib import Path
+    from app.services.deterministic_patcher import (
+        _patch_frontend_auth_field_names, _patch_hidden_loading_status,
+    )
+
+    root = Path(project_path)
+    if not root.is_dir():
+        return {"redeployed": False, "reason": "project files not found on disk"}
+
+    patched = _patch_frontend_auth_field_names(root) + _patch_hidden_loading_status(root)
+    if not patched:
+        return {"redeployed": False, "reason": "no frontend patches needed"}
+
+    cf_token = creds.get("CLOUDFLARE_API_TOKEN") or os.getenv("CLOUDFLARE_API_TOKEN")
+    cf_account = creds.get("CLOUDFLARE_ACCOUNT_ID") or os.getenv("CLOUDFLARE_ACCOUNT_ID")
+    if not cf_token or not cf_account:
+        return {"redeployed": False, "patched_files": patched,
+                "reason": "Cloudflare credentials not configured — patched on disk but could not redeploy"}
+
+    _orig = {k: os.environ.get(k) for k in ("CLOUDFLARE_API_TOKEN", "CLOUDFLARE_ACCOUNT_ID")}
+    os.environ["CLOUDFLARE_API_TOKEN"] = cf_token
+    os.environ["CLOUDFLARE_ACCOUNT_ID"] = cf_account
+    try:
+        from app.deployments.cloudflare_provider import CloudflareProvider
+        provider = CloudflareProvider()
+        env_vars = {"VITE_API_URL": backend_url} if backend_url else None
+        res = provider.deploy(project_path, project_name, env_vars=env_vars)
+        return {
+            "redeployed": res.success,
+            "url": res.url,
+            "error": res.error,
+            "patched_files": patched,
+            "fixes": [f"Applied {patched} frontend fix(es) and redeployed to Cloudflare Pages"] if res.success else [],
+        }
+    finally:
+        for k, v in _orig.items():
+            if v is not None:
+                os.environ[k] = v
+            else:
+                os.environ.pop(k, None)
+
+
 def _run_check_and_fix(job_id: str, backend_url: str, project_name: str | None,
                        github_url: str | None, creds: dict):
     from app.services.deployed_checker import check_deployed_app
@@ -436,7 +491,17 @@ def _run_check_and_fix(job_id: str, backend_url: str, project_name: str | None,
             project_path = os.path.join("generated_projects", project_name) if project_name else None
             fix_result = fix_deployed_app(check_result, project_path, github_url, creds)
             fixes = fix_result.get("fixes", [])
-        CHECK_STORE[job_id] = {"status": "done", "result": {**check_result, "fixes": fixes}}
+
+        frontend_result = None
+        if project_name:
+            project_path = os.path.join("generated_projects", project_name)
+            try:
+                frontend_result = _resync_frontend(project_path, project_name, backend_url, creds)
+                fixes.extend(frontend_result.get("fixes", []))
+            except Exception as e:
+                frontend_result = {"redeployed": False, "reason": f"resync failed: {e}"}
+
+        CHECK_STORE[job_id] = {"status": "done", "result": {**check_result, "fixes": fixes, "frontend": frontend_result}}
     except Exception as e:
         CHECK_STORE[job_id] = {"status": "error", "result": {"error": str(e)}}
 
