@@ -7,136 +7,18 @@ import re
 from pathlib import Path
 from typing import Optional
 
-
-# ── Auth template (same as in deterministic_patcher) ─────────────────────────
-
-_AUTH_UTILS_TEMPLATE = '''\
-import os
-from datetime import datetime, timedelta
-from typing import Optional
-
-import bcrypt
-import jwt
-from fastapi import Depends, HTTPException, status
-from fastapi.security import OAuth2PasswordBearer
-from sqlalchemy.orm import Session
-
-from app.database import get_db
-
-SECRET_KEY = os.getenv("SECRET_KEY", "changeme-dev-secret")
-ALGORITHM = "HS256"
-ACCESS_TOKEN_EXPIRE_MINUTES = 60 * 24 * 7
-
-oauth2_scheme = OAuth2PasswordBearer(tokenUrl="/auth/login")
-
-
-def get_password_hash(password: str) -> str:
-    return bcrypt.hashpw(password.encode("utf-8"), bcrypt.gensalt()).decode("utf-8")
-
-
-def verify_password(plain: str, hashed: str) -> bool:
-    try:
-        return bcrypt.checkpw(plain.encode("utf-8"), hashed.encode("utf-8"))
-    except Exception:
-        return False
-
-
-def create_access_token(data: dict, expires_delta: Optional[timedelta] = None) -> str:
-    to_encode = data.copy()
-    expire = datetime.utcnow() + (expires_delta or timedelta(minutes=ACCESS_TOKEN_EXPIRE_MINUTES))
-    to_encode["exp"] = expire
-    return jwt.encode(to_encode, SECRET_KEY, algorithm=ALGORITHM)
-
-
-def get_current_user(token: str = Depends(oauth2_scheme), db: Session = Depends(get_db)):
-    from app.models.user import User
-    credentials_exception = HTTPException(
-        status_code=status.HTTP_401_UNAUTHORIZED,
-        detail="Could not validate credentials",
-        headers={"WWW-Authenticate": "Bearer"},
-    )
-    try:
-        payload = jwt.decode(token, SECRET_KEY, algorithms=[ALGORITHM])
-        email: str = payload.get("sub")
-        if not email:
-            raise credentials_exception
-    except Exception:
-        raise credentials_exception
-    user = db.query(User).filter(User.email == email).first()
-    if not user:
-        raise credentials_exception
-    return user
-'''
-
-_AUTH_ROUTES_TEMPLATE = '''\
-from fastapi import APIRouter, Depends, HTTPException, status
-from fastapi.security import OAuth2PasswordRequestForm
-from pydantic import BaseModel, Field
-from sqlalchemy.orm import Session
-
-from app.database import get_db
-from app.utils.auth import (
-    create_access_token, verify_password, get_password_hash,
-    get_current_user, oauth2_scheme,
+# Auth templates come from deterministic_patcher.py -- the single source of
+# truth for the app-generation pipeline's own known-good auth injection. This
+# module used to keep its own hand-copied duplicates, which drifted: it grew
+# an OAuth2PasswordRequestForm (form-data) login while every generated
+# frontend, and the JSON-body LoginRequest deterministic_patcher actually
+# injects, use JSON {email, password}. A live app "fixed" via the stale
+# template would have its working login replaced with one incompatible with
+# its own frontend. Importing keeps the two permanently in sync.
+from app.services.deterministic_patcher import (
+    _AUTH_UTILS_TEMPLATE,
+    _AUTH_ROUTES_TEMPLATE,
 )
-
-auth_router = APIRouter()
-
-
-class SignupRequest(BaseModel):
-    email: str = Field(min_length=3)
-    password: str = Field(min_length=6)
-    display_name: str = ""
-
-
-class AuthResponse(BaseModel):
-    id: int
-    email: str
-    display_name: str = ""
-
-
-@auth_router.post("/auth/signup", response_model=AuthResponse, status_code=201)
-def signup(req: SignupRequest, db: Session = Depends(get_db)):
-    from app.models.user import User
-    if db.query(User).filter(User.email == req.email).first():
-        raise HTTPException(status_code=400, detail="Email already registered")
-    user = User(
-        email=req.email,
-        password_hash=get_password_hash(req.password),
-        display_name=req.display_name or req.email.split("@")[0],
-    )
-    db.add(user)
-    db.commit()
-    db.refresh(user)
-    return AuthResponse(id=user.id, email=user.email,
-                        display_name=getattr(user, "display_name", ""))
-
-
-@auth_router.post("/auth/login")
-def login(form_data: OAuth2PasswordRequestForm = Depends(), db: Session = Depends(get_db)):
-    from app.models.user import User
-    user = db.query(User).filter(User.email == form_data.username).first()
-    if not user or not verify_password(form_data.password, user.password_hash):
-        raise HTTPException(status_code=401, detail="Invalid credentials")
-    token = create_access_token(data={"sub": user.email})
-    return {
-        "access_token": token,
-        "token_type": "bearer",
-        "user_id": user.id,
-        "email": user.email,
-        "display_name": getattr(user, "display_name", ""),
-    }
-
-
-@auth_router.get("/auth/me")
-def me(current_user=Depends(get_current_user)):
-    return {
-        "id": current_user.id,
-        "email": current_user.email,
-        "display_name": getattr(current_user, "display_name", None),
-        "role": getattr(current_user, "role", None),
-    }
-'''
 
 
 # ── Fix helpers ───────────────────────────────────────────────────────────────

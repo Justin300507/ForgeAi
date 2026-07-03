@@ -86,12 +86,16 @@ def check_deployed_app(backend_url: str, architecture: Optional[dict] = None) ->
         errors.append(_err("RegistrationError", "/auth/signup", None, f"Request failed: {e}",
                            "Ensure /auth/signup endpoint exists in auth_routes.py"))
 
-    # 4. Login (OAuth2 form data)
+    # 4. Login (JSON body -- matches the pipeline's own known-good
+    # auth_routes.py template: LoginRequest{email, password} as JSON, not
+    # OAuth2PasswordRequestForm form-data. Every generated frontend posts
+    # JSON here too, so testing form-data produced a permanent false-positive
+    # 422 that, if auto-"fixed", would swap in an OAuth2-form login
+    # incompatible with the app's own working frontend.)
     try:
         r = requests.post(
             f"{backend_url}/auth/login",
-            data={"username": _TEST_EMAIL, "password": _TEST_PASSWORD},
-            headers={"Content-Type": "application/x-www-form-urlencoded"},
+            json={"email": _TEST_EMAIL, "password": _TEST_PASSWORD},
             timeout=_TIMEOUT,
         )
         if r.status_code == 200:
@@ -105,8 +109,10 @@ def check_deployed_app(backend_url: str, architecture: Optional[dict] = None) ->
                                    "Login handler must return {'access_token': ..., 'token_type': 'bearer'}"))
         elif r.status_code == 422:
             errors.append(_err("LoginError", "/auth/login", 422,
-                               f"Validation error — endpoint expects different body: {r.text[:300]}",
-                               "Login endpoint must use OAuth2PasswordRequestForm (form data), not JSON body"))
+                               f"Validation error — endpoint expects a different body: {r.text[:300]}",
+                               "Login endpoint must accept a JSON body {email, password} "
+                               "(e.g. a Pydantic LoginRequest model), not OAuth2PasswordRequestForm form-data — "
+                               "every generated frontend posts JSON here"))
         elif r.status_code == 401:
             errors.append(_err("LoginError", "/auth/login", 401,
                                "Wrong password or password hash mismatch",
