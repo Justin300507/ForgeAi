@@ -1153,10 +1153,7 @@ def _patch_router_names(project_path: Path) -> int:
 
         actual = m.group(1).strip()
         if actual == expected:
-            continue
-        if actual.endswith("_router") and actual != "router":
-            # Already a named router (e.g. auth_router) — don't clobber
-            continue
+            continue  # already correctly named (e.g. auth_router in auth_routes.py) — leave it
 
         new_content = re.sub(rf"\b{re.escape(actual)}\b", expected, content)
         if new_content != content:
