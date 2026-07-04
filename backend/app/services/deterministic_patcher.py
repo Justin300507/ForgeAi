@@ -2132,16 +2132,40 @@ def _patch_response_schemas_optional(project_path: Path) -> int:
                 if not stripped or stripped.startswith("#") or stripped.startswith("model_config") or stripped.startswith("class Config"):
                     continue
 
-                # Match a field: "    fieldname: SomeType" with no default
-                fm = re.match(r'^(\s+)(\w+)\s*:\s*(?!Optional\b)([^\n=#]+?)\s*$', line)
+                # Match a field: "    fieldname: SomeType" with an optional
+                # trailing "= default" captured separately (group 4) so
+                # "already Optional" and "already has a default" are checked
+                # as plain post-hoc conditions instead of a negative
+                # lookahead embedded in the pattern. The lookahead approach
+                # this replaced -- `(?!Optional\b)` right after `\s*:\s*` --
+                # is defeated by the SAME `\s*` backtracking to a zero-width
+                # match to satisfy it: given "fieldname: Optional[X]" (a
+                # space after the colon, the overwhelmingly common case),
+                # the engine gives back that one space from `\s*` so the
+                # lookahead's "no Optional right here" check passes against
+                # the space itself, then the capture group swallows the
+                # leftover " Optional[X]" as the "type". The field then gets
+                # wrapped AGAIN into `Optional[Optional[X]] = None` --
+                # confirmed via direct regex testing, not just reasoning.
+                # A field already typed Optional[...] but with NO default is
+                # still required as far as pydantic is concerned --
+                # Optional[X] only widens the accepted TYPE to include None,
+                # it does not supply a default, so a value must still be
+                # provided. Seen live: HabitResponse.updated_at declared
+                # `Optional[datetime]` with no default -- Habit has no
+                # updated_at column at all, so every response 500'd with
+                # ResponseValidationError ("Field required").
+                fm = re.match(r'^(\s+)(\w+)\s*:\s*([^\n=#]+?)\s*(=.*)?$', line)
                 if fm:
-                    indent = fm.group(1)
-                    fname = fm.group(2)
-                    ftype = fm.group(3).strip()
-                    # Skip if it already has Optional or a default
+                    indent, fname, ftype, has_default = fm.group(1), fm.group(2), fm.group(3).strip(), fm.group(4)
                     if fname in ("id", "class", "pass") or ftype.startswith("ClassVar"):
                         continue
-                    out_lines[idx] = f"{indent}{fname}: Optional[{ftype}] = None"
+                    if has_default:
+                        continue
+                    if ftype.startswith("Optional[") and ftype.endswith("]"):
+                        out_lines[idx] = f"{indent}{fname}: {ftype} = None"
+                    else:
+                        out_lines[idx] = f"{indent}{fname}: Optional[{ftype}] = None"
 
         new_content = "\n".join(out_lines)
 
@@ -2827,6 +2851,49 @@ _JSX_IMPORT_RE = re.compile(
     r"""(?:from|import)\s+['"](@?[\w][\w.-]*/[\w.-]+|@?[\w][\w.-]*)['"]"""
 )
 
+# npm registry rule: package names (scope included) are lowercase-only, no
+# uppercase letters anywhere -- ever. A "from" target with any capital letter
+# is never a real package; it's virtually always a broken/hallucinated
+# import of a local variable/hook that the LLM wrote as `import { x } from
+# 'someCamelCaseName'` instead of a real relative path. Left unfiltered,
+# _patch_frontend_package_json added these straight into package.json's
+# dependencies as literal package names -- `npm install` then 404's on
+# every one of them (npm's own registry rejects the name before even
+# checking if it exists: "name can no longer contain capital letters"),
+# breaking the ENTIRE frontend build with no way to recover, since nothing
+# ever removes a once-added bad dependency across subsequent fix rounds.
+_VALID_NPM_PKG_NAME_RE = re.compile(r"^(@[a-z0-9][a-z0-9._-]*/)?[a-z0-9][a-z0-9._-]*$")
+
+# A lowercase name (e.g. "habits") passes the pattern check above but can
+# still be a broken import -- not every hallucinated local-variable-as-
+# module-name happens to have a capital letter. The dead giveaway that
+# survives casing is self-reference: `import { habits } from 'habits'` or
+# `import { currentHabit, x } from 'currentHabit'` -- the LLM meant a
+# relative path to a hook/context but wrote the bare variable name being
+# imported as the module string instead. A real package is never named
+# after one of its own named imports like this.
+_SELF_REF_IMPORT_RE = re.compile(
+    r"""import\s+(?:(\w+)\s*,?\s*)?(?:\{([^}]*)\})?\s*from\s+['"]([^'"]+)['"]"""
+)
+
+
+def _is_self_referential_import(text: str, module_name: str) -> bool:
+    for m in _SELF_REF_IMPORT_RE.finditer(text):
+        default_name, named_block, mod = m.group(1), m.group(2), m.group(3)
+        if mod != module_name:
+            continue
+        bound_names = set()
+        if default_name:
+            bound_names.add(default_name)
+        if named_block:
+            for part in named_block.split(","):
+                part = part.strip()
+                if part:
+                    bound_names.add(part.split(" as ")[0].strip())
+        if module_name in bound_names:
+            return True
+    return False
+
 # Packages where "latest" resolves to a version incompatible with what LLMs
 # actually generate (trained on an older, more common API). Chakra UI v3
 # (the "latest" tag since 2024) removed useToast entirely in favor of a
@@ -2886,6 +2953,16 @@ def _patch_frontend_package_json(project_path: Path) -> bool:
             pkg_root = name.split("/")[0] if not name.startswith("@") else "/".join(name.split("/")[:2])
             # Skip if the root package is already installed
             if pkg_root in all_installed:
+                continue
+            # Never trust a name that couldn't possibly be a real npm
+            # package (see _VALID_NPM_PKG_NAME_RE docstring) -- leave it for
+            # the actual broken-import fix path instead of corrupting
+            # package.json with it.
+            if not _VALID_NPM_PKG_NAME_RE.match(pkg_root):
+                continue
+            # Nor a lowercase name that's just as clearly a broken
+            # self-referential import (see _is_self_referential_import).
+            if _is_self_referential_import(text, name):
                 continue
             # Always add the root package (not the subpath) so peer lookup works
             imported.add(pkg_root)
