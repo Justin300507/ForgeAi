@@ -3594,6 +3594,56 @@ def _patch_frontend_signup_password_key(project_path: Path) -> int:
     return patched
 
 
+_STALE_STATUS_ON_ERROR_RE = re.compile(
+    r"if\s*\(\s*(\w+)\s*\)\s*\{\s*setError\(\1\);\s*setLoading\(false\);\s*return;\s*\}"
+)
+
+
+def _patch_stale_status_on_error(project_path: Path) -> int:
+    """Clear the in-flight retry-status message when a real error occurs.
+
+    The standard generated retry-loop idiom (Login/Register/Dashboard/list
+    pages) is:
+        const msg = parseError(err);
+        if (msg) { setError(msg); setLoading(false); return; } // real API error, don't retry
+        if (attempt < 3) { setStatus(`...retrying...`); await sleep(...); }
+    The error branch never clears `status`, so whatever transient message was
+    showing ("Creating account...", "Waking up the server...") stays on
+    screen forever, stacked right next to the real error -- reported live as
+    "Field required" shown together with a permanent "Creating account...".
+    Purely cosmetic (the real error is still shown), but confusing enough to
+    look like the page is stuck. Scoped to files that actually declare a
+    `setStatus` setter, so it can't insert a call to something undefined.
+    """
+    src_dir = project_path / "src"
+    if not src_dir.exists():
+        return 0
+
+    patched = 0
+    for jf in src_dir.rglob("*.jsx"):
+        try:
+            content = jf.read_text(encoding="utf-8", errors="replace")
+        except Exception:
+            continue
+        if "setStatus(" not in content:
+            continue
+
+        def _fix(m: re.Match) -> str:
+            var = m.group(1)
+            return (
+                f"if ({var}) {{ setError({var}); setStatus(null); "
+                f"setLoading(false); return; }}"
+            )
+
+        new_content = _STALE_STATUS_ON_ERROR_RE.sub(_fix, content)
+        if new_content != content:
+            jf.write_text(new_content, encoding="utf-8")
+            patched += 1
+            print(f"  [patcher] Cleared stale status message on error path in {jf.name}")
+
+    return patched
+
+
 def _patch_missing_icon_imports(project_path: Path) -> int:
     """Add lucide-react icons that are USED in JSX but never imported.
 
@@ -3830,6 +3880,10 @@ def run_deterministic_patches(project_path: str, skip_protected_injections: bool
     # signup request body -- the backend never receives a password field and
     # every registration 422s with a bare "Field required".
     _patch_frontend_signup_password_key(root)
+
+    # Clear the in-flight retry-status message on the real-error path so it
+    # doesn't stay stuck on screen ("Creating account...") next to the error.
+    _patch_stale_status_on_error(root)
 
     # Hoist retry/wake-up status text above the loading skeleton so users see
     # "Waking up the server..." instead of a bare gray skeleton with no
