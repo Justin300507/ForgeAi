@@ -344,6 +344,18 @@ def generate_project_v6(
                 errors_by_file[m.group(1).replace("\\", "/")].append(err)
                 continue
 
+            # "Frontend auth field mismatch: src/pages/RegisterPage.jsx POSTs to..."
+            # (validate_route_quality's auth-contract check). None of the patterns
+            # above match a bare src/... path, so without this rule the diagnostic
+            # is silently dropped from errors_by_file every attempt — no fix is ever
+            # dispatched for it and it recurs identically until the fix loop gives up
+            # (seen live: 3 attempts, zero LLM calls against RegisterPage.jsx, same
+            # error each time).
+            m = re.search(r"Frontend auth field mismatch:\s+(\S+\.(?:jsx|js|tsx|ts))", err)
+            if m:
+                errors_by_file[m.group(1).replace("\\", "/")].append(err)
+                continue
+
             m = re.search(r"Missing frontend import target:\s+(\S+)", err)
             if m:
                 imp = m.group(1)

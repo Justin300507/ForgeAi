@@ -24,6 +24,7 @@ Execution order:
 """
 from __future__ import annotations
 
+import re
 import time
 from concurrent.futures import ThreadPoolExecutor, as_completed
 from pathlib import Path
@@ -59,6 +60,7 @@ def _run_static_validators(ctx: GenerationContext) -> VerificationResult:
             severity=_severity_static(err),
             source="static",
             message=err,
+            file_path=_filepath_static(err),
             fix_hint=_hint_static(err),
         )
         for err in validation.get("errors", [])
@@ -963,3 +965,27 @@ def _hint_static(err: str) -> Optional[str]:
     if "syntax error" in e:
         return "Fix Python syntax; check for missing colons, bad indentation"
     return None
+
+
+_STATIC_FILEPATH_RE = re.compile(r"\b((?:app|src)[\\/][\w./\\-]+?\.(?:py|jsx|js|tsx|ts|txt))\b")
+
+
+def _filepath_static(err: str) -> Optional[str]:
+    """
+    Extract an embedded file path from a validate_project() error string.
+
+    Every Diagnostic built from these errors used to leave file_path unset,
+    so the repair grouper (app/repair/grouper.py) saw an empty affected_files
+    list for ALL of them regardless of whether the message actually named a
+    file -- e.g. "Frontend auth field mismatch: src/pages/RegisterPage.jsx
+    POSTs to..." names the exact broken file, but the group still fell back to
+    ungrounded fix context. For a frontend-only diagnostic like that one, the
+    backend-files listing added for ungrounded groups doesn't help either --
+    it nudges the model toward "fixing" an unrelated backend schema instead of
+    the actual named frontend file (observed live: the diagnostic recurred
+    unchanged after the LLM patched app/schemas/user.py instead of
+    RegisterPage.jsx). Grounding the group in the file the message already
+    names fixes both problems at once.
+    """
+    m = _STATIC_FILEPATH_RE.search(err)
+    return m.group(1).replace("\\", "/") if m else None
