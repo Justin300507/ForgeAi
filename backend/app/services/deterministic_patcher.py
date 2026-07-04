@@ -3714,6 +3714,33 @@ def _patch_missing_icon_imports(project_path: Path) -> int:
     return patched
 
 
+def run_frontend_patches(project_path: Path) -> int:
+    """
+    Every frontend-only deterministic patch, in one place.
+
+    This is the single list new frontend patchers get registered in. It's
+    called both from run_deterministic_patches (full generation) and
+    standalone from main.py's _resync_frontend (the "Check & Fix deployed
+    app" frontend resync, which never touches the backend and can't re-run
+    the full pipeline). Those two call sites drifted apart once already:
+    _resync_frontend hardcoded two patcher names directly and silently
+    stopped picking up every frontend patcher added afterward (the
+    hashed_password signup-payload fix and the stale-status fix never
+    reached a live "Check & Fix" resync because of it). Routing both
+    call sites through this one function makes that class of bug
+    structurally impossible going forward.
+    """
+    patched = 0
+    patched += bool(_patch_frontend_package_json(project_path))
+    patched += _patch_missing_icon_imports(project_path)
+    patched += _patch_frontend_auth_field_names(project_path)
+    patched += _patch_frontend_signup_password_key(project_path)
+    patched += _patch_stale_status_on_error(project_path)
+    patched += _patch_hidden_loading_status(project_path)
+    patched += bool(_patch_pagination_component(project_path))
+    return patched
+
+
 def run_deterministic_patches(project_path: str, skip_protected_injections: bool = False) -> int:
     """
     Run all deterministic patches on a generated project.
@@ -3863,36 +3890,11 @@ def run_deterministic_patches(project_path: str, skip_protected_injections: bool
     # POST handlers to return id=None because the ORM object isn't re-bound to the DB row.
     _patch_missing_db_refresh(root)
 
-    # Fix frontend package.json: add any npm packages imported in JSX but missing
-    # from dependencies (e.g. @mui/material → also adds @emotion/react, @emotion/styled)
-    _patch_frontend_package_json(root)
-
-    # Add lucide-react icons used in JSX but never imported (undefined identifier
-    # -> runtime ReferenceError -> blank page; the build stays green).
-    _patch_missing_icon_imports(root)
-
-    # Fix LoginPage/RegisterPage reading the wrong field names off the auth
-    # response (username/id instead of the guaranteed display_name/user_id) --
-    # otherwise the dashboard greeting is stuck on "Hello, User!" forever.
-    _patch_frontend_auth_field_names(root)
-
-    # Fix RegisterPage sending `hashed_password` instead of `password` in the
-    # signup request body -- the backend never receives a password field and
-    # every registration 422s with a bare "Field required".
-    _patch_frontend_signup_password_key(root)
-
-    # Clear the in-flight retry-status message on the real-error path so it
-    # doesn't stay stuck on screen ("Creating account...") next to the error.
-    _patch_stale_status_on_error(root)
-
-    # Hoist retry/wake-up status text above the loading skeleton so users see
-    # "Waking up the server..." instead of a bare gray skeleton with no
-    # explanation during a Render cold start.
-    _patch_hidden_loading_status(root)
-
-    # Normalize Pagination.jsx to a known-good implementation -- LLMs
-    # routinely mis-close its nested-brace JSX and fail the entire Vite build.
-    _patch_pagination_component(root)
+    # All frontend-only fixes live in one bundle (see run_frontend_patches
+    # below) so a standalone frontend resync (main.py's _resync_frontend,
+    # used by "Check & Fix deployed app") can never silently drift out of
+    # sync with this list again.
+    run_frontend_patches(root)
 
     if modified:
         print(f"  [patcher] Patched {modified} file(s) — passlib→bcrypt, async→sync, smart quotes")

@@ -434,17 +434,21 @@ def _resync_frontend(project_path: str, project_name: str, backend_url: str | No
     never triggers a rebuild. This closes that loop using the same
     CloudflareProvider + project slug the original generation deployed with, so
     it updates the existing Pages project in place instead of creating a new one.
+
+    Runs run_frontend_patches() -- the SAME bundle run_deterministic_patches
+    uses during full generation -- instead of naming individual patchers here.
+    This used to hardcode two patcher functions directly and silently stopped
+    picking up newer ones added after (a live registration-form fix never
+    reached a "Check & Fix" resync because of exactly that drift).
     """
     from pathlib import Path
-    from app.services.deterministic_patcher import (
-        _patch_frontend_auth_field_names, _patch_hidden_loading_status,
-    )
+    from app.services.deterministic_patcher import run_frontend_patches
 
     root = Path(project_path)
     if not root.is_dir():
         return {"redeployed": False, "reason": "project files not found on disk"}
 
-    patched = _patch_frontend_auth_field_names(root) + _patch_hidden_loading_status(root)
+    patched = run_frontend_patches(root)
     if not patched:
         return {"redeployed": False, "reason": "no frontend patches needed"}
 
