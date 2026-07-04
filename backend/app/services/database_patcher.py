@@ -808,6 +808,145 @@ def patch_add_missing_model_columns(project_path: str) -> int:
     return len(patched_files) + len(orphan_patched)
 
 
+_CTOR_CALL_RE = re.compile(r"\b(\w+)\(([^()]*(?:\([^()]*\)[^()]*)*)\)")
+
+
+def patch_missing_required_constructor_kwargs(project_path: str) -> int:
+    """
+    A model column can be `nullable=False` with no default, but the route
+    that constructs it never supplies that field -- a distinct bug from
+    patch_add_missing_model_columns (that one handles a field the model has
+    NO column for at all; this one handles a column the model DOES have,
+    that's genuinely required, but the route's constructor call simply
+    forgot to pass it). SQLAlchemy raises IntegrityError/500 on every such
+    request. Seen live: `HabitCompletion.completion_date` is
+    `Column(Date, nullable=False)`, but `complete_habit()`'s
+    `HabitCompletion(habit_id=habit.id, user_id=current_user.id)` never sets
+    it -- POST /habits/{id}/complete 500'd on every call, a core feature
+    (marking a habit done) completely broken in production.
+
+    Scoped to Date/DateTime/Boolean columns only: those have an unambiguous,
+    always-correct default ("this happened right now" / a sensible boolean
+    default). String/Numeric/FK columns are deliberately left alone -- a
+    guessed "" or 0 there is as likely to mask a real, more meaningful bug as
+    to fix one, and FK ids specifically must never be guessed (a wrong id
+    can reference a nonexistent row or silently misattribute data).
+    """
+    project = Path(project_path)
+    models_dir = project / "app" / "models"
+    routes_dir = project / "app" / "routes"
+
+    if not models_dir.exists() or not routes_dir.exists():
+        return 0
+
+    class_re = re.compile(r"^class\s+(\w+)\s*\(", re.MULTILINE)
+    col_re = re.compile(
+        r"^\s{4}(\w+)\s*=\s*Column\(\s*([A-Za-z_][\w.]*)\s*(?:\([^)]*\))?\s*,?([^\n]*)\)\s*$",
+        re.MULTILINE,
+    )
+
+    # ClassName -> {required_field: sql_type}, where "required" means
+    # nullable=False and neither default= nor server_default= appears on
+    # the same Column(...) line.
+    required_by_class: dict[str, dict[str, str]] = {}
+    for mf in models_dir.glob("*.py"):
+        if mf.name == "__init__.py":
+            continue
+        try:
+            src = mf.read_text(encoding="utf-8", errors="replace")
+        except Exception:
+            continue
+        for cls_name in class_re.findall(src):
+            if cls_name in ("Base", "Config", "Meta"):
+                continue
+            start_m = re.search(rf"^class\s+{cls_name}\s*\(", src, re.MULTILINE)
+            if not start_m:
+                continue
+            next_class_m = re.search(r"^class\s+\w+\s*\(", src[start_m.end():], re.MULTILINE)
+            body = src[start_m.end():start_m.end() + next_class_m.start()] if next_class_m else src[start_m.end():]
+
+            for col_m in col_re.finditer(body):
+                field, sql_type, rest = col_m.group(1), col_m.group(2), col_m.group(3)
+                if field == "id" or field.endswith("_id"):
+                    continue
+                if sql_type not in ("Date", "DateTime", "Boolean"):
+                    continue
+                if "nullable=False" not in rest:
+                    continue
+                if "default=" in rest or "server_default=" in rest:
+                    continue
+                required_by_class.setdefault(cls_name, {})[field] = sql_type
+
+    if not required_by_class:
+        return 0
+
+    patched_files = 0
+    for rf in routes_dir.glob("*.py"):
+        try:
+            src = rf.read_text(encoding="utf-8", errors="replace")
+        except Exception:
+            continue
+        original = src
+        needs_date = False
+        needs_datetime = False
+
+        for cls_name, fields in required_by_class.items():
+            if cls_name not in src:
+                continue
+
+            def _inject(m: "re.Match") -> str:
+                nonlocal needs_date, needs_datetime
+                if m.group(1) != cls_name:
+                    return m.group(0)
+                args = m.group(2)
+                additions = []
+                for field, sql_type in fields.items():
+                    # word-boundary check so e.g. "user_id" doesn't match a
+                    # substring inside some other kwarg's value.
+                    if re.search(rf"\b{field}\s*=", args):
+                        continue
+                    if sql_type == "Date":
+                        additions.append(f"{field}=date.today()")
+                        needs_date = True
+                    elif sql_type == "DateTime":
+                        additions.append(f"{field}=datetime.utcnow()")
+                        needs_datetime = True
+                    elif sql_type == "Boolean":
+                        additions.append(f"{field}=False")
+                if not additions:
+                    return m.group(0)
+                new_args = args.rstrip()
+                sep = ", " if new_args and not new_args.endswith(",") else ""
+                return f"{m.group(1)}({new_args}{sep}{', '.join(additions)})"
+
+            src = _CTOR_CALL_RE.sub(_inject, src)
+
+        if src != original:
+            if needs_date and not re.search(r"^from datetime import[^\n]*\bdate\b(?!time)", src, re.MULTILINE):
+                if re.search(r"^from datetime import ([^\n]+)$", src, re.MULTILINE):
+                    src = re.sub(
+                        r"^from datetime import ([^\n]+)$",
+                        lambda m: m.group(0) if re.search(r"\bdate\b", m.group(1)) else f"from datetime import {m.group(1)}, date",
+                        src, count=1, flags=re.MULTILINE,
+                    )
+                else:
+                    src = "from datetime import date\n" + src
+            if needs_datetime and not re.search(r"^from datetime import[^\n]*\bdatetime\b", src, re.MULTILINE):
+                if re.search(r"^from datetime import ([^\n]+)$", src, re.MULTILINE):
+                    src = re.sub(
+                        r"^from datetime import ([^\n]+)$",
+                        lambda m: m.group(0) if re.search(r"\bdatetime\b", m.group(1)) else f"from datetime import {m.group(1)}, datetime",
+                        src, count=1, flags=re.MULTILINE,
+                    )
+                else:
+                    src = "from datetime import datetime\n" + src
+            rf.write_text(src, encoding="utf-8")
+            patched_files += 1
+            print(f"  [field_patcher] Added missing required constructor kwarg(s) in {rf.name}")
+
+    return patched_files
+
+
 # Field-name pattern -> Pydantic annotation (all Optional so a missing input
 # field never becomes a NEW 422 for the client). Same intent as
 # _COLUMN_TYPE_RULES above but scoped to the schema side of this bug class.

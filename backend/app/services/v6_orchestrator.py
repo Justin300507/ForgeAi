@@ -256,7 +256,7 @@ def generate_project_v6(
     run_deterministic_patches(project_path)
     from app.services.database_patcher import (
         patch_database_py, patch_model_field_mismatches, patch_add_missing_model_columns,
-        patch_add_missing_schema_fields,
+        patch_add_missing_schema_fields, patch_missing_required_constructor_kwargs,
     )
     patch_database_py(project_path)
     _n_field_fixes = patch_model_field_mismatches(project_path)
@@ -264,6 +264,7 @@ def generate_project_v6(
         print(f"  [field_patcher] Fixed model-field mismatches in {_n_field_fixes} route file(s)")
     patch_add_missing_model_columns(project_path)
     patch_add_missing_schema_fields(project_path)
+    patch_missing_required_constructor_kwargs(project_path)
     if ensure_app_jsx(project_path):
         print("  [scaffold] Synthesized missing src/App.jsx from existing pages")
 
@@ -693,6 +694,7 @@ def generate_project_v6(
                 patch_model_field_mismatches(project_path)
                 patch_add_missing_model_columns(project_path)
                 patch_add_missing_schema_fields(project_path)
+                patch_missing_required_constructor_kwargs(project_path)
                 # Re-inject database.py — the LLM fix may have overwritten it
                 patch_database_py(project_path)
                 # Delete stale SQLite db + WAL files so the next uvicorn process
@@ -893,12 +895,13 @@ def repair_project(
     run_deterministic_patches(project_path)
     from app.services.database_patcher import (
         patch_database_py, patch_model_field_mismatches, patch_add_missing_model_columns,
-        patch_add_missing_schema_fields,
+        patch_add_missing_schema_fields, patch_missing_required_constructor_kwargs,
     )
     patch_database_py(project_path)
     patch_model_field_mismatches(project_path)
     patch_add_missing_model_columns(project_path)
     patch_add_missing_schema_fields(project_path)
+    patch_missing_required_constructor_kwargs(project_path)
     if ensure_app_jsx(project_path):
         print("  [scaffold] Synthesized missing src/App.jsx from existing pages")
 

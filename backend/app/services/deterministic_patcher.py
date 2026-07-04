@@ -3087,6 +3087,290 @@ def _patch_wire_orphan_routers(project_path: Path) -> None:
         print(f"  [router_patcher] Wired {len(added)} orphan router(s) into main.py: {', '.join(added)}")
 
 
+_LOGIN_PAGE_TEMPLATE = '''\
+import React from 'react';
+import { useNavigate, Link } from 'react-router-dom';
+import API from '../api';
+
+const parseError = (err) => {
+  if (!err.response) return null;
+  const detail = err.response?.data?.detail;
+  if (!detail) return 'Something went wrong. Please try again.';
+  if (typeof detail === 'string') return detail;
+  if (Array.isArray(detail)) return detail.map(d => d.msg).join(', ');
+  return 'Something went wrong. Please try again.';
+};
+
+const sleep = (ms) => new Promise(r => setTimeout(r, ms));
+
+const LoginPage = () => {
+  const [email, setEmail] = React.useState('');
+  const [password, setPassword] = React.useState('');
+  const [loading, setLoading] = React.useState(false);
+  const [error, setError] = React.useState(null);
+  const [status, setStatus] = React.useState(null);
+  const navigate = useNavigate();
+
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    setLoading(true);
+    setError(null);
+    setStatus(null);
+
+    for (let attempt = 1; attempt <= 3; attempt++) {
+      try {
+        setStatus(attempt === 1 ? 'Signing in...' : `Backend starting up... retrying (${attempt}/3)`);
+        const res = await API.post('/auth/login', { email, password });
+        localStorage.setItem('token', res.data.access_token);
+        if (res.data.display_name) localStorage.setItem('display_name', res.data.display_name);
+        navigate('/dashboard');
+        return;
+      } catch (err) {
+        const msg = parseError(err);
+        if (msg) { setError(msg); setStatus(null); setLoading(false); return; }
+        if (attempt < 3) { setStatus(`Backend took too long. Retrying in 15s (${attempt}/3)`); await sleep(15000); }
+      }
+    }
+    setError('Backend took too long to respond. Please wait 30 seconds and try again.');
+    setLoading(false);
+  };
+
+  return (
+    <div className="min-h-screen bg-slate-50 dark:bg-slate-900 flex items-center justify-center p-4 relative overflow-hidden">
+      <div className="fixed inset-0 overflow-hidden pointer-events-none -z-10">
+        <div className="absolute -top-24 -right-24 w-96 h-96 rounded-full bg-gradient-to-br from-indigo-500 to-violet-500 opacity-20 dark:opacity-10 blur-3xl" />
+        <div className="absolute bottom-0 left-1/4 w-72 h-72 rounded-full bg-gradient-to-br from-indigo-500 to-violet-500 opacity-10 dark:opacity-[0.07] blur-3xl" />
+      </div>
+      <div className="w-full max-w-sm">
+        <div className="text-center mb-8">
+          <div className="w-12 h-12 rounded-2xl bg-gradient-to-br from-indigo-500 to-violet-500 mx-auto mb-3 flex items-center justify-center shadow-lg shadow-indigo-500/30">
+            <span className="text-white font-bold text-xl">A</span>
+          </div>
+          <h1 className="text-2xl font-bold text-slate-900 dark:text-white">Welcome back</h1>
+          <p className="text-slate-500 dark:text-slate-400 text-sm mt-1">Sign in to your account</p>
+        </div>
+        <div className="bg-white/80 dark:bg-slate-800/70 backdrop-blur-xl rounded-2xl shadow-sm ring-1 ring-black/5 dark:ring-white/5 border border-slate-100 dark:border-slate-700/60 p-6 space-y-4">
+          {error && <p className="text-sm text-red-600 dark:text-red-400 text-center">{error}</p>}
+          {status && <p className="text-sm text-slate-500 dark:text-slate-400 text-center">{status}</p>}
+          <form onSubmit={handleSubmit} className="space-y-4">
+            <div className="space-y-1">
+              <label className="text-xs font-medium text-slate-700 dark:text-slate-300">Email</label>
+              <input type="email" value={email} onChange={e => setEmail(e.target.value)} placeholder="you@example.com" className="input" required disabled={loading} />
+            </div>
+            <div className="space-y-1">
+              <label className="text-xs font-medium text-slate-700 dark:text-slate-300">Password</label>
+              <input type="password" value={password} onChange={e => setPassword(e.target.value)} placeholder="********" className="input" required disabled={loading} />
+            </div>
+            <button
+              type="submit"
+              disabled={loading || !email || !password}
+              className="w-full justify-center inline-flex items-center gap-1.5 px-4 py-2 rounded-lg text-white font-medium bg-gradient-to-r from-indigo-500 to-violet-500 hover:opacity-90 active:scale-[0.97] shadow-lg shadow-indigo-500/25 transition-all duration-150 disabled:opacity-50 disabled:pointer-events-none"
+            >
+              {loading ? 'Signing in...' : 'Sign In'}
+            </button>
+          </form>
+        </div>
+        <p className="text-center text-sm text-slate-500 mt-4">
+          Don't have an account? <Link to="/register" className="font-medium hover:underline bg-gradient-to-r from-indigo-500 to-violet-500 bg-clip-text text-transparent">Sign up</Link>
+        </p>
+      </div>
+    </div>
+  );
+};
+
+export default LoginPage;
+'''
+
+_REGISTER_PAGE_TEMPLATE = '''\
+import React from 'react';
+import { useNavigate, Link } from 'react-router-dom';
+import API from '../api';
+
+const parseError = (err) => {
+  if (!err.response) return null;
+  const detail = err.response?.data?.detail;
+  if (!detail) return 'Something went wrong. Please try again.';
+  if (typeof detail === 'string') return detail;
+  if (Array.isArray(detail)) return detail.map(d => d.msg).join(', ');
+  return 'Something went wrong. Please try again.';
+};
+
+const sleep = (ms) => new Promise(r => setTimeout(r, ms));
+
+const RegisterPage = () => {
+  const [email, setEmail] = React.useState('');
+  const [password, setPassword] = React.useState('');
+  const [displayName, setDisplayName] = React.useState('');
+  const [loading, setLoading] = React.useState(false);
+  const [error, setError] = React.useState(null);
+  const [status, setStatus] = React.useState(null);
+  const navigate = useNavigate();
+
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    setLoading(true);
+    setError(null);
+    setStatus(null);
+
+    if (password.length < 8) {
+      setError('Password must be at least 8 characters.');
+      setLoading(false);
+      return;
+    }
+
+    for (let attempt = 1; attempt <= 3; attempt++) {
+      try {
+        setStatus(attempt === 1 ? 'Creating account...' : `Backend starting up... retrying (${attempt}/3)`);
+        const res = await API.post('/auth/register', { email, password, display_name: displayName });
+        localStorage.setItem('token', res.data.access_token);
+        if (res.data.display_name) localStorage.setItem('display_name', res.data.display_name);
+        navigate('/dashboard');
+        return;
+      } catch (err) {
+        const msg = parseError(err);
+        if (msg) { setError(msg); setStatus(null); setLoading(false); return; }
+        if (attempt < 3) { setStatus(`Backend took too long. Retrying in 15s (${attempt}/3)`); await sleep(15000); }
+      }
+    }
+    setError('Backend took too long to respond. Please wait 30 seconds and try again.');
+    setLoading(false);
+  };
+
+  return (
+    <div className="min-h-screen bg-slate-50 dark:bg-slate-900 flex items-center justify-center p-4 relative overflow-hidden">
+      <div className="fixed inset-0 overflow-hidden pointer-events-none -z-10">
+        <div className="absolute -top-24 -right-24 w-96 h-96 rounded-full bg-gradient-to-br from-indigo-500 to-violet-500 opacity-20 dark:opacity-10 blur-3xl" />
+        <div className="absolute bottom-0 left-1/4 w-72 h-72 rounded-full bg-gradient-to-br from-indigo-500 to-violet-500 opacity-10 dark:opacity-[0.07] blur-3xl" />
+      </div>
+      <div className="w-full max-w-sm">
+        <div className="text-center mb-8">
+          <div className="w-12 h-12 rounded-2xl bg-gradient-to-br from-indigo-500 to-violet-500 mx-auto mb-3 flex items-center justify-center shadow-lg shadow-indigo-500/30">
+            <span className="text-white font-bold text-xl">A</span>
+          </div>
+          <h1 className="text-2xl font-bold text-slate-900 dark:text-white">Create an account</h1>
+          <p className="text-slate-500 dark:text-slate-400 text-sm mt-1">Get started in seconds</p>
+        </div>
+        <div className="bg-white/80 dark:bg-slate-800/70 backdrop-blur-xl rounded-2xl shadow-sm ring-1 ring-black/5 dark:ring-white/5 border border-slate-100 dark:border-slate-700/60 p-6 space-y-4">
+          {error && <p className="text-sm text-red-600 dark:text-red-400 text-center">{error}</p>}
+          {status && <p className="text-sm text-slate-500 dark:text-slate-400 text-center">{status}</p>}
+          <form onSubmit={handleSubmit} className="space-y-4">
+            <div className="space-y-1">
+              <label className="text-xs font-medium text-slate-700 dark:text-slate-300">Display name</label>
+              <input type="text" value={displayName} onChange={e => setDisplayName(e.target.value)} placeholder="Jane Doe" className="input" required disabled={loading} />
+            </div>
+            <div className="space-y-1">
+              <label className="text-xs font-medium text-slate-700 dark:text-slate-300">Email</label>
+              <input type="email" value={email} onChange={e => setEmail(e.target.value)} placeholder="you@example.com" className="input" required disabled={loading} />
+            </div>
+            <div className="space-y-1">
+              <label className="text-xs font-medium text-slate-700 dark:text-slate-300">Password</label>
+              <input type="password" value={password} onChange={e => setPassword(e.target.value)} placeholder="At least 8 characters" className="input" required disabled={loading} />
+            </div>
+            <button
+              type="submit"
+              disabled={loading || !email || !password || !displayName}
+              className="w-full justify-center inline-flex items-center gap-1.5 px-4 py-2 rounded-lg text-white font-medium bg-gradient-to-r from-indigo-500 to-violet-500 hover:opacity-90 active:scale-[0.97] shadow-lg shadow-indigo-500/25 transition-all duration-150 disabled:opacity-50 disabled:pointer-events-none"
+            >
+              {loading ? 'Creating account...' : 'Sign Up'}
+            </button>
+          </form>
+        </div>
+        <p className="text-center text-sm text-slate-500 mt-4">
+          Already have an account? <Link to="/login" className="font-medium hover:underline bg-gradient-to-r from-indigo-500 to-violet-500 bg-clip-text text-transparent">Sign in</Link>
+        </p>
+      </div>
+    </div>
+  );
+};
+
+export default RegisterPage;
+'''
+
+
+def patch_ensure_auth_pages(project_path: Path) -> int:
+    """
+    App.jsx's PrivateRoute pattern always redirects an unauthenticated user
+    to `<Navigate to="/login">` -- but this is a bare string the LLM has to
+    remember to also back with an actual LoginPage.jsx and `<Route
+    path="/login">`. Seen live: the LLM generated zero auth pages at all
+    (no LoginPage.jsx, no RegisterPage.jsx, no /login route anywhere), so
+    every unauthenticated visit hit PrivateRoute -> Navigate to "/login" ->
+    matched nothing -> fell through to the mandatory wildcard "*" -> Navigate
+    to "/dashboard" -> PrivateRoute -> "/login" again, forever. This is a
+    genuine infinite client-side redirect loop: Chrome's own IPC-flood
+    protection kicked in ("Throttling navigation to prevent the browser from
+    hanging"), the page never rendered anything, and the app was permanently
+    blank for every user with no way to ever log in -- not just an
+    inconvenience, a total-outage bug invisible to every other automated
+    check (compile, CRUD journey, endpoint smoke tests all use a token
+    obtained directly from the API, never by clicking through the UI).
+
+    Synthesizes known-good LoginPage.jsx / RegisterPage.jsx (styled to match
+    the shared index.css/api.js conventions) and wires them directly with
+    NO PrivateRoute wrapper -- deliberately not reusing
+    _patch_wire_orphan_frontend_routes below, which clones an existing
+    authenticated route's wrapper (PrivateRoute) for anything it wires;
+    doing that here would wrap the login page itself in the very auth guard
+    it exists to satisfy, recreating this exact bug.
+    """
+    app_jsx = project_path / "src" / "App.jsx"
+    pages_dir = project_path / "src" / "pages"
+    if not app_jsx.exists() or not pages_dir.exists():
+        return 0
+    try:
+        content = app_jsx.read_text(encoding="utf-8", errors="replace")
+    except Exception:
+        return 0
+
+    # Only apps using the standard token-gated auth pattern need these pages
+    # at all -- if the app never references /login, it's out of scope here.
+    if "/login" not in content:
+        return 0
+
+    login_path = pages_dir / "LoginPage.jsx"
+    register_path = pages_dir / "RegisterPage.jsx"
+
+    added: list[tuple] = []
+    synthesized_login = not login_path.exists()
+    if synthesized_login:
+        login_path.write_text(_LOGIN_PAGE_TEMPLATE, encoding="utf-8")
+        added.append(("LoginPage", "/login"))
+    # _LOGIN_PAGE_TEMPLATE's own "Sign up" link points to /register -- if
+    # we're synthesizing Login from scratch, Register must exist too or the
+    # link is a dead end, regardless of whether the ORIGINAL App.jsx (before
+    # this patch) ever mentioned /register at all.
+    if (synthesized_login or "/register" in content) and not register_path.exists():
+        register_path.write_text(_REGISTER_PAGE_TEMPLATE, encoding="utf-8")
+        added.append(("RegisterPage", "/register"))
+
+    if not added:
+        return 0
+
+    original = content
+    last_import_m = list(re.finditer(r"^import\s+.+$", content, re.MULTILINE))
+    insert_at = last_import_m[-1].end() if last_import_m else 0
+    import_lines = "".join(f"\nimport {name} from './pages/{name}'" for name, _p in added)
+    content = content[:insert_at] + import_lines + content[insert_at:]
+
+    route_lines = "".join(
+        f'\n        <Route path="{p}" element={{<{name} />}} />'
+        for name, p in added
+        if f'path="{p}"' not in content
+    )
+    wildcard_m = re.search(r'\n(\s*)<Route\s+path="\*"', content)
+    if wildcard_m:
+        content = content[:wildcard_m.start()] + route_lines + content[wildcard_m.start():]
+    else:
+        content = content.rstrip() + route_lines + "\n"
+
+    if content != original:
+        app_jsx.write_text(content, encoding="utf-8")
+        print(f"  [patcher] Synthesized missing auth page(s) (no PrivateRoute wrapper) "
+              f"and wired route(s): {', '.join(n for n, _p in added)}")
+
+    return len(added)
+
+
 def _patch_wire_orphan_frontend_routes(project_path: Path) -> None:
     """
     Frontend mirror of _patch_wire_orphan_routers above: App.jsx routinely
@@ -3967,6 +4251,7 @@ def run_frontend_patches(project_path: Path) -> int:
     patched += _patch_stale_status_on_error(project_path)
     patched += _patch_hidden_loading_status(project_path)
     patched += bool(_patch_pagination_component(project_path))
+    patched += patch_ensure_auth_pages(project_path)
     return patched
 
 
@@ -4062,6 +4347,11 @@ def run_deterministic_patches(project_path: str, skip_protected_injections: bool
     # Wire ALL routers into main.py — runs after auth_routes injection so auth_router
     # is already in main.py; this catches every other generated router.
     _patch_wire_orphan_routers(root)
+
+    # Synthesize LoginPage/RegisterPage if App.jsx redirects to /login but
+    # the LLM never generated them -- must run BEFORE the generic orphan
+    # route wirer below, which would otherwise wrap these in PrivateRoute.
+    patch_ensure_auth_pages(root)
 
     # Frontend mirror: wire any page component App.jsx imports but never
     # mounted on a <Route> (see docstring for why this is invisible to
