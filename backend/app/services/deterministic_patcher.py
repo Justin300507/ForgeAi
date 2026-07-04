@@ -3552,6 +3552,48 @@ def _patch_frontend_auth_field_names(project_path: Path) -> int:
     return patched
 
 
+_SIGNUP_HASHED_PW_KEY_RE = re.compile(r"\bhashed_password(\s*:)")
+
+
+def _patch_frontend_signup_password_key(project_path: Path) -> int:
+    """Fix RegisterPage sending `hashed_password` instead of `password`.
+
+    The known-good SignupRequest {email, password, display_name} takes the
+    plaintext password and hashes it server-side -- the client never has a
+    hash to send. LLMs occasionally name the payload key after the backend's
+    storage concept anyway: `API.post('/auth/register', { email,
+    hashed_password: password, display_name })`. The backend then sees no
+    `password` field at all and 422s with a bare "Field required" (no field
+    name surfaced to the user), so every registration hangs on "Creating
+    account..." and then fails. Reproduced live on forge_expense_tracker: the
+    adjacent /auth/login call in the same function correctly used
+    `password: n` for the identical variable, confirming this is a naming
+    slip rather than an intentional different contract.
+    """
+    src_dir = project_path / "src"
+    if not src_dir.exists():
+        return 0
+
+    patched = 0
+    for jf in src_dir.rglob("*.jsx"):
+        try:
+            content = jf.read_text(encoding="utf-8", errors="replace")
+        except Exception:
+            continue
+        if "/auth/register" not in content and "/auth/signup" not in content:
+            continue
+        if "hashed_password" not in content:
+            continue
+
+        new_content = _SIGNUP_HASHED_PW_KEY_RE.sub(r"password\1", content)
+        if new_content != content:
+            jf.write_text(new_content, encoding="utf-8")
+            patched += 1
+            print(f"  [patcher] Fixed signup payload key hashed_password -> password in {jf.name}")
+
+    return patched
+
+
 def _patch_missing_icon_imports(project_path: Path) -> int:
     """Add lucide-react icons that are USED in JSX but never imported.
 
@@ -3783,6 +3825,11 @@ def run_deterministic_patches(project_path: str, skip_protected_injections: bool
     # response (username/id instead of the guaranteed display_name/user_id) --
     # otherwise the dashboard greeting is stuck on "Hello, User!" forever.
     _patch_frontend_auth_field_names(root)
+
+    # Fix RegisterPage sending `hashed_password` instead of `password` in the
+    # signup request body -- the backend never receives a password field and
+    # every registration 422s with a bare "Field required".
+    _patch_frontend_signup_password_key(root)
 
     # Hoist retry/wake-up status text above the loading skeleton so users see
     # "Waking up the server..." instead of a bare gray skeleton with no
