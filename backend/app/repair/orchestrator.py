@@ -212,7 +212,7 @@ def _synthesize_missing_backend_files(
             continue
         error_text = "\n".join(d.message for d in path_diags)
         try:
-            fix = generate_missing_file(rel_path, error_text, provider)
+            fix = generate_missing_file(rel_path, error_text, provider, project_path=str(ctx.project_path))
         except Exception as exc:
             print(f"    [fix] Missing-file synthesis failed for {rel_path}: {exc}")
             continue

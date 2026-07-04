@@ -12,12 +12,14 @@ import json
 def generate_missing_file(
     filepath,
     error,
-    provider="auto"
+    provider="auto",
+    project_path=None
 ):
 
     prompt = build_missing_file_prompt(
         filepath,
-        error
+        error,
+        project_path=project_path
     )
 
     text = generate_content(

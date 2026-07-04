@@ -288,7 +288,7 @@ def generate_runtime_fix(
             print(f"Missing internal module {module} — generating file {missing_path}")
             try:
                 from app.services.missing_file_service import generate_missing_file
-                fix = generate_missing_file(missing_path, parsed_error, provider)
+                fix = generate_missing_file(missing_path, parsed_error, provider, project_path=project_path)
                 if fix and fix.get("path") and fix.get("content"):
                     return fix
             except Exception as mfe:

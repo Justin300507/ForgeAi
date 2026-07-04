@@ -506,7 +506,7 @@ def generate_project(idea: str, provider: str = "auto", use_tournament: bool = F
                 if not os.path.exists(absolute_path):
                     print(f"Generating Missing File: {filepath}")
                     fix = generate_missing_file(
-                        filepath, "\n".join(file_errors), provider
+                        filepath, "\n".join(file_errors), provider, project_path=project_path
                     )
                     if fix and fix.get("content"):
                         # Ensure the generated path is safe before writing

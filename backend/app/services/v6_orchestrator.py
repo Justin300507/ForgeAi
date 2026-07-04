@@ -456,7 +456,7 @@ def generate_project_v6(
                             )
                         print("  [patcher] Generated minimal seed_routes.py stub")
                         continue
-                    fix = generate_missing_file(filepath, "\n".join(file_errors), provider)
+                    fix = generate_missing_file(filepath, "\n".join(file_errors), provider, project_path=project_path)
                     _llm["repairs"] += 1
                     if fix and fix.get("content"):
                         fix["path"] = _sanitize_path(fix["path"])
@@ -964,7 +964,7 @@ def repair_project(
                     _patch_wire_orphan_routers(Path(project_path))
                     continue
                 if not os.path.exists(abs_path):
-                    fix = generate_missing_file(filepath, "\n".join(file_errors), provider)
+                    fix = generate_missing_file(filepath, "\n".join(file_errors), provider, project_path=project_path)
                     if fix and fix.get("content"):
                         fix["path"] = _sanitize_path(fix["path"])
                         write_fix(project_path, fix)
