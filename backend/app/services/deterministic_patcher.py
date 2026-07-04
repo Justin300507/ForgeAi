@@ -175,12 +175,43 @@ def _build_model_index(models_dir: Path) -> dict:
 def _inject_relationship_property(content: str, owning_class: str, attr: str,
                                   target: str, model_index: dict) -> str:
     """Insert a @property named `attr` into `owning_class` that returns the
-    related rows via the object's session (empty list if unresolvable)."""
+    related row(s) via the object's session (empty list / None if unresolvable).
+
+    Two distinct relationship directions, and getting this backwards is worse
+    than not injecting anything:
+
+    - Many-to-one ("belongs to"): the OWNING model itself holds the FK column
+      pointing at the target's table (e.g. Budget.category_id -> categories.id).
+      Must check this FIRST. The target has no FK back to the owner in this
+      direction, so the one-to-many branch below finds nothing and silently
+      degrades to an always-empty list -- for a field like `budget.category`
+      that a response schema types as a single object/str, serializing `[]`
+      against it is a 500 on every request that returns a non-null row
+      (reproduced live: Budget.category stripped from a relationship() and
+      re-injected as a list-returning property, crashing GET /budgets and
+      POST /budgets the moment any budget exists).
+    - One-to-many: the TARGET model holds the FK back to the owning table
+      (e.g. HabitCompletion.habit_id -> habits.id, for Habit.completions).
+    """
     my_table = model_index.get(owning_class, {}).get("table")
     tgt = model_index.get(target)
+    tgt_table = tgt.get("table") if tgt else None
+    owning_fks = model_index.get(owning_class, {}).get("fks", {})
+    own_fk_col = owning_fks.get(tgt_table) if tgt_table else None
     fk_col = tgt["fks"].get(my_table) if (tgt and my_table) else None
 
-    if tgt and fk_col:
+    if tgt and own_fk_col:
+        body = (
+            f"    @property\n"
+            f"    def {attr}(self):\n"
+            f"        from sqlalchemy import inspect as _sa_inspect\n"
+            f"        _sess = _sa_inspect(self).session\n"
+            f"        if _sess is None or self.{own_fk_col} is None:\n"
+            f"            return None\n"
+            f"        from app.models.{tgt['module']} import {target}\n"
+            f"        return _sess.query({target}).get(self.{own_fk_col})\n"
+        )
+    elif tgt and fk_col:
         body = (
             f"    @property\n"
             f"    def {attr}(self):\n"
