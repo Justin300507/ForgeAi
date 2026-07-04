@@ -53,7 +53,25 @@ def _strip_ansi(text: str) -> str:
 def _parse_vite_errors(stderr: str, stdout: str) -> list[str]:
     """Extract human-readable build errors from vite/esbuild output."""
     combined = _strip_ansi(stderr + "\n" + stdout)
+    lines = combined.splitlines()
     errors = []
+
+    # Vite's own marker, printed once right before the actual thrown error
+    # (type, message, and usually a "file: /abs/path.jsx:12:5" location) --
+    # authoritative when present, so grab this block FIRST and return early
+    # rather than falling through to the generic per-line matchers below,
+    # which have no pattern for a raw internal Rollup crash (a bare
+    # TypeError/Error with no ".jsx:N:N:" or "Cannot find module" wording at
+    # all -- just N frames of Rollup's own dist/*.js call stack). Missing
+    # this meant such a crash produced an EMPTY error list here, silently
+    # falling back to the caller's tail[-5:] fallback, which for a deep
+    # stack trace is nothing but Rollup's own internal frames -- zero
+    # information about which of the project's actual files is broken.
+    for i, raw in enumerate(lines):
+        if raw.strip() == "error during build:":
+            block = [l for l in lines[i + 1:i + 16] if l.strip()]
+            if block:
+                return ["error during build: " + " | ".join(block)]
 
     for line in combined.splitlines():
         line = line.strip()
@@ -260,9 +278,25 @@ class FrontendRunner:
                               "the build machine is memory-constrained; this is an "
                               "environment issue, not a code bug"]
                 else:
-                    tail = _strip_ansi((build.stderr or build.stdout or "")).strip().splitlines()
+                    # Prefer the HEAD over the tail: vite/rollup print the
+                    # actual error type, message, and (usually) a
+                    # "file: /abs/path.jsx:N:N" location near the TOP of the
+                    # output, then dump a long internal stack trace
+                    # underneath. For a deep internal crash (no line matched
+                    # any pattern in _parse_vite_errors) the LAST 5 lines are
+                    # guaranteed to be nothing but Rollup's own dist/*.js
+                    # call frames -- no reference to any file in the actual
+                    # project at all, so the fix-loop LLM had nothing to
+                    # ground a patch in and guessed at unrelated files
+                    # instead (confirmed live: a build failure that never
+                    # once mentioned a real project file got "fixed" by
+                    # scaffolding stub pages that were never the problem,
+                    # and the identical build error persisted unchanged
+                    # across every subsequent attempt).
+                    all_lines = [l for l in _strip_ansi((build.stderr or build.stdout or "")).strip().splitlines() if l.strip()]
+                    head = all_lines[:10]
                     errors = [f"vite build failed (exit {build.returncode}): "
-                              + " | ".join(tail[-5:])]
+                              + " | ".join(head)]
             print(f"Frontend build FAILED in {build_time}s — {len(errors)} errors")
             return FrontendBuildResult(
                 success=False,
