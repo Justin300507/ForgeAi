@@ -401,8 +401,33 @@ API.interceptors.request.use(cfg => {{
   if (token) cfg.headers.Authorization = `Bearer ${{token}}`;
   return cfg;
 }});
+// A 401 from any endpoint OTHER than login/register means the stored token
+// is stale or invalid (expired, or the backend's JWT secret rotated on a
+// redeploy) -- not a validation error the current page should render. Clear
+// it and hard-redirect to /login instead of letting every page's error
+// parser show a raw "Could not validate credentials" string. Returning a
+// never-resolving promise (not Promise.reject) stops the calling page from
+// flashing a broken error state while the redirect is already in flight.
+API.interceptors.response.use(
+  res => res,
+  err => {{
+    const url = err.config?.url || '';
+    const isAuthAttempt = url.includes('/auth/login') || url.includes('/auth/register');
+    if (err.response?.status === 401 && !isAuthAttempt) {{
+      localStorage.removeItem('token');
+      if (!window.location.pathname.startsWith('/login')) {{
+        window.location.href = '/login';
+      }}
+      return new Promise(() => {{}});
+    }}
+    return Promise.reject(err);
+  }}
+);
 export default API;
 ```
+Every page still needs its own `parseError`/try-catch for its OWN endpoint's real
+validation errors (422s, 404s, etc.) — this interceptor only intercepts the
+"stale session" 401 case so it never reaches page-level error rendering.
 
 ERROR HANDLING — always use these helpers in auth pages:
 ```jsx

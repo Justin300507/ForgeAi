@@ -653,6 +653,104 @@ def patch_add_missing_model_columns(project_path: str) -> int:
                         continue
                     missing_by_class.setdefault(cls_name, set()).add(field)
 
+    # A required (no-default) field on a *Create*/*Update* input schema that
+    # has no corresponding model column 422s on every single request unless
+    # the frontend happens to collect and send it -- and even then the value
+    # is silently dropped by the `{k: v for k, v in ... if k in columns}`
+    # filter routes use to build the ORM object, so it can never persist
+    # anyway. Seen live: HabitCreate required `start_date: date` with no
+    # `start_date` column on Habit and no frontend field for it -- every
+    # POST /habits 422'd with "Field required" and habit creation was
+    # completely broken. Skip password/token-like fields: those are
+    # legitimately required-but-columnless (hashed/exchanged and stored
+    # under a different name by the route, e.g. `password` -> `hashed_password`).
+    _ORPHAN_FIELD_SKIP_RE = re.compile(r"password|token", re.IGNORECASE)
+    orphan_patched = set()
+    if schemas_dir.exists():
+        for sf in schemas_dir.glob("*.py"):
+            if sf.name == "__init__.py":
+                continue
+            try:
+                src = sf.read_text(encoding="utf-8", errors="replace")
+                tree = _ast.parse(src)
+            except Exception:
+                continue
+
+            lines = src.split("\n")
+            changed = False
+
+            for node in tree.body:
+                if not isinstance(node, _ast.ClassDef):
+                    continue
+                if not (node.name.endswith("Create") or node.name.endswith("Update")):
+                    continue
+
+                cls_name = next(
+                    (m for m in model_info if node.name.lower().startswith(m.lower())),
+                    None,
+                )
+                if not cls_name:
+                    continue
+                _mf, valid_cols = model_info[cls_name]
+
+                for child in node.body:
+                    if not isinstance(child, _ast.AnnAssign):
+                        continue
+                    if not isinstance(child.target, _ast.Name):
+                        continue
+                    field = child.target.id
+                    if field in valid_cols or field == "id":
+                        continue
+                    if _ORPHAN_FIELD_SKIP_RE.search(field):
+                        continue
+                    if _is_optional_annotation(child.annotation):
+                        continue
+
+                    if child.value is not None:
+                        # Has `= something`: only a bare Field(...) call with
+                        # no default= kwarg is still required. A plain
+                        # literal default or a Field(..., default=...) means
+                        # the field already has a fallback -- leave it alone.
+                        if isinstance(child.value, _ast.Call):
+                            has_default_kw = any(
+                                kw.arg == "default" for kw in child.value.keywords
+                            )
+                            if has_default_kw:
+                                continue
+                        else:
+                            continue
+
+                    lineno = child.lineno - 1
+                    line = lines[lineno]
+                    fm = re.match(r'^(\s*)(\w+)\s*:\s*([^\n=#]+?)\s*(=.*)?$', line)
+                    if not fm:
+                        continue
+                    indent, fname, ftype, _rest = fm.groups()
+                    ftype = ftype.strip()
+                    if ftype.startswith("Optional") or ftype.startswith("ClassVar"):
+                        continue
+                    lines[lineno] = f"{indent}{fname}: Optional[{ftype}] = None"
+                    changed = True
+
+            if changed:
+                new_src = "\n".join(lines)
+                already_imported = bool(
+                    re.search(r"^from typing import[^\n]*\bOptional\b", src, re.MULTILINE)
+                )
+                if not already_imported:
+                    import_m2 = re.search(r"^from typing import ([^\n]+)$", new_src, re.MULTILINE)
+                    if import_m2:
+                        new_src = (
+                            new_src[:import_m2.start(1)]
+                            + import_m2.group(1).rstrip() + ", Optional"
+                            + new_src[import_m2.end(1):]
+                        )
+                    else:
+                        new_src = "from typing import Optional\n" + new_src
+                sf.write_text(new_src, encoding="utf-8")
+                orphan_patched.add(sf.name)
+                print(f"  [field_patcher] Made orphan required Create/Update field(s) Optional in {sf.name}")
+
     patched_files = set()
 
     for cls_name, fields in missing_by_class.items():
@@ -707,7 +805,7 @@ def patch_add_missing_model_columns(project_path: str) -> int:
             patched_files.add(mf.name)
             print(f"  [field_patcher] Added missing column(s) {sorted(fields)} to {cls_name} in {mf.name}")
 
-    return len(patched_files)
+    return len(patched_files) + len(orphan_patched)
 
 
 # Field-name pattern -> Pydantic annotation (all Optional so a missing input
