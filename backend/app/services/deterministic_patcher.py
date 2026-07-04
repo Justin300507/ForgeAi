@@ -2218,8 +2218,22 @@ def _patch_star_dict_extra_fields(project_path: Path) -> int:
                 extra_args = m.group(3)  # everything after dict() up to the closing )
                 if cls_name not in orm_classes:
                     return m.group(0)
+                # Explicit trailing kwargs (e.g. `, user_id=current_user.id`) must
+                # also be excluded from the filtered dict -- if the schema itself
+                # has a same-named field accepted as client input (a common
+                # MassAssignment gap: HabitCreate exposing `user_id`/`id` as
+                # optional), Python raises "got multiple values for keyword
+                # argument" when both the unpacked dict and the explicit kwarg
+                # supply it. Reproduced live: POST /habits 500'd on every request
+                # because HabitCreate.user_id passed the column-name filter and
+                # collided with the route's own `user_id=current_user.id`.
+                explicit_kwargs = sorted(set(re.findall(r'(?:^|,)\s*(\w+)\s*=', extra_args)))
+                exclude_clause = ""
+                if explicit_kwargs:
+                    exclude_set = "{" + ", ".join(f"'{k}'" for k in explicit_kwargs) + "}"
+                    exclude_clause = f" and k not in {exclude_set}"
                 # Build filtered dict, preserve any extra kwargs
-                filtered = f"{{k: v for k, v in {schema_var}.dict().items() if k in {cls_name}.__table__.columns.keys()}}"
+                filtered = f"{{k: v for k, v in {schema_var}.dict().items() if k in {cls_name}.__table__.columns.keys(){exclude_clause}}}"
                 if extra_args.strip().strip(",").strip():
                     return f"{cls_name}(**{filtered}{extra_args})"
                 return f"{cls_name}(**{filtered})"
@@ -2231,6 +2245,62 @@ def _patch_star_dict_extra_fields(project_path: Path) -> int:
                 print(f"  [patcher] Filtered **schema.dict() kwargs in {rf.name}")
         except Exception:
             pass
+    return patched
+
+
+_FILTERED_CTOR_KWARG_COLLISION_RE = re.compile(
+    r'\b([A-Z]\w+)\(\*\*\{k: v for k, v in (\w+)\.(?:dict|model_dump)\(\)\.items\(\)'
+    r' if k in \1\.__table__\.columns\.keys\(\)\}((?:[^)]*)?)\)',
+)
+
+
+def _patch_filtered_ctor_kwarg_collision(project_path: Path) -> int:
+    """
+    Fix an already-generated `Model(**{k: v for ... if k in Model.__table__.
+    columns.keys()}, some_kwarg=value)` call that's missing the "and k not in
+    {...}" exclusion _patch_star_dict_extra_fields now adds for any trailing
+    explicit kwarg.
+
+    Without it, if the schema also accepts a same-named field as client input
+    (HabitCreate exposing `user_id` as optional -- a MassAssignment gap flagged
+    by security review but never auto-fixed), the unpacked dict AND the
+    explicit kwarg both supply that name and Python raises "got multiple
+    values for keyword argument". Reproduced live: POST /habits 500'd on
+    every single request for exactly this reason, and the pipeline's own
+    runtime-fix loop failed to resolve it before giving up, shipping the app
+    at "deploy ready" with a completely broken create flow.
+    """
+    routes_dir = project_path / "app" / "routes"
+    if not routes_dir.exists():
+        return 0
+
+    patched = 0
+    for rf in routes_dir.glob("*.py"):
+        try:
+            content = rf.read_text(encoding="utf-8", errors="replace")
+        except Exception:
+            continue
+        if "__table__.columns.keys()" not in content:
+            continue
+
+        def _fix(m: re.Match) -> str:
+            cls_name, schema_var, extra_args = m.group(1), m.group(2), m.group(3)
+            explicit_kwargs = sorted(set(re.findall(r'(?:^|,)\s*(\w+)\s*=', extra_args)))
+            if not explicit_kwargs:
+                return m.group(0)
+            exclude_set = "{" + ", ".join(f"'{k}'" for k in explicit_kwargs) + "}"
+            filtered = (
+                f"{{k: v for k, v in {schema_var}.dict().items() "
+                f"if k in {cls_name}.__table__.columns.keys() and k not in {exclude_set}}}"
+            )
+            return f"{cls_name}(**{filtered}{extra_args})"
+
+        new_content = _FILTERED_CTOR_KWARG_COLLISION_RE.sub(_fix, content)
+        if new_content != content:
+            rf.write_text(new_content, encoding="utf-8")
+            patched += 1
+            print(f"  [patcher] Fixed constructor kwarg collision in {rf.name}")
+
     return patched
 
 
@@ -4030,6 +4100,12 @@ def run_deterministic_patches(project_path: str, skip_protected_injections: bool
     # hasattr(Model, k) form -- passes a read-only @property through and
     # raises AttributeError: property 'x' has no setter on every create request.
     _patch_unsafe_model_hasattr_filter(root)
+
+    # Fix an already-filtered constructor call missing the exclusion for a
+    # trailing kwarg that collides with a same-named schema field (e.g.
+    # HabitCreate.user_id vs the route's own user_id=current_user.id) --
+    # "got multiple values for keyword argument" on every create request.
+    _patch_filtered_ctor_kwarg_collision(root)
 
     # Fix attribute accesses (e.g. user.username when model only has email).
     # The field_patcher fixes constructor calls; this fixes dict literals and returns.
