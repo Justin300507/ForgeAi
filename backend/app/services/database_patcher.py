@@ -965,6 +965,95 @@ def patch_missing_required_constructor_kwargs(project_path: str) -> int:
     return patched_files
 
 
+_DICT_UNPACK_CTOR_RE = re.compile(r"\b(\w+)\(((?:[^()]|\([^()]*\))*)\)")
+_BARE_DICT_UNPACK_RE = re.compile(r"\*\*(\w+)\b")
+
+
+def patch_filter_dict_unpack_constructor_kwargs(project_path: str) -> int:
+    """
+    `Model(**some_dict)` crashes with `TypeError: 'x' is an invalid keyword
+    argument for Model` the moment `some_dict` has ANY key the model has no
+    column for -- and unlike a literal `Model(field=value, ...)` call (which
+    patch_add_missing_model_columns can see and fix), a bare `**varname`
+    unpack gives the regex-based scanners nothing to inspect: the offending
+    key lives inside a dict/list-of-dicts literal defined elsewhere (often
+    several lines away, e.g. a demo-data list a `for` loop iterates over),
+    not in the call itself.
+
+    Seen live: seed_routes.py's `habits_to_seed` demo list included a
+    `"description"` key for a `Habit` model that has no `description`
+    column at all; `Habit(user_id=user.id, **habit_data)` TypeErrored on
+    every single seed attempt (POST /seed 500, invisible to every other
+    check since nothing else calls it). Rather than trying to statically
+    trace the dict literal's keys back through the loop (fragile, and seed
+    data is throwaway demo content anyway -- dropping an extra invented
+    field loses nothing), this rewrites the unpack itself to filter against
+    the model's real columns at call time: exactly the same
+    `{k: v for k, v in x.items() if k in Model.__table__.columns.keys()}`
+    idiom this codebase's own prompts already teach for schema-to-model
+    construction (e.g. create_habit's `habit_in.dict()` filtering) --
+    applied here to a bare dict/loop-variable unpack instead of a Pydantic
+    schema's `.dict()`.
+
+    Only rewrites a BARE `**varname` (a simple identifier) -- an unpack
+    that's already a comprehension/filtered expression doesn't match this
+    regex at all (`**{k: v for ...}` starts with `**{`, not `**` followed by
+    a plain identifier), so this is naturally idempotent and never
+    double-wraps an existing filter.
+    """
+    project = Path(project_path)
+    models_dir = project / "app" / "models"
+    routes_dir = project / "app" / "routes"
+
+    if not models_dir.exists() or not routes_dir.exists():
+        return 0
+
+    class_re = re.compile(r"^class\s+(\w+)\s*\(", re.MULTILINE)
+    model_class_names: set = set()
+    for mf in models_dir.glob("*.py"):
+        if mf.name == "__init__.py":
+            continue
+        try:
+            src = mf.read_text(encoding="utf-8", errors="replace")
+        except Exception:
+            continue
+        model_class_names.update(n for n in class_re.findall(src) if n not in ("Base", "Config", "Meta"))
+
+    if not model_class_names:
+        return 0
+
+    patched = 0
+    for rf in routes_dir.glob("*.py"):
+        try:
+            src = rf.read_text(encoding="utf-8", errors="replace")
+        except Exception:
+            continue
+        original = src
+
+        def _fix_call(m: "re.Match") -> str:
+            cls_name, args = m.group(1), m.group(2)
+            if cls_name not in model_class_names:
+                return m.group(0)
+
+            def _repl_unpack(um: "re.Match") -> str:
+                varname = um.group(1)
+                return (f"**{{k: v for k, v in {varname}.items() "
+                        f"if k in {cls_name}.__table__.columns.keys()}}")
+
+            new_args, n = _BARE_DICT_UNPACK_RE.subn(_repl_unpack, args)
+            if n == 0:
+                return m.group(0)
+            return f"{cls_name}({new_args})"
+
+        src = _DICT_UNPACK_CTOR_RE.sub(_fix_call, src)
+        if src != original:
+            rf.write_text(src, encoding="utf-8")
+            patched += 1
+            print(f"  [field_patcher] Filtered dict-unpack constructor kwargs in {rf.name}")
+
+    return patched
+
+
 # Field-name pattern -> Pydantic annotation (all Optional so a missing input
 # field never becomes a NEW 422 for the client). Same intent as
 # _COLUMN_TYPE_RULES above but scoped to the schema side of this bug class.

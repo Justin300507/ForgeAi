@@ -416,6 +416,7 @@ class V15Pipeline:
             from app.services.database_patcher import (
                 patch_database_py, patch_model_field_mismatches, patch_add_missing_model_columns,
                 patch_add_missing_schema_fields, patch_missing_required_constructor_kwargs,
+                patch_filter_dict_unpack_constructor_kwargs,
             )
             run_deterministic_patches(str(ctx.project_path))
             patch_database_py(str(ctx.project_path))
@@ -423,6 +424,7 @@ class V15Pipeline:
             patch_add_missing_model_columns(str(ctx.project_path))
             patch_add_missing_schema_fields(str(ctx.project_path))
             patch_missing_required_constructor_kwargs(str(ctx.project_path))
+            patch_filter_dict_unpack_constructor_kwargs(str(ctx.project_path))
             # Preflight registry: deterministic fixes that don't need LLM
             from app.repair.preflight import preflight
             preflight.run(ctx.project_path)

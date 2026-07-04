@@ -1141,6 +1141,117 @@ def _patch_param_order(project_path: Path) -> int:
     return patched
 
 
+_ROUTE_DECORATOR_RE = re.compile(
+    r'@\w+\.(get|post|put|delete|patch)\(\s*["\']([^"\']+)["\']'
+)
+
+
+def _route_shadows(earlier_path: str, later_path: str) -> bool:
+    """
+    True if a request meant for `later_path` would actually match
+    `earlier_path` first, purely from FastAPI/Starlette's first-registered-
+    wins routing: same segment count, every literal segment identical, and
+    at least one segment where `earlier_path` has a `{param}` exactly where
+    `later_path` has a literal value.
+    """
+    e = [s for s in earlier_path.split("/") if s]
+    l = [s for s in later_path.split("/") if s]
+    if len(e) != len(l):
+        return False
+    has_param_vs_literal = False
+    for es, ls in zip(e, l):
+        if es == ls:
+            continue
+        e_is_param = es.startswith("{") and es.endswith("}")
+        l_is_param = ls.startswith("{") and ls.endswith("}")
+        if e_is_param and not l_is_param:
+            has_param_vs_literal = True
+            continue
+        return False
+    return has_param_vs_literal
+
+
+def patch_reorder_shadowed_static_routes(project_path: str) -> int:
+    """
+    A static sub-route registered AFTER a parameterized route with the same
+    shape is permanently unreachable: FastAPI/Starlette try routes in
+    registration order and the first match wins, so `@habit_router.get(
+    "/habits/{habit_id}")` registered before `@habit_router.get(
+    "/habits/streaks")` swallows every request for /habits/streaks --
+    "streaks" just becomes the string value of habit_id, and the real
+    handler never runs. This is a common, easy-to-miss ordering mistake:
+    generated route files are usually written CRUD-first (list, get-by-id,
+    create, update, delete) with "special" collection-level sub-routes
+    (streaks, search, export, summary, ...) appended at the end, which is
+    exactly the wrong order. Seen live: GET /habits/streaks 422'd with
+    "unable to parse 'streaks' as an integer" -- the {habit_id} route
+    caught it first and tried to parse the literal path segment as an int.
+
+    Fix: move each shadowed static route's whole decorated function block to
+    just before the parameterized route that was swallowing it, preserving
+    everything else's relative order.
+    """
+    project = Path(project_path)
+    routes_dir = project / "app" / "routes"
+    if not routes_dir.exists():
+        return 0
+
+    patched = 0
+    for rf in routes_dir.glob("*.py"):
+        try:
+            src = rf.read_text(encoding="utf-8", errors="replace")
+        except Exception:
+            continue
+
+        route_starts = [m.start() for m in re.finditer(r'^@\w+\.(?:get|post|put|delete|patch)\(', src, re.MULTILINE)]
+        if len(route_starts) < 2:
+            continue
+        route_starts.append(len(src))
+
+        blocks = []
+        for i in range(len(route_starts) - 1):
+            block_src = src[route_starts[i]:route_starts[i + 1]]
+            dm = _ROUTE_DECORATOR_RE.search(block_src)
+            if dm:
+                blocks.append({"src": block_src, "method": dm.group(1), "path": dm.group(2)})
+            else:
+                blocks.append({"src": block_src, "method": None, "path": None})
+
+        moved: set = set()
+        reordered = list(range(len(blocks)))
+        changed = False
+        renamed: list[str] = []
+        for j in range(len(blocks)):
+            if blocks[j]["path"] is None or j in moved:
+                continue
+            for i in range(j):
+                if i in moved or blocks[i]["path"] is None:
+                    continue
+                if blocks[i]["method"] != blocks[j]["method"]:
+                    continue
+                if _route_shadows(blocks[i]["path"], blocks[j]["path"]):
+                    reordered.remove(j)
+                    insert_at = reordered.index(i)
+                    reordered.insert(insert_at, j)
+                    moved.add(j)
+                    changed = True
+                    renamed.append(f"{blocks[j]['method'].upper()} {blocks[j]['path']}")
+                    break
+
+        if not changed:
+            continue
+
+        new_body = "\n\n\n".join(blocks[k]["src"].rstrip() for k in reordered) + "\n"
+        new_src = src[:route_starts[0]] + new_body
+        if new_src != src:
+            rf.write_text(new_src, encoding="utf-8")
+            patched += 1
+            print(f"  [route_patcher] Reordered shadowed static route(s) in {rf.name}: "
+                  f"{', '.join(renamed[:6])}")
+
+    return patched
+
+
 # ── 8b. Router name fixer (router → {resource}_router) ────────────────────────
 # LLM often writes `router = APIRouter()` instead of `task_router = APIRouter()`
 # The router_export_validator rejects this.  We fix it deterministically.
@@ -4342,6 +4453,11 @@ def run_deterministic_patches(project_path: str, skip_protected_injections: bool
 
     # Parameter ordering: Path(...) before body param → SyntaxError → reorder
     _patch_param_order(root)
+
+    # A static sub-route (e.g. /habits/streaks) registered after a
+    # same-shaped parameterized route (/habits/{habit_id}) is permanently
+    # unreachable -- the parameterized one matches first and "swallows" it.
+    patch_reorder_shadowed_static_routes(root)
 
     # Auth utils / routes: inject known-good templates on initial generation.
     # skip_protected_injections=True when called after Architecture Repair — the repair's
