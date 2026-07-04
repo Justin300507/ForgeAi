@@ -825,12 +825,17 @@ def patch_missing_required_constructor_kwargs(project_path: str) -> int:
     it -- POST /habits/{id}/complete 500'd on every call, a core feature
     (marking a habit done) completely broken in production.
 
-    Scoped to Date/DateTime/Boolean columns only: those have an unambiguous,
-    always-correct default ("this happened right now" / a sensible boolean
-    default). String/Numeric/FK columns are deliberately left alone -- a
-    guessed "" or 0 there is as likely to mask a real, more meaningful bug as
-    to fix one, and FK ids specifically must never be guessed (a wrong id
-    can reference a nonexistent row or silently misattribute data).
+    Scoped to Date/DateTime/Boolean columns, plus one narrow String case:
+    a "password hash" family column (see _PASSWORD_HASH_FIELD_RE) that has a
+    SIBLING password-hash column already being set in the same constructor
+    call -- that sibling's value is reused verbatim, never guessed. This
+    covers a common code-gen smell where a model ends up with two redundant
+    password-hash columns (e.g. `password_hash` and `hashed_password`) and a
+    route only populates one of them. Any other String/Numeric/FK column is
+    deliberately left alone -- a guessed "" or 0 there is as likely to mask a
+    real, more meaningful bug as to fix one, and FK ids specifically must
+    never be guessed (a wrong id can reference a nonexistent row or silently
+    misattribute data).
     """
     project = Path(project_path)
     models_dir = project / "app" / "models"
@@ -844,6 +849,7 @@ def patch_missing_required_constructor_kwargs(project_path: str) -> int:
         r"^\s{4}(\w+)\s*=\s*Column\(\s*([A-Za-z_][\w.]*)\s*(?:\([^)]*\))?\s*,?([^\n]*)\)\s*$",
         re.MULTILINE,
     )
+    password_hash_re = re.compile(r"^(password_hash|hashed_password|pwd_hash|pass_hash)$", re.IGNORECASE)
 
     # ClassName -> {required_field: sql_type}, where "required" means
     # nullable=False and neither default= nor server_default= appears on
@@ -869,7 +875,8 @@ def patch_missing_required_constructor_kwargs(project_path: str) -> int:
                 field, sql_type, rest = col_m.group(1), col_m.group(2), col_m.group(3)
                 if field == "id" or field.endswith("_id"):
                     continue
-                if sql_type not in ("Date", "DateTime", "Boolean"):
+                is_password_hash_field = sql_type == "String" and password_hash_re.match(field)
+                if sql_type not in ("Date", "DateTime", "Boolean") and not is_password_hash_field:
                     continue
                 if "nullable=False" not in rest:
                     continue
@@ -913,6 +920,17 @@ def patch_missing_required_constructor_kwargs(project_path: str) -> int:
                         needs_datetime = True
                     elif sql_type == "Boolean":
                         additions.append(f"{field}=False")
+                    elif sql_type == "String" and password_hash_re.match(field):
+                        # Only fill this in if a SIBLING password-hash kwarg
+                        # is already set in this exact call -- reuse its
+                        # value expression verbatim, never a guessed string.
+                        sibling_m = re.search(
+                            r"\b(password_hash|hashed_password|pwd_hash|pass_hash)\s*=\s*"
+                            r"([^,\)]+(?:\([^()]*\)[^,\)]*)*)",
+                            args, re.IGNORECASE,
+                        )
+                        if sibling_m and sibling_m.group(1).lower() != field.lower():
+                            additions.append(f"{field}={sibling_m.group(2).strip()}")
                 if not additions:
                     return m.group(0)
                 new_args = args.rstrip()

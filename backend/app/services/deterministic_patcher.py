@@ -3632,6 +3632,7 @@ def _patch_schema_nullable_required_mismatch(project_path: Path) -> int:
 
 
 _DT_COLUMN_TYPES = {"DateTime": "datetime", "Date": "date", "Time": "time"}
+_DT_TYPE_NAMES = frozenset(_DT_COLUMN_TYPES.values()) | {"str"}
 
 
 def _patch_response_schema_id_and_datetimes(project_path: Path) -> int:
@@ -3643,10 +3644,23 @@ def _patch_response_schema_id_and_datetimes(project_path: Path) -> int:
        CRUD journey can't capture an entity_id, and edit/delete/persistence
        all fail ("201 id=None"). Inject `id: Optional[int] = None`.
 
-    2. A schema field annotated str/Optional[str] whose model column is
-       DateTime/Date/Time — the ORM hands pydantic a datetime object, raising
-       ResponseValidationError (500) on every row returned. Retype to the
-       real datetime type (pydantic still accepts ISO strings on input).
+    2. A schema field whose annotation names the WRONG member of the
+       str/date/datetime/time family for what the model column actually is —
+       the ORM hands pydantic a value of the real column type, raising
+       ResponseValidationError (500) on every row returned. Originally this
+       only handled str/Optional[str] (the LLM using a bare string for a
+       timestamp field), but the identical crash happens when the schema
+       says `date` and the column is `DateTime`: pydantic refuses to
+       silently truncate a datetime with a non-midnight time component into
+       a date ("date_from_datetime_inexact"). Seen live: `created_at`/
+       `updated_at` typed `Optional[date]` against a real `DateTime` column
+       500'd on every POST/GET — the runtime-fix LLM "fixed" it by mutating
+       `habit.created_at = habit.created_at.date()` on every read instead of
+       just retyping the schema, which is fragile (that mutated value could
+       get written back on a later commit in the same session) and only
+       covered the routes it happened to touch. Retype to the column's real
+       type — pydantic still accepts ISO strings on input either way, so
+       this never breaks a client that was sending strings.
     """
     import ast as _ast
     from app.services.schema_model_validator import _collect_response_model_schemas
@@ -3733,12 +3747,11 @@ def _patch_response_schema_id_and_datetimes(project_path: Path) -> int:
                 if not py_dt or child.lineno != child.end_lineno:
                     continue
                 ann = _ast.get_source_segment(src, child.annotation) or ""
-                if ann == "str":
-                    new_ann = py_dt
-                elif ann == "Optional[str]":
-                    new_ann = f"Optional[{py_dt}]"
-                else:
+                is_optional = ann.startswith("Optional[") and ann.endswith("]")
+                inner = ann[len("Optional["):-1] if is_optional else ann
+                if inner not in _DT_TYPE_NAMES or inner == py_dt:
                     continue
+                new_ann = f"Optional[{py_dt}]" if is_optional else py_dt
                 i = child.lineno - 1
                 lines[i] = lines[i].replace(f": {ann}", f": {new_ann}", 1)
                 need_dt.add(py_dt)
