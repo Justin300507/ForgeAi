@@ -555,25 +555,35 @@ def run_user_journey(
             else:
                 enriched_payload[field_name] = "journey-test"
 
-        # Try enriched payload first, then minimal — stop immediately on 5xx
-        last_r = None
-        for payload in (enriched_payload, base_payload):
-            last_r = requests.post(entity_url, json=payload, headers=headers, timeout=5)
-            if last_r.status_code in (200, 201):
-                try:
-                    data = last_r.json()
-                    entity_id = data.get("id") or (data[0].get("id") if isinstance(data, list) else None)
-                except Exception:
-                    pass
-                return True, f"{last_r.status_code} id={entity_id}"
-            if last_r.status_code >= 500:
-                # 5xx can corrupt SQLite — don't retry, report the error code
-                return False, f"{last_r.status_code} (server error)"
-            if last_r.status_code == 401:
-                # Auth required and we don't have a token — skip CRUD cleanly
-                return False, "401 (auth required, no valid token)"
+        # Send the enriched (schema-aware) payload. Do NOT also try the bare
+        # base_payload afterwards — it is a strict subset of enriched_payload
+        # (missing every field the schema introspection discovered) and is
+        # guaranteed to 422 on any entity with real required fields, so a
+        # second attempt with it can only ever overwrite a potentially-useful
+        # response with a strictly worse, less-diagnostic one. This used to
+        # be a `for payload in (enriched_payload, base_payload)` loop that
+        # fell through to base_payload on ANY non-2xx/5xx/401 status (i.e.
+        # every 422), so `last_r` ended up holding base_payload's response —
+        # and the targeted 422-fix block below built its `targeted` dict from
+        # enriched_payload but diagnosed it against base_payload's error
+        # detail, which already listed those same fields as "missing" and so
+        # never actually changed anything or re-sent enriched_payload itself.
+        last_r = requests.post(entity_url, json=enriched_payload, headers=headers, timeout=5)
+        if last_r.status_code in (200, 201):
+            try:
+                data = last_r.json()
+                entity_id = data.get("id") or (data[0].get("id") if isinstance(data, list) else None)
+            except Exception:
+                pass
+            return True, f"{last_r.status_code} id={entity_id}"
+        if last_r.status_code >= 500:
+            # 5xx can corrupt SQLite — don't retry, report the error code
+            return False, f"{last_r.status_code} (server error)"
+        if last_r.status_code == 401:
+            # Auth required and we don't have a token — skip CRUD cleanly
+            return False, "401 (auth required, no valid token)"
 
-        # Attempt 3: parse 422 detail to build a targeted payload fixing specific errors
+        # Attempt 2: parse 422 detail to build a targeted payload fixing specific errors
         if last_r is not None and last_r.status_code == 422:
             _422_detail = "?"
             try:

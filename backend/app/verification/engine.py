@@ -62,6 +62,10 @@ def _run_static_validators(ctx: GenerationContext) -> VerificationResult:
             message=err,
             file_path=_filepath_static(err),
             fix_hint=_hint_static(err),
+            metadata=(
+                {"extra_file_paths": efp}
+                if (efp := _extra_filepaths_static(err)) else {}
+            ),
         )
         for err in validation.get("errors", [])
     ] + [
@@ -989,3 +993,33 @@ def _filepath_static(err: str) -> Optional[str]:
     """
     m = _STATIC_FILEPATH_RE.search(err)
     return m.group(1).replace("\\", "/") if m else None
+
+
+def _extra_filepaths_static(err: str) -> list[str]:
+    """
+    Return every embedded file path in `err` BEYOND the first (which
+    `_filepath_static` already captures as the diagnostic's primary
+    file_path).
+
+    A message like "Duplicate class definition: 'UserUpdate' is defined in
+    multiple files (app/schemas/user.py, app/routes/user_routes.py)" names
+    TWO files, but `_filepath_static`'s `.search()` only grabs the first —
+    the repair grouper then groups this diagnostic under file_path alone
+    and `_build_fix_prompt` only ever shows the LLM app/schemas/user.py's
+    content. The LLM dutifully edits that file every fix round, but the
+    actual duplicate copy living in app/routes/user_routes.py is never in
+    its context to remove, so the identical diagnostic recurs unchanged
+    across every fix attempt. Callers stash this list on
+    Diagnostic.metadata["extra_file_paths"] so the grouper can fold them
+    into affected_files alongside the primary file_path.
+    """
+    paths = _STATIC_FILEPATH_RE.findall(err)
+    seen = set()
+    extra = []
+    for p in paths:
+        norm = p.replace("\\", "/")
+        if norm in seen:
+            continue
+        seen.add(norm)
+        extra.append(norm)
+    return extra[1:]

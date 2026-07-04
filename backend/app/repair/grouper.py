@@ -172,7 +172,17 @@ def group_diagnostics(
             continue
         seen_ids.update(d.error_id for d in diags)
 
-        affected = list({d.file_path for d in diags if d.file_path})
+        # Some diagnostics (e.g. "Duplicate class definition ... in multiple
+        # files (a.py, b.py)") name a SECOND file the fix must also see —
+        # stashed in metadata since Diagnostic.file_path only holds one path.
+        # Without folding these in, the LLM fix prompt only ever includes
+        # the first-named file, patches it every round, and the diagnostic
+        # recurs unchanged since the actual duplicate/other half of the
+        # problem in the second file is never in its context.
+        affected_set = {d.file_path for d in diags if d.file_path}
+        for d in diags:
+            affected_set.update(d.metadata.get("extra_file_paths", []))
+        affected = list(affected_set)
         strategy = _strategy_for_group(diags)
         root     = _root_cause_summary(diags)
 
