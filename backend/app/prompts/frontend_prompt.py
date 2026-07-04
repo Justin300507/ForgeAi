@@ -65,13 +65,16 @@ FILE RULES
 DESIGN SYSTEM  (use these patterns exactly)
 ═══════════════════════════════════════════════════════
 
-COLOR PALETTE (Tailwind classes):
+COLOR PALETTE (Tailwind classes — these are the NEUTRAL/structural colors only:
+backgrounds, surfaces, borders, body text. They are the same in every app
+regardless of category. For BRAND/accent colors — sidebar, primary buttons,
+active nav, icon badges, gradients — use ONLY the tokens in the
+APP-SPECIFIC DESIGN SYSTEM section above, never indigo-600 as a default):
   Backgrounds:  bg-slate-50  dark:bg-slate-900
   Surfaces:     bg-white  dark:bg-slate-800
   Borders:      border-slate-100  dark:border-slate-700
   Text primary: text-slate-900  dark:text-slate-100
   Text muted:   text-slate-500  dark:text-slate-400
-  Accent:       bg-indigo-600 hover:bg-indigo-700  text-indigo-600
 
 ═══════════════════════════════════════════════════════
 VISUAL POLISH — mandatory, this is what separates "plain" from premium
@@ -115,74 +118,46 @@ not a shipped product. Apply ALL of these across every page:
   than the badge would suggest (e.g. 18px icon in a 36px badge, not a 24px
   icon cramped into the same box) — breathing room reads as more refined.
 
-SIDEBAR LAYOUT (use for ALL authenticated pages):
+SIDEBAR LAYOUT + NAV LINK PATTERN (use for ALL authenticated pages):
+Use the EXAMPLE SIDEBAR code block from the APP-SPECIFIC DESIGN SYSTEM section
+above verbatim (gradient sidebar, gradient active nav pill, gradient brand
+text) — do not fall back to a flat white/indigo sidebar, that is the generic
+look this app must NOT have. The overall shell shape is:
 ```jsx
 <div className="flex min-h-screen bg-slate-50 dark:bg-slate-900">
-  {{/* Sidebar */}}
-  <aside className="w-56 bg-white dark:bg-slate-800 border-r border-slate-100 dark:border-slate-700 flex flex-col px-3 py-4 fixed h-full">
-    <div className="flex items-center gap-2 px-2 mb-6">
-      <div className="w-7 h-7 rounded-lg bg-indigo-600 flex items-center justify-center">
-        <span className="text-white text-sm font-bold">A</span>
-      </div>
-      <span className="font-bold text-slate-900 dark:text-white text-sm">AppName</span>
-    </div>
-    <nav className="flex-1 space-y-0.5">
-      <NavLink to="/dashboard" ... />
-    </nav>
-  </aside>
+  {{/* Ambient background blobs from the design system above go here, as the
+     first child of this div */}}
+  {{/* Sidebar — use the EXAMPLE SIDEBAR block from the design system above */}}
+  <aside>...</aside>
   {{/* Main */}}
-  <main className="ml-56 flex-1 p-6 overflow-auto">
+  <main className="ml-56 flex-1 p-6 overflow-auto relative z-0">
     ...page content...
   </main>
 </div>
 ```
+The nav-link ternary shown in the design system's EXAMPLE SIDEBAR (a plain
+named `navClass` function, never an inline template literal in `className`) is
+mandatory — inlining `${{isActive ? ...}}` directly in the className attribute
+is the #1 cause of "Expected '}}' but found isActive" build failures.
 
-NAV LINK PATTERN:
-Define navClass as a plain named function returning ONE of two full class
-strings via a simple ternary. Do NOT inline a template literal with a nested
-`${{isActive ? ...}}` inside the className attribute — that brace nesting is the
-#1 cause of "Expected '}}' but found isActive" build failures. The className
-attribute must contain nothing but the identifier: `className={{navClass}}`.
-```jsx
-import {{ NavLink }} from 'react-router-dom';
-// Define ONCE inside the component, before the return statement:
-const navClass = ({{ isActive }}) =>
-  isActive
-    ? 'flex items-center gap-2.5 px-3 py-2 rounded-lg text-sm font-medium transition-colors bg-indigo-50 dark:bg-indigo-900/40 text-indigo-700 dark:text-indigo-300'
-    : 'flex items-center gap-2.5 px-3 py-2 rounded-lg text-sm font-medium transition-colors text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-700';
-
-<NavLink to="/path" className={{navClass}}>
-  <Icon size={{16}} /> Label
-</NavLink>
-```
-
-STAT CARD (gradient icon badge, hover lift, tight-tracking number):
-```jsx
-<div className="card p-5 hover:shadow-md hover:-translate-y-0.5 transition-all duration-200">
-  <div className="flex items-center justify-between">
-    <p className="text-xs font-medium text-slate-500 dark:text-slate-400 uppercase tracking-wide">Total Expenses</p>
-    <div className="w-9 h-9 rounded-lg bg-gradient-to-br from-indigo-50 to-indigo-100 dark:from-indigo-900/40 dark:to-indigo-900/20 flex items-center justify-center">
-      <Wallet className="text-indigo-600 dark:text-indigo-400" size={{18}} />
-    </div>
-  </div>
-  <p className="text-2xl font-bold tracking-tight text-slate-900 dark:text-white mt-3">$1,240</p>
-  <p className="text-xs text-emerald-600 dark:text-emerald-400 mt-1 flex items-center gap-1">
-    <TrendingUp size={{12}} /> +8.2% vs last month
-  </p>
-</div>
-```
+STAT CARD — use the EXAMPLE STAT CARD block from the APP-SPECIFIC DESIGN
+SYSTEM section above (glass-lite surface, category gradient icon badge,
+hover lift, tight-tracking number). Do not substitute a flat indigo badge.
 
 LIST ITEM CARD (clickable → lift on hover, gradient badge, staggered entrance):
+Use the SAME `stat_icon_bg` / `stat_icon_color` tokens from the design system
+above for the icon badge — never a hardcoded indigo badge here either.
 ```jsx
 {{items.map((item, index) => (
   <div
     key={{item.id}}
     style={{{{ animationDelay: `${{index * 40}}ms` }}}}
-    className="animate-[fadeIn_0.3s_ease-out] card p-4 flex items-center justify-between hover:shadow-md hover:-translate-y-0.5 transition-all duration-200 cursor-pointer"
+    className="animate-[fadeIn_0.3s_ease-out] bg-white/80 dark:bg-slate-800/70 backdrop-blur-xl rounded-xl border border-slate-100 dark:border-slate-700/60 ring-1 ring-black/5 dark:ring-white/5 p-4 flex items-center justify-between hover:shadow-md hover:-translate-y-0.5 transition-all duration-200 cursor-pointer"
   >
     <div className="flex items-center gap-3">
-      <div className="w-9 h-9 rounded-lg bg-gradient-to-br from-indigo-50 to-indigo-100 dark:from-indigo-900/40 dark:to-indigo-900/20 flex items-center justify-center">
-        <ShoppingCart className="text-indigo-600 dark:text-indigo-400" size={{18}} />
+      {{/* icon badge: use this app's stat_icon_bg / stat_icon_color tokens from the design system above */}}
+      <div className="w-9 h-9 rounded-lg flex items-center justify-center">
+        <ShoppingCart size={{18}} />
       </div>
       <div>
         <p className="text-sm font-semibold text-slate-900 dark:text-white">{{item.title}}</p>
@@ -194,13 +169,21 @@ LIST ITEM CARD (clickable → lift on hover, gradient badge, staggered entrance)
 ))}}
 ```
 
-PRIMARY BUTTON (press feedback):
+PRIMARY BUTTON — the app's main brand CTA (Add/Create/Save) uses the
+category gradient from the design system above, NOT the generic `.btn-primary`
+utility class (that class is a neutral fallback for secondary/incidental
+buttons only — a flat single-color primary button is exactly the "plain"
+look this app must avoid):
 ```jsx
-<button className="btn-primary flex items-center gap-1.5">
+<button className="inline-flex items-center gap-1.5 px-4 py-2 rounded-lg text-white font-medium bg-gradient-to-r {{gradient}} hover:opacity-90 active:scale-[0.97] shadow-lg shadow-{{primary_name}}-500/25 transition-all duration-150">
   <Plus size={{16}} /> Add Item
 </button>
 ```
-(`.btn-primary` already includes `active:scale-[0.97]` press feedback via index.css — do not add a conflicting scale/transition override on top of it.)
+Replace `{{gradient}}` / `{{primary_name}}` with this app's actual tokens from
+the design system above (e.g. `from-emerald-500 to-teal-500` / `emerald`) —
+these are placeholders here, not literal Tailwind classes to copy verbatim.
+Secondary/neutral actions (Cancel, Back, icon-only toolbar buttons) may still
+use the `.btn-secondary` / `.btn-primary` utility classes from index.css.
 
 FORM INPUT:
 ```jsx
@@ -227,27 +210,38 @@ BADGE:
 PAGE REQUIREMENTS
 ═══════════════════════════════════════════════════════
 
-LOGIN PAGE (no sidebar — centered card):
+LOGIN PAGE (no sidebar — centered card, first screen the user ever sees, so
+it must NOT be a flat white card with a flat indigo logo. Use this app's
+gradient tokens from the design system above, plus the same ambient
+background blobs, for the logo badge / link color / submit button):
 ```jsx
-<div className="min-h-screen bg-slate-50 dark:bg-slate-900 flex items-center justify-center p-4">
+<div className="min-h-screen bg-slate-50 dark:bg-slate-900 flex items-center justify-center p-4 relative overflow-hidden">
+  {{/* Ambient background blobs — same technique as the design system above */}}
+  <div className="fixed inset-0 overflow-hidden pointer-events-none -z-10">
+    <div className="absolute -top-24 -right-24 w-96 h-96 rounded-full bg-gradient-to-br {{gradient}} opacity-20 dark:opacity-10 blur-3xl" />
+    <div className="absolute bottom-0 left-1/4 w-72 h-72 rounded-full bg-gradient-to-br {{gradient}} opacity-10 dark:opacity-[0.07] blur-3xl" />
+  </div>
   <div className="w-full max-w-sm">
     <div className="text-center mb-8">
-      <div className="w-12 h-12 rounded-2xl bg-indigo-600 mx-auto mb-3 flex items-center justify-center">
+      <div className="w-12 h-12 rounded-2xl bg-gradient-to-br {{gradient}} mx-auto mb-3 flex items-center justify-center shadow-lg shadow-{{primary_name}}-500/30">
         <span className="text-white font-bold text-xl">A</span>
       </div>
       <h1 className="text-2xl font-bold text-slate-900 dark:text-white">Welcome back</h1>
       <p className="text-slate-500 dark:text-slate-400 text-sm mt-1">Sign in to your account</p>
     </div>
-    <div className="bg-white dark:bg-slate-800 rounded-2xl shadow-sm border border-slate-100 dark:border-slate-700 p-6 space-y-4">
+    <div className="bg-white/80 dark:bg-slate-800/70 backdrop-blur-xl rounded-2xl shadow-sm ring-1 ring-black/5 dark:ring-white/5 border border-slate-100 dark:border-slate-700/60 p-6 space-y-4">
       {{/* email input, password input, submit button */}}
-      <button type="submit" className="btn-primary w-full justify-center">Sign In</button>
+      <button type="submit" className="w-full justify-center inline-flex items-center gap-1.5 px-4 py-2 rounded-lg text-white font-medium bg-gradient-to-r {{gradient}} hover:opacity-90 active:scale-[0.97] shadow-lg shadow-{{primary_name}}-500/25 transition-all duration-150">Sign In</button>
     </div>
     <p className="text-center text-sm text-slate-500 mt-4">
-      Don't have an account? <Link to="/register" className="text-indigo-600 font-medium hover:underline">Sign up</Link>
+      Don't have an account? <Link to="/register" className="font-medium hover:underline bg-gradient-to-r {{gradient}} bg-clip-text text-transparent">Sign up</Link>
     </p>
   </div>
 </div>
 ```
+`{{gradient}}` / `{{primary_name}}` are placeholders — substitute this app's
+actual tokens from the design system above, same as the primary button rule.
+The Register page follows the identical pattern.
 
 DASHBOARD PAGE — MUST include ALL of:
   1. Page header with greeting + current date
@@ -369,7 +363,9 @@ Import only what you use:
            ShoppingCart, Calendar, Bell, Settings, LogOut, X,
            CheckCircle, AlertCircle, Clock, BarChart2 }} from 'lucide-react';
 
-Use as JSX: <LayoutDashboard size={{18}} className="text-indigo-600" />
+Use as JSX: <LayoutDashboard size={{18}} className="text-slate-500 dark:text-slate-400" />
+(inside a category-colored icon badge, use this app's `stat_icon_color` token
+from the design system above instead of a neutral color)
 Default size: 16 for nav, 18 for list icons, 20 for page headings
 
 ═══════════════════════════════════════════════════════
@@ -461,7 +457,8 @@ for (let attempt = 1; attempt <= 3; attempt++) {{
 setError('Backend took too long. Wait 30 seconds then try again.');
 setLoading(false);
 ```
-Show `status` text in indigo below the form while retrying.
+Show `status` text in a neutral muted color (`text-slate-500 dark:text-slate-400`)
+below the form while retrying.
 
 DASHBOARD/PROTECTED-PAGE DATA FETCHES ALSO NEED THIS RETRY — not just login.
 Render's free tier puts the backend to sleep after ~15 minutes idle; EVERY

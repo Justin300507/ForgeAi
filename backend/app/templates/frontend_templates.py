@@ -149,16 +149,16 @@ INDEX_CSS = """@tailwind base;
 
 @layer components {
   .card {
-    @apply bg-white dark:bg-slate-800 rounded-xl shadow-sm ring-1 ring-black/5 dark:ring-white/5 border border-slate-100 dark:border-slate-700 transition-shadow duration-200;
+    @apply bg-white/80 dark:bg-slate-800/70 backdrop-blur-xl rounded-xl shadow-sm ring-1 ring-black/5 dark:ring-white/5 border border-slate-100 dark:border-slate-700/60 transition-shadow duration-200;
   }
   .btn-primary {
-    @apply bg-indigo-600 hover:bg-indigo-700 active:scale-[0.97] text-white font-medium px-4 py-2 rounded-lg transition-all duration-150 cursor-pointer;
+    @apply bg-gradient-to-r from-slate-800 to-slate-700 hover:from-slate-700 hover:to-slate-600 dark:from-slate-600 dark:to-slate-500 dark:hover:from-slate-500 dark:hover:to-slate-400 active:scale-[0.97] text-white font-medium px-4 py-2 rounded-lg transition-all duration-150 cursor-pointer;
   }
   .btn-secondary {
     @apply bg-slate-100 hover:bg-slate-200 active:scale-[0.97] dark:bg-slate-700 dark:hover:bg-slate-600 text-slate-700 dark:text-slate-200 font-medium px-4 py-2 rounded-lg transition-all duration-150 cursor-pointer;
   }
   .input {
-    @apply w-full border border-slate-200 dark:border-slate-600 bg-white dark:bg-slate-800 text-slate-900 dark:text-slate-100 rounded-lg px-3 py-2 text-sm transition-shadow duration-150 focus:outline-none focus:ring-2 focus:ring-indigo-500;
+    @apply w-full border border-slate-200 dark:border-slate-600 bg-white/90 dark:bg-slate-800/90 text-slate-900 dark:text-slate-100 rounded-lg px-3 py-2 text-sm transition-shadow duration-150 focus:outline-none focus:ring-2 focus:ring-slate-400 dark:focus:ring-slate-500;
   }
   .badge {
     @apply inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium;

@@ -13,10 +13,10 @@ CATEGORIES: dict[str, dict] = {
         "primary":  "#f97316",
         "primary_dark": "#ea580c",
         "gradient": "from-orange-500 to-amber-500",
-        "sidebar": "bg-orange-950",
+        "sidebar": "bg-gradient-to-b from-slate-950 via-slate-950 to-orange-950",
         "sidebar_text": "text-orange-100",
-        "sidebar_active": "bg-orange-800 text-white",
-        "sidebar_idle": "text-orange-300 hover:bg-orange-900 hover:text-white",
+        "sidebar_active": "bg-gradient-to-r from-orange-500 to-amber-500 text-white shadow-lg shadow-orange-500/30",
+        "sidebar_idle": "text-orange-200/70 hover:bg-white/5 hover:text-white",
         "stat_icon_bg": "bg-gradient-to-br from-orange-50 to-orange-100 dark:from-orange-900/40 dark:to-orange-900/20",
         "stat_icon_color": "text-orange-600 dark:text-orange-400",
         "accent_badge": "bg-orange-50 text-orange-700",
@@ -32,10 +32,10 @@ CATEGORIES: dict[str, dict] = {
         "primary":  "#10b981",
         "primary_dark": "#059669",
         "gradient": "from-emerald-500 to-teal-500",
-        "sidebar": "bg-emerald-950",
+        "sidebar": "bg-gradient-to-b from-slate-950 via-slate-950 to-emerald-950",
         "sidebar_text": "text-emerald-100",
-        "sidebar_active": "bg-emerald-800 text-white",
-        "sidebar_idle": "text-emerald-300 hover:bg-emerald-900 hover:text-white",
+        "sidebar_active": "bg-gradient-to-r from-emerald-500 to-teal-500 text-white shadow-lg shadow-emerald-500/30",
+        "sidebar_idle": "text-emerald-200/70 hover:bg-white/5 hover:text-white",
         "stat_icon_bg": "bg-gradient-to-br from-emerald-50 to-emerald-100 dark:from-emerald-900/40 dark:to-emerald-900/20",
         "stat_icon_color": "text-emerald-600 dark:text-emerald-400",
         "accent_badge": "bg-emerald-50 text-emerald-700",
@@ -52,10 +52,10 @@ CATEGORIES: dict[str, dict] = {
         "primary":  "#6366f1",
         "primary_dark": "#4f46e5",
         "gradient": "from-indigo-500 to-violet-500",
-        "sidebar": "bg-slate-900",
+        "sidebar": "bg-gradient-to-b from-slate-950 via-slate-900 to-indigo-950",
         "sidebar_text": "text-slate-200",
-        "sidebar_active": "bg-indigo-600 text-white",
-        "sidebar_idle": "text-slate-400 hover:bg-slate-800 hover:text-white",
+        "sidebar_active": "bg-gradient-to-r from-indigo-500 to-violet-500 text-white shadow-lg shadow-indigo-500/30",
+        "sidebar_idle": "text-slate-400 hover:bg-white/5 hover:text-white",
         "stat_icon_bg": "bg-gradient-to-br from-indigo-50 to-indigo-100 dark:from-indigo-900/40 dark:to-indigo-900/20",
         "stat_icon_color": "text-indigo-600 dark:text-indigo-400",
         "accent_badge": "bg-indigo-50 text-indigo-700",
@@ -72,10 +72,10 @@ CATEGORIES: dict[str, dict] = {
         "primary":  "#a855f7",
         "primary_dark": "#9333ea",
         "gradient": "from-purple-500 to-pink-500",
-        "sidebar": "bg-purple-950",
+        "sidebar": "bg-gradient-to-b from-slate-950 via-slate-950 to-purple-950",
         "sidebar_text": "text-purple-100",
-        "sidebar_active": "bg-purple-800 text-white",
-        "sidebar_idle": "text-purple-300 hover:bg-purple-900 hover:text-white",
+        "sidebar_active": "bg-gradient-to-r from-purple-500 to-pink-500 text-white shadow-lg shadow-purple-500/30",
+        "sidebar_idle": "text-purple-200/70 hover:bg-white/5 hover:text-white",
         "stat_icon_bg": "bg-gradient-to-br from-purple-50 to-purple-100 dark:from-purple-900/40 dark:to-purple-900/20",
         "stat_icon_color": "text-purple-600 dark:text-purple-400",
         "accent_badge": "bg-purple-50 text-purple-700",
@@ -92,10 +92,10 @@ CATEGORIES: dict[str, dict] = {
         "primary":  "#0ea5e9",
         "primary_dark": "#0284c7",
         "gradient": "from-sky-500 to-cyan-500",
-        "sidebar": "bg-sky-950",
+        "sidebar": "bg-gradient-to-b from-slate-950 via-slate-950 to-sky-950",
         "sidebar_text": "text-sky-100",
-        "sidebar_active": "bg-sky-700 text-white",
-        "sidebar_idle": "text-sky-300 hover:bg-sky-900 hover:text-white",
+        "sidebar_active": "bg-gradient-to-r from-sky-500 to-cyan-500 text-white shadow-lg shadow-sky-500/30",
+        "sidebar_idle": "text-sky-200/70 hover:bg-white/5 hover:text-white",
         "stat_icon_bg": "bg-gradient-to-br from-sky-50 to-sky-100 dark:from-sky-900/40 dark:to-sky-900/20",
         "stat_icon_color": "text-sky-600 dark:text-sky-400",
         "accent_badge": "bg-sky-50 text-sky-700",
@@ -112,10 +112,10 @@ CATEGORIES: dict[str, dict] = {
         "primary":  "#14b8a6",
         "primary_dark": "#0d9488",
         "gradient": "from-teal-500 to-emerald-500",
-        "sidebar": "bg-teal-950",
+        "sidebar": "bg-gradient-to-b from-slate-950 via-slate-950 to-teal-950",
         "sidebar_text": "text-teal-100",
-        "sidebar_active": "bg-teal-700 text-white",
-        "sidebar_idle": "text-teal-300 hover:bg-teal-900 hover:text-white",
+        "sidebar_active": "bg-gradient-to-r from-teal-500 to-emerald-500 text-white shadow-lg shadow-teal-500/30",
+        "sidebar_idle": "text-teal-200/70 hover:bg-white/5 hover:text-white",
         "stat_icon_bg": "bg-gradient-to-br from-teal-50 to-teal-100 dark:from-teal-900/40 dark:to-teal-900/20",
         "stat_icon_color": "text-teal-600 dark:text-teal-400",
         "accent_badge": "bg-teal-50 text-teal-700",
@@ -132,10 +132,10 @@ CATEGORIES: dict[str, dict] = {
         "primary":  "#f43f5e",
         "primary_dark": "#e11d48",
         "gradient": "from-rose-500 to-pink-500",
-        "sidebar": "bg-rose-950",
+        "sidebar": "bg-gradient-to-b from-slate-950 via-slate-950 to-rose-950",
         "sidebar_text": "text-rose-100",
-        "sidebar_active": "bg-rose-700 text-white",
-        "sidebar_idle": "text-rose-300 hover:bg-rose-900 hover:text-white",
+        "sidebar_active": "bg-gradient-to-r from-rose-500 to-pink-500 text-white shadow-lg shadow-rose-500/30",
+        "sidebar_idle": "text-rose-200/70 hover:bg-white/5 hover:text-white",
         "stat_icon_bg": "bg-gradient-to-br from-rose-50 to-rose-100 dark:from-rose-900/40 dark:to-rose-900/20",
         "stat_icon_color": "text-rose-600 dark:text-rose-400",
         "accent_badge": "bg-rose-50 text-rose-700",
@@ -184,14 +184,18 @@ APP-SPECIFIC DESIGN SYSTEM  ← apply these EXACTLY
 
 Category detected: {ds['label']}
 
-PRIMARY COLOR  (replace all indigo-600 references with {ds['primary_name']}-600):
+This is the ONLY color system for this app. Every hardcoded example elsewhere
+in this prompt that mentions "indigo" is a NEUTRAL PLACEHOLDER — substitute
+the tokens below wherever you see it. Do not leave any indigo-* class in the
+generated code unless {ds['primary_name']} literally IS indigo.
+
   Sidebar background:    {ds['sidebar']} {ds['sidebar_text']}
   Active nav link:       {ds['sidebar_active']}
   Idle nav link:         {ds['sidebar_idle']}
   Stat icon background:  {ds['stat_icon_bg']}
   Stat icon color:       {ds['stat_icon_color']}
   Badge:                 {ds['accent_badge']}
-  Button primary:        bg-{ds['primary_name']}-600 hover:bg-{ds['primary_name']}-700 text-white
+  Button primary:        bg-gradient-to-r {ds['gradient']} hover:opacity-90 text-white shadow-lg shadow-{ds['primary_name']}-500/25
   Chart stroke:          {ds['chart_color']}
   Chart gradient top:    {ds['primary']}  opacity 0.15
   Chart gradient bottom: {ds['chart_gradient_stop']}  opacity 0
@@ -200,8 +204,30 @@ ICON VOCABULARY  (import from lucide-react, use these icons throughout):
   {icons_str}
   — Use thematically appropriate icons from this list on every card, nav item, and button.
 
-TAILWIND GRADIENT (use on the sidebar logo/brand area or hero header):
+TAILWIND GRADIENT (use on the sidebar logo/brand area, primary buttons, hero header, and ambient background blobs):
   className="bg-gradient-to-br {ds['gradient']} ..."
+
+GRADIENT BRAND TEXT (use for the app name in the sidebar/logo — a flat solid
+color there is the #1 thing that makes a generated app look like a generic
+template):
+```jsx
+<span className="font-bold text-lg bg-gradient-to-r {ds['gradient']} bg-clip-text text-transparent">
+  AppName
+</span>
+```
+
+AMBIENT BACKGROUND (mandatory on the authenticated app shell — this is what
+makes the app feel alive instead of a flat wireframe. Two blurred, low-opacity
+gradient blobs, fixed so they don't scroll, placed BEHIND the content with
+negative z-index. Purely decorative — do not let them intercept clicks):
+```jsx
+<div className="fixed inset-0 overflow-hidden pointer-events-none -z-10">
+  <div className="absolute -top-24 -right-24 w-96 h-96 rounded-full bg-gradient-to-br {ds['gradient']} opacity-20 dark:opacity-10 blur-3xl" />
+  <div className="absolute bottom-0 left-1/4 w-72 h-72 rounded-full bg-gradient-to-br {ds['gradient']} opacity-10 dark:opacity-[0.07] blur-3xl" />
+</div>
+```
+Place this as the FIRST child inside the outermost app-shell div (the one with
+`min-h-screen`), a sibling of the sidebar/main, not nested inside `<main>`.
 
 EXAMPLE SIDEBAR (complete — adapt nav links to your pages):
 IMPORTANT: define navClass as a plain named function that returns ONE of two
@@ -213,15 +239,15 @@ failures. `className={{navClass}}` must contain nothing but the identifier.
 // Define ONCE inside the component, before the return statement:
 const navClass = ({{ isActive }}) =>
   isActive
-    ? 'flex items-center gap-2.5 px-3 py-2 rounded-lg text-sm font-medium transition-colors {ds['sidebar_active']}'
-    : 'flex items-center gap-2.5 px-3 py-2 rounded-lg text-sm font-medium transition-colors {ds['sidebar_idle']}';
+    ? 'flex items-center gap-2.5 px-3 py-2 rounded-lg text-sm font-medium transition-all duration-200 {ds['sidebar_active']}'
+    : 'flex items-center gap-2.5 px-3 py-2 rounded-lg text-sm font-medium transition-all duration-200 {ds['sidebar_idle']}';
 
-<aside className="w-56 {ds['sidebar']} {ds['sidebar_text']} flex flex-col px-3 py-4 fixed h-full">
+<aside className="w-56 {ds['sidebar']} {ds['sidebar_text']} flex flex-col px-3 py-4 fixed h-full z-10">
   <div className="flex items-center gap-2 px-2 mb-6">
-    <div className="w-7 h-7 rounded-lg bg-gradient-to-br {ds['gradient']} flex items-center justify-center">
+    <div className="w-7 h-7 rounded-lg bg-gradient-to-br {ds['gradient']} flex items-center justify-center shadow-lg shadow-{ds['primary_name']}-500/30">
       <span className="text-white text-sm font-bold">A</span>
     </div>
-    <span className="font-bold text-white text-sm">AppName</span>
+    <span className="font-bold text-lg bg-gradient-to-r {ds['gradient']} bg-clip-text text-transparent">AppName</span>
   </div>
   <nav className="flex-1 space-y-0.5">
     <NavLink to="/dashboard" className={{navClass}}>
@@ -231,9 +257,9 @@ const navClass = ({{ isActive }}) =>
 </aside>
 ```
 
-EXAMPLE STAT CARD for this category (ring + hover lift + gradient badge + tight-tracking number):
+EXAMPLE STAT CARD for this category (glass-lite surface + ring + hover lift + gradient badge + tight-tracking number):
 ```jsx
-<div className="bg-white dark:bg-slate-800 rounded-xl p-5 border border-slate-100 dark:border-slate-700 ring-1 ring-black/5 dark:ring-white/5 shadow-sm hover:shadow-md hover:-translate-y-0.5 transition-all duration-200">
+<div className="bg-white/80 dark:bg-slate-800/70 backdrop-blur-xl rounded-xl p-5 border border-slate-100 dark:border-slate-700/60 ring-1 ring-black/5 dark:ring-white/5 shadow-sm hover:shadow-md hover:-translate-y-0.5 transition-all duration-200">
   <div className="flex items-center justify-between mb-3">
     <p className="text-xs font-medium text-slate-500 uppercase tracking-wide">Label</p>
     <div className="{ds['stat_icon_bg']} p-2 rounded-lg">
@@ -244,4 +270,7 @@ EXAMPLE STAT CARD for this category (ring + hover lift + gradient badge + tight-
   <p className="text-xs text-{ds['primary_name']}-600 mt-1">+12% this week</p>
 </div>
 ```
+Note the `/80` and `/70` opacity + `backdrop-blur-xl` on the card background —
+combined with the ambient blobs behind it, this is what gives the whole app
+its depth. A fully opaque `bg-white` card here looks flat again by comparison.
 """
