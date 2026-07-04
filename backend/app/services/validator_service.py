@@ -603,7 +603,7 @@ def validate_frontend_api_client(project_path, errors):
 
 
 _AUTH_POST_RE = re.compile(
-    r"""\.post\(\s*[`'"][^`'"]*(?:register|signup)[^`'"]*[`'"]\s*,\s*(\{)""",
+    r"""\.post\(\s*[`'"][^`'"]*(?:register|signup|login|signin|sign-in)[^`'"]*[`'"]\s*,\s*(\{)""",
     re.IGNORECASE,
 )
 
@@ -694,18 +694,31 @@ def _top_level_object_keys(literal):
 
 def validate_frontend_auth_fields(project_path, errors):
     """
-    Flag a Register/Signup form that POSTs a payload missing the 'email'
-    field the backend requires.
+    Flag a Login/Register/Signup form that POSTs a payload missing the
+    'email' field the backend requires.
 
     Every generated backend's auth contract (shared_contract.py + the
     known-good injected app/routes/auth_routes.py) uses `email` as the
-    mandatory identity field for POST /auth/register|signup, no matter what
-    the frontend generator produced. When the LLM instead builds the
-    register form around `username` (a real, observed deviation), the
-    request 422s with "email: field required" on every single submission —
-    a live-breaking bug that no runtime check catches, because the journey
-    runner builds its request body dynamically from the OpenAPI schema
-    instead of reading the actual frontend form.
+    mandatory identity field for POST /auth/register|signup AND
+    /auth/login, no matter what the frontend generator produced. When the
+    LLM instead builds the form around `username` (a real, observed
+    deviation), the request 422s with "email: field required" on every
+    single submission — a live-breaking bug that no runtime check catches,
+    because the journey runner builds its request body dynamically from
+    the OpenAPI schema instead of reading the actual frontend form.
+
+    Originally this only checked register/signup calls. Seen live: a
+    LoginPage.jsx built entirely around a "Username" field (state var
+    `username`, POSTing `{ username, password }`) passed every automated
+    check — the backend's own /auth/login endpoint works fine when called
+    correctly, so the "Check & Fix deployed app" tool's direct API test
+    and the journey runner (which never reads the frontend form) both
+    reported success — while the actual UI 422'd on every single login
+    attempt with a "Field required" error shown even with both fields
+    correctly filled in, since the frontend never sent `email` at all.
+    Extended the endpoint-name match to include login/signin/sign-in so
+    this exact failure mode is caught before generation completes, not
+    just for registration.
     """
     auth_routes = os.path.join(project_path, "app", "routes", "auth_routes.py")
     if not os.path.exists(auth_routes):
@@ -744,15 +757,28 @@ def validate_frontend_auth_fields(project_path, errors):
                 keys = _top_level_object_keys(literal)
                 if not keys or "email" in keys:
                     continue
-                errors.append(
-                    f"Frontend auth field mismatch: {rel(project_path, file_path)} "
-                    f"POSTs to a register/signup endpoint with fields "
-                    f"{sorted(keys)} but no 'email' — the backend's signup "
-                    f"schema requires email (per project contract), so every "
-                    f"registration will fail with a 422 and the UI will hang "
-                    f"on its loading state. Add an email input and send "
-                    f"{{ email, password, display_name }} in the POST body."
-                )
+                is_login = bool(re.search(r"login|signin|sign-in", m.group(0), re.IGNORECASE))
+                if is_login:
+                    errors.append(
+                        f"Frontend auth field mismatch: {rel(project_path, file_path)} "
+                        f"POSTs to a login endpoint with fields {sorted(keys)} but no "
+                        f"'email' — the backend's login schema requires email (per "
+                        f"project contract), so every login attempt will fail with a "
+                        f"422 even though the form is filled in correctly (the UI will "
+                        f"show a confusing generic 'Field required' error). Rename the "
+                        f"field/state var to email and send {{ email, password }} in "
+                        f"the POST body."
+                    )
+                else:
+                    errors.append(
+                        f"Frontend auth field mismatch: {rel(project_path, file_path)} "
+                        f"POSTs to a register/signup endpoint with fields "
+                        f"{sorted(keys)} but no 'email' — the backend's signup "
+                        f"schema requires email (per project contract), so every "
+                        f"registration will fail with a 422 and the UI will hang "
+                        f"on its loading state. Add an email input and send "
+                        f"{{ email, password, display_name }} in the POST body."
+                    )
 
 
 def validate_route_quality(
