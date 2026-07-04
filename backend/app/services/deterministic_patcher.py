@@ -704,18 +704,21 @@ def _patch_model_aliases(project_path: Path) -> None:
                     print(f"  [patcher] Added stub class(es) in {module}.py: {sorted(names - defined)}")
 
 
-def _patch_deduplicate_models(project_path: Path) -> int:
+def _dedupe_class_files(target_dir: Path, kind: str) -> int:
     """
-    When both user.py and users.py (or task.py and tasks.py) exist in app/models/
-    and both define the same class name, keep the file with more content and delete
-    the other. Adds an alias in the kept file so all import variants resolve.
+    When both user.py and users.py (or expense.py and expenses.py) exist in the
+    same directory and both define the same class name, keep the file with more
+    content and delete the other. Any import still pointing at the dropped
+    file's module path is left for _patch_redirect_missing_backend_imports to
+    resolve (it runs later and indexes symbols across the whole app/ tree).
+
+    `kind` is just the noun used in the log line ("model" / "schema").
     """
-    models_dir = project_path / "app" / "models"
-    if not models_dir.exists():
+    if not target_dir.exists():
         return 0
 
     removed = 0
-    py_files = {f.stem: f for f in models_dir.glob("*.py") if not f.name.startswith("_")}
+    py_files = {f.stem: f for f in target_dir.glob("*.py") if not f.name.startswith("_")}
 
     # Look for singular/plural pairs, e.g. user + users
     checked: set[str] = set()
@@ -753,10 +756,29 @@ def _patch_deduplicate_models(project_path: Path) -> int:
                 break
         keep.write_text(keep_content, encoding="utf-8")
         drop.unlink()
-        print(f"  [patcher] Removed duplicate model {drop.name} (kept {keep.name}), shared classes: {shared}")
+        print(f"  [patcher] Removed duplicate {kind} {drop.name} (kept {keep.name}), shared classes: {shared}")
         removed += 1
 
     return removed
+
+
+def _patch_deduplicate_models(project_path: Path) -> int:
+    return _dedupe_class_files(project_path / "app" / "models", "model")
+
+
+def _patch_deduplicate_schemas(project_path: Path) -> int:
+    """
+    Same singular/plural collision as models (e.g. app/schemas/expense.py vs
+    app/schemas/expenses.py both defining ExpenseBase/ExpenseCreate/...), but
+    for Pydantic schemas -- unlike models this never crashes at import time,
+    so it doesn't force a fix loop revert, but it IS a genuine correctness bug
+    (route A imports ExpenseCreate from expense.py while route B imports the
+    same-named-but-different class from expenses.py) and the static analyzer
+    flags it as "Duplicate class definition" every single pass, permanently
+    reoccupying one diagnostic slot in the fix loop's per-attempt budget.
+    Seen live stalling forge_finance's fix loop across all 3 attempts.
+    """
+    return _dedupe_class_files(project_path / "app" / "schemas", "schema")
 
 
 # ── 5. response_model using SQLAlchemy model instead of Pydantic schema ──────
@@ -3657,6 +3679,11 @@ def run_deterministic_patches(project_path: str, skip_protected_injections: bool
 
     # Deduplicate model files (user.py + users.py both having class User → keep larger)
     _patch_deduplicate_models(root)
+
+    # Same collision for schemas (expense.py + expenses.py both having
+    # ExpenseCreate → keep larger). Must run before the import-redirect patcher
+    # so any import left pointing at the dropped file gets resolved to the kept one.
+    _patch_deduplicate_schemas(root)
 
     # Model class aliases (Games→Game etc) — run before FK import patcher
     _patch_model_aliases(root)
