@@ -1247,6 +1247,71 @@ def authenticate_user(db: Session, email: str, password: str):
 '''
 
 
+# ── 9b. Known-good Pagination.jsx injection ──────────────────────────────────
+# LLMs (especially fallback models used whenever Gemini 503s) routinely
+# mis-close braces in this component -- a ternary nested inside a template
+# literal nested inside a JSX attribute expression, the same failure class
+# documented for Toast/NavLink -- producing an unparseable
+# `Expected "}" but found "currentPage"` esbuild error that fails the whole
+# Vite build. Seen live across unrelated generations (habit tracker, expense
+# tracker) with the exact same prop signature every time. Pagination has no
+# business logic or domain-specific content, so -- like auth_routes.py and
+# database.py -- it's safe to always normalize to a known-good static
+# implementation rather than repair whatever shape the LLM produced.
+
+_PAGINATION_TEMPLATE = '''\
+import React from 'react';
+import { ChevronLeft, ChevronRight } from 'lucide-react';
+
+const Pagination = ({ currentPage, totalPages, onPageChange }) => {
+  if (!totalPages || totalPages <= 1) return null;
+
+  return (
+    <div className="flex items-center justify-center gap-2 mt-6">
+      <button
+        type="button"
+        onClick={() => onPageChange(currentPage - 1)}
+        disabled={currentPage <= 1}
+        className="p-2 rounded-lg text-slate-500 hover:bg-slate-100 dark:hover:bg-slate-700 disabled:opacity-50 disabled:cursor-not-allowed"
+      >
+        <ChevronLeft size={18} />
+      </button>
+      <span className="text-sm font-medium text-slate-700 dark:text-slate-300">
+        Page {currentPage} of {totalPages}
+      </span>
+      <button
+        type="button"
+        onClick={() => onPageChange(currentPage + 1)}
+        disabled={currentPage >= totalPages}
+        className="p-2 rounded-lg text-slate-500 hover:bg-slate-100 dark:hover:bg-slate-700 disabled:opacity-50 disabled:cursor-not-allowed"
+      >
+        <ChevronRight size={18} />
+      </button>
+    </div>
+  );
+};
+
+export default Pagination;
+'''
+
+
+def _patch_pagination_component(project_path: Path) -> bool:
+    pagination_file = project_path / "src" / "components" / "Pagination.jsx"
+    if not pagination_file.exists():
+        return False
+    try:
+        content = pagination_file.read_text(encoding="utf-8", errors="replace")
+    except Exception:
+        return False
+    if "currentPage" not in content:
+        return False  # not actually the standard pagination component -- leave it alone
+    if content == _PAGINATION_TEMPLATE:
+        return False
+    pagination_file.write_text(_PAGINATION_TEMPLATE, encoding="utf-8")
+    print("  [patcher] Injected known-good src/components/Pagination.jsx")
+    return True
+
+
 def _patch_auth_utils(project_path: Path) -> None:
     utils_dir = project_path / "app" / "utils"
     auth_file = utils_dir / "auth.py"
@@ -3699,6 +3764,10 @@ def run_deterministic_patches(project_path: str, skip_protected_injections: bool
     # "Waking up the server..." instead of a bare gray skeleton with no
     # explanation during a Render cold start.
     _patch_hidden_loading_status(root)
+
+    # Normalize Pagination.jsx to a known-good implementation -- LLMs
+    # routinely mis-close its nested-brace JSX and fail the entire Vite build.
+    _patch_pagination_component(root)
 
     if modified:
         print(f"  [patcher] Patched {modified} file(s) — passlib→bcrypt, async→sync, smart quotes")
