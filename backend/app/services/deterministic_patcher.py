@@ -2146,7 +2146,15 @@ def _patch_star_dict_extra_fields(project_path: Path) -> int:
 
     Example:
         BEFORE: Task(**task_in.dict(), user_id=current_user.id)
-        AFTER:  Task(**{k: v for k, v in task_in.dict().items() if hasattr(Task, k)}, user_id=current_user.id)
+        AFTER:  Task(**{k: v for k, v in task_in.dict().items() if k in Task.__table__.columns.keys()}, user_id=current_user.id)
+
+    Filters against __table__.columns rather than hasattr(): a model that
+    exposes a read-only @property with the same name as a schema field (e.g.
+    `category` computed from a relationship) still passes hasattr(), so the
+    dict comprehension includes it, and the constructor call then raises
+    AttributeError: property 'category' of 'Expense' object has no setter --
+    a crash on every create request. __table__.columns only ever contains
+    actually-assignable mapped columns. Reproduced live on forge_expense_tracker.
     """
     routes_dir = project_path / "app" / "routes"
     models_dir = project_path / "app" / "models"
@@ -2180,7 +2188,7 @@ def _patch_star_dict_extra_fields(project_path: Path) -> int:
                 if cls_name not in orm_classes:
                     return m.group(0)
                 # Build filtered dict, preserve any extra kwargs
-                filtered = f"{{k: v for k, v in {schema_var}.dict().items() if hasattr({cls_name}, k)}}"
+                filtered = f"{{k: v for k, v in {schema_var}.dict().items() if k in {cls_name}.__table__.columns.keys()}}"
                 if extra_args.strip().strip(",").strip():
                     return f"{cls_name}(**{filtered}{extra_args})"
                 return f"{cls_name}(**{filtered})"
@@ -2192,6 +2200,50 @@ def _patch_star_dict_extra_fields(project_path: Path) -> int:
                 print(f"  [patcher] Filtered **schema.dict() kwargs in {rf.name}")
         except Exception:
             pass
+    return patched
+
+
+_UNSAFE_HASATTR_COLUMN_FILTER_RE = re.compile(r"hasattr\(([A-Z]\w+),\s*k\)")
+
+
+def _patch_unsafe_model_hasattr_filter(project_path: Path) -> int:
+    """
+    Rewrite `if hasattr(Model, k)` to `if k in Model.__table__.columns.keys()`
+    in an already-generated project.
+
+    _patch_star_dict_extra_fields (and the service-stub generator below) used
+    to write this exact hasattr()-based filter as a defensive fix for
+    TypeError on invalid constructor kwargs -- but hasattr() also returns True
+    for a read-only @property with the same name as a schema field (e.g.
+    `category` computed from a relationship), so the filter let it through
+    and the constructor call raised AttributeError: property 'x' of 'Model'
+    object has no setter, on every create request. Both generators were
+    fixed to never produce this pattern again; this patches projects that
+    already have it baked in from before that fix existed. Reproduced live
+    on forge_expense_tracker's POST /expenses (500 on every request).
+    """
+    routes_dir = project_path / "app" / "routes"
+    if not routes_dir.exists():
+        return 0
+
+    patched = 0
+    for rf in routes_dir.glob("*.py"):
+        try:
+            content = rf.read_text(encoding="utf-8", errors="replace")
+        except Exception:
+            continue
+        if "hasattr(" not in content:
+            continue
+
+        new_content = _UNSAFE_HASATTR_COLUMN_FILTER_RE.sub(
+            lambda m: f"k in {m.group(1)}.__table__.columns.keys()",
+            content,
+        )
+        if new_content != content:
+            rf.write_text(new_content, encoding="utf-8")
+            patched += 1
+            print(f"  [patcher] Fixed unsafe hasattr() column filter in {rf.name}")
+
     return patched
 
 
@@ -2668,16 +2720,20 @@ def _infer_crud_func(func: str, model_cls: str, resource: str) -> str:
         return (f"def {func}(db: Session, limit: int = 100, offset: int = 0, **kw):\n"
                 f"    return db.query({model_cls}).offset(offset).limit(limit).all()\n")
     if re.match(r"create_\w+", f):
+        # Filter against __table__.columns, not hasattr(): a model exposing a
+        # read-only @property with the same name as a schema field passes
+        # hasattr() too, and the constructor call then raises AttributeError
+        # ("property 'x' has no setter") on every create request.
         return (f"def {func}(db: Session, {resource}_in=None, **kw):\n"
                 f"    data = {resource}_in.dict() if hasattr({resource}_in, 'dict') else kw\n"
-                f"    obj = {model_cls}(**{{k: v for k, v in data.items() if hasattr({model_cls}, k)}})\n"
+                f"    obj = {model_cls}(**{{k: v for k, v in data.items() if k in {model_cls}.__table__.columns.keys()}})\n"
                 f"    db.add(obj); db.commit(); db.refresh(obj); return obj\n")
     if re.match(r"update_\w+", f):
         return (f"def {func}(db: Session, {rid}: int, {resource}_in=None, **kw):\n"
                 f"    obj = db.query({model_cls}).filter({model_cls}.id == {rid}).first()\n"
                 f"    if not obj: return None\n"
                 f"    data = {resource}_in.dict() if hasattr({resource}_in, 'dict') else kw\n"
-                f"    [setattr(obj, k, v) for k, v in data.items() if hasattr(obj, k)]\n"
+                f"    [setattr(obj, k, v) for k, v in data.items() if k in {model_cls}.__table__.columns.keys()]\n"
                 f"    db.commit(); db.refresh(obj); return obj\n")
     if re.match(r"delete_\w+", f):
         return (f"def {func}(db: Session, {rid}: int) -> bool:\n"
@@ -3938,6 +3994,11 @@ def run_deterministic_patches(project_path: str, skip_protected_injections: bool
     # Prevents TypeError: 'status' is an invalid keyword argument for Task when the
     # Pydantic schema has extra fields that don't exist as columns on the model.
     _patch_star_dict_extra_fields(root)
+
+    # Fix the same filter if it was already generated with the older, unsafe
+    # hasattr(Model, k) form -- passes a read-only @property through and
+    # raises AttributeError: property 'x' has no setter on every create request.
+    _patch_unsafe_model_hasattr_filter(root)
 
     # Fix attribute accesses (e.g. user.username when model only has email).
     # The field_patcher fixes constructor calls; this fixes dict literals and returns.
