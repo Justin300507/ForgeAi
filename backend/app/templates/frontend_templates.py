@@ -138,24 +138,33 @@ INDEX_CSS = """@tailwind base;
   }
 }
 
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(4px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  * { animation-duration: 0.01ms !important; animation-iteration-count: 1 !important; transition-duration: 0.01ms !important; }
+}
+
 @layer components {
   .card {
-    @apply bg-white dark:bg-slate-800 rounded-xl shadow-sm border border-slate-100 dark:border-slate-700;
+    @apply bg-white dark:bg-slate-800 rounded-xl shadow-sm ring-1 ring-black/5 dark:ring-white/5 border border-slate-100 dark:border-slate-700 transition-shadow duration-200;
   }
   .btn-primary {
-    @apply bg-indigo-600 hover:bg-indigo-700 text-white font-medium px-4 py-2 rounded-lg transition-colors duration-150 cursor-pointer;
+    @apply bg-indigo-600 hover:bg-indigo-700 active:scale-[0.97] text-white font-medium px-4 py-2 rounded-lg transition-all duration-150 cursor-pointer;
   }
   .btn-secondary {
-    @apply bg-slate-100 hover:bg-slate-200 dark:bg-slate-700 dark:hover:bg-slate-600 text-slate-700 dark:text-slate-200 font-medium px-4 py-2 rounded-lg transition-colors duration-150 cursor-pointer;
+    @apply bg-slate-100 hover:bg-slate-200 active:scale-[0.97] dark:bg-slate-700 dark:hover:bg-slate-600 text-slate-700 dark:text-slate-200 font-medium px-4 py-2 rounded-lg transition-all duration-150 cursor-pointer;
   }
   .input {
-    @apply w-full border border-slate-200 dark:border-slate-600 bg-white dark:bg-slate-800 text-slate-900 dark:text-slate-100 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500;
+    @apply w-full border border-slate-200 dark:border-slate-600 bg-white dark:bg-slate-800 text-slate-900 dark:text-slate-100 rounded-lg px-3 py-2 text-sm transition-shadow duration-150 focus:outline-none focus:ring-2 focus:ring-indigo-500;
   }
   .badge {
     @apply inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium;
   }
   .stat-card {
-    @apply card p-5;
+    @apply card p-5 hover:shadow-md;
   }
   .nav-link {
     @apply flex items-center gap-2.5 px-3 py-2 rounded-lg text-sm font-medium transition-colors duration-150;

@@ -73,6 +73,48 @@ COLOR PALETTE (Tailwind classes):
   Text muted:   text-slate-500  dark:text-slate-400
   Accent:       bg-indigo-600 hover:bg-indigo-700  text-indigo-600
 
+═══════════════════════════════════════════════════════
+VISUAL POLISH — mandatory, this is what separates "plain" from premium
+═══════════════════════════════════════════════════════
+
+A flat white card with a thin border and nothing else reads as a wireframe,
+not a shipped product. Apply ALL of these across every page:
+
+- Card depth: every surface card gets `shadow-sm hover:shadow-md
+  transition-shadow duration-200` at minimum — cards that are clickable
+  (list rows, nav items, stat cards that link somewhere) ALSO get
+  `hover:-translate-y-0.5 transition-all duration-200` for a subtle lift.
+- Ring for definition in dark mode: add `ring-1 ring-black/5
+  dark:ring-white/5` alongside the border on elevated surfaces (cards,
+  modals, dropdowns) — a hairline border alone looks flat on dark
+  backgrounds.
+- Icon badges are never a flat solid box: use a soft gradient tint —
+  `bg-gradient-to-br from-{{color}}-50 to-{{color}}-100 dark:from-{{color}}-900/40
+  dark:to-{{color}}-900/20` instead of a single flat `bg-{{color}}-50`.
+- Buttons get press feedback: `active:scale-[0.97] transition-transform
+  duration-100` in addition to the hover color change — a button that only
+  changes color on hover feels unresponsive on click.
+- Page entrance: wrap the main content return in a fade/slide-in —
+  `<div className="animate-[fadeIn_0.3s_ease-out]">` is enough (the
+  keyframe is already defined in src/index.css, do not redefine it).
+- List/grid entrances stagger: when mapping over an array to render cards,
+  add `style={{{{ animationDelay: `${{index * 40}}ms` }}}}` alongside the same
+  fadeIn animation class so items cascade in rather than all popping at once.
+- Numbers and stats: use `font-bold tracking-tight` on large stat values
+  (not just `font-bold`) — tight tracking on big numbers reads as more
+  deliberate/designed.
+- Section headings use a consistent weight scale: page title
+  `text-2xl font-bold`, card/section title `text-base font-semibold`,
+  label/eyebrow text `text-xs font-medium uppercase tracking-wide
+  text-slate-500`. Never mix arbitrary weights across the same hierarchy
+  level between pages.
+- Dividers between grouped content use `divide-y divide-slate-100
+  dark:divide-slate-700` on the parent instead of manual borders on every
+  child — keeps spacing consistent.
+- Every icon inside a colored badge/circle should be sized 1–2px smaller
+  than the badge would suggest (e.g. 18px icon in a 36px badge, not a 24px
+  icon cramped into the same box) — breathing room reads as more refined.
+
 SIDEBAR LAYOUT (use for ALL authenticated pages):
 ```jsx
 <div className="flex min-h-screen bg-slate-50 dark:bg-slate-900">
@@ -114,39 +156,51 @@ const navClass = ({{ isActive }}) =>
 </NavLink>
 ```
 
-STAT CARD:
+STAT CARD (gradient icon badge, hover lift, tight-tracking number):
 ```jsx
-<div className="bg-white dark:bg-slate-800 rounded-xl p-5 border border-slate-100 dark:border-slate-700 shadow-sm">
-  <p className="text-xs font-medium text-slate-500 dark:text-slate-400 uppercase tracking-wide">Total Expenses</p>
-  <p className="text-2xl font-bold text-slate-900 dark:text-white mt-1">$1,240</p>
-  <p className="text-xs text-emerald-600 mt-1 flex items-center gap-1">
+<div className="card p-5 hover:shadow-md hover:-translate-y-0.5 transition-all duration-200">
+  <div className="flex items-center justify-between">
+    <p className="text-xs font-medium text-slate-500 dark:text-slate-400 uppercase tracking-wide">Total Expenses</p>
+    <div className="w-9 h-9 rounded-lg bg-gradient-to-br from-indigo-50 to-indigo-100 dark:from-indigo-900/40 dark:to-indigo-900/20 flex items-center justify-center">
+      <Wallet className="text-indigo-600 dark:text-indigo-400" size={{18}} />
+    </div>
+  </div>
+  <p className="text-2xl font-bold tracking-tight text-slate-900 dark:text-white mt-3">$1,240</p>
+  <p className="text-xs text-emerald-600 dark:text-emerald-400 mt-1 flex items-center gap-1">
     <TrendingUp size={{12}} /> +8.2% vs last month
   </p>
 </div>
 ```
 
-LIST ITEM CARD:
+LIST ITEM CARD (clickable → lift on hover, gradient badge, staggered entrance):
 ```jsx
-<div className="bg-white dark:bg-slate-800 rounded-xl border border-slate-100 dark:border-slate-700 p-4 flex items-center justify-between hover:shadow-sm transition-shadow">
-  <div className="flex items-center gap-3">
-    <div className="w-9 h-9 rounded-lg bg-indigo-50 dark:bg-indigo-900/30 flex items-center justify-center">
-      <ShoppingCart className="text-indigo-600" size={{18}} />
+{{items.map((item, index) => (
+  <div
+    key={{item.id}}
+    style={{{{ animationDelay: `${{index * 40}}ms` }}}}
+    className="animate-[fadeIn_0.3s_ease-out] card p-4 flex items-center justify-between hover:shadow-md hover:-translate-y-0.5 transition-all duration-200 cursor-pointer"
+  >
+    <div className="flex items-center gap-3">
+      <div className="w-9 h-9 rounded-lg bg-gradient-to-br from-indigo-50 to-indigo-100 dark:from-indigo-900/40 dark:to-indigo-900/20 flex items-center justify-center">
+        <ShoppingCart className="text-indigo-600 dark:text-indigo-400" size={{18}} />
+      </div>
+      <div>
+        <p className="text-sm font-semibold text-slate-900 dark:text-white">{{item.title}}</p>
+        <p className="text-xs text-slate-500 dark:text-slate-400">Food · Jun 22</p>
+      </div>
     </div>
-    <div>
-      <p className="text-sm font-semibold text-slate-900 dark:text-white">Grocery Run</p>
-      <p className="text-xs text-slate-500 dark:text-slate-400">Food · Jun 22</p>
-    </div>
+    <span className="text-sm font-bold tracking-tight text-red-500">-$47.80</span>
   </div>
-  <span className="text-sm font-bold text-red-500">-$47.80</span>
-</div>
+))}}
 ```
 
-PRIMARY BUTTON:
+PRIMARY BUTTON (press feedback):
 ```jsx
 <button className="btn-primary flex items-center gap-1.5">
   <Plus size={{16}} /> Add Item
 </button>
 ```
+(`.btn-primary` already includes `active:scale-[0.97]` press feedback via index.css — do not add a conflicting scale/transition override on top of it.)
 
 FORM INPUT:
 ```jsx
@@ -443,8 +497,15 @@ Show a hint below the password field: `<p className="text-xs text-slate-400">Mus
 navigate('/login');
 ```
 
-5. API LIST RESPONSES — FastAPI always returns `{{ items: [...], total: N }}` wrappers.
-Always unwrap: `setItems(res.data.items || [])` — NEVER `setItems(res.data)`
+5. API LIST RESPONSES — response shape VARIES by endpoint in this project, it is
+NOT always `{{ items: [...], total: N }}`. A paginated endpoint (accepts
+`limit`/`offset` query params) returns `{{ items, total }}` — unwrap with
+`res.data.items || []`. A simple, non-paginated list endpoint returns a BARE
+ARRAY — use `res.data || []` directly, do NOT read `.items` off it (that
+silently becomes `undefined`, and rendering `undefined.length` blanks the
+whole page). Check the actual endpoint definition in the architecture above
+(does it declare `limit`/`offset` params and a `{{items,total}}` response
+model, or a plain `List[...]` response model?) before assuming either shape.
 
 6. CURRENT USER — the login response includes display_name, user_id, email. Read from localStorage:
 ```jsx

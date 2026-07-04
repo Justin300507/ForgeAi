@@ -17,7 +17,7 @@ CATEGORIES: dict[str, dict] = {
         "sidebar_text": "text-orange-100",
         "sidebar_active": "bg-orange-800 text-white",
         "sidebar_idle": "text-orange-300 hover:bg-orange-900 hover:text-white",
-        "stat_icon_bg": "bg-orange-50 dark:bg-orange-900/30",
+        "stat_icon_bg": "bg-gradient-to-br from-orange-50 to-orange-100 dark:from-orange-900/40 dark:to-orange-900/20",
         "stat_icon_color": "text-orange-600 dark:text-orange-400",
         "accent_badge": "bg-orange-50 text-orange-700",
         "chart_color": "#f97316",
@@ -36,7 +36,7 @@ CATEGORIES: dict[str, dict] = {
         "sidebar_text": "text-emerald-100",
         "sidebar_active": "bg-emerald-800 text-white",
         "sidebar_idle": "text-emerald-300 hover:bg-emerald-900 hover:text-white",
-        "stat_icon_bg": "bg-emerald-50 dark:bg-emerald-900/30",
+        "stat_icon_bg": "bg-gradient-to-br from-emerald-50 to-emerald-100 dark:from-emerald-900/40 dark:to-emerald-900/20",
         "stat_icon_color": "text-emerald-600 dark:text-emerald-400",
         "accent_badge": "bg-emerald-50 text-emerald-700",
         "chart_color": "#10b981",
@@ -56,7 +56,7 @@ CATEGORIES: dict[str, dict] = {
         "sidebar_text": "text-slate-200",
         "sidebar_active": "bg-indigo-600 text-white",
         "sidebar_idle": "text-slate-400 hover:bg-slate-800 hover:text-white",
-        "stat_icon_bg": "bg-indigo-50 dark:bg-indigo-900/30",
+        "stat_icon_bg": "bg-gradient-to-br from-indigo-50 to-indigo-100 dark:from-indigo-900/40 dark:to-indigo-900/20",
         "stat_icon_color": "text-indigo-600 dark:text-indigo-400",
         "accent_badge": "bg-indigo-50 text-indigo-700",
         "chart_color": "#6366f1",
@@ -76,7 +76,7 @@ CATEGORIES: dict[str, dict] = {
         "sidebar_text": "text-purple-100",
         "sidebar_active": "bg-purple-800 text-white",
         "sidebar_idle": "text-purple-300 hover:bg-purple-900 hover:text-white",
-        "stat_icon_bg": "bg-purple-50 dark:bg-purple-900/30",
+        "stat_icon_bg": "bg-gradient-to-br from-purple-50 to-purple-100 dark:from-purple-900/40 dark:to-purple-900/20",
         "stat_icon_color": "text-purple-600 dark:text-purple-400",
         "accent_badge": "bg-purple-50 text-purple-700",
         "chart_color": "#a855f7",
@@ -96,7 +96,7 @@ CATEGORIES: dict[str, dict] = {
         "sidebar_text": "text-sky-100",
         "sidebar_active": "bg-sky-700 text-white",
         "sidebar_idle": "text-sky-300 hover:bg-sky-900 hover:text-white",
-        "stat_icon_bg": "bg-sky-50 dark:bg-sky-900/30",
+        "stat_icon_bg": "bg-gradient-to-br from-sky-50 to-sky-100 dark:from-sky-900/40 dark:to-sky-900/20",
         "stat_icon_color": "text-sky-600 dark:text-sky-400",
         "accent_badge": "bg-sky-50 text-sky-700",
         "chart_color": "#0ea5e9",
@@ -116,7 +116,7 @@ CATEGORIES: dict[str, dict] = {
         "sidebar_text": "text-teal-100",
         "sidebar_active": "bg-teal-700 text-white",
         "sidebar_idle": "text-teal-300 hover:bg-teal-900 hover:text-white",
-        "stat_icon_bg": "bg-teal-50 dark:bg-teal-900/30",
+        "stat_icon_bg": "bg-gradient-to-br from-teal-50 to-teal-100 dark:from-teal-900/40 dark:to-teal-900/20",
         "stat_icon_color": "text-teal-600 dark:text-teal-400",
         "accent_badge": "bg-teal-50 text-teal-700",
         "chart_color": "#14b8a6",
@@ -136,7 +136,7 @@ CATEGORIES: dict[str, dict] = {
         "sidebar_text": "text-rose-100",
         "sidebar_active": "bg-rose-700 text-white",
         "sidebar_idle": "text-rose-300 hover:bg-rose-900 hover:text-white",
-        "stat_icon_bg": "bg-rose-50 dark:bg-rose-900/30",
+        "stat_icon_bg": "bg-gradient-to-br from-rose-50 to-rose-100 dark:from-rose-900/40 dark:to-rose-900/20",
         "stat_icon_color": "text-rose-600 dark:text-rose-400",
         "accent_badge": "bg-rose-50 text-rose-700",
         "chart_color": "#f43f5e",
@@ -231,16 +231,16 @@ const navClass = ({{ isActive }}) =>
 </aside>
 ```
 
-EXAMPLE STAT CARD for this category:
+EXAMPLE STAT CARD for this category (ring + hover lift + gradient badge + tight-tracking number):
 ```jsx
-<div className="bg-white dark:bg-slate-800 rounded-xl p-5 border border-slate-100 dark:border-slate-700 shadow-sm">
+<div className="bg-white dark:bg-slate-800 rounded-xl p-5 border border-slate-100 dark:border-slate-700 ring-1 ring-black/5 dark:ring-white/5 shadow-sm hover:shadow-md hover:-translate-y-0.5 transition-all duration-200">
   <div className="flex items-center justify-between mb-3">
     <p className="text-xs font-medium text-slate-500 uppercase tracking-wide">Label</p>
     <div className="{ds['stat_icon_bg']} p-2 rounded-lg">
       <{ds['icons'][0]} size={{18}} className="{ds['stat_icon_color']}" />
     </div>
   </div>
-  <p className="text-2xl font-bold text-slate-900 dark:text-white">42</p>
+  <p className="text-2xl font-bold tracking-tight text-slate-900 dark:text-white">42</p>
   <p className="text-xs text-{ds['primary_name']}-600 mt-1">+12% this week</p>
 </div>
 ```
