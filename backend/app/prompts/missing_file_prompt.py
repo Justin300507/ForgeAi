@@ -1,8 +1,97 @@
 import os
+import re
 
 from app.prompts.shared_contract import FASTAPI_CONTRACT
 
 _REFERENCE_MAX_CHARS = 4000
+
+
+def _find_page_intent(project_path, filepath):
+    """
+    Figure out what a generically-named scaffolded page (NewPage.jsx,
+    DetailPage.jsx, etc.) is actually supposed to do, by tracing:
+    filepath -> component name -> the route it's mounted at (App.jsx) ->
+    the human-readable label a NavLink/Link uses for that route.
+
+    Without this, the missing-file agent gets nothing but a bare filename
+    to work from, and a filename like "NewPage" carries zero semantic
+    information -- it generates a maximally-generic filler page ("New
+    Page" / "This is a brand new page!" / "You can start adding content
+    here."). Reproduced live: habit-forge's "Create Habit" nav link
+    pointed at /habits/new -> NewPage.jsx, which rendered exactly that
+    placeholder instead of a habit-creation form, even though a real,
+    unused HabitForm.jsx component with a working "Create Habit" submit
+    button already existed in the same project.
+    """
+    if not project_path:
+        return None
+    try:
+        component = os.path.splitext(os.path.basename(filepath))[0]
+        app_jsx = os.path.join(project_path, "src", "App.jsx")
+        if not os.path.isfile(app_jsx):
+            return None
+        with open(app_jsx, "r", encoding="utf-8", errors="replace") as fh:
+            app_content = fh.read()
+
+        route_m = re.search(
+            rf'<Route\s+path="([^"]+)"\s+element=\{{[^{{}}]*<{re.escape(component)}\b',
+            app_content,
+        )
+        if not route_m:
+            return None
+        route_path = route_m.group(1)
+
+        label = None
+        src_dir = os.path.join(project_path, "src")
+        for root, _dirs, files in os.walk(src_dir):
+            for fname in files:
+                if not fname.endswith((".jsx", ".js")):
+                    continue
+                try:
+                    with open(os.path.join(root, fname), "r", encoding="utf-8", errors="replace") as fh:
+                        content = fh.read()
+                except Exception:
+                    continue
+                link_m = re.search(
+                    rf'<(?:Link|NavLink)\s+to="{re.escape(route_path)}"[^>]*>(.*?)</(?:Link|NavLink)>',
+                    content, re.DOTALL,
+                )
+                if link_m:
+                    # Strip any nested JSX tags (icons etc.) and collapse whitespace
+                    text = re.sub(r"<[^>]+>", " ", link_m.group(1))
+                    text = re.sub(r"\{[^}]*\}", " ", text)
+                    text = " ".join(text.split())
+                    if text:
+                        label = text
+                        break
+            if label:
+                break
+
+        if not label:
+            return None
+
+        # A component whose content already mentions the discovered label
+        # (e.g. HabitForm.jsx has a "Create Habit" submit button) is a strong
+        # signal it's the real building block for this page and just needs
+        # to be wired in, rather than reinvented.
+        reusable = None
+        components_dir = os.path.join(project_path, "src", "components")
+        if os.path.isdir(components_dir):
+            for fname in sorted(os.listdir(components_dir)):
+                if not fname.endswith((".jsx", ".js")):
+                    continue
+                try:
+                    with open(os.path.join(components_dir, fname), "r", encoding="utf-8", errors="replace") as fh:
+                        content = fh.read()
+                except Exception:
+                    continue
+                if label.lower() in content.lower():
+                    reusable = "src/components/" + fname
+                    break
+
+        return route_path, label, reusable
+    except Exception:
+        return None
 
 
 def _find_reference_sibling(project_path, filepath):
@@ -83,6 +172,32 @@ different convention -- copy this project's real one.
 --- {ref_path} ---
 {ref_content}
 """
+
+    intent = _find_page_intent(project_path, filepath)
+    intent_block = ""
+    if intent:
+        route_path, label, reusable = intent
+        reuse_line = (
+            f"\nAn existing component, {reusable}, already contains text matching "
+            f"this label -- it's very likely the real building block for this page "
+            f"(a form, list, or detail view meant to be imported and wired in here), "
+            f"not something to reinvent from scratch. Check it before writing new UI."
+            if reusable else ""
+        )
+        intent_block = f"""
+========================================
+WHAT THIS PAGE MUST ACTUALLY DO
+========================================
+
+This file is mounted at route "{route_path}", and the app's own navigation
+links to that route with the label "{label}". This is NOT a placeholder
+page -- it must implement the real "{label}" feature (the appropriate
+form, list, or detail view for it), using the shared axios client and
+this project's real API endpoints/field names. Do NOT generate generic
+filler content ("New Page" / "This is a brand new page!" / "You can
+start adding content here.") -- that is a placeholder and is never
+acceptable.{reuse_line}
+"""
     return f"""
 You are ForgeAI Missing File Agent.
 
@@ -93,7 +208,7 @@ MISSING FILE
 ========================================
 
 {filepath}
-
+{intent_block}
 ========================================
 VALIDATION ERROR
 ========================================
