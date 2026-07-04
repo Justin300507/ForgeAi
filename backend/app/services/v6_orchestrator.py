@@ -502,7 +502,8 @@ def generate_project_v6(
                 _patch_model_aliases, _patch_schemas_from_attributes,
                 _patch_missing_pydantic_imports, _patch_attr_access_mismatches,
                 _patch_response_schemas_optional, _patch_create_missing_service_stubs,
-                _patch_wire_orphan_routers,
+                _patch_wire_orphan_routers, _patch_wire_orphan_frontend_routes,
+                _patch_frontend_package_json,
             )
             _patch_model_aliases(_Path(project_path))
             _patch_schemas_from_attributes(_Path(project_path))
@@ -511,6 +512,14 @@ def generate_project_v6(
             _patch_response_schemas_optional(_Path(project_path))
             _patch_create_missing_service_stubs(_Path(project_path))
             _patch_wire_orphan_routers(_Path(project_path))
+            # Frontend mirror of the router-wiring line above: pages created by
+            # this very fix attempt (e.g. BadgesPage.jsx, because Navigation.jsx
+            # already linked to /badges) need to be imported and routed into
+            # App.jsx too, or they stay permanently orphaned -- App.jsx is only
+            # ever scaffolded once, before these pages exist. Invisible to every
+            # automated check since none of them click through the sidebar.
+            _patch_wire_orphan_frontend_routes(_Path(project_path))
+            _patch_frontend_package_json(_Path(project_path))
         except Exception as _pe:
             print(f"  [post-fix patcher] {_pe}")
 
@@ -977,15 +986,26 @@ def repair_project(
             from pathlib import Path as _Path
             from app.services.deterministic_patcher import (
                 _patch_model_aliases, _patch_schemas_from_attributes,
-                _patch_missing_pydantic_imports, _patch_passlib_references,
-                _patch_field_alignment, _patch_create_missing_service_stubs,
+                _patch_missing_pydantic_imports, _patch_attr_access_mismatches,
+                _patch_response_schemas_optional, _patch_create_missing_service_stubs,
+                _patch_wire_orphan_routers, _patch_wire_orphan_frontend_routes,
+                _patch_frontend_package_json,
             )
+            # This batch previously imported _patch_passlib_references and
+            # _patch_field_alignment, neither of which exist in
+            # deterministic_patcher.py -- the ImportError was swallowed by the
+            # except below, so this entire post-fix patcher batch has been a
+            # silent no-op on every "Fix & Retry" repair run. Replaced with the
+            # same working list generate_project_v6's fix loop uses.
             _patch_model_aliases(_Path(project_path))
             _patch_schemas_from_attributes(_Path(project_path))
             _patch_missing_pydantic_imports(_Path(project_path))
-            _patch_passlib_references(_Path(project_path))
-            _patch_field_alignment(_Path(project_path))
+            _patch_attr_access_mismatches(_Path(project_path))
+            _patch_response_schemas_optional(_Path(project_path))
             _patch_create_missing_service_stubs(_Path(project_path))
+            _patch_wire_orphan_routers(_Path(project_path))
+            _patch_wire_orphan_frontend_routes(_Path(project_path))
+            _patch_frontend_package_json(_Path(project_path))
         except Exception as _pe:
             print(f"  [post-fix patcher] {_pe}")
 

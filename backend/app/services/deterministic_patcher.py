@@ -2563,6 +2563,19 @@ _JSX_IMPORT_RE = re.compile(
     r"""(?:from|import)\s+['"](@?[\w][\w.-]*/[\w.-]+|@?[\w][\w.-]*)['"]"""
 )
 
+# Packages where "latest" resolves to a version incompatible with what LLMs
+# actually generate (trained on an older, more common API). Chakra UI v3
+# (the "latest" tag since 2024) removed useToast entirely in favor of a
+# completely different toaster/createToaster API and requires a different
+# <ChakraProvider value={system}> setup -- LLM-generated Chakra code is
+# almost always v2-shaped. Pinning avoids a build break that's invisible
+# until the component is actually reachable (see
+# _patch_wire_orphan_frontend_routes: SettingsPage.jsx's `useToast` import
+# only started failing the build once that patch made the page reachable).
+_FRONTEND_PKG_VERSION_OVERRIDES: dict[str, str] = {
+    "@chakra-ui/react": "^2.8.2",
+}
+
 
 def _patch_frontend_package_json(project_path: Path) -> bool:
     """
@@ -2580,6 +2593,15 @@ def _patch_frontend_package_json(project_path: Path) -> bool:
         pkg = _json.loads(pkg_json.read_text(encoding="utf-8"))
     except Exception:
         return False
+
+    # Re-pin any already-present dependency that has drifted onto "latest"
+    # (e.g. from an earlier patcher run, before an override existed).
+    repinned = False
+    for name, version in _FRONTEND_PKG_VERSION_OVERRIDES.items():
+        deps = pkg.get("dependencies", {})
+        if name in deps and deps[name] != version:
+            deps[name] = version
+            repinned = True
 
     all_installed: set[str] = set(pkg.get("dependencies", {}).keys()) | set(pkg.get("devDependencies", {}).keys())
 
@@ -2612,12 +2634,15 @@ def _patch_frontend_package_json(project_path: Path) -> bool:
             to_add.update(e for e in extras if e not in all_installed)
 
     if not to_add:
-        return False
+        if repinned:
+            pkg_json.write_text(_json.dumps(pkg, indent=2), encoding="utf-8")
+            print("  [patcher] Re-pinned frontend package version override(s)")
+        return repinned
 
     if "dependencies" not in pkg:
         pkg["dependencies"] = {}
     for name in sorted(to_add):
-        pkg["dependencies"][name] = "latest"
+        pkg["dependencies"][name] = _FRONTEND_PKG_VERSION_OVERRIDES.get(name, "latest")
 
     pkg_json.write_text(_json.dumps(pkg, indent=2), encoding="utf-8")
     print(f"  [patcher] Added missing frontend packages to package.json: {sorted(to_add)}")
@@ -2914,6 +2939,20 @@ def _patch_wire_orphan_frontend_routes(project_path: Path) -> None:
     wildcard "*" -> /dashboard redirect -- every automated check (compile,
     CRUD journey, endpoint smoke tests) passes because none of them click
     through the app's own navigation. Only visible by actually using it.
+
+    Also handles a worse variant of the same problem: frontend_scaffold_
+    service.ensure_app_jsx synthesizes App.jsx exactly once, from whatever
+    pages exist on disk *at that moment* -- but the missing-frontend-import
+    fix loop routinely creates additional page files (e.g. BadgesPage.jsx,
+    because Navigation.jsx already links to /badges) afterward. Those pages
+    are never imported into App.jsx at all, let alone routed, since the
+    scaffold never re-runs. Reported live: habit-forge's Dashboard/Habits
+    routes worked but Reports/Badges/Settings all silently bounced back to
+    /dashboard -- "every other page is broken" from the user's perspective,
+    while every automated check stayed green because none of them click
+    through the sidebar. Any page file under src/pages/ that isn't imported
+    anywhere in App.jsx gets an import added here first, so the existing
+    orphan-route logic below picks it up the same as an already-imported one.
     """
     app_jsx = project_path / "src" / "App.jsx"
     if not app_jsx.exists():
@@ -2925,9 +2964,38 @@ def _patch_wire_orphan_frontend_routes(project_path: Path) -> None:
     original = content
 
     # Page components imported into App.jsx: import X from './pages/Y'
-    import_re = re.compile(r"^import\s+(\w+)\s+from\s+['\"]\./pages/\w+['\"]", re.MULTILINE)
-    imported = import_re.findall(content)
+    import_re = re.compile(r"^import\s+(\w+)\s+from\s+['\"]\./pages/(\w+)['\"]", re.MULTILINE)
+    imported_pairs = import_re.findall(content)
+    imported_modules = {module for _name, module in imported_pairs}
+
+    pages_dir = project_path / "src" / "pages"
+    if pages_dir.is_dir():
+        new_imports = []
+        for pf in sorted(pages_dir.glob("*.jsx")):
+            if pf.stem in imported_modules:
+                continue
+            try:
+                page_src = pf.read_text(encoding="utf-8", errors="replace")
+            except Exception:
+                continue
+            m = re.search(r"export\s+default\s+(?:function\s+)?(\w+)", page_src)
+            if not m or m.group(1) in {n for n, _mod in imported_pairs}:
+                continue
+            new_imports.append((m.group(1), pf.stem))
+
+        if new_imports:
+            last_import_m = list(re.finditer(r"^import\s+.+$", content, re.MULTILINE))
+            insert_at = last_import_m[-1].end() if last_import_m else 0
+            addition = "".join(f"\nimport {name} from './pages/{module}'" for name, module in new_imports)
+            content = content[:insert_at] + addition + content[insert_at:]
+            imported_pairs = imported_pairs + new_imports
+            print(f"  [route_patcher] Imported {len(new_imports)} orphan page file(s) into App.jsx: "
+                  f"{', '.join(n for n, _m in new_imports)}")
+
+    imported = [name for name, _module in imported_pairs]
     if not imported:
+        if content != original:
+            app_jsx.write_text(content, encoding="utf-8")
         return
 
     # A component is "routed" if it appears as a JSX tag anywhere (self-closing
@@ -2935,6 +3003,8 @@ def _patch_wire_orphan_frontend_routes(project_path: Path) -> None:
     # <Route element={...}>.
     orphans = [name for name in imported if not re.search(rf"<{name}[\s/>]", content)]
     if not orphans:
+        if content != original:
+            app_jsx.write_text(content, encoding="utf-8")
         return
 
     routed_paths = set(re.findall(r'<Route\s+path="([^"]+)"', content))
@@ -2965,6 +3035,8 @@ def _patch_wire_orphan_frontend_routes(project_path: Path) -> None:
         if template_m:
             break
     if not template_m:
+        if content != original:
+            app_jsx.write_text(content, encoding="utf-8")
         return
     indent, template_element = template_m.groups()
 
