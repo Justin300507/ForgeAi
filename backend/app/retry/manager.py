@@ -17,6 +17,7 @@ from dataclasses import dataclass, field
 from typing import Optional
 
 from app.core.context import FixStrategy, GenerationContext
+from app.retry import strategy_memory
 
 
 @dataclass
@@ -99,6 +100,10 @@ class RetryManager:
         self._attempt     = 0
         self._history: list[tuple[StrategyConfig, float, float]] = []
                              # (config, score_before, score_after)
+        # The pattern_id classified for the CURRENT in-flight attempt, set by
+        # next_strategy() and consumed by record_result() so the outcome is
+        # persisted against the same pattern the strategy was chosen for.
+        self._current_pattern: Optional[str] = None
 
     @property
     def attempt_number(self) -> int:
@@ -112,12 +117,29 @@ class RetryManager:
         """
         Return the next StrategyConfig, or None if all attempts are used.
         Also rotates the provider on attempt 4.
+
+        Before using the ladder's default strategy for this attempt, checks
+        strategy_memory for whether that exact (pattern, strategy) pairing
+        has a proven history of never improving the score (>=3 tries, 0
+        successes) across ALL past runs -- not just this one. If so, it
+        escalates directly to the next rung of the ladder instead of
+        spending this attempt repeating a known-useless move. This still
+        consumes exactly one attempt slot; it only changes WHICH strategy
+        that slot uses.
         """
         if self.exhausted:
             return None
 
         self._attempt += 1
         idx = min(self._attempt - 1, len(_ESCALATION_PLAN) - 1)
+
+        pattern_id = strategy_memory.dominant_pattern(ctx)
+        self._current_pattern = pattern_id
+        while (idx < len(_ESCALATION_PLAN) - 1
+               and strategy_memory.should_skip(pattern_id, _ESCALATION_PLAN[idx].strategy.value)):
+            print(f"[retry] Skipping {_ESCALATION_PLAN[idx].strategy.value} for pattern "
+                  f"'{pattern_id}' -- proven ineffective in past runs, escalating")
+            idx += 1
         cfg = _ESCALATION_PLAN[idx]
 
         # Attempt 4+: switch provider if the current strategy demands it
@@ -137,6 +159,17 @@ class RetryManager:
         icon  = "↑" if delta > 0 else ("↓" if delta < 0 else "→")
         print(f"[retry] Result: {score_before:.1f} {icon} {score_after:.1f} "
               f"(Δ={delta:+.1f})")
+
+        # Persist this (pattern, strategy) outcome for future runs. Uses the
+        # same "improved" definition as the pipeline's own stall detection
+        # (strictly positive delta), so strategy_memory and the fix loop's
+        # stall counter never disagree about what counts as progress.
+        try:
+            strategy_memory.record_outcome(
+                self._current_pattern, cfg.strategy.value, improved=delta > 0
+            )
+        except Exception as exc:
+            print(f"[retry] strategy_memory write failed (non-fatal): {exc}")
 
     def best_score(self) -> float:
         if not self._history:
