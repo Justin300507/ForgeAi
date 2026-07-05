@@ -274,13 +274,46 @@ def parse_runtime_error(stderr):
         }
 
     if "FastAPIError" in stderr:
-        # Specific: response_model is a SQLAlchemy model, not Pydantic schema
+        # Specific: response_model (or a bare return-type annotation, which
+        # FastAPI treats identically) is a SQLAlchemy model, not a Pydantic
+        # schema. FastAPI's own message embeds the exact offending type as
+        # "check that <class 'app.models.x.Y'>" -- extracting it turns a
+        # generic "check your response models" hint (which forces the fix to
+        # guess which of possibly several response_model= usages in the file
+        # is broken) into a precise "Y in app/models/x.py is the one" pointer.
         hint = None
+        bad_type = None
+        offending_class = None
+        offending_module = None
         if "is a valid Pydantic field type" in stderr or "response field" in stderr:
-            hint = "response_model must be a Pydantic schema (e.g. UserResponse), not a SQLAlchemy model class (e.g. User)."
+            type_m = re.search(r"check that\s+(?:<class '([\w.]+)'>|(\S+))\s+is a valid Pydantic field type", stderr)
+            if type_m:
+                bad_type = type_m.group(1) or type_m.group(2)
+                if bad_type and "." in bad_type:
+                    offending_module, _, offending_class = bad_type.rpartition(".")
+                else:
+                    offending_class = bad_type
+            if offending_class and offending_module and offending_module.startswith("app.models"):
+                hint = (
+                    f"The response_model (or return-type annotation) is `{offending_class}` from "
+                    f"`{offending_module}` -- that's the SQLAlchemy ORM model, not a Pydantic schema. "
+                    f"Find the route(s) in {error_file or 'app/routes/'} using `{offending_class}` as "
+                    f"response_model or as a `-> {offending_class}` return type, and point them at the "
+                    f"matching Pydantic schema class in app/schemas/ instead (e.g. `{offending_class}Response`)."
+                )
+            elif offending_class:
+                hint = (
+                    f"`{offending_class}` is not a valid Pydantic field type. If it's meant to be a "
+                    f"response schema, make sure it's a real `BaseModel` subclass imported from "
+                    f"app/schemas/, not a SQLAlchemy model or an unrelated class."
+                )
+            else:
+                hint = "response_model must be a Pydantic schema (e.g. UserResponse), not a SQLAlchemy model class (e.g. User)."
         return {
             "type": "FastAPIError",
             "error_file": error_file,
+            "offending_class": offending_class,
+            "offending_module": offending_module,
             "hint": hint,
         }
 

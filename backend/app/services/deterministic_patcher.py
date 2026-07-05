@@ -815,13 +815,22 @@ def _patch_deduplicate_schemas(project_path: Path) -> int:
 
 # ── 5. response_model using SQLAlchemy model instead of Pydantic schema ──────
 
-_FROM_MODELS_IMPORT = re.compile(r"^from app\.models\.\w+ import ([\w,\s]+)", re.MULTILINE)
+_FROM_MODELS_IMPORT = re.compile(r"^from app\.models\.\w+ import ([^\n]+)", re.MULTILINE)
 _RESPONSE_MODEL_ATTR = re.compile(r"\bresponse_model\s*=\s*(List\[)?(\w+)(])?")
+# FastAPI derives the response model from a route function's return-type
+# annotation just as readily as from an explicit response_model= kwarg — an
+# annotation like `-> HabitCompletion:` referencing an ORM model crashes
+# backend startup with the exact same "Invalid args for response field!"
+# FastAPIError as the response_model= form, but was invisible to this patcher
+# since it only looked for the `response_model=` keyword.
+_RETURN_TYPE_ANNOTATION = re.compile(r"(->\s*)(List\[)?(\w+)(\])?(\s*:)")
 
 
 def _patch_orm_response_model(content: str, filepath: str, project_path: Path = None) -> str:
     norm = filepath.replace("\\", "/")
-    if "response_model" not in content or ("/routes/" not in norm and not norm.startswith("app/routes")):
+    if ("/routes/" not in norm and not norm.startswith("app/routes")):
+        return content
+    if "response_model" not in content and "->" not in content:
         return content
 
     # Collect all class names imported from app.models.*
@@ -868,6 +877,19 @@ def _patch_orm_response_model(content: str, filepath: str, project_path: Path = 
         return f"response_model={prefix}dict{suffix}"  # fallback: dict serializes fine
 
     new_content = _RESPONSE_MODEL_ATTR.sub(_replace_rm, content)
+
+    def _replace_rt(m: re.Match) -> str:
+        arrow, prefix, cls_name, suffix, colon = m.groups()
+        prefix = prefix or ""
+        suffix = suffix or ""
+        if cls_name not in orm_classes:
+            return m.group(0)
+        if cls_name in schema_map:
+            schema_cls, _ = schema_map[cls_name]
+            return f"{arrow}{prefix}{schema_cls}{suffix}{colon}"
+        return f"{arrow}{prefix}dict{suffix}{colon}"
+
+    new_content = _RETURN_TYPE_ANNOTATION.sub(_replace_rt, new_content)
 
     # Add imports for any schema classes we substituted in
     for orm_cls, (schema_cls, module_name) in schema_map.items():
