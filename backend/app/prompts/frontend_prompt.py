@@ -249,6 +249,30 @@ DASHBOARD PAGE — MUST include ALL of:
   3. Recharts chart (BarChart or AreaChart) in a card below stats
   4. Recent items list (last 5 entries)
 
+These four are the FLOOR, not the whole page — a dashboard that stops here
+looks identical across every app category regardless of what the app
+actually does, which reads as generic no matter how well each individual
+card is styled. Add 1-2 MORE widgets chosen from this app's actual entities/
+features (pick whichever genuinely fits, don't force one that doesn't):
+  - Goal/progress card: a labeled progress bar or radial percentage toward
+    a target (budget remaining, workout streak, tasks completed this week)
+  - Quick actions row: 2-4 small buttons for the app's most common action
+    besides "Add X" (e.g. "Mark all read", "Export CSV", "Start timer")
+  - Secondary breakdown: a compact donut/pie or horizontal bar list showing
+    a category split (spending by category, tasks by status, members by tier)
+  - Attention list: items needing action, styled distinctly from the
+    "recent" list (overdue, low-stock, unread) — red/amber accents, not the
+    neutral list styling used for "recent activity"
+Compose these into the SAME stats-grid + chart + list shell above, don't
+replace it — the floor stays mandatory, this is what fills it out.
+
+CHART TYPE — match the chart to what the data actually represents, don't
+default to AreaChart for everything:
+  Trend over time (revenue, weight, completions per day)   -> AreaChart or LineChart
+  Comparing discrete categories (sales by region, votes)    -> BarChart
+  Part-of-a-whole composition (budget by category, status)  -> PieChart / donut (innerRadius set)
+  Single value vs. a goal (storage used, workout streak %)  -> RadialBarChart or a plain progress bar
+
 RECHARTS EXAMPLE (area chart):
 ```jsx
 import {{ AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer }} from 'recharts';
@@ -264,23 +288,35 @@ const data = [
 
 <div className="bg-white dark:bg-slate-800 rounded-xl border border-slate-100 dark:border-slate-700 p-5">
   <h3 className="font-semibold text-slate-900 dark:text-white mb-4">Monthly Overview</h3>
-  <ResponsiveContainer width="100%" height={{240}}>
-    <AreaChart data={{data}}>
-      <defs>
-        <linearGradient id="colorTotal" x1="0" y1="0" x2="0" y2="1">
-          <stop offset="5%" stopColor="#6366f1" stopOpacity={{0.15}} />
-          <stop offset="95%" stopColor="#6366f1" stopOpacity={{0}} />
-        </linearGradient>
-      </defs>
-      <CartesianGrid strokeDasharray="3 3" stroke="#e2e8f0" />
-      <XAxis dataKey="month" tick={{{{ fontSize: 12, fill: '#94a3b8' }}}} axisLine={{false}} tickLine={{false}} />
-      <YAxis tick={{{{ fontSize: 12, fill: '#94a3b8' }}}} axisLine={{false}} tickLine={{false}} />
-      <Tooltip contentStyle={{{{ background: '#1e293b', border: 'none', borderRadius: '8px', color: '#f1f5f9' }}}} />
-      <Area type="monotone" dataKey="total" stroke="#6366f1" strokeWidth={{2}} fill="url(#colorTotal)" />
-    </AreaChart>
-  </ResponsiveContainer>
+  {{data.length === 0 ? (
+    <div className="h-[240px] flex flex-col items-center justify-center text-center gap-2">
+      <TrendingUp size={{28}} className="text-slate-300 dark:text-slate-600" />
+      <p className="text-sm text-slate-400 dark:text-slate-500">Not enough data yet — check back after a few entries</p>
+    </div>
+  ) : (
+    <ResponsiveContainer width="100%" height={{240}}>
+      <AreaChart data={{data}}>
+        <defs>
+          <linearGradient id="colorTotal" x1="0" y1="0" x2="0" y2="1">
+            <stop offset="5%" stopColor="#6366f1" stopOpacity={{0.15}} />
+            <stop offset="95%" stopColor="#6366f1" stopOpacity={{0}} />
+          </linearGradient>
+        </defs>
+        <CartesianGrid strokeDasharray="3 3" stroke="#e2e8f0" />
+        <XAxis dataKey="month" tick={{{{ fontSize: 12, fill: '#94a3b8' }}}} axisLine={{false}} tickLine={{false}} />
+        <YAxis tick={{{{ fontSize: 12, fill: '#94a3b8' }}}} axisLine={{false}} tickLine={{false}} />
+        <Tooltip contentStyle={{{{ background: '#1e293b', border: 'none', borderRadius: '8px', color: '#f1f5f9' }}}} />
+        <Area type="monotone" dataKey="total" stroke="#6366f1" strokeWidth={{2}} fill="url(#colorTotal)" activeDot={{{{ r: 5, strokeWidth: 2 }}}} />
+      </AreaChart>
+    </ResponsiveContainer>
+  )}}
 </div>
 ```
+The empty-state branch above is mandatory for every chart, not optional
+polish — a chart fed an empty array silently renders a blank card with axes
+and no data, which is indistinguishable from the app being broken (this is
+the single most common false "blank page" report from screenshot review).
+Replace the icon/copy to fit the app's domain; keep the structure.
 
 LIST / INDEX PAGES — MUST contain:
   - Page header with title + "Add X" button (flex justify-between items-center)
@@ -289,6 +325,27 @@ LIST / INDEX PAGES — MUST contain:
   - At LEAST 5 pre-populated example items in useState initial array (use realistic domain data)
   - Empty state component if filtered list is empty (icon + "No results found" message)
   - Loading skeleton (show when fetching) using animate-pulse divs
+
+COMPOSITION MENU — pick 1-2 of these per list/detail page where the domain
+genuinely calls for it (don't force all of them onto every page, and don't
+skip all of them either — a page using only the bare list above every time
+is what makes generated apps feel interchangeable regardless of what they
+actually do):
+  - Sort control next to the search bar (dropdown or clickable column header)
+  - Bulk select: checkbox per row + a contextual action bar that appears
+    once >=1 row is selected ("3 selected — Delete / Archive")
+  - Row action menu: a single "⋮" icon button per row opening a small
+    absolute-positioned dropdown (Edit/Duplicate/Delete) instead of three
+    separate always-visible icon buttons crowding the row
+  - Tabs above the list to split by a natural status dimension (All /
+    Active / Archived) — real `<button>` tabs with an active-underline
+    style, wired to a state variable that filters the array, not separate
+    routes
+  - Pagination or a "Load more" button once the (demo) dataset exceeds ~8 items
+  - Detail pages (viewing one item, not editing) benefit from a 2-column
+    layout on lg+ screens: primary info left, a compact metadata/activity
+    sidebar right — a form-shaped single column for a read-only detail view
+    is a common tell that the page was templated rather than composed
 
 FORM PAGES — MUST contain:
   - Page header with back button (← Back)
