@@ -177,6 +177,9 @@ def build_design_system_injection(idea: str) -> str:
     ds = detect_category(idea)
     icons_str = ", ".join(ds["icons"][:8])
 
+    from app.prompts.style_system import build_style_injection
+    style_block = build_style_injection(idea, ds)
+
     return f"""
 ═══════════════════════════════════════════════════════
 APP-SPECIFIC DESIGN SYSTEM  ← apply these EXACTLY
@@ -273,4 +276,4 @@ EXAMPLE STAT CARD for this category (glass-lite surface + ring + hover lift + gr
 Note the `/80` and `/70` opacity + `backdrop-blur-xl` on the card background —
 combined with the ambient blobs behind it, this is what gives the whole app
 its depth. A fully opaque `bg-white` card here looks flat again by comparison.
-"""
+{style_block}"""
