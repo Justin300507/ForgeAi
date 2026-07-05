@@ -1375,8 +1375,31 @@ def create_access_token(data: dict, expires_delta: Optional[timedelta] = None) -
     return jwt.encode(to_encode, SECRET_KEY, algorithm=ALGORITHM)
 
 
+def _get_user_model():
+    import importlib
+    for mod in ("app.models.user", "app.models.users"):
+        try:
+            m = importlib.import_module(mod)
+            return getattr(m, "User")
+        except (ImportError, AttributeError):
+            continue
+    raise ImportError("No User model found in app.models.user or app.models.users")
+
+
+def _login_field(User) -> str:
+    """Which column uniquely identifies a user for login -- 'email' if the
+    model has one, else 'username'. Signup, login, and get_current_user must
+    all agree on this: a user created under one identifier field can never
+    be found again by a path that assumes the other, and since the field
+    doesn't exist at all on some models, comparing against it outright
+    raises AttributeError -- 500ing the request instead of a clean 401.
+    """
+    cols = {c.name for c in User.__table__.columns}
+    return "email" if "email" in cols else "username"
+
+
 def get_current_user(token: str = Depends(oauth2_scheme), db: Session = Depends(get_db)):
-    from app.models.user import User
+    User = _get_user_model()
     credentials_exception = HTTPException(
         status_code=status.HTTP_401_UNAUTHORIZED,
         detail="Could not validate credentials",
@@ -1384,21 +1407,21 @@ def get_current_user(token: str = Depends(oauth2_scheme), db: Session = Depends(
     )
     try:
         payload = jwt.decode(token, SECRET_KEY, algorithms=[ALGORITHM])
-        email: str = payload.get("sub")
-        if not email:
+        identifier: str = payload.get("sub")
+        if not identifier:
             raise credentials_exception
     except Exception:
         raise credentials_exception
-    user = db.query(User).filter(User.email == email).first()
+    user = db.query(User).filter(getattr(User, _login_field(User)) == identifier).first()
     if not user:
         raise credentials_exception
     return user
 
 
-def authenticate_user(db: Session, email: str, password: str):
+def authenticate_user(db: Session, identifier: str, password: str):
     """Convenience helper — LLM-generated routes commonly import this."""
-    from app.models.user import User
-    user = db.query(User).filter(User.email == email).first()
+    User = _get_user_model()
+    user = db.query(User).filter(getattr(User, _login_field(User)) == identifier).first()
     if not user:
         return None
     for field in ("hashed_password", "password_hash", "password"):
@@ -1545,6 +1568,7 @@ from sqlalchemy.orm import Session
 from app.database import get_db
 from app.utils.auth import (
     get_password_hash, verify_password, create_access_token, get_current_user,
+    _get_user_model, _login_field,
 )
 
 auth_router = APIRouter()
@@ -1561,22 +1585,19 @@ class LoginRequest(BaseModel):
     password: str = Field(min_length=1)
 
 
-def _get_user_model():
-    import importlib
-    for mod, cls in (("app.models.user", "User"), ("app.models.users", "Users")):
-        try:
-            m = importlib.import_module(mod)
-            return getattr(m, cls)
-        except (ImportError, AttributeError):
-            continue
-    raise ImportError("No User model found in app.models.user or app.models.users")
+def _identifier_value(login_field: str, email: str) -> str:
+    return email if login_field == "email" else email.split("@")[0]
 
 
 def _make_user(email: str, password: str, display_name: str = ""):
-    """Build a User instance regardless of which password field the model uses."""
+    """Build a User instance regardless of which password/identifier field the model uses."""
     User = _get_user_model()
     cols = {c.name for c in User.__table__.columns}
-    kw: dict = {"email": email}
+    login_field = _login_field(User)
+    identifier = _identifier_value(login_field, email)
+    kw: dict = {login_field: identifier}
+    if login_field != "email" and "email" in cols:
+        kw["email"] = email
     pwd_hash = get_password_hash(password)
     for field in ("hashed_password", "password_hash", "password"):
         if field in cols:
@@ -1584,7 +1605,7 @@ def _make_user(email: str, password: str, display_name: str = ""):
             break
     if "display_name" in cols:
         kw["display_name"] = display_name or email.split("@")[0]
-    if "username" in cols:
+    if "username" in cols and "username" not in kw:
         kw["username"] = email.split("@")[0]
     if "is_active" in cols:
         kw["is_active"] = True
@@ -1613,7 +1634,7 @@ def _make_user(email: str, password: str, display_name: str = ""):
             kw[col.name] = True
         else:
             kw[col.name] = ""
-    return User(**kw)
+    return User(**{k: v for k, v in kw.items() if k in cols})
 
 
 def _read_password(user) -> str | None:
@@ -1628,18 +1649,20 @@ def _read_password(user) -> str | None:
 @auth_router.post("/auth/register")
 def signup(req: SignupRequest, db: Session = Depends(get_db)):
     User = _get_user_model()
-    if db.query(User).filter(User.email == req.email).first():
+    login_field = _login_field(User)
+    identifier = _identifier_value(login_field, req.email)
+    if db.query(User).filter(getattr(User, login_field) == identifier).first():
         raise HTTPException(status_code=400, detail="Email already registered")
     user = _make_user(req.email, req.password, req.display_name)
     db.add(user)
     db.commit()
     db.refresh(user)
-    token = create_access_token(data={"sub": user.email})
+    token = create_access_token(data={"sub": identifier})
     return {
         "access_token": token,
         "token_type": "bearer",
         "user_id": user.id,
-        "email": user.email,
+        "email": req.email,
         "display_name": getattr(user, "display_name", req.email.split("@")[0]),
     }
 
@@ -1647,17 +1670,19 @@ def signup(req: SignupRequest, db: Session = Depends(get_db)):
 @auth_router.post("/auth/login")
 def login(req: LoginRequest, db: Session = Depends(get_db)):
     User = _get_user_model()
-    user = db.query(User).filter(User.email == req.email).first()
+    login_field = _login_field(User)
+    identifier = _identifier_value(login_field, req.email)
+    user = db.query(User).filter(getattr(User, login_field) == identifier).first()
     stored = _read_password(user) if user else None
     if not user or not stored or not verify_password(req.password, stored):
         raise HTTPException(status_code=401, detail="Incorrect email or password")
-    token = create_access_token(data={"sub": user.email})
+    token = create_access_token(data={"sub": identifier})
     return {
         "access_token": token,
         "token_type": "bearer",
         "user_id": user.id,
-        "email": user.email,
-        "display_name": getattr(user, "display_name", user.email.split("@")[0]),
+        "email": getattr(user, "email", req.email),
+        "display_name": getattr(user, "display_name", identifier),
     }
 
 
@@ -1665,7 +1690,7 @@ def login(req: LoginRequest, db: Session = Depends(get_db)):
 def me(current_user=Depends(get_current_user)):
     return {
         "id": current_user.id,
-        "email": current_user.email,
+        "email": getattr(current_user, "email", getattr(current_user, "username", None)),
         "display_name": getattr(current_user, "display_name", None),
         "role": getattr(current_user, "role", None),
     }
