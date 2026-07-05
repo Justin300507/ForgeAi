@@ -3115,12 +3115,19 @@ def _patch_frontend_package_json(project_path: Path) -> bool:
 _SVC_IMPORT_RE = re.compile(r"^from app\.services\.(\w+) import ([^\n]+)", re.MULTILINE)
 
 
-def _infer_crud_func(func: str, model_cls: str, resource: str) -> str:
+def _infer_crud_func(func: str, model_cls: str, resource: str, pk: str = "id") -> str:
+    """`pk` is the model's actual primary-key column name (detected by the
+    caller from the model source, defaulting to "id"). Hardcoding
+    `{model_cls}.id` here used to raise AttributeError on every request for
+    any model whose primary key is named something else (e.g. `game_id`) --
+    the same failure class as the auth-template bug: an unconditional
+    schema assumption baked into generated code that isn't always true.
+    """
     f = func.lower()
     rid = f"{resource}_id"
     if re.match(r"get_\w+_by_id|get_by_id|fetch_\w+_by_id", f):
         return (f"def {func}(db: Session, {rid}: int):\n"
-                f"    return db.query({model_cls}).filter({model_cls}.id == {rid}).first()\n")
+                f"    return db.query({model_cls}).filter({model_cls}.{pk} == {rid}).first()\n")
     if re.match(r"get_all_\w+|list_\w+|get_\w+s$", f):
         return (f"def {func}(db: Session, limit: int = 100, offset: int = 0, **kw):\n"
                 f"    return db.query({model_cls}).offset(offset).limit(limit).all()\n")
@@ -3135,19 +3142,19 @@ def _infer_crud_func(func: str, model_cls: str, resource: str) -> str:
                 f"    db.add(obj); db.commit(); db.refresh(obj); return obj\n")
     if re.match(r"update_\w+", f):
         return (f"def {func}(db: Session, {rid}: int, {resource}_in=None, **kw):\n"
-                f"    obj = db.query({model_cls}).filter({model_cls}.id == {rid}).first()\n"
+                f"    obj = db.query({model_cls}).filter({model_cls}.{pk} == {rid}).first()\n"
                 f"    if not obj: return None\n"
                 f"    data = {resource}_in.dict() if hasattr({resource}_in, 'dict') else kw\n"
                 f"    [setattr(obj, k, v) for k, v in data.items() if k in {model_cls}.__table__.columns.keys()]\n"
                 f"    db.commit(); db.refresh(obj); return obj\n")
     if re.match(r"delete_\w+", f):
         return (f"def {func}(db: Session, {rid}: int) -> bool:\n"
-                f"    obj = db.query({model_cls}).filter({model_cls}.id == {rid}).first()\n"
+                f"    obj = db.query({model_cls}).filter({model_cls}.{pk} == {rid}).first()\n"
                 f"    if not obj: return False\n"
                 f"    db.delete(obj); db.commit(); return True\n")
     if re.match(r"add_\w+_to_\w+|remove_\w+_from_\w+", f):
         return (f"def {func}(db: Session, {rid}: int, user_id: int, **kw):\n"
-                f"    return db.query({model_cls}).filter({model_cls}.id == {rid}).first()\n")
+                f"    return db.query({model_cls}).filter({model_cls}.{pk} == {rid}).first()\n")
     # Generic fallback
     return (f"def {func}(db: Session, *args, **kw):\n    return None\n")
 
@@ -3174,8 +3181,13 @@ def _patch_create_missing_service_stubs(project_path: Path) -> int:
     if not needed:
         return 0
 
-    # Build model class map: service name → (ModelClass, module path)
-    model_map: dict[str, tuple[str, str]] = {}
+    # Build model class map: service name → (ModelClass, module path, pk column)
+    _pk_re = re.compile(r"^\s{4}(\w+)\s*=\s*Column\([^\n]*primary_key\s*=\s*True", re.MULTILINE)
+    _mapped_pk_re = re.compile(
+        r"^\s{4}(\w+)\s*:\s*Mapped\[[^\]]+\]\s*=\s*mapped_column\([^\n]*primary_key\s*=\s*True",
+        re.MULTILINE,
+    )
+    model_map: dict[str, tuple[str, str, str]] = {}
     if models_dir.exists():
         for mf in models_dir.glob("*.py"):
             if mf.name.startswith("_"):
@@ -3184,10 +3196,12 @@ def _patch_create_missing_service_stubs(project_path: Path) -> int:
                 text = mf.read_text(encoding="utf-8", errors="replace")
             except Exception:
                 continue
+            pk_m = _pk_re.search(text) or _mapped_pk_re.search(text)
+            pk = pk_m.group(1) if pk_m else "id"
             for cls in re.findall(r"^class (\w+)\s*\(Base\)", text, re.MULTILINE):
                 for key in (mf.stem, mf.stem.rstrip("s"), cls.lower(), cls.lower().rstrip("s")):
                     if key not in model_map:
-                        model_map[key] = (cls, f"app.models.{mf.stem}")
+                        model_map[key] = (cls, f"app.models.{mf.stem}", pk)
 
     services_dir.mkdir(parents=True, exist_ok=True)
     created = 0
@@ -3207,9 +3221,12 @@ def _patch_create_missing_service_stubs(project_path: Path) -> int:
 
         # Infer resource name and model class
         resource = module.replace("_service", "").replace("_services", "")
-        model_cls, model_mod = model_map.get(resource) or model_map.get(resource.rstrip("s")) or (resource.capitalize(), f"app.models.{resource}")
+        model_cls, model_mod, pk = (
+            model_map.get(resource) or model_map.get(resource.rstrip("s"))
+            or (resource.capitalize(), f"app.models.{resource}", "id")
+        )
 
-        stubs = [_infer_crud_func(f, model_cls, resource) for f in sorted(missing)]
+        stubs = [_infer_crud_func(f, model_cls, resource, pk) for f in sorted(missing)]
 
         if existing is None:
             content = (
