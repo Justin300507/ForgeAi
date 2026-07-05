@@ -601,6 +601,13 @@ def _run_workflow_tests(ctx: GenerationContext, screenshots: list[str]) -> tuple
 #   STAGE 11 — LLM Judge (sequential, after all parallel stages)
 # ═══════════════════════════════════════════════════════════════
 
+_BLANK_CLAIM_RE = re.compile(
+    r"blank|empty page|nothing (?:render|display)|did not (?:load|render)|"
+    r"failed to render|no content|white screen|nothing (?:is )?(?:shown|visible)",
+    re.IGNORECASE,
+)
+
+
 def _run_llm_judge(
     ctx: GenerationContext,
     all_pre_judge_diagnostics: list[Diagnostic],
@@ -651,6 +658,31 @@ def _run_llm_judge(
                "medium": ErrorSeverity.MEDIUM, "low": ErrorSeverity.LOW}
     if judgment.assessment and judgment.severity not in ("info", ""):
         severity = sev_map.get(judgment.severity, ErrorSeverity.MEDIUM)
+
+        # The vision judge reads a screenshot in isolation and can hallucinate
+        # "blank page" for a UI that's merely sparse/minimal-looking, or for
+        # a screenshot taken before a fast page finished its transition. The
+        # browser stage already has a hard structural signal for this exact
+        # claim -- #root's actual child count -- so cross-check before
+        # trusting a blank/empty verdict enough to hard-block deployment.
+        # Real run this fixes: judge said "the application is displaying a
+        # completely blank page" about a screenshot that plainly showed a
+        # populated dashboard (stat cards, chart, habit list) -- the DOM had
+        # mounted real content and there were zero console errors, so the
+        # verdict was wrong, not the app.
+        if severity == ErrorSeverity.CRITICAL and _BLANK_CLAIM_RE.search(judgment.assessment):
+            br = ctx.browser_result
+            structural_contradicts = (
+                br is not None and not br.skipped
+                and not br.blank_page and br.page_loaded
+                and not br.console_errors
+            )
+            if structural_contradicts:
+                severity = ErrorSeverity.MEDIUM
+                print("  [verify]       LLM Judge claimed a blank/empty page, but the browser "
+                      "stage found mounted DOM content with zero console errors -- treating "
+                      "as a likely vision misread and downgrading to medium severity")
+
         diagnostics.append(Diagnostic(
             error_id=Diagnostic.make_id("llm_judge", ErrorCategory.BROWSER, judgment.assessment),
             category=ErrorCategory.BROWSER,
