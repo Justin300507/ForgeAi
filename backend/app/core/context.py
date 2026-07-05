@@ -157,19 +157,28 @@ class BrowserTestResult:
 @dataclass
 class ScoreDimension:
     name:    str
-    score:   float   # 0–100
+    # None means N/A (the underlying stage did not run) -- distinct from a
+    # real 0, which means the stage ran and failed outright. A dimension
+    # that never ran must not silently pull the weighted average toward
+    # a neutral value; it must be excluded from the average entirely
+    # (see ScoringEngine.score's renormalization).
+    score:   Optional[float]   # 0-100, or None if not applicable
     weight:  float   # fraction; all weights sum to 1.0
     passed:  bool
     details: str = ""
 
     @property
+    def na(self) -> bool:
+        return self.score is None
+
+    @property
     def weighted(self) -> float:
-        return self.score * self.weight
+        return 0.0 if self.score is None else self.score * self.weight
 
 
 @dataclass
 class QualityScore:
-    overall:          float                  # 0–100 weighted sum
+    overall:          float                  # 0–100 weighted sum over evaluated dimensions
     dimensions:       list[ScoreDimension]
     timestamp:        datetime
     attempt_number:   int
@@ -184,6 +193,18 @@ class QualityScore:
         if s >= 70: return "C"
         if s >= 60: return "D"
         return "F"
+
+    @property
+    def dimensions_total(self) -> int:
+        return len(self.dimensions)
+
+    @property
+    def dimensions_evaluated(self) -> int:
+        return sum(1 for d in self.dimensions if not d.na)
+
+    @property
+    def coverage_label(self) -> str:
+        return f"{self.dimensions_evaluated}/{self.dimensions_total} dimensions"
 
     def dim(self, name: str) -> Optional[ScoreDimension]:
         return next((d for d in self.dimensions if d.name == name), None)
@@ -389,6 +410,13 @@ class GenerationContext:
     def latest_score(self) -> float:
         return self.current_score.overall if self.current_score else 0.0
 
+    # Stages whose failure must hard-block deployment regardless of the
+    # weighted score: a passing weighted average can absorb a failure in any
+    # single low-weight dimension, but these are all-or-nothing preconditions
+    # (e.g. a broken frontend build stays broken on Cloudflare no matter what
+    # the browser/integration dimensions score before it's ever fixed).
+    CRITICAL_STAGES = ("frontend_build", "runtime")
+
     @property
     def is_deployment_ready(self) -> bool:
         # A high-confidence critical visual verdict (e.g. "this is a blank
@@ -398,6 +426,13 @@ class GenerationContext:
         # already-high score can absorb without ever dropping below threshold.
         if self.llm_judge_severity == ErrorSeverity.CRITICAL and self.llm_judge_confidence >= 0.6:
             return False
+        # Same reasoning for any critical stage that outright failed: a
+        # renormalized score over the remaining dimensions can still clear
+        # DEPLOY_THRESHOLD (that's the point of renormalization) even though
+        # the build/runtime that Cloudflare/Render will reproduce is broken.
+        for r in self.static_results:
+            if r.stage in self.CRITICAL_STAGES and r.status == StageStatus.FAILED:
+                return False
         return self.latest_score >= self.DEPLOY_THRESHOLD
 
     def record_score(self, score: QualityScore):

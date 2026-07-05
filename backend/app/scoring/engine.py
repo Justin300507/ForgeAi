@@ -94,7 +94,11 @@ def _dim_frontend_load(ctx: GenerationContext) -> ScoreDimension:
     """Did the frontend load without blank pages?"""
     br = ctx.browser_result
     if br is None or br.skipped:
-        return ScoreDimension(name="Frontend Load", score=50, weight=0.10,
+        # N/A, not a neutral 50 -- a dimension that never ran must not pull
+        # the weighted average toward a fixed value either way. See
+        # ScoringEngine.score() for how N/A dimensions are excluded and the
+        # remaining weights renormalized.
+        return ScoreDimension(name="Frontend Load", score=None, weight=0.10,
                               passed=False, details=f"skipped: {getattr(br,'skip_reason','') if br else 'not run'}")
     if br.blank_page:
         return ScoreDimension(name="Frontend Load", score=0, weight=0.10,
@@ -111,7 +115,7 @@ def _dim_browser_ux(ctx: GenerationContext) -> ScoreDimension:
     """Console errors, network failures, form submission, navigation."""
     br = ctx.browser_result
     if br is None or br.skipped:
-        return ScoreDimension(name="Browser UX", score=50, weight=0.15,
+        return ScoreDimension(name="Browser UX", score=None, weight=0.15,
                               passed=False, details="skipped")
 
     # Deductions
@@ -141,7 +145,7 @@ def _dim_integration(ctx: GenerationContext) -> ScoreDimension:
     """Did the E2E workflow (register→login→CRUD) pass?"""
     br = ctx.browser_result
     if br is None or br.skipped:
-        return ScoreDimension(name="Integration", score=50, weight=0.10,
+        return ScoreDimension(name="Integration", score=None, weight=0.10,
                               passed=False, details="skipped")
 
     total  = len(br.workflow_steps_passed) + len(br.workflow_steps_failed)
@@ -348,9 +352,14 @@ class ScoringEngine:
                     details=f"scorer crashed: {exc}",
                 ))
 
-        # Normalise weights (in case custom dimensions were added)
-        total_w = sum(d.weight for d in dimensions)
-        overall = sum(d.score * (d.weight / total_w) for d in dimensions) if total_w else 0.0
+        # Normalise weights over EVALUATED dimensions only (score is not
+        # None). A dimension that never ran (N/A) must not participate in
+        # the weighted average at all -- including it at any fixed score,
+        # neutral or otherwise, either inflates or deflates a result that
+        # should be judged purely on what was actually checked.
+        evaluated = [d for d in dimensions if not d.na]
+        total_w = sum(d.weight for d in evaluated)
+        overall = sum(d.score * (d.weight / total_w) for d in evaluated) if total_w else 0.0
         overall = round(overall, 2)
 
         qs = QualityScore(
@@ -369,13 +378,18 @@ class ScoringEngine:
         ready_tag = " [DEPLOY READY]" if score.deployment_ready else " [NEEDS REPAIR]"
         print(f"\n{sep}")
         print(f"  FORGE SCORE: {score.overall:.1f}/100  ({score.grade}){ready_tag}")
+        print(f"  Coverage: {score.coverage_label}")
         print(sep)
         for d in score.dimensions:
-            filled = int(d.score / 100 * bar_width)
-            bar    = "#" * filled + "." * (bar_width - filled)
-            flag   = "+" if d.passed else "x"
-            pct    = f"{d.weight*100:.0f}%"
-            print(f"  {flag} {d.name:<22} [{bar}] {d.score:5.1f}  (wt:{pct})")
+            pct = f"{d.weight*100:.0f}%"
+            if d.na:
+                bar = "." * bar_width
+                print(f"  ~ {d.name:<22} [{bar}]   N/A  (wt:{pct}, excluded)")
+            else:
+                filled = int(d.score / 100 * bar_width)
+                bar    = "#" * filled + "." * (bar_width - filled)
+                flag   = "+" if d.passed else "x"
+                print(f"  {flag} {d.name:<22} [{bar}] {d.score:5.1f}  (wt:{pct})")
             if d.details:
                 print(f"      {d.details}")
         print(f"{sep}\n")
