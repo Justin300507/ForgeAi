@@ -103,7 +103,8 @@ def ensure_app_jsx(project_path):
     )
 
     lines = [
-        "import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom'",
+        "import React from 'react'",
+        "import { BrowserRouter, Routes, Route, Navigate, useNavigate } from 'react-router-dom'",
     ]
     for name, module in pages:
         lines.append(f"import {name} from './pages/{module}'")
@@ -111,10 +112,24 @@ def ensure_app_jsx(project_path):
     lines.append("const PrivateRoute = ({ children }) =>")
     lines.append("  localStorage.getItem('token') ? children : <Navigate to=\"/login\" replace />")
     lines.append("")
-    lines.append("export default function App() {")
+    lines.append("function AppRoutes() {")
+    lines.append("  const navigate = useNavigate()")
+    lines.append("  const [dark, setDark] = React.useState(() => localStorage.getItem('theme') === 'dark')")
+    lines.append("")
+    lines.append("  React.useEffect(() => {")
+    lines.append("    document.documentElement.classList.toggle('dark', dark)")
+    lines.append("    localStorage.setItem('theme', dark ? 'dark' : 'light')")
+    lines.append("  }, [dark])")
+    lines.append("")
+    lines.append("  const onLogout = () => {")
+    lines.append("    localStorage.removeItem('token')")
+    lines.append("    navigate('/login')")
+    lines.append("  }")
+    lines.append("")
+    lines.append("  const pageProps = { dark, setDark, onLogout }")
+    lines.append("")
     lines.append("  return (")
-    lines.append("    <BrowserRouter>")
-    lines.append("      <Routes>")
+    lines.append("    <Routes>")
 
     seen_paths = set()
 
@@ -123,7 +138,7 @@ def ensure_app_jsx(project_path):
         if path in seen_paths:
             continue
         seen_paths.add(path)
-        lines.append(f'        <Route path="{path}" element={{<{name} />}} />')
+        lines.append(f'      <Route path="{path}" element={{<{name} {{...pageProps}} />}} />')
 
     for name, _module in private_pages:
         path = _route_path_for(name)
@@ -131,12 +146,19 @@ def ensure_app_jsx(project_path):
             continue
         seen_paths.add(path)
         lines.append(
-            f'        <Route path="{path}" element={{<PrivateRoute><{name} /></PrivateRoute>}} />'
+            f'      <Route path="{path}" element={{<PrivateRoute><{name} {{...pageProps}} /></PrivateRoute>}} />'
         )
 
-    lines.append(f'        <Route path="/" element={{<Navigate to="{default_authed_route}" replace />}} />')
-    lines.append(f'        <Route path="*" element={{<Navigate to="{default_authed_route}" replace />}} />')
-    lines.append("      </Routes>")
+    lines.append(f'      <Route path="/" element={{<Navigate to="{default_authed_route}" replace />}} />')
+    lines.append(f'      <Route path="*" element={{<Navigate to="{default_authed_route}" replace />}} />')
+    lines.append("    </Routes>")
+    lines.append("  )")
+    lines.append("}")
+    lines.append("")
+    lines.append("export default function App() {")
+    lines.append("  return (")
+    lines.append("    <BrowserRouter>")
+    lines.append("      <AppRoutes />")
     lines.append("    </BrowserRouter>")
     lines.append("  )")
     lines.append("}")

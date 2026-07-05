@@ -369,19 +369,65 @@ from the design system above instead of a neutral color)
 Default size: 16 for nav, 18 for list icons, 20 for page headings
 
 ═══════════════════════════════════════════════════════
-DARK MODE
+DARK MODE + LOGOUT — OWNED BY App.jsx, PASSED DOWN AS PROPS
 ═══════════════════════════════════════════════════════
 
-Add a dark mode toggle button somewhere (header or settings page):
-```jsx
-const [dark, setDark] = React.useState(false);
-React.useEffect(() => {{
-  document.documentElement.classList.toggle('dark', dark);
-}}, [dark]);
+`dark`/`setDark`/`onLogout` must live in ONE place (App.jsx) and be passed as
+props to every routed page — NOT declared as local state inside whichever
+page happens to render the toggle button or a Header. If each page owns its
+own `dark` state independently, toggling it on one page has no effect on any
+other page (looks broken), and a page's Header/logout button silently does
+nothing if that page never wrote its own click handler. This is the single
+most common way a generated app's dark-mode toggle and logout button end up
+non-functional — the pattern below is mandatory, not optional styling.
 
-<button onClick={{() => setDark(d => !d)}} className="p-2 rounded-lg text-slate-500 hover:bg-slate-100 dark:hover:bg-slate-700 transition-colors">
-  {{dark ? <Sun size={{18}} /> : <Moon size={{18}} />}}
-</button>
+App.jsx:
+```jsx
+import React from 'react';
+import {{ BrowserRouter, Routes, Route, Navigate, useNavigate }} from 'react-router-dom';
+
+function AppRoutes() {{
+  const navigate = useNavigate();
+  const [dark, setDark] = React.useState(() => localStorage.getItem('theme') === 'dark');
+
+  React.useEffect(() => {{
+    document.documentElement.classList.toggle('dark', dark);
+    localStorage.setItem('theme', dark ? 'dark' : 'light');
+  }}, [dark]);
+
+  const onLogout = () => {{
+    localStorage.removeItem('token');
+    navigate('/login');
+  }};
+
+  const pageProps = {{ dark, setDark, onLogout }};
+
+  return (
+    <Routes>
+      <Route path="/dashboard" element={{<PrivateRoute><Dashboard {{...pageProps}} /></PrivateRoute>}} />
+      {{/* pass {{...pageProps}} to EVERY routed page, public and private alike */}}
+    </Routes>
+  );
+}}
+
+export default function App() {{
+  return (<BrowserRouter><AppRoutes /></BrowserRouter>);
+}}
+```
+
+Every page/component that shows a dark-mode toggle or a logout button
+receives `dark`, `setDark`, `onLogout` as **props** (destructure them from the
+function's params — do NOT call `React.useState` for `dark` anywhere outside
+App.jsx):
+```jsx
+const Header = ({{ dark, setDark, onLogout }}) => (
+  <header>
+    <button onClick={{() => setDark(d => !d)}} className="p-2 rounded-lg text-slate-500 hover:bg-slate-100 dark:hover:bg-slate-700 transition-colors">
+      {{dark ? <Sun size={{18}} /> : <Moon size={{18}} />}}
+    </button>
+    <button onClick={{onLogout}}>Log out</button>
+  </header>
+);
 ```
 
 ═══════════════════════════════════════════════════════
@@ -470,8 +516,29 @@ error (e.g. a literal "Not Found" from the platform's own routing while the
 container is still starting, not from your API) gets shown directly to the
 user, which looks like the app is broken when it just needs ~30-50s. Wrap
 the initial data-fetching effect on every protected page in the SAME
-attempt/sleep(15000) retry loop shown above (3 attempts), showing a friendly
-"Waking up the server…" status instead of a raw error while retrying.
+attempt/sleep(15000) retry loop shown above (3 attempts).
+
+The loading skeleton MUST visibly change once a retry happens — a skeleton
+that looks identical for the full 30-50s cold-start window is indistinguishable
+from a permanently broken page from the user's point of view, even though the
+retry loop is working correctly underneath. Track whether a retry has
+happened and show a message once it has:
+```jsx
+const [slowLoad, setSlowLoad] = React.useState(false);
+// ...inside the catch block, before the sleep:
+setSlowLoad(true);
+// ...in the loading branch of the JSX:
+{{loading && (
+  <>
+    {{slowLoad && (
+      <div className="text-sm font-medium text-amber-600 dark:text-amber-400 mb-4">
+        Waking up the server — it's been idle and can take up to a minute on the first load. Hang tight...
+      </div>
+    )}}
+    <SkeletonOrSpinner />
+  </>
+)}}
+```
 
 AUTH RULES — mandatory for every app with authentication:
 

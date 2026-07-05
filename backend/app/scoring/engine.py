@@ -235,6 +235,43 @@ def _dim_completeness(ctx: GenerationContext) -> ScoreDimension:
     )
 
 
+def _dim_llm_judge_visual(ctx: GenerationContext) -> ScoreDimension:
+    """Vision-LLM verdict on the actual rendered screenshot.
+
+    Structural checks (build passed, health check 200, endpoints responded)
+    can all be green while the app is still visibly broken to a real user —
+    e.g. a blank page caused by a runtime ReferenceError that no static
+    analysis or HTTP check would ever see. A real run scored 96.3/A+ and
+    deployed with the LLM Judge explicitly reporting "the application is
+    displaying a completely blank page" because that verdict never touched
+    scoring at all. This dimension (plus the separate hard gate in
+    GenerationContext.is_deployment_ready for high-confidence critical
+    findings) is what makes that verdict actually count.
+    """
+    severity = getattr(ctx, "llm_judge_severity", None)
+    if severity is None:
+        return ScoreDimension(name="Visual Judge", score=100, weight=0.05,
+                              passed=True, details="no visual issues reported")
+
+    confidence = getattr(ctx, "llm_judge_confidence", 0.0)
+    score_by_severity = {
+        ErrorSeverity.CRITICAL: 0.0,
+        ErrorSeverity.HIGH: 30.0,
+        ErrorSeverity.MEDIUM: 60.0,
+        ErrorSeverity.LOW: 85.0,
+    }
+    base = score_by_severity.get(severity, 70.0)
+    # Low-confidence verdicts get pulled toward neutral rather than fully
+    # trusted — a vision model unsure of its own read shouldn't tank the
+    # score as hard as a confident one.
+    score = base + (100.0 - base) * (1.0 - min(max(confidence, 0.0), 1.0))
+    return ScoreDimension(
+        name="Visual Judge", score=score, weight=0.05,
+        passed=score >= 70,
+        details=f"llm_judge_severity={severity.value} confidence={confidence:.2f}",
+    )
+
+
 def _dim_performance(ctx: GenerationContext) -> ScoreDimension:
     """Backend response time for /health endpoint."""
     rr = ctx.runtime_result
@@ -287,8 +324,9 @@ class ScoringEngine:
             _dim_security,          # weight 0.05
             _dim_completeness,      # weight 0.03
             _dim_performance,       # weight 0.02
+            _dim_llm_judge_visual,  # weight 0.05 (weights are re-normalised below)
         ]
-        # Total weight = 1.00
+        # Weights are re-normalised in .score() so this doesn't need to sum to 1.00.
 
     def add_dimension(self, fn) -> "ScoringEngine":
         """Register a custom dimension function: fn(ctx) → ScoreDimension."""

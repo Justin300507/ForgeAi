@@ -650,15 +650,23 @@ def _run_llm_judge(
     sev_map = {"critical": ErrorSeverity.CRITICAL, "high": ErrorSeverity.HIGH,
                "medium": ErrorSeverity.MEDIUM, "low": ErrorSeverity.LOW}
     if judgment.assessment and judgment.severity not in ("info", ""):
+        severity = sev_map.get(judgment.severity, ErrorSeverity.MEDIUM)
         diagnostics.append(Diagnostic(
             error_id=Diagnostic.make_id("llm_judge", ErrorCategory.BROWSER, judgment.assessment),
             category=ErrorCategory.BROWSER,
-            severity=sev_map.get(judgment.severity, ErrorSeverity.MEDIUM),
+            severity=severity,
             source="llm_judge",
             message=judgment.assessment,
             fix_hint=judgment.fix_hint or None,
             metadata={"confidence": judgment.confidence, "screenshot_used": judgment.screenshot_available},
         ))
+        # Recorded unconditionally (any severity/confidence) for scoring —
+        # see _dim_llm_judge_visual. is_deployment_ready applies its own
+        # confidence bar before treating this as a hard deploy-block, so a
+        # low-confidence vision misread can still show up in the score
+        # without being able to fail an otherwise-sound generation outright.
+        ctx.llm_judge_severity = severity
+        ctx.llm_judge_confidence = judgment.confidence
 
     status = StageStatus.PASSED if not diagnostics else StageStatus.FAILED
     return VerificationResult(stage="llm_judge", status=status, diagnostics=diagnostics,

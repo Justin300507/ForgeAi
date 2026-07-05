@@ -15,7 +15,8 @@ from app.services.orm_validator import (
 )
 from app.services.endpoint_validator import (
     validate_endpoints,
-    validate_orphan_routes
+    validate_orphan_routes,
+    validate_frontend_api_calls
 )
 from app.services.database_validator import (
     validate_database
@@ -489,6 +490,61 @@ def _page_name_for_path(path):
     return "".join(w.capitalize() for w in words if w) + "Page"
 
 
+# Verb synonyms so a route segment and a page-name word don't have to be
+# spelled identically to count as the same CRUD intent (mirrors the matching
+# used by deterministic_patcher's orphan-route wirer — kept in sync so a page
+# this validator considers "already served" is the same one that patcher
+# would actually wire up).
+_NAV_CRUD_VERB_SYNONYMS = [
+    frozenset({"new", "add", "create"}),
+    frozenset({"edit", "update"}),
+    frozenset({"delete", "remove"}),
+    frozenset({"detail", "details", "view", "show"}),
+]
+
+
+def _nav_word_synonyms(word):
+    for group in _NAV_CRUD_VERB_SYNONYMS:
+        if word in group:
+            return group
+    return frozenset({word})
+
+
+def _path_matches_existing_page(target, existing_pages):
+    """True if some already-on-disk page plausibly serves this route.
+
+    Comparing only the route's last segment against each page's filename
+    (the old approach) misses exactly the routes that matter most: create/edit
+    forms whose distinguishing noun sits in an earlier segment while the
+    component is named things like AddEditHabitPage — "/habits/new" vs.
+    "addedithabitpage" never shared a last-segment substring, so a page that
+    already existed and already handled this route was reported as missing,
+    and a generic placeholder page got generated (and wired) in its place.
+    """
+    segs = [s for s in target.strip("/").split("/") if s and not s.startswith(":") and not s.startswith("{")]
+    if not segs:
+        return False
+
+    for page in existing_pages:
+        page_words = {w.lower() for w in re.findall(r"[A-Z][a-z0-9]*", page) if w.lower() != "page"}
+        if not page_words:
+            page_words = {page.lower().replace("page", "")}
+
+        score = 0
+        for seg in segs:
+            seg_l = seg.lower().replace("-", "").replace("_", "")
+            seg_singular = seg_l[:-1] if seg_l.endswith("s") and len(seg_l) > 3 else seg_l
+            candidates = _nav_word_synonyms(seg_l) | _nav_word_synonyms(seg_singular) | {seg_l, seg_singular}
+            if candidates & page_words:
+                score += 1
+            elif any(len(c) > 2 and len(pw) > 2 and (c in pw or pw in c) for c in candidates for pw in page_words):
+                score += 1
+        if score > 0:
+            return True
+
+    return False
+
+
 def validate_frontend_nav_targets(project_path, errors):
     """
     A page can be truncated out of the LLM's frontend response (hits its
@@ -545,9 +601,7 @@ def validate_frontend_nav_targets(project_path, errors):
 
     reported = set()
     for target in sorted(nav_targets - _SKIP_NAV_TARGETS - routed_paths):
-        last_seg = target.rstrip("/").split("/")[-1].replace("-", "").replace("_", "").lower()
-        if any(last_seg in p.lower() or p.lower().replace("page", "") in last_seg
-               for p in existing_pages):
+        if _path_matches_existing_page(target, existing_pages):
             continue  # a page that plausibly serves this route already exists on disk
         page_name = _page_name_for_path(target)
         if page_name in reported:
@@ -1026,6 +1080,10 @@ def validate_project(project_path):
     validate_endpoints(
         project_path,
         metadata,
+        errors
+    )
+    validate_frontend_api_calls(
+        project_path,
         errors
     )
     validate_orphan_routes(

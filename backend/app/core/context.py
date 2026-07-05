@@ -277,6 +277,19 @@ class GenerationContext:
         # completely blind to them and a fix that broke one of them (e.g. made
         # workflow tests start failing) was never caught as a regression.
         self.extra_results:   list[VerificationResult] = []
+        # LLM Judge's severity verdict on the current screenshot, if it ran.
+        # Deliberately kept separate from extra_results/all_diagnostics: the
+        # judge's diagnostic *text* is free-form and varies between calls for
+        # the same underlying issue, so feeding it into content-hash-based
+        # regression detection would flag almost every judge comment as "new".
+        # The *severity* alone doesn't have that problem and is exactly what
+        # is_deployment_ready needs -- a judge screenshot verdict of "the app
+        # is showing a blank page" is a real, user-visible failure that the
+        # numeric dimension scores can (and did) miss entirely, so it must be
+        # able to block deployment on its own rather than only nudging a
+        # weighted average that a already-high score can absorb.
+        self.llm_judge_severity: Optional[ErrorSeverity] = None
+        self.llm_judge_confidence: float = 0.0
 
         # ── Scoring ───────────────────────────────────────────────────────
         self.score_history:   list[QualityScore]        = []
@@ -378,6 +391,13 @@ class GenerationContext:
 
     @property
     def is_deployment_ready(self) -> bool:
+        # A high-confidence critical visual verdict (e.g. "this is a blank
+        # page") is a real user-visible failure the numeric dimensions can
+        # miss entirely -- see _dim_llm_judge_visual's docstring. It hard-
+        # blocks here rather than only nudging the weighted average, which an
+        # already-high score can absorb without ever dropping below threshold.
+        if self.llm_judge_severity == ErrorSeverity.CRITICAL and self.llm_judge_confidence >= 0.6:
+            return False
         return self.latest_score >= self.DEPLOY_THRESHOLD
 
     def record_score(self, score: QualityScore):

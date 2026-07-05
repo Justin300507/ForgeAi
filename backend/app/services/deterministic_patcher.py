@@ -3692,6 +3692,68 @@ def patch_ensure_auth_pages(project_path: Path) -> int:
     return len(added)
 
 
+# Verb synonyms so a route segment and a component-name word don't have to be
+# spelled identically to be recognized as the same CRUD intent — "new" and
+# "add" mean the same thing to a router but are different words.
+_CRUD_VERB_SYNONYMS: list[frozenset] = [
+    frozenset({"new", "add", "create"}),
+    frozenset({"edit", "update"}),
+    frozenset({"delete", "remove"}),
+    frozenset({"detail", "details", "view", "show"}),
+]
+
+
+def _word_synonyms(word: str) -> frozenset:
+    for group in _CRUD_VERB_SYNONYMS:
+        if word in group:
+            return group
+    return frozenset({word})
+
+
+def _component_words(comp_name: str) -> set[str]:
+    """PascalCase component name -> lowercase words, minus the generic 'Page' suffix."""
+    words = re.findall(r"[A-Z][a-z0-9]*", comp_name)
+    return {w.lower() for w in words if w.lower() != "page"}
+
+
+def _best_matching_path(comp_name: str, candidate_paths: list[str]) -> str | None:
+    """Pick the candidate route path whose segments best match this component's
+    name, considering every path segment (not just the last) and CRUD-verb
+    synonyms (new/add/create, edit/update, ...).
+
+    Naively comparing only the final URL segment against the whole component
+    name (e.g. "/habits/new" -> last segment "new" vs "addedithabitpage")
+    fails for exactly the routes that matter most: create/edit forms, whose
+    component is typically named things like AddEditHabitPage while the
+    route's distinguishing word ("habit") sits in an earlier segment. That
+    mismatch left already-built pages like AddEditHabitPage.jsx unrouted,
+    and the fix-loop scaffolded a generic placeholder page for the route
+    instead of ever finding this one.
+    """
+    comp_words = _component_words(comp_name)
+    if not comp_words:
+        return None
+
+    best_path, best_score = None, 0
+    for p in candidate_paths:
+        segs = [s for s in p.strip("/").split("/") if s and not s.startswith(":") and not s.startswith("{")]
+        if not segs:
+            continue
+        score = 0
+        for seg in segs:
+            seg_l = seg.lower().replace("-", "")
+            seg_singular = seg_l[:-1] if seg_l.endswith("s") and len(seg_l) > 3 else seg_l
+            candidates = _word_synonyms(seg_l) | _word_synonyms(seg_singular) | {seg_l, seg_singular}
+            if candidates & comp_words:
+                score += 1
+            elif any(len(c) > 2 and len(cw) > 2 and (c in cw or cw in c) for c in candidates for cw in comp_words):
+                score += 1
+        if score > best_score:
+            best_path, best_score = p, score
+
+    return best_path if best_score > 0 else None
+
+
 def _patch_wire_orphan_frontend_routes(project_path: Path) -> None:
     """
     Frontend mirror of _patch_wire_orphan_routers above: App.jsx routinely
@@ -3808,13 +3870,7 @@ def _patch_wire_orphan_frontend_routes(project_path: Path) -> None:
 
     added: list[tuple] = []
     for comp_name in orphans:
-        comp_key = comp_name.lower().replace("page", "")
-        target_path = None
-        for p in candidate_paths:
-            last_seg = p.rstrip("/").split("/")[-1].replace("-", "")
-            if last_seg and (last_seg in comp_key or comp_key in last_seg):
-                target_path = p
-                break
+        target_path = _best_matching_path(comp_name, candidate_paths)
         if target_path is None:
             target_path = _kebab_path(comp_name)
         if target_path in routed_paths:
@@ -4491,8 +4547,22 @@ def _patch_stale_status_on_error(project_path: Path) -> int:
     return patched
 
 
+# Component names owned by react-router-dom that also happen to collide with a
+# real lucide-react icon name (currently just "Link" — lucide has a chain-link
+# icon by that name too). Blindly intersecting JSX-tag usage with the lucide
+# icon set — as this patcher used to do — meant a forgotten `import { Link }
+# from 'react-router-dom'` got "fixed" by importing the lucide icon instead,
+# which type-checks and builds fine but silently breaks every <Link to="..">
+# in the file (renders a plain, non-navigating icon glyph). Route these names
+# to react-router-dom instead of lucide-react.
+_ROUTER_COMPONENT_NAMES = frozenset({
+    "Link", "NavLink", "Navigate", "Route", "Routes", "Outlet", "BrowserRouter",
+})
+
+
 def _patch_missing_icon_imports(project_path: Path) -> int:
-    """Add lucide-react icons that are USED in JSX but never imported.
+    """Add lucide-react icons (or react-router-dom components) that are USED in
+    JSX but never imported.
 
     LLMs routinely render <ChevronRight/> (or another icon) without importing it.
     The vite build passes — an undefined JSX identifier is valid *syntax* — but at
@@ -4501,7 +4571,10 @@ def _patch_missing_icon_imports(project_path: Path) -> int:
     silently dies). Seen live: /tasks rendered blank because ChevronRight wasn't
     imported. This adds any such icon (restricted to the known-real _LUCIDE_ICONS
     set, so it can never introduce a bad export) to the file's lucide import,
-    creating the import line if the file has none.
+    creating the import line if the file has none. Names in
+    _ROUTER_COMPONENT_NAMES are resolved to react-router-dom instead, even
+    though some (Link) are also valid lucide icon names — see that set's
+    docstring for why.
     """
     import re
     src_dir = project_path / "src"
@@ -4510,6 +4583,7 @@ def _patch_missing_icon_imports(project_path: Path) -> int:
 
     patched = 0
     lucide_import_re = re.compile(r"import\s*\{([^}]*)\}\s*from\s*['\"]lucide-react['\"]\s*;?")
+    router_import_re = re.compile(r"import\s*\{([^}]*)\}\s*from\s*['\"]react-router-dom['\"]\s*;?")
 
     for jf in src_dir.rglob("*.jsx"):
         try:
@@ -4531,30 +4605,50 @@ def _patch_missing_icon_imports(project_path: Path) -> int:
             known.add(m.group(1))
 
         used = set(re.findall(r"<([A-Z]\w+)[\s/>]", src))
-        missing = sorted((used - known) & _LUCIDE_ICONS)
-        if not missing:
-            continue
+        undeclared = used - known
+        router_missing = sorted(undeclared & _ROUTER_COMPONENT_NAMES)
+        missing = sorted((undeclared & _LUCIDE_ICONS) - _ROUTER_COMPONENT_NAMES)
 
-        m = lucide_import_re.search(src)
-        if m:
-            existing = [n.strip() for n in m.group(1).split(",") if n.strip()]
-            merged = existing + [n for n in missing if n not in existing]
-            new_import = "import { " + ", ".join(merged) + " } from 'lucide-react';"
-            src = src[:m.start()] + new_import + src[m.end():]
-        else:
-            # No lucide import in this file — add one after the first import line
-            # (or at the very top if there are none).
-            new_import = "import { " + ", ".join(missing) + " } from 'lucide-react';\n"
-            first_import = re.search(r"^import .*\n", src, re.MULTILINE)
-            if first_import:
-                src = src[:first_import.end()] + new_import + src[first_import.end():]
+        if router_missing:
+            m = router_import_re.search(src)
+            if m:
+                existing = [n.strip() for n in m.group(1).split(",") if n.strip()]
+                merged = existing + [n for n in router_missing if n not in existing]
+                new_import = "import { " + ", ".join(merged) + " } from 'react-router-dom';"
+                src = src[:m.start()] + new_import + src[m.end():]
             else:
-                src = new_import + src
+                new_import = "import { " + ", ".join(router_missing) + " } from 'react-router-dom';\n"
+                first_import = re.search(r"^import .*\n", src, re.MULTILINE)
+                if first_import:
+                    src = src[:first_import.end()] + new_import + src[first_import.end():]
+                else:
+                    src = new_import + src
+            print(f"  [patcher] Added missing react-router-dom import(s) {router_missing} to {jf.name}")
+
+        if missing:
+            m = lucide_import_re.search(src)
+            if m:
+                existing = [n.strip() for n in m.group(1).split(",") if n.strip()]
+                merged = existing + [n for n in missing if n not in existing]
+                new_import = "import { " + ", ".join(merged) + " } from 'lucide-react';"
+                src = src[:m.start()] + new_import + src[m.end():]
+            else:
+                # No lucide import in this file — add one after the first import line
+                # (or at the very top if there are none).
+                new_import = "import { " + ", ".join(missing) + " } from 'lucide-react';\n"
+                first_import = re.search(r"^import .*\n", src, re.MULTILINE)
+                if first_import:
+                    src = src[:first_import.end()] + new_import + src[first_import.end():]
+                else:
+                    src = new_import + src
+            print(f"  [patcher] Added missing icon import(s) {missing} to {jf.name}")
+
+        if not router_missing and not missing:
+            continue
 
         try:
             jf.write_text(src, encoding="utf-8")
             patched += 1
-            print(f"  [patcher] Added missing icon import(s) {missing} to {jf.name}")
         except Exception:
             pass
 
