@@ -143,6 +143,45 @@ def validate_schema_model_consistency(
                                     ):
                                         fields[target.id] = nullable
 
+                        # SQLAlchemy 2.0 typed-declarative style:
+                        # `name: Mapped[int] = mapped_column(...)`.
+                        elif (
+                            isinstance(child, ast.AnnAssign)
+                            and isinstance(child.target, ast.Name)
+                            and isinstance(child.value, ast.Call)
+                            and hasattr(child.value.func, "id")
+                            and child.value.func.id == "mapped_column"
+                        ):
+
+                            nullable = False
+
+                            for kw in child.value.keywords:
+
+                                if kw.arg == "nullable":
+
+                                    if isinstance(kw.value, ast.Constant):
+                                        nullable = kw.value.value
+
+                            fields[child.target.id] = nullable
+
+                        # A `@property` (e.g. an `id` alias for a
+                        # differently-named primary key) is a legitimate,
+                        # always-present attribute as far as Pydantic's
+                        # `from_attributes` serialization is concerned --
+                        # without this, database_patcher's alias fix for a
+                        # missing `id` column never clears this validator's
+                        # error and the fix loop stalls forever re-reporting
+                        # the same "does not exist as a column" mismatch.
+                        elif (
+                            isinstance(child, ast.FunctionDef)
+                            and child.name not in fields
+                            and any(
+                                isinstance(dec, ast.Name) and dec.id == "property"
+                                for dec in child.decorator_list
+                            )
+                        ):
+                            fields[child.name] = False
+
                     models[node.name] = fields
 
             if "schemas" in path.lower():

@@ -12,6 +12,7 @@ Fixes known LLM failure patterns that the contract can't fully prevent:
 
 All fixes are regex/AST-free pattern matching — deterministic, fast, no LLM cost.
 """
+import ast
 import keyword
 import re
 from pathlib import Path
@@ -1912,6 +1913,53 @@ _TYPE_MAP = {
 }
 
 
+def _infer_fields_from_route_return(routes_dir: Path, cls_name: str) -> list[tuple[str, str]]:
+    """
+    Fallback for stub schemas with no matching SQLAlchemy model (aggregate/
+    report endpoints like a stats summary have no 1:1 table to derive fields
+    from). Scan route files for a function decorated with
+    response_model=<cls_name> and pull the string keys out of its
+    `return {...}` dict literal, typed Optional[Any].
+
+    Without this, the stub schema is an empty `pass` body, and FastAPI's
+    response_model machinery silently serializes every response down to
+    `{}` -- a 200 OK that looks fine in logs but hands the frontend an
+    object missing every field it expects, crashing on the first
+    `.map()`/`.slice()` call with no server-side error to point at the cause.
+    """
+    for rf in routes_dir.glob("*.py"):
+        try:
+            src = rf.read_text(encoding="utf-8", errors="replace")
+        except Exception:
+            continue
+        if "response_model" not in src or cls_name not in src:
+            continue
+        try:
+            tree = ast.parse(src)
+        except SyntaxError:
+            continue
+        for node in ast.walk(tree):
+            if not isinstance(node, (ast.FunctionDef, ast.AsyncFunctionDef)):
+                continue
+            uses_cls = False
+            for dec in node.decorator_list:
+                dec_src = ast.get_source_segment(src, dec) or ""
+                if re.search(rf"response_model\s*=\s*(?:List\[|list\[)?{re.escape(cls_name)}\b", dec_src):
+                    uses_cls = True
+                    break
+            if not uses_cls:
+                continue
+            for stmt in ast.walk(node):
+                if isinstance(stmt, ast.Return) and isinstance(stmt.value, ast.Dict):
+                    fields = []
+                    for k in stmt.value.keys:
+                        if isinstance(k, ast.Constant) and isinstance(k.value, str):
+                            fields.append(k.value)
+                    if fields:
+                        return [(name, "Any") for name in fields]
+    return []
+
+
 def _patch_create_missing_schemas(project_path: Path) -> int:
     """
     Create minimal Pydantic schema files when route files import from
@@ -2004,15 +2052,29 @@ def _patch_create_missing_schemas(project_path: Path) -> int:
             )
             if not missing:
                 continue
+
+            cls_columns = {
+                cn: columns or _infer_fields_from_route_return(routes_dir, cn)
+                for cn in missing
+            }
+            needs_any = any(typ == "Any" for cols in cls_columns.values() for _, typ in cols)
+            all_dt_names = sorted(
+                {t for cols in cls_columns.values() for _, t in cols if t in ("datetime", "date", "time")}
+                | set(_dt_names)
+            )
+
             additions = []
             if "Optional" not in existing_content:
-                additions.append("from typing import Optional\n")
-            if _dt_names and "from datetime import" not in existing_content:
-                additions.append(f"from datetime import {', '.join(_dt_names)}\n")
+                additions.append(f"from typing import Optional{', Any' if needs_any else ''}\n")
+            elif needs_any and "Any" not in existing_content:
+                additions.append("from typing import Any\n")
+            if all_dt_names and "from datetime import" not in existing_content:
+                additions.append(f"from datetime import {', '.join(all_dt_names)}\n")
             for cls_name in missing:
-                if columns:
+                cols = cls_columns[cls_name]
+                if cols:
                     field_lines = "\n".join(
-                        f"    {name}: Optional[{typ}] = None" for name, typ in columns
+                        f"    {name}: Optional[{typ}] = None" for name, typ in cols
                     )
                 else:
                     field_lines = "    pass"
@@ -2032,14 +2094,26 @@ def _patch_create_missing_schemas(project_path: Path) -> int:
         )
         if not valid_classes:
             continue
-        lines = ["from typing import Optional", "from pydantic import BaseModel"]
-        if _dt_names:
-            lines.append(f"from datetime import {', '.join(_dt_names)}")
+
+        cls_columns = {
+            cn: columns or _infer_fields_from_route_return(routes_dir, cn)
+            for cn in valid_classes
+        }
+        needs_any = any(typ == "Any" for cols in cls_columns.values() for _, typ in cols)
+        all_dt_names = sorted(
+            {t for cols in cls_columns.values() for _, t in cols if t in ("datetime", "date", "time")}
+            | set(_dt_names)
+        )
+
+        lines = [f"from typing import Optional{', Any' if needs_any else ''}", "from pydantic import BaseModel"]
+        if all_dt_names:
+            lines.append(f"from datetime import {', '.join(all_dt_names)}")
         lines += ["", ""]
         for cls_name in valid_classes:
-            if columns:
+            cols = cls_columns[cls_name]
+            if cols:
                 field_lines = "\n".join(
-                    f"    {name}: Optional[{typ}] = None" for name, typ in columns
+                    f"    {name}: Optional[{typ}] = None" for name, typ in cols
                 )
             else:
                 field_lines = "    pass"
@@ -4428,6 +4502,52 @@ def _patch_missing_icon_imports(project_path: Path) -> int:
     return patched
 
 
+_UNSAFE_CHAIN_CALL_RE = re.compile(
+    r"(\w+)\?\.(\w+)\.(map|filter|forEach|reduce|reduceRight|find|findIndex|"
+    r"some|every|flatMap|join|slice|indexOf|includes)\("
+)
+_UNSAFE_CHAIN_LENGTH_RE = re.compile(r"(\w+)\?\.(\w+)\.length\b")
+
+
+def _patch_unsafe_optional_chain_before_array_method(project_path: Path) -> int:
+    """Fix `x?.y.map(...)` -- optional-chained on the base but not on the
+    nested property actually being iterated.
+
+    `x?.y` short-circuits to `undefined` only when `x` itself is nullish; if
+    `x` is a real (but incomplete) object and `y` is simply absent -- e.g. a
+    fresh-user API response `{}` with no `weekly_completions` key yet -- `y`
+    evaluates to `undefined` and `.map`/`.length` on it throws a TypeError.
+    React has no default error boundary, so this unmounts the entire tree:
+    the whole app goes to a blank white page with nothing in the console UI
+    testers would notice from a static build check. Seen live: a habit
+    tracker's dashboard rendered blank for every real user because
+    `stats?.weekly_completions.map(...)` crashed on the first API response
+    that hadn't accumulated any completions yet. Rewrites to
+    `x?.y?.map(...)` / `x?.y?.length`, which is always valid JS and fixes
+    the crash regardless of what LLM originally generated it.
+    """
+    src_dir = project_path / "src"
+    if not src_dir.exists():
+        return 0
+
+    patched = 0
+    for jf in list(src_dir.rglob("*.jsx")) + list(src_dir.rglob("*.js")) + list(src_dir.rglob("*.tsx")):
+        try:
+            content = jf.read_text(encoding="utf-8", errors="replace")
+        except Exception:
+            continue
+
+        new_content = _UNSAFE_CHAIN_CALL_RE.sub(r"\1?.\2?.\3(", content)
+        new_content = _UNSAFE_CHAIN_LENGTH_RE.sub(r"\1?.\2?.length", new_content)
+
+        if new_content != content:
+            jf.write_text(new_content, encoding="utf-8")
+            patched += 1
+            print(f"  [patcher] Fixed unsafe optional chain before array access in {jf.name}")
+
+    return patched
+
+
 def run_frontend_patches(project_path: Path) -> int:
     """
     Every frontend-only deterministic patch, in one place.
@@ -4450,6 +4570,7 @@ def run_frontend_patches(project_path: Path) -> int:
     patched += _patch_frontend_auth_field_names(project_path)
     patched += _patch_frontend_signup_password_key(project_path)
     patched += _patch_stale_status_on_error(project_path)
+    patched += _patch_unsafe_optional_chain_before_array_method(project_path)
     patched += _patch_hidden_loading_status(project_path)
     patched += bool(_patch_pagination_component(project_path))
     patched += patch_ensure_auth_pages(project_path)

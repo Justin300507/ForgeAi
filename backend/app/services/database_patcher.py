@@ -543,6 +543,16 @@ def patch_add_missing_model_columns(project_path: str) -> int:
 
     class_re = re.compile(r"^class\s+(\w+)\s*\(", re.MULTILINE)
     col_re = re.compile(r"^\s{4}(\w+)\s*=\s*Column\(", re.MULTILINE)
+    # SQLAlchemy 2.0 typed-declarative style: `name: Mapped[int] = mapped_column(...)`.
+    # col_re alone misses these, which would otherwise make a genuinely-present
+    # id column look "missing" below.
+    mapped_col_re = re.compile(r"^\s{4}(\w+)\s*:\s*Mapped\[[^\]]+\]\s*=\s*mapped_column\(", re.MULTILINE)
+    id_property_re = re.compile(r"^\s{4}def\s+id\s*\(\s*self", re.MULTILINE)
+    pk_re = re.compile(r"^\s{4}(\w+)\s*=\s*Column\([^\n]*primary_key\s*=\s*True", re.MULTILINE)
+    mapped_pk_re = re.compile(
+        r"^\s{4}(\w+)\s*:\s*Mapped\[[^\]]+\]\s*=\s*mapped_column\([^\n]*primary_key\s*=\s*True",
+        re.MULTILINE,
+    )
 
     # ClassName -> (file path, frozenset(existing columns))
     model_info: dict[str, tuple] = {}
@@ -554,7 +564,18 @@ def patch_add_missing_model_columns(project_path: str) -> int:
             for cls_name in class_re.findall(src):
                 if cls_name in ("Base", "Config", "Meta"):
                     continue
-                cols = set(col_re.findall(src)) | {"id"}
+                # `id` used to be assumed present unconditionally (most models
+                # declare it via a Base mixin). That blind assumption meant a
+                # model that genuinely has no `id` column -- e.g. a primary
+                # key named `game_id` instead -- was never detected as
+                # missing, so the ResponseValidationError for
+                # `GameResponse.id` was never fixed and the fix loop stalled
+                # forever re-reporting the same error. Only treat `id` as
+                # present if a column/mapped_column/property named `id`
+                # actually exists.
+                cols = set(col_re.findall(src)) | set(mapped_col_re.findall(src))
+                if id_property_re.search(src):
+                    cols = cols | {"id"}
                 model_info[cls_name] = (mf, frozenset(cols))
         except Exception:
             pass
@@ -752,6 +773,60 @@ def patch_add_missing_model_columns(project_path: str) -> int:
                 print(f"  [field_patcher] Made orphan required Create/Update field(s) Optional in {sf.name}")
 
     patched_files = set()
+
+    # A genuinely missing `id` needs different treatment than any other
+    # missing field: the generic path below infers a column type from the
+    # field name and `id` matches none of _COLUMN_TYPE_RULES, so it would
+    # fall through to `Column(String, server_default='', nullable=False)` --
+    # a non-primary-key string column that never matches the response
+    # schema's `id: int` and still leaves every row without a usable
+    # identifier. Instead, alias the model's real primary key (e.g.
+    # `game_id`) as an `id` property so serialization just works.
+    for cls_name, fields in list(missing_by_class.items()):
+        if "id" not in fields:
+            continue
+        mf, _valid_cols = model_info[cls_name]
+        try:
+            src = mf.read_text(encoding="utf-8", errors="replace")
+        except Exception:
+            continue
+
+        start_m = re.search(rf"^class\s+{cls_name}\s*\(", src, re.MULTILINE)
+        if not start_m:
+            continue
+        next_class_m = re.search(r"^class\s+\w+\s*\(", src[start_m.end():], re.MULTILINE)
+        body_end = start_m.end() + next_class_m.start() if next_class_m else len(src)
+        class_body = src[start_m.end():body_end]
+
+        fields.discard("id")
+
+        if id_property_re.search(class_body):
+            continue
+
+        pk_m = pk_re.search(class_body) or mapped_pk_re.search(class_body)
+        if not pk_m or pk_m.group(1) == "id":
+            continue
+        pk_field = pk_m.group(1)
+
+        col_matches = list(re.finditer(
+            r"^\s{4}\w+(?:\s*:\s*Mapped\[[^\]]+\])?\s*=\s*(?:Column|mapped_column)\([^\n]*\)\n",
+            class_body, re.MULTILINE,
+        ))
+        insert_at = (
+            start_m.end() + col_matches[-1].end() if col_matches
+            else src.index("\n", start_m.end()) + 1
+        )
+        prop_src = f"\n    @property\n    def id(self):\n        return self.{pk_field}\n"
+        src = src[:insert_at] + prop_src + src[insert_at:]
+        mf.write_text(src, encoding="utf-8")
+        patched_files.add(mf.name)
+        print(
+            f"  [field_patcher] Aliased primary key '{pk_field}' as an "
+            f".id property on {cls_name} in {mf.name} (response schema "
+            f"expects 'id')"
+        )
+
+    missing_by_class = {c: f for c, f in missing_by_class.items() if f}
 
     for cls_name, fields in missing_by_class.items():
         mf, valid_cols = model_info[cls_name]
