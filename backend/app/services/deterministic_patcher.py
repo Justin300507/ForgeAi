@@ -3915,7 +3915,21 @@ def _patch_wire_orphan_frontend_routes(project_path: Path) -> None:
         if target_path in routed_paths:
             continue
 
-        new_element = re.sub(r"<\w+\s*/>", f"<{comp_name} />", template_element, count=1)
+        # Match the anchor's page component tag even when it forwards props
+        # (`<DashboardPage {...pageProps} />`) -- the old `<\w+\s*/>` pattern
+        # required a bare tag with no attributes, silently matched nothing
+        # for any anchor route that passes props, and left the clone
+        # rendering the anchor's own page (e.g. every orphan route wired
+        # from a `/dashboard` anchor rendered DashboardPage instead of its
+        # own page) instead of raising an error anyone would notice.
+        new_element, n_subs = re.subn(
+            r"<\w+(?:\{[^{}]*\}|[^<>])*?/>", f"<{comp_name} />", template_element,
+            count=1,
+        )
+        if n_subs == 0:
+            print(f"    [route_patcher] Skipped {comp_name}: couldn't find the "
+                  f"anchor's page tag inside its own template to clone")
+            continue
         new_route = f'{indent}<Route path="{target_path}" element={{{new_element}}} />'
 
         wildcard_m = re.search(r'\n(\s*)<Route\s+path="\*"', content)

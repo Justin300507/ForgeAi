@@ -173,6 +173,155 @@ def _scaffold_missing_local_imports(
     return created
 
 
+_JSX_TAG_NAME_RE = re.compile(r"[A-Za-z][\w.]*")
+
+
+def _find_jsx_element_end(content: str, start: int, mismatches: list[str]) -> int:
+    """Consume one JSX element starting at content[start] == '<' (an opening
+    or self-closing tag, never a bare closing tag), returning the index just
+    past its end. Recurses for nested elements found anywhere while scanning
+    -- both ones embedded in an attribute expression
+    (`element={<PrivateRoute><X /></PrivateRoute>}`) and ones nested as
+    children -- so nesting depth is simply the call stack instead of an
+    explicit one, and a capitalized tag's own matching close is always
+    searched for by the same call that opened it. Appends to `mismatches`
+    (and stops recursing further) the moment a capitalized tag's closing tag
+    turns out to be missing or wrong -- this is deliberately not a full
+    JSX/JS parser, just enough of one to catch a dangling wrapper tag without
+    misflagging valid nesting as broken.
+    """
+    n = len(content)
+    i = start + 1
+
+    if i < n and content[i] == ">":
+        # JSX fragment shorthand `<>...</>` -- no name, no attributes.
+        name = ""
+        i += 1
+        self_closing = False
+    else:
+        m = _JSX_TAG_NAME_RE.match(content, i)
+        if not m:
+            # Not actually a tag (e.g. a bare '<' from a JS comparison like
+            # `a < 5` inside an attribute expression) -- leave it alone
+            # rather than misinterpreting it as an element.
+            return start + 1
+        name = m.group(0)
+        i = m.end()
+
+        quote: Optional[str] = None
+        self_closing = False
+        while i < n:
+            c = content[i]
+            if quote:
+                if c == "\\":
+                    i = min(i + 2, n)
+                    continue
+                if c == quote:
+                    quote = None
+                i += 1
+                continue
+            if c in ("'", '"', "`"):
+                quote = c
+                i += 1
+                continue
+            if c == "=" and i + 1 < n and content[i + 1] == ">":
+                i += 2  # arrow function inside an attribute value, not a tag close
+                continue
+            if c == "<":
+                if i + 1 < n and content[i + 1] != "/":
+                    if mismatches:
+                        return i
+                    i = _find_jsx_element_end(content, i, mismatches)
+                    if mismatches:
+                        return i
+                    continue
+                # a bare '</...' while still looking for our OWN '>' means we
+                # never found our own opening tag's terminator -- give up on
+                # this element rather than guessing where it ends.
+                return i
+            if c == "/" and i + 1 < n and content[i + 1] == ">":
+                self_closing = True
+                i += 2
+                break
+            if c == ">":
+                i += 1
+                break
+            i += 1
+
+    if self_closing or i >= n:
+        return i
+
+    is_component = name[:1].isupper()
+    while i < n:
+        if mismatches:
+            return i
+        if content[i] != "<":
+            i += 1
+            continue
+        if i + 1 < n and content[i + 1] == "/":
+            if i + 2 < n and content[i + 2] == ">":
+                # fragment close `</>`
+                if name and is_component:
+                    mismatches.append(f'closing fragment "</>" does not match opening "{name}"')
+                return i + 3
+            cm = _JSX_TAG_NAME_RE.match(content, i + 2)
+            if not cm:
+                i += 1
+                continue
+            cname = cm.group(0)
+            end = content.find(">", cm.end())
+            i = end + 1 if end != -1 else n
+            if is_component and cname != name:
+                mismatches.append(f'closing "{cname}" tag does not match opening "{name}"')
+            return i
+        i = _find_jsx_element_end(content, i, mismatches)
+    if is_component:
+        mismatches.append(f'opening "{name}" tag has no matching closing tag')
+    return i
+
+
+def _jsx_tag_mismatches(content: str) -> list[str]:
+    """Detect unbalanced capitalized JSX component tags (Route, PrivateRoute,
+    Routes, BrowserRouter, ...) in a patch before it's ever written to disk.
+
+    Root cause this guards against: the LLM fix loop occasionally patches
+    App.jsx with a wrapper tag it opens but never closes (e.g. `<PrivateRoute>`
+    around a new `<Route>` with the matching `</PrivateRoute>` missing) --
+    live example: two straight fix attempts on habit_forge each reintroduced
+    "Unexpected closing 'Routes' tag does not match opening 'PrivateRoute'"
+    at a different line, both silently accepted by this same write path.
+    Nothing catches this until the full verify cycle's frontend build step
+    (esbuild), by which point a whole attempt (LLM call + install + build +
+    runtime + journey tests) has been burned just to discover and revert it.
+    Only capitalized (component) tags are tracked -- lowercase html tags are
+    left alone to keep false-positive risk near zero.
+    """
+    mismatches: list[str] = []
+    i = 0
+    n = len(content)
+    while i < n and not mismatches:
+        if content[i] != "<":
+            i += 1
+            continue
+        if i + 1 < n and content[i + 1] == "/":
+            m = _JSX_TAG_NAME_RE.match(content, i + 2)
+            if not m:
+                i += 1
+                continue
+            name = m.group(0)
+            end = content.find(">", m.end())
+            i = end + 1 if end != -1 else n
+            if name[:1].isupper():
+                mismatches.append(f'closing "{name}" tag with no matching opening tag')
+            continue
+        m = _JSX_TAG_NAME_RE.match(content, i + 1)
+        if not m:
+            i += 1
+            continue
+        i = _find_jsx_element_end(content, i, mismatches)
+    return mismatches
+
+
 _MISSING_BACKEND_IMPORT_RE = re.compile(r"Missing backend import target:\s*(\S+\.py)")
 
 
@@ -566,6 +715,12 @@ def _apply_fix_group(
                     print(f"    [fix] REJECTED patch for {rel_path}: unresolvable "
                           f"local import(s): {', '.join(still_missing[:5])}")
                     continue
+
+            tag_mismatches = _jsx_tag_mismatches(content)
+            if tag_mismatches:
+                print(f"    [fix] REJECTED patch for {rel_path}: unbalanced JSX tag(s) "
+                      f"-- {tag_mismatches[0]}")
+                continue
         try:
             target.parent.mkdir(parents=True, exist_ok=True)
             target.write_text(content, encoding="utf-8")
