@@ -175,12 +175,22 @@ class V15Pipeline:
         rm = self.retry_manager
 
         # Early-stop: after N consecutive attempts with no score improvement,
-        # stop escalating. Attempts 3-5 (module regen, model switch, full
-        # architecture regen) are the most expensive LLM calls in the whole
-        # pipeline, and the benchmark history shows that when attempts 1-2
-        # both fail to move the score, the later attempts almost never do
-        # either -- they just burn API credits.
-        max_stalled = int(os.environ.get("FORGE_MAX_STALLED_FIX_ATTEMPTS", "2"))
+        # stop escalating. Default is 3, not 2: attempts 1-2 (PATCH_FILE,
+        # then PATCH_FILE with an "improved" prompt) both route through the
+        # same _apply_fix_group code path and differ only by ~4 lines of
+        # generic instruction text appended to the prompt -- they're
+        # effectively one strategy tried twice, not two different ones.
+        # Attempt 3 (REGENERATE_MODULE) is the first genuinely different
+        # strategy (a real module regen via architecture_fix_service for
+        # backend groups). A max_stalled of 2 stopped the loop before that
+        # attempt ever ran, so runs could give up having only tried the
+        # single weakest strategy -- seen live pinning both a snake-and-
+        # ladders and a habit-tracker generation at a stalled score with
+        # attempts 3-5 (module regen, model switch, full arch regen) still
+        # on the table. 3 costs one more (cheap, patch-level) LLM call per
+        # stalled run in exchange for actually reaching a different strategy
+        # before giving up.
+        max_stalled = int(os.environ.get("FORGE_MAX_STALLED_FIX_ATTEMPTS", "3"))
         stalled = 0
 
         # Best-state safety net: keep a file snapshot of the highest-scoring
