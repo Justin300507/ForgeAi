@@ -4210,6 +4210,146 @@ Disc Disc2 Disc3 Radio Cast Airplay Bluetooth Cable Plug Plug2 PlugZap Usb
 """.split())
 
 
+# A handful of heroicons component names whose closest lucide-react
+# equivalent isn't just "strip the Icon suffix" (heroicons and lucide don't
+# share a naming convention for everything). Anything not listed here falls
+# back to that strip-and-lookup in _heroicon_to_lucide.
+_HEROICON_OVERRIDES = {
+    "XMarkIcon": "X", "Bars3Icon": "Menu", "Bars4Icon": "AlignJustify",
+    "Cog6ToothIcon": "Settings", "Cog8ToothIcon": "Settings2",
+    "MagnifyingGlassIcon": "Search", "FunnelIcon": "Filter",
+    "ArrowRightOnRectangleIcon": "LogOut", "ArrowLeftOnRectangleIcon": "LogIn",
+    "ExclamationTriangleIcon": "AlertTriangle", "ExclamationCircleIcon": "AlertCircle",
+    "InformationCircleIcon": "Info", "QuestionMarkCircleIcon": "HelpCircle",
+    "ChatBubbleLeftIcon": "MessageCircle", "ChatBubbleLeftRightIcon": "MessageSquare",
+    "EllipsisVerticalIcon": "MoreVertical", "EllipsisHorizontalIcon": "MoreHorizontal",
+    "ArrowPathIcon": "RefreshCw", "PencilSquareIcon": "Pencil",
+    "DocumentTextIcon": "FileText", "DocumentDuplicateIcon": "Copy", "DocumentIcon": "File",
+    "ClipboardDocumentListIcon": "ClipboardList", "ClipboardDocumentIcon": "ClipboardCopy",
+    "ArrowTrendingUpIcon": "TrendingUp", "ArrowTrendingDownIcon": "TrendingDown",
+    "BellAlertIcon": "BellRing", "PresentationChartLineIcon": "LineChart",
+    "PresentationChartBarIcon": "BarChart", "ChartPieIcon": "PieChart",
+    "ChartBarIcon": "BarChart", "ChartBarSquareIcon": "BarChart3",
+    "RectangleStackIcon": "Layers", "Squares2X2Icon": "Grid2x2", "SquaresPlusIcon": "Grid3x3",
+    "AdjustmentsHorizontalIcon": "SlidersHorizontal", "AdjustmentsVerticalIcon": "SlidersHorizontal",
+    "LockClosedIcon": "Lock", "LockOpenIcon": "Unlock", "EyeSlashIcon": "EyeOff",
+    "HandThumbUpIcon": "ThumbsUp", "HandThumbDownIcon": "ThumbsDown",
+    "PaperAirplaneIcon": "Send", "GlobeAltIcon": "Globe", "GlobeAmericasIcon": "Globe2",
+    "EnvelopeIcon": "Mail", "EnvelopeOpenIcon": "MailOpen",
+    "BuildingOfficeIcon": "Building", "BuildingOffice2Icon": "Building2",
+    "BuildingStorefrontIcon": "Building", "CurrencyDollarIcon": "DollarSign",
+    "BanknotesIcon": "Banknote", "ShoppingCartIcon": "ShoppingCart",
+    "ShoppingBagIcon": "ShoppingBag", "ArchiveBoxIcon": "Archive",
+    "ArchiveBoxXMarkIcon": "ArchiveRestore", "WrenchIcon": "Wrench",
+    "WrenchScrewdriverIcon": "Wrench", "BeakerIcon": "FlaskConical",
+    "AcademicCapIcon": "GraduationCap", "LightBulbIcon": "Lightbulb",
+    "BoltIcon": "Zap", "BoltSlashIcon": "ZapOff",
+    "FaceSmileIcon": "Smile", "FaceFrownIcon": "Frown", "HandRaisedIcon": "Hand",
+    "SpeakerWaveIcon": "Volume2", "SpeakerXMarkIcon": "VolumeX",
+    "MicrophoneIcon": "Mic", "VideoCameraIcon": "Video", "PhotoIcon": "Image",
+    "MusicalNoteIcon": "Music", "StopIcon": "Square",
+    "ForwardIcon": "SkipForward", "BackwardIcon": "SkipBack",
+    "ArrowUturnLeftIcon": "Undo2", "ArrowUturnRightIcon": "Redo2",
+    "SignalSlashIcon": "WifiOff", "CircleStackIcon": "Database",
+    "ServerStackIcon": "Server", "CommandLineIcon": "Terminal",
+    "CodeBracketIcon": "Code", "CodeBracketSquareIcon": "Code2",
+    "CubeIcon": "Box", "CubeTransparentIcon": "Box",
+    "QueueListIcon": "ListOrdered", "ListBulletIcon": "List",
+    "ViewColumnsIcon": "Columns", "DevicePhoneMobileIcon": "Smartphone",
+    "ComputerDesktopIcon": "Monitor", "DeviceTabletIcon": "Tablet",
+    "UserGroupIcon": "Users", "IdentificationIcon": "IdCard",
+    "HomeModernIcon": "Home", "InboxStackIcon": "Inbox",
+    "SwatchIcon": "Palette", "PaintBrushIcon": "Paintbrush",
+}
+
+_HEROICON_IMPORT_RE = re.compile(
+    r"import\s*\{([^}]*)\}\s*from\s*['\"]@heroicons/react/(?:16|20|24)/(?:outline|solid)['\"]\s*;?"
+)
+
+
+def _heroicon_to_lucide(name: str) -> str:
+    if name in _HEROICON_OVERRIDES:
+        return _HEROICON_OVERRIDES[name]
+    stripped = name[:-4] if name.endswith("Icon") else name  # PlusIcon -> Plus
+    if stripped in _LUCIDE_ICONS:
+        return stripped
+    # No confident mapping — fall back to a generic icon that's guaranteed to
+    # exist rather than leaving an unresolvable import. A wrong-but-harmless
+    # icon beats a build that doesn't compile at all.
+    return "Circle"
+
+
+def _patch_disallowed_icon_packages(project_path: Path) -> int:
+    """Rewrite @heroicons/react imports to their lucide-react equivalents.
+
+    lucide-react is the mandatory icon package (see frontend_prompt.py), but
+    heroicons ships from the same team as Tailwind and shows up constantly in
+    the training data the LLM draws from, so it reaches for it out of habit
+    anyway. Unlike a missing lucide import (see _patch_missing_icon_imports),
+    this is a genuinely unresolvable package — nothing in node_modules
+    provides it — so Rollup hard-fails the build. Seen live: the fix-loop's
+    generic "missing import" handling doesn't know how to repair a
+    third-party package path; it scaffolded an unrelated local file as a stub
+    and failed on the exact same unresolved heroicons import again on the
+    next verify pass. Rewriting the import (and every JSX usage of the
+    renamed icons) to lucide-react is a direct, deterministic fix for the
+    only thing actually broken.
+    """
+    src_dir = project_path / "src"
+    if not src_dir.exists():
+        return 0
+
+    patched = 0
+    lucide_import_re = re.compile(r"import\s*\{([^}]*)\}\s*from\s*['\"]lucide-react['\"]\s*;?")
+
+    for jf in src_dir.rglob("*.jsx"):
+        try:
+            src = jf.read_text(encoding="utf-8", errors="replace")
+        except Exception:
+            continue
+
+        matches = list(_HEROICON_IMPORT_RE.finditer(src))
+        if not matches:
+            continue
+
+        rename_map: dict[str, str] = {}
+        for m in matches:
+            for n in m.group(1).split(","):
+                n = n.strip().split(" as ")[0].strip()
+                if n:
+                    rename_map[n] = _heroicon_to_lucide(n)
+
+        new_src = _HEROICON_IMPORT_RE.sub("", src)
+        for old, new in rename_map.items():
+            if old != new:
+                new_src = re.sub(rf"\b{re.escape(old)}\b", new, new_src)
+
+        lucide_names = sorted(set(rename_map.values()))
+        m = lucide_import_re.search(new_src)
+        if m:
+            existing = [n.strip() for n in m.group(1).split(",") if n.strip()]
+            merged = existing + [n for n in lucide_names if n not in existing]
+            new_import = "import { " + ", ".join(merged) + " } from 'lucide-react';"
+            new_src = new_src[:m.start()] + new_import + new_src[m.end():]
+        else:
+            new_import = "import { " + ", ".join(lucide_names) + " } from 'lucide-react';\n"
+            first_import = re.search(r"^import .*\n", new_src, re.MULTILINE)
+            if first_import:
+                new_src = new_src[:first_import.end()] + new_import + new_src[first_import.end():]
+            else:
+                new_src = new_import + new_src
+
+        try:
+            jf.write_text(new_src, encoding="utf-8")
+            patched += 1
+            mapping_str = ", ".join(f"{o}->{n}" for o, n in rename_map.items())
+            print(f"  [patcher] Rewrote @heroicons/react import(s) to lucide-react in {jf.name}: {mapping_str}")
+        except Exception:
+            pass
+
+    return patched
+
+
 def _module_dotted(project_root: Path, py_file: Path) -> str | None:
     """app/routes/auth_routes.py -> 'app.routes.auth_routes' (None if outside app/)."""
     try:
@@ -4775,6 +4915,7 @@ def run_frontend_patches(project_path: Path) -> int:
     """
     patched = 0
     patched += bool(_patch_frontend_package_json(project_path))
+    patched += _patch_disallowed_icon_packages(project_path)
     patched += _patch_missing_icon_imports(project_path)
     patched += _patch_frontend_auth_field_names(project_path)
     patched += _patch_frontend_signup_password_key(project_path)
