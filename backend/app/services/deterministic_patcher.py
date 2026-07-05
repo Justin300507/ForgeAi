@@ -3880,11 +3880,28 @@ def _patch_wire_orphan_frontend_routes(project_path: Path) -> None:
         )
         if template_m:
             break
-    if not template_m:
+    if template_m:
+        indent, template_element = template_m.groups()
+    elif "PrivateRoute" in content:
+        # No existing authenticated route to clone a wrapper from -- this
+        # happens whenever App.jsx was scaffolded (ensure_app_jsx) before
+        # every page file existed on disk, since the missing-file fix loop
+        # creates pages like Dashboard/Habits/Badges *afterward* in response
+        # to validation errors. That scaffold then has zero private routes
+        # to use as an anchor, so bailing out here (the old behavior) left
+        # every one of those later-created pages permanently unrouted --
+        # imported into App.jsx, but with nothing to navigate to after
+        # login except the "*" -> /login catch-all, which looks exactly
+        # like "login doesn't work" from the user's side even though auth
+        # succeeded and a valid token was stored. PrivateRoute itself is
+        # part of the standard App.jsx template (see ensure_app_jsx /
+        # frontend_prompt.py) and doesn't depend on any route existing, so
+        # wrap directly in it instead of requiring something to clone.
+        indent, template_element = "        ", "<PrivateRoute><Placeholder /></PrivateRoute>"
+    else:
         if content != original:
             app_jsx.write_text(content, encoding="utf-8")
         return
-    indent, template_element = template_m.groups()
 
     def _kebab_path(name: str) -> str:
         s = re.sub(r"(?<!^)(?=[A-Z])", "-", name).lower().replace("-page", "")
@@ -3915,6 +3932,62 @@ def _patch_wire_orphan_frontend_routes(project_path: Path) -> None:
         app_jsx.write_text(content, encoding="utf-8")
         summary = ", ".join(f"{c} -> {p}" for c, p in added)
         print(f"  [route_patcher] Wired {len(added)} orphan page(s) into App.jsx: {summary}")
+
+
+def _patch_login_redirect_target(project_path: Path) -> int:
+    """Fix `navigate('/dashboard')` in auth pages when the app has no
+    /dashboard route at all.
+
+    frontend_prompt.py's login/register examples hardcode navigate('/dashboard')
+    on the assumption a DashboardPage always exists, and validator_service.py's
+    nav-target check explicitly skips "/dashboard" on the same assumption
+    (_SKIP_NAV_TARGETS). Both break when the LLM names its main authenticated
+    page something else (e.g. HabitsPage, TasksPage) instead of literally
+    "Dashboard" -- which is common and not itself wrong. Login then succeeds,
+    a real token gets stored, navigate('/dashboard') fires, matches nothing,
+    and the "*" catch-all bounces straight back to /login -- from the user's
+    side this looks exactly like "signing in doesn't work" even though auth
+    worked perfectly. Must run after _patch_wire_orphan_frontend_routes so
+    routes are already wired before checking what actually exists.
+    """
+    app_jsx = project_path / "src" / "App.jsx"
+    if not app_jsx.exists():
+        return 0
+    try:
+        app_content = app_jsx.read_text(encoding="utf-8", errors="replace")
+    except Exception:
+        return 0
+
+    routed_paths = set(re.findall(r'<Route\s+path="([^"]+)"', app_content))
+    if "/dashboard" in routed_paths:
+        return 0
+
+    _AUTH_LIKE = {"/", "/login", "/register", "/signup", "*"}
+    private_routes = re.findall(r'<Route\s+path="([^"]+)"\s+element=\{<PrivateRoute>', app_content)
+    fallback = next((p for p in private_routes if p not in _AUTH_LIKE), None)
+    if not fallback:
+        return 0  # nothing sensible to redirect to either -- leave as-is
+
+    src_dir = project_path / "src"
+    if not src_dir.exists():
+        return 0
+
+    patched = 0
+    for jf in src_dir.rglob("*.jsx"):
+        try:
+            content = jf.read_text(encoding="utf-8", errors="replace")
+        except Exception:
+            continue
+        if "/dashboard" not in content:
+            continue
+        new_content = re.sub(r"""(navigate\(\s*)(['"])/dashboard\2""", rf"\1\g<2>{fallback}\2", content)
+        if new_content != content:
+            jf.write_text(new_content, encoding="utf-8")
+            patched += 1
+            print(f"  [patcher] Redirected navigate('/dashboard') -> '{fallback}' in {jf.name} "
+                  f"(no /dashboard route exists in this app)")
+
+    return patched
 
 
 # ── Main entry point ──────────────────────────────────────────────────────────
@@ -5057,6 +5130,12 @@ def run_deterministic_patches(project_path: str, skip_protected_injections: bool
     # mounted on a <Route> (see docstring for why this is invisible to
     # every other automated check).
     _patch_wire_orphan_frontend_routes(root)
+
+    # Must run after the line above: if the app's main authenticated page
+    # isn't literally named "Dashboard", login/register's hardcoded
+    # navigate('/dashboard') matches no route at all and silently bounces
+    # back to /login even though auth succeeded (see docstring).
+    _patch_login_redirect_target(root)
 
     # Seed robustness: guard against IndexError when parent entity inserts fail
     _patch_seed_robustness(root)
