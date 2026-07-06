@@ -442,22 +442,41 @@ def generate_project_v6(
                     continue
 
                 if not os.path.exists(abs_path):
-                    # seed_routes.py: never call the LLM — it generates wrong-project content
-                    # (gym/hospital models) because it has no project context. Write a minimal
-                    # working stub that always passes static + runtime validation.
+                    # seed_routes.py: never call the LLM -- it generates wrong-project content
+                    # (gym/hospital models) because it has no project context. Try the
+                    # deterministic ADR-002 seeder first (reuses entity_metadata.py to seed
+                    # real lookup/reference tables); fall back to the static zero-insert
+                    # stub only if that returns nothing usable. Never let this branch fail
+                    # generation outright -- the static stub is always the safety net.
                     if filepath in ("app/routes/seed_routes.py", "app\\routes\\seed_routes.py"):
                         os.makedirs(os.path.dirname(abs_path), exist_ok=True)
-                        with open(abs_path, "w", encoding="utf-8") as _sf:
-                            _sf.write(
-                                "from fastapi import APIRouter, Depends\n"
-                                "from sqlalchemy.orm import Session\n"
-                                "from app.database import get_db\n\n"
-                                "seed_router = APIRouter()\n\n"
-                                "@seed_router.post('/seed')\n"
-                                "def seed_data(db: Session = Depends(get_db)):\n"
-                                "    return {'seeded': True, 'message': 'Demo data ready'}\n"
+                        from app.services.deterministic_seed_generator import generate
+                        _source, _telemetry = generate(project_path)
+                        if _source is not None:
+                            with open(abs_path, "w", encoding="utf-8") as _sf:
+                                _sf.write(_source)
+                            print(
+                                f"  [patcher] ADR-002 deterministic seed_routes.py generated "
+                                f"({_telemetry['lookup_entities']} lookup entities, "
+                                f"{_telemetry['generation_time_ms']}ms)"
                             )
-                        print("  [patcher] Generated minimal seed_routes.py stub")
+                            for _line in _telemetry["exclusions"]:
+                                print(f"  [patcher]   {_line}")
+                        else:
+                            with open(abs_path, "w", encoding="utf-8") as _sf:
+                                _sf.write(
+                                    "from fastapi import APIRouter, Depends\n"
+                                    "from sqlalchemy.orm import Session\n"
+                                    "from app.database import get_db\n\n"
+                                    "seed_router = APIRouter()\n\n"
+                                    "@seed_router.post('/seed')\n"
+                                    "def seed_data(db: Session = Depends(get_db)):\n"
+                                    "    return {'seeded': True, 'message': 'Demo data ready'}\n"
+                                )
+                            print(
+                                f"  [patcher] Generated minimal seed_routes.py stub "
+                                f"(ADR-002 fallback: {_telemetry['fallback_reason']})"
+                            )
                         continue
                     fix = generate_missing_file(filepath, "\n".join(file_errors), provider, project_path=project_path)
                     _llm["repairs"] += 1
