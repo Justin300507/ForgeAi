@@ -100,4 +100,127 @@ returns the correct `dominant_errors` list. No generation calls used.
 for over a week. Going forward, `generation_log.jsonl` (not
 `project_history.jsonl`/`patterns.json`) is the correct source for a
 V15-specific failure taxonomy — but it needs fresh runs post-fix to build
-up a meaningful sample. Not yet committed — pending confirmation.
+up a meaningful sample. **Committed 862d393, pushed to main.**
+
+---
+
+## Experiment 004 — silent-exception audit (Claude-only, $0)
+
+**Hypothesis:** VNext report special task — audit every `except`/silent-return
+in the live V15 stack (`pipeline.py`, `verification/engine.py`,
+`repair/orchestrator.py`, `retry/manager.py`, `scoring/engine.py`) for hidden
+failures like Experiment 003's bug, before spending any more generation credits.
+
+**Changes under test:** None — pure code review, no generation calls.
+
+**Date:** 2026-07-06
+
+**Findings (71 except blocks reviewed):**
+- Most already log their exception; only ~14 were truly silent (`except:
+  pass` with no message).
+- Reviewed each: 4 are benign expected control flow (`ValueError` from
+  `Path.relative_to`, best-effort backend-process cleanup) — left as-is.
+- 10 were real gaps and got structured logging added: `pipeline.py`
+  (reset_session, cost-totals sync, confidence engine, generation_log write,
+  arch_db write, deploy-failure secondary record) and `repair/orchestrator.py`
+  (missing-import stub write, fix-context file read, scaffolded-stub re-read,
+  fix_cache.store).
+- **Most important find**: `_ProjectSnapshot.revert()` in
+  `repair/orchestrator.py` printed `"Reverted to pre-fix snapshot"`
+  *unconditionally*, even when individual file restores/deletes silently
+  failed. A partially-failed revert was being reported — and trusted — as a
+  clean recovery. This is the same class of "half-reverted mixed state" bug
+  a prior fix's `_EXTS` widening was meant to solve, just reintroduced at
+  the I/O-failure layer. Now tracks per-file failures and reports "Revert
+  INCOMPLETE" with specifics when anything fails to restore/delete.
+
+**Fix:** structured `print(...)` logging added at each real gap; revert()
+now conditionally reports success vs. incomplete. Verified via `ast.parse`
+on both files + live `import` of all 5 touched modules. No generation calls.
+
+**Conclusion:** No score-affecting bug found here (unlike Experiment 003),
+but this closes off a class of "next silent bug that takes a week to
+notice." **Committed 4287344, pushed to main.**
+
+**Candidate for next cycle (not implemented — one improvement at a time)**:
+while reading `repair/orchestrator.py`'s `fix_cache.store()`/`lookup()`, found
+that `FixCache` keys on `sha256(sorted(diagnostic messages))` — an exact-text
+hash. Since diagnostic messages are often file/variable-specific, this will
+essentially only ever hit on a byte-for-byte repeat, matching the VNext
+report's own diagnosis (§8.3 / ROI #9: "repair_db has 9 entries and
+near-zero reuse"). Re-keying on `(pattern_id, contract_fingerprint)` instead
+of raw message hash is VNext ROI #9 (Medium effort, "+2, −cost"). Proposing
+this as the next targeted improvement once the current changes are validated
+by a clean canary run — not starting it now per the "implement ONLY one
+improvement, validate, benchmark, then continue" rule.
+
+---
+
+## Experiment 005 — m1-contract-gemini (clean run, real signal)
+
+**Hypothesis:** Same as Experiment 002 (does warn-only ContractConformanceValidator
+regress anything), re-run with `--provider gemini` to avoid the exhausted-Groq
+confound. User asked to force Gemini directly rather than wait for Groq's
+daily reset.
+
+**Changes under test:** Same M1 code (ac06e54/a4bb28a/6e117be) — no new code
+changes going into this run. `--provider gemini` added to `run_canary.py`
+(commit e469045) to make this possible.
+
+**Date:** 2026-07-06, ~11:15 IST
+
+**Results vs. the TRUE baseline (Experiment 001, not the contaminated 002):**
+| App | Baseline (001) | This run (005) | Delta |
+|---|---|---|---|
+| todo | 76.9, build✅ | 25.5, build✅ but 2 Python syntax errors block runtime | **-51.4** |
+| blog_cms | 33.0, build❌ | 66.1, build❌ (different error now) | **+33.1** |
+| crm | 76.9, build✅ | 65.8, build✅ | -11.1 |
+
+(Note: the canary script's own "OK"/"REGRESSION" verdict compared against
+Experiment 002 — the provider-exhausted run — not 001, so its "CANARY PASSED"
+readout is not meaningful here. Manual diff against 001 above is the real
+comparison.)
+
+**New finding — root-caused — malformed route filename from a query-string
+endpoint:** todo's Python syntax errors trace to a generated route module
+literally named `tasks_limit=5&sort_by=created_at&sort_order=desc`. Traced
+to the very first diagnostic in the run (line 142 of the log, BEFORE any
+fix-loop patch touched anything):
+`Missing endpoint GET /tasks?limit=5&sort_by=created_at&sort_order=desc
+(expected in app/routes/tasks?limit=5&sort_by=created_at&sort_order=desc_routes.py)
+-- called from src/pages/DashboardPage.jsx but never implemented on the backend`.
+So this is a pre-existing bug, NOT caused by AppContract/M1: somewhere
+upstream (architect endpoint spec or frontend API-call generation) produced
+an endpoint whose "path" field is a literal path+querystring
+(`/tasks?limit=5&sort_by=...`) instead of a bare path with separate query
+params, and the endpoint-validator / router-patcher then naively derived a
+file/router name directly from that string — `?`, `=`, `&` end up baked into
+a Python module name, which can never compile. The ContractConformanceValidator
+correctly flagged it ("No endpoints found in app/routes/tasks..."); the bug
+is in whatever derives file/router names from endpoint paths not sanitizing
+query strings out first. Good candidate for a small, deterministic, high-
+confidence fix next cycle (arguably higher priority than the FixCache
+re-keying candidate below, since this is an observed crash from today, not
+a theoretical inefficiency) — not implemented this cycle per the one-change
+rule.
+
+**Bonus catch — confidence engine**: this run's log printed `[V15] confidence
+engine failed (non-fatal): 'method' object is not iterable` for all 3 apps —
+the logging added in Experiment 004 immediately surfacing a second,
+independent occurrence of the exact bug class fixed in Experiment 003, this
+time in `app/confidence/engine.py`. Investigated: EVERY attribute name in
+`compute_from_context()` was wrong (`best_score`/`scores`/`attempt_count`
+don't exist on `GenerationContext`; real names are
+`latest_score`/`score_history`/`fix_attempts`), plus a `isinstance(dims, dict)`
+check that could never be true since `QualityScore.dimensions` is a list.
+The confidence engine has never once produced a real report. Fixed and
+verified locally (constructed a `GenerationContext` + `QualityScore` via the
+real `ctx.record_score()` path, confirmed correct factor values). **Committed
+cbb46fb, pushed to main.**
+
+**Conclusion:** Inconclusive on the AppContract question specifically — one
+sample per app isn't enough to separate "M1 caused this" from "normal
+LLM-output variance," and todo's regression traces to a new, unrelated-looking
+bug (malformed route filename), not an obvious contract-validator side effect.
+Need at least one more clean todo run to see if the query-param-filename bug
+recurs. The confidence-engine fix was the clear, unambiguous win from this run.
