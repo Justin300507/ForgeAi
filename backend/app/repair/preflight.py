@@ -214,6 +214,27 @@ def _fix_config_missing_attrs(project_path: Path, diagnostics: list) -> bool:
     attribute 'DATABASE_URL'` recurring across generations because
     app/main.py does `create_engine(settings.DATABASE_URL)` but the
     generated Config class sometimes omits that field.
+
+    Confirmed live (2026-07-06 canary) that the instance-only guard below is
+    NOT sufficient on its own -- two compounding, independently-occurring
+    bugs:
+      1. main.py sometimes does its OWN `settings = Config()` (a second,
+         fresh instance of the same class) instead of importing config.py's
+         `settings` -- an instance-level guard on the wrong object is
+         invisible to it. Fix: also set the default on the CLASS itself
+         (inherited by every existing AND future instance) whenever the
+         instance was built from a plain class actually defined in this
+         file.
+      2. The LLM sometimes names the field in the opposite case from what
+         consuming code expects (`database_url` defined, `DATABASE_URL`
+         read, or vice versa) -- Python attribute names are case-sensitive,
+         so only patching the canonical case misses this. Fix: guard-set
+         both the canonical and lowercase spelling on the class.
+    Pydantic BaseSettings/BaseModel subclasses manage attributes through
+    their own __fields__/__dict__ machinery -- arbitrary class-level
+    setattr isn't guaranteed to surface through instance access the same
+    way, so those (and anything built via a factory function rather than a
+    plain class literal) keep the original instance-only guard unchanged.
     """
     defaults = {
         "DATABASE_URL": 'os.getenv("DATABASE_URL", "sqlite:///./app.db")',
@@ -260,12 +281,28 @@ def _fix_config_missing_attrs(project_path: Path, diagnostics: list) -> bool:
     # `config` name to attach a hasattr guard to" -- how it was built
     # doesn't matter.
     m = re.search(
-        r'^(settings|config)\s*(?::\s*[\w\[\], .]+)?\s*=\s*\S',
+        r'^(settings|config)\s*(?::\s*[\w\[\], .]+)?\s*=\s*(\w+)\s*\(',
         content, re.MULTILINE,
     )
-    if not m:
-        return False
-    instance_name = m.group(1)
+    if m:
+        instance_name = m.group(1)
+        class_name: Optional[str] = m.group(2)
+        # Only class-patch if that name is a plain class actually defined in
+        # this file (not an imported name or a factory function) and it
+        # isn't a pydantic BaseSettings/BaseModel subclass.
+        if not re.search(rf'^class\s+{re.escape(class_name)}\b', content, re.MULTILINE):
+            class_name = None
+        elif re.search(rf'class\s+{re.escape(class_name)}\s*\(\s*(?:BaseSettings|BaseModel)', content):
+            class_name = None
+    else:
+        m2 = re.search(
+            r'^(settings|config)\s*(?::\s*[\w\[\], .]+)?\s*=\s*\S',
+            content, re.MULTILINE,
+        )
+        if not m2:
+            return False
+        instance_name = m2.group(1)
+        class_name = None
 
     # Always append the hasattr guard for every default: it is a runtime
     # no-op when the attribute exists, and checking mere TEXT presence of
@@ -281,6 +318,12 @@ def _fix_config_missing_attrs(project_path: Path, diagnostics: list) -> bool:
         guard_lines.append(f'        {instance_name}.{attr} = {expr}')
         guard_lines.append(f'    except Exception:')
         guard_lines.append(f'        object.__setattr__({instance_name}, "{attr}", {expr})')
+
+        if class_name:
+            case_variants = {attr, attr.lower()}
+            for variant in case_variants:
+                guard_lines.append(f'if not hasattr({class_name}, "{variant}"):')
+                guard_lines.append(f'    setattr({class_name}, "{variant}", {expr})')
 
     config_file.write_text(content.rstrip() + "\n" + "\n".join(guard_lines) + "\n", encoding="utf-8")
     return True
