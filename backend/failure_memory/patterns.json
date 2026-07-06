@@ -306,7 +306,7 @@
       "last_seen": "2026-07-01T20:13:11.496878"
     },
     "JourneyCRUDFailure": {
-      "count": 22,
+      "count": 23,
       "examples": [
         {
           "project": "BlogSphere",
@@ -330,7 +330,7 @@
         }
       ],
       "first_seen": "2026-06-29T23:47:06.584012",
-      "last_seen": "2026-07-06T09:32:49.465818"
+      "last_seen": "2026-07-06T09:47:06.046502"
     },
     "InvalidDependsType": {
       "count": 1,
@@ -355,7 +355,7 @@
       "last_seen": "2026-07-01T15:55:15.892695"
     },
     "NotNullViolationError": {
-      "count": 2,
+      "count": 4,
       "examples": [
         {
           "project": "todo_list_app",
@@ -364,10 +364,18 @@
         {
           "project": "todo_list_app",
           "error": "NotNullViolationError"
+        },
+        {
+          "project": "simple_crm",
+          "error": "NotNullViolationError"
+        },
+        {
+          "project": "simple_crm",
+          "error": "NotNullViolationError"
         }
       ],
       "first_seen": "2026-07-01T19:37:49.712563",
-      "last_seen": "2026-07-01T19:52:55.085233"
+      "last_seen": "2026-07-06T10:02:36.798218"
     },
     "AttributeError": {
       "count": 4,
@@ -393,7 +401,7 @@
       "last_seen": "2026-07-06T07:35:28.549883"
     },
     "ConfigAttributeError": {
-      "count": 3,
+      "count": 4,
       "examples": [
         {
           "project": "forge_learn",
@@ -406,10 +414,14 @@
         {
           "project": "simple_crm",
           "error": "ConfigAttributeError"
+        },
+        {
+          "project": "forge_blog_cms",
+          "error": "ConfigAttributeError"
         }
       ],
       "first_seen": "2026-07-05T09:26:46.709471",
-      "last_seen": "2026-07-06T06:48:44.955871"
+      "last_seen": "2026-07-06T09:55:49.139185"
     },
     "ResponseValidationError": {
       "count": 1,
@@ -450,6 +462,6 @@
       "last_seen": "2026-07-06T05:46:37.663703"
     }
   },
-  "total_runs": 335,
-  "last_updated": "2026-07-06T09:32:49.465789"
+  "total_runs": 340,
+  "last_updated": "2026-07-06T10:02:36.798203"
 }

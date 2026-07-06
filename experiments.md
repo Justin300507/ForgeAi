@@ -756,6 +756,77 @@ field-presence check to a field-*requiredness* check.
 total** (~₹7). crm: Fix Attempts 2/5, confidence 31.3% (F, driven by the
 still-open `name` crash), historical base rate 18.2% (n=22).
 
+---
+
+## Experiment 013 — NOT NULL gap fix, requiredness refinement (validation canary)
+
+**Hypothesis:** Does checking schema-field *requiredness* instead of mere
+*presence* (commit 57b562b) finally eliminate the exact `contacts.name`
+NOT NULL crash that recurred in Experiment 012 despite the original fix?
+
+**Changes under test:** the requiredness refinement only (57b562b). No
+other code touched. Verified locally beforehand (3 cases: field absent,
+field present-but-Optional/stub, field genuinely required) before spending
+any generation credits.
+
+**Date:** 2026-07-06, `--provider gemini --no-deploy` (log
+`m1_canary_requiredness_run.log`).
+
+**Results vs. Experiment 012:**
+| App | Exp012 | Exp013 | Canary verdict |
+|---|---|---|---|
+| todo | 76.4 (C) | 67.4 (D) | flagged REGRESSION |
+| blog_cms | 34.3 (F) | 86.2 (B) | OK (score up sharply) |
+| crm | 72.6 (C) | 74.3 (C) | OK |
+
+**Primary question — answered directly: YES, the exact target crash is
+gone.** Grepped the full run log for `NOT NULL constraint failed`: only
+**one** occurrence in the entire run, and it is **not** `contacts.name` —
+it's a new, different column (`posts.content_markdown` in blog_cms, the
+same general model/schema divergence pattern recurring on a different
+entity this attempt, not something this cycle's fix was scoped to). Zero
+occurrences of `contacts.name` anywhere. Per the specified success
+criterion ("if the original NOT NULL crash disappears, keep the
+refinement"): **confirmed, keep.**
+
+**crm detail**: CRUD is still not fully working this run, but for a
+*different, upstream* reason than a NOT NULL crash — this attempt's
+`create_contact` handler has a different shape than Experiments 011/012
+(no defensive `{k: v for k, v in ... if k in Contact.__table__.columns}`
+filter this time), so it does `Contact(**contact_in.model_dump(),
+user_id=...)` directly and hits `TypeError: 'first_name' is an invalid
+keyword argument for Contact` instead. This is the **same root defect**
+(backend generator's uncoordinated `Contact.name` vs `ContactCreate.
+first_name/last_name`) surfacing through a different route-code shape that
+this preflight fix doesn't touch (it only edits `app/models/*.py` column
+nullability, never route constructor calls) — not a new bug, and not
+something this fix was ever positioned to catch. `status` desync/etc. are
+unaffected; Runtime Startup/API Functionality unchanged from Exp012
+(app boots, 15/15 endpoints respond).
+
+**todo regression — confirmed unrelated**: this attempt's frontend sends
+`{username, password}` to login/register while the backend requires
+`email` — a frontend/backend auth field-naming mismatch, plus the run hit
+a Groq daily-quota rate limit near the end (`429 rate_limit_exceeded`,
+92,788/100,000 TPD used) — the same provider-exhaustion confound flagged
+back in Experiment 002. Neither has anything to do with NOT NULL columns
+or this fix.
+
+**blog_cms — improved sharply (34.3→86.2)**, consistent with ordinary
+attempt-to-attempt variance rather than any effect from this fix (which
+only touches `app/models`).
+
+**Conclusion — KEEP the refinement.** Stopping here per instructions: not
+expanding scope to chase the new `posts.content_markdown` NOT NULL
+instance or the `first_name`-constructor-TypeError manifestation this
+cycle — both are evidence the same backend-generator root cause (Experiment
+012's classification) is systemic across apps/attempts, worth a dedicated
+future investigation, but out of scope for "the smallest deterministic
+fix" mandate given this cycle.
+
+**Cost**: $0.0262 (todo) + $0.0264 (blog_cms) + $0.0209 (crm) = **$0.0735
+total** (~₹6). Fix Attempts: todo 2/5, blog_cms 3/5, crm 3/5.
+
 **Housekeeping this cycle**: found and deleted ~10 zero-byte debris files in
 `backend/` (`backend/'`, `backend/65`, `backend/dict`, etc.) — artifacts of
 an earlier broken shell redirection, not user work. Also found an earlier,
