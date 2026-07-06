@@ -931,6 +931,84 @@ discipline, these will be validated separately, not stacked.
 total**. Fix Attempts: todo 2/5, blog_cms 5/5 (most ever — but converged
 to a stable 86-87 plateau, not oscillating), crm 3/5.
 
+---
+
+## Experiment 015 — Journey-runner status-code fix (validation canary, infra-confounded)
+
+**1. Hypothesis**: does the `is not None` fix (commit 8f64039) surface the
+real HTTP status code on a Create-entity rejection instead of a
+contentless `"?"`?
+
+**2. Evidence**: `generation_log.jsonl` showed `Create entity: ?` as the
+single most frequent specific failure signature (7/27 recent entries);
+Experiment 013's raw log showed the exact wire-level response was `POST
+/tasks 400 Bad Request` while the journey step recorded `detail: '?'`.
+
+**3. Root cause**: `requests.Response.__bool__` returns `self.ok` (False
+for status ≥ 400); `do_create()`'s final fallback used `if last_r` instead
+of `if last_r is not None`, so a perfectly valid 400/403/404/409 response
+was treated as falsy. Classification: **runtime** (the journey-runner
+telemetry harness itself, not generation/repair/validation).
+
+**4. Implementation**: one-line change in
+`app/runtime/user_journey_runner.py`, `do_create()`'s final return.
+
+**5. Validation (local, $0)**: reproduced with a real `requests.Response`
+object (`bool(resp)` confirmed `False` for status 400); confirmed old code
+returns `'?'`, new code returns `'400'`; confirmed 201 and `None` cases
+unaffected; scanned the rest of the file for the same anti-pattern (only
+instance).
+
+**6. Benchmark comparison** (`--provider gemini --no-deploy`, log
+`m1_canary_statuscode_run.log`):
+| App | Exp014 | Exp015 | Canary verdict |
+|---|---|---|---|
+| todo | 73.9 (C) | 73.9 (C) | OK |
+| blog_cms | 87.4 (B) | 68.3 (D) | flagged REGRESSION |
+| crm | 66.9 (D) | 0.0 (F) | flagged REGRESSION |
+
+**Infrastructure confound, not a code regression**: grepped the run log
+for `getaddrinfo failed`/`Connection error`: **126 occurrences**, 84 inside
+blog_cms's section, 42 inside crm's section, **0 inside todo's**. Both
+Gemini (DNS resolution failure, `[Errno 11001] getaddrinfo failed`) and
+Groq (`Connection error`) were unreachable for a stretch spanning
+blog_cms's and crm's runs — a transient local network/DNS outage, not a
+provider quota or code issue. crm's generation failed outright (0 tokens
+billed, 18.8s total) because every single model/schema/route file's LLM
+call failed with both providers down. Confirmed connectivity was restored
+immediately after (`socket.getaddrinfo` succeeded for both hosts moments
+later). Per the Experiment 002 precedent, a run like this "produces zero
+usable signal" for the two contaminated apps — their scores are excluded
+from judging this fix.
+
+**7. Telemetry comparison — direct, unambiguous confirmation from todo's
+uncontaminated section**: todo hit the *exact* recurring scenario from
+Experiment 013 (`POST /tasks` → 400, unseeded Priority-name lookup).
+Journey step now reads `{'name': 'Create entity', 'passed': False,
+'detail': '400'}` — the real status code — where it previously read
+`'detail': '?'`. `parsed_error.hint`'s `failed_steps` list also now
+carries `('Create entity', '400')` instead of `('Create entity', '?')`,
+giving the repair loop's own diagnostic message real information for the
+first time on this exact failure class.
+
+**8. Verdict: KEEP.** Confirmed effective via direct, real-world evidence
+in the one app segment unaffected by the network outage. Not re-running
+the full canary purely to re-confirm blog_cms/crm's scores under normal
+network conditions — the fix's success criterion (real status code
+surfaces instead of "?") is already unambiguously met; a clean re-run of
+just those two apps is optional future work, not required to keep this
+change.
+
+**Cost**: $0.0246 (todo only — blog_cms and crm spent $0 since their LLM
+calls failed before any billable generation completed).
+
+**9. Next highest-ROI candidate**: the `do_create()` 422-retry
+false-positive found while investigating Experiment 014 (a retry that
+itself returns 5xx currently falls through to a false "passed" with a
+stale 422 message) — implemented and locally verified, not yet committed
+or canary-validated; queued as Experiment 016, kept isolated per
+discipline.
+
 **Housekeeping this cycle**: found and deleted ~10 zero-byte debris files in
 `backend/` (`backend/'`, `backend/65`, `backend/dict`, etc.) — artifacts of
 an earlier broken shell redirection, not user work. Also found an earlier,
