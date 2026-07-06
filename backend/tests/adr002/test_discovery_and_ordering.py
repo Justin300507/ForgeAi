@@ -159,6 +159,50 @@ class Beta(Base):
     alpha_id = Column(Integer, ForeignKey("alphas.id"), nullable=False)
 '''
 
+FIXTURE_POST_COMMENT = '''
+from sqlalchemy import Column, Integer, String, ForeignKey
+from app.database import Base
+
+class Post(Base):
+    __tablename__ = "posts"
+    id = Column(Integer, primary_key=True)
+    title = Column(String(200), nullable=False)
+    comment_id = Column(Integer, ForeignKey("comments.id"), nullable=False)
+'''
+
+FIXTURE_COMMENT_USER_FK = '''
+from sqlalchemy import Column, Integer, String, ForeignKey
+from app.database import Base
+
+class Comment(Base):
+    __tablename__ = "comments"
+    id = Column(Integer, primary_key=True)
+    text = Column(String(500), nullable=False)
+    user_id = Column(Integer, ForeignKey("users.id"), nullable=False)
+'''
+
+FIXTURE_REPLY_COMMENT_FK = '''
+from sqlalchemy import Column, Integer, String, ForeignKey
+from app.database import Base
+
+class Reply(Base):
+    __tablename__ = "replies"
+    id = Column(Integer, primary_key=True)
+    text = Column(String(500), nullable=False)
+    comment_id = Column(Integer, ForeignKey("comments.id"), nullable=False)
+'''
+
+FIXTURE_THREAD_REPLY_FK = '''
+from sqlalchemy import Column, Integer, String, ForeignKey
+from app.database import Base
+
+class Thread(Base):
+    __tablename__ = "threads"
+    id = Column(Integer, primary_key=True)
+    title = Column(String(200), nullable=False)
+    reply_id = Column(Integer, ForeignKey("replies.id"), nullable=False)
+'''
+
 
 def _entities(*sources: str) -> dict:
     out = {}
@@ -284,6 +328,49 @@ def test_topological_order_detects_cycle():
     assert names == {"alphas", "betas"}, names
     ordered = topological_order(eligible)
     assert ordered is None
+
+
+def test_find_lookup_entities_two_hop_fixed_point_cascade():
+    """
+    Verifies that the while-loop actually re-scans after removing candidates.
+
+    Setup: Post -> comments.id (makes Comment candidate), Comment -> users.id
+    (external), Reply -> comments.id, Thread -> replies.id (makes Reply candidate).
+
+    Pass 1: Comment excluded (FK to users outside eligible).
+    Pass 2: Reply must be re-scanned and excluded (FK to comments no longer
+    eligible after pass 1 removal).
+
+    This test would FAIL if find_lookup_entities naively checked each candidate
+    once against the ORIGINAL candidate set instead of iterating until fixed
+    point (the while changed: loop is essential).
+    """
+    entities = _entities(
+        FIXTURE_POST_COMMENT,
+        FIXTURE_COMMENT_USER_FK,
+        FIXTURE_REPLY_COMMENT_FK,
+        FIXTURE_THREAD_REPLY_FK
+    )
+    eligible, exclusions = find_lookup_entities(entities)
+    names = {e.table_name for e in eligible}
+
+    # Neither comments nor replies should be in the eligible set
+    assert "comments" not in names, f"comments unexpectedly eligible: {names}"
+    assert "replies" not in names, f"replies unexpectedly eligible: {names}"
+
+    # Verify the exclusion log contains evidence of both removals
+    exclusion_text = "\n".join(exclusions)
+
+    # Pass 1: comments excluded for FK to users (external)
+    assert any("excluded comments" in line and "users" in line
+               for line in exclusions), \
+        f"Missing exclusion log for comments->users: {exclusions}"
+
+    # Pass 2: replies excluded for FK to comments
+    # This is the critical proof that the while-loop fired a second pass
+    assert any("excluded replies" in line and "comments" in line
+               for line in exclusions), \
+        f"Missing exclusion log for replies->comments (two-pass proof): {exclusions}"
 
 
 if __name__ == "__main__":
