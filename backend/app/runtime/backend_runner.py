@@ -268,6 +268,7 @@ class BackendRunner:
                     "skipped": journey_result.skipped,
                     "skip_reason": getattr(journey_result, "skip_reason", ""),
                     "entity": getattr(journey_result, "entity", ""),
+                    "seed_summary": getattr(journey_result, "seed_summary", {}),
                     "steps": [
                         {"name": s.name, "passed": s.passed, "detail": s.detail}
                         for s in journey_result.steps
@@ -288,6 +289,8 @@ class BackendRunner:
                     for step in journey_result.steps:
                         marker = "✓" if step.passed else "✗"
                         print(f"    {marker} {step.name}: {step.detail}")
+                    if journey_result.seed_summary:
+                        print(f"  Seed summary: {journey_result.seed_summary}")
             except Exception as je:
                 print(f"  Journey error: {je}")
                 journey_data = {"skipped": True, "skip_reason": str(je)}

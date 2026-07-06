@@ -31,6 +31,7 @@ class JourneyResult:
     skipped: bool = False
     skip_reason: str = ""
     entity: str = ""
+    seed_summary: dict = field(default_factory=dict)
 
 
 _CRITICAL_STEPS = {"Login", "Create entity", "List entities", "Edit entity", "Delete entity"}
@@ -481,8 +482,12 @@ def run_user_journey(
     # added to `steps`/`_CRITICAL_STEPS`: seeding is optional infrastructure,
     # not a journey behavior under test, and must never itself count as a
     # pass/fail journey step or influence scoring.
+    seed_summary: dict = {}
     try:
-        requests.post(f"{base}/seed", headers=headers, timeout=5)
+        _seed_resp = requests.post(f"{base}/seed", headers=headers, timeout=5)
+        _seed_json = _seed_resp.json()
+        if isinstance(_seed_json, dict) and isinstance(_seed_json.get("summary"), dict):
+            seed_summary = _seed_json["summary"]
     except Exception:
         pass
 
@@ -853,4 +858,5 @@ def run_user_journey(
         steps_passed=passed,
         steps_failed=failed,
         entity=entity,
+        seed_summary=seed_summary,
     )
