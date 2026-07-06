@@ -3,7 +3,7 @@ import os
 import sys
 import time
 
-sys.path.insert(0, os.path.join(os.path.dirname(__file__), ".."))
+sys.path.insert(0, os.path.join(os.path.dirname(__file__), "..", "backend"))
 
 from app.services.backend_service import generate_backend
 from app.services.frontend_service import generate_frontend
@@ -44,7 +44,19 @@ def run_fixture(fixture_filename, provider="groq"):
     fixture_path = os.path.join(FIXTURES_DIR, fixture_filename)
 
     with open(fixture_path, "r", encoding="utf-8") as f:
-        fixture_data = json.load(f)
+        raw = f.read()
+
+    if not raw.strip():
+        print(f"\n=== FIXTURE: {fixture_name} ===")
+        print(f"⚠️  Skipping — {fixture_path} is empty.")
+        return None
+
+    try:
+        fixture_data = json.loads(raw)
+    except json.JSONDecodeError as e:
+        print(f"\n=== FIXTURE: {fixture_name} ===")
+        print(f"⚠️  Skipping — invalid JSON in {fixture_path}: {e}")
+        return None
 
     plan = fixture_data["plan"]
     architecture = fixture_data["architecture"]

@@ -135,6 +135,54 @@ class ForgeAIAdapter:
         )
 
 
+class ForgeAIV15Adapter:
+    """Calls the local ForgeAI /project/v15 endpoint (the actual pipeline the
+    live web app uses -- V6 generation + deterministic patches + the 10-
+    dimension quality-scoring engine + fix loop). ForgeAIAdapter above hits
+    the older, non-representative /project endpoint instead.
+
+    Always sends deploy=False: /project/v15 defaults to deploy=True, which
+    would push every benchmarked app to the real configured GitHub account
+    and trigger real Render/Cloudflare deployments -- never appropriate for
+    a benchmark run.
+    """
+    name = "forgeai_v15"
+
+    def __init__(self, base_url: str = "http://localhost:8000"):
+        self.base_url = base_url.rstrip("/")
+
+    def generate(self, idea: str) -> AdapterResult:
+        import urllib.request
+        import urllib.error
+
+        payload = json.dumps({"idea": idea, "deploy": False, "deploy_to": "none"}).encode()
+        req = urllib.request.Request(
+            f"{self.base_url}/project/v15",
+            data=payload,
+            headers={"Content-Type": "application/json"},
+            method="POST",
+        )
+        t0 = time.time()
+        try:
+            with urllib.request.urlopen(req, timeout=900) as resp:
+                body = json.loads(resp.read())
+        except urllib.error.HTTPError as e:
+            body = json.loads(e.read())
+        elapsed = time.time() - t0
+
+        score = float(body.get("forge_score", 0))
+        return AdapterResult(
+            compile_success    = score > 0,
+            runtime_success    = score >= 50,
+            crud_success       = bool(body.get("deployed", False)) or score >= 80,
+            forge_score        = score,
+            generation_time_s  = float(body.get("elapsed_s", elapsed)) or elapsed,
+            estimated_cost_usd = float(body.get("estimated_cost", 0)),
+            fix_count          = int(body.get("fix_attempts", 0)),
+            notes              = body.get("error", "") or body.get("status", ""),
+        )
+
+
 class HttpAdapter:
     """Generic HTTP adapter: POST {idea} → AdapterResult JSON."""
     name = "http"
@@ -191,6 +239,8 @@ class MockAdapter:
 def make_adapter(name: str, adapter_url: str = "", base_url: str = "http://localhost:8000"):
     if name == "forgeai":
         return ForgeAIAdapter(base_url)
+    if name == "forgeai_v15":
+        return ForgeAIV15Adapter(base_url)
     if name == "http":
         if not adapter_url:
             print("ERROR: --adapter http requires --adapter-url")
@@ -200,7 +250,7 @@ def make_adapter(name: str, adapter_url: str = "", base_url: str = "http://local
         return NullAdapter()
     if name == "mock":
         return MockAdapter()
-    print(f"ERROR: Unknown adapter '{name}'. Choices: forgeai, http, null, mock")
+    print(f"ERROR: Unknown adapter '{name}'. Choices: forgeai, forgeai_v15, http, null, mock")
     sys.exit(1)
 
 
@@ -408,7 +458,7 @@ def main() -> None:
                              "advanced", "enterprise", "hard"],
                    help="Benchmark suite to run (default: golden)")
     p.add_argument("--adapter",      default="forgeai",
-                   choices=["forgeai", "http", "null", "mock"],
+                   choices=["forgeai", "forgeai_v15", "http", "null", "mock"],
                    help="Generation backend adapter (default: forgeai)")
     p.add_argument("--adapter-url",  default="",
                    help="URL for http adapter or ForgeAI base URL override")

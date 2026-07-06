@@ -1,0 +1,48 @@
+{
+  "ConfigAttributeError": {
+    "patch_file": {
+      "successes": 0,
+      "tries": 2
+    }
+  },
+  "SyntaxError": {
+    "patch_file": {
+      "successes": 2,
+      "tries": 6
+    },
+    "regenerate_module": {
+      "successes": 0,
+      "tries": 2
+    }
+  },
+  "api": {
+    "patch_file": {
+      "successes": 0,
+      "tries": 3
+    },
+    "regenerate_module": {
+      "successes": 0,
+      "tries": 3
+    }
+  },
+  "browser": {
+    "patch_file": {
+      "successes": 0,
+      "tries": 2
+    }
+  },
+  "contract": {
+    "patch_file": {
+      "successes": 6,
+      "tries": 22
+    },
+    "regenerate_module": {
+      "successes": 0,
+      "tries": 3
+    },
+    "switch_model": {
+      "successes": 0,
+      "tries": 3
+    }
+  }
+}

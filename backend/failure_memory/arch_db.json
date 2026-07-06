@@ -321,652 +321,6 @@
       "score": 100,
       "success_count": 1,
       "generation_id": "83fe184447",
-      "timestamp": "2026-06-30T00:29:49Z"
-    },
-    {
-      "category": "todo_crud",
-      "idea": "A todo list app with user authentication and task priorities",
-      "architecture": {
-        "api_endpoints": [
-          {
-            "method": "POST",
-            "path": "/auth/register",
-            "description": "Register a new user with username, email, and password",
-            "file": "app\\routes\\auth_routes.py"
-          },
-          {
-            "method": "POST",
-            "path": "/auth/login",
-            "description": "Authenticate user and return JWT access token",
-            "file": "app\\routes\\auth_routes.py"
-          },
-          {
-            "method": "POST",
-            "path": "/auth/logout",
-            "description": "Invalidate the current JWT token",
-            "file": "app\\routes\\auth_routes.py"
-          },
-          {
-            "method": "GET",
-            "path": "/auth/me",
-            "description": "Retrieve profile of the authenticated user",
-            "file": "app\\routes\\auth_routes.py"
-          },
-          {
-            "method": "GET",
-            "path": "/users/me",
-            "description": "Get current user's detailed information",
-            "file": "app\\routes\\user_routes.py"
-          },
-          {
-            "method": "GET",
-            "path": "/tasks",
-            "description": "List all tasks for the authenticated user, sorted by priority",
-            "file": "app\\routes\\task_routes.py"
-          },
-          {
-            "method": "POST",
-            "path": "/tasks",
-            "description": "Create a new task with title, description, priority, and optional due date",
-            "file": "app\\routes\\task_routes.py"
-          },
-          {
-            "method": "GET",
-            "path": "/tasks/{id}",
-            "description": "Retrieve a specific task by its ID",
-            "file": "app\\routes\\task_routes.py"
-          },
-          {
-            "method": "PUT",
-            "path": "/tasks/{id}",
-            "description": "Update an existing task's details, including priority and completion status",
-            "file": "app\\routes\\task_routes.py"
-          },
-          {
-            "method": "DELETE",
-            "path": "/tasks/{id}",
-            "description": "Delete a task owned by the authenticated user",
-            "file": "app\\routes\\task_routes.py"
-          }
-        ],
-        "database_schema": [
-          {
-            "table_name": "users",
-            "columns": [
-              {
-                "name": "id",
-                "type": "INTEGER",
-                "is_primary_key": true,
-                "is_nullable": false
-              },
-              {
-                "name": "username",
-                "type": "VARCHAR(150)",
-                "is_primary_key": false,
-                "is_nullable": false
-              },
-              {
-                "name": "email",
-                "type": "VARCHAR(255)",
-                "is_primary_key": false,
-                "is_nullable": false
-              },
-              {
-                "name": "hashed_password",
-                "type": "VARCHAR(255)",
-                "is_primary_key": false,
-                "is_nullable": false
-              },
-              {
-                "name": "created_at",
-                "type": "DATETIME",
-                "is_primary_key": false,
-                "is_nullable": false
-              }
-            ]
-          },
-          {
-            "table_name": "tasks",
-            "columns": [
-              {
-                "name": "id",
-                "type": "INTEGER",
-                "is_primary_key": true,
-                "is_nullable": false
-              },
-              {
-                "name": "user_id",
-                "type": "INTEGER",
-                "is_primary_key": false,
-                "is_nullable": false
-              },
-              {
-                "name": "title",
-                "type": "VARCHAR(200)",
-                "is_primary_key": false,
-                "is_nullable": false
-              },
-              {
-                "name": "description",
-                "type": "TEXT",
-                "is_primary_key": false,
-                "is_nullable": true
-              },
-              {
-                "name": "priority",
-                "type": "VARCHAR(10)",
-                "is_primary_key": false,
-                "is_nullable": false
-              },
-              {
-                "name": "due_date",
-                "type": "DATETIME",
-                "is_primary_key": false,
-                "is_nullable": true
-              },
-              {
-                "name": "completed",
-                "type": "BOOLEAN",
-                "is_primary_key": false,
-                "is_nullable": false
-              },
-              {
-                "name": "created_at",
-                "type": "DATETIME",
-                "is_primary_key": false,
-                "is_nullable": false
-              },
-              {
-                "name": "updated_at",
-                "type": "DATETIME",
-                "is_primary_key": false,
-                "is_nullable": false
-              }
-            ]
-          }
-        ],
-        "folder_structure": {
-          "backend": [
-            "routes",
-            "models",
-            "schemas",
-            "services",
-            "utils",
-            "dependencies",
-            "config"
-          ]
-        },
-        "frontend_structure": {
-          "pages": [
-            "Login",
-            "Register",
-            "Dashboard",
-            "TaskForm",
-            "Settings"
-          ],
-          "components": [
-            "Header",
-            "Footer",
-            "Sidebar",
-            "LoginForm",
-            "RegisterForm",
-            "SettingsForm",
-            "TaskList",
-            "TaskItem",
-            "PriorityBadge",
-            "TaskForm",
-            "Modal",
-            "ConfirmationDialog",
-            "ErrorAlert",
-            "LoadingSpinner",
-            "UserAvatar"
-          ]
-        }
-      },
-      "plan": {
-        "project_name": "PriorityTodo",
-        "description": "A web-based todo list application that lets users register, log in, and manage tasks with configurable priority levels. Tasks can be created, edited, deleted, and viewed sorted by priority.",
-        "target_users": [
-          "Individuals seeking personal productivity",
-          "Students managing assignments",
-          "Professionals tracking work items"
-        ],
-        "core_features": [
-          "User registration and secure login",
-          "Create tasks with selectable priority (Low, Medium, High)",
-          "Edit existing tasks and change their priority",
-          "Delete tasks",
-          "Dashboard displaying tasks sorted by priority"
-        ],
-        "future_features": [
-          "Task categories and tags for better organization",
-          "Recurring tasks with automatic schedule generation",
-          "Sharing tasks or lists with other registered users"
-        ],
-        "tech_stack": [
-          "FastAPI",
-          "React",
-          "SQLite",
-          "Pydantic",
-          "SQLAlchemy"
-        ],
-        "database_entities": [
-          {
-            "name": "User",
-            "fields": [
-              "id",
-              "username",
-              "email",
-              "hashed_password",
-              "created_at"
-            ]
-          },
-          {
-            "name": "Task",
-            "fields": [
-              "id",
-              "user_id",
-              "title",
-              "description",
-              "priority",
-              "due_date",
-              "completed",
-              "created_at",
-              "updated_at"
-            ]
-          }
-        ],
-        "api_modules": [
-          {
-            "name": "Auth",
-            "endpoints": [
-              "/auth/register",
-              "/auth/login",
-              "/auth/logout",
-              "/auth/me"
-            ]
-          },
-          {
-            "name": "User",
-            "endpoints": [
-              "/users/me"
-            ]
-          },
-          {
-            "name": "Task",
-            "endpoints": [
-              "/tasks",
-              "/tasks/{id}"
-            ]
-          }
-        ],
-        "pages": [
-          "Login",
-          "Register",
-          "Dashboard",
-          "TaskForm",
-          "Settings"
-        ],
-        "backend_modules": [
-          "Authentication",
-          "User Management",
-          "Task Management",
-          "Priority Validation"
-        ],
-        "roadmap": [
-          {
-            "phase": "Phase 1 - MVP",
-            "milestones": [
-              "Implement user registration and login with JWT",
-              "Create Task CRUD endpoints with priority field",
-              "Build React dashboard showing tasks sorted by priority",
-              "Integrate SQLite database via SQLAlchemy"
-            ]
-          },
-          {
-            "phase": "Phase 2 - Enhanced UI & Filtering",
-            "milestones": [
-              "Add due date handling and visual indicators",
-              "Implement client‑side filtering and sorting by priority and due date",
-              "Introduce user settings page for profile updates"
-            ]
-          },
-          {
-            "phase": "Phase 3 - Advanced Collaboration",
-            "milestones": [
-              "Add task categories/tags and UI for tag management",
-              "Implement recurring task logic on the backend",
-              "Enable task sharing between users with permission controls"
-            ]
-          }
-        ]
-      },
-      "score": 100,
-      "success_count": 1,
-      "generation_id": "83fe184447",
-      "timestamp": "2026-06-30T00:32:39Z"
-    },
-    {
-      "category": "todo_crud",
-      "idea": "A todo list app with user authentication and task priorities",
-      "architecture": {
-        "api_endpoints": [
-          {
-            "method": "POST",
-            "path": "/auth/register",
-            "description": "Register a new user with username, email, and password",
-            "file": "app\\routes\\auth_routes.py"
-          },
-          {
-            "method": "POST",
-            "path": "/auth/login",
-            "description": "Authenticate user and return JWT access token",
-            "file": "app\\routes\\auth_routes.py"
-          },
-          {
-            "method": "POST",
-            "path": "/auth/logout",
-            "description": "Invalidate the current JWT token",
-            "file": "app\\routes\\auth_routes.py"
-          },
-          {
-            "method": "GET",
-            "path": "/auth/me",
-            "description": "Retrieve profile of the authenticated user",
-            "file": "app\\routes\\auth_routes.py"
-          },
-          {
-            "method": "GET",
-            "path": "/users/me",
-            "description": "Get current user's detailed information",
-            "file": "app\\routes\\user_routes.py"
-          },
-          {
-            "method": "GET",
-            "path": "/tasks",
-            "description": "List all tasks for the authenticated user, sorted by priority",
-            "file": "app\\routes\\task_routes.py"
-          },
-          {
-            "method": "POST",
-            "path": "/tasks",
-            "description": "Create a new task with title, description, priority, and optional due date",
-            "file": "app\\routes\\task_routes.py"
-          },
-          {
-            "method": "GET",
-            "path": "/tasks/{id}",
-            "description": "Retrieve a specific task by its ID",
-            "file": "app\\routes\\task_routes.py"
-          },
-          {
-            "method": "PUT",
-            "path": "/tasks/{id}",
-            "description": "Update an existing task's details, including priority and completion status",
-            "file": "app\\routes\\task_routes.py"
-          },
-          {
-            "method": "DELETE",
-            "path": "/tasks/{id}",
-            "description": "Delete a task owned by the authenticated user",
-            "file": "app\\routes\\task_routes.py"
-          }
-        ],
-        "database_schema": [
-          {
-            "table_name": "users",
-            "columns": [
-              {
-                "name": "id",
-                "type": "INTEGER",
-                "is_primary_key": true,
-                "is_nullable": false
-              },
-              {
-                "name": "username",
-                "type": "VARCHAR(150)",
-                "is_primary_key": false,
-                "is_nullable": false
-              },
-              {
-                "name": "email",
-                "type": "VARCHAR(255)",
-                "is_primary_key": false,
-                "is_nullable": false
-              },
-              {
-                "name": "hashed_password",
-                "type": "VARCHAR(255)",
-                "is_primary_key": false,
-                "is_nullable": false
-              },
-              {
-                "name": "created_at",
-                "type": "DATETIME",
-                "is_primary_key": false,
-                "is_nullable": false
-              }
-            ]
-          },
-          {
-            "table_name": "tasks",
-            "columns": [
-              {
-                "name": "id",
-                "type": "INTEGER",
-                "is_primary_key": true,
-                "is_nullable": false
-              },
-              {
-                "name": "user_id",
-                "type": "INTEGER",
-                "is_primary_key": false,
-                "is_nullable": false
-              },
-              {
-                "name": "title",
-                "type": "VARCHAR(200)",
-                "is_primary_key": false,
-                "is_nullable": false
-              },
-              {
-                "name": "description",
-                "type": "TEXT",
-                "is_primary_key": false,
-                "is_nullable": true
-              },
-              {
-                "name": "priority",
-                "type": "VARCHAR(10)",
-                "is_primary_key": false,
-                "is_nullable": false
-              },
-              {
-                "name": "due_date",
-                "type": "DATETIME",
-                "is_primary_key": false,
-                "is_nullable": true
-              },
-              {
-                "name": "completed",
-                "type": "BOOLEAN",
-                "is_primary_key": false,
-                "is_nullable": false
-              },
-              {
-                "name": "created_at",
-                "type": "DATETIME",
-                "is_primary_key": false,
-                "is_nullable": false
-              },
-              {
-                "name": "updated_at",
-                "type": "DATETIME",
-                "is_primary_key": false,
-                "is_nullable": false
-              }
-            ]
-          }
-        ],
-        "folder_structure": {
-          "backend": [
-            "routes",
-            "models",
-            "schemas",
-            "services",
-            "utils",
-            "dependencies",
-            "config"
-          ]
-        },
-        "frontend_structure": {
-          "pages": [
-            "Login",
-            "Register",
-            "Dashboard",
-            "TaskForm",
-            "Settings"
-          ],
-          "components": [
-            "Header",
-            "Footer",
-            "Sidebar",
-            "LoginForm",
-            "RegisterForm",
-            "SettingsForm",
-            "TaskList",
-            "TaskItem",
-            "PriorityBadge",
-            "TaskForm",
-            "Modal",
-            "ConfirmationDialog",
-            "ErrorAlert",
-            "LoadingSpinner",
-            "UserAvatar"
-          ]
-        }
-      },
-      "plan": {
-        "project_name": "PriorityTodo",
-        "description": "A web-based todo list application that lets users register, log in, and manage tasks with configurable priority levels. Tasks can be created, edited, deleted, and viewed sorted by priority.",
-        "target_users": [
-          "Individuals seeking personal productivity",
-          "Students managing assignments",
-          "Professionals tracking work items"
-        ],
-        "core_features": [
-          "User registration and secure login",
-          "Create tasks with selectable priority (Low, Medium, High)",
-          "Edit existing tasks and change their priority",
-          "Delete tasks",
-          "Dashboard displaying tasks sorted by priority"
-        ],
-        "future_features": [
-          "Task categories and tags for better organization",
-          "Recurring tasks with automatic schedule generation",
-          "Sharing tasks or lists with other registered users"
-        ],
-        "tech_stack": [
-          "FastAPI",
-          "React",
-          "SQLite",
-          "Pydantic",
-          "SQLAlchemy"
-        ],
-        "database_entities": [
-          {
-            "name": "User",
-            "fields": [
-              "id",
-              "username",
-              "email",
-              "hashed_password",
-              "created_at"
-            ]
-          },
-          {
-            "name": "Task",
-            "fields": [
-              "id",
-              "user_id",
-              "title",
-              "description",
-              "priority",
-              "due_date",
-              "completed",
-              "created_at",
-              "updated_at"
-            ]
-          }
-        ],
-        "api_modules": [
-          {
-            "name": "Auth",
-            "endpoints": [
-              "/auth/register",
-              "/auth/login",
-              "/auth/logout",
-              "/auth/me"
-            ]
-          },
-          {
-            "name": "User",
-            "endpoints": [
-              "/users/me"
-            ]
-          },
-          {
-            "name": "Task",
-            "endpoints": [
-              "/tasks",
-              "/tasks/{id}"
-            ]
-          }
-        ],
-        "pages": [
-          "Login",
-          "Register",
-          "Dashboard",
-          "TaskForm",
-          "Settings"
-        ],
-        "backend_modules": [
-          "Authentication",
-          "User Management",
-          "Task Management",
-          "Priority Validation"
-        ],
-        "roadmap": [
-          {
-            "phase": "Phase 1 - MVP",
-            "milestones": [
-              "Implement user registration and login with JWT",
-              "Create Task CRUD endpoints with priority field",
-              "Build React dashboard showing tasks sorted by priority",
-              "Integrate SQLite database via SQLAlchemy"
-            ]
-          },
-          {
-            "phase": "Phase 2 - Enhanced UI & Filtering",
-            "milestones": [
-              "Add due date handling and visual indicators",
-              "Implement client‑side filtering and sorting by priority and due date",
-              "Introduce user settings page for profile updates"
-            ]
-          },
-          {
-            "phase": "Phase 3 - Advanced Collaboration",
-            "milestones": [
-              "Add task categories/tags and UI for tag management",
-              "Implement recurring task logic on the backend",
-              "Enable task sharing between users with permission controls"
-            ]
-          }
-        ]
-      },
-      "score": 100,
-      "success_count": 1,
-      "generation_id": "83fe184447",
       "timestamp": "2026-06-30T00:37:35Z"
     },
     {
@@ -1614,6 +968,814 @@
       "success_count": 1,
       "generation_id": "83fe184447",
       "timestamp": "2026-06-30T00:47:12Z"
+    },
+    {
+      "category": "todo_crud",
+      "idea": "A simple todo list app. Users can add, edit, delete, and mark todos complete. Todos have a title, optional description, and done status.",
+      "architecture": {
+        "api_endpoints": [
+          {
+            "method": "GET",
+            "path": "/users",
+            "description": "Retrieve a paginated list of users. Supports optional search by email.",
+            "file": "app\\routes\\user_routes.py"
+          },
+          {
+            "method": "GET",
+            "path": "/users/{id}",
+            "description": "Retrieve a single user by its ID.",
+            "file": "app\\routes\\user_routes.py"
+          },
+          {
+            "method": "POST",
+            "path": "/users",
+            "description": "Create a new user record (admin use). Password must be hashed before storage.",
+            "file": "app\\routes\\user_routes.py"
+          },
+          {
+            "method": "PUT",
+            "path": "/users/{id}",
+            "description": "Replace an existing user with new data.",
+            "file": "app\\routes\\user_routes.py"
+          },
+          {
+            "method": "DELETE",
+            "path": "/users/{id}",
+            "description": "Delete a user permanently.",
+            "file": "app\\routes\\user_routes.py"
+          },
+          {
+            "method": "GET",
+            "path": "/todos",
+            "description": "Retrieve a paginated list of the authenticated user's todos. Supports search by title and optional category filter.",
+            "file": "app\\routes\\todo_routes.py"
+          },
+          {
+            "method": "GET",
+            "path": "/todos/{id}",
+            "description": "Retrieve a single todo belonging to the authenticated user.",
+            "file": "app\\routes\\todo_routes.py"
+          },
+          {
+            "method": "POST",
+            "path": "/todos",
+            "description": "Create a new todo for the authenticated user. Title is required; description is optional.",
+            "file": "app\\routes\\todo_routes.py"
+          },
+          {
+            "method": "PUT",
+            "path": "/todos/{id}",
+            "description": "Replace an existing todo with new data (title, description, category).",
+            "file": "app\\routes\\todo_routes.py"
+          },
+          {
+            "method": "DELETE",
+            "path": "/todos/{id}",
+            "description": "Delete a todo owned by the authenticated user.",
+            "file": "app\\routes\\todo_routes.py"
+          },
+          {
+            "method": "PATCH",
+            "path": "/todos/{id}/done",
+            "description": "Toggle the 'done' status of a todo owned by the authenticated user.",
+            "file": "app\\routes\\todo_routes.py"
+          },
+          {
+            "method": "POST",
+            "path": "/auth/register",
+            "description": "Register a new user with email and password. Returns a JWT on success.",
+            "file": "app\\routes\\auth_routes.py"
+          },
+          {
+            "method": "POST",
+            "path": "/auth/login",
+            "description": "Authenticate a user and return a JWT token.",
+            "file": "app\\routes\\auth_routes.py"
+          },
+          {
+            "method": "POST",
+            "path": "/seed",
+            "description": "Populate the database with demo data (5‑10 records per table).",
+            "file": "app\\routes\\seed_routes.py"
+          },
+          {
+            "method": "GET",
+            "path": "/stats/summary",
+            "description": "Return aggregate counts and key metrics for the dashboard (total users, total todos, completed todos).",
+            "file": "app\\routes\\stats_routes.py"
+          }
+        ],
+        "database_schema": [
+          {
+            "table_name": "users",
+            "columns": [
+              {
+                "name": "id",
+                "type": "Integer",
+                "is_primary_key": true,
+                "is_nullable": false
+              },
+              {
+                "name": "email",
+                "type": "String(255)",
+                "is_primary_key": false,
+                "is_nullable": false
+              },
+              {
+                "name": "hashed_password",
+                "type": "String(255)",
+                "is_primary_key": false,
+                "is_nullable": false
+              },
+              {
+                "name": "created_at",
+                "type": "DateTime",
+                "is_primary_key": false,
+                "is_nullable": false
+              }
+            ]
+          },
+          {
+            "table_name": "todos",
+            "columns": [
+              {
+                "name": "id",
+                "type": "Integer",
+                "is_primary_key": true,
+                "is_nullable": false
+              },
+              {
+                "name": "user_id",
+                "type": "Integer",
+                "is_primary_key": false,
+                "is_nullable": false
+              },
+              {
+                "name": "title",
+                "type": "String(200)",
+                "is_primary_key": false,
+                "is_nullable": false
+              },
+              {
+                "name": "description",
+                "type": "Text",
+                "is_primary_key": false,
+                "is_nullable": true
+              },
+              {
+                "name": "done",
+                "type": "Boolean",
+                "is_primary_key": false,
+                "is_nullable": false
+              },
+              {
+                "name": "category_id",
+                "type": "Integer",
+                "is_primary_key": false,
+                "is_nullable": true
+              },
+              {
+                "name": "created_at",
+                "type": "DateTime",
+                "is_primary_key": false,
+                "is_nullable": false
+              },
+              {
+                "name": "updated_at",
+                "type": "DateTime",
+                "is_primary_key": false,
+                "is_nullable": false
+              }
+            ]
+          },
+          {
+            "table_name": "todo_categories",
+            "columns": [
+              {
+                "name": "id",
+                "type": "Integer",
+                "is_primary_key": true,
+                "is_nullable": false
+              },
+              {
+                "name": "name",
+                "type": "String(100)",
+                "is_primary_key": false,
+                "is_nullable": false
+              }
+            ]
+          },
+          {
+            "table_name": "refresh_tokens",
+            "columns": [
+              {
+                "name": "id",
+                "type": "Integer",
+                "is_primary_key": true,
+                "is_nullable": false
+              },
+              {
+                "name": "user_id",
+                "type": "Integer",
+                "is_primary_key": false,
+                "is_nullable": false
+              },
+              {
+                "name": "token",
+                "type": "String(512)",
+                "is_primary_key": false,
+                "is_nullable": false
+              },
+              {
+                "name": "expires_at",
+                "type": "DateTime",
+                "is_primary_key": false,
+                "is_nullable": false
+              },
+              {
+                "name": "created_at",
+                "type": "DateTime",
+                "is_primary_key": false,
+                "is_nullable": false
+              }
+            ]
+          }
+        ],
+        "folder_structure": {
+          "backend": [
+            "app/models",
+            "app/schemas",
+            "app/routes",
+            "app/services",
+            "app/utils",
+            "app/dependencies",
+            "app/config"
+          ]
+        },
+        "frontend_structure": {
+          "pages": [
+            "HomePage",
+            "LoginPage",
+            "RegisterPage",
+            "TodoListPage",
+            "TodoDetailPage",
+            "TodoEditPage",
+            "TodoCreatePage",
+            "DashboardPage"
+          ],
+          "components": [
+            "Navbar",
+            "Footer",
+            "TodoItem",
+            "TodoForm",
+            "SearchBar",
+            "PaginationControls",
+            "TodoToggleButton",
+            "ProtectedRoute",
+            "LoadingSpinner",
+            "ErrorAlert"
+          ]
+        }
+      },
+      "plan": {
+        "project_name": "simple_todo",
+        "display_name": "Simple Todo",
+        "features": [
+          "Register and login using email/password, issuing JWTs for session management",
+          "Create, read, update, and delete todo items belonging to the authenticated user",
+          "Toggle the done status of a todo item",
+          "Enforce required title field and proper data types"
+        ],
+        "tech_stack": {
+          "backend": "FastAPI",
+          "database": "SQLite",
+          "auth": "JWT",
+          "frontend": "React + Vite"
+        },
+        "db_entities": [
+          "User",
+          "Todo"
+        ],
+        "api_modules": [
+          "auth",
+          "todos"
+        ],
+        "user_stories": [
+          {
+            "role": "New user",
+            "want": "to create an account with email and password",
+            "acceptance_criteria": [
+              "POST /auth/register returns 201 with a JWT token when a valid email and password are supplied",
+              "Password is stored hashed; the raw password is never returned",
+              "Attempting to register with an already‑used email returns a 400 error"
+            ]
+          },
+          {
+            "role": "Returning user",
+            "want": "to log in with my credentials",
+            "acceptance_criteria": [
+              "POST /auth/login returns 200 with a JWT token for correct credentials",
+              "Invalid email or password returns a 401 error",
+              "Token can be used in the Authorization header to access protected endpoints"
+            ]
+          },
+          {
+            "role": "Authenticated user",
+            "want": "to add a new todo item",
+            "acceptance_criteria": [
+              "POST /todos with a non‑empty title returns 201 and the created todo (done defaults to false)",
+              "Description field is optional; omitting it does not cause an error",
+              "The created todo is linked to the authenticated user's id"
+            ]
+          },
+          {
+            "role": "Authenticated user",
+            "want": "to edit the title or description of an existing todo",
+            "acceptance_criteria": [
+              "PATCH /todos/{id} with any subset of title/description returns 200 and the updated fields",
+              "Fields not supplied remain unchanged",
+              "Attempting to edit a todo that belongs to another user returns 403"
+            ]
+          },
+          {
+            "role": "Authenticated user",
+            "want": "to toggle a todo's done status",
+            "acceptance_criteria": [
+              "PATCH /todos/{id}/done toggles the boolean 'done' field and returns 200 with the new status",
+              "The endpoint only affects the todo owned by the requester; others return 403",
+              "The response includes the updated 'done' value"
+            ]
+          },
+          {
+            "role": "Authenticated user",
+            "want": "to delete a todo I no longer need",
+            "acceptance_criteria": [
+              "DELETE /todos/{id} returns 204 on successful deletion",
+              "Subsequent GET /todos/{id} returns 404",
+              "Deleting a todo owned by another user returns 403"
+            ]
+          },
+          {
+            "role": "Authenticated user",
+            "want": "to view a paginated list of my todos",
+            "acceptance_criteria": [
+              "GET /todos?page=1&size=10 returns a JSON array of up to 10 todos belonging to the user",
+              "Response includes total count and current page metadata",
+              "Todos from other users are never included in the result set"
+            ]
+          },
+          {
+            "role": "Authenticated user",
+            "want": "to search my todos by keyword",
+            "acceptance_criteria": [
+              "GET /todos?search=keyword returns only todos whose title contains the case‑insensitive keyword",
+              "Search works together with pagination parameters",
+              "If no todos match, an empty array is returned with a 200 status"
+            ]
+          }
+        ],
+        "non_functional_requirements": {
+          "authentication": "required — each request must include a valid JWT to protect user data",
+          "authorization": "users can only access, modify, or delete todos that they own",
+          "pagination": "required on the GET /todos list endpoint",
+          "search": "title field of Todo entity",
+          "file_uploads": "no",
+          "real_time": "no"
+        },
+        "data_entities_detail": [
+          {
+            "name": "User",
+            "description": "Stores account credentials and metadata for each person using the app",
+            "key_fields": [
+              "id",
+              "email"
+            ],
+            "relationships": [
+              "has many Todo"
+            ]
+          },
+          {
+            "name": "Todo",
+            "description": "Represents a single task with optional details and completion status",
+            "key_fields": [
+              "id",
+              "user_id"
+            ],
+            "relationships": [
+              "belongs to User"
+            ]
+          }
+        ],
+        "out_of_scope": [
+          "Sharing or assigning todos to other users",
+          "Recurring or scheduled tasks",
+          "Push or email notifications",
+          "Mobile native applications"
+        ]
+      },
+      "score": 91.5,
+      "success_count": 1,
+      "generation_id": "5a55fc8770b74903b19c913ef3953285",
+      "timestamp": "2026-07-02T10:24:03Z"
+    },
+    {
+      "category": "todo_crud",
+      "idea": "A todo list app with user accounts. Users can register and log in. Each user sees only their own todos. Todos have a title, optional description, due date, priority (low/medium/high), and done/undone ",
+      "architecture": {
+        "api_endpoints": [
+          {
+            "method": "GET",
+            "path": "/users",
+            "description": "Retrieve a paginated list of users, optionally filtered by username search query.",
+            "file": "app\\routes\\user_routes.py"
+          },
+          {
+            "method": "GET",
+            "path": "/users/{id}",
+            "description": "Retrieve details of a specific user by ID.",
+            "file": "app\\routes\\user_routes.py"
+          },
+          {
+            "method": "POST",
+            "path": "/users",
+            "description": "Create a new user account with username and password.",
+            "file": "app\\routes\\user_routes.py"
+          },
+          {
+            "method": "PUT",
+            "path": "/users/{id}",
+            "description": "Update an existing user's information (e.g., username or password).",
+            "file": "app\\routes\\user_routes.py"
+          },
+          {
+            "method": "DELETE",
+            "path": "/users/{id}",
+            "description": "Delete a user account.",
+            "file": "app\\routes\\user_routes.py"
+          },
+          {
+            "method": "GET",
+            "path": "/tasks",
+            "description": "Retrieve a list of tasks for the authenticated user, supporting search by title/description and filters for status and priority.",
+            "file": "app\\routes\\task_routes.py"
+          },
+          {
+            "method": "GET",
+            "path": "/tasks/{id}",
+            "description": "Retrieve details of a specific task by ID.",
+            "file": "app\\routes\\task_routes.py"
+          },
+          {
+            "method": "POST",
+            "path": "/tasks",
+            "description": "Create a new task for the authenticated user.",
+            "file": "app\\routes\\task_routes.py"
+          },
+          {
+            "method": "PUT",
+            "path": "/tasks/{id}",
+            "description": "Update an existing task (title, description, due date, priority, completed flag).",
+            "file": "app\\routes\\task_routes.py"
+          },
+          {
+            "method": "DELETE",
+            "path": "/tasks/{id}",
+            "description": "Delete a task.",
+            "file": "app\\routes\\task_routes.py"
+          },
+          {
+            "method": "POST",
+            "path": "/auth/register",
+            "description": "Register a new user account (alias of POST /users).",
+            "file": "app\\routes\\auth_routes.py"
+          },
+          {
+            "method": "POST",
+            "path": "/auth/login",
+            "description": "Authenticate a user and return a JWT access token.",
+            "file": "app\\routes\\auth_routes.py"
+          },
+          {
+            "method": "POST",
+            "path": "/seed",
+            "description": "Populate the database with demo users, tasks, and priority levels.",
+            "file": "app\\routes\\seed_routes.py"
+          },
+          {
+            "method": "GET",
+            "path": "/stats/summary",
+            "description": "Return aggregate statistics such as total users, total tasks, and tasks per priority.",
+            "file": "app\\routes\\stats_routes.py"
+          }
+        ],
+        "database_schema": [
+          {
+            "table_name": "users",
+            "columns": [
+              {
+                "name": "id",
+                "type": "INTEGER",
+                "is_primary_key": true,
+                "is_nullable": false
+              },
+              {
+                "name": "username",
+                "type": "VARCHAR(150)",
+                "is_primary_key": false,
+                "is_nullable": false
+              },
+              {
+                "name": "hashed_password",
+                "type": "VARCHAR(255)",
+                "is_primary_key": false,
+                "is_nullable": false
+              },
+              {
+                "name": "created_at",
+                "type": "DATETIME",
+                "is_primary_key": false,
+                "is_nullable": false
+              }
+            ]
+          },
+          {
+            "table_name": "priorities",
+            "columns": [
+              {
+                "name": "id",
+                "type": "INTEGER",
+                "is_primary_key": true,
+                "is_nullable": false
+              },
+              {
+                "name": "name",
+                "type": "VARCHAR(50)",
+                "is_primary_key": false,
+                "is_nullable": false
+              },
+              {
+                "name": "level",
+                "type": "INTEGER",
+                "is_primary_key": false,
+                "is_nullable": false
+              }
+            ]
+          },
+          {
+            "table_name": "tasks",
+            "columns": [
+              {
+                "name": "id",
+                "type": "INTEGER",
+                "is_primary_key": true,
+                "is_nullable": false
+              },
+              {
+                "name": "user_id",
+                "type": "INTEGER",
+                "is_primary_key": false,
+                "is_nullable": false
+              },
+              {
+                "name": "title",
+                "type": "VARCHAR(200)",
+                "is_primary_key": false,
+                "is_nullable": false
+              },
+              {
+                "name": "description",
+                "type": "TEXT",
+                "is_primary_key": false,
+                "is_nullable": true
+              },
+              {
+                "name": "due_date",
+                "type": "DATETIME",
+                "is_primary_key": false,
+                "is_nullable": true
+              },
+              {
+                "name": "priority_id",
+                "type": "INTEGER",
+                "is_primary_key": false,
+                "is_nullable": true
+              },
+              {
+                "name": "completed",
+                "type": "BOOLEAN",
+                "is_primary_key": false,
+                "is_nullable": false
+              },
+              {
+                "name": "created_at",
+                "type": "DATETIME",
+                "is_primary_key": false,
+                "is_nullable": false
+              },
+              {
+                "name": "updated_at",
+                "type": "DATETIME",
+                "is_primary_key": false,
+                "is_nullable": true
+              }
+            ]
+          },
+          {
+            "table_name": "task_logs",
+            "columns": [
+              {
+                "name": "id",
+                "type": "INTEGER",
+                "is_primary_key": true,
+                "is_nullable": false
+              },
+              {
+                "name": "task_id",
+                "type": "INTEGER",
+                "is_primary_key": false,
+                "is_nullable": false
+              },
+              {
+                "name": "action",
+                "type": "VARCHAR(100)",
+                "is_primary_key": false,
+                "is_nullable": false
+              },
+              {
+                "name": "timestamp",
+                "type": "DATETIME",
+                "is_primary_key": false,
+                "is_nullable": false
+              }
+            ]
+          }
+        ],
+        "folder_structure": {
+          "backend": [
+            "app/models",
+            "app/schemas",
+            "app/routes",
+            "app/services",
+            "app/utils",
+            "app/config"
+          ]
+        },
+        "frontend_structure": {
+          "pages": [
+            "LoginPage",
+            "RegisterPage",
+            "DashboardPage",
+            "TaskListPage",
+            "TaskFormPage"
+          ],
+          "components": [
+            "Header",
+            "Footer",
+            "TaskCard",
+            "TaskForm",
+            "TaskFilterBar",
+            "AuthForm",
+            "Button",
+            "Input",
+            "Modal",
+            "Sidebar"
+          ]
+        }
+      },
+      "plan": {
+        "project_name": "todo_list_app",
+        "display_name": "Personal Todo List",
+        "features": [
+          "Allow users to create an account",
+          "Allow users to create new tasks",
+          "Allow users to log in to their account"
+        ],
+        "tech_stack": {
+          "backend": "FastAPI",
+          "database": "SQLite",
+          "auth": "JWT",
+          "frontend": "React + Vite"
+        },
+        "db_entities": [
+          "User",
+          "Task"
+        ],
+        "api_modules": [
+          "auth",
+          "tasks"
+        ],
+        "user_stories": [
+          {
+            "role": "User",
+            "want": "To register for an account",
+            "acceptance_criteria": [
+              "The user can enter a valid username and password to create an account",
+              "The user receives a confirmation message after successfully registering",
+              "The user is redirected to the login page after registration"
+            ]
+          },
+          {
+            "role": "User",
+            "want": "To log in to my account",
+            "acceptance_criteria": [
+              "The user can enter a valid username and password to log in",
+              "The user is redirected to the task list page after successful login",
+              "The user sees an error message if the login credentials are invalid"
+            ]
+          },
+          {
+            "role": "User",
+            "want": "To create a new task",
+            "acceptance_criteria": [
+              "The user can enter a task title and description",
+              "The user can select a due date and priority level for the task",
+              "The task is added to the user's task list after creation"
+            ]
+          },
+          {
+            "role": "User",
+            "want": "To edit an existing task",
+            "acceptance_criteria": [
+              "The user can select a task to edit",
+              "The user can update the task title, description, due date, and priority level",
+              "The task is updated in the user's task list after editing"
+            ]
+          },
+          {
+            "role": "User",
+            "want": "To delete a task",
+            "acceptance_criteria": [
+              "The user can select a task to delete",
+              "The task is removed from the user's task list after deletion",
+              "The user is prompted to confirm deletion before it is executed"
+            ]
+          },
+          {
+            "role": "User",
+            "want": "To mark a task as complete",
+            "acceptance_criteria": [
+              "The user can select a task to mark as complete",
+              "The task is updated to show as completed in the user's task list",
+              "The user can filter tasks by completion status"
+            ]
+          },
+          {
+            "role": "User",
+            "want": "To filter tasks by status and priority",
+            "acceptance_criteria": [
+              "The user can select a filter option (e.g. 'completed', 'high priority')",
+              "The task list is updated to show only tasks that match the selected filter",
+              "The user can clear the filter to show all tasks"
+            ]
+          }
+        ],
+        "non_functional_requirements": {
+          "authentication": "required — to ensure only authorized users can access their task list",
+          "authorization": "simple authentication, no role-based access",
+          "pagination": "not required — task lists are expected to be small",
+          "search": "not required — tasks can be filtered by status and priority",
+          "file_uploads": "no — no file uploads are needed",
+          "real_time": "no — real-time updates are not necessary"
+        },
+        "data_entities_detail": [
+          {
+            "name": "User",
+            "description": "Stores user account information",
+            "key_fields": [
+              "id",
+              "username",
+              "password"
+            ],
+            "relationships": [
+              "has many Tasks"
+            ]
+          },
+          {
+            "name": "Task",
+            "description": "Stores task information",
+            "key_fields": [
+              "id",
+              "title",
+              "description",
+              "due_date",
+              "priority",
+              "completed"
+            ],
+            "relationships": [
+              "belongs to User"
+            ]
+          }
+        ],
+        "out_of_scope": [
+          "team collaboration",
+          "task assignments",
+          "file uploads"
+        ]
+      },
+      "score": 99.29,
+      "success_count": 1,
+      "generation_id": "2a735777f9e14b73946ba084a367bf34",
+      "timestamp": "2026-07-06T07:33:08Z"
     }
   ],
   "blog_cms": [
@@ -7147,6 +7309,656 @@
       "success_count": 1,
       "generation_id": "60e8e2c108",
       "timestamp": "2026-06-30T00:46:07Z"
+    }
+  ],
+  "generic": [
+    {
+      "category": "generic",
+      "idea": "a simple counter app",
+      "architecture": {
+        "api_endpoints": [
+          {
+            "method": "POST",
+            "path": "/auth/register",
+            "description": "Registers a new user.",
+            "file": "app\\routes\\auth_routes.py"
+          },
+          {
+            "method": "POST",
+            "path": "/auth/login",
+            "description": "Authenticates a user and returns an access token.",
+            "file": "app\\routes\\auth_routes.py"
+          },
+          {
+            "method": "GET",
+            "path": "/users/me",
+            "description": "Retrieves the currently authenticated user's profile.",
+            "file": "app\\routes\\user_routes.py"
+          },
+          {
+            "method": "POST",
+            "path": "/counters",
+            "description": "Creates a new counter for the authenticated user.",
+            "file": "app\\routes\\counter_routes.py"
+          },
+          {
+            "method": "GET",
+            "path": "/counters",
+            "description": "Retrieves all counters for the authenticated user.",
+            "file": "app\\routes\\counter_routes.py"
+          },
+          {
+            "method": "GET",
+            "path": "/counters/{counter_id}",
+            "description": "Retrieves a specific counter by ID for the authenticated user.",
+            "file": "app\\routes\\counter_routes.py"
+          },
+          {
+            "method": "PATCH",
+            "path": "/counters/{counter_id}/increment",
+            "description": "Increments a specific counter's value by one.",
+            "file": "app\\routes\\counter_routes.py"
+          },
+          {
+            "method": "PATCH",
+            "path": "/counters/{counter_id}/decrement",
+            "description": "Decrements a specific counter's value by one.",
+            "file": "app\\routes\\counter_routes.py"
+          },
+          {
+            "method": "PATCH",
+            "path": "/counters/{counter_id}/reset",
+            "description": "Resets a specific counter's value to zero.",
+            "file": "app\\routes\\counter_routes.py"
+          },
+          {
+            "method": "PUT",
+            "path": "/counters/{counter_id}",
+            "description": "Updates a specific counter's name or value.",
+            "file": "app\\routes\\counter_routes.py"
+          },
+          {
+            "method": "DELETE",
+            "path": "/counters/{counter_id}",
+            "description": "Deletes a specific counter.",
+            "file": "app\\routes\\counter_routes.py"
+          },
+          {
+            "method": "GET",
+            "path": "/counters?search={query}",
+            "description": "Searches counters by name for the authenticated user.",
+            "file": "app\\routes\\counter_routes.py"
+          },
+          {
+            "method": "POST",
+            "path": "/seed",
+            "description": "Populates database with realistic demo data.",
+            "file": "app\\routes\\seed_routes.py"
+          },
+          {
+            "method": "GET",
+            "path": "/stats/summary",
+            "description": "Returns aggregate counts and key metrics for the dashboard.",
+            "file": "app\\routes\\stats_routes.py"
+          }
+        ],
+        "database_schema": [
+          {
+            "table_name": "users",
+            "columns": [
+              {
+                "name": "id",
+                "type": "INTEGER",
+                "is_primary_key": true,
+                "is_nullable": false
+              },
+              {
+                "name": "username",
+                "type": "VARCHAR(50)",
+                "is_primary_key": false,
+                "is_nullable": false
+              },
+              {
+                "name": "hashed_password",
+                "type": "VARCHAR(255)",
+                "is_primary_key": false,
+                "is_nullable": false
+              }
+            ]
+          },
+          {
+            "table_name": "counters",
+            "columns": [
+              {
+                "name": "id",
+                "type": "INTEGER",
+                "is_primary_key": true,
+                "is_nullable": false
+              },
+              {
+                "name": "name",
+                "type": "VARCHAR(100)",
+                "is_primary_key": false,
+                "is_nullable": false
+              },
+              {
+                "name": "value",
+                "type": "INTEGER",
+                "is_primary_key": false,
+                "is_nullable": false
+              },
+              {
+                "name": "user_id",
+                "type": "INTEGER",
+                "is_primary_key": false,
+                "is_nullable": false
+              }
+            ]
+          }
+        ],
+        "folder_structure": {
+          "backend": [
+            "app/",
+            "app/main.py",
+            "app/config.py",
+            "app/database.py",
+            "app/models/",
+            "app/models/user.py",
+            "app/models/counter.py",
+            "app/schemas/",
+            "app/schemas/user.py",
+            "app/schemas/counter.py",
+            "app/schemas/auth.py",
+            "app/services/",
+            "app/services/user_service.py",
+            "app/services/counter_service.py",
+            "app/utils/",
+            "app/utils/auth.py",
+            "app/utils/security.py",
+            "app/routes/",
+            "app/routes/auth_routes.py",
+            "app/routes/user_routes.py",
+            "app/routes/counter_routes.py",
+            "app/routes/seed_routes.py",
+            "app/routes/stats_routes.py"
+          ]
+        },
+        "frontend_structure": {
+          "pages": [
+            "LoginPage.jsx",
+            "RegisterPage.jsx",
+            "DashboardPage.jsx",
+            "CounterDetailPage.jsx",
+            "NotFoundPage.jsx"
+          ],
+          "components": [
+            "Header.jsx",
+            "Footer.jsx",
+            "LoginForm.jsx",
+            "RegisterForm.jsx",
+            "CounterList.jsx",
+            "CounterCard.jsx",
+            "CreateCounterForm.jsx",
+            "EditCounterForm.jsx",
+            "Button.jsx",
+            "Input.jsx",
+            "Modal.jsx"
+          ]
+        }
+      },
+      "plan": {
+        "project_name": "simple_counter_app",
+        "display_name": "Simple Counter",
+        "features": [
+          "Allows users to create new counters with a user-defined name, initialized to zero.",
+          "Provides a mechanism to increase a counter's value by one.",
+          "Provides a mechanism to decrease a counter's value by one.",
+          "Allows users to set a specific counter's value back to zero.",
+          "Displays all counters created by the user with their current values.",
+          "Enables users to remove unwanted counters."
+        ],
+        "tech_stack": {
+          "backend": "FastAPI",
+          "database": "SQLite",
+          "auth": "JWT",
+          "frontend": "React + Vite"
+        },
+        "db_entities": [
+          "User",
+          "Counter"
+        ],
+        "api_modules": [
+          "auth",
+          "users",
+          "counters"
+        ],
+        "user_stories": [
+          {
+            "role": "User",
+            "want": "to create a new counter with a specific name",
+            "acceptance_criteria": [
+              "The user can input a name for the new counter.",
+              "Upon creation, the new counter's value is initialized to 0.",
+              "The newly created counter is visible in my list of counters."
+            ]
+          },
+          {
+            "role": "User",
+            "want": "to increment a counter's value",
+            "acceptance_criteria": [
+              "Clicking an 'increment' button increases the counter's value by 1.",
+              "The displayed value of the counter updates immediately after incrementing.",
+              "The incremented value is persisted and remains correct upon refresh."
+            ]
+          },
+          {
+            "role": "User",
+            "want": "to decrement a counter's value",
+            "acceptance_criteria": [
+              "Clicking a 'decrement' button decreases the counter's value by 1.",
+              "The displayed value of the counter updates immediately after decrementing.",
+              "The decremented value is persisted and remains correct upon refresh."
+            ]
+          },
+          {
+            "role": "User",
+            "want": "to reset a counter's value to zero",
+            "acceptance_criteria": [
+              "There is a clear option to reset a specific counter.",
+              "Confirming the reset action sets the counter's value to 0.",
+              "The reset value is persisted and remains 0 upon refresh."
+            ]
+          },
+          {
+            "role": "User",
+            "want": "to view all my created counters and their current values",
+            "acceptance_criteria": [
+              "Upon logging in, a list of all my counters is displayed.",
+              "Each counter in the list shows its name and current numerical value.",
+              "The list is updated to reflect any changes made to individual counters."
+            ]
+          },
+          {
+            "role": "User",
+            "want": "to delete an existing counter",
+            "acceptance_criteria": [
+              "There is a clear option to delete a specific counter.",
+              "After confirming deletion, the counter is removed from my list.",
+              "The deleted counter is no longer accessible or visible."
+            ]
+          }
+        ],
+        "non_functional_requirements": {
+          "authentication": "required — Users need to log in to manage their personal counters.",
+          "authorization": "Users can only view, create, update, and delete their own counters.",
+          "pagination": "not required",
+          "search": "not required",
+          "file_uploads": "no",
+          "real_time": "no"
+        },
+        "data_entities_detail": [
+          {
+            "name": "User",
+            "description": "Stores user authentication information.",
+            "key_fields": [
+              "id",
+              "username",
+              "hashed_password"
+            ],
+            "relationships": [
+              "has many Counter"
+            ]
+          },
+          {
+            "name": "Counter",
+            "description": "Stores individual counter data.",
+            "key_fields": [
+              "id",
+              "name",
+              "value",
+              "user_id"
+            ],
+            "relationships": [
+              "belongs to User"
+            ]
+          }
+        ],
+        "out_of_scope": [
+          "Sharing counters with other users",
+          "Counter history or logging of changes",
+          "Customizable increment/decrement steps",
+          "Tags or categories for counters",
+          "Notifications or alerts based on counter values"
+        ]
+      },
+      "score": 94.67,
+      "success_count": 1,
+      "generation_id": "802a85e74ee14c8496abf118c7486805",
+      "timestamp": "2026-07-05T08:56:18Z"
+    },
+    {
+      "category": "generic",
+      "idea": "a simple counter app",
+      "architecture": {
+        "api_endpoints": [
+          {
+            "method": "POST",
+            "path": "/auth/register",
+            "description": "Registers a new user.",
+            "file": "app\\routes\\auth_routes.py"
+          },
+          {
+            "method": "POST",
+            "path": "/auth/login",
+            "description": "Authenticates a user and returns an access token.",
+            "file": "app\\routes\\auth_routes.py"
+          },
+          {
+            "method": "GET",
+            "path": "/users/me",
+            "description": "Retrieves the currently authenticated user's profile.",
+            "file": "app\\routes\\user_routes.py"
+          },
+          {
+            "method": "POST",
+            "path": "/counters",
+            "description": "Creates a new counter for the authenticated user.",
+            "file": "app\\routes\\counter_routes.py"
+          },
+          {
+            "method": "GET",
+            "path": "/counters",
+            "description": "Retrieves all counters for the authenticated user.",
+            "file": "app\\routes\\counter_routes.py"
+          },
+          {
+            "method": "GET",
+            "path": "/counters/{counter_id}",
+            "description": "Retrieves a specific counter by ID for the authenticated user.",
+            "file": "app\\routes\\counter_routes.py"
+          },
+          {
+            "method": "PATCH",
+            "path": "/counters/{counter_id}/increment",
+            "description": "Increments a specific counter's value by one.",
+            "file": "app\\routes\\counter_routes.py"
+          },
+          {
+            "method": "PATCH",
+            "path": "/counters/{counter_id}/decrement",
+            "description": "Decrements a specific counter's value by one.",
+            "file": "app\\routes\\counter_routes.py"
+          },
+          {
+            "method": "PATCH",
+            "path": "/counters/{counter_id}/reset",
+            "description": "Resets a specific counter's value to zero.",
+            "file": "app\\routes\\counter_routes.py"
+          },
+          {
+            "method": "PUT",
+            "path": "/counters/{counter_id}",
+            "description": "Updates a specific counter's name or value.",
+            "file": "app\\routes\\counter_routes.py"
+          },
+          {
+            "method": "DELETE",
+            "path": "/counters/{counter_id}",
+            "description": "Deletes a specific counter.",
+            "file": "app\\routes\\counter_routes.py"
+          },
+          {
+            "method": "GET",
+            "path": "/counters?search={query}",
+            "description": "Searches counters by name for the authenticated user.",
+            "file": "app\\routes\\counter_routes.py"
+          },
+          {
+            "method": "POST",
+            "path": "/seed",
+            "description": "Populates database with realistic demo data.",
+            "file": "app\\routes\\seed_routes.py"
+          },
+          {
+            "method": "GET",
+            "path": "/stats/summary",
+            "description": "Returns aggregate counts and key metrics for the dashboard.",
+            "file": "app\\routes\\stats_routes.py"
+          }
+        ],
+        "database_schema": [
+          {
+            "table_name": "users",
+            "columns": [
+              {
+                "name": "id",
+                "type": "INTEGER",
+                "is_primary_key": true,
+                "is_nullable": false
+              },
+              {
+                "name": "username",
+                "type": "VARCHAR(50)",
+                "is_primary_key": false,
+                "is_nullable": false
+              },
+              {
+                "name": "hashed_password",
+                "type": "VARCHAR(255)",
+                "is_primary_key": false,
+                "is_nullable": false
+              }
+            ]
+          },
+          {
+            "table_name": "counters",
+            "columns": [
+              {
+                "name": "id",
+                "type": "INTEGER",
+                "is_primary_key": true,
+                "is_nullable": false
+              },
+              {
+                "name": "name",
+                "type": "VARCHAR(100)",
+                "is_primary_key": false,
+                "is_nullable": false
+              },
+              {
+                "name": "value",
+                "type": "INTEGER",
+                "is_primary_key": false,
+                "is_nullable": false
+              },
+              {
+                "name": "user_id",
+                "type": "INTEGER",
+                "is_primary_key": false,
+                "is_nullable": false
+              }
+            ]
+          }
+        ],
+        "folder_structure": {
+          "backend": [
+            "app/",
+            "app/main.py",
+            "app/config.py",
+            "app/database.py",
+            "app/models/",
+            "app/models/user.py",
+            "app/models/counter.py",
+            "app/schemas/",
+            "app/schemas/user.py",
+            "app/schemas/counter.py",
+            "app/schemas/auth.py",
+            "app/services/",
+            "app/services/user_service.py",
+            "app/services/counter_service.py",
+            "app/utils/",
+            "app/utils/auth.py",
+            "app/utils/security.py",
+            "app/routes/",
+            "app/routes/auth_routes.py",
+            "app/routes/user_routes.py",
+            "app/routes/counter_routes.py",
+            "app/routes/seed_routes.py",
+            "app/routes/stats_routes.py"
+          ]
+        },
+        "frontend_structure": {
+          "pages": [
+            "LoginPage.jsx",
+            "RegisterPage.jsx",
+            "DashboardPage.jsx",
+            "CounterDetailPage.jsx",
+            "NotFoundPage.jsx"
+          ],
+          "components": [
+            "Header.jsx",
+            "Footer.jsx",
+            "LoginForm.jsx",
+            "RegisterForm.jsx",
+            "CounterList.jsx",
+            "CounterCard.jsx",
+            "CreateCounterForm.jsx",
+            "EditCounterForm.jsx",
+            "Button.jsx",
+            "Input.jsx",
+            "Modal.jsx"
+          ]
+        }
+      },
+      "plan": {
+        "project_name": "simple_counter_app",
+        "display_name": "Simple Counter",
+        "features": [
+          "Allows users to create new counters with a user-defined name, initialized to zero.",
+          "Provides a mechanism to increase a counter's value by one.",
+          "Provides a mechanism to decrease a counter's value by one.",
+          "Allows users to set a specific counter's value back to zero.",
+          "Displays all counters created by the user with their current values.",
+          "Enables users to remove unwanted counters."
+        ],
+        "tech_stack": {
+          "backend": "FastAPI",
+          "database": "SQLite",
+          "auth": "JWT",
+          "frontend": "React + Vite"
+        },
+        "db_entities": [
+          "User",
+          "Counter"
+        ],
+        "api_modules": [
+          "auth",
+          "users",
+          "counters"
+        ],
+        "user_stories": [
+          {
+            "role": "User",
+            "want": "to create a new counter with a specific name",
+            "acceptance_criteria": [
+              "The user can input a name for the new counter.",
+              "Upon creation, the new counter's value is initialized to 0.",
+              "The newly created counter is visible in my list of counters."
+            ]
+          },
+          {
+            "role": "User",
+            "want": "to increment a counter's value",
+            "acceptance_criteria": [
+              "Clicking an 'increment' button increases the counter's value by 1.",
+              "The displayed value of the counter updates immediately after incrementing.",
+              "The incremented value is persisted and remains correct upon refresh."
+            ]
+          },
+          {
+            "role": "User",
+            "want": "to decrement a counter's value",
+            "acceptance_criteria": [
+              "Clicking a 'decrement' button decreases the counter's value by 1.",
+              "The displayed value of the counter updates immediately after decrementing.",
+              "The decremented value is persisted and remains correct upon refresh."
+            ]
+          },
+          {
+            "role": "User",
+            "want": "to reset a counter's value to zero",
+            "acceptance_criteria": [
+              "There is a clear option to reset a specific counter.",
+              "Confirming the reset action sets the counter's value to 0.",
+              "The reset value is persisted and remains 0 upon refresh."
+            ]
+          },
+          {
+            "role": "User",
+            "want": "to view all my created counters and their current values",
+            "acceptance_criteria": [
+              "Upon logging in, a list of all my counters is displayed.",
+              "Each counter in the list shows its name and current numerical value.",
+              "The list is updated to reflect any changes made to individual counters."
+            ]
+          },
+          {
+            "role": "User",
+            "want": "to delete an existing counter",
+            "acceptance_criteria": [
+              "There is a clear option to delete a specific counter.",
+              "After confirming deletion, the counter is removed from my list.",
+              "The deleted counter is no longer accessible or visible."
+            ]
+          }
+        ],
+        "non_functional_requirements": {
+          "authentication": "required — Users need to log in to manage their personal counters.",
+          "authorization": "Users can only view, create, update, and delete their own counters.",
+          "pagination": "not required",
+          "search": "not required",
+          "file_uploads": "no",
+          "real_time": "no"
+        },
+        "data_entities_detail": [
+          {
+            "name": "User",
+            "description": "Stores user authentication information.",
+            "key_fields": [
+              "id",
+              "username",
+              "hashed_password"
+            ],
+            "relationships": [
+              "has many Counter"
+            ]
+          },
+          {
+            "name": "Counter",
+            "description": "Stores individual counter data.",
+            "key_fields": [
+              "id",
+              "name",
+              "value",
+              "user_id"
+            ],
+            "relationships": [
+              "belongs to User"
+            ]
+          }
+        ],
+        "out_of_scope": [
+          "Sharing counters with other users",
+          "Counter history or logging of changes",
+          "Customizable increment/decrement steps",
+          "Tags or categories for counters",
+          "Notifications or alerts based on counter values"
+        ]
+      },
+      "score": 94.67,
+      "success_count": 1,
+      "generation_id": "37cd1171c5704154a96144dabea14a68",
+      "timestamp": "2026-07-05T08:58:37Z"
     }
   ]
 }

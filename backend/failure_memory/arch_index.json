@@ -2225,5 +2225,329 @@
     "success_count": 1,
     "generation_id": "60e8e2c108",
     "timestamp": "2026-06-30T00:11:38Z"
+  },
+  "generic": {
+    "category": "generic",
+    "idea": "a simple counter app",
+    "architecture": {
+      "api_endpoints": [
+        {
+          "method": "POST",
+          "path": "/auth/register",
+          "description": "Registers a new user.",
+          "file": "app\\routes\\auth_routes.py"
+        },
+        {
+          "method": "POST",
+          "path": "/auth/login",
+          "description": "Authenticates a user and returns an access token.",
+          "file": "app\\routes\\auth_routes.py"
+        },
+        {
+          "method": "GET",
+          "path": "/users/me",
+          "description": "Retrieves the currently authenticated user's profile.",
+          "file": "app\\routes\\user_routes.py"
+        },
+        {
+          "method": "POST",
+          "path": "/counters",
+          "description": "Creates a new counter for the authenticated user.",
+          "file": "app\\routes\\counter_routes.py"
+        },
+        {
+          "method": "GET",
+          "path": "/counters",
+          "description": "Retrieves all counters for the authenticated user.",
+          "file": "app\\routes\\counter_routes.py"
+        },
+        {
+          "method": "GET",
+          "path": "/counters/{counter_id}",
+          "description": "Retrieves a specific counter by ID for the authenticated user.",
+          "file": "app\\routes\\counter_routes.py"
+        },
+        {
+          "method": "PATCH",
+          "path": "/counters/{counter_id}/increment",
+          "description": "Increments a specific counter's value by one.",
+          "file": "app\\routes\\counter_routes.py"
+        },
+        {
+          "method": "PATCH",
+          "path": "/counters/{counter_id}/decrement",
+          "description": "Decrements a specific counter's value by one.",
+          "file": "app\\routes\\counter_routes.py"
+        },
+        {
+          "method": "PATCH",
+          "path": "/counters/{counter_id}/reset",
+          "description": "Resets a specific counter's value to zero.",
+          "file": "app\\routes\\counter_routes.py"
+        },
+        {
+          "method": "PUT",
+          "path": "/counters/{counter_id}",
+          "description": "Updates a specific counter's name or value.",
+          "file": "app\\routes\\counter_routes.py"
+        },
+        {
+          "method": "DELETE",
+          "path": "/counters/{counter_id}",
+          "description": "Deletes a specific counter.",
+          "file": "app\\routes\\counter_routes.py"
+        },
+        {
+          "method": "GET",
+          "path": "/counters?search={query}",
+          "description": "Searches counters by name for the authenticated user.",
+          "file": "app\\routes\\counter_routes.py"
+        },
+        {
+          "method": "POST",
+          "path": "/seed",
+          "description": "Populates database with realistic demo data.",
+          "file": "app\\routes\\seed_routes.py"
+        },
+        {
+          "method": "GET",
+          "path": "/stats/summary",
+          "description": "Returns aggregate counts and key metrics for the dashboard.",
+          "file": "app\\routes\\stats_routes.py"
+        }
+      ],
+      "database_schema": [
+        {
+          "table_name": "users",
+          "columns": [
+            {
+              "name": "id",
+              "type": "INTEGER",
+              "is_primary_key": true,
+              "is_nullable": false
+            },
+            {
+              "name": "username",
+              "type": "VARCHAR(50)",
+              "is_primary_key": false,
+              "is_nullable": false
+            },
+            {
+              "name": "hashed_password",
+              "type": "VARCHAR(255)",
+              "is_primary_key": false,
+              "is_nullable": false
+            }
+          ]
+        },
+        {
+          "table_name": "counters",
+          "columns": [
+            {
+              "name": "id",
+              "type": "INTEGER",
+              "is_primary_key": true,
+              "is_nullable": false
+            },
+            {
+              "name": "name",
+              "type": "VARCHAR(100)",
+              "is_primary_key": false,
+              "is_nullable": false
+            },
+            {
+              "name": "value",
+              "type": "INTEGER",
+              "is_primary_key": false,
+              "is_nullable": false
+            },
+            {
+              "name": "user_id",
+              "type": "INTEGER",
+              "is_primary_key": false,
+              "is_nullable": false
+            }
+          ]
+        }
+      ],
+      "folder_structure": {
+        "backend": [
+          "app/",
+          "app/main.py",
+          "app/config.py",
+          "app/database.py",
+          "app/models/",
+          "app/models/user.py",
+          "app/models/counter.py",
+          "app/schemas/",
+          "app/schemas/user.py",
+          "app/schemas/counter.py",
+          "app/schemas/auth.py",
+          "app/services/",
+          "app/services/user_service.py",
+          "app/services/counter_service.py",
+          "app/utils/",
+          "app/utils/auth.py",
+          "app/utils/security.py",
+          "app/routes/",
+          "app/routes/auth_routes.py",
+          "app/routes/user_routes.py",
+          "app/routes/counter_routes.py",
+          "app/routes/seed_routes.py",
+          "app/routes/stats_routes.py"
+        ]
+      },
+      "frontend_structure": {
+        "pages": [
+          "LoginPage.jsx",
+          "RegisterPage.jsx",
+          "DashboardPage.jsx",
+          "CounterDetailPage.jsx",
+          "NotFoundPage.jsx"
+        ],
+        "components": [
+          "Header.jsx",
+          "Footer.jsx",
+          "LoginForm.jsx",
+          "RegisterForm.jsx",
+          "CounterList.jsx",
+          "CounterCard.jsx",
+          "CreateCounterForm.jsx",
+          "EditCounterForm.jsx",
+          "Button.jsx",
+          "Input.jsx",
+          "Modal.jsx"
+        ]
+      }
+    },
+    "plan": {
+      "project_name": "simple_counter_app",
+      "display_name": "Simple Counter",
+      "features": [
+        "Allows users to create new counters with a user-defined name, initialized to zero.",
+        "Provides a mechanism to increase a counter's value by one.",
+        "Provides a mechanism to decrease a counter's value by one.",
+        "Allows users to set a specific counter's value back to zero.",
+        "Displays all counters created by the user with their current values.",
+        "Enables users to remove unwanted counters."
+      ],
+      "tech_stack": {
+        "backend": "FastAPI",
+        "database": "SQLite",
+        "auth": "JWT",
+        "frontend": "React + Vite"
+      },
+      "db_entities": [
+        "User",
+        "Counter"
+      ],
+      "api_modules": [
+        "auth",
+        "users",
+        "counters"
+      ],
+      "user_stories": [
+        {
+          "role": "User",
+          "want": "to create a new counter with a specific name",
+          "acceptance_criteria": [
+            "The user can input a name for the new counter.",
+            "Upon creation, the new counter's value is initialized to 0.",
+            "The newly created counter is visible in my list of counters."
+          ]
+        },
+        {
+          "role": "User",
+          "want": "to increment a counter's value",
+          "acceptance_criteria": [
+            "Clicking an 'increment' button increases the counter's value by 1.",
+            "The displayed value of the counter updates immediately after incrementing.",
+            "The incremented value is persisted and remains correct upon refresh."
+          ]
+        },
+        {
+          "role": "User",
+          "want": "to decrement a counter's value",
+          "acceptance_criteria": [
+            "Clicking a 'decrement' button decreases the counter's value by 1.",
+            "The displayed value of the counter updates immediately after decrementing.",
+            "The decremented value is persisted and remains correct upon refresh."
+          ]
+        },
+        {
+          "role": "User",
+          "want": "to reset a counter's value to zero",
+          "acceptance_criteria": [
+            "There is a clear option to reset a specific counter.",
+            "Confirming the reset action sets the counter's value to 0.",
+            "The reset value is persisted and remains 0 upon refresh."
+          ]
+        },
+        {
+          "role": "User",
+          "want": "to view all my created counters and their current values",
+          "acceptance_criteria": [
+            "Upon logging in, a list of all my counters is displayed.",
+            "Each counter in the list shows its name and current numerical value.",
+            "The list is updated to reflect any changes made to individual counters."
+          ]
+        },
+        {
+          "role": "User",
+          "want": "to delete an existing counter",
+          "acceptance_criteria": [
+            "There is a clear option to delete a specific counter.",
+            "After confirming deletion, the counter is removed from my list.",
+            "The deleted counter is no longer accessible or visible."
+          ]
+        }
+      ],
+      "non_functional_requirements": {
+        "authentication": "required — Users need to log in to manage their personal counters.",
+        "authorization": "Users can only view, create, update, and delete their own counters.",
+        "pagination": "not required",
+        "search": "not required",
+        "file_uploads": "no",
+        "real_time": "no"
+      },
+      "data_entities_detail": [
+        {
+          "name": "User",
+          "description": "Stores user authentication information.",
+          "key_fields": [
+            "id",
+            "username",
+            "hashed_password"
+          ],
+          "relationships": [
+            "has many Counter"
+          ]
+        },
+        {
+          "name": "Counter",
+          "description": "Stores individual counter data.",
+          "key_fields": [
+            "id",
+            "name",
+            "value",
+            "user_id"
+          ],
+          "relationships": [
+            "belongs to User"
+          ]
+        }
+      ],
+      "out_of_scope": [
+        "Sharing counters with other users",
+        "Counter history or logging of changes",
+        "Customizable increment/decrement steps",
+        "Tags or categories for counters",
+        "Notifications or alerts based on counter values"
+      ]
+    },
+    "score": 94.67,
+    "success_count": 1,
+    "generation_id": "802a85e74ee14c8496abf118c7486805",
+    "timestamp": "2026-07-05T08:56:18Z"
   }
 }

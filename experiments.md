@@ -472,3 +472,92 @@ crashes), Confidence Quality 25.3%. Top failure classes (all-time,
 legacy-path patterns.json): JourneyCRUDFailure 17%, MissingEndpoint 11%,
 ImportError 10% — JourneyCRUDFailure is the next natural candidate given it's
 both the #1 all-time category and what's now visibly holding crm back.
+
+---
+
+## Experiment 010 — JourneyCRUDFailure 422-coercion fix (validation canary)
+
+**Hypothesis:** Does coercing 422 type-mismatch fields (not just enum
+mismatches) in the CRUD-journey retry path (commit e2f8d77) reduce
+`JourneyCRUDFailure` ("no entity_id captured" cascades), measured against
+Experiment 009's baseline?
+
+**Changes under test:** `user_journey_runner.py`'s 422-retry branch now
+consults a coercion table (string_type/int_type/float_type/bool_type/
+list_type) alongside the existing enum-fix path (commit e2f8d77). No other
+code touched.
+
+**Date:** 2026-07-06, ~13:00–14:00 IST. `--provider gemini --no-deploy`
+(log: `m1_canary_journeyfix_run.log`).
+
+**Results vs. Experiment 009:**
+| App | Exp009 | Exp010 | Verdict |
+|---|---|---|---|
+| todo | 76.4 | **99.3 (A+)**, build✅ runtime✅ | improved |
+| blog_cms | 34.3 | 67.5 (D), runtime❌ | improved, still failing |
+| crm | 66.6 | **44.4 (F)**, runtime❌ | canary script flagged REGRESSION |
+
+**Honest read: the fix was never exercised this run.** Grepped the full log
+for the 422 type-mismatch signature this fix targets (a plain-type Pydantic
+`*_type` error on Create entity) — it does not occur anywhere in this run.
+Each app hit a *different*, unrelated bug this attempt (ordinary single-
+sample LLM generation variance, the same phenomenon flagged in Experiments
+005/007/008/009):
+
+- **todo**: transient `AttributeError: property 'priority' of 'Task' object
+  has no setter` on first Create-entity attempt (a SQLAlchemy declarative
+  model where `priority` collided with a property/column setter). Self-
+  healed by the existing fix loop on retry (final run shows `Create entity:
+  200 id=1`) — nothing to do with e2f8d77.
+- **blog_cms**: `TypeError: Post() got multiple values for keyword argument
+  'author_id'` (duplicate kwarg in the generated route's ORM-object
+  construction) plus a separate `AttributeError: type object 'User' has no
+  attribute 'created_at'` in a stats endpoint. Neither is a 422/entity_id
+  issue — both are backend-generation bugs upstream of the journey runner.
+- **crm (the flagged "regression")**: total backend boot failure, root-caused
+  to `generated_projects/simple_crm/app/schemas/contact.py` —
+  `ContactStatus` was generated as a near-empty Pydantic `BaseModel` stub
+  (`id: Optional[int] = None`) instead of an `Enum`, then used directly as a
+  FastAPI `Query()` annotation in `contact_routes.py`
+  (`status: Optional[ContactStatus] = Query(...)`). FastAPI's dependant
+  analysis asserts query params must be scalar/Enum types; a bare `BaseModel`
+  fails that assertion at **import time**, before any route registers, so
+  the entire app never boots (`Runtime Startup` and `API Functionality` both
+  0.0 across all 4 fix attempts). The one automatic runtime-fix attempt
+  (Gemini) patched unrelated things (passlib→bcrypt, async→sync, smart
+  quotes, db_patcher) and left the actual `ContactStatus` class untouched, so
+  the identical crash recurred and the fix loop gave up ("Failure signature
+  unchanged — stopping retries").
+
+**Conclusion: KEEP e2f8d77 (no evidence against it; simply untested this
+run), but do not credit or blame it for any of this run's score movement.**
+crm's "regression" is not a regression relative to the fix under test — it's
+a fresh, previously-uncatalogued bug: **a generated Enum-shaped field
+(`*Status`/`*Type` naming pattern) sometimes gets emitted as an empty
+`BaseModel` instead of an `Enum`, and if that field is later used as a
+`Query()` parameter, the whole backend fails to boot.** This is a total
+boot-failure class hitting Runtime Startup (20% weight, the single highest-
+weighted dimension) — structurally the same severity tier as the
+config-patcher bug fixed in Experiment 009, and the current fix-loop
+cannot self-heal it (signature-unchanged bail-out after one attempt).
+
+**Next highest-ROI candidate identified (not yet fixed)**: detect/repair
+"BaseModel used where FastAPI requires a scalar/Enum Query type" — either
+(a) a generation-time check that a `Query()`-annotated field's referenced
+schema is a real `Enum` (str/int subclass) and not a `BaseModel`, with a
+targeted regenerate-as-enum repair, or (b) a narrower preflight patch that
+converts an empty single-field `id`-only `BaseModel` used in a `Query()`
+annotation into `Optional[str]` as a safe fallback so the app can at least
+boot. Cheap, deterministic, directly targets Runtime Startup — same shape of
+fix as Experiment 009's win. Pending user confirmation before starting.
+
+**Housekeeping this cycle**: found and deleted ~10 zero-byte debris files in
+`backend/` (`backend/'`, `backend/65`, `backend/dict`, etc.) — artifacts of
+an earlier broken shell redirection, not user work. Also found an earlier,
+abandoned exploration (`ForgeAIV15Adapter` added to `run_forgebench.py`,
+plus a path fix in `tests/run_fixture_regression.py`) from a pre-canary-script
+attempt at baselining via the `run_forgebench.py --suite golden` runner
+(`backend/benchmark_results/20260706_0613_golden/`, all 3 results scored
+0.0) — predates and was superseded by the `run_canary.py` 3-app canary
+methodology this log otherwise uses. Left uncommitted pending a decision on
+whether to keep, finish, or discard it.

@@ -1,7 +1,7 @@
 {
   "patterns": {
     "RouterExportMismatch": {
-      "count": 8,
+      "count": 9,
       "examples": [
         {
           "project": "test_app",
@@ -25,7 +25,7 @@
         }
       ],
       "first_seen": "2026-06-21T20:43:34.977754",
-      "last_seen": "2026-06-22T11:48:13.728754"
+      "last_seen": "2026-07-06T01:13:44.604568"
     },
     "NoReferencedTableError": {
       "count": 6,
@@ -82,7 +82,7 @@
       "last_seen": "2026-06-30T00:47:12.165282"
     },
     "ModuleNotFoundError": {
-      "count": 8,
+      "count": 9,
       "examples": [
         {
           "project": "HydroTrack",
@@ -106,10 +106,10 @@
         }
       ],
       "first_seen": "2026-06-21T21:19:46.461599",
-      "last_seen": "2026-06-22T11:13:08.860100"
+      "last_seen": "2026-07-01T19:49:17.134673"
     },
     "SQLAlchemyError": {
-      "count": 9,
+      "count": 10,
       "examples": [
         {
           "project": "HR Onboarding System",
@@ -133,10 +133,10 @@
         }
       ],
       "first_seen": "2026-06-21T21:30:53.208370",
-      "last_seen": "2026-06-27T17:01:25.687774"
+      "last_seen": "2026-07-01T15:13:32.069453"
     },
     "ValidationError": {
-      "count": 2,
+      "count": 3,
       "examples": [
         {
           "project": "TeamFlow",
@@ -145,10 +145,14 @@
         {
           "project": "TaskFlow Pro",
           "error": "ValidationError"
+        },
+        {
+          "project": "habit_forge",
+          "error": "ValidationError"
         }
       ],
       "first_seen": "2026-06-21T23:42:14.421044",
-      "last_seen": "2026-06-28T21:09:54.229124"
+      "last_seen": "2026-07-01T17:05:10.204402"
     },
     "TimestampNotNullError": {
       "count": 1,
@@ -162,7 +166,7 @@
       "last_seen": "2026-06-22T05:53:56.254146"
     },
     "ImportError": {
-      "count": 10,
+      "count": 11,
       "examples": [
         {
           "project": "inventory_system",
@@ -186,7 +190,7 @@
         }
       ],
       "first_seen": "2026-06-22T05:55:11.076646",
-      "last_seen": "2026-06-30T00:48:14.728752"
+      "last_seen": "2026-07-01T15:06:02.891817"
     },
     "MonolithicSchemaError": {
       "count": 1,
@@ -200,7 +204,7 @@
       "last_seen": "2026-06-22T07:34:30.310089"
     },
     "MissingEndpoint": {
-      "count": 6,
+      "count": 12,
       "examples": [
         {
           "project": "bug_tracker",
@@ -224,7 +228,7 @@
         }
       ],
       "first_seen": "2026-06-22T07:49:29.613937",
-      "last_seen": "2026-06-22T08:18:06.744575"
+      "last_seen": "2026-07-06T07:08:09.674372"
     },
     "FastAPIError": {
       "count": 1,
@@ -279,7 +283,7 @@
       "last_seen": "2026-06-28T21:05:09.324044"
     },
     "PydanticSerializationError": {
-      "count": 3,
+      "count": 4,
       "examples": [
         {
           "project": "blog_platform",
@@ -292,13 +296,17 @@
         {
           "project": "recipe_share",
           "error": "PydanticSerializationError"
+        },
+        {
+          "project": "simple_notes_app",
+          "error": "PydanticSerializationError"
         }
       ],
       "first_seen": "2026-06-29T23:39:46.755253",
-      "last_seen": "2026-06-30T00:02:25.376156"
+      "last_seen": "2026-07-01T20:13:11.496878"
     },
     "JourneyCRUDFailure": {
-      "count": 9,
+      "count": 19,
       "examples": [
         {
           "project": "BlogSphere",
@@ -322,7 +330,7 @@
         }
       ],
       "first_seen": "2026-06-29T23:47:06.584012",
-      "last_seen": "2026-07-01T10:10:27.014389"
+      "last_seen": "2026-07-06T07:05:38.347866"
     },
     "InvalidDependsType": {
       "count": 1,
@@ -334,8 +342,114 @@
       ],
       "first_seen": "2026-06-30T00:08:24.188295",
       "last_seen": "2026-06-30T00:08:24.188317"
+    },
+    "ModelFieldMismatchError": {
+      "count": 1,
+      "examples": [
+        {
+          "project": "habit_forge",
+          "error": "ModelFieldMismatchError"
+        }
+      ],
+      "first_seen": "2026-07-01T15:55:15.892683",
+      "last_seen": "2026-07-01T15:55:15.892695"
+    },
+    "NotNullViolationError": {
+      "count": 2,
+      "examples": [
+        {
+          "project": "todo_list_app",
+          "error": "NotNullViolationError"
+        },
+        {
+          "project": "todo_list_app",
+          "error": "NotNullViolationError"
+        }
+      ],
+      "first_seen": "2026-07-01T19:37:49.712563",
+      "last_seen": "2026-07-01T19:52:55.085233"
+    },
+    "AttributeError": {
+      "count": 4,
+      "examples": [
+        {
+          "project": "gym_tracker",
+          "error": "AttributeError"
+        },
+        {
+          "project": "gym_tracker",
+          "error": "AttributeError"
+        },
+        {
+          "project": "gym_tracker",
+          "error": "AttributeError"
+        },
+        {
+          "project": "forge_blog_cms",
+          "error": "AttributeError"
+        }
+      ],
+      "first_seen": "2026-07-01T22:56:38.596264",
+      "last_seen": "2026-07-06T07:35:28.549883"
+    },
+    "ConfigAttributeError": {
+      "count": 3,
+      "examples": [
+        {
+          "project": "forge_learn",
+          "error": "ConfigAttributeError"
+        },
+        {
+          "project": "forge_blog_cms",
+          "error": "ConfigAttributeError"
+        },
+        {
+          "project": "simple_crm",
+          "error": "ConfigAttributeError"
+        }
+      ],
+      "first_seen": "2026-07-05T09:26:46.709471",
+      "last_seen": "2026-07-06T06:48:44.955871"
+    },
+    "ResponseValidationError": {
+      "count": 1,
+      "examples": [
+        {
+          "project": "recipe_forge",
+          "error": "ResponseValidationError"
+        }
+      ],
+      "first_seen": "2026-07-05T09:59:06.675979",
+      "last_seen": "2026-07-05T09:59:06.675987"
+    },
+    "SyntaxError": {
+      "count": 5,
+      "examples": [
+        {
+          "project": "forge_blog_cms",
+          "error": "Syntax error in app\\main.py:   File \"C:\\Users\\jerry\\onedrive\\Desktop\\forgeai\\generated_projects\\forge_blog_cms\\app\\main.py\", line 23\n    from app.routes.articles_author_id=$_userId__routes import arti"
+        },
+        {
+          "project": "todo_list_app",
+          "error": "Syntax error in app\\main.py:   File \"C:\\Users\\jerry\\onedrive\\Desktop\\forgeai\\generated_projects\\todo_list_app\\app\\main.py\", line 20\n    from app.routes.tasks_limit=5&sort_by=created_at&sort_order=desc"
+        },
+        {
+          "project": "todo_list_app",
+          "error": "Syntax error in app\\routes\\tasks_limit=5&sort_by=created_at&sort_order=desc_routes.py:   File \"C:\\Users\\jerry\\onedrive\\Desktop\\forgeai\\generated_projects\\todo_list_app\\app\\routes\\tasks_limit=5&sort_by"
+        },
+        {
+          "project": "todo_list_app",
+          "error": "Syntax error in app\\main.py:   File \"C:\\Users\\jerry\\onedrive\\Desktop\\forgeai\\generated_projects\\todo_list_app\\app\\main.py\", line 25\n    from app.routes.tasks_limit=5&sort_by=created_at&sort_order=desc"
+        },
+        {
+          "project": "todo_list_app",
+          "error": "Syntax error in app\\routes\\tasks_limit=5&sort_by=created_at&sort_order=desc_routes.py:   File \"C:\\Users\\jerry\\onedrive\\Desktop\\forgeai\\generated_projects\\todo_list_app\\app\\routes\\tasks_limit=5&sort_by"
+        }
+      ],
+      "first_seen": "2026-07-06T01:13:44.604581",
+      "last_seen": "2026-07-06T05:46:37.663703"
     }
   },
-  "total_runs": 271,
-  "last_updated": "2026-07-01T10:39:55.158771"
+  "total_runs": 328,
+  "last_updated": "2026-07-06T07:39:26.536918"
 }
