@@ -1,0 +1,103 @@
+# ForgeAI Experiment Log
+
+Every paid generation run (Gemini/Cerebras/whatever provider is under test) gets an
+entry here. Rule: if a run doesn't answer a stated hypothesis, don't run it. Claude
+does architecture, prompts, validators, and code for free — only the generation
+step under test costs money.
+
+Canary script: `backend/scripts/run_canary.py` (apps: todo / blog_cms / crm,
+`--no-deploy` unless deploy behavior is the thing being tested). Raw numbers also
+land in `backend/benchmark_results/canary_history.json`.
+
+---
+
+## Experiment 001 — m0-quick-wins (baseline)
+
+**Hypothesis:** N/A — first-ever canary run, establishes the baseline to diff
+future runs against.
+
+**Changes under test:** N/A (baseline snapshot before M1 AppContract work).
+
+**Date:** 2026-07-06
+
+**Apps:** todo / blog_cms / crm
+
+**Results:**
+- todo: score 76.9, build ✅, runtime ❌, crud N/A, deployed ❌
+- blog_cms: score 33.0, build ❌, runtime ❌, crud N/A, deployed ❌
+- crm: score 76.9, build ✅, runtime ❌, crud N/A, deployed ❌
+
+**Conclusion:** Canary harness works and is safe to gate future milestones on.
+blog_cms is the weakest app (build failure) — worth root-causing separately.
+Runtime dimension failing across the board even where build passes.
+
+---
+
+## Experiment 002 — m1-contract (INCONCLUSIVE — provider exhaustion)
+
+**Hypothesis:** Wiring `ContractConformanceValidator` into `VerificationEngine`
+in warn-only mode (commit 6e117be) does not regress build/runtime/crud/browser/
+deployed/score on any of the 3 canary apps vs. Experiment 001.
+
+**Changes under test:** AppContract IR schema (ac06e54) + ContractAdapter
+(a4bb28a) + warn-only ContractConformanceValidator wiring (6e117be).
+
+**Date:** 2026-07-06
+
+**Apps:** todo / blog_cms / crm (`--no-deploy`)
+
+**Results:**
+- todo: score 76.9 → **25.3**, build now failing (flagged REGRESSION)
+- blog_cms: score 33.0 → 31.5, still failing build (flagged OK, no prior pass to regress from)
+- crm: score 76.9 → **0.0**, pipeline generation failed outright
+
+**Root cause of the "regression"**: NOT the contract validator. Mid-run, Groq
+hit its org-wide daily token limit (100,000 TPD, used ~95,854 — resets ~1h44m
+after 2026-07-06 10:29 IST, i.e. ~12:15 IST) and Gemini was simultaneously
+returning 503 "high demand" errors. With both fallback providers down, the
+fix-loop and (for crm) the initial generation itself had no working model to
+call, so scores collapsed for infrastructure reasons, not code reasons.
+
+**Conclusion:** This run answers nothing about AppContract/ContractConformanceValidator.
+Do not treat the score drops as evidence against M1. Re-run once Groq's daily
+quota resets (~12:15 IST) to get a clean signal. Confirms the user's warning
+that provider quotas were "1 generation from limit" — literally true for Groq.
+
+---
+
+## Experiment 003 — generation_log telemetry bug (Claude-only, $0)
+
+**Hypothesis:** Why does `frontend_built` only pass ~53% of the time
+(project_history.jsonl), and why couldn't a clean V15-specific failure
+taxonomy be built? Root-cause without spending any generation credits.
+
+**Changes under test:** None — pure investigation using graphify + direct
+code reading, no LLM generation calls at all.
+
+**Date:** 2026-07-06 (while Groq/Gemini were rate-limited/down)
+
+**Findings:**
+1. `patterns.json` / `project_history.jsonl` are written only by the legacy
+   `project_service.generate_project()` path (v6/v7) and by ForgeBench's
+   default generator — never by V15 (`app/core/pipeline.py`). The failure
+   taxonomy/variance numbers logged in Experiment 001's context and
+   `project_failure_taxonomy` memory describe the OLD pipeline, not V15.
+2. V15's own equivalent, `failure_memory/generation_log.jsonl` (feeds the
+   confidence engine's success-rate priors), had only 2 lines total, last
+   written 2026-06-28, despite many V15 runs since. Root cause:
+   `app/core/pipeline.py:334` did `getattr(ctx, "all_diagnostics", [])`, but
+   `GenerationContext.all_diagnostics` is a **method**, not a property —
+   `getattr` returned the unbound method itself, and iterating it
+   (`for d in all_diags`) raised `TypeError: 'method' object is not
+   iterable`, silently swallowed by a bare `except Exception: pass`.
+
+**Fix:** `all_diags = ctx.all_diagnostics()` (call it). Verified via a
+standalone local script constructing a minimal `GenerationContext` +
+`Diagnostic`: confirmed the old code raises `TypeError` and the new code
+returns the correct `dominant_errors` list. No generation calls used.
+
+**Conclusion:** V15 has been "flying blind" on its own per-run telemetry
+for over a week. Going forward, `generation_log.jsonl` (not
+`project_history.jsonl`/`patterns.json`) is the correct source for a
+V15-specific failure taxonomy — but it needs fresh runs post-fix to build
+up a meaningful sample. Not yet committed — pending confirmation.

@@ -331,7 +331,7 @@ class V15Pipeline:
             from app.knowledge.failure_db import generation_log, GenerationRecord
             import hashlib
             arch_hash = hashlib.sha256(str(ctx.architecture)[:500].encode()).hexdigest()[:12]
-            all_diags = getattr(ctx, "all_diagnostics", [])
+            all_diags = ctx.all_diagnostics()
             generation_log.record(GenerationRecord(
                 idea=ctx.idea[:200],
                 attempt_number=len(ctx.fix_attempts),
