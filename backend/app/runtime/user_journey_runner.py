@@ -677,7 +677,17 @@ def run_user_journey(
             # re-running the whole pipeline just to see what field failed.
             return True, f"422 (schema mismatch, server alive) detail={str(_422_detail)[:200]}"
 
-        return False, f"{last_r.status_code if last_r else '?'}"
+        # NOTE: must be `is not None`, not truthiness -- requests.Response
+        # overrides __bool__ to return self.ok (False for any status >= 400),
+        # so `if last_r` silently collapsed every genuine 400/403/404/409
+        # Create-entity rejection into a contentless "?" instead of the real
+        # status code, even though last_r is a perfectly valid response here.
+        # Confirmed live: todo's "POST /tasks" 400 (invalid priority name)
+        # was logged as "Create entity: ?" -- the #1 most frequent specific
+        # failure signature in generation_log.jsonl -- starving the fix loop
+        # (and its 422-specific repair hint) of the one piece of information
+        # it needed to diagnose the actual rejection.
+        return False, f"{last_r.status_code if last_r is not None else '?'}"
     steps.append(_step("Create entity", do_create))
 
     # ── Step 5: List entities ─────────────────────────────────────────
