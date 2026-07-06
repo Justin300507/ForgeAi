@@ -315,3 +315,98 @@ own threshold.
 have full per-dimension/confidence/repair data starting with the *next*
 canary run — this run predates that capture (module was already loaded when
 the process started).
+
+---
+
+## Experiment 008 — Controlled AppContract A/B (contract ON vs OFF)
+
+**Hypothesis:** Does the warn-only ContractConformanceValidator (M1) measurably
+reduce contract-coherence failures (RouterExportMismatch, MissingEndpoint,
+ImportError, ModuleNotFoundError, schema mismatch)? Every prior run (001,
+005, 007) already had it wired in — there was no "off" data point to compare
+against, so this couldn't actually be answered before this experiment.
+
+**Changes under test:** Added `FORGE_CONTRACT_CHECK=0` env gate to
+`verification/engine.py` (commit cb9ad0f) — skips the contract-conformance
+stage entirely when set, unchanged behavior otherwise. This is the only
+code change; no AppContract logic itself was touched, per "implement only
+the minimum necessary for evaluation."
+
+**Date:** 2026-07-06, ~12:15 IST. Paired with Experiment 007 (contract ON,
+same day, same provider, same fixes already in place) as the control
+comparison — todo/blog_cms/crm, `--provider gemini --no-deploy`.
+
+**Baseline category frequencies** (grep counts across full run logs — noisy
+across multiple fix attempts, see caveat below):
+
+| Category | Exp001 (pre-M1) | Exp007 (contract ON) | Exp008 (contract OFF) |
+|---|---|---|---|
+| RouterExportMismatch | 2 | 0 | 0 |
+| MissingEndpoint | 18 | 11 | 3 |
+| ImportError | 0 | 8 | 4 |
+| ModuleNotFoundError | 0 | 0 | 4 |
+| Schema mismatch | 10 | 13 | 5 |
+| Contract violation (new category) | 5* | 44 | 0 |
+
+*\*Exp001 already had 5 "contract" hits despite predating what I assumed was
+a clean baseline — turns out 6e117be (contract wiring) was committed before
+Exp001 ran, so **no run in this dataset has a true "AppContract never
+existed" baseline**. Exp008 (this experiment) is the only clean "OFF" data
+point that exists.*
+
+**Score comparison (Exp007 ON vs Exp008 OFF):**
+| App | ON (Exp007) | OFF (Exp008) | Delta |
+|---|---|---|---|
+| todo | 76.4 | 76.9 | -0.5 (noise) |
+| blog_cms | 94.1 | 45.0 | **-49.1** |
+| crm | 72.6 | 47.1 | **-25.5** |
+
+**Critical finding — the gap is NOT attributable to AppContract.** Investigated
+why blog_cms/crm scored so much lower OFF: both had **Runtime Startup = 0.0,
+API Functionality = 0.0** — the backend never booted at all. Root-caused the
+actual crash in both generated projects on disk:
+
+- blog_cms: `AttributeError: 'Config' object has no attribute 'DATABASE_URL'`
+  at `app/main.py:35`. Traced further: the preflight patcher
+  (`_fix_config_missing_attrs` in `app/repair/preflight.py`) *did* run and
+  *did* add `settings.DATABASE_URL` — but only to the `settings` instance
+  living in `app/config.py`'s module namespace. `main.py` does its own
+  `settings = Config()` (a **second, fresh instance** of the same class) at
+  line 34 and reads `settings.DATABASE_URL` off *that* instance, which never
+  got patched. The fix patches an instance; the bug needs the attribute on
+  the *class*.
+- crm: same failure class, different manifestation —
+  `AttributeError: 'Config' object has no attribute 'database_url'`
+  (lowercase). The preflight patcher's `defaults` dict only checks the
+  exact-case key `"DATABASE_URL"`, so a lowercase-convention `Config` class
+  isn't covered at all.
+
+Neither of these has anything to do with the contract-conformance stage —
+it's LOW severity, doesn't gate deployment or the runtime-skip gate, and by
+design only affects the 5%-weight Code Quality dimension. It structurally
+cannot cause or prevent a `ConfigAttributeError`. This is ordinary
+generation variance (this attempt happened to produce a `Config` class the
+preflight patcher's two blind spots both hit) landing in the OFF condition
+by chance, not a causal contract effect.
+
+**Conclusion — per the user's own decision rule ("if unclear or
+insignificant, do not continue expanding AppContract, identify next highest-
+ROI bottleneck instead"):** **Inconclusive on AppContract.** n=1 per
+condition can't separate a real effect from LLM generation variance in
+principle, and in this specific case the entire score gap has a fully
+identified alternate cause unrelated to the contract stage. Recommend NOT
+continuing to expand AppContract based on this evidence — not because it's
+disproven, but because (a) its current warn-only, post-hoc-derived form
+structurally can't influence generation or gate anything yet (the VNext
+report's own phased plan expects the real effect only once generators
+consume the contract natively, a later milestone), and (b) this run
+surfaced a much clearer, twice-confirmed, cheaply-fixable bottleneck instead.
+
+**Next highest-ROI candidate identified (not yet fixed)**: the preflight
+`_fix_config_missing_attrs` patcher has two blind spots — (1) patches an
+instance, not the class, so a second `Config()` instantiation elsewhere
+doesn't inherit the fix; (2) hardcoded to exact-case attribute names, missing
+`database_url`/other-case variants. This directly hits Runtime Startup, the
+single highest-weighted scoring dimension (20%), and just caused two total
+backend-boot failures in one canary run. High confidence, cheap, deterministic
+fix — recommend this as the next cycle's target, pending user confirmation.
