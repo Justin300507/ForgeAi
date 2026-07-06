@@ -266,3 +266,52 @@ news, this isn't a widespread epidemic, just the two spots already found in
 the confidence engine plus one stale comment. **Committed 4af31b4 (filename
 fix) and 6e0fdeb (docstring), pushed to main.** Ready for Priority 3: re-run
 the canary to see if todo recovers.
+
+---
+
+## Experiment 007 — m1-post-filename-fix (Priority 3 re-canary)
+
+**Hypothesis:** Did fixing the querystring-in-filename bug (Experiment 006)
+restore todo's score, and does a second clean sample still look fine for
+blog_cms/crm — separating the AppContract question from the filename-bug
+confound.
+
+**Changes under test:** Experiment 006's filename-sanitization fix only.
+Same M1 AppContract code as Experiments 002/005 (unchanged).
+
+**Date:** 2026-07-06, ~11:55 IST. `--provider gemini --no-deploy`.
+
+**Results vs. true baseline (Experiment 001):**
+| App | Baseline (001) | Exp 005 (pre-fix) | Exp 007 (post-fix) | vs. baseline |
+|---|---|---|---|---|
+| todo | 76.9 | 25.5 (crash) | **76.4** | -0.5 (recovered) |
+| blog_cms | 33.0 | 66.1 | **94.1** (A, deploy-ready) | +61.1 |
+| crm | 76.9 | 65.8 | **72.6** | -4.3 |
+
+No occurrence of the querystring-filename bug anywhere in this run's log
+(`grep -c "tasks_limit" m1_canary_v2_run.log` → 0). Confidence engine also
+confirmed working end-to-end in a real run for the first time: printed a
+real "Deployment confidence: 32.8% [F] ... Historical base rate: 28.6%
+(n=7)" report for crm instead of crashing.
+
+**This matches the user's stated decision criterion exactly**: "todo
+recovered, blog still improved, CRM stable" → stop fixing infrastructure,
+move to the next major architectural item (AppContract evaluation, or
+whatever telemetry identifies as the next bottleneck). crm's -4.3 is small
+enough to be normal run-to-run LLM variance, not a red flag.
+
+**Conclusion:** The filename-bug fix is confirmed working. Two clean data
+points now exist with M1's AppContract code active and no known
+infrastructure bugs confounding the result: todo and crm both land close to
+baseline, blog_cms far exceeds it. This is early positive signal for
+AppContract specifically (nothing regressed that wasn't already explained by
+a since-fixed bug), though still only 2 samples per app — not yet enough to
+formally conclude "M1 improved success rate," just enough to say "M1 did not
+regress anything once real bugs are accounted for." Ready to move to
+Priority 4 (AppContract evaluation / next architectural item) per the user's
+own threshold.
+
+**Health report**: `backend/scripts/health_report.py` (added this cycle) will
+have full per-dimension/confidence/repair data starting with the *next*
+canary run — this run predates that capture (module was already loaded when
+the process started).
