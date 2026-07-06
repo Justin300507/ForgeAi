@@ -1,6 +1,6 @@
 # ADR-002 Candidate: Deterministic Reference-Data Seeder — Design
 
-**Status**: Approved for implementation (pending benchmark confirmation before promotion to ADR-002)
+**Status**: FROZEN — approved for implementation (pending benchmark confirmation before promotion to ADR-002)
 **Date**: 2026-07-06
 **Scope**: `v6_orchestrator.py`'s missing-`seed_routes.py` fallback path ONLY. The primary
 LLM-authored seed prompt (`shared_contract.py`) is untouched.
@@ -52,10 +52,24 @@ that module.
   parsed `table_name` is `users` or `user`).
 
 - `find_lookup_entities(entities) -> list[EntityDefinition]`
-  Structural FK-target heuristic only: build the set of every table name that appears as an
-  FK target (`fk_target.split(".")[0]`) across all discovered entities; an entity qualifies
-  as a lookup entity iff its own `table_name` is in that target set. No entity-name
-  keyword-matching anywhere (no "Priority", "Category", "Status" special-casing).
+  Two-stage structural rule, no entity-name keyword-matching anywhere (no "Priority",
+  "Category", "Status" special-casing):
+  1. **Candidate set**: build the set of every table name that appears as an FK target
+     (`fk_target.split(".")[0]`) across all discovered entities; an entity is a candidate
+     iff its own `table_name` is in that target set.
+  2. **Eligibility (transitive closure)**: a candidate is *eligible* for deterministic
+     seeding only if every one of its required foreign keys (`nullable=False`, no default)
+     also points to a currently-eligible entity. Computed as a fixed point: start with the
+     full candidate set, then repeatedly remove any candidate with a required FK pointing
+     outside the current eligible set, until a pass removes nothing (this always
+     terminates — the set only shrinks, monotonically, each pass). A required FK to
+     `users`, or to any non-candidate entity (e.g. a business entity), causes removal.
+     Nullable/defaulted FKs never disqualify — they're simply omitted from the generated
+     insert (SQLAlchemy leaves them `NULL`/default; no runtime query, no conditional
+     codegen).
+  Each removal is logged (`"excluded <table>: required FK -> <target> outside the
+  deterministic lookup graph"`) and generation continues with the reduced set — an
+  exclusion never aborts the whole file, only that one entity.
 
 - `topological_order(entities) -> list[EntityDefinition] | None`
   Kahn's algorithm over the FK subgraph restricted to the lookup set. Returns `None` if a
@@ -77,9 +91,12 @@ that module.
     well-formed unique value," not "always the same value")
   - Anything else, if not nullable → the string fallback above (never leave a NOT NULL
     column unset)
-  FK columns whose target is NOT in the lookup set (e.g. an optional `owner_id -> users.id`)
-  are rendered as a runtime lookup: `db.query(User).first()`, and the row insert is skipped
-  entirely (wrapped) if that returns `None`.
+  FK columns are only ever generated for targets already in the eligible lookup set (see
+  `find_lookup_entities` above) — by construction there is never a required external FK
+  left to resolve at this stage. A nullable FK to a non-eligible entity (e.g. optional
+  `owner_id -> users.id`) is simply omitted from the generated `Model(...)` call — no
+  runtime query, no conditional branch, no dependency on live database state at all. This
+  keeps every line of generated code a pure, static insert.
 
 - `render_seed_routes(entities_in_order: list[EntityDefinition]) -> str`
   Emits the complete `seed_routes.py` source:
@@ -138,17 +155,24 @@ defense-in-depth only — correctness never depends on it firing.
 
 ## Lookup entity detection & exclusions
 
-FK-target heuristic only (see above). Explicitly never seeded, by construction (not by
-name-matching):
+FK-target candidacy + transitive required-FK eligibility (see `find_lookup_entities`
+above). Explicitly never seeded, by construction (not by name-matching):
 - `users` / authentication entities (excluded by table-name check)
 - The main CRUD-journey target entity and any other entity with zero incoming FK references
-  (never appears in the lookup set because nothing points to it)
+  (never appears in the candidate set because nothing points to it)
+- Any candidate lookup entity with a required FK — direct or transitive — to `users` or to
+  any entity outside the eligible graph (e.g. a lookup table that mandates a real
+  `owner_id`, or a lookup table that depends on another lookup table that itself got
+  excluded). Formal rule: **a candidate is eligible only if it is an FK target AND every
+  required foreign key it declares also points to another eligible entity.** This is a
+  deliberate simplification over attempting a live runtime lookup for such cases — if an
+  entity fundamentally requires `User`/`Organization`/`Tenant`/etc. to exist, it is
+  application data, not standalone reference data, and doesn't belong in this deterministic
+  fallback at all.
 - Any entity requiring business-meaningful data (customers, products, blog posts, invoices,
-  tasks) — these are out of scope by definition, since the FK-target heuristic only
-  surfaces entities that exist purely to be referenced by others, i.e., reference/lookup
-  tables. The generator has no code path that could produce business data even if a
-  business entity happened to have an inbound FK from another business entity — the row
-  values are always the generic typed placeholders in "Data" below, never domain content.
+  tasks) — out of scope by definition, since only FK-target candidates ever enter
+  consideration, and the value generator never produces anything beyond the generic typed
+  placeholders in "Data" below.
 
 ## Data generation
 
@@ -194,8 +218,14 @@ Unit tests against fixture model-file strings (no server, no LLM):
 4. Multi-level FK chain (lookup entity FKs another lookup entity) → correct topological
    order
 5. FK cycle among lookup entities → detected, aborts, falls back
-6. Nullable FK to a non-lookup entity (e.g. optional `owner_id`) → runtime-lookup rendering
-   correct
+6. Nullable FK to a non-lookup entity (e.g. optional `owner_id`) → omitted from the
+   generated insert entirely, no runtime query generated
+6b. Required FK to a non-lookup entity (e.g. mandatory `owner_id -> users.id`) → that one
+   entity is excluded from the eligible set (transitive-closure removal), exclusion is
+   logged, generation continues with the remaining eligible entities
+6c. Required FK chain where the target itself later gets excluded (A required-FKs B,
+   B required-FKs `users`) → the fixed-point pass removes B first, then removes A on the
+   next pass (transitive exclusion), not just direct exclusions
 7. Repeated `POST /seed` semantics (simulate count-based logic directly): first call
    inserts 3, second call inserts 0
 8. Pre-existing data: entity already has 1-2 rows before first `/seed` call → generator
