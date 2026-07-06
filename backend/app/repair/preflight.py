@@ -21,6 +21,7 @@ Current fixes (no LLM needed):
  10. Unused passlib / werkzeug imports in code  → strip them
  11. BaseModel used as a Query() param type      → loosen to str/Optional[str]
  12. NOT NULL model column absent from Create schema → relax to nullable=True
+ 13. Frontend sibling imports never generated       → wire in existing stub scaffolder
 """
 from __future__ import annotations
 
@@ -430,6 +431,57 @@ def _fix_query_param_basemodel(project_path: Path, diagnostics: list) -> bool:
             changed = True
 
     return changed
+
+
+@preflight.register("fix_frontend_missing_imports", priority=23)
+def _fix_frontend_missing_imports(project_path: Path, diagnostics: list) -> bool:
+    """
+    The recurring `Could not resolve "./Navbar"` / `"./Sidebar"` /
+    `"./pages/SignupPage"` / etc. class of Vite build failure (blog_cms,
+    confirmed recurring across 8 of 9 canary runs this cycle -- a
+    different specific missing file each time) is not a one-off generation
+    mistake: the frontend generator routinely emits a page/component that
+    imports 2-3 sibling components (Layout -> Navbar/Sidebar/Toast, App ->
+    SignupPage, etc.) without a hard guarantee every one of them actually
+    gets generated in the same batch.
+
+    Root cause classification: **repair engine**, not the frontend
+    generator. A comprehensive fix for exactly this already exists --
+    `create_missing_stubs()` in `app/services/frontend_fix_service.py`
+    walks every `.jsx` file under `src/`, resolves every relative import,
+    and stubs anything unresolved -- but it is never called anywhere in
+    the live V15 pipeline (confirmed: zero references to it outside its
+    own module and callers of the unused `run_frontend_fix_loop`). The
+    pipeline instead only has a narrower, *reactive* per-patch scaffolder
+    (`_scaffold_missing_local_imports` in `repair/orchestrator.py`) that
+    only stubs imports it sees in a file it happens to be patching *this*
+    round. Confirmed live (2026-07-06, Experiment 011 canary log,
+    `forge_blog_cms`): Layout.jsx's build error surfaced as "Could not
+    resolve './Sidebar'", got patched, then the very next build surfaced
+    "Could not resolve './Navbar'" (the same file, a sibling import that
+    was never checked until its own turn came up) -- a multi-round
+    whack-a-mole burning LLM fix attempts and tokens on something a single
+    upfront sweep would resolve for free.
+
+    Fix (smallest deterministic patch, no prompt/generation/route changes):
+    call the existing, already-implemented `create_missing_stubs()` once
+    here, in the deterministic preflight stage that already runs before
+    the first verification pass for every project. This does not change
+    what that function does -- it only wires already-written code into the
+    pipeline at the correct point instead of leaving it dead.
+    """
+    if not (project_path / "src").exists():
+        return False
+    try:
+        from app.services.frontend_fix_service import create_missing_stubs
+    except Exception:
+        return False
+    try:
+        n_stubs = create_missing_stubs(str(project_path))
+    except Exception as exc:
+        print(f"  [preflight] fix_frontend_missing_imports: skipped ({exc})")
+        return False
+    return n_stubs > 0
 
 
 @preflight.register("fix_model_schema_notnull_gap", priority=24)
