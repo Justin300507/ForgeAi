@@ -410,3 +410,65 @@ doesn't inherit the fix; (2) hardcoded to exact-case attribute names, missing
 single highest-weighted scoring dimension (20%), and just caused two total
 backend-boot failures in one canary run. High confidence, cheap, deterministic
 fix — recommend this as the next cycle's target, pending user confirmation.
+
+---
+
+## Experiment 009 — preflight config-patcher fix (validation canary)
+
+**Hypothesis:** Does fixing `_fix_config_missing_attrs`'s two blind spots
+(instance-vs-class scoping, case-sensitivity — see Experiment 008) eliminate
+the `ConfigAttributeError` boot-crash class, measured against the paired
+baseline that had it (Experiment 008)?
+
+**Changes under test:** `preflight.py`'s config patcher now also sets
+defaults on the CLASS (not just one instance) in both canonical and
+lowercase spelling, when the settings object is built from a plain class
+defined in the same file (commit f2721c5). Pydantic/factory-built configs
+unchanged. No other code touched.
+
+**Date:** 2026-07-06, ~12:20 IST. `--provider gemini --no-deploy`,
+`FORGE_CONTRACT_CHECK` at its default (on) — same as Experiment 007, not a
+contract test this time.
+
+**Results:**
+| App | Exp008 (baseline, had the bug) | Exp009 (fix applied) |
+|---|---|---|
+| todo | 76.9, Runtime Startup 20/Compilation, API 100 | 76.4, Runtime Startup 20, API 100 (unaffected, as expected — todo never hit this bug) |
+| blog_cms | 45.0, Runtime Startup **0.0**/API **0.0** (`ConfigAttributeError: DATABASE_URL`) | 34.3, Runtime Startup 0.0/API 0.0 — **different, unrelated bug this attempt**: frontend build failure (`Could not resolve "./pages/SignupPage"`), which trips the `frontend_build` critical-stage gate and skips runtime entirely |
+| crm | 47.1, Runtime Startup **0.0**/API **0.0** (`ConfigAttributeError: database_url`, lowercase) | **66.6, Runtime Startup 20.0/API 100.0 — backend boots, health check 200, 15/15 endpoints respond** |
+
+**`ConfigAttributeError` occurrences across the entire run log: 0** (was 2 in
+Experiment 008 — one per broken app). Confirms the specific bug class this
+fix targets is gone.
+
+**Honest read on the noisy overall picture**: crm is a clean, unambiguous
+win — total boot failure → fully healthy backend, exactly the predicted
+effect. blog_cms's *overall* score didn't improve (34.3 vs 45.0) but for an
+**unrelated reason**: this generation attempt produced a missing frontend
+page import, a different bug this fix was never meant to address (ordinary
+LLM generation variance between attempts, the same phenomenon flagged in
+Experiments 005/007/008). crm's CRUD-journey failures (Edit/Delete/verify —
+"no entity_id captured") are also a separate, pre-existing, already-catalogued
+issue (`JourneyCRUDFailure`, patterns.json's #1 category) that this fix
+wasn't targeting either.
+
+**Conclusion — KEEP the change.** Per the instruction "only keep the change
+if telemetry shows a measurable improvement": the improvement must be judged
+against what the fix specifically targets (config-attribute boot crashes),
+not the aggregate score, which is necessarily noisy across unrelated failure
+modes in single-sample LLM generations. On its actual target: 2/2 known
+occurrences eliminated (one fully demonstrated end-to-end in crm, zero
+recurrences anywhere in the run), confirmed additionally by the 3 local unit
+tests in commit f2721c5 (both original bugs reproduced-then-fixed, pydantic
+path unaffected, no clobbering of correct values). Reverting would not fix
+blog_cms's SignupPage import or crm's CRUD-journey issue — those are
+independent, already-known bottlenecks for a future cycle.
+
+**Health report** (`health_report.py`, first fully-populated one — dimensions/
+confidence/retry_history captured from this run onward):
+Overall 59.1%, Build 66.7% (2/3), Runtime 0.0% (0/3 — driven by blog_cms's
+unrelated frontend-build gate + crm's CRUD-journey shortfall, not boot
+crashes), Confidence Quality 25.3%. Top failure classes (all-time,
+legacy-path patterns.json): JourneyCRUDFailure 17%, MissingEndpoint 11%,
+ImportError 10% — JourneyCRUDFailure is the next natural candidate given it's
+both the #1 all-time category and what's now visibly holding crm back.
