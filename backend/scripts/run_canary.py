@@ -87,6 +87,7 @@ def _check_result(idea_key: str, idea: str, deploy: bool, provider: str = "auto"
             "forge_score": 0.0, "build_ok": False, "runtime_ok": False,
             "crud_ok": False, "browser_ok": False, "deployed": False,
             "elapsed_s": round(time.time() - t0, 1),
+            "dimensions": [], "confidence": None, "retry_history": None,
         }
 
     dims = result.get("dimensions", [])
@@ -107,6 +108,11 @@ def _check_result(idea_key: str, idea: str, deploy: bool, provider: str = "auto"
         "deployed":     result.get("deployed", False),
         "fix_attempts": result.get("fix_attempts", 0),
         "elapsed_s":    round(time.time() - t0, 1),
+        # Full dimension list + confidence + retry history, so a later
+        # health-report pass doesn't need to re-run anything or scrape logs.
+        "dimensions":     dims,
+        "confidence":     result.get("confidence"),
+        "retry_history":  result.get("retry_history"),
     }
 
 
