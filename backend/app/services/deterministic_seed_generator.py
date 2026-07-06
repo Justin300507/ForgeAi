@@ -154,17 +154,6 @@ def topological_order(entities: list):
 from datetime import datetime, timezone
 
 
-def _singular(name: str) -> str:
-    """Singularize a plural noun (e.g. 'priorities' -> 'priority')."""
-    if name.endswith("ies"):
-        return name[:-3] + "y"
-    if name.endswith("ss") or name.endswith("us"):
-        return name
-    if name.endswith("s") and len(name) > 2:
-        return name[:-1]
-    return name
-
-
 _BOOL_TYPES = {"Boolean"}
 _INT_TYPES = {"Integer", "SmallInteger", "BigInteger", "Numeric", "Float", "DECIMAL"}
 _DATE_TYPES = {"Date", "DateTime", "Time", "TIMESTAMP"}
@@ -193,10 +182,7 @@ def generate_field_value(field, class_name: str, loop_var: str = "i") -> str:
 
 
 def _module_name(entity) -> str:
-    if entity.source_path:
-        return os.path.splitext(os.path.basename(entity.source_path))[0]
-    # Fallback when source_path is empty: use singularized table name
-    return _singular(entity.table_name)
+    return os.path.splitext(os.path.basename(entity.source_path))[0]
 
 
 def render_seed_routes(entities_in_order: list) -> str:

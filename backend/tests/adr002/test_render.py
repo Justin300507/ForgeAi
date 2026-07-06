@@ -98,10 +98,20 @@ class Ticket(Base):
 
 
 def _entities(*sources):
+    import re
+
+    def _to_snake_case(name: str) -> str:
+        """Convert CamelCase to snake_case."""
+        s1 = re.sub('(.)([A-Z][a-z]+)', r'\1_\2', name)
+        return re.sub('([a-z0-9])([A-Z])', r'\1_\2', s1).lower()
+
     out = {}
     for src in sources:
         e = extract_entity_definition(src)
         if e is not None:
+            # Populate source_path based on class name (what discover_models would produce)
+            module_name = _to_snake_case(e.class_name)
+            e.source_path = f"app/models/{module_name}.py"
             out[e.table_name] = e
     return out
 
