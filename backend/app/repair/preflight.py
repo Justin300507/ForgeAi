@@ -19,6 +19,7 @@ Current fixes (no LLM needed):
   8. Passlib/python-jose in requirements        → swap for PyJWT/bcrypt
   9. Missing __init__.py in app/               → touch it
  10. Unused passlib / werkzeug imports in code  → strip them
+ 11. BaseModel used as a Query() param type      → loosen to str/Optional[str]
 """
 from __future__ import annotations
 
@@ -339,6 +340,94 @@ def _fix_missing_init(project_path: Path, diagnostics: list) -> bool:
             if not init.exists():
                 init.write_text("", encoding="utf-8")
                 changed = True
+    return changed
+
+
+@preflight.register("fix_query_param_basemodel", priority=22)
+def _fix_query_param_basemodel(project_path: Path, diagnostics: list) -> bool:
+    """
+    FastAPI's dependant analysis requires every `Query(...)`-defaulted
+    parameter to be a scalar type (str/int/float/bool/Enum) or a list of
+    these -- never an arbitrary Pydantic `BaseModel`. When the backend
+    generator emits a "status"/"type"-style schema as a bare
+    `class Foo(BaseModel): ...` instead of an `Enum`, and then uses it as a
+    Query() type, FastAPI raises `AssertionError: Query parameter '<name>'
+    must be one of the supported types` at import time -- before a single
+    route registers, so the whole app fails to boot. The existing repair
+    loop cannot self-heal this: one retry attempt patches unrelated things
+    (auth libs, DB wiring), the identical crash recurs, and the loop gives
+    up ("failure signature unchanged").
+
+    Root cause confirmed live (2026-07-06 canary, crm/simple_crm):
+    `ContactStatus` was generated as `class ContactStatus(BaseModel): id:
+    Optional[int] = None` (not an Enum) and used as
+    `status: Optional[ContactStatus] = Query(None, ...)` in a route file.
+
+    Fix: find every plain-`BaseModel` class across `app/schemas` and
+    `app/models` (never `Enum`/`BaseSettings` -- those are legitimate Query
+    types, left untouched), find every route parameter annotated with one
+    of those class names and defaulted via `Query(...)`, and loosen just
+    that parameter's annotation to `str`/`Optional[str]` so FastAPI accepts
+    it and the app boots. Any `{param}.value` access in the same route file
+    (the enum-style access pattern the LLM assumed) is rewritten to a
+    `getattr(..., "value", ...)` fallback -- a no-op when the value really
+    is an Enum with `.value`, and safe when it's now a plain string.
+    """
+    routes_dir = project_path / "app" / "routes"
+    if not routes_dir.exists():
+        return False
+
+    basemodel_classes: set[str] = set()
+    for base_dir in ("schemas", "models"):
+        d = project_path / "app" / base_dir
+        if not d.exists():
+            continue
+        for f in d.rglob("*.py"):
+            try:
+                text = f.read_text(encoding="utf-8", errors="replace")
+            except Exception:
+                continue
+            for m in re.finditer(r'^class\s+(\w+)\s*\(\s*BaseModel\s*\)\s*:', text, re.MULTILINE):
+                basemodel_classes.add(m.group(1))
+
+    if not basemodel_classes:
+        return False
+
+    param_pattern = re.compile(
+        r'(\b(\w+)\s*:\s*)(Optional\[\s*(\w+)\s*\]|(\w+))(\s*=\s*Query\()'
+    )
+
+    changed = False
+    for route_file in routes_dir.rglob("*.py"):
+        try:
+            text = route_file.read_text(encoding="utf-8", errors="replace")
+        except Exception:
+            continue
+        original = text
+        bad_params: list[str] = []
+
+        def _replace(match: re.Match) -> str:
+            prefix, _param_name, _type_expr, opt_cls, bare_cls, suffix = match.groups()
+            cls_name = opt_cls or bare_cls
+            if cls_name not in basemodel_classes:
+                return match.group(0)
+            bad_params.append(match.group(2))
+            new_type = "Optional[str]" if opt_cls else "str"
+            return f"{prefix}{new_type}{suffix}"
+
+        text = param_pattern.sub(_replace, text)
+
+        for param_name in bad_params:
+            text = re.sub(
+                rf'\b{re.escape(param_name)}\.value\b',
+                f'getattr({param_name}, "value", {param_name})',
+                text,
+            )
+
+        if text != original:
+            route_file.write_text(text, encoding="utf-8")
+            changed = True
+
     return changed
 
 

@@ -551,6 +551,20 @@ annotation into `Optional[str]` as a safe fallback so the app can at least
 boot. Cheap, deterministic, directly targets Runtime Startup — same shape of
 fix as Experiment 009's win. Pending user confirmation before starting.
 
+**Update (same session)**: implemented and locally verified the candidate
+above — `_fix_query_param_basemodel` added to `preflight.py` (priority 22).
+Scans `app/schemas` + `app/models` for plain `BaseModel` classes (never
+`Enum`/`BaseSettings`), finds route params annotated with one of those
+classes and defaulted via `Query(...)`, loosens the annotation to
+`str`/`Optional[str]`, and rewrites any `{param}.value` access in the same
+file to a `getattr(..., "value", ...)` fallback. Verified locally against
+the actual `simple_crm/app/schemas/contact.py` +
+`app/routes/contact_routes.py` files from this run's crash: patch applies,
+result is valid Python (`ast.parse`), is idempotent on a second pass, and a
+negative-case project using a real `(str, Enum)`-based Query param is left
+completely untouched. No generation calls used — pending a validation
+canary (Experiment 011) before crediting it with any score movement.
+
 **Housekeeping this cycle**: found and deleted ~10 zero-byte debris files in
 `backend/` (`backend/'`, `backend/65`, `backend/dict`, etc.) — artifacts of
 an earlier broken shell redirection, not user work. Also found an earlier,
