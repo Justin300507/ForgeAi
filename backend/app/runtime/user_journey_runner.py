@@ -41,6 +41,27 @@ _PREFIX_SEGMENTS = {"api", "v1", "v2", "v3", "v4", "auth", "me", "admin"}
 # Resources that are auth-related — prefer to test other entities first
 _AUTH_RESOURCES = {"users", "user", "accounts", "account", "members", "member"}
 
+# Pydantic v2 type-mismatch error tags -> a coercion of the current (wrong)
+# guessed value into what the error says is actually expected. Confirmed
+# live (2026-07-06): a schema-introspected field (e.g. `phone_number`)
+# whose OpenAPI type hint disagreed with what the request model actually
+# validates gets guessed as the wrong Python type (int 1 instead of a
+# string) and 422s identically on every canary run for that app -- and
+# because this fell through the 422 retry's enum-only "wrong value" branch
+# unhandled, `entity_id` was never captured, failing every downstream CRUD
+# step (Edit/Delete/Verify) as a direct, deterministic consequence of this
+# one field.
+_TYPE_COERCIONS = {
+    "string_type":   lambda v: str(v),
+    "int_type":      lambda v: int(float(v)) if isinstance(v, str) else int(v),
+    "int_parsing":   lambda v: int(float(v)) if isinstance(v, str) else int(v),
+    "float_type":    lambda v: float(v),
+    "float_parsing": lambda v: float(v),
+    "bool_type":     lambda v: str(v).strip().lower() in ("true", "1", "yes") if isinstance(v, str) else bool(v),
+    "bool_parsing":  lambda v: str(v).strip().lower() in ("true", "1", "yes") if isinstance(v, str) else bool(v),
+    "list_type":     lambda v: v if isinstance(v, list) else [v],
+}
+
 
 def _detect_api_prefix(architecture: dict) -> str:
     """Return the common URL prefix for all non-auth endpoints (e.g. '/api/v1')."""
@@ -627,6 +648,14 @@ def run_user_journey(
                             if enum_values and targeted.get(field_name) != enum_values[0]:
                                 targeted[field_name] = enum_values[0]
                                 changed = True
+                            elif field_name in targeted and msg_type in _TYPE_COERCIONS:
+                                try:
+                                    coerced = _TYPE_COERCIONS[msg_type](targeted[field_name])
+                                    if coerced != targeted[field_name]:
+                                        targeted[field_name] = coerced
+                                        changed = True
+                                except Exception:
+                                    pass
                     if changed:
                         r3 = requests.post(entity_url, json=targeted, headers=headers, timeout=5)
                         if r3.status_code in (200, 201):
