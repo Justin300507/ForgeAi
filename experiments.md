@@ -651,6 +651,111 @@ as the two just-shipped fixes (deterministic, preflight-patchable, directly
 gates CRUD success) — recommended as the next reliability target, pending
 user go-ahead.
 
+---
+
+## Experiment 012 — NOT NULL model/schema gap fix (root-cause trace + validation canary)
+
+**Hypothesis:** Where does `IntegrityError: NOT NULL constraint failed:
+contacts.name` (Experiment 011, crm) actually originate, and does
+`_fix_model_schema_notnull_gap` (preflight.py, priority 24, commit a49455c)
+prevent that class of crash without regressing todo/blog_cms?
+
+**Trace (planner → architect → backend model wave → backend schema/route
+wave → journey runner → db.commit()):**
+- **Planner/Architect**: architect stage was a **cache hit** for crm
+  (`ARCHITECT CACHE HIT — skipping LLM call`) — identical, stable spec
+  reused across every crm run this cycle. Ruled out: the same input can't
+  explain a divergence that appears downstream.
+- **Backend generator**: models are generated in `Wave 2 — Models (4
+  tables, parallel)`, one independent Gemini call per table; schemas/routes
+  are generated in a separate wave/call. Given the identical spec, the
+  model wave produced `Contact.name = Column(String(255), nullable=False)`
+  (no default) while the schema wave independently produced
+  `first_name`/`last_name` on `ContactCreate` — no `name` field at all.
+  **This is the first point the required field disappears.**
+- **Generated API**: `create_contact`'s generic, otherwise-reasonable
+  defensive pattern — `Contact(**{k: v for k, v in data.items() if k in
+  Contact.__table__.columns.keys()})` — silently drops any column the
+  schema never supplies instead of erroring, so the mismatch surfaces only
+  as a NOT NULL failure at `db.commit()`, deep enough in the ORM that the
+  route's own `except Exception` can only 500 generically.
+- **Frontend/Playwright**: not implicated — the CRUD-journey runner tests
+  the API directly over HTTP; it never goes through the generated React
+  form, so the frontend generator is not in this path at all.
+- **Repair engine / validation**: no existing validator checks "does every
+  NOT NULL model column have a corresponding Create-schema field" — a
+  genuine coverage gap, but not the origin.
+- **Root cause classification: `backend generator`** — specifically,
+  uncoordinated model-generation and schema/route-generation waves for the
+  same entity, with no cross-consistency check between them.
+
+**Fix implemented** (commit a49455c): `_fix_model_schema_notnull_gap` in
+`preflight.py`. Verified locally beforehand against the real crm files
+(relaxes `name` and `status`, leaves FK/PK/server_default columns and
+already-covered fields untouched, idempotent).
+
+**Validation canary** (2026-07-06, ~15:00 IST, `--provider gemini
+--no-deploy`, log `m1_canary_notnullgap_run.log`):
+
+| App | Exp011 | Exp012 | Canary verdict |
+|---|---|---|---|
+| todo | 99.3 (A+) | 76.4 (C) | flagged REGRESSION |
+| blog_cms | 93.3 (A) | 34.3 (F) | flagged REGRESSION |
+| crm | 65.8 (D) | 72.6 (C) | OK |
+
+**Root-caused both flagged regressions — neither is caused by this fix:**
+- **todo**: `POST /tasks` returns `400 Bad Request` this attempt because
+  `create_task` looks up `Priority.name == task_in.priority` against an
+  unseeded `priorities` table and 400s if no row matches. Grepped todo's
+  models after the run: none of the columns our fixer could have touched
+  (`priority_id`, etc.) were altered — this is a fresh, unrelated
+  generation-quality bug (missing seed data for a lookup table),
+  independent LLM variance in this attempt's `task_routes.py`.
+- **blog_cms**: `ImportError: cannot import name 'TokenData'` plus the
+  *same* recurring frontend bug seen in Experiments 009 and 011 —
+  `Could not resolve "./pages/SignupPage"` — now confirmed across 3
+  separate experiments as a persistent, not-yet-fixed generation gap,
+  wholly unrelated to model/schema nullability.
+- Neither app's `preflight` log shows a materially relevant change from
+  `fix_model_schema_notnull_gap` (it fired in both, per its normal safe/
+  no-op-when-covered behavior); the actual failures trace to backend
+  routing logic (todo) and frontend imports (blog_cms) our fixer never
+  touches.
+
+**crm — partially effective, root cause of the shortfall identified:**
+`status` was successfully relaxed to `nullable=True` (confirmed on disk) —
+a real, verified instance of the fix working exactly as designed on a
+column our fix owns cleanly. However, **the exact `name` crash recurred
+identically** (`IntegrityError: NOT NULL constraint failed: contacts.name`,
+Runtime Startup stuck at 20/100, crud still blocked). Traced why: a
+**pre-existing, independent patcher** (`field_patcher` in
+`deterministic_patcher.py`, not part of this fix) runs *after* preflight
+in this pipeline and reactively adds a stub `name: Optional[str] = None`
+field to `ContactCreate` in response to a different diagnosed error
+(`[field_patcher] Added missing schema field(s) ['name'] to ContactCreate`).
+By the time it added that field, `_fix_model_schema_notnull_gap` had
+already run and seen no `name` field in the schema (correctly, at that
+point) — but once `name` exists as an *Optional* schema field, my fixer's
+"is this column name present in the schema" check treats it as covered,
+even though "present but Optional, defaulting to None" gives exactly zero
+guarantee the client ever supplies a real value. `field_patcher` fixes its
+own target (a missing-attribute/constructor error) without fixing the
+downstream NOT NULL guarantee, and my fixer's presence-only check doesn't
+catch that the newly-added field is not actually *required*.
+
+**Conclusion — KEEP the fix (it does what it does correctly, causes no
+regressions), but it is incomplete for this exact case.** Not a case of
+"unrelated failure" like todo/blog_cms — this is a real, identified gap in
+the fix's own logic: it should treat a schema field as "covering" a NOT
+NULL column only if that field is **required** (no `Optional[...]`, no
+default), not merely *present*. Recommended refinement for next cycle (not
+implemented this cycle, per stop-and-report instruction): change the
+field-presence check to a field-*requiredness* check.
+
+**Cost**: $0.0276 (todo) + $0.0227 (blog_cms) + $0.0283 (crm) = **$0.0786
+total** (~₹7). crm: Fix Attempts 2/5, confidence 31.3% (F, driven by the
+still-open `name` crash), historical base rate 18.2% (n=22).
+
 **Housekeeping this cycle**: found and deleted ~10 zero-byte debris files in
 `backend/` (`backend/'`, `backend/65`, `backend/dict`, etc.) — artifacts of
 an earlier broken shell redirection, not user work. Also found an earlier,

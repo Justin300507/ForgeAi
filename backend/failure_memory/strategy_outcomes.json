@@ -34,7 +34,7 @@
   "contract": {
     "patch_file": {
       "successes": 7,
-      "tries": 26
+      "tries": 32
     },
     "regenerate_arch": {
       "successes": 0,

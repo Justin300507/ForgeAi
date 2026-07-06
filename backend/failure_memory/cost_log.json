@@ -9760,5 +9760,137 @@
     "forge_score": 45,
     "wall_time_s": 92.55,
     "timestamp": "2026-07-06T14:36:48"
+  },
+  {
+    "total_calls": 23,
+    "total_tokens": 116452,
+    "total_cost_usd": 0.025618,
+    "total_llm_time_s": 256.03,
+    "by_stage": {
+      "backend_generation": {
+        "calls": 15,
+        "tokens": 60899,
+        "cost_usd": 0.012267,
+        "time_s": 192.60999999999999
+      },
+      "missing_file": {
+        "calls": 3,
+        "tokens": 16678,
+        "cost_usd": 0.003314,
+        "time_s": 12.44
+      },
+      "qa_review": {
+        "calls": 1,
+        "tokens": 4436,
+        "cost_usd": 0.001114,
+        "time_s": 5.92
+      },
+      "security_review": {
+        "calls": 1,
+        "tokens": 9536,
+        "cost_usd": 0.0025,
+        "time_s": 12.91
+      },
+      "code_review": {
+        "calls": 1,
+        "tokens": 8349,
+        "cost_usd": 0.002605,
+        "time_s": 16.21
+      },
+      "performance_review": {
+        "calls": 1,
+        "tokens": 7254,
+        "cost_usd": 0.001894,
+        "time_s": 9.27
+      },
+      "runtime_fix": {
+        "calls": 1,
+        "tokens": 9300,
+        "cost_usd": 0.001924,
+        "time_s": 6.67
+      }
+    },
+    "project_name": "todo_list_app",
+    "forge_score": 46,
+    "wall_time_s": 206.69,
+    "timestamp": "2026-07-06T14:57:08"
+  },
+  {
+    "total_calls": 18,
+    "total_tokens": 77437,
+    "total_cost_usd": 0.015259,
+    "total_llm_time_s": 65.71,
+    "by_stage": {
+      "backend_generation": {
+        "calls": 16,
+        "tokens": 66680,
+        "cost_usd": 0.01328,
+        "time_s": 59.54
+      },
+      "missing_file": {
+        "calls": 2,
+        "tokens": 10757,
+        "cost_usd": 0.001979,
+        "time_s": 6.17
+      }
+    },
+    "project_name": "forge_blog_cms",
+    "forge_score": 54,
+    "wall_time_s": 28.99,
+    "timestamp": "2026-07-06T14:59:03"
+  },
+  {
+    "total_calls": 22,
+    "total_tokens": 112728,
+    "total_cost_usd": 0.025309,
+    "total_llm_time_s": 123.42,
+    "by_stage": {
+      "backend_generation": {
+        "calls": 15,
+        "tokens": 62226,
+        "cost_usd": 0.012643999999999997,
+        "time_s": 58.53
+      },
+      "missing_file": {
+        "calls": 2,
+        "tokens": 11192,
+        "cost_usd": 0.00228,
+        "time_s": 8.83
+      },
+      "qa_review": {
+        "calls": 1,
+        "tokens": 4159,
+        "cost_usd": 0.000974,
+        "time_s": 4.73
+      },
+      "security_review": {
+        "calls": 1,
+        "tokens": 9235,
+        "cost_usd": 0.002345,
+        "time_s": 11.9
+      },
+      "code_review": {
+        "calls": 1,
+        "tokens": 8329,
+        "cost_usd": 0.002665,
+        "time_s": 16.2
+      },
+      "performance_review": {
+        "calls": 1,
+        "tokens": 7116,
+        "cost_usd": 0.001907,
+        "time_s": 12.51
+      },
+      "runtime_fix": {
+        "calls": 1,
+        "tokens": 10471,
+        "cost_usd": 0.002494,
+        "time_s": 10.72
+      }
+    },
+    "project_name": "simple_crm",
+    "forge_score": 44,
+    "wall_time_s": 96.89,
+    "timestamp": "2026-07-06T15:02:49"
   }
 ]
