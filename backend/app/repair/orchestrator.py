@@ -168,8 +168,8 @@ def _scaffold_missing_local_imports(
             stub_path.parent.mkdir(parents=True, exist_ok=True)
             stub_path.write_text("\n".join(lines) + "\n", encoding="utf-8")
             created.append(str(stub_path.relative_to(root)).replace("\\", "/"))
-        except Exception:
-            pass
+        except Exception as exc:
+            print(f"[repair] Failed to write stub for missing import {stub_path}: {exc}")
     return created
 
 
@@ -426,8 +426,8 @@ def _build_fix_prompt(
             try:
                 content = full.read_text(encoding="utf-8", errors="replace")
                 file_contents += f"\n--- {fpath} ---\n{content[:3000]}\n"
-            except Exception:
-                pass
+            except Exception as exc:
+                print(f"[repair] Could not read {fpath} for fix context (LLM will fix it blind): {exc}")
 
     required_endpoints = _required_endpoints_for_files(ctx, group.affected_files[:3])
 
@@ -704,8 +704,8 @@ def _apply_fix_group(
                     for c in created:
                         try:
                             fix_content_map[c] = (root / c).read_text(encoding="utf-8")
-                        except Exception:
-                            pass
+                        except Exception as exc:
+                            print(f"[repair] Could not re-read scaffolded stub {c}: {exc}")
                 # Re-check (stubs now exist on disk); only reject if something
                 # genuinely couldn't be resolved.
                 still_missing = _missing_local_imports(
@@ -862,18 +862,20 @@ class _ProjectSnapshot:
         for f in self._iter_files():
             try:
                 self._snap[str(f.relative_to(self.project_path))] = f.read_bytes()
-            except Exception:
-                pass
+            except Exception as exc:
+                print(f"[fix] Snapshot failed to capture {f}: {exc} — a revert "
+                      f"will NOT be able to restore this file")
 
     def revert(self):
         # Restore every snapshotted file...
+        failures: list[str] = []
         for rel, data in self._snap.items():
             target = self.project_path / rel
             try:
                 target.parent.mkdir(parents=True, exist_ok=True)
                 target.write_bytes(data)
-            except Exception:
-                pass
+            except Exception as exc:
+                failures.append(f"{rel} (restore failed: {exc})")
         # ...and remove source files the failed fix newly created, which the
         # old revert left behind (e.g. a broken new route module that main.py
         # doesn't import but py_compile still trips over).
@@ -882,9 +884,18 @@ class _ProjectSnapshot:
             if rel not in self._snap:
                 try:
                     f.unlink()
-                except Exception:
-                    pass
-        print("    [fix] Reverted to pre-fix snapshot")
+                except Exception as exc:
+                    failures.append(f"{rel} (delete failed: {exc})")
+        if failures:
+            # A revert that doesn't fully succeed leaves the project in a
+            # half-reverted mixed state — the exact bug the _EXTS widening
+            # above was meant to fix. Must NOT print an unconditional
+            # success message in that case, or a corrupted state gets
+            # reported (and trusted) as a clean recovery.
+            print(f"    [fix] Revert INCOMPLETE — {len(failures)} file(s) could "
+                  f"not be restored/removed: {'; '.join(failures[:5])}")
+        else:
+            print("    [fix] Reverted to pre-fix snapshot")
 
 
 # ── FixOrchestrator ───────────────────────────────────────────────────────────
@@ -1078,8 +1089,8 @@ class FixOrchestrator:
                         # this patch did NOT resolve the group; don't cache it.
                         continue
                     fix_cache.store(g.diagnostics, fix_content, idea=getattr(ctx, "idea", ""))
-            except Exception:
-                pass
+            except Exception as exc:
+                print(f"[fix] fix_cache.store failed (fix worked but won't be reused): {exc}")
 
         elapsed = (time.time() - t0) * 1000
 

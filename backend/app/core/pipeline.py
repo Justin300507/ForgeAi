@@ -107,8 +107,8 @@ class V15Pipeline:
         try:
             from app.utils.cost_tracker import reset_session
             reset_session()
-        except Exception:
-            pass
+        except Exception as exc:
+            print(f"[V15] cost_tracker reset_session failed (non-fatal): {exc}")
 
         # ── Stage 1: Generate ─────────────────────────────────────────────
         self.bus.emit(Events.STAGE_START, {"stage": "generation"})
@@ -315,18 +315,25 @@ class V15Pipeline:
                     totals["completion_tokens"] - ctx.token_usage.completion_tokens,
                     totals["cost_usd"] - ctx.token_usage.estimated_cost_usd,
                 )
-        except Exception:
-            pass
+        except Exception as exc:
+            print(f"[V15] token/cost totals sync failed (non-fatal): {exc}")
 
         # ── Deployment confidence ──────────────────────────────────────────
         try:
             from app.confidence.engine import compute_from_context
             confidence = compute_from_context(ctx)
             confidence.display()
-        except Exception:
+        except Exception as exc:
+            print(f"[V15] confidence engine failed (non-fatal): {exc}")
             confidence = None
 
         # ── Record this run to the generation log ─────────────────────────
+        # This write silently no-op'd for over a week (2026-06-28 to 07-06):
+        # getattr(ctx, "all_diagnostics", []) on a *method* returned the
+        # unbound method itself, iterating it raised TypeError, and the bare
+        # `except: pass` that used to be here hid it completely -- the
+        # confidence engine's success-rate priors ran on 2 stale records the
+        # whole time. Logging the exception is what would have surfaced it.
         try:
             from app.knowledge.failure_db import generation_log, GenerationRecord
             import hashlib
@@ -343,8 +350,8 @@ class V15Pipeline:
                                   d.severity.value in ("critical", "high")][:5],
                 architecture_hash=arch_hash,
             ))
-        except Exception:
-            pass
+        except Exception as exc:
+            print(f"[V15] generation_log write failed (non-fatal): {exc}")
 
         # ── Record to Architecture Database if high-quality ───────────────
         try:
@@ -360,8 +367,8 @@ class V15Pipeline:
                         score=ctx.latest_score,
                         generation_id=ctx.job_id,
                     )
-        except Exception:
-            pass
+        except Exception as exc:
+            print(f"[V15] arch_db write failed (non-fatal): {exc}")
 
         # ── Build API response ─────────────────────────────────────────────
         return {
@@ -553,6 +560,6 @@ class V15Pipeline:
             try:
                 from app.services.deployment_fix_service import record_deployment_outcome
                 record_deployment_outcome(success=False, error_types=[type(exc).__name__])
-            except Exception:
-                pass
+            except Exception as inner_exc:
+                print(f"[V15] deployment_memory failure-record also failed (non-fatal): {inner_exc}")
             return {"success": False, "error": str(exc)}
