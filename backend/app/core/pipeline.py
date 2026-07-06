@@ -512,6 +512,32 @@ class V15Pipeline:
                       f"but the frontend did NOT deploy "
                       f"({cloudflare_result.get('reason') or cloudflare_result.get('error') or 'see cloudflare result'})")
 
+            # Record this deployment attempt to deployment_memory.json. Prior
+            # to this, the store's only writer was the V11 orchestrator
+            # (dead pipeline) -- V15 is the actual live path and had never
+            # recorded a single outcome here, so the store sat frozen at 3
+            # stale entries (all failures, none since 2026-06-22) despite
+            # real successful V15 deploys happening since.
+            try:
+                from app.services.deployment_fix_service import record_deployment_outcome
+                backend_health = health.get("backend", {}) if isinstance(health, dict) else {}
+                error_types = [
+                    tag for tag in (
+                        github_result.get("error") and "github_push",
+                        (not backend_url) and "render_backend",
+                        (self.deploy_to in ("cloudflare", "both")
+                         and not cloudflare_result.get("skipped")
+                         and not frontend_deployed) and "cloudflare_frontend",
+                    ) if tag
+                ]
+                record_deployment_outcome(
+                    success=bool(backend_url),
+                    health_latency_ms=backend_health.get("latency_ms"),
+                    error_types=error_types,
+                )
+            except Exception as exc:
+                print(f"[V15] deployment_memory write failed (non-fatal): {exc}")
+
             return {
                 "success":            bool(backend_url),
                 "frontend_deployed":  frontend_deployed,
@@ -524,4 +550,9 @@ class V15Pipeline:
             }
         except Exception as exc:
             print(f"[V15] Deploy error: {exc}")
+            try:
+                from app.services.deployment_fix_service import record_deployment_outcome
+                record_deployment_outcome(success=False, error_types=[type(exc).__name__])
+            except Exception:
+                pass
             return {"success": False, "error": str(exc)}
