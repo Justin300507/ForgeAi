@@ -224,3 +224,45 @@ LLM-output variance," and todo's regression traces to a new, unrelated-looking
 bug (malformed route filename), not an obvious contract-validator side effect.
 Need at least one more clean todo run to see if the query-param-filename bug
 recurs. The confidence-engine fix was the clear, unambiguous win from this run.
+
+---
+
+## Experiment 006 — filename-sanitization fix + GenerationContext audit (Claude-only, $0)
+
+**Hypothesis:** (a) Fix the querystring-in-filename bug root-caused in
+Experiment 005 before evaluating AppContract further — user's explicit
+reprioritization (filename bug > confidence engine [done] > re-canary >
+AppContract eval). (b) Given confidence engine had two independent stale-
+attribute bugs, audit every `GenerationContext` consumer for the same class
+of issue before it causes a third surprise.
+
+**Changes under test:**
+1. `endpoint_validator.py:207` — `validate_frontend_api_calls` derived
+   `resource`/`expected_file` from the raw (un-query-stripped) path; its
+   sibling function 60 lines above already stripped `?...` first. Fixed to
+   match. Also hardened 3 other call sites with the identical
+   `.strip("/").split("/")[0]` pattern (playwright_runner.py,
+   deployed_fixer.py, endpoint_smoke_test_service.py) that don't currently
+   crash (degrade to empty/no-op on a malformed path) but are the same
+   latent bug class.
+2. Scanned every `ctx.<attr>` and `getattr(ctx, "...")` in `app/` against
+   `GenerationContext`'s real attribute/method list (extracted programmatically
+   from `context.py`). Found only one leftover issue: a stale docstring in
+   `confidence/engine.py` still said `ctx.scores` (fixed). The two dynamic
+   attributes flagged (`failure_graph`, `_backend_runner`) are intentional
+   runtime-added state, always accessed via `getattr(..., default)` —
+   verified safe by design, not bugs.
+
+**Date:** 2026-07-06
+
+**Verification:** `ast.parse` on all touched files. Isolated reproduction:
+fed the exact observed path (`/tasks?limit=5&sort_by=created_at&sort_order=desc`)
+through the old vs. new derivation logic — old code reproduces the exact
+broken filename from Experiment 005's crash; new code produces
+`task_routes.py`. No generation calls.
+
+**Conclusion:** The GenerationContext audit came back mostly clean — good
+news, this isn't a widespread epidemic, just the two spots already found in
+the confidence engine plus one stale comment. **Committed 4af31b4 (filename
+fix) and 6e0fdeb (docstring), pushed to main.** Ready for Priority 3: re-run
+the canary to see if todo recovers.
