@@ -20,6 +20,7 @@ Current fixes (no LLM needed):
   9. Missing __init__.py in app/               → touch it
  10. Unused passlib / werkzeug imports in code  → strip them
  11. BaseModel used as a Query() param type      → loosen to str/Optional[str]
+ 12. NOT NULL model column absent from Create schema → relax to nullable=True
 """
 from __future__ import annotations
 
@@ -427,6 +428,113 @@ def _fix_query_param_basemodel(project_path: Path, diagnostics: list) -> bool:
         if text != original:
             route_file.write_text(text, encoding="utf-8")
             changed = True
+
+    return changed
+
+
+@preflight.register("fix_model_schema_notnull_gap", priority=24)
+def _fix_model_schema_notnull_gap(project_path: Path, diagnostics: list) -> bool:
+    """
+    The SQLAlchemy model-generation wave and the Pydantic schema/route-
+    generation wave run as separate, uncoordinated LLM calls for the same
+    entity (confirmed live: `[V6] Wave 2 -- Models (4 tables, parallel)`
+    runs one Gemini call per table; schemas/routes are generated in a
+    later, independent call). Given the identical architect spec, they can
+    still disagree on field naming for the same concept -- e.g. the model
+    declares a single `nullable=False` `name` column while the Create
+    schema only offers `first_name`/`last_name`. Since the route
+    conservatively does `Contact(**{k: v for k, v in data.items() if k in
+    Contact.__table__.columns.keys()})`, a column the schema never
+    populates is silently omitted rather than raising -- and the DB then
+    rejects the NULL at `db.commit()` with an uncatchable
+    `IntegrityError: NOT NULL constraint failed`, deep enough in the ORM
+    that the route's own `except Exception` handler can only turn it into
+    a generic 500, and the CRUD-journey runner never captures an
+    entity_id. This is a distinct, newly-exposed sub-cause of
+    JourneyCRUDFailure (Experiment 011/012), separate from the type-
+    mismatch case already handled by e2f8d77.
+
+    Root cause confirmed live (2026-07-06 canary, crm/simple_crm):
+    `Contact.name = Column(String(255), nullable=False)` with no default,
+    while `ContactCreate` only defines `first_name`/`last_name`/etc. --
+    `name` is never in the request, so it inserts as NULL.
+
+    Fix (smallest deterministic patch, no prompt/generation changes): for
+    every `{Model}Create` schema found in `app/schemas`, cross-reference
+    its declared field names against `{Model}`'s columns in
+    `app/models`. Any column that is `nullable=False`, not a primary key,
+    not a `ForeignKey` (those are supplied programmatically by the route,
+    e.g. `user_id=current_user.id`, never by the client), has no
+    `default`/`server_default`, and whose exact name is absent from the
+    Create schema can never be populated through the normal create flow --
+    relax it to `nullable=True` so the app doesn't crash. This does not
+    invent a value or touch route/schema/prompt logic; it only prevents a
+    guaranteed-unsatisfiable constraint from crashing the request.
+    """
+    models_dir = project_path / "app" / "models"
+    schemas_dir = project_path / "app" / "schemas"
+    if not models_dir.exists() or not schemas_dir.exists():
+        return False
+
+    # Collect every {Model}Create schema's declared field names.
+    create_schema_fields: dict[str, set[str]] = {}
+    for f in schemas_dir.rglob("*.py"):
+        try:
+            text = f.read_text(encoding="utf-8", errors="replace")
+        except Exception:
+            continue
+        for cm in re.finditer(r'^class\s+(\w+)Create\s*\(\s*BaseModel\s*\)\s*:', text, re.MULTILINE):
+            model_name = cm.group(1)
+            rest = text[cm.end():]
+            end_match = re.search(r'^class\s+\w+', rest, re.MULTILINE)
+            body = rest[:end_match.start()] if end_match else rest
+            fields = set(re.findall(r'^\s{4}(\w+)\s*:', body, re.MULTILINE))
+            create_schema_fields.setdefault(model_name, set()).update(fields)
+
+    if not create_schema_fields:
+        return False
+
+    col_pattern = re.compile(r'^(\s+)(\w+)\s*=\s*Column\(([^\n]*)\)\s*$', re.MULTILINE)
+    changed = False
+
+    for model_file in models_dir.rglob("*.py"):
+        try:
+            text = model_file.read_text(encoding="utf-8", errors="replace")
+        except Exception:
+            continue
+        original = text
+
+        class_matches = list(re.finditer(r'^class\s+(\w+)\s*\(\s*Base\s*\)\s*:', text, re.MULTILINE))
+        for class_match in reversed(class_matches):
+            schema_fields = create_schema_fields.get(class_match.group(1))
+            if schema_fields is None:
+                continue  # no Create schema for this model -- nothing to compare against
+
+            class_start = class_match.end()
+            next_class = re.search(r'^class\s+\w+', text[class_start:], re.MULTILINE)
+            class_end = class_start + next_class.start() if next_class else len(text)
+            class_body = text[class_start:class_end]
+
+            def _relax(m: re.Match, _fields=schema_fields) -> str:
+                nonlocal changed
+                indent, attr_name, args = m.group(1), m.group(2), m.group(3)
+                if attr_name in _fields:
+                    return m.group(0)
+                if 'primary_key' in args or 'ForeignKey' in args:
+                    return m.group(0)
+                if 'nullable=False' not in args:
+                    return m.group(0)
+                if 'default=' in args or 'server_default=' in args:
+                    return m.group(0)
+                changed = True
+                return f"{indent}{attr_name} = Column({args.replace('nullable=False', 'nullable=True')})"
+
+            new_class_body = col_pattern.sub(_relax, class_body)
+            if new_class_body != class_body:
+                text = text[:class_start] + new_class_body + text[class_end:]
+
+        if text != original:
+            model_file.write_text(text, encoding="utf-8")
 
     return changed
 
