@@ -317,6 +317,7 @@ def generate(project_path: str):
         telemetry["entities_discovered"] = len(entities)
         if not entities:
             telemetry["fallback_reason"] = "no models discovered"
+            telemetry["generation_time_ms"] = round((time.time() - start) * 1000, 2)
             return None, telemetry
 
         eligible, exclusion_log = find_lookup_entities(entities)
@@ -324,11 +325,13 @@ def generate(project_path: str):
         telemetry["lookup_entities"] = len(eligible)
         if not eligible:
             telemetry["fallback_reason"] = "no lookup entities"
+            telemetry["generation_time_ms"] = round((time.time() - start) * 1000, 2)
             return None, telemetry
 
         ordered = topological_order(eligible)
         if ordered is None:
             telemetry["fallback_reason"] = "FK cycle detected"
+            telemetry["generation_time_ms"] = round((time.time() - start) * 1000, 2)
             return None, telemetry
 
         source = render_seed_routes(ordered)
