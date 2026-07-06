@@ -109,7 +109,7 @@
       "last_seen": "2026-07-01T19:49:17.134673"
     },
     "SQLAlchemyError": {
-      "count": 10,
+      "count": 11,
       "examples": [
         {
           "project": "HR Onboarding System",
@@ -133,7 +133,7 @@
         }
       ],
       "first_seen": "2026-06-21T21:30:53.208370",
-      "last_seen": "2026-07-01T15:13:32.069453"
+      "last_seen": "2026-07-06T12:23:57.957873"
     },
     "ValidationError": {
       "count": 3,
@@ -204,7 +204,7 @@
       "last_seen": "2026-06-22T07:34:30.310089"
     },
     "MissingEndpoint": {
-      "count": 30,
+      "count": 36,
       "examples": [
         {
           "project": "bug_tracker",
@@ -228,7 +228,7 @@
         }
       ],
       "first_seen": "2026-06-22T07:49:29.613937",
-      "last_seen": "2026-07-06T10:54:41.402699"
+      "last_seen": "2026-07-06T12:21:01.425642"
     },
     "FastAPIError": {
       "count": 1,
@@ -306,7 +306,7 @@
       "last_seen": "2026-07-01T20:13:11.496878"
     },
     "JourneyCRUDFailure": {
-      "count": 26,
+      "count": 27,
       "examples": [
         {
           "project": "BlogSphere",
@@ -330,7 +330,7 @@
         }
       ],
       "first_seen": "2026-06-29T23:47:06.584012",
-      "last_seen": "2026-07-06T11:43:10.741834"
+      "last_seen": "2026-07-06T12:15:39.628366"
     },
     "InvalidDependsType": {
       "count": 1,
@@ -405,7 +405,7 @@
       "last_seen": "2026-07-06T11:52:24.191764"
     },
     "ConfigAttributeError": {
-      "count": 8,
+      "count": 9,
       "examples": [
         {
           "project": "forge_learn",
@@ -429,7 +429,7 @@
         }
       ],
       "first_seen": "2026-07-05T09:26:46.709471",
-      "last_seen": "2026-07-06T11:50:05.026903"
+      "last_seen": "2026-07-06T12:26:17.515620"
     },
     "ResponseValidationError": {
       "count": 2,
@@ -474,6 +474,6 @@
       "last_seen": "2026-07-06T05:46:37.663703"
     }
   },
-  "total_runs": 355,
-  "last_updated": "2026-07-06T11:52:24.191748"
+  "total_runs": 360,
+  "last_updated": "2026-07-06T12:26:17.515606"
 }

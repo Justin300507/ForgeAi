@@ -1083,6 +1083,150 @@ independent bottleneck. Recommend holding here per the user's own stated
 roadmap (deterministic bugs first, AppContract only after) rather than
 writing a fifth preflight rule chasing the same root disease.
 
+---
+
+## Experiment 017 — Model-driven schema generation (architectural experiment)
+
+**1. Hypothesis**: does resolving the real generated model (via a
+deterministic entity-metadata extractor) and injecting its fields as a
+binding contract into Wave 3's schema prompt eliminate model/schema
+field-name drift, without implementing the full AppContract IR?
+
+**2. Evidence**: Experiments 012/013/014/016 all traced crm's persistent
+CRUD blocker to the same disease — `Contact.name` (model) vs
+`ContactCreate.first_name`/`last_name` (schema). Per the VNext report's
+own meta-pattern analysis, this class of cross-file disagreement accounts
+for 58% of all historical failure instances.
+
+**3. Root cause**: traced to `parallel_backend_service.py`. The mechanism
+to prevent this *already existed* — `_gen_schema` already took a
+`model_content` parameter, and the prompt already labeled it "CORRESPONDING
+MODEL (for field reference)" — but two bugs defeated it: (a) Wave 3's
+model-content lookup was a naive `resource.py` / `resource[:-1]+".py"`
+filename guess that doesn't handle every singular/plural convention, and
+(b) critically, Wave 2.5's singular-shim step registers a bare two-line
+re-export (`from app.models.contacts import Contact`, zero column data)
+into the *same* `model_contents` dict the real model lives in — so Wave
+3's naive lookup can silently receive the contentless shim instead of the
+real model, leaving the schema LLM call with no real field information.
+Classification: **backend generator / generation-pipeline plumbing** (the
+handoff between two already-adjacent stages, not the LLM's fault).
+
+**4. Implementation** (commit 97e17d2): new reusable
+`app/services/entity_metadata.py` (`EntityDefinition`/`FieldDefinition`,
+`extract_entity_definition()`, `find_model_for_resource()` — resolves by
+parsed `table_name`/`class_name`, never filename guessing, so a shim
+correctly parses to `None` and can never be mistaken for a real model —
+and `render_field_manifest()`). Wired behind `FORGE_MODEL_DRIVEN_SCHEMA`
+(default off, preserving the exact current lookup/prompt byte-for-byte
+when unset — verified). When on, Wave 3 resolves the real model and
+injects a "BINDING FIELD CONTRACT" block into the schema prompt in place
+of the old advisory "for reference" framing.
+
+**5. Validation (local, $0)**: extractor correctness against a real
+captured model file; shim correctly parses to `None`; `find_model_for_resource`
+resolves the real model over the shim for both singular/plural resource
+names (the exact bug scenario); full Wave-3 wiring simulated end-to-end;
+`build_schema_prompt` confirmed byte-identical when `field_manifest` is
+omitted. `ast.parse`/`py_compile` clean.
+
+**6. Benchmark comparison** (`FORGE_MODEL_DRIVEN_SCHEMA=1`,
+`--provider gemini --no-deploy`, log `m1_canary_modeldriven_run.log`) vs.
+Experiment 016 (`CANARY PASSED`, the cleanest recent baseline):
+| App | Exp016 | Exp017 | Canary verdict |
+|---|---|---|---|
+| todo | 73.9 (C) | 73.9 (C) | OK |
+| blog_cms | 84.8 (B) | 61.5 (D) | flagged REGRESSION |
+| crm | 66.2 (D) | 39.4 (F) | flagged REGRESSION |
+
+**`CANARY FAILED`** by the automated script — but per the user's explicit
+instruction ("do not judge success solely by overall Forge Score; judge by
+whether model/schema drift measurably decreases"), both regressions were
+traced to their root cause before drawing any conclusion:
+
+- **crm's regression is 100% unrelated**: `AttributeError: 'Config' object
+  has no attribute 'DATABASE_URL'` — the exact `ConfigAttributeError`
+  class Experiment 009's config-patcher targets, recurring in a form that
+  fix's known limitation doesn't cover (pydantic `BaseSettings`-style
+  Config classes are deliberately left to the instance-only guard, per
+  that fix's own docstring). This crashed the app before generation even
+  reached `app/schemas/contact.py` — this experiment's change (Wave 3
+  only) cannot be its cause.
+- **blog_cms's regression is also unrelated**: `sqlalchemy.exc.ArgumentError:
+  IN expression list ... expected, got 'journey-test'` in `post_routes.py`'s
+  `Tag.id.in_(post_in.tag_ids)`. Confirmed `tag_ids` is **not a Column on
+  the `Post` model at all** (tags are handled via a relationship
+  property) — the LLM independently invented `tag_ids: Optional[str]` in
+  the schema this attempt, unrelated to anything the entity-metadata
+  extractor reads (it only parses `Column(...)` definitions). Matches the
+  extensively-documented pattern of blog_cms hitting a different specific
+  generation-variance bug almost every attempt this entire cycle.
+
+**7. Telemetry comparison — the actual target metric, directly confirmed**:
+inspected the freshly generated `simple_crm/app/models/contacts.py` and
+`app/schemas/contact.py` on disk. The model still declares `name`/`status`
+as before; the schema now reads:
+```
+class ContactCreate(BaseModel):
+    name: str = Field(min_length=1)
+    ...
+    status: str = Field(min_length=1)
+```
+— **exact field names, correctly marked required (non-Optional)**,
+matching the model precisely. Confirmed this is not just a fluke of this
+one run: the reactive `[field_patcher] Added missing schema field(s)
+['name']` event (which fired in Experiment 012 to patch over exactly this
+gap) **did not fire at all this run** — because "name" was correctly
+present in `ContactCreate` from the very first generation attempt, not
+patched in afterward. This is the clean, direct, mechanism-level
+confirmation the experiment set out to get.
+
+**8. Verdict: KEEP (mechanism confirmed, overall run confounded).** The
+targeted drift class is eliminated on direct evidence. Both scored
+regressions are independently and fully explained by unrelated,
+already-catalogued bug classes (config-attribute handling, ad-hoc
+relationship-field invention) that predate and are outside the scope of
+this change. Reverting proven-correct, low-risk, feature-flagged code
+(default OFF, zero effect on current production behavior) over unrelated
+noise would be a mistake. Not flipping the default to ON yet, though —
+one confounded run isn't enough to confidently declare the *aggregate*
+score/CRUD impact, only the specific mechanism under direct test.
+
+**Recommended before flipping the default**: one more clean canary run
+(no confounding config/relationship bugs) to see the mechanism's effect on
+overall CRUD/Runtime scores now that Contact's drift is gone — crm's CRUD
+was never reached this run because of the unrelated Config crash.
+
+**Architectural trade-offs**: Wave 3 now depends on Wave 2's actual output
+for entities where the flag is on, rather than treating them as
+independent (this dependency already existed structurally — Wave 3 always
+ran after Wave 2.5 completes — this experiment only makes Wave 3 correctly
+*consume* what was already available). No latency cost observed (waves
+were already sequential). The extractor only reads `Column(...)`
+definitions, not `relationship()`/secondary tables — doesn't help
+many-to-many association fields (e.g. blog_cms's tags) as-is, a natural
+next extension given the reusable-extractor design.
+
+**Estimate of historical-failure-bucket coverage**: this targets the
+`PydanticSerializationError`/`ModelFieldMismatch` class specifically (row 9
+in the VNext report's failure table, ~6 instances/6% of the historical
+window) plus a share of `JourneyCRUDFailure` (the #1 pattern, 24
+instances) where the root cause is field-name drift specifically (a
+subset, not all of it — JourneyCRUDFailure also covers unrelated causes
+like the Priority-lookup 400 and provider timeouts). Meaningful but
+partial coverage of the 58% "cross-file disagreement" bucket the full
+AppContract would eventually address in full (it doesn't touch
+endpoints/routers/imports).
+
+**Cost**: 3-app canary, standard run (~$0.07-0.08 typical for this suite).
+
+**9. Next highest-ROI candidate**: re-run once more for a clean
+signal-vs-noise read on aggregate CRUD/Runtime impact; separately, the
+Config `BaseSettings` gap (Experiment 009's fix doesn't cover it) and
+blog_cms's tags/relationship-field invention are both new, independently
+catalogued candidates for future cycles — neither blocks keeping this
+experiment's code.
+
 **Housekeeping this cycle**: found and deleted ~10 zero-byte debris files in
 `backend/` (`backend/'`, `backend/65`, `backend/dict`, etc.) — artifacts of
 an earlier broken shell redirection, not user work. Also found an earlier,
