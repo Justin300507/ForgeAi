@@ -7,6 +7,8 @@ Execution order:
     2.  Compile         — py_compile every .py file for fast syntax check
     2a. Import closure  — every import resolves to a file, a requirements.txt
                           dependency, or the stdlib -- statically, pre-boot
+    2a2. Contract check — AppContract conformance, warn-only (LOW severity
+                          only; never gates anything -- see app/contract/)
     2b. Frontend build  — vite build (see below)
     3.  Runtime         — install deps, start uvicorn, health check
 
@@ -315,6 +317,51 @@ def _run_import_closure_check(ctx: GenerationContext) -> VerificationResult:
 
     status = StageStatus.PASSED if not diagnostics else StageStatus.FAILED
     return VerificationResult(stage="import_closure", status=status, diagnostics=diagnostics, duration_ms=_ms(t0))
+
+
+# ═══════════════════════════════════════════════════════════════
+#   STAGE 2a2 — Contract conformance (warn-only, see app/contract/)
+# ═══════════════════════════════════════════════════════════════
+
+def _run_contract_conformance_check(ctx: GenerationContext) -> VerificationResult:
+    """
+    Derives an AppContract from ctx.architecture (via the adapter-first
+    migration path in docs/FORGEAI_VNEXT_REPORT.md #1/#2) and checks the
+    generated project against it. Every finding is LOW severity /
+    ErrorCategory.CONTRACT -- deliberately warn-only per the report's own
+    risk mitigation (§14): observe real hit-rate across benchmark runs
+    before this is ever allowed to gate anything. LOW severity cannot
+    trigger the critical-static runtime-skip gate or the
+    is_deployment_ready critical-stage hard gate.
+    """
+    t0 = time.time()
+    if not ctx.architecture or not ctx.project_path:
+        return VerificationResult(stage="contract_conformance", status=StageStatus.SKIPPED,
+                                  metadata={"reason": "no architecture or project_path"}, duration_ms=_ms(t0))
+    try:
+        from app.contract.adapter import from_architecture_plan
+        from app.contract.validator import check_contract_conformance
+        from app.models.architecture_models import ArchitecturePlan
+
+        arch_dict = _arch_dict(ctx)
+        if not arch_dict:
+            return VerificationResult(stage="contract_conformance", status=StageStatus.SKIPPED,
+                                      metadata={"reason": "architecture not dict-convertible"}, duration_ms=_ms(t0))
+        contract = from_architecture_plan(
+            idea=ctx.idea, project_name=ctx.project_name,
+            architecture=ArchitecturePlan(**arch_dict),
+        )
+        diagnostics = check_contract_conformance(contract, ctx.project_path)
+    except Exception as exc:
+        return VerificationResult(
+            stage="contract_conformance", status=StageStatus.FAILED,
+            diagnostics=[_diag("contract_conformance", f"Contract conformance checker crashed: {exc}",
+                               ErrorSeverity.LOW, ErrorCategory.CONTRACT)],
+            duration_ms=_ms(t0),
+        )
+
+    status = StageStatus.PASSED if not diagnostics else StageStatus.FAILED
+    return VerificationResult(stage="contract_conformance", status=status, diagnostics=diagnostics, duration_ms=_ms(t0))
 
 
 # ═══════════════════════════════════════════════════════════════
@@ -1099,6 +1146,13 @@ class VerificationEngine:
         ctx.static_results.append(ic)
         results.append(ic)
         print(f"  [verify]       {ic.status.value} — {len(ic.diagnostics)} unresolved imports")
+
+        # ── Stage 2a2: Contract conformance (warn-only) ───────────────────────
+        print("  [verify] 2a2 Contract conformance check (warn-only)...")
+        cc = _run_contract_conformance_check(ctx)
+        ctx.static_results.append(cc)
+        results.append(cc)
+        print(f"  [verify]       {cc.status.value} — {len(cc.diagnostics)} contract findings")
 
         # ── Stage 2b: Frontend build (produces dist/ for Playwright) ──────────
         print("  [verify] 2b Frontend build...")
