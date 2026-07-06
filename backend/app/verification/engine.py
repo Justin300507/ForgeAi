@@ -31,6 +31,7 @@ Execution order:
 """
 from __future__ import annotations
 
+import os
 import re
 import time
 from concurrent.futures import ThreadPoolExecutor, as_completed
@@ -1148,11 +1149,16 @@ class VerificationEngine:
         print(f"  [verify]       {ic.status.value} — {len(ic.diagnostics)} unresolved imports")
 
         # ── Stage 2a2: Contract conformance (warn-only) ───────────────────────
-        print("  [verify] 2a2 Contract conformance check (warn-only)...")
-        cc = _run_contract_conformance_check(ctx)
-        ctx.static_results.append(cc)
-        results.append(cc)
-        print(f"  [verify]       {cc.status.value} — {len(cc.diagnostics)} contract findings")
+        # FORGE_CONTRACT_CHECK=0 skips this stage entirely -- added solely to
+        # allow a controlled A/B (contract on vs off, all else identical) to
+        # measure whether it actually reduces contract-coherence failures.
+        # Defaults to on; unset/"1" is identical to before this flag existed.
+        if os.environ.get("FORGE_CONTRACT_CHECK", "1") != "0":
+            print("  [verify] 2a2 Contract conformance check (warn-only)...")
+            cc = _run_contract_conformance_check(ctx)
+            ctx.static_results.append(cc)
+            results.append(cc)
+            print(f"  [verify]       {cc.status.value} — {len(cc.diagnostics)} contract findings")
 
         # ── Stage 2b: Frontend build (produces dist/ for Playwright) ──────────
         print("  [verify] 2b Frontend build...")
