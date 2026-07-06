@@ -1009,6 +1009,80 @@ stale 422 message) — implemented and locally verified, not yet committed
 or canary-validated; queued as Experiment 016, kept isolated per
 discipline.
 
+---
+
+## Experiment 016 — Journey-runner 422-retry false-positive fix (validation canary)
+
+**1. Hypothesis**: does the new `elif r3.status_code >= 500` branch
+(commit 174ed86) correctly report a 422-retry that itself crashes the
+server as failed, instead of a false "passed" with a stale 422 message?
+
+**2. Evidence**: found while root-causing Experiment 014's crm
+regression — crm's `contacts.name` NOT NULL crash happened *during* the
+422-retry (phone_number got auto-corrected, the corrected payload's
+`db.commit()` then hit the NOT NULL constraint), yet the journey step was
+recorded as `passed: True` with the original 422's message.
+
+**3. Root cause**: same function as Experiment 015 (`do_create()`,
+`user_journey_runner.py`) — the retry-response handling only branched on
+`(200, 201)` and `422`; any other code silently fell through to the
+generic "passed" return. Classification: **runtime** (journey-runner
+telemetry).
+
+**4. Implementation**: one `elif` branch added, mirroring the existing
+5xx handling already present for the *first* request earlier in the same
+function.
+
+**5. Validation (local, $0)**: reproduced the branch logic with real
+`requests.Response` objects (201/500/422 cases); `ast.parse`/`py_compile`
+clean.
+
+**6. Benchmark comparison** (`--provider gemini --no-deploy`, log
+`m1_canary_retry500_run.log`), clean run — 0 network-error occurrences:
+| App | Exp015 (todo only, clean) | Exp016 | Canary verdict |
+|---|---|---|---|
+| todo | 73.9 (C) | 73.9 (C) | OK |
+| blog_cms | — (infra-confounded) | 84.8 (B), build=True runtime=True | OK |
+| crm | — (infra-confounded) | 66.2 (D) | OK |
+
+**`CANARY PASSED — safe to continue`** — the first fully clean pass (no
+flagged regressions) since Experiment 007.
+
+**7. Telemetry comparison — direct confirmation on the exact target
+scenario**: crm hit `contacts.name` NOT NULL again this run (the
+underlying model/schema divergence is still an open, separately-tracked
+issue — see Experiments 012/013), but this time the journey step
+correctly reads `{'name': 'Create entity', 'passed': False, 'detail': '500
+(server error on 422-retry)'}` — occurring identically across all 5 fix
+attempts in the log. This is exactly the fix's intended effect: the
+*diagnostic accuracy* improved (a real crash is now visible as a failure
+with its real cause) even though the *underlying crash* is a separate,
+already-tracked, not-yet-fixed issue. Score-wise this is a wash (66.9 →
+66.2, noise), which is expected and correct — this fix targets telemetry
+honesty, not the crash itself.
+
+**8. Verdict: KEEP.** Confirmed both on the target mechanism (branch logic
+verified locally) and live (identical real crash, now correctly
+diagnosed). No regressions anywhere in a clean, uncontaminated 3-app run.
+
+**Cost**: $0.0309 (todo) + $0.0190 (blog_cms) + $0.0252 (crm) = **$0.0751
+total**.
+
+**9. Next highest-ROI candidate**: with both journey-runner telemetry bugs
+fixed, the CRM CRUD blocker is now cleanly and accurately diagnosed every
+time as `contacts.name` NOT NULL via a 422-retry crash — the *actual*
+remaining bottleneck is the backend generator's model/schema field
+divergence itself (`Contact.name` vs `ContactCreate.first_name/last_name`,
+flagged systemic since Experiment 012). Per the VNext report's own
+meta-pattern analysis (§3: "cross-file/cross-stage name-and-shape
+disagreement" accounts for 58% of all historical failure instances), this
+class of bug is what the future AppContract is meant to solve
+permanently — further one-off preflight patches for new manifestations of
+the *same* divergence would be diminishing-returns whack-a-mole, not a new
+independent bottleneck. Recommend holding here per the user's own stated
+roadmap (deterministic bugs first, AppContract only after) rather than
+writing a fifth preflight rule chasing the same root disease.
+
 **Housekeeping this cycle**: found and deleted ~10 zero-byte debris files in
 `backend/` (`backend/'`, `backend/65`, `backend/dict`, etc.) — artifacts of
 an earlier broken shell redirection, not user work. Also found an earlier,

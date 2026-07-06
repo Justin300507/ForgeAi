@@ -306,7 +306,7 @@
       "last_seen": "2026-07-01T20:13:11.496878"
     },
     "JourneyCRUDFailure": {
-      "count": 25,
+      "count": 26,
       "examples": [
         {
           "project": "BlogSphere",
@@ -330,7 +330,7 @@
         }
       ],
       "first_seen": "2026-06-29T23:47:06.584012",
-      "last_seen": "2026-07-06T10:43:54.703565"
+      "last_seen": "2026-07-06T11:43:10.741834"
     },
     "InvalidDependsType": {
       "count": 1,
@@ -378,7 +378,7 @@
       "last_seen": "2026-07-06T10:02:36.798218"
     },
     "AttributeError": {
-      "count": 4,
+      "count": 5,
       "examples": [
         {
           "project": "gym_tracker",
@@ -395,13 +395,17 @@
         {
           "project": "forge_blog_cms",
           "error": "AttributeError"
+        },
+        {
+          "project": "simple_crm",
+          "error": "AttributeError"
         }
       ],
       "first_seen": "2026-07-01T22:56:38.596264",
-      "last_seen": "2026-07-06T07:35:28.549883"
+      "last_seen": "2026-07-06T11:52:24.191764"
     },
     "ConfigAttributeError": {
-      "count": 7,
+      "count": 8,
       "examples": [
         {
           "project": "forge_learn",
@@ -425,7 +429,7 @@
         }
       ],
       "first_seen": "2026-07-05T09:26:46.709471",
-      "last_seen": "2026-07-06T10:27:46.097609"
+      "last_seen": "2026-07-06T11:50:05.026903"
     },
     "ResponseValidationError": {
       "count": 2,
@@ -470,6 +474,6 @@
       "last_seen": "2026-07-06T05:46:37.663703"
     }
   },
-  "total_runs": 351,
-  "last_updated": "2026-07-06T10:54:41.402595"
+  "total_runs": 355,
+  "last_updated": "2026-07-06T11:52:24.191748"
 }
