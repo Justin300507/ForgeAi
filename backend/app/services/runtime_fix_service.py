@@ -496,7 +496,7 @@ def generate_runtime_fix(
                 model_content=model_content,
             )
             try:
-                text = generate_content(prompt, provider, max_tokens=6000)
+                text = generate_content(prompt, provider, max_tokens=6000, stage="runtime_fix")
                 if text:
                     clean = text.replace("```json", "").replace("```", "").strip()
                     return extract_json(clean)
@@ -612,7 +612,8 @@ def generate_runtime_fix(
     text = generate_content(
         prompt,
         provider,
-        max_tokens=8000
+        max_tokens=8000,
+        stage="runtime_fix",
     )
 
     text = text.replace(

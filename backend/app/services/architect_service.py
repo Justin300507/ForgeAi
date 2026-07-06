@@ -36,7 +36,8 @@ def generate_architecture(
         text = generate_content(
             prompt,
             provider,
-            max_tokens=max_tokens
+            max_tokens=max_tokens,
+            stage="architecture",
         )
 
         if not text:
@@ -65,7 +66,7 @@ def generate_architecture(
                 print(e)
                 if attempt < 2:
                     print("Retrying architect LLM call...")
-                    text = generate_content(prompt, provider, max_tokens=max_tokens)
+                    text = generate_content(prompt, provider, max_tokens=max_tokens, stage="architecture")
                     if not text:
                         break
                     clean_text = text.replace("```json", "").replace("```", "").strip()

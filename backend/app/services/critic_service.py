@@ -97,7 +97,7 @@ def run_critic(project_path: str, provider: str = "auto") -> dict:
     prompt = _CRITIC_PROMPT.replace("{files_block}", files_block)
 
     try:
-        raw = generate_content(prompt, provider, max_tokens=1500)
+        raw = generate_content(prompt, provider, max_tokens=1500, stage="critic")
         if not raw:
             raise ValueError("Empty response")
 

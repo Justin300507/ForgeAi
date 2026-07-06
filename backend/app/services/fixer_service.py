@@ -35,6 +35,7 @@ def generate_fix(
         provider,
         max_tokens=12000,
         thinking_budget=thinking_budget,
+        stage="fix",
     )
 
     try:

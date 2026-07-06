@@ -635,7 +635,7 @@ def _apply_fix_group(
         # content (thousands of wasted tokens per fix call). architecture_fix_
         # service.py already does this (thinking_budget=512); this call site
         # never did.
-        raw = generate_content(prompt, provider=provider, max_tokens=8000, thinking_budget=512)
+        raw = generate_content(prompt, provider=provider, max_tokens=8000, thinking_budget=512, stage="fix")
     except Exception as exc:
         # A specifically-routed provider (e.g. model_router picked "groq") has
         # no fallback of its own -- only provider="auto" does. Retry through
@@ -644,7 +644,7 @@ def _apply_fix_group(
         if provider != "auto":
             print(f"    [fix] {provider} failed ({exc}) — retrying via auto-fallback chain")
             try:
-                raw = generate_content(prompt, provider="auto", max_tokens=8000, thinking_budget=512)
+                raw = generate_content(prompt, provider="auto", max_tokens=8000, thinking_budget=512, stage="fix")
             except Exception as exc2:
                 print(f"    [fix] LLM call failed for group {group.group_id}: {exc2}")
                 return [], {}

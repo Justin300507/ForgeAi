@@ -127,7 +127,7 @@ The last character of your response MUST be }}
 Return JSON only.
 """
 
-    text = generate_content(prompt, provider, max_tokens=8000, thinking_budget=512)
+    text = generate_content(prompt, provider, max_tokens=8000, thinking_budget=512, stage="architecture_fix")
     print("\n=== ARCHITECTURE FIX RAW RESPONSE ===")
     print(text[:3000])
 

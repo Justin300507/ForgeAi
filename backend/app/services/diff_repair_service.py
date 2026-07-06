@@ -116,7 +116,7 @@ def generate_diff_repair(
     prompt = _build_diff_repair_prompt(filepath, old_content, broken_content, diagnostics)
 
     try:
-        raw = generate_content(prompt, provider=provider, max_tokens=6000)
+        raw = generate_content(prompt, provider=provider, max_tokens=6000, stage="diff_repair")
         if not raw:
             return None
 

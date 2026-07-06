@@ -25,7 +25,8 @@ def generate_missing_file(
     text = generate_content(
         prompt,
         provider,
-        max_tokens=8000
+        max_tokens=8000,
+        stage="missing_file",
     )
 
     try:

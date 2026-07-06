@@ -92,7 +92,7 @@ that will prevent this mistake. The rule must:
 Return ONLY the rule text. No preamble, no explanation."""
 
     try:
-        return generate_content(prompt, provider, max_tokens=300)
+        return generate_content(prompt, provider, max_tokens=300, stage="prompt_optimizer")
     except Exception:
         return None
 

@@ -27,7 +27,8 @@ def generate_backend(
         text = generate_content(
             prompt,
             provider,
-            max_tokens=max_tokens
+            max_tokens=max_tokens,
+            stage="backend_generation",
         )
 
         if not text:
@@ -99,7 +100,7 @@ def generate_backend(
                     # Use a hard cap well below the 12K TPM limit
                     fallback_tokens = 8000 if retry_provider == "groq" else max_tokens
                     try:
-                        text = generate_content(prompt, retry_provider, max_tokens=fallback_tokens)
+                        text = generate_content(prompt, retry_provider, max_tokens=fallback_tokens, stage="backend_generation")
                     except Exception as fe:
                         print(f"  fallback {retry_provider} failed: {fe} — trying next")
                         # Try repair of what we already have before the next retry

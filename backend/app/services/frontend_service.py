@@ -106,7 +106,7 @@ def generate_frontend(
         data = None
         for attempt in range(3):
             start = time.time()
-            text = generate_content(prompt, provider, max_tokens=max_tokens)
+            text = generate_content(prompt, provider, max_tokens=max_tokens, stage="frontend_generation")
             print(f"Frontend Time: {time.time() - start:.2f}s")
 
             if not text:

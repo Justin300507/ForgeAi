@@ -135,7 +135,7 @@ def _validate_rule_quality(candidate: dict, provider: str) -> float:
             pattern_key=candidate["pattern_key"],
             examples=examples,
         )
-        raw = generate_content(prompt, provider, max_tokens=1000)
+        raw = generate_content(prompt, provider, max_tokens=1000, stage="rule_evolution")
         result = extract_json(raw)
         score = result.get("overall_quality") or result.get("quality_score")
         return float(score) if score is not None else 5.0

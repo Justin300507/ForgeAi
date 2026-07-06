@@ -43,7 +43,7 @@ def generate_frontend_fix(
     prompt = build_frontend_fix_prompt(file_path, current_content, build_errors)
     print(f"Frontend fix for {file_path} ({len(build_errors)} errors)")
 
-    text = generate_content(prompt, provider, max_tokens=8000)
+    text = generate_content(prompt, provider, max_tokens=8000, stage="frontend_fix")
     if not text:
         return None
 

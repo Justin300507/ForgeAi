@@ -171,7 +171,7 @@ def _call_llm_with_optional_image(
 
     # Fallback: text-only via existing provider system
     from app.providers.ai_provider import generate_content
-    return generate_content(prompt, provider=provider, max_tokens=1000)
+    return generate_content(prompt, provider=provider, max_tokens=1000, stage="llm_judge")
 
 
 def _has_api_key(key: str) -> bool:

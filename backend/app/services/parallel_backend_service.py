@@ -65,7 +65,7 @@ def _call_llm(prompt: str, provider: str, max_tokens: int = 8000) -> dict | None
 
     for attempt in range(3):
         try:
-            text = generate_content(prompt, provider, max_tokens=max_tokens)
+            text = generate_content(prompt, provider, max_tokens=max_tokens, stage="backend_generation")
             if not text:
                 return None
             text = text.replace("```json", "").replace("```", "").strip()

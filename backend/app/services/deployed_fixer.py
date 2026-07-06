@@ -162,7 +162,7 @@ Return JSON with EXACTLY this structure:
 {{"path": "app/routes/..._routes.py", "content": "...full fixed file content..."}}
 """
         from app.utils.json_cleaner import extract_json
-        text = generate_content(prompt, "auto", max_tokens=6000)
+        text = generate_content(prompt, "auto", max_tokens=6000, stage="deployed_fix")
         text = text.replace("```json", "").replace("```", "").strip()
         fix = extract_json(text)
         if fix.get("path") and fix.get("content"):

@@ -32,7 +32,8 @@ def generate_plan(
         text = generate_content(
             prompt,
             provider,
-            max_tokens=max_tokens
+            max_tokens=max_tokens,
+            stage="planning",
         )
 
         if not text:
