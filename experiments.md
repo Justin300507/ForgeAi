@@ -827,6 +827,110 @@ fix" mandate given this cycle.
 **Cost**: $0.0262 (todo) + $0.0264 (blog_cms) + $0.0209 (crm) = **$0.0735
 total** (~₹6). Fix Attempts: todo 2/5, blog_cms 3/5, crm 3/5.
 
+---
+
+## Experiment 014 — Frontend missing-import scaffolder wiring (validation canary)
+
+**1. Hypothesis**: does wiring the existing, previously-dead
+`create_missing_stubs()` into preflight (commit b0a6c3c) eliminate the
+`Could not resolve "./Navbar"`/`"./Sidebar"`/`"./pages/SignupPage"` class
+of Vite build failure, confirmed recurring across 8 of 9 canary runs this
+cycle?
+
+**2. Evidence**: surveyed every canary log this cycle (`grep -o 'Could not
+resolve "[^"]*"'` across all 9 `m1_canary_*.log` files) — hit in
+`m1_canary_run.log`, `_gemini_run`, `_v2_run`, `_contractoff_run`,
+`_configfix_run`, `_journeyfix_run`, `_querybasemodel_run`,
+`_notnullgap_run` (8/9), always blog_cms, a different specific missing
+sibling component/page each time (HomePage, PostListPage, SignupPage,
+Navbar, Sidebar, Toast, Layout). Cross-referenced against
+`generation_log.jsonl`: `Could not resolve "./Navbar"...` (4) and
+`.../SignupPage...` (3) are the 3rd/4th most frequent specific failure
+signatures in the authoritative V15 telemetry.
+
+**3. Root cause**: **repair engine**, not frontend generator. A
+comprehensive fix already existed — `create_missing_stubs()` in
+`app/services/frontend_fix_service.py` walks every `.jsx` file under
+`src/`, resolves every relative import, stubs anything unresolved — but
+was never called anywhere in the live V15 pipeline (confirmed via
+`grep -rn` across `core/`, `verification/`, `repair/`: zero references
+outside its own module). The pipeline only had a narrower, reactive
+per-patch scaffolder (`_scaffold_missing_local_imports` in
+`repair/orchestrator.py`) that only stubs imports it sees in a file it's
+actively patching *that round* — traced the exact whack-a-mole mechanism
+live in Experiment 011's log: Sidebar error → patched → Navbar error
+surfaces in the same file next build → patched → SignupPage error
+surfaces in a different file → ..., burning several fix-loop rounds and
+LLM tokens on something a single upfront sweep resolves for free.
+
+**4. Implementation**: `fix_frontend_missing_imports` added to
+`preflight.py` (priority 23, commit b0a6c3c) — calls the existing
+`create_missing_stubs()` once in the deterministic preflight stage that
+already runs before the first verification pass. No new stub logic
+written; only wiring.
+
+**5. Validation (local, $0)**: reproduced the exact real-world scenario
+(Layout.jsx importing 3 missing siblings, App.jsx importing a missing
+page) and confirmed all 4 get stubbed in one pass; idempotent on a second
+run; confirmed registered in the preflight registry at the intended
+priority slot; `ast.parse`/`py_compile` clean.
+
+**6. Benchmark comparison** (`--provider gemini --no-deploy`, log
+`m1_canary_signuppage_run.log`):
+| App | Exp013 | Exp014 | Canary verdict |
+|---|---|---|---|
+| todo | 67.4 (D) | 73.9 (C) | OK |
+| blog_cms | 86.2 (B) | **87.4 (B), build=True runtime=True** | OK |
+| crm | 74.3 (C) | 66.9 (D) | flagged REGRESSION |
+
+**7. Telemetry comparison**: `grep -c "Could not resolve"` across the
+entire run: **0** (was present in 8 of the previous 9 runs). blog_cms is
+the first run *all cycle* with both `build=True` AND `runtime=True`
+simultaneously. The preflight log confirms the mechanism worked exactly as
+designed: `Stub created: src\components\Navbar.jsx` /
+`Sidebar.jsx` / `Toast.jsx` / `src\pages\SignupPage.jsx` /
+`src\components\Layout.jsx`, printed 4 separate times across the run's
+regenerations, `[preflight] fix_frontend_missing_imports: applied` each
+time.
+
+**crm's flagged regression is unrelated** — this fix only touches
+`src/*.jsx` frontend files; crm's failure is 100% backend
+(`IntegrityError: NOT NULL constraint failed: contacts.name`, again). This
+is not a reappearance of an unfixed bug: the *final* on-disk
+`app/models/contacts.py` shows `name = Column(String(255),
+nullable=True)` — the requiredness fix (Experiment 013) DID relax it
+correctly. The crash happened *mid-repair-loop*, visible in crm's own
+`Score Track: 73 → 74 → 26 → 74 → 66 → 67 → 67` — an LLM-driven fix
+attempt evidently regenerated `contacts.py`/`contact.py` at some point
+(reintroducing the divergence before preflight/orchestrator patches
+re-converged it), a known-systemic, already-flagged issue (Experiments
+012/013: the backend generator's uncoordinated model/schema field
+divergence surfaces differently almost every attempt). New wrinkle found
+while tracing this: `do_create()`'s 422→targeted-retry path
+(`user_journey_runner.py`) has no branch for the retry itself returning
+5xx — if `r3.status_code` isn't 200/201 or 422, execution falls through
+unconditionally to `return True, f"422 (schema mismatch, server
+alive)..."`, silently reporting the step as "passed" even though the
+retry actually crashed with a 500. **Not fixed this cycle** — flagged as
+the next candidate (see below), kept isolated per "never stack a second
+fix."
+
+**8. Verdict: KEEP.** Judged against its actual target (the frontend
+missing-import class): complete, unambiguous success — 0 occurrences
+where 8/9 prior runs had them, and blog_cms's first-ever
+build+runtime-both-true result this cycle. crm's regression has a fully
+identified, unrelated cause and does not implicate this change.
+
+**9. Next highest-ROI candidate**: the `do_create()` false-positive
+"passed" on a 5xx retry response (found while root-causing this
+experiment) — small, isolated, one-branch fix in the same file as the
+"?"-status-code fix (commit 8f64039, not yet validated by a canary). Per
+discipline, these will be validated separately, not stacked.
+
+**Cost**: $0.0198 (todo) + $0.0277 (blog_cms) + $0.0255 (crm) = **$0.073
+total**. Fix Attempts: todo 2/5, blog_cms 5/5 (most ever — but converged
+to a stable 86-87 plateau, not oscillating), crm 3/5.
+
 **Housekeeping this cycle**: found and deleted ~10 zero-byte debris files in
 `backend/` (`backend/'`, `backend/65`, `backend/dict`, etc.) — artifacts of
 an earlier broken shell redirection, not user work. Also found an earlier,

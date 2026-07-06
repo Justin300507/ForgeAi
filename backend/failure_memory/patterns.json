@@ -204,7 +204,7 @@
       "last_seen": "2026-06-22T07:34:30.310089"
     },
     "MissingEndpoint": {
-      "count": 18,
+      "count": 21,
       "examples": [
         {
           "project": "bug_tracker",
@@ -228,7 +228,7 @@
         }
       ],
       "first_seen": "2026-06-22T07:49:29.613937",
-      "last_seen": "2026-07-06T09:29:03.220935"
+      "last_seen": "2026-07-06T10:24:13.664188"
     },
     "FastAPIError": {
       "count": 1,
@@ -306,7 +306,7 @@
       "last_seen": "2026-07-01T20:13:11.496878"
     },
     "JourneyCRUDFailure": {
-      "count": 23,
+      "count": 24,
       "examples": [
         {
           "project": "BlogSphere",
@@ -330,7 +330,7 @@
         }
       ],
       "first_seen": "2026-06-29T23:47:06.584012",
-      "last_seen": "2026-07-06T09:47:06.046502"
+      "last_seen": "2026-07-06T10:15:26.048918"
     },
     "InvalidDependsType": {
       "count": 1,
@@ -401,7 +401,7 @@
       "last_seen": "2026-07-06T07:35:28.549883"
     },
     "ConfigAttributeError": {
-      "count": 4,
+      "count": 7,
       "examples": [
         {
           "project": "forge_learn",
@@ -418,21 +418,29 @@
         {
           "project": "forge_blog_cms",
           "error": "ConfigAttributeError"
+        },
+        {
+          "project": "forge_blog_cms",
+          "error": "ConfigAttributeError"
         }
       ],
       "first_seen": "2026-07-05T09:26:46.709471",
-      "last_seen": "2026-07-06T09:55:49.139185"
+      "last_seen": "2026-07-06T10:27:46.097609"
     },
     "ResponseValidationError": {
-      "count": 1,
+      "count": 2,
       "examples": [
         {
           "project": "recipe_forge",
           "error": "ResponseValidationError"
+        },
+        {
+          "project": "simple_crm",
+          "error": "ResponseValidationError"
         }
       ],
       "first_seen": "2026-07-05T09:59:06.675979",
-      "last_seen": "2026-07-05T09:59:06.675987"
+      "last_seen": "2026-07-06T10:36:16.185918"
     },
     "SyntaxError": {
       "count": 5,
@@ -462,6 +470,6 @@
       "last_seen": "2026-07-06T05:46:37.663703"
     }
   },
-  "total_runs": 340,
-  "last_updated": "2026-07-06T10:02:36.798203"
+  "total_runs": 347,
+  "last_updated": "2026-07-06T10:36:16.185862"
 }

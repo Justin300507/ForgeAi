@@ -33,12 +33,12 @@
   },
   "contract": {
     "patch_file": {
-      "successes": 9,
-      "tries": 38
+      "successes": 11,
+      "tries": 44
     },
     "regenerate_arch": {
-      "successes": 0,
-      "tries": 3
+      "successes": 1,
+      "tries": 7
     },
     "regenerate_module": {
       "successes": 0,
