@@ -290,3 +290,53 @@ def _render_entity_seed_fn(entity, class_name_by_table: dict) -> list:
         f"'already_existed': existing}}"
     )
     return body
+
+
+import time
+
+
+def generate(project_path: str):
+    """Top-level entry point for v6_orchestrator.py. Returns
+    (source_code, telemetry) on success, or (None, telemetry) if
+    deterministic generation isn't applicable or fails for any reason --
+    the caller MUST fall back to the static stub in that case. This
+    function never raises; every failure path is caught here, which is
+    the single fallback boundary for the whole feature."""
+    start = time.time()
+    telemetry = {
+        "adr002_enabled": False,
+        "entities_discovered": 0,
+        "lookup_entities": 0,
+        "fallback_used": True,
+        "fallback_reason": "",
+        "generation_time_ms": 0.0,
+        "exclusions": [],
+    }
+    try:
+        entities = discover_models(project_path)
+        telemetry["entities_discovered"] = len(entities)
+        if not entities:
+            telemetry["fallback_reason"] = "no models discovered"
+            return None, telemetry
+
+        eligible, exclusion_log = find_lookup_entities(entities)
+        telemetry["exclusions"] = exclusion_log
+        telemetry["lookup_entities"] = len(eligible)
+        if not eligible:
+            telemetry["fallback_reason"] = "no lookup entities"
+            return None, telemetry
+
+        ordered = topological_order(eligible)
+        if ordered is None:
+            telemetry["fallback_reason"] = "FK cycle detected"
+            return None, telemetry
+
+        source = render_seed_routes(ordered)
+        telemetry["adr002_enabled"] = True
+        telemetry["fallback_used"] = False
+        telemetry["generation_time_ms"] = round((time.time() - start) * 1000, 2)
+        return source, telemetry
+    except Exception as exc:
+        telemetry["fallback_reason"] = f"exception: {exc}"
+        telemetry["generation_time_ms"] = round((time.time() - start) * 1000, 2)
+        return None, telemetry
