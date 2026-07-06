@@ -465,6 +465,27 @@ def run_user_journey(
 
     headers = {"Authorization": f"Bearer {token}"} if token else {}
 
+    # ── Reference-data seed (best-effort, not a scored step) ─────────────
+    # Root cause (Experiment 019): Create-entity failures recurring across
+    # every todo run this cycle (`POST /tasks` -> 400 "Invalid priority
+    # name"/"Invalid priority_id") were traced to the generated app
+    # correctly rejecting a foreign-key reference (task -> priority) that
+    # simply doesn't exist yet -- the `priorities` lookup table is only
+    # ever populated by the app's own generated `POST /seed` endpoint,
+    # which the journey runner never called before attempting CRUD. The
+    # app isn't buggy here; the test harness just never seeded the
+    # reference data any FK-validated Create call depends on. Every
+    # generated app in this codebase consistently exposes `POST /seed`
+    # (see `app/routes/seed_routes.py`) for exactly this purpose, so call
+    # it once, silently, before the CRUD journey starts. Deliberately not
+    # added to `steps`/`_CRITICAL_STEPS`: seeding is optional infrastructure,
+    # not a journey behavior under test, and must never itself count as a
+    # pass/fail journey step or influence scoring.
+    try:
+        requests.post(f"{base}/seed", headers=headers, timeout=5)
+    except Exception:
+        pass
+
     # ── Step 3: Detect entity ────────────────────────────────────────────
     # entity_url was computed from the architecture; verify it's reachable
     # (pass auth headers in case all endpoints require JWT).
