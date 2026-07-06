@@ -465,19 +465,41 @@ def _fix_model_schema_notnull_gap(project_path: Path, diagnostics: list) -> bool
     `app/models`. Any column that is `nullable=False`, not a primary key,
     not a `ForeignKey` (those are supplied programmatically by the route,
     e.g. `user_id=current_user.id`, never by the client), has no
-    `default`/`server_default`, and whose exact name is absent from the
-    Create schema can never be populated through the normal create flow --
-    relax it to `nullable=True` so the app doesn't crash. This does not
-    invent a value or touch route/schema/prompt logic; it only prevents a
-    guaranteed-unsatisfiable constraint from crashing the request.
+    `default`/`server_default`, and whose exact name is not a *required*
+    field in the Create schema can never be reliably populated through the
+    normal create flow -- relax it to `nullable=True` so the app doesn't
+    crash. This does not invent a value or touch route/schema/prompt logic;
+    it only prevents a guaranteed-unsatisfiable constraint from crashing
+    the request.
+
+    Refinement (Experiment 012 -> 013): the original version of this fix
+    checked field *presence* in the Create schema, not *requiredness*.
+    Live validation showed that's insufficient: a separate, pre-existing
+    patcher (`field_patcher` in `deterministic_patcher.py`) runs *after*
+    preflight and reactively stubs a missing field into the Create schema
+    as `Optional[str] = None` in response to a different diagnosed error
+    (a missing-attribute/constructor error, not a NOT NULL concern). That
+    stub makes the field "present" without making it required, so the
+    client can still omit it and the column still receives NULL --
+    reproducing the exact crash this fix exists to prevent
+    (`contacts.name`, confirmed recurring in Experiment 012 despite the
+    field technically being "in" the schema). A schema field only
+    guarantees the DB gets a non-null value if Pydantic itself would 422
+    when the client omits it -- i.e. the field has no `Optional[...]`
+    annotation and no default. So the check must be "is this column
+    covered by a *required* schema field", not merely "does a field with
+    this name exist".
     """
     models_dir = project_path / "app" / "models"
     schemas_dir = project_path / "app" / "schemas"
     if not models_dir.exists() or not schemas_dir.exists():
         return False
 
-    # Collect every {Model}Create schema's declared field names.
-    create_schema_fields: dict[str, set[str]] = {}
+    # Collect every {Model}Create schema's *required* field names only --
+    # a field with an `Optional[...]` annotation or any default value does
+    # not guarantee the client supplies a real value, so it cannot be
+    # trusted to satisfy a NOT NULL column.
+    create_schema_required_fields: dict[str, set[str]] = {}
     for f in schemas_dir.rglob("*.py"):
         try:
             text = f.read_text(encoding="utf-8", errors="replace")
@@ -488,10 +510,15 @@ def _fix_model_schema_notnull_gap(project_path: Path, diagnostics: list) -> bool
             rest = text[cm.end():]
             end_match = re.search(r'^class\s+\w+', rest, re.MULTILINE)
             body = rest[:end_match.start()] if end_match else rest
-            fields = set(re.findall(r'^\s{4}(\w+)\s*:', body, re.MULTILINE))
-            create_schema_fields.setdefault(model_name, set()).update(fields)
+            required = set()
+            for fm in re.finditer(r'^\s{4}(\w+)\s*:\s*([^\n=]*)(=.*)?$', body, re.MULTILINE):
+                field_name, annotation, default = fm.group(1), fm.group(2), fm.group(3)
+                if 'Optional[' in annotation or default is not None:
+                    continue  # has a default or is Optional -- not required
+                required.add(field_name)
+            create_schema_required_fields.setdefault(model_name, set()).update(required)
 
-    if not create_schema_fields:
+    if not create_schema_required_fields:
         return False
 
     col_pattern = re.compile(r'^(\s+)(\w+)\s*=\s*Column\(([^\n]*)\)\s*$', re.MULTILINE)
@@ -506,8 +533,8 @@ def _fix_model_schema_notnull_gap(project_path: Path, diagnostics: list) -> bool
 
         class_matches = list(re.finditer(r'^class\s+(\w+)\s*\(\s*Base\s*\)\s*:', text, re.MULTILINE))
         for class_match in reversed(class_matches):
-            schema_fields = create_schema_fields.get(class_match.group(1))
-            if schema_fields is None:
+            required_fields = create_schema_required_fields.get(class_match.group(1))
+            if required_fields is None:
                 continue  # no Create schema for this model -- nothing to compare against
 
             class_start = class_match.end()
@@ -515,10 +542,10 @@ def _fix_model_schema_notnull_gap(project_path: Path, diagnostics: list) -> bool
             class_end = class_start + next_class.start() if next_class else len(text)
             class_body = text[class_start:class_end]
 
-            def _relax(m: re.Match, _fields=schema_fields) -> str:
+            def _relax(m: re.Match, _required=required_fields) -> str:
                 nonlocal changed
                 indent, attr_name, args = m.group(1), m.group(2), m.group(3)
-                if attr_name in _fields:
+                if attr_name in _required:
                     return m.group(0)
                 if 'primary_key' in args or 'ForeignKey' in args:
                     return m.group(0)
