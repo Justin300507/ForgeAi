@@ -3702,6 +3702,460 @@
       "success_count": 1,
       "generation_id": "6bb790b5f5f44dd3a9327c1058ae1953",
       "timestamp": "2026-07-06T12:46:11Z"
+    },
+    {
+      "category": "blog_cms",
+      "idea": "A blog CMS with author and reader roles. Authors write posts with title, content (markdown), tags, and cover image URL. Posts can be saved as draft or published. Readers see all published posts, can f",
+      "architecture": {
+        "api_endpoints": [
+          {
+            "method": "POST",
+            "path": "/seed",
+            "description": "Populates database with realistic demo data.",
+            "file": "app\\routes\\seed_routes.py"
+          },
+          {
+            "method": "GET",
+            "path": "/stats/summary",
+            "description": "Returns aggregate counts and key metrics for the dashboard.",
+            "file": "app\\routes\\stats_routes.py"
+          },
+          {
+            "method": "POST",
+            "path": "/auth/login",
+            "description": "Authenticates a user and returns a JWT token.",
+            "file": "app\\routes\\auth_routes.py"
+          },
+          {
+            "method": "GET",
+            "path": "/users/me",
+            "description": "Retrieves the profile of the currently authenticated user.",
+            "file": "app\\routes\\user_routes.py"
+          },
+          {
+            "method": "GET",
+            "path": "/posts",
+            "description": "Retrieves a paginated list of all published blog posts, with optional tag filtering.",
+            "file": "app\\routes\\post_routes.py"
+          },
+          {
+            "method": "GET",
+            "path": "/posts/{post_id}",
+            "description": "Retrieves a single published blog post by its ID.",
+            "file": "app\\routes\\post_routes.py"
+          },
+          {
+            "method": "GET",
+            "path": "/authors/{author_id}/posts",
+            "description": "Retrieves a paginated list of posts by a specific author, including drafts for the author themselves.",
+            "file": "app\\routes\\post_routes.py"
+          },
+          {
+            "method": "POST",
+            "path": "/posts",
+            "description": "Creates a new blog post (initially as a draft).",
+            "file": "app\\routes\\post_routes.py"
+          },
+          {
+            "method": "PUT",
+            "path": "/posts/{post_id}",
+            "description": "Updates an existing blog post by its ID.",
+            "file": "app\\routes\\post_routes.py"
+          },
+          {
+            "method": "PATCH",
+            "path": "/posts/{post_id}/publish",
+            "description": "Publishes a draft post, making it visible to readers.",
+            "file": "app\\routes\\post_routes.py"
+          },
+          {
+            "method": "PATCH",
+            "path": "/posts/{post_id}/unpublish",
+            "description": "Unpublishes a published post, making it a draft again.",
+            "file": "app\\routes\\post_routes.py"
+          },
+          {
+            "method": "DELETE",
+            "path": "/posts/{post_id}",
+            "description": "Deletes a blog post by its ID.",
+            "file": "app\\routes\\post_routes.py"
+          },
+          {
+            "method": "GET",
+            "path": "/tags",
+            "description": "Retrieves a list of all available tags.",
+            "file": "app\\routes\\tag_routes.py"
+          },
+          {
+            "method": "POST",
+            "path": "/tags",
+            "description": "Creates a new tag (admin/author only).",
+            "file": "app\\routes\\tag_routes.py"
+          },
+          {
+            "method": "DELETE",
+            "path": "/tags/{tag_id}",
+            "description": "Deletes a tag (admin/author only).",
+            "file": "app\\routes\\tag_routes.py"
+          }
+        ],
+        "database_schema": [
+          {
+            "table_name": "users",
+            "columns": [
+              {
+                "name": "id",
+                "type": "INTEGER",
+                "is_primary_key": true,
+                "is_nullable": false
+              },
+              {
+                "name": "username",
+                "type": "VARCHAR(50)",
+                "is_primary_key": false,
+                "is_nullable": false
+              },
+              {
+                "name": "password_hash",
+                "type": "VARCHAR(255)",
+                "is_primary_key": false,
+                "is_nullable": false
+              },
+              {
+                "name": "role",
+                "type": "VARCHAR(20)",
+                "is_primary_key": false,
+                "is_nullable": false
+              }
+            ]
+          },
+          {
+            "table_name": "posts",
+            "columns": [
+              {
+                "name": "id",
+                "type": "INTEGER",
+                "is_primary_key": true,
+                "is_nullable": false
+              },
+              {
+                "name": "title",
+                "type": "VARCHAR(255)",
+                "is_primary_key": false,
+                "is_nullable": false
+              },
+              {
+                "name": "content_markdown",
+                "type": "TEXT",
+                "is_primary_key": false,
+                "is_nullable": false
+              },
+              {
+                "name": "cover_image_url",
+                "type": "VARCHAR(255)",
+                "is_primary_key": false,
+                "is_nullable": true
+              },
+              {
+                "name": "status",
+                "type": "VARCHAR(20)",
+                "is_primary_key": false,
+                "is_nullable": false
+              },
+              {
+                "name": "published_at",
+                "type": "DATETIME",
+                "is_primary_key": false,
+                "is_nullable": true
+              },
+              {
+                "name": "created_at",
+                "type": "DATETIME",
+                "is_primary_key": false,
+                "is_nullable": false
+              },
+              {
+                "name": "updated_at",
+                "type": "DATETIME",
+                "is_primary_key": false,
+                "is_nullable": false
+              },
+              {
+                "name": "author_id",
+                "type": "INTEGER",
+                "is_primary_key": false,
+                "is_nullable": false
+              }
+            ]
+          },
+          {
+            "table_name": "tags",
+            "columns": [
+              {
+                "name": "id",
+                "type": "INTEGER",
+                "is_primary_key": true,
+                "is_nullable": false
+              },
+              {
+                "name": "name",
+                "type": "VARCHAR(50)",
+                "is_primary_key": false,
+                "is_nullable": false
+              }
+            ]
+          },
+          {
+            "table_name": "post_tags",
+            "columns": [
+              {
+                "name": "post_id",
+                "type": "INTEGER",
+                "is_primary_key": true,
+                "is_nullable": false
+              },
+              {
+                "name": "tag_id",
+                "type": "INTEGER",
+                "is_primary_key": true,
+                "is_nullable": false
+              }
+            ]
+          }
+        ],
+        "folder_structure": {
+          "backend": [
+            "app/",
+            "app/api/",
+            "app/core/",
+            "app/core/config.py",
+            "app/core/security.py",
+            "app/db/",
+            "app/db/base.py",
+            "app/db/session.py",
+            "app/models/",
+            "app/models/user.py",
+            "app/models/post.py",
+            "app/models/tag.py",
+            "app/models/post_tag.py",
+            "app/schemas/",
+            "app/schemas/user.py",
+            "app/schemas/post.py",
+            "app/schemas/tag.py",
+            "app/schemas/auth.py",
+            "app/services/",
+            "app/services/user_service.py",
+            "app/services/post_service.py",
+            "app/services/tag_service.py",
+            "app/routes/",
+            "app/routes/auth_routes.py",
+            "app/routes/user_routes.py",
+            "app/routes/post_routes.py",
+            "app/routes/tag_routes.py",
+            "app/routes/seed_routes.py",
+            "app/routes/stats_routes.py",
+            "app/main.py"
+          ]
+        },
+        "frontend_structure": {
+          "pages": [
+            "HomePage.jsx",
+            "LoginPage.jsx",
+            "PostListPage.jsx",
+            "PostDetailPage.jsx",
+            "AuthorDashboardPage.jsx",
+            "CreatePostPage.jsx",
+            "EditPostPage.jsx"
+          ],
+          "components": [
+            "Header.jsx",
+            "Footer.jsx",
+            "LoginForm.jsx",
+            "PostCard.jsx",
+            "TagFilter.jsx",
+            "Pagination.jsx",
+            "MarkdownRenderer.jsx",
+            "AuthorPostList.jsx",
+            "PostForm.jsx",
+            "AuthGuard.jsx",
+            "LoadingSpinner.jsx",
+            "ErrorMessage.jsx"
+          ]
+        }
+      },
+      "plan": {
+        "project_name": "forge_blog_cms",
+        "display_name": "Forge Blog CMS",
+        "features": [
+          "Secure login for authors and role-based access control to ensure authors can only manage their own posts and readers can only view published content.",
+          "Authors can create new posts with title, markdown content, tags, and a cover image URL, and edit existing posts.",
+          "Authors can save posts as drafts for later editing and explicitly publish them when ready, making them visible to readers.",
+          "Authors can delete their own posts, removing them from the system.",
+          "Readers can view a list of all published posts, displaying title, author, date, and tags.",
+          "Readers can filter the list of published posts by selecting one or more tags.",
+          "Readers can click on a post to view its full content, including rendered markdown, title, author, date, tags, and cover image."
+        ],
+        "tech_stack": {
+          "backend": "FastAPI",
+          "database": "SQLite",
+          "auth": "JWT",
+          "frontend": "React + Vite"
+        },
+        "db_entities": [
+          "User",
+          "Post",
+          "Tag",
+          "PostTag"
+        ],
+        "api_modules": [
+          "auth",
+          "users",
+          "posts",
+          "tags"
+        ],
+        "user_stories": [
+          {
+            "role": "Author",
+            "want": "to create a new blog post",
+            "acceptance_criteria": [
+              "I can input a title, markdown content, tags, and a cover image URL.",
+              "The post is saved as a 'draft' by default upon creation.",
+              "I receive confirmation that my post has been successfully created."
+            ]
+          },
+          {
+            "role": "Author",
+            "want": "to save a post as a draft",
+            "acceptance_criteria": [
+              "When I save a post, its status is set to 'draft'.",
+              "Draft posts are not visible to readers.",
+              "I can access and edit my draft posts from my author dashboard."
+            ]
+          },
+          {
+            "role": "Author",
+            "want": "to publish a draft post",
+            "acceptance_criteria": [
+              "I can change the status of a draft post to 'published'.",
+              "The published post immediately appears in the list of posts visible to readers.",
+              "The published post displays its title, my name, the publication date, and its tags."
+            ]
+          },
+          {
+            "role": "Author",
+            "want": "to edit an existing post (draft or published)",
+            "acceptance_criteria": [
+              "I can modify the title, content, tags, and cover image URL of any of my posts.",
+              "If the post is published, the changes are reflected immediately for readers.",
+              "I receive confirmation that my post has been successfully updated."
+            ]
+          },
+          {
+            "role": "Reader",
+            "want": "to view a list of all published blog posts",
+            "acceptance_criteria": [
+              "I see a list of posts, each displaying its title, author, publication date, and tags.",
+              "Only 'published' posts are visible in this list.",
+              "The list is ordered by publication date, newest first."
+            ]
+          },
+          {
+            "role": "Reader",
+            "want": "to filter posts by a specific tag",
+            "acceptance_criteria": [
+              "I can select a tag to filter the post list.",
+              "Only posts containing the selected tag are displayed.",
+              "The filter can be cleared to show all published posts again."
+            ]
+          },
+          {
+            "role": "Reader",
+            "want": "to read a full blog post",
+            "acceptance_criteria": [
+              "When I click on a post title, I am taken to a dedicated page for that post.",
+              "The full content (markdown rendered), title, author, publication date, and cover image are displayed.",
+              "The post's tags are also visible on the individual post page."
+            ]
+          }
+        ],
+        "non_functional_requirements": {
+          "authentication": "required — Authors need to log in to manage posts; Readers do not need to log in to view posts.",
+          "authorization": "Authors can only create, edit, delete, and publish their own posts. Readers can only view published posts.",
+          "pagination": "required on: /posts (for readers), /authors/{author_id}/posts (for authors)",
+          "search": "none",
+          "file_uploads": "no",
+          "real_time": "no"
+        },
+        "data_entities_detail": [
+          {
+            "name": "User",
+            "description": "Stores user authentication and profile information.",
+            "key_fields": [
+              "id",
+              "username",
+              "password_hash",
+              "role"
+            ],
+            "relationships": [
+              "has many Post"
+            ]
+          },
+          {
+            "name": "Post",
+            "description": "Stores blog post content and metadata.",
+            "key_fields": [
+              "id",
+              "title",
+              "content_markdown",
+              "cover_image_url",
+              "status",
+              "published_at",
+              "created_at",
+              "updated_at",
+              "author_id"
+            ],
+            "relationships": [
+              "belongs to User",
+              "has many Tag"
+            ]
+          },
+          {
+            "name": "Tag",
+            "description": "Stores categories for blog posts.",
+            "key_fields": [
+              "id",
+              "name"
+            ],
+            "relationships": [
+              "has many Post"
+            ]
+          },
+          {
+            "name": "PostTag",
+            "description": "Junction table for many-to-many relationship between Posts and Tags.",
+            "key_fields": [
+              "post_id",
+              "tag_id"
+            ],
+            "relationships": [
+              "belongs to Post",
+              "belongs to Tag"
+            ]
+          }
+        ],
+        "out_of_scope": [
+          "User registration (authors will be pre-provisioned or invited)",
+          "Comments section for posts",
+          "Rich text editor (only markdown input)",
+          "Advanced search functionality (only tag filtering)",
+          "Analytics or readership metrics",
+          "User profile pages beyond basic author identification"
+        ]
+      },
+      "score": 90.29,
+      "success_count": 1,
+      "generation_id": "1001e6a10eed459a915cd2acaf423df3",
+      "timestamp": "2026-07-06T13:47:13Z"
     }
   ],
   "food_restaurant": [
@@ -8489,6 +8943,466 @@
       "success_count": 1,
       "generation_id": "37cd1171c5704154a96144dabea14a68",
       "timestamp": "2026-07-05T08:58:37Z"
+    }
+  ],
+  "crm": [
+    {
+      "category": "crm",
+      "idea": "A simple CRM for small businesses with user login. Users manage contacts (name, email, phone, company, status: lead/prospect/customer/churned). Add notes to any contact with timestamps. Log interactio",
+      "architecture": {
+        "api_endpoints": [
+          {
+            "method": "POST",
+            "path": "/seed",
+            "description": "Populates database with realistic demo data.",
+            "file": "app\\routes\\seed_routes.py"
+          },
+          {
+            "method": "POST",
+            "path": "/auth/register",
+            "description": "Registers a new user.",
+            "file": "app\\routes\\auth_routes.py"
+          },
+          {
+            "method": "POST",
+            "path": "/auth/login",
+            "description": "Logs in a user and returns an access token.",
+            "file": "app\\routes\\auth_routes.py"
+          },
+          {
+            "method": "GET",
+            "path": "/users/me",
+            "description": "Retrieves the currently authenticated user's details.",
+            "file": "app\\routes\\user_routes.py"
+          },
+          {
+            "method": "GET",
+            "path": "/contacts",
+            "description": "Retrieves a list of contacts for the authenticated user, with optional search and pagination.",
+            "file": "app\\routes\\contact_routes.py"
+          },
+          {
+            "method": "GET",
+            "path": "/contacts/{contact_id}",
+            "description": "Retrieves details for a specific contact.",
+            "file": "app\\routes\\contact_routes.py"
+          },
+          {
+            "method": "POST",
+            "path": "/contacts",
+            "description": "Creates a new contact for the authenticated user.",
+            "file": "app\\routes\\contact_routes.py"
+          },
+          {
+            "method": "PUT",
+            "path": "/contacts/{contact_id}",
+            "description": "Updates an existing contact's details.",
+            "file": "app\\routes\\contact_routes.py"
+          },
+          {
+            "method": "DELETE",
+            "path": "/contacts/{contact_id}",
+            "description": "Deletes a contact.",
+            "file": "app\\routes\\contact_routes.py"
+          },
+          {
+            "method": "POST",
+            "path": "/contacts/{contact_id}/notes",
+            "description": "Adds a new note to a specific contact.",
+            "file": "app\\routes\\contact_routes.py"
+          },
+          {
+            "method": "GET",
+            "path": "/contacts/{contact_id}/notes",
+            "description": "Retrieves all notes for a specific contact.",
+            "file": "app\\routes\\contact_routes.py"
+          },
+          {
+            "method": "POST",
+            "path": "/contacts/{contact_id}/interactions",
+            "description": "Logs a new interaction for a specific contact.",
+            "file": "app\\routes\\contact_routes.py"
+          },
+          {
+            "method": "GET",
+            "path": "/contacts/{contact_id}/interactions",
+            "description": "Retrieves all interactions for a specific contact.",
+            "file": "app\\routes\\contact_routes.py"
+          },
+          {
+            "method": "GET",
+            "path": "/stats/pipeline",
+            "description": "Retrieves counts of contacts grouped by their status (Lead, Prospect, Customer, Churned).",
+            "file": "app\\routes\\stats_routes.py"
+          },
+          {
+            "method": "GET",
+            "path": "/contacts/search",
+            "description": "Searches contacts by name or company name.",
+            "file": "app\\routes\\contact_routes.py"
+          }
+        ],
+        "database_schema": [
+          {
+            "table_name": "users",
+            "columns": [
+              {
+                "name": "id",
+                "type": "INTEGER",
+                "is_primary_key": true,
+                "is_nullable": false
+              },
+              {
+                "name": "email",
+                "type": "VARCHAR(255)",
+                "is_primary_key": false,
+                "is_nullable": false
+              },
+              {
+                "name": "password_hash",
+                "type": "VARCHAR(255)",
+                "is_primary_key": false,
+                "is_nullable": false
+              }
+            ]
+          },
+          {
+            "table_name": "contacts",
+            "columns": [
+              {
+                "name": "id",
+                "type": "INTEGER",
+                "is_primary_key": true,
+                "is_nullable": false
+              },
+              {
+                "name": "name",
+                "type": "VARCHAR(255)",
+                "is_primary_key": false,
+                "is_nullable": false
+              },
+              {
+                "name": "email",
+                "type": "VARCHAR(255)",
+                "is_primary_key": false,
+                "is_nullable": true
+              },
+              {
+                "name": "phone",
+                "type": "VARCHAR(50)",
+                "is_primary_key": false,
+                "is_nullable": true
+              },
+              {
+                "name": "company",
+                "type": "VARCHAR(255)",
+                "is_primary_key": false,
+                "is_nullable": true
+              },
+              {
+                "name": "status",
+                "type": "VARCHAR(50)",
+                "is_primary_key": false,
+                "is_nullable": false
+              },
+              {
+                "name": "user_id",
+                "type": "INTEGER",
+                "is_primary_key": false,
+                "is_nullable": false
+              }
+            ]
+          },
+          {
+            "table_name": "notes",
+            "columns": [
+              {
+                "name": "id",
+                "type": "INTEGER",
+                "is_primary_key": true,
+                "is_nullable": false
+              },
+              {
+                "name": "content",
+                "type": "TEXT",
+                "is_primary_key": false,
+                "is_nullable": false
+              },
+              {
+                "name": "timestamp",
+                "type": "DATETIME",
+                "is_primary_key": false,
+                "is_nullable": false
+              },
+              {
+                "name": "contact_id",
+                "type": "INTEGER",
+                "is_primary_key": false,
+                "is_nullable": false
+              }
+            ]
+          },
+          {
+            "table_name": "interactions",
+            "columns": [
+              {
+                "name": "id",
+                "type": "INTEGER",
+                "is_primary_key": true,
+                "is_nullable": false
+              },
+              {
+                "name": "type",
+                "type": "VARCHAR(50)",
+                "is_primary_key": false,
+                "is_nullable": false
+              },
+              {
+                "name": "date",
+                "type": "DATE",
+                "is_primary_key": false,
+                "is_nullable": false
+              },
+              {
+                "name": "outcome",
+                "type": "TEXT",
+                "is_primary_key": false,
+                "is_nullable": true
+              },
+              {
+                "name": "contact_id",
+                "type": "INTEGER",
+                "is_primary_key": false,
+                "is_nullable": false
+              }
+            ]
+          }
+        ],
+        "folder_structure": {
+          "backend": [
+            "app/",
+            "app/main.py",
+            "app/database.py",
+            "app/models/",
+            "app/models/user.py",
+            "app/models/contact.py",
+            "app/models/note.py",
+            "app/models/interaction.py",
+            "app/schemas/",
+            "app/schemas/user.py",
+            "app/schemas/contact.py",
+            "app/schemas/note.py",
+            "app/schemas/interaction.py",
+            "app/schemas/auth.py",
+            "app/schemas/stats.py",
+            "app/services/",
+            "app/services/auth_service.py",
+            "app/services/user_service.py",
+            "app/services/contact_service.py",
+            "app/services/note_service.py",
+            "app/services/interaction_service.py",
+            "app/services/stats_service.py",
+            "app/routes/",
+            "app/routes/auth_routes.py",
+            "app/routes/user_routes.py",
+            "app/routes/contact_routes.py",
+            "app/routes/stats_routes.py",
+            "app/routes/seed_routes.py",
+            "app/utils/",
+            "app/utils/auth.py",
+            "app/utils/dependencies.py",
+            "app/utils/password.py",
+            "app/config.py"
+          ]
+        },
+        "frontend_structure": {
+          "pages": [
+            "LoginPage.jsx",
+            "RegisterPage.jsx",
+            "DashboardPage.jsx",
+            "ContactsListPage.jsx",
+            "ContactDetailPage.jsx",
+            "AddContactPage.jsx",
+            "EditContactPage.jsx",
+            "PipelinePage.jsx"
+          ],
+          "components": [
+            "Header.jsx",
+            "Footer.jsx",
+            "LoginForm.jsx",
+            "RegisterForm.jsx",
+            "ContactCard.jsx",
+            "ContactForm.jsx",
+            "NoteForm.jsx",
+            "NoteList.jsx",
+            "InteractionForm.jsx",
+            "InteractionList.jsx",
+            "SearchBar.jsx",
+            "Pagination.jsx",
+            "PipelineStatusColumn.jsx",
+            "ProtectedRoute.jsx",
+            "LoadingSpinner.jsx",
+            "ErrorMessage.jsx"
+          ]
+        }
+      },
+      "plan": {
+        "project_name": "simple_crm",
+        "display_name": "Simple CRM",
+        "features": [
+          "Secure user login and registration to access the CRM.",
+          "Create, view, update, and delete contacts with name, email, phone, company, and status (lead/prospect/customer/churned).",
+          "Add timestamped notes to any contact for internal context.",
+          "Log interactions (call/email/meeting) with a date and outcome for each contact.",
+          "Visualize contacts grouped by their status (Lead, Prospect, Customer, Churned) with counts for each group.",
+          "Search contacts by their name or company name."
+        ],
+        "tech_stack": {
+          "backend": "FastAPI",
+          "database": "SQLite",
+          "auth": "JWT",
+          "frontend": "React + Vite"
+        },
+        "db_entities": [
+          "User",
+          "Contact",
+          "Note",
+          "Interaction"
+        ],
+        "api_modules": [
+          "auth",
+          "users",
+          "contacts"
+        ],
+        "user_stories": [
+          {
+            "role": "Small Business User",
+            "want": "to log in securely to my CRM account",
+            "acceptance_criteria": [
+              "Given I am on the login page, when I enter valid credentials and click 'Login', then I am redirected to my contacts dashboard.",
+              "Given I am on the login page, when I enter invalid credentials and click 'Login', then I see an error message 'Invalid credentials'."
+            ]
+          },
+          {
+            "role": "Small Business User",
+            "want": "to add a new contact with their details",
+            "acceptance_criteria": [
+              "Given I am on the contacts page, when I click 'Add Contact' and fill in name, email, phone, company, and select a status, then the new contact appears in my contact list.",
+              "Given I am adding a new contact, when I leave a required field (e.g., name) blank, then I see a validation error and the contact is not created."
+            ]
+          },
+          {
+            "role": "Small Business User",
+            "want": "to add a note to a contact",
+            "acceptance_criteria": [
+              "Given I am viewing a contact's details, when I enter text into the 'Add Note' field and click 'Save Note', then the note appears in the contact's notes section with a timestamp.",
+              "Given a contact has multiple notes, when I view the contact's details, then the notes are displayed in chronological order (newest first)."
+            ]
+          },
+          {
+            "role": "Small Business User",
+            "want": "to log an interaction (call, email, meeting) with a contact",
+            "acceptance_criteria": [
+              "Given I am viewing a contact's details, when I select an interaction type (Call, Email, Meeting), a date, and an outcome, then the interaction is added to the contact's interaction log.",
+              "Given a contact has logged interactions, when I view the contact's details, then the interactions are displayed chronologically with type, date, and outcome."
+            ]
+          },
+          {
+            "role": "Small Business User",
+            "want": "to see my contacts grouped by their status in a pipeline view",
+            "acceptance_criteria": [
+              "Given I navigate to the 'Pipeline' view, then I see distinct sections for 'Lead', 'Prospect', 'Customer', and 'Churned' contacts.",
+              "Given I have contacts with different statuses, when I view the pipeline, then each status section displays the correct count of contacts assigned to that status."
+            ]
+          },
+          {
+            "role": "Small Business User",
+            "want": "to search for contacts by name or company",
+            "acceptance_criteria": [
+              "Given I am on the contacts list, when I type 'John' into the search bar, then only contacts with 'John' in their name are displayed.",
+              "Given I am on the contacts list, when I type 'Acme Corp' into the search bar, then only contacts associated with 'Acme Corp' are displayed."
+            ]
+          }
+        ],
+        "non_functional_requirements": {
+          "authentication": "required — users need to log in to access their private contact data.",
+          "authorization": "Users can only access and manage their own contacts and associated data.",
+          "pagination": "required on contacts list if the number of contacts exceeds a reasonable display limit (e.g., 50).",
+          "search": "contacts (by name, company)",
+          "file_uploads": "no",
+          "real_time": "no"
+        },
+        "data_entities_detail": [
+          {
+            "name": "User",
+            "description": "Stores user authentication information.",
+            "key_fields": [
+              "id",
+              "email",
+              "password_hash"
+            ],
+            "relationships": [
+              "has many Contact"
+            ]
+          },
+          {
+            "name": "Contact",
+            "description": "Stores details for each business contact.",
+            "key_fields": [
+              "id",
+              "name",
+              "email",
+              "phone",
+              "company",
+              "status",
+              "user_id"
+            ],
+            "relationships": [
+              "belongs to User",
+              "has many Note",
+              "has many Interaction"
+            ]
+          },
+          {
+            "name": "Note",
+            "description": "Stores timestamped notes related to a contact.",
+            "key_fields": [
+              "id",
+              "content",
+              "timestamp",
+              "contact_id"
+            ],
+            "relationships": [
+              "belongs to Contact"
+            ]
+          },
+          {
+            "name": "Interaction",
+            "description": "Stores logged interactions with a contact.",
+            "key_fields": [
+              "id",
+              "type",
+              "date",
+              "outcome",
+              "contact_id"
+            ],
+            "relationships": [
+              "belongs to Contact"
+            ]
+          }
+        ],
+        "out_of_scope": [
+          "Reporting/Analytics beyond pipeline counts",
+          "Email/Calendar integrations",
+          "Customizable fields for contacts",
+          "Task management",
+          "Multi-user accounts or team features"
+        ]
+      },
+      "score": 91.57,
+      "success_count": 1,
+      "generation_id": "9eb5aaff56204dd68e2a6765f8ec6dd2",
+      "timestamp": "2026-07-06T13:48:49Z"
     }
   ]
 }

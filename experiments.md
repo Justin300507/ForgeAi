@@ -1307,6 +1307,101 @@ instruction.
 **Cost**: $0.0267 (todo) + $0.0275 (blog_cms) + $0.0145 (crm) = **$0.0687
 total**.
 
+---
+
+## Experiment 019 — Seed reference data before CRUD journey
+
+**Hypothesis**: does calling `POST /seed` before the CRUD journey
+(commit edea8bb) fix todo's persistent Create-entity failure, which was
+traced across Experiments 013/015/016/017/018 to an unseeded `priorities`
+reference table?
+
+**Evidence**: `generation_log.jsonl` post-Experiment-018 showed
+`POST /seed returned 500` and todo's `Create entity: 400`-class
+JourneyCRUDFailure tied for most-frequent specific signature (7 and
+6-7 respectively). Ranked the seed-500 pattern lower priority: it already
+has a working, zero-cost deterministic recovery (`repair/orchestrator.py`
+rewrites a known-good `seed_routes.py` stub on that exact diagnostic),
+whereas todo's Create-entity 400 has no existing fix and had recurred in
+literally every todo canary run this session.
+
+**Root cause**: **runtime / journey-runner test-harness limitation**, not
+a generation defect. The generated `task_routes.py` correctly validates
+`priority_id` against the `priorities` table and correctly rejects a
+reference that doesn't exist — the app isn't buggy. The `priorities`
+table is only ever populated by the app's own generated `POST /seed`
+endpoint, which the journey runner never called before attempting CRUD.
+
+**Implementation**: single best-effort `POST {base}/seed` call added
+right after Login (carries the auth token), before Create entity.
+Deliberately not recorded as a `JourneyStep` (verified `steps_passed`/
+`steps_failed`/`success` are computed purely from the `steps` list, which
+this call never joins — cannot affect scoring even if the endpoint is
+absent).
+
+**Validation (local, $0)**: mocked `requests` end-to-end — confirmed
+`/seed` is called exactly once, after Login and before Create entity,
+carries the Bearer token, never appears in the JourneyStep list, and the
+journey runs to completion normally when the call raises (simulating no
+`/seed` endpoint). `ast.parse`/`py_compile` clean, graphify graph updated.
+
+**Benchmark comparison** (`--provider gemini --no-deploy`, log
+`m1_canary_seedcrud_run.log`) vs. Experiment 018:
+| App | Exp018 | Exp019 | Verdict |
+|---|---|---|---|
+| todo | 73.9 (C) | 73.9 (C) | OK, unchanged |
+| blog_cms | 90.3 (A), CRUD 11/11 | 90.3 (A), CRUD 11/11 | OK |
+| crm | 91.4 (A), CRUD 11/11, 4/5 fix attempts | 91.6 (A), CRUD 11/11, **0/5 fix attempts** | OK, improved |
+
+**`CANARY PASSED — safe to continue`.**
+
+**Telemetry — mechanism confirmed working, but gated by an orthogonal,
+pre-existing factor**: the wire log confirms the fix fired exactly as
+designed: `"POST /seed HTTP/1.1" 200 OK` immediately after login, before
+`"POST /tasks" ... 400 Bad Request`. Investigated why todo's Create still
+failed despite a successful seed call: **this attempt's generated
+`seed_routes.py` is the deterministic minimal-stub fallback**
+(`v6_orchestrator.py`'s "never call the LLM for seed_routes.py... write a
+minimal working stub" path, confirmed by the exact stub text `{'seeded':
+True, 'message': 'Demo data ready'}` and zero references to `Priority(`
+anywhere in the file) — used whenever the LLM fails to produce a real
+`seed_routes.py` this attempt. The stub does no database inserts at all,
+so there was no reference data to seed regardless of when `/seed` gets
+called. This is a *different*, pre-existing, already-known generation-
+variance factor (whether `seed_routes.py` gets generated with real content
+vs. falls back to the no-op stub) — not a flaw in this fix, and not
+something this fix was ever positioned to control.
+
+**Verdict: KEEP.** The mechanism is proven correct and harmless (fires at
+the right point, never affects scoring, zero regressions across two apps
+that already depend on real seed data working — crm's fix-attempt count
+actually *improved* to 0/5, its best result yet). It will pay off on any
+future generation attempt where `seed_routes.py` gets real content (as
+observed multiple times earlier this session) without needing further
+change. Not reverting a correct, zero-risk fix because one specific
+attempt's *upstream* content generation defaulted to a no-op stub.
+
+**Engineering effort**: S (single isolated addition, ~20 lines, no new
+dependencies). **Expected ROI**: partial and conditional — eliminates the
+unseeded-reference-table failure mode whenever `seed_routes.py` is
+substantively generated; does nothing when it falls back to the no-op
+stub (a separate, now-identified gap).
+
+**Next highest-ROI bottleneck**: the minimal seed-stub fallback itself.
+When the LLM fails to produce `seed_routes.py`, `v6_orchestrator.py`
+silently substitutes a no-op stub that always returns `200 OK` with zero
+inserts — which is exactly why this experiment's improvement didn't
+materialize for todo this run. A deterministic upgrade (using the existing
+`entity_metadata` extractor to detect reference/lookup-style tables from
+already-generated models and auto-seed a few rows into the stub, instead
+of leaving it empty) would directly compound with this experiment's fix.
+This requires a further design + a validating benchmark, so — per stop
+condition 1 — flagging it as the prepared next task rather than starting
+it now.
+
+**Cost**: $0.0194 (todo) + $0.0217 (blog_cms) + $0.0154 (crm) = **$0.0565
+total**.
+
 **Housekeeping this cycle**: found and deleted ~10 zero-byte debris files in
 `backend/` (`backend/'`, `backend/65`, `backend/dict`, etc.) — artifacts of
 an earlier broken shell redirection, not user work. Also found an earlier,

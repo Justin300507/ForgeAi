@@ -306,7 +306,7 @@
       "last_seen": "2026-07-01T20:13:11.496878"
     },
     "JourneyCRUDFailure": {
-      "count": 28,
+      "count": 29,
       "examples": [
         {
           "project": "BlogSphere",
@@ -330,7 +330,7 @@
         }
       ],
       "first_seen": "2026-06-29T23:47:06.584012",
-      "last_seen": "2026-07-06T12:42:20.574800"
+      "last_seen": "2026-07-06T13:42:49.314630"
     },
     "InvalidDependsType": {
       "count": 1,
@@ -474,6 +474,6 @@
       "last_seen": "2026-07-06T05:46:37.663703"
     }
   },
-  "total_runs": 365,
-  "last_updated": "2026-07-06T12:51:06.872469"
+  "total_runs": 368,
+  "last_updated": "2026-07-06T13:48:23.959693"
 }
