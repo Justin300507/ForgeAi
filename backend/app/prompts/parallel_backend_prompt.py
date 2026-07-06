@@ -61,11 +61,26 @@ def build_schema_prompt(
     endpoints: list[dict],
     contract: str,
     failure_memory: str,
+    field_manifest: str = "",
 ) -> str:
     ep_lines = "\n".join(
         f"  {e['method']} {e['path']} — {e.get('description', '')}"
         for e in endpoints
     )
+
+    manifest_block = f"""
+
+BINDING FIELD CONTRACT (Experiment 017 — model-driven schema generation):
+The SQLAlchemy model for this resource has ALREADY been generated. Its
+columns below are ground truth, not a suggestion. Every field marked
+REQUIRED must appear in your Create schema under its EXACT name — do not
+rename, split, or invent alternate field names (e.g. do not write
+`first_name`/`last_name` if the model defines a single `name` column).
+Fields marked "foreign key" or "primary key" must NOT appear in your
+Create/Update schemas at all (the route supplies them programmatically).
+
+{field_manifest}
+""" if field_manifest else ""
 
     return f"""You are a ForgeAI Backend Engineer. Generate EXACTLY ONE Pydantic schema file.
 
@@ -80,7 +95,7 @@ ENDPOINTS USING THIS RESOURCE:
 
 CORRESPONDING MODEL (for field reference):
 {model_content or '(not yet generated)'}
-
+{manifest_block}
 RULES:
 - Create: {resource.title().replace('_', '')}Create, {resource.title().replace('_', '')}Update, {resource.title().replace('_', '')}Response
 - All inherit from pydantic BaseModel

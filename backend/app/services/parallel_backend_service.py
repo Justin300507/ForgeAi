@@ -15,6 +15,7 @@ Drop-in replacement for generate_backend() — returns same dict shape:
   {"files": [{"path": "...", "content": "..."}, ...]}
 """
 import json
+import os
 import time
 from collections import defaultdict
 from concurrent.futures import ThreadPoolExecutor, as_completed
@@ -32,6 +33,15 @@ from app.prompts.parallel_backend_prompt import (
 from app.memory.failure_memory import build_prompt_injection
 from app.templates.database_template import DATABASE_PY_TEMPLATE, AUTH_UTILS_TEMPLATE
 from app.utils.json_cleaner import extract_json
+from app.services.entity_metadata import find_model_for_resource, render_field_manifest
+
+# Experiment 017: model-driven schema generation. Off by default so the
+# existing (bugged) filename-guess lookup remains the exact A/B baseline;
+# set FORGE_MODEL_DRIVEN_SCHEMA=1 to have Wave 3 resolve the REAL generated
+# model (by parsed table_name/class_name, never a bare re-export shim) and
+# inject an explicit, binding field manifest into the schema prompt instead
+# of a "for reference" raw file dump.
+MODEL_DRIVEN_SCHEMA_GENERATION = os.environ.get("FORGE_MODEL_DRIVEN_SCHEMA", "0") == "1"
 
 
 @dataclass
@@ -189,9 +199,12 @@ def _gen_model(entity: dict, all_tables: list[dict], provider: str, contract: st
     return result
 
 
-def _gen_schema(resource: str, model_content: str, endpoints: list[dict], provider: str, contract: str, memory: str) -> FileResult:
+def _gen_schema(
+    resource: str, model_content: str, endpoints: list[dict], provider: str,
+    contract: str, memory: str, field_manifest: str = "",
+) -> FileResult:
     t0 = time.time()
-    prompt = build_schema_prompt(resource, model_content, endpoints, contract, memory)
+    prompt = build_schema_prompt(resource, model_content, endpoints, contract, memory, field_manifest=field_manifest)
     data = _call_llm(prompt, provider)
     result = _make_file_result(data, f"app/schemas/{resource}.py", t0)
     status = "OK" if result.success else f"FAIL:{result.error[:60]}"
@@ -637,8 +650,19 @@ def generate_backend_parallel(
             or model_contents.get(f"app/models/{resource[:-1]}.py")  # strip trailing 's'
             or ""
         )
+        field_manifest = ""
+        if MODEL_DRIVEN_SCHEMA_GENERATION:
+            entity = find_model_for_resource(model_contents, resource)
+            if entity is not None:
+                field_manifest = render_field_manifest(entity)
+                # The resolved real model may differ from the naive filename
+                # guess above (e.g. that guess found a re-export shim with no
+                # column data) -- prefer the real, parsed model's own source
+                # content so the raw reference block in the prompt agrees
+                # with the field manifest instead of contradicting it.
+                model_content = model_contents.get(entity.source_path, model_content)
         schema_tasks.append(
-            (_gen_schema, f"app/schemas/{resource}.py", resource, model_content, eps, provider, contract, memory)
+            (_gen_schema, f"app/schemas/{resource}.py", resource, model_content, eps, provider, contract, memory, field_manifest)
         )
 
     schema_results = _parallel_wave(schema_tasks, max_workers=5)
