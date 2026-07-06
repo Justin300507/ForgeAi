@@ -670,6 +670,18 @@ def run_user_journey(
                                 _422_detail = r3.json().get("detail", _422_detail)
                             except Exception:
                                 pass
+                        elif r3.status_code >= 500:
+                            # The retry itself crashed the server (e.g. a NOT
+                            # NULL constraint the 422 fix-up didn't touch).
+                            # Falling through to the generic "schema mismatch,
+                            # server alive" return below would report this
+                            # step as PASSED while masking a real 500 --
+                            # confirmed live in Experiment 014 (crm):
+                            # phone_number's 422 got fixed, the retry then hit
+                            # `IntegrityError: NOT NULL constraint failed:
+                            # contacts.name`, and the step was still recorded
+                            # as passed with a stale 422 message.
+                            return False, f"{r3.status_code} (server error on 422-retry)"
             except Exception:
                 pass
             # Surface the actual validation error instead of a content-free
