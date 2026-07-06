@@ -169,27 +169,31 @@ def compute_from_context(ctx) -> ConfidenceReport:
     """
     from app.knowledge.failure_db import generation_log
 
-    # Extract scores from context
-    overall       = getattr(ctx, "best_score",  0.0) or 0.0
-    runtime_score = 0.0
-    browser_score = 0.0
-    compile_score = 0.0
+    # Extract scores from context. Every attribute below used to be a name
+    # GenerationContext doesn't have (best_score/scores/attempt_count don't
+    # exist; the real fields are latest_score/score_history/fix_attempts —
+    # see app/core/context.py) and `dims` was checked with isinstance(dict)
+    # when ScoreDimension.dimensions is a list, so this always fell through
+    # to the 0.0 defaults even when the getattr calls didn't already raise.
+    # On top of that, all_diagnostics is a method, not a property, so the
+    # `for d in getattr(ctx, "all_diagnostics", [])` line threw TypeError on
+    # every call — meaning compute_from_context() never once returned a real
+    # report; every call was silently swallowed by pipeline.py's `except
+    # Exception: confidence = None`.
+    overall = ctx.latest_score
 
-    # Pull individual dimension scores if available
-    scores = getattr(ctx, "scores", [])
-    if scores:
-        last_score = scores[-1] if isinstance(scores, list) else scores
-        dims = getattr(last_score, "dimensions", {})
-        if isinstance(dims, dict):
-            runtime_score = dims.get("runtime_startup", {}).get("score", 0.0) if isinstance(dims.get("runtime_startup"), dict) else 0.0
-            browser_score = dims.get("browser_ux", {}).get("score", 0.0) if isinstance(dims.get("browser_ux"), dict) else 0.0
-            compile_score = dims.get("compilation", {}).get("score", 0.0) if isinstance(dims.get("compilation"), dict) else 0.0
+    dims_by_name: dict[str, float] = {}
+    if ctx.score_history:
+        for dim in ctx.score_history[-1].dimensions:
+            if dim.score is not None:
+                dims_by_name[dim.name] = dim.score
 
-    fix_count    = getattr(ctx, "attempt_count", 0) or 0
-    had_critical = any(
-        getattr(d, "severity", None) and getattr(d.severity, "value", "") == "critical"
-        for d in getattr(ctx, "all_diagnostics", [])
-    )
+    runtime_score = dims_by_name.get("Runtime Startup", 0.0)
+    browser_score = dims_by_name.get("Browser UX", 0.0)
+    compile_score = dims_by_name.get("Compilation", 0.0)
+
+    fix_count    = len(ctx.fix_attempts)
+    had_critical = ctx.has_critical()
 
     # Historical rate from generation log
     hist_rate = generation_log.success_rate(recent_n=100)
