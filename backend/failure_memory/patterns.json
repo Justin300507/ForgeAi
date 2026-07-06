@@ -306,7 +306,7 @@
       "last_seen": "2026-07-01T20:13:11.496878"
     },
     "JourneyCRUDFailure": {
-      "count": 27,
+      "count": 28,
       "examples": [
         {
           "project": "BlogSphere",
@@ -330,7 +330,7 @@
         }
       ],
       "first_seen": "2026-06-29T23:47:06.584012",
-      "last_seen": "2026-07-06T12:15:39.628366"
+      "last_seen": "2026-07-06T12:42:20.574800"
     },
     "InvalidDependsType": {
       "count": 1,
@@ -405,7 +405,7 @@
       "last_seen": "2026-07-06T11:52:24.191764"
     },
     "ConfigAttributeError": {
-      "count": 9,
+      "count": 10,
       "examples": [
         {
           "project": "forge_learn",
@@ -429,7 +429,7 @@
         }
       ],
       "first_seen": "2026-07-05T09:26:46.709471",
-      "last_seen": "2026-07-06T12:26:17.515620"
+      "last_seen": "2026-07-06T12:49:32.519866"
     },
     "ResponseValidationError": {
       "count": 2,
@@ -474,6 +474,6 @@
       "last_seen": "2026-07-06T05:46:37.663703"
     }
   },
-  "total_runs": 360,
-  "last_updated": "2026-07-06T12:26:17.515606"
+  "total_runs": 365,
+  "last_updated": "2026-07-06T12:51:06.872469"
 }

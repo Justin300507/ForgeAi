@@ -1227,6 +1227,86 @@ blog_cms's tags/relationship-field invention are both new, independently
 catalogued candidates for future cycles — neither blocks keeping this
 experiment's code.
 
+---
+
+## Experiment 018 — Model-driven schema generation, confirming run + promotion to default
+
+**Objective** (per explicit instruction): not Forge Score — validate
+whether model-driven schema generation *consistently* eliminates
+model↔schema drift, with no code changes before the run
+(`FORGE_MODEL_DRIVEN_SCHEMA=1`, same commit as Experiment 017).
+
+**Result: `CANARY PASSED — safe to continue`.**
+| App | Exp017 | Exp018 | Verdict |
+|---|---|---|---|
+| todo | 73.9 (C) | 73.9 (C) | OK |
+| blog_cms | 61.5 (D), confounded | 90.3 (A), **build=True runtime=True, CRUD 11/11 PASS** | OK |
+| crm | 39.4 (F), confounded | 91.4 (A), **build=True runtime=True, CRUD 11/11 PASS** | OK |
+
+**Success criteria, evaluated directly:**
+
+1. **Contact.name vs first_name/last_name drift does not reappear — YES,
+   confirmed.** `ContactCreate` again declares `name`/`status` under the
+   model's exact column names (this attempt as `Optional[str]` rather than
+   `str`, ordinary attempt-to-attempt variance in requiredness — the field
+   *names* are what this experiment targets, and they match).
+2. **Experiment 012's reactive patcher does not fire — YES, confirmed.**
+   Zero `[field_patcher] Added missing schema field(s) [...]` events
+   naming Contact/name anywhere in the log. (It did fire twice for
+   unrelated entities — `['status']` on blog_cms's `ArticleCreate` and
+   `['email']` on its `UserCreate` — ordinary independent generation
+   variance on different entities, not a recurrence of the target bug.)
+3. **Schemas continue to match generated model columns — YES.** Verified
+   on disk for all 3 apps.
+4. **Runtime/CRUD not negatively affected by the mechanism — YES, and
+   better than "not negatively affected": both blog_cms and crm achieved
+   full `Journey PASS — 11 passed / 0 failed` (Create 201, Edit 200,
+   Delete 204) — the first full CRUD pass for crm at any point in this
+   entire session, and the first for blog_cms too.**
+5. **Remaining failures, classified:**
+   - **todo**: `Create entity: 400` (unseeded `Priority` lookup table,
+     `task_routes.py`'s `Priority.name == task_in.priority` query) —
+     **unrelated generation variance / existing infrastructure issue**,
+     the exact same root cause identified in Experiment 013, in a
+     different code path (route business logic) this mechanism never
+     touches. Confirmed the Task model/schema field names agree; this is
+     not model/schema drift.
+   - `fix_model_schema_notnull_gap` fired 5 times across the run on
+     `title`/`due_date`/`priority_id` (todo), `username`/`hashed_password`
+     (todo/blog_cms users), `content_markdown`/`cover_image_url`/
+     `published_at` (blog_cms posts) — **existing infrastructure (the
+     preflight safety net doing its normal, intended job)**, not a
+     regression: these are ordinary nullable/optional-field variance in
+     entities unrelated to the Contact-style renaming drift this
+     experiment targets, and the safety net exists precisely to catch
+     exactly this class of gap regardless of cause.
+   - No occurrences of any new/unexplained crash pattern. **Zero evidence
+     of a regression introduced by this feature.**
+
+**Report:**
+- **Drift eliminated? YES** — confirmed on two independent runs
+  (Experiments 017 and 018) under different generation attempts.
+- **Reactive patcher fired (for the target bug)? NO.**
+- **New regressions caused by this feature? NO** — every remaining
+  failure traces to an independent, pre-existing, already-catalogued
+  cause outside this mechanism's scope.
+- **Confidence this should become the default: HIGH.** Two consecutive
+  canaries, the second a clean, uncontaminated `CANARY PASSED` with both
+  previously-blocked apps achieving full CRUD success for the first time
+  this cycle.
+
+**Decision: PROMOTED FORGE_MODEL_DRIVEN_SCHEMA to the default** (commit
+pending below) — `MODEL_DRIVEN_SCHEMA_GENERATION` now defaults to `True`
+when the env var is unset. The flag itself is kept (`FORGE_MODEL_DRIVEN_SCHEMA=0`
+rolls back to the old lookup instantly if a future regression is ever
+traced to this mechanism) — verified both directions still work.
+Relationship/secondary-table extraction (e.g. blog_cms's tags) explicitly
+NOT implemented this cycle — flagged as a separate future experiment per
+instruction.
+
+**Cost**: $0.0267 (todo) + $0.0275 (blog_cms) + $0.0145 (crm) = **$0.0687
+total**.
+
 **Housekeeping this cycle**: found and deleted ~10 zero-byte debris files in
 `backend/` (`backend/'`, `backend/65`, `backend/dict`, etc.) — artifacts of
 an earlier broken shell redirection, not user work. Also found an earlier,

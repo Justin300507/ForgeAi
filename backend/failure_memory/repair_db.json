@@ -89,9 +89,9 @@
     "fix_content": {
       "app/routes/seed_routes.py": "from fastapi import APIRouter, Depends\nfrom sqlalchemy.orm import Session\nfrom app.database import get_db\n\nseed_router = APIRouter()\n\n@seed_router.post('/seed')\ndef seed_data(db: Session = Depends(get_db)):\n    return {'seeded': True, 'message': 'Demo data ready'}\n"
     },
-    "success_count": 1,
+    "success_count": 2,
     "first_seen": "2026-07-05T10:01:42Z",
-    "last_seen": "2026-07-05T10:01:42Z",
+    "last_seen": "2026-07-06T12:48:01Z",
     "source_idea": "a recipe sharing platform"
   },
   "6967fc8aca1ae308": {
@@ -212,9 +212,9 @@
     "fix_content": {
       "app/services/auth_service.py": "import bcrypt\nfrom sqlalchemy.orm import Session\n\nfrom app.models.user import User\n\n\nclass AuthService:\n    def __init__(self, db: Session):\n        self.db = db\n\n    def hash_password(self, password: str) -> str:\n        # bcrypt.gensalt() generates a salt, bcrypt.hashpw hashes the password with the salt\n        hashed_password = bcrypt.hashpw(password.encode('utf-8'), bcrypt.gensalt())\n        return hashed_password.decode('utf-8')\n\n    def verify_password(self, plain_password: str, hashed_password: str) -> bool:\n        # bcrypt.checkpw verifies a plain password against a hashed one\n        return bcrypt.checkpw(plain_password.encode('utf-8'), hashed_password.encode('utf-8'))\n\n    def get_user_by_email(self, email: str) -> User | None:\n        return self.db.query(User).filter(User.email == email).first()\n\n    def get_user_by_id(self, user_id: int) -> User | None:\n        return self.db.query(User).filter(User.id == user_id).first()\n"
     },
-    "success_count": 3,
+    "success_count": 4,
     "first_seen": "2026-07-06T07:40:26Z",
-    "last_seen": "2026-07-06T10:32:58Z",
+    "last_seen": "2026-07-06T12:48:01Z",
     "source_idea": "A simple CRM for small businesses with user login. Users manage contacts (name, email, phone, compan"
   },
   "9d8b4f9d82a84206": {
@@ -222,9 +222,9 @@
     "fix_content": {
       "app/services/user_service.py": "from sqlalchemy.orm import Session\nfrom app.models.user import User\nfrom app.schemas.user import UserCreate, UserUpdate\nfrom app.utils.auth import get_password_hash\n\n\nclass UserService:\n    def __init__(self, db: Session):\n        self.db = db\n\n    def get_user(self, user_id: int) -> User | None:\n        return self.db.query(User).filter(User.id == user_id).first()\n\n    def get_user_by_email(self, email: str) -> User | None:\n        return self.db.query(User).filter(User.email == email).first()\n\n    def get_users(self, skip: int = 0, limit: int = 100) -> list[User]:\n        return self.db.query(User).offset(skip).limit(limit).all()\n\n    def create_user(self, user_data: UserCreate) -> User:\n        hashed_password = get_password_hash(user_data.password)\n        db_user = User(\n            email=user_data.email,\n            hashed_password=hashed_password,\n            first_name=user_data.first_name,\n            last_name=user_data.last_name\n        )\n        self.db.add(db_user)\n        self.db.commit()\n        self.db.refresh(db_user)\n        return db_user\n\n    def update_user(self, user_id: int, user_data: UserUpdate) -> User | None:\n        db_user = self.db.query(User).filter(User.id == user_id).first()\n        if db_user:\n            update_data = user_data.model_dump(exclude_unset=True)\n            if 'password' in update_data and update_data['password']:\n                update_data['hashed_password'] = get_password_hash(update_data.pop('password'))\n            \n            for key, value in update_data.items():\n                setattr(db_user, key, value)\n            \n            self.db.commit()\n            self.db.refresh(db_user)\n        return db_user\n\n    def delete_user(self, user_id: int) -> User | None:\n        db_user = self.db.query(User).filter(User.id == user_id).first()\n        if db_user:\n            self.db.delete(db_user)\n            self.db.commit()\n        return db_user\n"
     },
-    "success_count": 3,
+    "success_count": 4,
     "first_seen": "2026-07-06T07:40:26Z",
-    "last_seen": "2026-07-06T10:32:58Z",
+    "last_seen": "2026-07-06T12:48:01Z",
     "source_idea": "A simple CRM for small businesses with user login. Users manage contacts (name, email, phone, compan"
   },
   "4267423c521b9d48": {
@@ -232,9 +232,9 @@
     "fix_content": {
       "app/services/contact_service.py": "from typing import List, Optional\nfrom sqlalchemy.orm import Session\nfrom app.models.contact import Contact\nfrom app.schemas.contact import ContactCreate, ContactUpdate\n\n\nclass ContactService:\n    def __init__(self, db: Session):\n        self.db = db\n\n    def create_contact(self, contact_data: ContactCreate) -> Contact:\n        db_contact = Contact(**contact_data.model_dump())\n        self.db.add(db_contact)\n        self.db.commit()\n        self.db.refresh(db_contact)\n        return db_contact\n\n    def get_contact(self, contact_id: int) -> Optional[Contact]:\n        return self.db.query(Contact).filter(Contact.id == contact_id).first()\n\n    def get_contacts(self, skip: int = 0, limit: int = 100) -> List[Contact]:\n        return self.db.query(Contact).offset(skip).limit(limit).all()\n\n    def update_contact(self, contact_id: int, contact_data: ContactUpdate) -> Optional[Contact]:\n        db_contact = self.db.query(Contact).filter(Contact.id == contact_id).first()\n        if db_contact:\n            for key, value in contact_data.model_dump(exclude_unset=True).items():\n                setattr(db_contact, key, value)\n            self.db.commit()\n            self.db.refresh(db_contact)\n        return db_contact\n\n    def delete_contact(self, contact_id: int) -> Optional[Contact]:\n        db_contact = self.db.query(Contact).filter(Contact.id == contact_id).first()\n        if db_contact:\n            self.db.delete(db_contact)\n            self.db.commit()\n        return db_contact\n"
     },
-    "success_count": 3,
+    "success_count": 4,
     "first_seen": "2026-07-06T07:40:26Z",
-    "last_seen": "2026-07-06T10:32:58Z",
+    "last_seen": "2026-07-06T12:48:14Z",
     "source_idea": "A simple CRM for small businesses with user login. Users manage contacts (name, email, phone, compan"
   },
   "bd32f0f26a526f13": {
@@ -242,9 +242,9 @@
     "fix_content": {
       "app/services/note_service.py": "from sqlalchemy.orm import Session\nfrom typing import List, Optional\n\nfrom app.models.note import Note\nfrom app.schemas.note import NoteCreate, NoteUpdate\n\n\nclass NoteService:\n    def __init__(self, db: Session):\n        self.db = db\n\n    def create_note(self, note_data: NoteCreate, user_id: int) -> Note:\n        db_note = Note(**note_data.model_dump(), user_id=user_id)\n        self.db.add(db_note)\n        self.db.commit()\n        self.db.refresh(db_note)\n        return db_note\n\n    def get_note(self, note_id: int, user_id: int) -> Optional[Note]:\n        return self.db.query(Note).filter(Note.id == note_id, Note.user_id == user_id).first()\n\n    def get_notes(self, user_id: int, skip: int = 0, limit: int = 100) -> List[Note]:\n        return self.db.query(Note).filter(Note.user_id == user_id).offset(skip).limit(limit).all()\n\n    def update_note(self, note_id: int, user_id: int, note_data: NoteUpdate) -> Optional[Note]:\n        db_note = self.db.query(Note).filter(Note.id == note_id, Note.user_id == user_id).first()\n        if db_note:\n            for key, value in note_data.model_dump(exclude_unset=True).items():\n                setattr(db_note, key, value)\n            self.db.commit()\n            self.db.refresh(db_note)\n        return db_note\n\n    def delete_note(self, note_id: int, user_id: int) -> Optional[Note]:\n        db_note = self.db.query(Note).filter(Note.id == note_id, Note.user_id == user_id).first()\n        if db_note:\n            self.db.delete(db_note)\n            self.db.commit()\n        return db_note\n"
     },
-    "success_count": 2,
+    "success_count": 3,
     "first_seen": "2026-07-06T07:40:26Z",
-    "last_seen": "2026-07-06T10:32:58Z",
+    "last_seen": "2026-07-06T12:48:14Z",
     "source_idea": "A simple CRM for small businesses with user login. Users manage contacts (name, email, phone, compan"
   },
   "e031e84c826e8422": {
@@ -252,9 +252,9 @@
     "fix_content": {
       "app/services/interaction_service.py": "from sqlalchemy.orm import Session\nfrom app.models.interaction import Interaction # Assuming an Interaction model exists\nfrom app.schemas.interaction import InteractionCreate # Assuming an InteractionCreate schema exists\n\nclass InteractionService:\n    def __init__(self, db: Session):\n        self.db = db\n\n    def create_interaction(self, interaction_data: InteractionCreate, user_id: int):\n        # Placeholder for creating an interaction\n        # This would typically involve creating an Interaction model instance\n        # and adding it to the session.\n        db_interaction = Interaction(\n            user_id=user_id,\n            target_id=interaction_data.target_id,\n            interaction_type=interaction_data.interaction_type,\n            # Add other fields as necessary based on your Interaction model\n        )\n        self.db.add(db_interaction)\n        self.db.commit()\n        self.db.refresh(db_interaction)\n        return db_interaction\n\n    def get_interaction(self, interaction_id: int):\n        return self.db.query(Interaction).filter(Interaction.id == interaction_id).first()\n\n    def get_interactions_by_user(self, user_id: int, skip: int = 0, limit: int = 100):\n        return self.db.query(Interaction).filter(Interaction.user_id == user_id).offset(skip).limit(limit).all()\n\n    def delete_interaction(self, interaction_id: int):\n        db_interaction = self.db.query(Interaction).filter(Interaction.id == interaction_id).first()\n        if db_interaction:\n            self.db.delete(db_interaction)\n            self.db.commit()\n            return True\n        return False\n"
     },
-    "success_count": 1,
+    "success_count": 2,
     "first_seen": "2026-07-06T07:40:26Z",
-    "last_seen": "2026-07-06T07:40:26Z",
+    "last_seen": "2026-07-06T12:48:14Z",
     "source_idea": "A simple CRM for small businesses with user login. Users manage contacts (name, email, phone, compan"
   },
   "a2ab7f7ea9a2ff41": {
@@ -282,9 +282,9 @@
     "fix_content": {
       "app/schemas/stats.py": "from pydantic import BaseModel\n\nclass StatsResponse(BaseModel):\n    total_users: int\n    total_tasks: int\n    completed_tasks: int\n    pending_tasks: int\n\n    class Config:\n        from_attributes = True\n"
     },
-    "success_count": 2,
+    "success_count": 3,
     "first_seen": "2026-07-06T09:59:50Z",
-    "last_seen": "2026-07-06T10:32:58Z",
+    "last_seen": "2026-07-06T12:48:01Z",
     "source_idea": "A simple CRM for small businesses with user login. Users manage contacts (name, email, phone, compan"
   },
   "cf1ee0fb5b1b0821": {
@@ -366,5 +366,55 @@
     "first_seen": "2026-07-06T12:19:40Z",
     "last_seen": "2026-07-06T12:19:40Z",
     "source_idea": "A blog CMS with author and reader roles. Authors write posts with title, content (markdown), tags, a"
+  },
+  "bbb3ad8b0e1cc646": {
+    "fix_hash": "bbb3ad8b0e1cc646",
+    "fix_content": {
+      "app/schemas/contact.py": "from datetime import datetime\nfrom typing import Optional\nfrom pydantic import BaseModel, Field, ConfigDict\n\n\nclass ContactCreate(BaseModel):\n    model_config = {\"from_attributes\": True}\n    name: Optional[str] = Field(None, min_length=1)\n    email: Optional[str] = None\n    phone: Optional[str] = None\n    company: Optional[str] = None\n    status: Optional[str] = Field(None, min_length=1)\n\n\nclass ContactUpdate(BaseModel):\n    model_config = {\"from_attributes\": True}\n    name: Optional[str] = Field(None, min_length=1)\n    email: Optional[str] = None\n    phone: Optional[str] = None\n    company: Optional[str] = None\n    status: Optional[str] = Field(None, min_length=1)\n\n\nclass ContactResponse(BaseModel):\n    id: int\n    name: Optional[str] = None\n    email: Optional[str] = None\n    phone: Optional[str] = None\n    company: Optional[str] = None\n    status: Optional[str] = None\n    user_id: Optional[int] = None\n    created_at: Optional[datetime] = None\n    updated_at: Optional[datetime] = None\n\n    model_config = ConfigDict(from_attributes=True)\n\n\nclass ContactSearchResponse(BaseModel):\n    id: Optional[int] = None\n    model_config = {'from_attributes': True}\n"
+    },
+    "success_count": 1,
+    "first_seen": "2026-07-06T12:48:01Z",
+    "last_seen": "2026-07-06T12:48:01Z",
+    "source_idea": "A simple CRM for small businesses with user login. Users manage contacts (name, email, phone, compan"
+  },
+  "832ef0af40f632f2": {
+    "fix_hash": "832ef0af40f632f2",
+    "fix_content": {
+      "app/schemas/user.py": "from typing import Optional\nfrom pydantic import BaseModel, Field, ConfigDict\n\n\nclass UserCreate(BaseModel):\n    model_config = {\"from_attributes\": True}\n    email: Optional[str] = Field(None, min_length=1) # Changed to Optional to match model's NULL allowance\n    password: str = Field(min_length=1)\n\n\nclass UserUpdate(BaseModel):\n    model_config = {\"from_attributes\": True}\n    email: Optional[str] = None\n    password: Optional[str] = None\n\n\nclass UserResponse(BaseModel):\n    id: int\n    email: Optional[str] = None\n\n    model_config = ConfigDict(from_attributes=True)\n"
+    },
+    "success_count": 1,
+    "first_seen": "2026-07-06T12:48:01Z",
+    "last_seen": "2026-07-06T12:48:01Z",
+    "source_idea": "A simple CRM for small businesses with user login. Users manage contacts (name, email, phone, compan"
+  },
+  "fa339419f17b7aff": {
+    "fix_hash": "fa339419f17b7aff",
+    "fix_content": {
+      "app/services/stats_service.py": "from sqlalchemy.orm import Session\nfrom sqlalchemy import func\n\n# Assuming a User model exists for demonstration purposes.\n# In a real application, you would import specific models\n# relevant to the statistics you want to calculate.\nfrom app.models.user import User\n\nclass StatsService:\n    def __init__(self, db: Session):\n        self.db = db\n\n    def get_total_users(self) -> int:\n        \"\"\"Returns the total number of users in the database.\"\"\"\n        return self.db.query(User).count()\n\n    def get_user_creation_stats(self):\n        \"\"\"Returns user creation counts grouped by day.\"\"\"\n        # Assuming 'created_at' is a column in the User model\n        # and is a datetime type.\n        stats = self.db.query(\n            func.date(User.created_at).label('creation_date'),\n            func.count(User.id).label('count')\n        ).group_by(func.date(User.created_at)).all()\n        return [{\n            \"creation_date\": stat.creation_date.isoformat() if stat.creation_date else None,\n            \"count\": stat.count\n        } for stat in stats]\n\n    # Add more statistics methods as needed for your application\n    # For example:\n    # def get_total_items(self) -> int:\n    #     return self.db.query(Item).count()\n"
+    },
+    "success_count": 1,
+    "first_seen": "2026-07-06T12:48:14Z",
+    "last_seen": "2026-07-06T12:48:14Z",
+    "source_idea": "A simple CRM for small businesses with user login. Users manage contacts (name, email, phone, compan"
+  },
+  "679c9ddf22a8231a": {
+    "fix_hash": "679c9ddf22a8231a",
+    "fix_content": {
+      "app/utils/dependencies.py": "from typing import Annotated\nfrom fastapi import Query\n\ndef get_pagination_params(\n    skip: Annotated[int, Query(ge=0, description=\"Number of items to skip\")] = 0,\n    limit: Annotated[int, Query(ge=1, le=100, description=\"Maximum number of items to return\")] = 100,\n):\n    \"\"\"Dependency to get pagination parameters.\"\"\"\n    return {\"skip\": skip, \"limit\": limit}\n"
+    },
+    "success_count": 1,
+    "first_seen": "2026-07-06T12:48:14Z",
+    "last_seen": "2026-07-06T12:48:14Z",
+    "source_idea": "A simple CRM for small businesses with user login. Users manage contacts (name, email, phone, compan"
+  },
+  "e0ffc0e5354597c7": {
+    "fix_hash": "e0ffc0e5354597c7",
+    "fix_content": {
+      "app/utils/password.py": "import bcrypt\n\ndef hash_password(password: str) -> str:\n    \"\"\"Hashes a password using bcrypt.\"\"\"\n    hashed_bytes = bcrypt.hashpw(password.encode('utf-8'), bcrypt.gensalt())\n    return hashed_bytes.decode('utf-8')\n\ndef verify_password(plain_password: str, hashed_password: str) -> bool:\n    \"\"\"Verifies a plain password against a hashed password.\"\"\"\n    return bcrypt.checkpw(plain_password.encode('utf-8'), hashed_password.encode('utf-8'))\n"
+    },
+    "success_count": 1,
+    "first_seen": "2026-07-06T12:48:14Z",
+    "last_seen": "2026-07-06T12:48:14Z",
+    "source_idea": "A simple CRM for small businesses with user login. Users manage contacts (name, email, phone, compan"
   }
 }

@@ -35,13 +35,16 @@ from app.templates.database_template import DATABASE_PY_TEMPLATE, AUTH_UTILS_TEM
 from app.utils.json_cleaner import extract_json
 from app.services.entity_metadata import find_model_for_resource, render_field_manifest
 
-# Experiment 017: model-driven schema generation. Off by default so the
-# existing (bugged) filename-guess lookup remains the exact A/B baseline;
-# set FORGE_MODEL_DRIVEN_SCHEMA=1 to have Wave 3 resolve the REAL generated
-# model (by parsed table_name/class_name, never a bare re-export shim) and
-# inject an explicit, binding field manifest into the schema prompt instead
-# of a "for reference" raw file dump.
-MODEL_DRIVEN_SCHEMA_GENERATION = os.environ.get("FORGE_MODEL_DRIVEN_SCHEMA", "0") == "1"
+# Experiments 017/018: model-driven schema generation. PROMOTED TO DEFAULT
+# 2026-07-06 after two canaries confirmed the mechanism (Exp017: direct
+# file-level proof the Contact.name/first_name drift is eliminated, no
+# unrelated regressions found; Exp018 clean confirming run: CANARY PASSED,
+# both previously-blocked apps -- blog_cms and crm -- achieved full 11/11
+# CRUD passes for the first time all cycle, the one remaining failure
+# (todo, unseeded Priority-lookup table) independently confirmed unrelated
+# and pre-existing). Set FORGE_MODEL_DRIVEN_SCHEMA=0 to roll back to the
+# old naive filename-guess lookup if a regression is ever traced to this.
+MODEL_DRIVEN_SCHEMA_GENERATION = os.environ.get("FORGE_MODEL_DRIVEN_SCHEMA", "1") == "1"
 
 
 @dataclass
