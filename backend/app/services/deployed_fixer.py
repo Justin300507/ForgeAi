@@ -136,7 +136,7 @@ def _llm_fix(error: dict, project_path: Path) -> Optional[dict]:
         fix_hint = error.get("fix_hint", "")
 
         # Find the relevant file
-        route_hint = endpoint.strip("/").split("/")[0] if endpoint else ""
+        route_hint = endpoint.split("?")[0].strip("/").split("/")[0] if endpoint else ""
         candidate = project_path / "app" / "routes" / f"{route_hint}_routes.py"
         file_content = ""
         rel_path = ""

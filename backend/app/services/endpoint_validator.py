@@ -204,7 +204,14 @@ def validate_frontend_api_calls(project_path, errors):
     missing = set(found.keys()) - actual
     for method, norm_path in sorted(missing):
         original_path, relpath = found[(method, norm_path)]
-        resource = original_path.strip("/").split("/")[0].rstrip("s") or "misc"
+        # Derive resource/filename from the query-string-free path. original_path
+        # (used below in the message, unchanged) can be
+        # "/tasks?limit=5&sort_by=created_at&sort_order=desc" — deriving the
+        # filename from THAT produced "tasks?limit=5&sort_by=..._routes.py",
+        # an un-importable module the fix loop then dutifully created,
+        # crashing every subsequent compile check (observed live 2026-07-06,
+        # todo canary run, forge score 76.9 -> 25.5).
+        resource = original_path.split("?")[0].strip("/").split("/")[0].rstrip("s") or "misc"
         expected_file = f"app/routes/{resource}_routes.py"
         # Same "Missing endpoint ... (expected in ...)" shape validate_endpoints
         # uses, so this flows through the existing fix-loop file-attribution

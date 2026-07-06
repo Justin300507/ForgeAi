@@ -9,7 +9,7 @@ _ABORT_AFTER_CONSECUTIVE_TIMEOUTS = 4
 
 def _build_synthetic_body(architecture, path):
 
-    resource = path.strip("/").split("/")[0].rstrip("s")
+    resource = path.split("?")[0].strip("/").split("/")[0].rstrip("s")
     body = {}
 
     for table in architecture.get("database_schema", []):

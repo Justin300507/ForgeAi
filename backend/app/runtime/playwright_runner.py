@@ -84,7 +84,7 @@ def _default_routes(architecture: dict | None) -> list[str]:
             "invoices": "/invoices",
         }
         for ep in architecture.get("api_endpoints", []):
-            path = ep.get("path", "")
+            path = ep.get("path", "").split("?")[0]
             prefix = path.strip("/").split("/")[0] if path else ""
             if prefix in seen_prefixes or prefix not in mapping:
                 continue
