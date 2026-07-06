@@ -1412,3 +1412,128 @@ attempt at baselining via the `run_forgebench.py --suite golden` runner
 0.0) — predates and was superseded by the `run_canary.py` 3-app canary
 methodology this log otherwise uses. Left uncommitted pending a decision on
 whether to keep, finish, or discard it.
+
+## Experiment 020 — Deterministic reference-data seeder (ADR-002 candidate)
+
+**Hypothesis**: does replacing the zero-insert minimal `seed_routes.py`
+fallback stub (fires when the LLM omits the file entirely — the factor
+Experiment 019 identified as gating its own benefit) with a deterministic,
+`entity_metadata`-driven generator eliminate the "lucky LLM roll" gate on
+reference-table seeding, so FK-validated Create calls stop failing whenever
+this fallback path fires — without any new LLM calls, keyword/entity-name
+special-casing, or runtime lookups against out-of-graph entities?
+
+**Design**: full spec at
+`docs/superpowers/specs/2026-07-06-deterministic-seed-generator-design.md`
+(frozen after a multi-round architecture review), implementation plan at
+`docs/superpowers/plans/2026-07-06-deterministic-seed-generator.md`. Built
+via Subagent-Driven Development, one task at a time, task-scoped review +
+fix-and-re-review loop before every commit (Tasks 1-5, commits
+`a609753..1f3e893`): FK-target candidacy + transitive required-FK
+eligibility (a candidate is only seedable if every required FK it declares
+also points to another eligible entity — entities requiring a real `users`
+row, directly or transitively, are excluded and logged, never resolved with
+a runtime query), Kahn's-algorithm topological ordering with explicit cycle
+detection, count-based idempotency (`db.query(Model).count() >= 3`, no
+field-guessing or UNIQUE-constraint reliance), type-driven value generation
+(zero semantic guessing), and a single fallback boundary that reverts to
+today's exact static stub on any failure. Two review rounds caught and
+fixed real issues before merge: a byte-for-byte duplicate of
+`entity_metadata.py`'s `_singular()` helper (Task 2 — removed, fixed at the
+correct layer instead of routing around it), and a telemetry field
+(`generation_time_ms`) silently staying `0.0` on 3 of 4 fallback paths
+(Task 3 — fixed). 35/35 local tests passing before any canary spend.
+
+**Canary** (`adr002-deterministic-seeder`, `--no-deploy`,
+`m2_canary_adr002_run.log`), compared against Experiment 019's
+`m1-seed-before-crud` baseline:
+
+| app | forge_score | crud_ok | runtime_ok | fix_attempts |
+|---|---|---|---|---|
+| todo | 73.86 → 75.97 | None → False | False → False | 2 → 2 |
+| blog_cms | 90.29 → 87.30 | None → False | True → True | 0 → 4 |
+| crm | 91.57 → 88.63 | None → False | True → True | 0 → 0 |
+
+**Telemetry — mechanism fired correctly in both cases it applied, confirmed
+by direct log inspection, not just aggregate scores**:
+
+- **todo** (line 139): `[patcher] ADR-002 deterministic seed_routes.py
+  generated (1 lookup entities, 2.27ms)`. Runtime confirms real inserts,
+  not a no-op: `Seed summary: {'priorities': {'inserted': 3, 'skipped': 0,
+  'already_existed': 0}}` — reproduced identically across all 5 journey
+  runs this attempt. **However, todo's Create-entity step still failed —
+  with a completely different, unrelated error than the one this feature
+  targets**: `AttributeError: 'TaskCreate' object has no attribute
+  'items'` in the LLM-generated `task_routes.py` (a malformed
+  `**{...task_in.items()...}.model_dump(...)` construct — broken
+  dict-unpacking chained onto a `.model_dump()` call that doesn't belong
+  there, an unrelated code-generation defect this run). The FK-validation
+  failure this feature exists to fix (empty `priorities` table) did **not**
+  recur — confirmed by the seed telemetry showing 3 real rows inserted
+  before every Create attempt. todo's forge_score improved slightly
+  (73.86→75.97) despite `crud_ok` staying false, consistent with a
+  different failure mode blocking CRUD this run, not the one under test.
+- **blog_cms** (line 1516, its second repair-loop regeneration):
+  `[patcher] ADR-002 deterministic seed_routes.py generated (1 lookup
+  entities, 2.06ms)` immediately followed by `[patcher]   excluded posts:
+  required FK -> users outside the deterministic lookup graph` — the
+  transitive-eligibility rule correctly refused to seed `Post` (which
+  requires a real author), exactly the "don't fabricate business data"
+  boundary this design exists to enforce, and correctly retained the one
+  genuine lookup entity instead. blog_cms's fix-attempt regression (0→4)
+  and score drop (90.29→87.30) trace to an entirely separate, pre-existing
+  defect class: endpoint/routing-naming drift between frontend calls
+  (`GET /articles?author_id=`, `GET /authors/${userId}`, `POST /articles`)
+  and the backend's actual route modules (`post_routes.py`,
+  `article_routes.py` naming mismatch) — unrelated to seeding.
+- **crm**: no ADR-002 log line at all — the LLM produced a real
+  `seed_routes.py` this attempt, so the fallback path (and therefore this
+  feature) never fired. `fix_attempts` stayed at 0; the small score dip
+  (91.57→88.63) is unrelated LLM generation variance.
+
+**Verdict: mechanism CONFIRMED correct and safe, aggregate benefit
+INCONCLUSIVE this run — exactly the "gated by a separate factor" pattern
+Experiment 019 hit, now on the far side of the gate this feature was built
+to remove.** This is a fallback-path fix: it can only produce a visible
+score effect in a given canary run if (a) the LLM actually omits
+`seed_routes.py` that attempt, AND (b) no other unrelated defect
+independently blocks the same CRUD step. Condition (a) held for todo and
+blog_cms this run; condition (b) did not — todo hit a new, unrelated
+dict-unpacking bug and blog_cms hit pre-existing endpoint-naming drift,
+both fully independent of reference-data seeding. Direct evidence (the
+`Seed summary` telemetry, the `excluded posts` exclusion log, both added by
+this feature specifically to make this claim checkable rather than
+inferred) confirms the mechanism did exactly what the frozen spec
+requires in both cases it fired. Per the spec's own acceptance criteria,
+"reference-table failures decrease" is satisfied in the narrow, literal
+sense (the specific empty-lookup-table failure mode did not recur where
+the path fired) — but the broader "CRUD reliability improves" criterion is
+not cleanly demonstrated by this single confounded run.
+
+**Decision: KEEP, do not promote to ADR-002 yet.** Per the plan's Task 7
+gate ("do not write the ADR on inconclusive evidence"), promotion is
+deferred pending a run where this path fires without an unrelated defect
+also present — or targeted verification (deleting a real project's
+`seed_routes.py` post-generation and re-running the journey in isolation,
+bypassing the LLM-omission coin-flip entirely) if a clean canary
+confirmation proves elusive. The code stays in place regardless: it is a
+strict safety improvement over the status quo (static stub → guaranteed
+zero inserts, always) even on an inconclusive canary, and Tasks 1-5's 35
+unit/execution-based tests already prove the algorithm correct
+independent of any canary's LLM-generation lottery.
+
+**Engineering effort**: M (7-task TDD plan, 2 review-and-fix rounds, ~700
+lines including tests). **Cost**: 1 canary run, no additional LLM spend
+attributable to this feature (zero new LLM calls by design — confirmed by
+`generation_time_ms` in the low single-digit milliseconds for both firings,
+consistent with pure local computation).
+
+**Next steps**: (1) re-run the canary once more, unconditionally, to get a
+second confounded-or-clean data point before deciding whether a targeted
+non-canary verification is needed; (2) the two unrelated defects surfaced
+this run (todo's `task_in.items()`/`model_dump()` malformed constructor,
+blog_cms's endpoint-naming drift between frontend calls and backend route
+modules) are newly identified, independent bottlenecks — not part of this
+experiment's scope, flagged for future prioritization alongside Phase 4
+(frontend reliability) and Phase 5 (endpoint consistency) from the user's
+V16 roadmap.
