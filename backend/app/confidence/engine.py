@@ -165,7 +165,7 @@ def compute_confidence(
 def compute_from_context(ctx) -> ConfidenceReport:
     """
     Convenience wrapper: compute confidence from a GenerationContext object.
-    Pulls score dimensions from ctx.scores and historical data from the generation log.
+    Pulls score dimensions from ctx.score_history and historical data from the generation log.
     """
     from app.knowledge.failure_db import generation_log
 
