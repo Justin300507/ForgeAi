@@ -76,11 +76,11 @@ def _dim_lookup(dimensions: list[dict], name: str) -> dict | None:
     return next((d for d in dimensions if d["name"] == name), None)
 
 
-def _check_result(idea_key: str, idea: str, deploy: bool) -> dict:
+def _check_result(idea_key: str, idea: str, deploy: bool, provider: str = "auto") -> dict:
     print(f"\n{'='*70}\n  CANARY: {idea_key}\n{'='*70}")
     t0 = time.time()
     try:
-        result = generate_project_v15(idea=idea, provider="auto", deploy=deploy)
+        result = generate_project_v15(idea=idea, provider=provider, deploy=deploy)
     except Exception as exc:
         return {
             "app": idea_key, "crashed": True, "error": f"{type(exc).__name__}: {exc}",
@@ -138,6 +138,9 @@ def main():
     parser = argparse.ArgumentParser(description="Canary benchmark: Todo/Blog CMS/CRM against V15Pipeline")
     parser.add_argument("--label", default=None, help="Label for this run (e.g. milestone name)")
     parser.add_argument("--no-deploy", action="store_true", help="Skip live deploy (faster, no side effects)")
+    parser.add_argument("--provider", default="auto",
+                         help="LLM provider (auto|gemini|groq|cerebras|...); auto already tries "
+                              "Gemini first with retries, falling back to Groq")
     args = parser.parse_args()
 
     deploy = not args.no_deploy
@@ -150,7 +153,7 @@ def main():
     results = []
     for idea_key, filename in CANARY_APPS:
         idea = (BENCHMARKS_DIR / filename).read_text(encoding="utf-8").strip()
-        results.append(_check_result(idea_key, idea, deploy))
+        results.append(_check_result(idea_key, idea, deploy, provider=args.provider))
 
     print(f"\n{'='*70}\n  CANARY SUMMARY{'  (' + args.label + ')' if args.label else ''}\n{'='*70}")
     any_regression = False
