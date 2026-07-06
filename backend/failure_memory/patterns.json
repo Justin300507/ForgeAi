@@ -204,7 +204,7 @@
       "last_seen": "2026-06-22T07:34:30.310089"
     },
     "MissingEndpoint": {
-      "count": 12,
+      "count": 15,
       "examples": [
         {
           "project": "bug_tracker",
@@ -228,7 +228,7 @@
         }
       ],
       "first_seen": "2026-06-22T07:49:29.613937",
-      "last_seen": "2026-07-06T07:08:09.674372"
+      "last_seen": "2026-07-06T09:04:32.321980"
     },
     "FastAPIError": {
       "count": 1,
@@ -306,7 +306,7 @@
       "last_seen": "2026-07-01T20:13:11.496878"
     },
     "JourneyCRUDFailure": {
-      "count": 19,
+      "count": 20,
       "examples": [
         {
           "project": "BlogSphere",
@@ -330,7 +330,7 @@
         }
       ],
       "first_seen": "2026-06-29T23:47:06.584012",
-      "last_seen": "2026-07-06T07:05:38.347866"
+      "last_seen": "2026-07-06T09:06:48.102617"
     },
     "InvalidDependsType": {
       "count": 1,
@@ -450,6 +450,6 @@
       "last_seen": "2026-07-06T05:46:37.663703"
     }
   },
-  "total_runs": 328,
-  "last_updated": "2026-07-06T07:39:26.536918"
+  "total_runs": 332,
+  "last_updated": "2026-07-06T09:06:48.102600"
 }

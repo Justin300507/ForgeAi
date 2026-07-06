@@ -565,6 +565,92 @@ negative-case project using a real `(str, Enum)`-based Query param is left
 completely untouched. No generation calls used — pending a validation
 canary (Experiment 011) before crediting it with any score movement.
 
+---
+
+## Experiment 011 — BaseModel-Query-param fix (validation canary)
+
+**Hypothesis:** Does `_fix_query_param_basemodel` (preflight.py, priority 22,
+commit acdf252) eliminate the `AssertionError: Query parameter '<name>'
+must be one of the supported types` boot-crash class discovered in
+Experiment 010, without regressing todo/blog_cms/crm on anything the fix
+doesn't target?
+
+**Changes under test:** `_fix_query_param_basemodel` only. No other code
+touched (confirmed clean working tree before running).
+
+**Date:** 2026-07-06, ~14:00-14:45 IST. `--provider gemini --no-deploy`
+(log: `m1_canary_querybasemodel_run.log`).
+
+**Results vs. Experiment 010:**
+| App | Exp010 | Exp011 | Canary verdict |
+|---|---|---|---|
+| todo | 99.3 (A+) | 99.3 (A+), 0 fix attempts | OK, unchanged |
+| blog_cms | 67.5 (D) | 93.3 (A), DEPLOY READY | flagged REGRESSION (build=False) |
+| crm | 44.4 (F), total boot failure | 65.8 (D), NEEDS REPAIR | flagged OK by script, but score moved |
+
+**Target questions, answered directly:**
+
+1. **`ConfigAttributeError` remains eliminated** — YES. Zero occurrences
+   anywhere in the run log (grepped the full ~2,500-line log).
+2. **`BaseModel`-as-`Query()` startup failures eliminated** — YES. Zero
+   occurrences of `must be one of the supported types` anywhere. crm's
+   backend boots cleanly across all 3 fix attempts (`started=True
+   health=True`), all 15 endpoints respond (API Functionality 100/100) —
+   the exact scenario that was a 100% boot failure in Experiment 010.
+3. **crm Runtime Startup improves** — YES in the sense that matters: the
+   app now actually starts and serves traffic (vs. total non-boot before).
+   The *dimension score* is still 20/100 this run, but for an unrelated
+   reason: its `success` flag is coupled to the full smoke-test/journey
+   outcome, which hit a **different, newly-exposed bug** — a
+   `NOT NULL constraint failed: contacts.name` `IntegrityError` on Create
+   entity (the request never populated `name`). This has nothing to do
+   with Query()/BaseModel; it's a distinct root cause, only reachable now
+   because the app boots at all.
+4. **crm CRUD success improves** — marginally: journey `steps_passed` went
+   6→7 (Create entity is now classified "passed, 422 schema mismatch,
+   server alive" instead of a flat 500 crash — the phone_number
+   type-coercion from e2f8d77 visibly worked this run), but `crud_passed`
+   is still `False` overall because the NOT-NULL-constraint bug above
+   prevented an entity_id from ever being returned. Fixing the boot crash
+   was a *precondition* for CRUD to even be attempted; it just uncovered
+   the next bottleneck in the same code path.
+5. **No regressions in todo/blog_cms** — confirmed. todo is byte-identical
+   in outcome (0 fix attempts needed). blog_cms's automated "REGRESSION"
+   flag is a false positive, same pattern seen in Experiments 005/007/008:
+   its score *improved* (67.5→93.3); the `build=False` flag traces to a
+   pre-existing, already-catalogued frontend missing-import bug
+   (`Could not resolve "./Sidebar"` / `"./Navbar"` / `"./pages/SignupPage"`
+   — a different missing file each attempt, ordinary LLM variance, see
+   [[project_import_resolution]]). `_fix_query_param_basemodel` never
+   touches frontend files, so it cannot be the cause.
+
+**Cost**: $0.0226 (todo) + $0.0100 (blog_cms) + $0.0261 (crm) = **$0.0587
+total** (~₹5). Confidence reports: todo 93.1% (A), blog_cms 74.6% (C), crm
+26.9% (F, driven by the unrelated NOT-NULL bug, not this fix). Browser
+validation dimension was N/A/excluded on all 3 apps (playwright not
+installed in this environment — a pre-existing infrastructure gap,
+unrelated to this experiment).
+
+**Conclusion — KEEP the fix.** Judged strictly against what it targets (per
+the user's explicit instruction to ignore unrelated failures): both
+confirmed occurrences of the BaseModel-as-Query-type boot crash
+(`ConfigAttributeError`'s sibling bug class) are gone, replicated exactly
+where it was previously guaranteed to fail (crm). No regression anywhere
+attributable to this change.
+
+**Next highest-ROI candidate identified from telemetry (not started)**:
+cross-referenced this run's finding against `backend/failure_memory/patterns.json`
+(all-time, n=332 runs) — `JourneyCRUDFailure` remains the #1 category (20
+occurrences, well ahead of `MissingEndpoint` 15 and `ImportError` 11), and
+this run added a *new, cleanly root-caused* sub-cause within that same
+bucket: a SQLAlchemy model column defined `NOT NULL` (no `server_default`,
+not `nullable=True`) whose value the Create-entity route/schema doesn't
+always supply, causing an `IntegrityError` deep in `db.commit()` that the
+journey runner can't recover from (no entity_id ever returned). Same shape
+as the two just-shipped fixes (deterministic, preflight-patchable, directly
+gates CRUD success) — recommended as the next reliability target, pending
+user go-ahead.
+
 **Housekeeping this cycle**: found and deleted ~10 zero-byte debris files in
 `backend/` (`backend/'`, `backend/65`, `backend/dict`, etc.) — artifacts of
 an earlier broken shell redirection, not user work. Also found an earlier,
