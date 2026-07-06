@@ -12,6 +12,8 @@ Execution order:
 
   [Parallel — after backend is up]
     4.  HTTP            — direct HTTP calls to every endpoint
+    4b. Schema/DB       — live OpenAPI response schema vs. actual JSON keys,
+                          exact-diffed per endpoint (Pydantic/model mismatches)
     5.  Browser         — Playwright: page load, blank-page check
     6.  Console Logs    — browser console errors
     7.  Screenshots     — capture full-page PNG
@@ -538,6 +540,145 @@ def _run_runtime_validation(ctx: GenerationContext) -> VerificationResult:
 
 
 # ═══════════════════════════════════════════════════════════════
+#   STAGE 3b — Schema/DB assertion (post-boot, parallel-safe)
+# ═══════════════════════════════════════════════════════════════
+
+def _openapi_schema_ref(get_op: dict) -> Optional[str]:
+    """First $ref found in a GET operation's 200 JSON response schema,
+    unwrapping one level of `items` (list endpoints) or `allOf` (FastAPI's
+    inheritance-composition style)."""
+    try:
+        schema = get_op["responses"]["200"]["content"]["application/json"]["schema"]
+    except (KeyError, TypeError):
+        return None
+    return _first_ref(schema)
+
+
+def _first_ref(schema: Any) -> Optional[str]:
+    if not isinstance(schema, dict):
+        return None
+    if "$ref" in schema:
+        return schema["$ref"]
+    if "items" in schema:
+        return _first_ref(schema["items"])
+    if schema.get("allOf"):
+        return _first_ref(schema["allOf"][0])
+    return None
+
+
+def _resolve_required_fields(schema_name: str, schemas: dict) -> tuple[str, list[str]]:
+    """Required field names for an OpenAPI component schema, resolving one
+    level of `allOf` composition (FastAPI emits this for schemas built via
+    class inheritance -- exactly the case the static AST-based
+    schema_model_validator misses, since it inspects each ClassDef in
+    isolation without following base-class fields)."""
+    schema_def = schemas.get(schema_name, {})
+    required = list(schema_def.get("required", []))
+    title = schema_def.get("title") or schema_name
+    for part in schema_def.get("allOf", []):
+        ref = part.get("$ref")
+        if ref:
+            sub = schemas.get(ref.rsplit("/", 1)[-1], {})
+            required.extend(sub.get("required", []))
+    return title, sorted(set(required))
+
+
+def _run_schema_db_assertion(ctx: GenerationContext) -> VerificationResult:
+    """
+    Post-boot assertion: for every list-style GET endpoint, fetch the live
+    OpenAPI spec's declared response schema and diff its required fields
+    against the ACTUAL JSON keys the running server returns.
+
+    This is a runtime complement to the static, AST-based
+    schema_model_validator (which pattern-matches Column()/mapped_column()
+    calls and inherits nothing across class hierarchies): it inspects the
+    server's own fully-resolved OpenAPI schema and a real response body,
+    so it also catches mismatches the static check can miss (fields from a
+    shared base schema, dynamically-added columns) -- and produces an
+    EXACT missing-field diff instead of the HTTP stage's generic
+    "GET /x returned 500", directly targeting the PydanticSerializationError/
+    ResponseValidationError/ModelFieldMismatch failure patterns.
+
+    Scoped to endpoints without a path parameter (list endpoints) so it
+    never needs a real id and never has side effects -- pure GETs only.
+    """
+    t0 = time.time()
+    diagnostics: list[Diagnostic] = []
+    if not ctx.backend_url:
+        return VerificationResult(stage="schema_db_assertion", status=StageStatus.SKIPPED,
+                                  metadata={"reason": "no backend url"}, duration_ms=_ms(t0))
+    try:
+        import httpx
+        base = ctx.backend_url.rstrip("/")
+        spec_resp = httpx.get(base + "/openapi.json", timeout=5)
+        if spec_resp.status_code != 200:
+            return VerificationResult(stage="schema_db_assertion", status=StageStatus.SKIPPED,
+                                      metadata={"reason": f"openapi.json returned {spec_resp.status_code}"},
+                                      duration_ms=_ms(t0))
+        spec = spec_resp.json()
+        schemas = spec.get("components", {}).get("schemas", {})
+        checked = 0
+
+        for path, methods in spec.get("paths", {}).items():
+            if "{" in path:
+                continue  # detail routes need a real id -- list endpoints only
+            get_op = methods.get("get")
+            if not get_op:
+                continue
+            ref = _openapi_schema_ref(get_op)
+            if not ref:
+                continue
+            schema_name, required = _resolve_required_fields(ref.rsplit("/", 1)[-1], schemas)
+            if not required:
+                continue
+
+            try:
+                r = httpx.get(base + path, timeout=5)
+            except Exception:
+                continue
+            if r.status_code != 200:
+                continue  # non-2xx is already the HTTP stage's diagnostic to raise
+
+            try:
+                body = r.json()
+            except Exception:
+                continue
+            sample = body[0] if isinstance(body, list) and body else (body if isinstance(body, dict) else None)
+            if sample is None:
+                continue  # empty list -- nothing to diff against yet
+
+            checked += 1
+            actual_keys = set(sample.keys())
+            missing = sorted(f for f in required if f not in actual_keys)
+            if missing:
+                diagnostics.append(Diagnostic(
+                    error_id=Diagnostic.make_id(
+                        "schema_db_assertion", ErrorCategory.CONTRACT,
+                        f"missing fields {missing} in {path}", path),
+                    category=ErrorCategory.CONTRACT,
+                    severity=ErrorSeverity.HIGH,
+                    source="schema_db_assertion",
+                    message=(f"GET {path} declares response schema '{schema_name}' requiring "
+                             f"field(s) {missing}, but the live JSON response only contains "
+                             f"{sorted(actual_keys)}. This is a schema/model field mismatch."),
+                    file_path=None,
+                    fix_hint=(f"Add {missing} to the SQLAlchemy model backing '{schema_name}' "
+                              f"(or remove the field from the schema if it was never meant to exist)."),
+                ))
+
+        status = StageStatus.PASSED if not diagnostics else StageStatus.FAILED
+        return VerificationResult(stage="schema_db_assertion", status=status, diagnostics=diagnostics,
+                                  duration_ms=_ms(t0), metadata={"endpoints_checked": checked})
+    except Exception as exc:
+        return VerificationResult(
+            stage="schema_db_assertion", status=StageStatus.FAILED,
+            diagnostics=[_diag("schema_db_assertion", f"Schema/DB assertion crashed: {exc}",
+                               ErrorSeverity.MEDIUM, ErrorCategory.RUNTIME)],
+            duration_ms=_ms(t0),
+        )
+
+
+# ═══════════════════════════════════════════════════════════════
 #   STAGE 4 — HTTP endpoint tests (parallel-safe)
 # ═══════════════════════════════════════════════════════════════
 
@@ -1014,23 +1155,25 @@ class VerificationEngine:
         )
 
         if runtime_ok and self.run_browser:
-            print("  [verify] 4-9: Running HTTP / Browser / Performance / Accessibility in parallel...")
+            print("  [verify] 4-9: Running HTTP / Schema-DB / Browser / Performance / Accessibility in parallel...")
             evt = ctx.begin_stage("parallel-checks")
 
             # browser_result captures + screenshots stored separately
             browser_vr: Optional[VerificationResult] = None
             http_vr: Optional[VerificationResult]    = None
+            schema_vr: Optional[VerificationResult]  = None
             perf_vr: Optional[VerificationResult]    = None
             a11y_vr: Optional[VerificationResult]    = None
 
-            with ThreadPoolExecutor(max_workers=4) as pool:
+            with ThreadPoolExecutor(max_workers=5) as pool:
                 fut_http   = pool.submit(_run_http_tests, ctx)
+                fut_schema = pool.submit(_run_schema_db_assertion, ctx)
                 fut_browser = pool.submit(_run_browser_and_screenshots, ctx)
                 fut_perf   = pool.submit(_run_performance_check, ctx)
                 fut_a11y   = pool.submit(_run_accessibility_check, ctx)
 
                 # Collect results as they finish
-                for fut in as_completed([fut_http, fut_browser, fut_perf, fut_a11y]):
+                for fut in as_completed([fut_http, fut_schema, fut_browser, fut_perf, fut_a11y]):
                     try:
                         result = fut.result()
                         if fut is fut_browser:
@@ -1038,6 +1181,8 @@ class VerificationEngine:
                             all_screenshots.extend(s for s in screenshots if s)
                         elif fut is fut_http:
                             http_vr = result
+                        elif fut is fut_schema:
+                            schema_vr = result
                         elif fut is fut_perf:
                             perf_vr = result
                         elif fut is fut_a11y:
@@ -1051,10 +1196,11 @@ class VerificationEngine:
 
             ctx.end_stage(evt, StageStatus.PASSED)
 
-            # http/performance/accessibility diagnostics used to only live in the
-            # local `results` list (used for printing) and were never visible to
-            # the fix loop or regression detection -- ctx.extra_results fixes that.
-            for stage_result in [http_vr, perf_vr, a11y_vr]:
+            # http/schema/performance/accessibility diagnostics used to only live
+            # in the local `results` list (used for printing) and were never
+            # visible to the fix loop or regression detection -- ctx.extra_results
+            # fixes that.
+            for stage_result in [http_vr, schema_vr, perf_vr, a11y_vr]:
                 if stage_result:
                     results.append(stage_result)
                     ctx.extra_results.append(stage_result)
@@ -1074,7 +1220,7 @@ class VerificationEngine:
 
         else:
             skip_reason = "backend not running" if not runtime_ok else "browser disabled"
-            for stage in ("http", "browser", "performance", "accessibility", "workflow"):
+            for stage in ("http", "schema_db_assertion", "browser", "performance", "accessibility", "workflow"):
                 results.append(VerificationResult(stage=stage, status=StageStatus.SKIPPED,
                                                   metadata={"reason": skip_reason}))
                 print(f"  [verify] SKIPPED {stage}: {skip_reason}")
