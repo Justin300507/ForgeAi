@@ -470,4 +470,14 @@ class GenerationContext:
                 {"attempt": s.attempt_number, "score": s.overall, "grade": s.grade}
                 for s in self.score_history
             ],
+            # Per-dimension pass/fail, not just the aggregate score -- callers
+            # that need to know specifically whether the build, runtime, or
+            # CRUD/browser checks passed (e.g. a canary benchmark gating on
+            # "no regression in build/runtime/CRUD/browser", not just the
+            # overall number) previously had no way to get that from
+            # to_summary() without reaching into ctx internals directly.
+            "dimensions": [
+                {"name": d.name, "score": d.score, "passed": d.passed, "na": d.na}
+                for d in self.current_score.dimensions
+            ] if self.current_score else [],
         }
