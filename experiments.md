@@ -1537,3 +1537,41 @@ modules) are newly identified, independent bottlenecks — not part of this
 experiment's scope, flagged for future prioritization alongside Phase 4
 (frontend reliability) and Phase 5 (endpoint consistency) from the user's
 V16 roadmap.
+
+**Update — second canary run (`adr002-deterministic-seeder-confirm`,
+`m2_canary_adr002_confirm_run.log`)**: `grep -c "ADR-002"` on this run's
+log returns **zero** — the LLM produced a real, non-empty `seed_routes.py`
+for all three apps this attempt, so the fallback path (and therefore this
+feature) never fired anywhere. This run adds no new evidence about the
+mechanism itself, positive or negative — it's the "condition (a) didn't
+hold" case named in this experiment's own verdict above, not a second
+trial of the thing under test.
+
+| app | forge_score (baseline → run 1 → run 2) | fix_attempts (run1 → run2) |
+|---|---|---|
+| todo | 73.86 → 75.97 → 75.97 | 2 → 2 |
+| blog_cms | 90.29 → 87.30 → 83.30 | 4 → 0 |
+| crm | 91.57 → 88.63 → 87.49 | 0 → 0 |
+
+`run_canary.py`'s own regression detector flagged blog_cms's further drop
+(87.3→83.3) and exited non-zero — but this is, if anything, **exonerating**
+for this feature: blog_cms's score kept declining in a run where the
+deterministic seeder never touched the file at all, confirming the
+regression traces to the already-identified endpoint-naming drift (or
+further unrelated LLM variance), not to anything this feature does.
+todo's forge_score and fix_attempts are identical to the first ADR-002 run
+digit-for-digit, consistent with an LLM response-cache hit reproducing the
+same generation output (including, this time, a real `seed_routes.py`)
+rather than a fresh independent sample.
+
+**Revised assessment**: two canary runs deep, the mechanism has fired
+exactly twice total (both in run 1, both verified correct via telemetry)
+and zero times in run 2. Continuing to spend full 3-app canaries hoping to
+catch the LLM omitting `seed_routes.py` again is an inefficient way to
+gather more evidence — it depends on an upstream coin-flip this feature
+doesn't control. A targeted, deterministic verification (delete a real
+generated project's `seed_routes.py` after generation and re-run just the
+journey in isolation, forcing the fallback path on demand instead of
+waiting for it) would give a clean answer at near-zero cost instead of
+gambling on further canary spend. Decision on which path to take next is
+the user's call, per this project's credit-discipline convention.
