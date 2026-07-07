@@ -1768,3 +1768,36 @@ comment). **Cost**: $0 for the fix and its local verification.
 entirely this run before CRUD was ever reached — higher severity than a
 CRUD-step failure, since it blocks everything downstream. Investigating
 next.
+
+## Experiment 023 — ConfigAttributeError pydantic-class patch, confirming canary
+
+**Hypothesis**: does commit `85514e5` (extending
+`_fix_config_missing_attrs` to class-level-patch pydantic
+`BaseSettings`/`BaseModel` Config classes, not just plain classes) hold up
+on a real canary, given the first attempt to confirm it was killed
+mid-run and produced no data?
+
+**Canary** (`pydantic-config-patch-confirm`,
+`m5_canary_pydanticconfig_confirm_run.log`): **CANARY PASSED** — all three
+apps `build=True runtime=True`, scores 91.2/85.9/87.8. `grep -c
+"ConfigAttributeError"` across the full log: **zero**. This is the
+cleanest run of this entire session — no regressions flagged at all.
+
+**Verdict: KEEP, FREEZE.** Per the user's explicit instruction: this area
+(`_fix_config_missing_attrs`) is done — three independently-discovered
+compounding bugs across two sessions (instance-vs-class scoping,
+case-sensitivity, pydantic class-level patching) are now all fixed and
+locally+canary confirmed. Not touching this function again unless new
+evidence (a fresh `ConfigAttributeError` occurrence with a genuinely new
+root cause) appears in a future run.
+
+**Note on interpreting this clean result**: `crud=False` for all three
+apps this run is expected and unrelated — no seed_routes.py/task_routes.py
+fixes were part of this specific commit, and today's earlier fixes
+(Experiments 021, 022) already independently addressed their own separate
+CRUD-blocking causes. This canary's job was narrowly to confirm the
+Config fix, which it did cleanly.
+
+**Cost**: one canary run, ~$0.02-0.03 per the session's typical per-run
+cost (see COST SUMMARY in the log). Zero cost for the fix itself (local
+verification only, per Experiment 023's predecessor commit).
