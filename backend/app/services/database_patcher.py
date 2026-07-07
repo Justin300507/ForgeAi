@@ -1041,7 +1041,17 @@ def patch_missing_required_constructor_kwargs(project_path: str) -> int:
 
 
 _DICT_UNPACK_CTOR_RE = re.compile(r"\b(\w+)\(((?:[^()]|\([^()]*\))*)\)")
-_BARE_DICT_UNPACK_RE = re.compile(r"\*\*(\w+)\b")
+# Negative lookahead excludes **varname.model_dump(...) (or any other
+# attribute/method access chained onto the unpacked name) -- without it,
+# _repl_unpack below replaces only the bare "varname" token (the \b match
+# boundary stops at the "."), leaving the original ".model_dump(...)" call
+# dangling on the dict comprehension it just inserted: a real, observed,
+# repeatedly-recurring bug (**task_in.model_dump(exclude_unset=True) ->
+# **{k: v for k, v in task_in.items() if k in Task.__table__.columns.keys()}.model_dump(exclude_unset=True),
+# an AttributeError at runtime since a dict has no .model_dump()). A
+# schema already serialized via .model_dump(...) is already the correct,
+# Pydantic-native way to pass only-set fields -- it needs no filtering.
+_BARE_DICT_UNPACK_RE = re.compile(r"\*\*(\w+)\b(?!\s*\.)")
 
 
 def patch_filter_dict_unpack_constructor_kwargs(project_path: str) -> int:
