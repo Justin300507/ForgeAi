@@ -427,6 +427,26 @@ def generate_project_v6(
                     _patch_wire_orphan_routers(Path(project_path))
                     continue
 
+                if any("Router export mismatch" in e for e in file_errors):
+                    # The file exists and almost always already declares a router —
+                    # just under a different name than router_export_validator.py
+                    # expects. Alias it deterministically instead of an LLM rename,
+                    # which risks missing a decorator reference. Falls through to
+                    # the LLM path below only if THIS file's mismatch is still
+                    # present after the patch (zero or multiple APIRouter()
+                    # assignments — ambiguous) — never worse than today.
+                    from app.services.deterministic_patcher import _patch_router_export_mismatch
+                    _patch_router_export_mismatch(Path(project_path))
+                    _expected_router = os.path.basename(filepath).replace("_routes.py", "") + "_router"
+                    if os.path.exists(abs_path):
+                        with open(abs_path, "r", encoding="utf-8") as _rf:
+                            _post_patch_content = _rf.read()
+                        if re.search(
+                            rf"^{re.escape(_expected_router)}\s*(?::|=)",
+                            _post_patch_content, re.MULTILINE,
+                        ):
+                            continue
+
                 # Never LLM-fix patcher-injected files — the patcher owns these
                 # and always injects known-good templates.  A cached LLM fix would
                 # overwrite the template with a potentially broken version.
@@ -995,6 +1015,18 @@ def repair_project(
                     from app.services.deterministic_patcher import _patch_wire_orphan_routers
                     _patch_wire_orphan_routers(Path(project_path))
                     continue
+                if any("Router export mismatch" in e for e in file_errors):
+                    from app.services.deterministic_patcher import _patch_router_export_mismatch
+                    _patch_router_export_mismatch(Path(project_path))
+                    _expected_router = os.path.basename(filepath).replace("_routes.py", "") + "_router"
+                    if os.path.exists(abs_path):
+                        with open(abs_path, "r", encoding="utf-8") as _rf:
+                            _post_patch_content = _rf.read()
+                        if re.search(
+                            rf"^{re.escape(_expected_router)}\s*(?::|=)",
+                            _post_patch_content, re.MULTILINE,
+                        ):
+                            continue
                 if not os.path.exists(abs_path):
                     fix = generate_missing_file(filepath, "\n".join(file_errors), provider, project_path=project_path)
                     if fix and fix.get("content"):

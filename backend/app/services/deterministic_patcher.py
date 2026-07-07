@@ -3430,6 +3430,69 @@ def _patch_wire_orphan_routers(project_path: Path) -> None:
         print(f"  [router_patcher] Wired {len(added)} orphan router(s) into main.py: {', '.join(added)}")
 
 
+_ROUTER_ASSIGN_RE = re.compile(r"^(\w+)\s*=\s*APIRouter\b", re.MULTILINE)
+
+
+def _patch_router_export_mismatch(project_path: Path) -> int:
+    """
+    Fixes 'Router export mismatch in app/routes/X.py. Expected 'Y_router''
+    deterministically instead of routing it to an LLM fix.
+
+    router_export_validator.py only checks whether a module-level variable
+    named exactly '<file>_router' exists -- it never inspects what the file
+    actually calls its router. In practice the router is almost always
+    there, just under a different name (or the wrong naming convention).
+    Rather than renaming it (and every @actual_name.get/post/... decorator
+    reference, which risks a missed occurrence), add a one-line alias:
+    '<expected_name> = <actual_name>' -- main.py's
+    'from app.routes.X import Y_router' then resolves correctly with zero
+    risk to the file's existing route definitions.
+
+    Skips (falls through to the existing LLM fix, never worse than today)
+    when the file has zero or more than one APIRouter() assignment, since
+    either case makes "the actual router" ambiguous.
+    """
+    routes_dir = project_path / "app" / "routes"
+    if not routes_dir.exists():
+        return 0
+
+    fixed = 0
+    for route_file in sorted(routes_dir.glob("*.py")):
+        if route_file.name == "__init__.py":
+            continue
+        try:
+            content = route_file.read_text(encoding="utf-8", errors="replace")
+        except Exception:
+            continue
+
+        expected_router = route_file.name.replace("_routes.py", "") + "_router"
+
+        # Module-level only, matching router_export_validator.py's own check.
+        already_exported = re.search(
+            rf"^{re.escape(expected_router)}\s*(?::|=)", content, re.MULTILINE
+        )
+        if already_exported:
+            continue
+
+        candidates = [
+            m.group(1) for m in _ROUTER_ASSIGN_RE.finditer(content)
+            if m.group(1) != expected_router
+        ]
+        if len(candidates) != 1:
+            continue  # ambiguous or no router found -- leave to the LLM fix
+
+        actual_router = candidates[0]
+        content = content.rstrip() + f"\n\n{expected_router} = {actual_router}\n"
+        route_file.write_text(content, encoding="utf-8")
+        fixed += 1
+        print(
+            f"  [router_export_patcher] Aliased {expected_router} = {actual_router} "
+            f"in app/routes/{route_file.name}"
+        )
+
+    return fixed
+
+
 _LOGIN_PAGE_TEMPLATE = '''\
 import React from 'react';
 import { useNavigate, Link } from 'react-router-dom';
