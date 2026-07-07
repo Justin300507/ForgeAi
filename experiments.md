@@ -1629,3 +1629,73 @@ forces and observes the exact mechanism under test; (5) negative evidence
 from the second canary (blog_cms continued drifting while ADR-002 was
 completely inactive), which rules out this feature as the source of that
 unrelated regression. Promoting to `docs/adr/ADR-002-deterministic-reference-data-generation.md`.
+
+## Experiment 021 — Deterministic RouterExportMismatch repair (ADR-003 Tier 1)
+
+**Hypothesis**: per `docs/ADR-003-investigation.md` (analysis-only
+investigation of endpoint/route contract drift), `RouterExportMismatch`
+(9 occurrences in `patterns.json`'s 376-run corpus) was the one item in
+that investigation with unambiguous, high-confidence deterministic-fix
+potential — the route file almost always already declares a router, just
+under a name `router_export_validator.py` doesn't expect, and every
+occurrence today routes to a non-deterministic LLM regeneration call.
+Does adding a deterministic alias fix eliminate the need for that LLM
+call, with zero regression risk?
+
+**Note on the investigation's second Tier-1 item**: the proposed
+"WS vs WEBSOCKET validator normalization" fix was found, on closer check
+of `git log`, to already be resolved — commit `89be822` (2026-06-30,
+predating this session) added `"FORBIDDEN endpoint methods: WS,
+WebSocket"` to the architect prompt specifically because it "caused
+realtime_routes.py to be generated empty, triggering Missing endpoint...
+validators." The stored `MissingEndpoint` example referencing a `WS`
+route is a stale artifact from before that fix. Correctly out of scope
+here — implementing it would have solved an already-solved problem.
+
+**Implementation** (commit 6135e3d): `_patch_router_export_mismatch()`
+(`deterministic_patcher.py`) scans a route file for its actual
+`APIRouter()` assignment and appends a one-line alias
+(`expected_name = actual_name`) rather than renaming anything —
+zero risk to existing route/decorator definitions. Skips (falls through
+to today's exact LLM-fix behavior, never worse) when a file has zero or
+multiple `APIRouter()` assignments, since "the actual router" is
+ambiguous in that case. Wired into both copies of `v6_orchestrator.py`'s
+fix-loop, following the same "patch deterministically, verify THIS
+specific file's mismatch actually resolved, only then fall through"
+pattern already established for orphan-router wiring (Experiment-era
+precedent) and the ADR-002 seed fallback.
+
+**Verified locally** ($0, no LLM/server) against three fixtures: a file
+with a mismatched router name (correctly aliased, validator error
+disappears), a file already using the expected name (correctly left
+untouched), and a file with two ambiguous `APIRouter()` assignments
+(correctly left alone, falls through to LLM as designed). All three
+behaved exactly as intended.
+
+**Canary** (`router-export-mismatch-fix`,
+`m3_canary_routerexport_run.log`): `grep -c "Router export mismatch"`
+returns **zero** — no app hit this failure mode this run, so the new code
+path was never exercised (same "condition (a) didn't hold" shape as
+ADR-002's second canary). `CANARY FAILED` was flagged by the script's own
+regression detector for crm's runtime dropping (87.5→72.2) — confirmed
+unrelated: the only patcher lines in this run's log are the pre-existing
+`[router_patcher]` (orphan-router wiring, unchanged), not the new
+`[router_export_patcher]`, so this commit touched none of the code that
+ran for crm this attempt. Encouragingly, todo (91.2) and blog_cms
+(`crud=True` for the first time this session) both improved this run —
+also unrelated to this fix (no router-export mismatches occurred for
+either), attributable to ordinary LLM-generation variance.
+
+**Verdict: KEEP.** Correctness is established by the offline fixture
+tests (deterministic, exhaustive over the three possible cases — matched,
+already-correct, ambiguous), not by this canary, which simply never
+exercised the code. Per the same "inconclusive-by-absence, don't chase it
+with more blind canaries" judgment made for ADR-002's second run, this is
+being left to fire naturally in a future canary rather than spending
+further runs specifically hunting for a `RouterExportMismatch` occurrence.
+
+**Engineering effort**: S (single new patcher function, ~55 lines,
+reuses the existing patcher-dispatch pattern, zero new dependencies).
+**Cost**: $0 for the fix and its verification (no LLM calls in either);
+canary cost shared with the ordinary reliability-monitoring cadence, not
+attributable to this fix specifically since it never fired.

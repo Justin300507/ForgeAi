@@ -1,0 +1,1683 @@
+
+======================================================================
+  CANARY: todo
+======================================================================
+
+######################################################################
+# FORGEAI V15 — Autonomous Self-Healing Platform
+# Idea:   A todo list app with user accounts. Users can register and log in
+# Job ID: a4eef312d69d4a65b7e6fe6c0aa814d9
+# Deploy: False → both
+######################################################################
+
+[V15] >> generation ...
+[V15] Model router: complexity=3 (medium) triggered=[filter, register, todo, medium_description] stage=planning → gemini
+
+######################################################################
+# V6 AUTONOMOUS ENGINEERING TEAM
+# Idea: A todo list app with user accounts. Users can register and log in
+######################################################################
+
+=== PRODUCT MANAGER (V6) ===
+  [cache hit] A todo list app with user accounts. Users can register and l
+  Project: Personal Todo List
+  7 user stories | 7 features | 2 entities
+
+=== ARCHITECT (V6) ===
+
+=== ARCHITECT CACHE HIT — skipping LLM call ===
+
+=== TECH LEAD REVIEW (V6) ===
+  [cache hit]
+  Summary: The proposed architecture captures the core todo functionality and includes most required endpoints,
+  Issues: 5 critical, 2 warnings
+  [CRITICAL] Missing mandatory CORS middleware and /health endpoint in main.py
+    Fix: Add `from fastapi.middleware.cors import CORSMiddleware` and `app.add_middleware(CORSMiddleware, allow_origins=["*"], allow_credentials=True, allow_methods=["*"], allow_headers=["*"])` to main.py, and implement `@app.get("/health")` returning `{"status": "ok"}`.
+  [CRITICAL] Auth endpoint path does not match contract; contract requires POST /auth/signup, but architecture defines POST /auth/register
+    Fix: Rename the route to `/auth/signup` (or add an alias) and ensure the handler returns AuthResponse with id, email, display_name as specified.
+  [CRITICAL] Router variables do not follow naming convention; contract requires `<resource>_router = APIRouter()` (e.g., `user_router`), but architecture may use generic names
+    Fix: In each route file, declare the router with the exact name (`auth_router`, `user_router`, `task_router`, `seed_router`, `stats_router`). Update main.py to import and include these routers.
+
+=== BACKEND + FRONTEND — PARALLEL ===
+
+=== FRONTEND TEAM (V6) ===
+
+=== START FRONTEND ===
+
+=== BACKEND TEAM — PARALLEL GENERATION (V6) ===
+Frontend: [cache hit] — skipping LLM call
+=== END FRONTEND ===
+
+  [V6] Wave 1 — Foundation
+  [V6] Wave 2 — Models (4 tables, parallel)
+      [cache hit]
+    [model] priorities: OK (0.0s)
+      [cache hit]
+    [model] users: OK (0.0s)
+      [cache hit]
+    [model] task_logs: OK (0.0s)
+      [cache hit]
+    [model] tasks: OK (0.0s)
+  [V6] Wave 2 done in 0.0s
+  [V6] Wave 2.5 — stripped back_populates/backref from app/models/task_logs.py
+  [V6] Wave 2.5 — stripped back_populates/backref from app/models/tasks.py
+  [V6] Wave 2.5 — renaming plural class names: {'Priorities': 'Priority', 'Users': 'User', 'TaskLogs': 'TaskLog', 'Tasks': 'Task'}
+  [V6] Wave 2.5 — created shim app/models/priority.py → Priority
+  [V6] Wave 2.5 — created shim app/models/user.py → User
+  [V6] Wave 2.5 — created shim app/models/task_log.py → TaskLog
+  [V6] Wave 2.5 — created shim app/models/task.py → Task
+  [V6] Wave 3 — Schemas (5 resources, parallel)
+      [cache hit]
+    [schema] user: OK (0.0s)
+      [cache hit]
+    [schema] auth: OK (0.0s)
+      [cache hit]
+    [schema] task: OK (0.0s)
+      [cache hit]
+    [schema] seed: OK (0.0s)
+[LLM cache] HIT (backend_generation) — 0 tokens billed
+    [schema] stats: FAIL:No JSON found in response (0.0s)
+  [V6] Wave 3 done in 0.0s
+  [V6] Wave 4 — Routes (5 files, parallel)
+Using Gemini
+Using Gemini
+Using Gemini
+Using Gemini
+Using Gemini
+Gemini failed (Cannot send a request, as the client has been closed.) — falling back to auto chain
+Using Groq (fallback)
+Gemini failed (Cannot send a request, as the client has been closed.) — falling back to auto chain
+Using Groq (fallback)
+Gemini failed (Cannot send a request, as the client has been closed.) — falling back to auto chain
+Using Groq (fallback)
+Gemini failed (Cannot send a request, as the client has been closed.) — falling back to auto chain
+Using Groq (fallback)
+Groq failed: Error code: 413 - {'error': {'message': 'Request too large for model `llama-3.3-70b-versatile` in organization `org_01kwen0b0zf7g9fbch9yzafmz6` service tier `on_demand` on tokens per minute (TPM): Limit 12000, Requested 14160, please reduce your message size and try again. Need more tokens? Upgrade to Dev Tier today at https://console.groq.com/settings/billing', 'type': 'tokens', 'code': 'rate_limit_exceeded'}}
+    [route] app/routes/stats_routes.py: FAIL:Gemini (after retries) and Groq both failed (4.4s)
+Groq failed: Error code: 413 - {'error': {'message': 'Request too large for model `llama-3.3-70b-versatile` in organization `org_01kwen0b0zf7g9fbch9yzafmz6` service tier `on_demand` on tokens per minute (TPM): Limit 12000, Requested 14233, please reduce your message size and try again. Need more tokens? Upgrade to Dev Tier today at https://console.groq.com/settings/billing', 'type': 'tokens', 'code': 'rate_limit_exceeded'}}
+    [route] app/routes/task_routes.py: FAIL:Gemini (after retries) and Groq both failed (4.5s)
+Groq failed: Error code: 413 - {'error': {'message': 'Request too large for model `llama-3.3-70b-versatile` in organization `org_01kwen0b0zf7g9fbch9yzafmz6` service tier `on_demand` on tokens per minute (TPM): Limit 12000, Requested 14224, please reduce your message size and try again. Need more tokens? Upgrade to Dev Tier today at https://console.groq.com/settings/billing', 'type': 'tokens', 'code': 'rate_limit_exceeded'}}
+    [route] app/routes/user_routes.py: FAIL:Gemini (after retries) and Groq both failed (4.7s)
+Groq failed: Error code: 413 - {'error': {'message': 'Request too large for model `llama-3.3-70b-versatile` in organization `org_01kwen0b0zf7g9fbch9yzafmz6` service tier `on_demand` on tokens per minute (TPM): Limit 12000, Requested 14157, please reduce your message size and try again. Need more tokens? Upgrade to Dev Tier today at https://console.groq.com/settings/billing', 'type': 'tokens', 'code': 'rate_limit_exceeded'}}
+    [route] app/routes/seed_routes.py: FAIL:Gemini (after retries) and Groq both failed (4.7s)
+    [route] app/routes/auth_routes.py: OK (9.4s)
+  [V6] Wave 4 done in 9.4s
+  [V6] Wave 5 — main.py (from 1 route files, 4 models)
+Using Gemini
+    [main] app/main.py: OK (5.4s)
+
+  [V6] Parallel backend done: 23/28 files OK in 14.84s (parallel phase: 9.41s)
+  Parallel failures: ['app/schemas/stats.py', 'app/routes/stats_routes.py', 'app/routes/task_routes.py', 'app/routes/user_routes.py', 'app/routes/seed_routes.py']
+  Generated 23 files in 14.8s (parallel phase: 9.4s)
+  Backend+Frontend done in 14.8s
+
+[V14] Deployment configs written: ['render.yaml', 'Procfile', '.env.example', '.github/workflows/deploy.yml', 'wrangler.toml']
+
+=== FILES WRITTEN: C:\Users\jerry\onedrive\Desktop\forgeai\generated_projects\todo_list_app (35 files) ===
+
+=== DETERMINISTIC PATCHER ===
+  [patcher] Stripped 3 relationship() declaration(s) from tasks.py
+  [patcher] Stripped 1 relationship() declaration(s) from task_logs.py
+  [patcher] Injected known-good app/utils/auth.py
+  [patcher] Injected known-good app/routes/auth_routes.py (dynamic password field + fast bcrypt)
+  [patcher] Made Response schema fields Optional in auth.py
+  [patcher] Made Response schema fields Optional in task.py
+  [patcher] Made Response schema fields Optional in user.py
+  [patcher] Response schema id/datetime fixes in user.py: UserResponse.created_at:datetime
+  [schema_patcher] Added from_attributes=True to 5 schema file(s)
+  [patcher] Cleared stale status message on error path in LoginPage.jsx
+  [patcher] Fixed response .data assumed to be wrapped (actually a bare array) in DashboardPage.jsx
+  [patcher] Patched 1 file(s) — passlib→bcrypt, async→sync, smart quotes
+  [db_patcher] Injected known-good app/database.py
+  [scaffold] Synthesized missing src/App.jsx from existing pages
+
+=== VALIDATION LOOP (V6) ===
+  Validation: FAIL — 20 errors
+
+  Validation errors:
+    • Missing endpoint DELETE /tasks/{id} (expected in app/routes/task_routes.py)
+    • Missing endpoint DELETE /users/{id} (expected in app/routes/user_routes.py)
+    • Missing endpoint GET /stats/summary (expected in app/routes/stats_routes.py)
+    • Missing endpoint GET /tasks (expected in app/routes/task_routes.py)
+    • Missing endpoint GET /tasks/{id} (expected in app/routes/task_routes.py)
+    • Missing endpoint GET /users (expected in app/routes/user_routes.py)
+    • Missing endpoint GET /users/{id} (expected in app/routes/user_routes.py)
+    • Missing endpoint POST /seed (expected in app/routes/seed_routes.py)
+
+  Fix attempt 1/4 ...
+[LLM cache] HIT (missing_file) — 0 tokens billed
+[LLM cache] HIT (missing_file) — 0 tokens billed
+[LLM cache] HIT (missing_file) — 0 tokens billed
+  [patcher] ADR-002 deterministic seed_routes.py generated (1 lookup entities, 2.17ms)
+  [patcher]   excluded tasks: required FK -> users outside the deterministic lookup graph
+[LLM cache] HIT (missing_file) — 0 tokens billed
+[LLM cache] HIT (missing_file) — 0 tokens billed
+[LLM cache] HIT (missing_file) — 0 tokens billed
+[LLM cache] HIT (missing_file) — 0 tokens billed
+      [fix cache hit] src/pages/LoginPage.jsx
+      [fix cache hit] src/pages/RegisterPage.jsx
+  [schema_patcher] Added from_attributes=True to 1 schema file(s)
+  [router_patcher] Wired 5 orphan router(s) into main.py: seed_router, stat_router, stats_router, task_router, user_router
+  [route_patcher] Imported 3 orphan page file(s) into App.jsx: SeedPage, TasksPage, UsersPage
+    [route_patcher] Skipped SeedPage: couldn't find the anchor's page tag inside its own template to clone
+    [route_patcher] Skipped TasksPage: couldn't find the anchor's page tag inside its own template to clone
+    [route_patcher] Skipped UsersPage: couldn't find the anchor's page tag inside its own template to clone
+  [route_patcher] Wired 0 orphan page(s) into App.jsx: 
+  Post-fix 1: FAIL — 6 errors
+    • Duplicate class definition: 'TaskCreate' is defined in multiple files (app/routes/task_routes.py, app/schemas/task.py) — this creates incompatible duplicate types
+    • Duplicate class definition: 'TaskUpdate' is defined in multiple files (app/routes/task_routes.py, app/schemas/task.py) — this creates incompatible duplicate types
+    • Duplicate class definition: 'TaskResponse' is defined in multiple files (app/routes/task_routes.py, app/schemas/task.py) — this creates incompatible duplicate types
+    • Duplicate class definition: 'UserCreate' is defined in multiple files (app/routes/user_routes.py, app/schemas/user.py) — this creates incompatible duplicate types
+    • Duplicate class definition: 'UserUpdate' is defined in multiple files (app/routes/user_routes.py, app/schemas/user.py) — this creates incompatible duplicate types
+
+  Fix attempt 2/4 ...
+[LLM cache] HIT (fix) — 0 tokens billed
+[LLM cache] HIT (fix) — 0 tokens billed
+    [route_patcher] Skipped SeedPage: couldn't find the anchor's page tag inside its own template to clone
+    [route_patcher] Skipped TasksPage: couldn't find the anchor's page tag inside its own template to clone
+    [route_patcher] Skipped UsersPage: couldn't find the anchor's page tag inside its own template to clone
+  Post-fix 2: PASS — 0 errors
+
+=== REVIEWS (QA / Security / Code / Performance) ===
+
+=== QA REVIEW (V6) ===
+Using Gemini
+  QA score: 60/100 | Stories: 6/7 covered
+  Blockers: No pagination on GET /tasks (and likely GET /users), GET /tasks does not support filtering by status and priority, which is a core user story requirement., Missing 404 error handling on single-resource GET, PUT, DELETE endpoints for tasks and users.
+  [MISSING] No pagination on GET /tasks (and potentially GET /users) — returns all rows
+  [MISSING] GET /tasks does not support filtering by status or priority as per user story.
+  [MISSING] No explicit confirmation prompt for task deletion is indicated by the API endpoints alone; this would likely be a frontend feature, but the backend doesn't enforce it.
+
+=== SECURITY REVIEW (V6) ===
+Using Gemini
+  Security score: 60/100 | Risk: medium
+  Findings: 0 critical, 3 high, 8 total
+  Passed: No hardcoded secrets found (secrets loaded from environment variables)., No direct SQL injection vulnerabilities found (SQLAlchemy ORM is used)., Password hashing is implemented using `get_password_hash` (assuming it uses a strong algorithm like bcrypt).
+
+============================================================
+  SECURITY REPORT — Score: 60/100 [MEDIUM]
+  The codebase exhibits several medium to high-risk security findings, primarily concerning authentication gaps on sensitive endpoints like `/seed` and `/stats/summary`, which expose data or functionality to unauthenticated users. Additionally, the permissive CORS configuration and weak password minimum length in schemas pose risks. Mass assignment vulnerabilities are present in user creation and update, allowing potential privilege escalation or unauthorized field modification. Addressing these issues is crucial for improving the application's overall security posture.
+
+  Findings (8):
+  [HIGH    ] AuthenticationGap in app/routes/seed_routes.py
+             The `/seed` endpoint, which can populate the database with initial data, does not require authentication. An unauthenticated attacker could potentially abuse this endpoint to create unwanted data or trigger resource consumption.
+             Fix: Add `current_user: User = Depends(get_current_user)` to the `seed_data` function signature to ensure only authenticated users can access this endpoint. Consider restricting this further to only admin users if applicable.
+  [HIGH    ] AuthenticationGap in app/routes/stat_routes.py
+             The `/stats/summary` endpoint in `stat_routes.py` does not require authentication. This exposes potentially sensitive aggregate user data to any unauthenticated user.
+             Fix: Add `current_user: User = Depends(get_current_user)` to the `get_stats_summary` function signature to ensure only authenticated users can access this endpoint.
+  [HIGH    ] AuthenticationGap in app/routes/stats_routes.py
+             The `/stats/summary` endpoint in `stats_routes.py` does not require authentication. This exposes potentially sensitive aggregate user data to any unauthenticated user.
+             Fix: Add `current_user: User = Depends(get_current_user)` to the `get_stats_summary` function signature to ensure only authenticated users can access this endpoint.
+  [MEDIUM  ] CORSIssue in app/main.py
+             CORS is configured with `allow_origins=["*"]`, which is too permissive for production environments. This allows any domain to make cross-origin requests, potentially enabling CSRF attacks if other vulnerabilities exist.
+             Fix: Restrict `allow_origins` to a specific list of trusted frontend domains (e.g., `["https://yourfrontend.com", "http://localhost:3000"]`) in production. Use environment variables to manage this list.
+  [MEDIUM  ] MissingValidation in app/schemas/user.py
+             The `password` field in `UserCreate` and `UserUpdate` schemas has a `min_length=1`. This is too short for a secure password and allows users to set extremely weak passwords.
+             Fix: Increase `min_length` for passwords to at least 8 or 12 characters (e.g., `min_length=8` or `min_length=12`) in `app/schemas/user.py` and `app/schemas/auth.py`.
+  [MEDIUM  ] MissingValidation in app/routes/auth_routes.py
+             The `password` field in `SignupRequest` and `LoginRequest` schemas has a `min_length=1`. This is too short for a secure password and allows users to set extremely weak passwords.
+             Fix: Increase `min_length` for passwords to at least 8 or 12 characters (e.g., `min_length=8` or `min_length=12`) in `app/routes/auth_routes.py` and `app/schemas/auth.py`.
+  [LOW     ] MassAssignment in app/routes/user_routes.py
+             The `create_user` endpoint in `user_routes.py` directly assigns `role` and `is_active` from `user_in: UserCreate`. This allows any user registering to potentially set their own role or active status, which should typically be server-controlled.
+             Fix: Remove `role` and `is_active` from `UserCreate` schema. Set these values explicitly on the server-side (e.g., `user = User(..., role='user', is_active=True)`) or only allow privileged users to set them via a separate endpoint.
+  [LOW     ] MassAssignment in app/routes/user_routes.py
+             The `update_user` endpoint in `user_routes.py` iterates through `user_in.model_dump(exclude_unset=True).items()` and uses `setattr(user, key, value)`. If the `UserUpdate` schema were to include sensitive, server-controlled fields (e.g., `is_admin`, `role`), this could lead to unauthorized privilege escalation.
+             Fix: Explicitly list allowed fields for update or ensure that `UserUpdate` schema strictly excludes any sensitive, server-controlled fields. For example, instead of `setattr`, use `user.username = user_in.username` for each allowed field.
+
+  Passed: No hardcoded secrets found (secrets loaded from environment variables)., No direct SQL injection vulnerabilities found (SQLAlchemy ORM is used)., Password hashing is implemented using `get_password_hash` (assuming it uses a strong algorithm like bcrypt)., JWT tokens are created with `create_access_token` (assuming it includes expiry and uses a strong secret key, though the key itself is not in the provided code)., IDOR is generally handled for tasks by filtering on `current_user.id`.
+============================================================
+
+=== CODE REVIEW (V6) ===
+Using Gemini
+  Code review: 63/100 overall | 1 critical, 4 high issues
+  Naming: 75 | Architecture: 60 | Maintainability: 65 | Tech Debt: 55
+  The project demonstrates a good foundational structure for a FastAPI application, with clear separation of concerns for 
+
+=== PERFORMANCE REVIEW (V6) ===
+Using Gemini
+  Performance score: 65/100 | 10 issues total
+  N+1: 4 | Missing indexes: 3 | Large payloads: 0 | Slow APIs: 3
+  [N+1]  app/models/task_logs.py: N+1: The 'task' property on TaskLog performs a separate query to fetch the assoc
+  [N+1]  app/models/tasks.py: N+1: The 'task_logs' property on Task performs a separate query to fetch all ass
+  [IDX]  app/models/task_logs.py.task_id: Foreign key 'task_id' in 'task_logs' table is used for relat
+  [IDX]  app/models/tasks.py.user_id: Foreign key 'user_id' in 'tasks' table is used for filtering
+  [db_patcher] Injected known-good app/database.py
+
+=== RUNTIME VALIDATION (V6) ===
+Running runtime validation in: C:\Users\jerry\onedrive\Desktop\forgeai\generated_projects\todo_list_app
+Using Python: C:\Users\jerry\onedrive\Desktop\forgeai\backend\venv\Scripts\python.exe
+Skipping pip install (packages pre-installed): C:\Users\jerry\onedrive\Desktop\forgeai\generated_projects\todo_list_app\app\requirements.txt
+  [runner] Pre-flight DB init: OK
+Health Check /health: 200
+
+=== USER JOURNEY (CRUD WORKFLOW) ===
+  Journey PASS — 11 passed / 0 failed
+    ✓ Register: 200 @ register
+    ✓ Login: 200 @ login
+    ✓ Detect entity: http://127.0.0.1:8001/tasks
+    ✓ Create entity: 200 id=1
+    ✓ List entities: 200 count=1
+    ✓ Edit entity: 200
+    ✓ Delete entity: 204
+    ✓ Verify deletion: 404 confirmed deleted
+    ✓ Logout: 200
+    ✓ Login again: re-login 200
+    ✓ Verify persistence: deleted item absent — persistence confirmed
+  Seed summary: {'priorities': {'inserted': 3, 'skipped': 0, 'already_existed': 0}}
+
+=== ENDPOINT SMOKE TESTS ===
+  All endpoints responded without errors.
+
+  Endpoint pass rate: 100% (14/14 passed, 0 timeouts, 0 errors)
+  Runtime: PASS
+
+  ZIP: C:\Users\jerry\onedrive\Desktop\forgeai\generated_projects\todo_list_app.zip
+
+=== REPO DOCS GENERATED ===
+  4 files: README.md, API_DOCS.md, ARCHITECTURE.md, DEPLOYMENT.md
+  18 endpoints documented, 4 models in ER diagram
+
+=== V6 SCORE: 66/100 (C) ===
+    Runtime:      100/100
+    Security:     60/100
+    Performance:  16/100
+    Maintainability: 64/100
+    Review:       61/100
+
+────────────────────────────────────────
+  LLM Calls
+  Planner            1
+  Architect          1
+  Tech Lead          1
+  Backend            23
+  Frontend           1
+  Reviews            4
+  Repairs            11
+  Runtime Fixes      0
+  ────────────────────
+  Total              42
+────────────────────────────────────────
+
+=== COST SUMMARY ===
+  LLM calls:    6
+  Total tokens: 36,707
+  Est. cost:    $0.0096
+  LLM time:     65.1s
+    backend_generation: 8,409 tokens  $0.0018
+    qa_review: 4,727 tokens  $0.0014
+    security_review: 8,154 tokens  $0.0019
+    code_review: 8,437 tokens  $0.0028
+    performance_review: 6,980 tokens  $0.0018
+[V15] OK generation [passed] (84054ms)
+    [route_patcher] Skipped SeedPage: couldn't find the anchor's page tag inside its own template to clone
+    [route_patcher] Skipped TasksPage: couldn't find the anchor's page tag inside its own template to clone
+    [route_patcher] Skipped UsersPage: couldn't find the anchor's page tag inside its own template to clone
+  [patcher] Filtered **schema.dict() kwargs in task_routes.py
+  [patcher] Patched 3 file(s) — passlib→bcrypt, async→sync, smart quotes
+  [db_patcher] Injected known-good app/database.py
+  [field_patcher] Aligned model fields in user_routes.py
+  [field_patcher] Added missing column(s) ['email'] to User in users.py
+  [field_patcher] Added missing schema field(s) ['display_name', 'email', 'role'] to UserCreate in user.py
+  [preflight] fix_postgres_url: applied
+  [preflight] fix_model_schema_notnull_gap: applied
+  [preflight] fix_missing_env: applied
+  [db_patcher] Injected known-good app/database.py
+  [preflight] fix_database_py: applied
+  [preflight] 4 deterministic fix(es) applied without LLM
+  [verify] 1/11 Static analysis...
+  [verify]       failed — 2 issues
+  [verify] 2/11 Compile check...
+  [verify]       passed — 0 syntax errors
+  [verify] 2a Import closure check...
+  [verify]       passed — 0 unresolved imports
+  [verify] 2a2 Contract conformance check (warn-only)...
+  [verify]       failed — 1 contract findings
+  [verify] 2b Frontend build...
+[Frontend] cwd:          C:\Users\jerry\OneDrive\Desktop\forgeAi\generated_projects\todo_list_app
+[Frontend] cwd exists:   True
+[Frontend] package.json: ✓ exists
+[Frontend] npm:          C:\Program Files\nodejs\npm.CMD
+[Frontend] Building in: C:\Users\jerry\OneDrive\Desktop\forgeAi\generated_projects\todo_list_app
+[Frontend] Installing dependencies (npm install)...
+[Frontend] npm install complete
+Running vite build...
+Frontend build PASSED in 38.23s
+  [verify]       passed — 0 build errors
+  [verify] 3/11 Runtime startup...
+Running runtime validation in: C:\Users\jerry\onedrive\Desktop\forgeai\generated_projects\todo_list_app
+Using Python: C:\Users\jerry\onedrive\Desktop\forgeai\backend\venv\Scripts\python.exe
+Skipping pip install (packages pre-installed): C:\Users\jerry\onedrive\Desktop\forgeai\generated_projects\todo_list_app\app\requirements.txt
+  [runner] Deleted stale DB: app.db
+  [runner] Deleted stale DB: sql_app.db
+  [runner] Deleted stale DB: app.db-wal
+  [runner] Deleted stale DB: app.db-shm
+  [runner] Pre-flight DB init: OK
+Health Check /health: 200
+
+=== USER JOURNEY (CRUD WORKFLOW) ===
+  Journey PASS — 11 passed / 0 failed
+    ✓ Register: 200 @ register
+    ✓ Login: 200 @ login
+    ✓ Detect entity: http://127.0.0.1:8001/tasks
+    ✓ Create entity: 200 id=1
+    ✓ List entities: 200 count=1
+    ✓ Edit entity: 200
+    ✓ Delete entity: 204
+    ✓ Verify deletion: 404 confirmed deleted
+    ✓ Logout: 200
+    ✓ Login again: re-login 200
+    ✓ Verify persistence: deleted item absent — persistence confirmed
+  Seed summary: {'priorities': {'inserted': 3, 'skipped': 0, 'already_existed': 0}}
+
+=== ENDPOINT SMOKE TESTS ===
+  All endpoints responded without errors.
+
+  Endpoint pass rate: 100% (14/14 passed, 0 timeouts, 0 errors)
+  [verify]       passed
+  [verify] 4-9: Running HTTP / Schema-DB / Browser / Performance / Accessibility in parallel...
+  [verify]       http: passed — 0 issues
+  [verify]       schema_db_assertion: passed — 0 issues
+  [verify]       accessibility: passed — 0 issues
+  [verify]       browser: passed — 0 issues
+  [verify] 10/11 Workflow tests...
+  [verify]       failed
+  [verify] 11/11 LLM Judge...
+[LLM cache] HIT (llm_judge) — 0 tokens billed
+  [verify]       LLM Judge claimed a blank/empty page, but the browser stage found mounted DOM content with zero console errors -- treating as a likely vision misread and downgrading to medium severity
+  [verify]       LLM Judge: The application is failing to authenticate users properly, resulting in 401 unau
+
+------------------------------------------------------------
+  FORGE SCORE: 91.2/100  (A) [DEPLOY READY]
+  Coverage: 11/11 dimensions
+------------------------------------------------------------
+  + Compilation            [##########################....]  89.0  (wt:15%)
+      critical=0 high=0 medium=2 low=1
+  + Runtime Startup        [##############################] 100.0  (wt:20%)
+      started=True health=True success=True
+  + API Functionality      [##############################] 100.0  (wt:15%)
+      14/14 endpoints passed
+  + Frontend Load          [##############################] 100.0  (wt:10%)
+      loaded OK
+  + Browser UX             [##########################....]  88.0  (wt:15%)
+      console_errors=0 network_failures=0 forms=0/0
+  x Integration            [###################...........]  66.7  (wt:10%)
+      4/6 workflow steps passed
+  x Code Quality           [###########################...]  91.0  (wt:5%)
+      stubs=0 globals=0 other_contract=3
+  + Security               [##############################] 100.0  (wt:5%)
+      security_issues=0 cors=True server_up=True
+  + Completeness           [##############################] 100.0  (wt:3%)
+      planned=14 missing=0
+  + Performance            [###########################...]  90.0  (wt:2%)
+      health_latency_ms=0
+  x Visual Judge           [###################...........]  64.0  (wt:5%)
+      llm_judge_severity=medium confidence=0.90
+------------------------------------------------------------
+
+[V15] Score: 91.2 (A) -- [DEPLOY READY]
+
+[V15] === Pipeline complete: generated ===
+
+  Deployment confidence: 91.5%  [###########################...]  B+
+  Likely to succeed — minor risks remain.
+  Factors:
+    base                         -0.500
+    overall_score                ++2.080
+    runtime_health               ++0.500
+    browser_ux                   ++0.264
+    compilation                  ++0.178
+    historical_base_rate         -0.152
+  Historical base rate: 22.4%  (n=49)
+  [arch_db] Stored arch for category 'todo_crud' (score=91.2)
+
+======================================================================
+  V15 FINAL REPORT
+======================================================================
+  Project:       todo_list_app
+  Forge Score:   91.2/100  (A)
+  Deployed:      NO
+  Fix Attempts:  0/5
+  Total Tokens:  36,707
+  Est. Cost:     $0.0096
+  Total Time:    143.42s
+  Score Track:   91
+======================================================================
+
+
+======================================================================
+  CANARY: blog_cms
+======================================================================
+
+######################################################################
+# FORGEAI V15 — Autonomous Self-Healing Platform
+# Idea:   A blog CMS with author and reader roles. Authors write posts with
+# Job ID: 2c34c39b6dfa415ca6267f416bd996a4
+# Deploy: False → both
+######################################################################
+
+[V15] >> generation ...
+[V15] Model router: complexity=7 (high) triggered=[image, filter, auth, tag, medium_description] stage=planning → gemini
+
+######################################################################
+# V6 AUTONOMOUS ENGINEERING TEAM
+# Idea: A blog CMS with author and reader roles. Authors write posts with
+######################################################################
+
+=== PRODUCT MANAGER (V6) ===
+  [cache hit] A blog CMS with author and reader roles. Authors write posts
+  Project: Forge Blog CMS
+  7 user stories | 7 features | 4 entities
+
+=== ARCHITECT (V6) ===
+
+=== ARCHITECT CACHE HIT — skipping LLM call ===
+
+=== TECH LEAD REVIEW (V6) ===
+  [cache hit]
+  Summary: The proposed architecture provides a solid foundation for the Forge Blog CMS, largely adhering to th
+  Issues: 2 critical, 3 warnings
+  [CRITICAL] The product spec explicitly states 'User registration (authors will be pre-provisioned or invited)' and 'User Authentication & Authorization: Secure login for authors'. However, the proposed architecture includes `/auth/signup` in the `MANDATORY AUTH ENDPOINTS` section of the contract, which contradicts the product spec's 'out_of_scope' for user registration. Additionally, the proposed API endpoints do not list `/auth/signup` but the contract requires it for 'every app with a users table'. This is a direct conflict.
+    Fix: Given the product spec's 'out_of_scope' for user registration, the `/auth/signup` endpoint should NOT be generated. The `MANDATORY AUTH ENDPOINTS` section of the contract should be interpreted as 'if user registration is in scope, then include signup'. For this project, it is out of scope. The `users` table will still exist for authors, but they will be pre-provisioned. The `auth_routes.py` file should only contain `/auth/login` and `/auth/me`.
+  [CRITICAL] The contract states `GET /auth/me` but the proposed architecture lists `GET /users/me`.
+    Fix: Rename `GET /users/me` to `GET /auth/me` and place it in `app/routes/auth_routes.py` as per the contract's mandatory auth endpoints.
+
+=== BACKEND + FRONTEND — PARALLEL ===
+
+=== BACKEND TEAM — PARALLEL GENERATION (V6) ===
+
+=== FRONTEND TEAM (V6) ===
+
+=== START FRONTEND ===
+
+  [V6] Wave 1 — Foundation
+  [V6] Wave 2 — Models (4 tables, parallel)
+Frontend: [cache hit] — skipping LLM call
+=== END FRONTEND ===
+      [cache hit]
+    [model] users: OK (0.0s)
+      [cache hit]
+    [model] posts: OK (0.0s)
+      [cache hit]
+    [model] tags: OK (0.0s)
+      [cache hit]
+    [model] post_tags: OK (0.0s)
+  [V6] Wave 2 done in 0.0s
+  [V6] Wave 2.5 — stripped back_populates/backref from app/models/users.py
+  [V6] Wave 2.5 — stripped back_populates/backref from app/models/posts.py
+  [V6] Wave 2.5 — stripped back_populates/backref from app/models/post_tags.py
+  [V6] Wave 2.5 — renaming plural class names: {'Users': 'User', 'Posts': 'Post', 'Tags': 'Tag', 'PostTags': 'PostTag'}
+  [V6] Wave 2.5 — created shim app/models/user.py → User
+  [V6] Wave 2.5 — created shim app/models/post.py → Post
+  [V6] Wave 2.5 — created shim app/models/tag.py → Tag
+  [V6] Wave 2.5 — created shim app/models/post_tag.py → PostTag
+  [V6] Wave 3 — Schemas (6 resources, parallel)
+      [cache hit]
+    [schema] seed: OK (0.0s)
+      [cache hit]
+    [schema] stats: OK (0.0s)
+      [cache hit]
+    [schema] auth: OK (0.0s)
+      [cache hit]
+    [schema] user: OK (0.0s)
+      [cache hit]
+    [schema] post: OK (0.0s)
+      [cache hit]
+    [schema] tag: OK (0.0s)
+  [V6] Wave 3 done in 0.0s
+  [V6] Wave 4 — Routes (6 files, parallel)
+Using Gemini
+Using Gemini
+Using Gemini
+Using Gemini
+Using Gemini
+    [route] app/routes/user_routes.py: OK (3.7s)
+Using Gemini
+    [route] app/routes/stats_routes.py: OK (4.5s)
+    [route] app/routes/tag_routes.py: OK (3.8s)
+    [route] app/routes/auth_routes.py: OK (8.7s)
+    [route] app/routes/post_routes.py: OK (9.0s)
+    [route] app/routes/seed_routes.py: OK (12.5s)
+  [V6] Wave 4 done in 12.5s
+  [V6] Wave 5 — main.py (from 6 route files, 4 models)
+Using Gemini
+    [main] app/main.py: OK (3.6s)
+
+  [V6] Parallel backend done: 30/30 files OK in 16.18s (parallel phase: 12.54s)
+  Generated 30 files in 16.2s (parallel phase: 12.5s)
+  Backend+Frontend done in 16.2s
+
+[V14] Deployment configs written: ['render.yaml', 'Procfile', '.env.example', '.github/workflows/deploy.yml', 'wrangler.toml']
+
+=== FILES WRITTEN: C:\Users\jerry\onedrive\Desktop\forgeai\generated_projects\forge_blog_cms (44 files) ===
+
+=== DETERMINISTIC PATCHER ===
+  [patcher] Stripped 2 relationship() declaration(s) from posts.py
+  [patcher] Stripped 2 relationship() declaration(s) from post_tags.py
+  [patcher] Stripped 1 relationship() declaration(s) from users.py
+  [patcher] Injected known-good app/utils/auth.py
+  [patcher] Injected known-good app/routes/auth_routes.py (dynamic password field + fast bcrypt)
+  [route_patcher] Wired 1 orphan page(s) into App.jsx: HomePage -> /home
+  [patcher] Made Response schema fields Optional in auth.py
+  [patcher] Made Response schema fields Optional in post.py
+  [patcher] Made Response schema fields Optional in seed.py
+  [patcher] Made Response schema fields Optional in stats.py
+  [patcher] Made Response schema fields Optional in tag.py
+  [patcher] Made Response schema fields Optional in user.py
+  [schema_patcher] Added from_attributes=True to 5 schema file(s)
+  [patcher] Filtered **schema.dict() kwargs in post_routes.py
+  [refresh_patcher] Injected db.refresh() in seed_routes.py
+  [patcher] Added missing frontend packages to package.json: ['react-markdown', 'remark-gfm']
+  [patcher] Added missing icon import(s) ['MessageCircle'] to AuthorPostList.jsx
+  [patcher] Cleared stale status message on error path in LoginForm.jsx
+  [patcher] Hoisted retry-status message above the loading skeleton in LoginForm.jsx
+  [patcher] Injected known-good src/components/Pagination.jsx
+  [patcher] Patched 1 file(s) — passlib→bcrypt, async→sync, smart quotes
+  [db_patcher] Injected known-good app/database.py
+  [field_patcher] Aligned model fields in seed_routes.py
+  [field_patcher] Fixed model-field mismatches in 1 route file(s)
+  [field_patcher] Added missing column(s) ['user_id'] to Post in posts.py
+  [field_patcher] Added missing column(s) ['email'] to User in users.py
+
+=== VALIDATION LOOP (V6) ===
+  Validation: FAIL — 9 errors
+
+  Validation errors:
+    • Missing backend import target: app/config.py
+    • Missing frontend import target: ./pages/HomePage
+    • Missing frontend import target: ./pages/LoginPage
+    • Missing frontend import target: ./pages/PostListPage
+    • Missing frontend import target: ./pages/PostDetailPage
+    • Missing frontend import target: ./pages/AuthorDashboardPage
+    • Missing frontend import target: ./pages/CreatePostPage
+    • Missing frontend import target: ./pages/EditPostPage
+
+  Fix attempt 1/4 ...
+[LLM cache] HIT (missing_file) — 0 tokens billed
+[LLM cache] HIT (missing_file) — 0 tokens billed
+[LLM cache] HIT (missing_file) — 0 tokens billed
+[LLM cache] HIT (missing_file) — 0 tokens billed
+[LLM cache] HIT (missing_file) — 0 tokens billed
+[LLM cache] HIT (missing_file) — 0 tokens billed
+[LLM cache] HIT (missing_file) — 0 tokens billed
+[LLM cache] HIT (missing_file) — 0 tokens billed
+      [fix cache hit] src/components/LoginForm.jsx
+  Post-fix 1: FAIL — 5 errors
+    • Missing endpoint GET /articles?author_id=${userId} (expected in app/routes/article_routes.py) -- called from src/pages/AuthorDashboardPage.jsx but never implemented on the backend
+    • Missing endpoint GET /authors/${userId} (expected in app/routes/author_routes.py) -- called from src/pages/AuthorDashboardPage.jsx but never implemented on the backend
+    • Missing endpoint POST /articles (expected in app/routes/article_routes.py) -- called from src/pages/CreatePostPage.jsx but never implemented on the backend
+    • Missing frontend import target: ../components/Layout
+    • Missing frontend import target: ./pages/SignupPage
+
+  Fix attempt 2/4 ...
+Using Gemini
+Using Gemini
+[LLM cache] HIT (missing_file) — 0 tokens billed
+[LLM cache] HIT (missing_file) — 0 tokens billed
+  [router_patcher] Wired 2 orphan router(s) into main.py: article_router, author_router
+  [route_patcher] Imported 1 orphan page file(s) into App.jsx: SignupPage
+  [route_patcher] Wired 1 orphan page(s) into App.jsx: SignupPage -> /signup
+  Post-fix 2: FAIL — 6 errors
+    • Missing backend import target: app/schemas/article.py
+    • Missing backend import target: app/schemas/author.py
+    • Missing frontend import target: ./Navbar
+    • Missing frontend import target: ./Sidebar
+    • Missing frontend import target: ./Toast
+
+  Fix attempt 3/4 ...
+Using Gemini
+Using Gemini
+[LLM cache] HIT (missing_file) — 0 tokens billed
+[LLM cache] HIT (missing_file) — 0 tokens billed
+[LLM cache] HIT (missing_file) — 0 tokens billed
+[LLM cache] HIT (missing_file) — 0 tokens billed
+  [patcher] Added missing frontend packages to package.json: ['react-toastify']
+  Post-fix 3: FAIL — 3 errors
+    • Missing symbol 'ArticleListResponse' in app/schemas/article.py (imported from app/routes/article_routes.py)
+    • Missing symbol 'AuthorDetailResponse' in app/schemas/author.py (imported from app/routes/author_routes.py)
+    • Missing symbol 'AuthorPostResponse' in app/schemas/author.py (imported from app/routes/author_routes.py)
+
+  Fix attempt 4/4 ...
+Using Gemini
+Using Gemini
+  [patcher] Made Response schema fields Optional in article.py
+  [patcher] Made Response schema fields Optional in author.py
+  Post-fix 4: PASS — 0 errors
+
+=== REVIEWS (QA / Security / Code / Performance) ===
+
+=== QA REVIEW (V6) ===
+Using Gemini
+  QA score: 80/100 | Stories: 5/7 covered
+  Blockers: Missing endpoint for a reader to view a single full blog post (GET /articles/{article_id})., Missing tag filtering capability on the list of published posts (GET /articles).
+  [MISSING] No endpoint to retrieve a single full blog post for readers (GET /articles/{article_id} is missing).
+  [MISSING] GET /articles endpoint lacks a tag filtering capability.
+
+=== SECURITY REVIEW (V6) ===
+Using Gemini
+  Security score: 60/100 | Risk: medium
+  Findings: 0 critical, 1 high, 12 total
+  Passed: No direct password exposure in API responses (password_hash is not returned)., Passwords are hashed using `get_password_hash` (assumed to be bcrypt or similar strong algorithm)., JWT tokens are created with an expiry (`ACCESS_TOKEN_EXPIRE_MINUTES`).
+
+============================================================
+  SECURITY REPORT — Score: 60/100 [MEDIUM]
+  The codebase has a medium security risk, primarily due to a weak default `SECRET_KEY` and overly permissive CORS settings, which are critical for production deployments. Several endpoints lack authentication, which might be by design but warrants review. Minor SQL injection risk in schema migration and mass assignment concerns in post creation were also identified. Input validation for string lengths could be improved in models.
+
+  Findings (12):
+  [HIGH    ] HardcodedSecret in app/config.py
+             The SECRET_KEY has a weak default value ('super-secret-key') if the environment variable is not set. This is a critical security risk for JWTs.
+             Fix: Ensure SECRET_KEY is always loaded from a strong, randomly generated environment variable in production. Remove the default value or make it a strong, unique value for development only, with clear warnings.
+  [MEDIUM  ] CORSIssue in app/main.py
+             CORS is configured to allow all origins ('*'). While convenient for development, this is insecure in production as it allows any domain to make cross-origin requests, potentially leading to CSRF or data leakage if other vulnerabilities exist.
+             Fix: In production, restrict `allow_origins` to a specific list of trusted frontend domains. For example: `allow_origins=["https://yourfrontend.com", "https://anotherdomain.com"]`.
+  [MEDIUM  ] SQLInjection in app/database.py
+             The `_add_missing_columns` function constructs an ALTER TABLE SQL query using f-strings directly with `table.name`, `col.name`, and `type_str`. While this function is for schema migration and likely run by an admin, direct string concatenation without proper sanitization or parameterization can be a SQL injection risk if any of these values could be controlled by an attacker.
+             Fix: For schema migrations, ensure that table and column names are strictly validated against a whitelist or are derived from trusted, internal sources only. If dynamic names are absolutely necessary, use SQLAlchemy's DDL constructs or ensure robust sanitization. For user-controlled input, always use parameterized queries.
+  [LOW     ] AuthenticationGap in app/routes/article_routes.py
+             The `/articles` endpoint allows retrieval of published articles without any authentication. While this might be intended for public access, it's worth confirming if there are any sensitive fields or if filtering by `author_id` could expose information that should be restricted.
+             Fix: If all data returned by this endpoint is truly public, no change is needed. If any part of the article data or the ability to filter by author should be restricted, add `Depends(get_current_user)` and implement appropriate authorization checks.
+  [LOW     ] AuthenticationGap in app/routes/post_routes.py
+             The `/posts` endpoint allows retrieval of published posts without any authentication. Similar to `/articles`, this might be intended for public access, but review if any sensitive information could be exposed.
+             Fix: If all data returned by this endpoint is truly public, no change is needed. If any part of the post data or the ability to filter by tag should be restricted, add `Depends(get_current_user)` and implement appropriate authorization checks.
+  [LOW     ] AuthenticationGap in app/routes/post_routes.py
+             The `/posts/{post_id}` endpoint allows retrieval of a single published post by ID without any authentication. Review if any sensitive information could be exposed.
+             Fix: If all data returned by this endpoint is truly public, no change is needed. If any part of the post data should be restricted, add `Depends(get_current_user)` and implement appropriate authorization checks.
+  [LOW     ] AuthenticationGap in app/routes/stats_routes.py
+             The `/stats/summary` endpoint is accessible without authentication. While the current implementation returns placeholder data, if it were to return actual sensitive statistics (e.g., total users, revenue), it should be protected.
+             Fix: If the statistics are intended to be public, no change is needed. If they are for internal use or administrators, add `Depends(get_current_user)` and implement role-based access control.
+  [LOW     ] AuthenticationGap in app/routes/tag_routes.py
+             The `/tags` endpoint allows retrieval of all tags without any authentication. This is likely intended for public access, but it's good to confirm.
+             Fix: If all tags are intended to be public, no change is needed. If there could be sensitive tags or tag management should be restricted, add `Depends(get_current_user)` and implement appropriate authorization checks.
+  [LOW     ] MassAssignment in app/routes/post_routes.py
+             The `create_post` endpoint uses `Post(**{k: v for k, v in post_in.dict().items() if k in Post.__table__.columns.keys() and k not in {'author_id', 'status'}})` to create a new post. While it explicitly excludes `author_id` and `status`, this pattern can be fragile. If a new sensitive column is added to the `Post` model and not explicitly excluded here, it could be mass-assigned from user input.
+             Fix: Instead of dynamically filtering `post_in.dict().items()`, explicitly list the fields that are allowed to be set by the user. For example: `new_post = Post(title=post_in.title, content_markdown=post_in.content_markdown, cover_image_url=post_in.cover_image_url, author_id=current_user.id, status="draft")`.
+  [LOW     ] IDOR in app/routes/post_routes.py
+             The `get_posts_by_author` endpoint allows fetching posts by any `author_id`. While it correctly filters for 'published' posts if the `author_id` is not the `current_user.id`, it still allows an attacker to enumerate authors and their public posts. This is not a direct IDOR for sensitive data, but could be used for reconnaissance.
+             Fix: Consider if there's a need to restrict the ability to list posts for arbitrary authors, or if this public enumeration is acceptable. If not, ensure that only the current user can view their own posts, or only posts from authors they are authorized to view.
+  [LOW     ] MissingValidation in app/models/users.py
+             The `email` column in the `User` model is defined as `String` without a `length` limit. While `String` defaults to 255 in some dialects, explicitly defining `max_length` in Pydantic schemas and `length` in SQLAlchemy models is good practice to prevent excessively long inputs that could lead to denial-of-service or database storage issues.
+             Fix: Add a `length` parameter to the `String` column definition for `email` in `app/models/users.py`, e.g., `Column(String(255), server_default='', nullable=False)`. Also, ensure corresponding Pydantic schemas use `max_length`.
+  [LOW     ] MissingValidation in app/models/posts.py
+             The `content_markdown` column in the `Post` model is defined as `Text` without a length limit. While `Text` is for long strings, excessively large inputs could still impact performance or storage. Consider if there's a practical upper bound.
+             Fix: While `Text` is designed for large content, if there's a reasonable maximum size for a blog post, consider adding a `max_length` to the Pydantic schema (`ArticleCreate`, `ArticleUpdate`) to prevent extremely large payloads at the API level. The database `Text` type itself typically handles large data, but API-level limits are good for resource management.
+
+  Passed: No direct password exposure in API responses (password_hash is not returned)., Passwords are hashed using `get_password_hash` (assumed to be bcrypt or similar strong algorithm)., JWT tokens are created with an expiry (`ACCESS_TOKEN_EXPIRE_MINUTES`)., Most sensitive endpoints require authentication (`Depends(get_current_user)`)., Pydantic schemas for creation/update generally exclude server-set fields like `id`, `created_at`, `updated_at` from direct user input.
+============================================================
+
+=== CODE REVIEW (V6) ===
+Using Gemini
+  Code review: 63/100 overall | 1 critical, 7 high issues
+  Naming: 75 | Architecture: 60 | Maintainability: 65 | Tech Debt: 55
+  The project demonstrates a good foundational structure for a FastAPI application, with clear separation of models, schem
+
+=== PERFORMANCE REVIEW (V6) ===
+Using Gemini
+  Performance review failed: Expecting ',' delimiter: line 128 column 6 (char 10699)
+  [db_patcher] Injected known-good app/database.py
+
+=== RUNTIME VALIDATION (V6) ===
+Running runtime validation in: C:\Users\jerry\onedrive\Desktop\forgeai\generated_projects\forge_blog_cms
+Using Python: C:\Users\jerry\onedrive\Desktop\forgeai\backend\venv\Scripts\python.exe
+Skipping pip install (packages pre-installed): C:\Users\jerry\onedrive\Desktop\forgeai\generated_projects\forge_blog_cms\app\requirements.txt
+  [runner] Pre-flight DB init: OK
+  Runtime: FAIL
+Runtime Fix Requested: {'success': False, 'healthy': False, 'exit_code': 1, 'stdout': '', 'stderr': 'Traceback (most recent call last):\n  File "<frozen runpy>", line 203, in _run_module_as_main\n  File "<frozen runpy>", line 88, in _run_code\n  File "C:\\Users\\jerry\\onedrive\\Desktop\\forgeai\\backend\\venv\\Lib\\site-packages\\uvicorn\\__main__.py", line 4, in <module>\n    uvicorn.main()\n    ~~~~~~~~~~~~^^\n  File "C:\\Users\\jerry\\onedrive\\Desktop\\forgeai\\backend\\venv\\Lib\\site-packages\\click\\core.py", line 1524, in __call__\n    return self.main(*args, **kwargs)\n           ~~~~~~~~~^^^^^^^^^^^^^^^^^\n  File "C:\\Users\\jerry\\onedrive\\Desktop\\forgeai\\backend\\venv\\Lib\\site-packages\\click\\core.py", line 1445, in main\n    rv = self.invoke(ctx)\n  File "C:\\Users\\jerry\\onedrive\\Desktop\\forgeai\\backend\\venv\\Lib\\site-packages\\click\\core.py", line 1308, in invoke\n    return ctx.invoke(self.callback, **ctx.params)\n           ~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File "C:\\Users\\jerry\\onedrive\\Desktop\\forgeai\\backend\\venv\\Lib\\site-packages\\click\\core.py", line 877, in invoke\n    return callback(*args, **kwargs)\n  File "C:\\Users\\jerry\\onedrive\\Desktop\\forgeai\\backend\\venv\\Lib\\site-packages\\uvicorn\\main.py", line 441, in main\n    run(\n    ~~~^\n        app,\n        ^^^^\n    ...<48 lines>...\n        reset_contextvars=reset_contextvars,\n        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n    )\n    ^\n  File "C:\\Users\\jerry\\onedrive\\Desktop\\forgeai\\backend\\venv\\Lib\\site-packages\\uvicorn\\main.py", line 609, in run\n    config.load_app()\n    ~~~~~~~~~~~~~~~^^\n  File "C:\\Users\\jerry\\onedrive\\Desktop\\forgeai\\backend\\venv\\Lib\\site-packages\\uvicorn\\config.py", line 415, in load_app\n    return import_from_string(self.app)\n  File "C:\\Users\\jerry\\onedrive\\Desktop\\forgeai\\backend\\venv\\Lib\\site-packages\\uvicorn\\importer.py", line 19, in import_from_string\n    module = importlib.import_module(module_str)\n  File "C:\\Users\\jerry\\AppData\\Local\\Python\\pythoncore-3.14-64\\Lib\\importlib\\__init__.py", line 88, in import_module\n    return _bootstrap._gcd_import(name[level:], package, level)\n           ~~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File "<frozen importlib._bootstrap>", line 1406, in _gcd_import\n  File "<frozen importlib._bootstrap>", line 1371, in _find_and_load\n  File "<frozen importlib._bootstrap>", line 1342, in _find_and_load_unlocked\n  File "<frozen importlib._bootstrap>", line 938, in _load_unlocked\n  File "<frozen importlib._bootstrap_external>", line 759, in exec_module\n  File "<frozen importlib._bootstrap>", line 491, in _call_with_frames_removed\n  File "C:\\Users\\jerry\\onedrive\\Desktop\\forgeai\\generated_projects\\forge_blog_cms\\app\\main.py", line 34, in <module>\n    engine = create_engine(settings.DATABASE_URL)\n                           ^^^^^^^^^^^^^^^^^^^^^\nAttributeError: \'Config\' object has no attribute \'DATABASE_URL\'\n\nHealth Check Failed', 'startup_time': 7.794844627380371, 'behavioral_issues': [], 'total_endpoints': 0, 'timeout_count': 0, 'error_count': 0, 'endpoint_pass_rate': 0.0, 'crud_passed': None, 'journey': None, 'parsed_error': {'type': 'ConfigAttributeError', 'missing_attr': 'DATABASE_URL', 'config_class': 'Config', 'error_file': 'C:\\Users\\jerry\\onedrive\\Desktop\\forgeai\\generated_projects\\forge_blog_cms\\app\\main.py', 'hint': "'Config' is missing the 'DATABASE_URL' attribute referenced elsewhere (e.g. settings.DATABASE_URL). Add 'DATABASE_URL' as a field on the Config class in app/config.py, typically loaded from an environment variable."}}
+Using Gemini
+  [patcher] Rewrote @heroicons/react import(s) to lucide-react in Sidebar.jsx: HomeIcon->Home, BookOpenIcon->BookOpen, UserCircleIcon->UserCircle, PlusCircleIcon->Circle, Cog6ToothIcon->Settings, ArrowLeftOnRectangleIcon->LogIn, SunIcon->Sun, MoonIcon->Moon, ChartBarIcon->BarChart
+  [patcher] Fixed response .data assumed to be wrapped (actually a bare array) in AuthorDashboardPage.jsx
+  [patcher] Patched 3 file(s) — passlib→bcrypt, async→sync, smart quotes
+  [field_patcher] Added missing schema field(s) ['status'] to ArticleCreate in article.py
+  [db_patcher] Injected known-good app/database.py
+Running runtime validation in: C:\Users\jerry\onedrive\Desktop\forgeai\generated_projects\forge_blog_cms
+Using Python: C:\Users\jerry\onedrive\Desktop\forgeai\backend\venv\Scripts\python.exe
+Skipping pip install (packages pre-installed): C:\Users\jerry\onedrive\Desktop\forgeai\generated_projects\forge_blog_cms\app\requirements.txt
+  [runner] Pre-flight DB init: OK
+  Runtime: FAIL
+  [runtime fix] Failure signature unchanged — stopping retries
+
+  ZIP: C:\Users\jerry\onedrive\Desktop\forgeai\generated_projects\forge_blog_cms.zip
+
+=== V6 SCORE: 57/100 (D) ===
+    Runtime:      40/100
+    Security:     60/100
+    Performance:  70/100
+    Maintainability: 64/100
+    Review:       71/100
+
+────────────────────────────────────────
+  LLM Calls
+  Planner            1
+  Architect          1
+  Tech Lead          1
+  Backend            30
+  Frontend           1
+  Reviews            4
+  Repairs            21
+  Runtime Fixes      1
+  ────────────────────
+  Total              60
+────────────────────────────────────────
+
+=== COST SUMMARY ===
+  LLM calls:    18
+  Total tokens: 99,226
+  Est. cost:    $0.0230
+  LLM time:     126.8s
+    backend_generation: 35,659 tokens  $0.0079
+    missing_file: 20,094 tokens  $0.0038
+    fix: 4,166 tokens  $0.0009
+    qa_review: 4,888 tokens  $0.0013
+    security_review: 10,242 tokens  $0.0026
+    code_review: 8,743 tokens  $0.0027
+    performance_review: 8,455 tokens  $0.0025
+    runtime_fix: 6,979 tokens  $0.0013
+[V15] OK generation [passed] (118693ms)
+  [patcher] Patched 1 file(s) — passlib→bcrypt, async→sync, smart quotes
+  [db_patcher] Injected known-good app/database.py
+  [preflight] fix_config_missing_attrs: applied
+  [preflight] fix_postgres_url: applied
+  Stub created: src\components\Navbar.jsx
+  Stub created: src\components\Sidebar.jsx
+  Stub created: src\components\Toast.jsx
+  [preflight] fix_frontend_missing_imports: applied
+  [preflight] fix_model_schema_notnull_gap: applied
+  [preflight] fix_missing_env: applied
+  [db_patcher] Injected known-good app/database.py
+  [preflight] fix_database_py: applied
+  [preflight] 6 deterministic fix(es) applied without LLM
+  [verify] 1/11 Static analysis...
+  [verify]       failed — 6 issues
+  [verify] 2/11 Compile check...
+  [verify]       passed — 0 syntax errors
+  [verify] 2a Import closure check...
+  [verify]       passed — 0 unresolved imports
+  [verify] 2a2 Contract conformance check (warn-only)...
+  [verify]       failed — 10 contract findings
+  [verify] 2b Frontend build...
+[Frontend] cwd:          C:\Users\jerry\OneDrive\Desktop\forgeAi\generated_projects\forge_blog_cms
+[Frontend] cwd exists:   True
+[Frontend] package.json: ✓ exists
+[Frontend] npm:          C:\Program Files\nodejs\npm.CMD
+[Frontend] Building in: C:\Users\jerry\OneDrive\Desktop\forgeAi\generated_projects\forge_blog_cms
+[Frontend] Installing dependencies (npm install)...
+[Frontend] npm install complete
+Running vite build...
+Frontend build PASSED in 23.23s
+  [verify]       passed — 0 build errors
+  [verify] 3/11 Runtime startup...
+Running runtime validation in: C:\Users\jerry\onedrive\Desktop\forgeai\generated_projects\forge_blog_cms
+Using Python: C:\Users\jerry\onedrive\Desktop\forgeai\backend\venv\Scripts\python.exe
+Skipping pip install (packages pre-installed): C:\Users\jerry\onedrive\Desktop\forgeai\generated_projects\forge_blog_cms\app\requirements.txt
+  [runner] Deleted stale DB: app.db
+  [runner] Pre-flight DB init: OK
+Health Check /health: 200
+
+=== USER JOURNEY (CRUD WORKFLOW) ===
+  Journey PASS — 11 passed / 0 failed
+    ✓ Register: 200 @ signup
+    ✓ Login: 200 @ login
+    ✓ Detect entity: http://127.0.0.1:8001/posts
+    ✓ Create entity: 201 id=1
+    ✓ List entities: 200 count=0
+    ✓ Edit entity: 200
+    ✓ Delete entity: 204
+    ✓ Verify deletion: 404 confirmed deleted
+    ✓ Logout: 200
+    ✓ Login again: re-login 200
+    ✓ Verify persistence: deleted item absent — persistence confirmed
+
+=== ENDPOINT SMOKE TESTS ===
+  All endpoints responded without errors.
+
+  Endpoint pass rate: 100% (15/15 passed, 0 timeouts, 0 errors)
+  [verify]       passed
+  [verify] 4-9: Running HTTP / Schema-DB / Browser / Performance / Accessibility in parallel...
+  [verify]       http: passed — 0 issues
+  [verify]       schema_db_assertion: passed — 0 issues
+  [verify]       accessibility: passed — 0 issues
+  [verify]       browser: passed — 0 issues
+  [verify] 10/11 Workflow tests...
+  [verify]       failed
+  [verify] 11/11 LLM Judge...
+Using Gemini
+  [verify]       LLM Judge claimed a blank/empty page, but the browser stage found mounted DOM content with zero console errors -- treating as a likely vision misread and downgrading to medium severity
+  [verify]       LLM Judge: The application is displaying a blank page, indicating a complete failure to ren
+
+------------------------------------------------------------
+  FORGE SCORE: 86.7/100  (B) [DEPLOY READY]
+  Coverage: 11/11 dimensions
+------------------------------------------------------------
+  + Compilation            [##################............]  60.0  (wt:15%)
+      critical=0 high=0 medium=6 low=10
+  + Runtime Startup        [##############################] 100.0  (wt:20%)
+      started=True health=True success=True
+  + API Functionality      [##############################] 100.0  (wt:15%)
+      15/15 endpoints passed
+  + Frontend Load          [##############################] 100.0  (wt:10%)
+      loaded OK
+  + Browser UX             [##########################....]  88.0  (wt:15%)
+      console_errors=0 network_failures=0 forms=0/0
+  + Integration            [#########################.....]  83.3  (wt:10%)
+      5/6 workflow steps passed
+  x Code Quality           [###############...............]  52.0  (wt:5%)
+      stubs=0 globals=0 other_contract=16
+  + Security               [##############################] 100.0  (wt:5%)
+      security_issues=0 cors=True server_up=True
+  + Completeness           [##############################] 100.0  (wt:3%)
+      planned=15 missing=0
+  + Performance            [###########################...]  90.0  (wt:2%)
+      health_latency_ms=0
+  x Visual Judge           [##################............]  62.0  (wt:5%)
+      llm_judge_severity=medium confidence=0.95
+------------------------------------------------------------
+
+[V15] Score: 86.7 (B) -- [DEPLOY READY]
+
+[V15] === Pipeline complete: generated ===
+
+  Deployment confidence: 89.3%  [##########################....]  B+
+  Moderate confidence — review the fix history before deploying.
+  Factors:
+    base                         -0.500
+    overall_score                ++1.879
+    runtime_health               ++0.500
+    browser_ux                   ++0.264
+    compilation                  ++0.120
+    historical_base_rate         -0.144
+  Historical base rate: 24.0%  (n=50)
+  [arch_db] Stored arch for category 'blog_cms' (score=86.7)
+
+======================================================================
+  V15 FINAL REPORT
+======================================================================
+  Project:       forge_blog_cms
+  Forge Score:   86.7/100  (B)
+  Deployed:      NO
+  Fix Attempts:  0/5
+  Total Tokens:  99,859
+  Est. Cost:     $0.0233
+  Total Time:    166.38s
+  Score Track:   87
+======================================================================
+
+
+======================================================================
+  CANARY: crm
+======================================================================
+
+######################################################################
+# FORGEAI V15 — Autonomous Self-Healing Platform
+# Idea:   A simple CRM for small businesses with user login. Users manage c
+# Job ID: 8a34564fbbd04ea7943e8196f04012e0
+# Deploy: False → both
+######################################################################
+
+[V15] >> generation ...
+[V15] Model router: complexity=3 (medium) triggered=[email, search, login, note, simple] stage=planning → gemini
+
+######################################################################
+# V6 AUTONOMOUS ENGINEERING TEAM
+# Idea: A simple CRM for small businesses with user login. Users manage c
+######################################################################
+
+=== PRODUCT MANAGER (V6) ===
+  [cache hit] A simple CRM for small businesses with user login. Users man
+  Project: Simple CRM
+  6 user stories | 6 features | 4 entities
+
+=== ARCHITECT (V6) ===
+
+=== ARCHITECT CACHE HIT — skipping LLM call ===
+
+=== TECH LEAD REVIEW (V6) ===
+  [cache hit]
+  Summary: The proposed architecture for Simple CRM is largely sound and adheres to most project contract requi
+  Issues: 0 critical, 7 warnings
+
+=== BACKEND + FRONTEND — PARALLEL ===
+
+=== BACKEND TEAM — PARALLEL GENERATION (V6) ===
+
+=== FRONTEND TEAM (V6) ===
+
+=== START FRONTEND ===
+
+  [V6] Wave 1 — Foundation
+  [V6] Wave 2 — Models (4 tables, parallel)
+Frontend: [cache hit] — skipping LLM call
+=== END FRONTEND ===
+      [cache hit]
+    [model] users: OK (0.0s)
+      [cache hit]
+    [model] contacts: OK (0.0s)
+      [cache hit]
+    [model] notes: OK (0.0s)
+      [cache hit]
+    [model] interactions: OK (0.0s)
+  [V6] Wave 2 done in 0.0s
+  [V6] Wave 2.5 — stripped back_populates/backref from app/models/users.py
+  [V6] Wave 2.5 — stripped back_populates/backref from app/models/contacts.py
+  [V6] Wave 2.5 — stripped back_populates/backref from app/models/notes.py
+  [V6] Wave 2.5 — stripped back_populates/backref from app/models/interactions.py
+  [V6] Wave 2.5 — renaming plural class names: {'Contacts': 'Contact', 'Notes': 'Note', 'Interactions': 'Interaction'}
+  [V6] Wave 2.5 — created shim app/models/user.py → User
+  [V6] Wave 2.5 — created shim app/models/contact.py → Contact
+  [V6] Wave 2.5 — created shim app/models/note.py → Note
+  [V6] Wave 2.5 — created shim app/models/interaction.py → Interaction
+  [V6] Wave 2.5 — stripped no-FK relationship users → notes
+  [V6] Wave 2.5 — stripped no-FK relationship users → interactions
+  [V6] Wave 3 — Schemas (5 resources, parallel)
+      [cache hit]
+    [schema] seed: OK (0.0s)
+      [cache hit]
+    [schema] user: OK (0.0s)
+[LLM cache] HIT (backend_generation) — 0 tokens billed
+      [retry 1/2] JSON decode error: Expecting property name enclosed in double quotes: line 1 column 2 (char 1)
+      [cache hit]
+    [schema] contact: OK (0.0s)
+      [cache hit]
+    [schema] stats: OK (0.0s)
+[LLM cache] HIT (backend_generation) — 0 tokens billed
+      [retry 2/2] JSON decode error: Expecting property name enclosed in double quotes: line 1 column 2 (char 1)
+[LLM cache] HIT (backend_generation) — 0 tokens billed
+    [schema] auth: FAIL:JSONDecodeError after 3 attempts: Expecting property name en (0.0s)
+  [V6] Wave 3 done in 0.0s
+  [V6] Wave 4 — Routes (5 files, parallel)
+Using Gemini
+Using Gemini
+Using Gemini
+Using Gemini
+Using Gemini
+    [route] app/routes/user_routes.py: OK (3.2s)
+    [route] app/routes/auth_routes.py: OK (5.9s)
+    [route] app/routes/stats_routes.py: OK (6.9s)
+    [route] app/routes/seed_routes.py: OK (10.3s)
+    [route] app/routes/contact_routes.py: OK (11.2s)
+  [V6] Wave 4 done in 11.2s
+  [V6] Wave 5 — main.py (from 5 route files, 4 models)
+Using Gemini
+    [main] app/main.py: OK (3.0s)
+
+  [V6] Parallel backend done: 27/28 files OK in 14.18s (parallel phase: 11.2s)
+  Parallel failures: ['app/schemas/auth.py']
+  Generated 27 files in 14.2s (parallel phase: 11.2s)
+  Backend+Frontend done in 14.2s
+
+[V14] Deployment configs written: ['render.yaml', 'Procfile', '.env.example', '.github/workflows/deploy.yml', 'wrangler.toml']
+
+=== FILES WRITTEN: C:\Users\jerry\onedrive\Desktop\forgeai\generated_projects\simple_crm (47 files) ===
+
+=== DETERMINISTIC PATCHER ===
+  [patcher] Stripped 3 relationship() declaration(s) from contacts.py
+  [patcher] Stripped 1 relationship() declaration(s) from interactions.py
+  [patcher] Stripped 1 relationship() declaration(s) from notes.py
+  [patcher] Stripped 1 relationship() declaration(s) from users.py
+  [route_patcher] Reordered shadowed static route(s) in contact_routes.py: GET /contacts/search
+  [patcher] Injected known-good app/utils/auth.py
+  [patcher] Injected known-good app/routes/auth_routes.py (dynamic password field + fast bcrypt)
+  [patcher] Redirected missing backend import(s) in contact_routes.py
+  [patcher] Created re-export shim app/schemas/interaction.py
+  [patcher] Added missing class(es) to existing contact.py: ['ContactStatusEnum']
+  [patcher] Skipping stub for ['InteractionCreate', 'InteractionResponse'] in interaction.py — already defined in ['contact'].py (import path may need fixing, but no duplicate stub created)
+  [patcher] Added missing class(es) to existing interaction.py: ['InteractionTypeEnum']
+  [patcher] Made Response schema fields Optional in contact.py
+  [patcher] Made Response schema fields Optional in seed.py
+  [patcher] Made Response schema fields Optional in stats.py
+  [patcher] Made Response schema fields Optional in user.py
+  [patcher] Response schema id/datetime fixes in user.py: UserResponse.created_at:datetime, UserResponse.updated_at:datetime
+  [schema_patcher] Added from_attributes=True to 3 schema file(s)
+  [patcher] Fixed pydantic imports in interaction.py: pydantic={'BaseModel'} typing={}
+  [patcher] Cleared stale status message on error path in LoginForm.jsx
+  [patcher] Cleared stale status message on error path in RegisterForm.jsx
+  [patcher] Injected known-good src/components/Pagination.jsx
+  [patcher] Patched 2 file(s) — passlib→bcrypt, async→sync, smart quotes
+  [db_patcher] Injected known-good app/database.py
+  [field_patcher] Made orphan required Create/Update field(s) Optional in contact.py
+  [field_patcher] Added missing column(s) ['display_name', 'hashed_password'] to User in users.py
+  [field_patcher] Added missing required constructor kwarg(s) in seed_routes.py
+  [field_patcher] Filtered dict-unpack constructor kwargs in contact_routes.py
+  [field_patcher] Filtered dict-unpack constructor kwargs in seed_routes.py
+  [scaffold] Synthesized missing src/App.jsx from existing pages
+
+=== VALIDATION LOOP (V6) ===
+  Validation: PASS — 0 errors
+
+=== REVIEWS (QA / Security / Code / Performance) ===
+
+=== QA REVIEW (V6) ===
+Using Gemini
+  QA score: 90/100 | Stories: 6/6 covered
+  Blockers: Missing 404 error handling for single-resource GET, PUT, DELETE, and nested resource endpoints when the resource is not found.
+
+=== SECURITY REVIEW (V6) ===
+Using Gemini
+  Security score: 60/100 | Risk: medium
+  Findings: 0 critical, 1 high, 8 total
+  Passed: Authentication is implemented for most sensitive endpoints using `Depends(get_current_user)`., Passwords are hashed using `get_password_hash` (assuming it uses a strong algorithm like bcrypt)., No obvious hardcoded secrets for JWT_SECRET_KEY (assumed to be from environment variables based on `os.getenv` pattern in `database.py`).
+
+============================================================
+  SECURITY REPORT — Score: 60/100 [MEDIUM]
+  The codebase demonstrates a good foundation for security, particularly in authentication and authorization for contacts. However, the overly permissive CORS configuration poses a significant risk. Minor SQL injection risk exists in a DDL helper function, and some Pydantic schemas could benefit from more explicit length validation. Hardcoded seed data passwords are noted but acceptable for non-production use. The mass assignment pattern, while attempting to filter, could be made more robust.
+
+  Findings (8):
+  [HIGH    ] CORSIssue in app/main.py
+             CORS is configured to allow all origins ('*'), which is overly permissive for a production environment and can expose the API to Cross-Site Request Forgery (CSRF) attacks if not properly mitigated elsewhere.
+             Fix: Restrict `allow_origins` to a specific list of trusted domains where your frontend applications are hosted. For development, you can use `["http://localhost:3000"]` or similar. For production, use `["https://your-frontend-domain.com"]`.
+  [MEDIUM  ] SQLInjection in app/database.py
+             The `_add_missing_columns` function constructs an `ALTER TABLE` statement using f-strings with `table.name`, `col.name`, and `type_str` directly. While `table.name` and `col.name` are likely derived from SQLAlchemy's metadata and thus safer, `type_str` is derived from `col.type.compile(dialect=engine.dialect)` which could potentially be manipulated if an attacker could control the column type definition (though less likely in this context). More critically, if `table.name` or `col.name` were ever derived from untrusted input, this would be a direct SQL injection vulnerability.
+             Fix: Ensure that `table.name`, `col.name`, and `type_str` are always derived from trusted, internal SQLAlchemy metadata and never from user-supplied input. For DDL operations, SQLAlchemy's ORM typically handles schema migrations safely. If dynamic DDL is absolutely necessary, consider using SQLAlchemy's DDL constructs directly or carefully sanitizing inputs, though direct string formatting for DDL is generally discouraged.
+  [MEDIUM  ] PasswordExposure in app/models/users.py
+             The `User` model includes both `password_hash` and `hashed_password` columns. While the intent is likely to store a hash, having multiple fields for the same purpose can lead to confusion and potential exposure if one is accidentally returned. More importantly, the `UserResponse` schema in `app/schemas/user.py` does not explicitly exclude these fields, relying on Pydantic's default behavior. If `UserResponse` were to be used in a context where `hashed_password` or `password_hash` were accidentally included (e.g., via `model_dump()` without `exclude`), it could expose password hashes.
+             Fix: Consolidate to a single, consistently named field for the password hash (e.g., `hashed_password`). Ensure that `UserResponse` (and any other response schemas) explicitly exclude sensitive fields like `hashed_password` using `exclude={'hashed_password'}` in `model_dump` or by not including them in the `UserResponse` definition at all.
+  [LOW     ] MissingValidation in app/models/contacts.py
+             The `Contact` model defines `email`, `phone`, and `company` as `String(255)` or `String(50)` without explicit `max_length` validation in the Pydantic schemas (`ContactCreate`, `ContactUpdate`). While the database column has a length limit, Pydantic validation provides an earlier layer of defense and better user feedback.
+             Fix: Add `max_length` constraints to the `email`, `phone`, and `company` fields in `ContactCreate` and `ContactUpdate` Pydantic schemas to match or be less than the database column limits. For example, `email: Optional[str] = Field(None, max_length=255)`.
+  [LOW     ] MissingValidation in app/models/interactions.py
+             The `Interaction` model defines `type` as `String(50)` and `outcome` as `Text` without explicit `max_length` validation in the Pydantic schemas (`InteractionCreate`). While `type` has a database limit, `outcome` (Text) does not, and Pydantic validation provides an earlier layer of defense.
+             Fix: Add `max_length` constraints to the `type` field in `InteractionCreate` to match or be less than the database column limit. For `outcome`, consider if a reasonable `max_length` should be enforced at the application level to prevent excessively large text inputs, e.g., `summary: Optional[str] = Field(None, max_length=2000)`.
+  [LOW     ] MissingValidation in app/models/notes.py
+             The `Note` model defines `content` as `Text` without explicit `max_length` validation in the Pydantic schema (`NoteCreate`). While `Text` columns typically don't have a fixed limit, enforcing a reasonable `max_length` at the application level can prevent excessively large inputs, which could impact performance or storage.
+             Fix: Add a `max_length` constraint to the `content` field in `NoteCreate` Pydantic schema, e.g., `content: str = Field(min_length=1, max_length=5000)`.
+  [INFO    ] HardcodedSecret in app/routes/seed_routes.py
+             The `seed_database` function contains hardcoded passwords ('password123') for seeding initial users. While this is for seeding, it's a practice that can lead to hardcoded credentials in other parts of the codebase if not careful.
+             Fix: Ensure that this `seed_routes.py` is never deployed to production or is protected by strong authentication. For production environments, initial user creation should use secure password generation and storage practices. If seeding is required in non-development environments, consider generating random secure passwords for seeded users and logging them securely for initial access, or using environment variables for seed passwords.
+  [INFO    ] MassAssignment in app/routes/contact_routes.py
+             The `create_contact` endpoint uses `db_contact = Contact(**{k: v for k, v in contact_in.items() if k in Contact.__table__.columns.keys()}.model_dump(exclude_unset=True), user_id=current_user.id)`. While it attempts to filter keys to only those in `Contact.__table__.columns.keys()`, this pattern can be fragile. If a Pydantic schema (`ContactCreate`) were to include a field that should *not* be directly set by the user (e.g., `id`, `created_at`, `user_id` if not explicitly handled), but also happens to be a column in the `Contact` model, it could lead to mass assignment.
+             Fix: Explicitly list the fields that are allowed to be set from `contact_in` when creating the `Contact` object, or rely on Pydantic's `model_dump` with `exclude` or `include` parameters. For example: `db_contact = Contact(name=contact_in.name, email=contact_in.email, ..., user_id=current_user.id)`. This makes the allowed fields explicit and less prone to accidental mass assignment if schemas or models change.
+
+  Passed: Authentication is implemented for most sensitive endpoints using `Depends(get_current_user)`., Passwords are hashed using `get_password_hash` (assuming it uses a strong algorithm like bcrypt)., No obvious hardcoded secrets for JWT_SECRET_KEY (assumed to be from environment variables based on `os.getenv` pattern in `database.py`)., IDOR is mitigated for contacts by filtering on `Contact.user_id == current_user.id`., Pydantic schemas generally define fields explicitly, reducing mass assignment risk, though one pattern could be improved., JWT token expiry is likely handled by `create_access_token` (assuming it sets an expiry).
+============================================================
+
+=== CODE REVIEW (V6) ===
+Using Gemini
+  Code review: 64/100 overall | 5 critical, 7 high issues
+  Naming: 75 | Architecture: 60 | Maintainability: 65 | Tech Debt: 55
+  The codebase demonstrates a good foundational structure for a FastAPI application, with clear separation of concerns for
+
+=== PERFORMANCE REVIEW (V6) ===
+Using Gemini
+  Performance score: 65/100 | 17 issues total
+  N+1: 6 | Missing indexes: 6 | Large payloads: 0 | Slow APIs: 5
+  [N+1]  app/models/contacts.py: N+1: The 'interactions' property on the Contact model performs a separate query 
+  [N+1]  app/models/contacts.py: N+1: The 'notes' property on the Contact model performs a separate query for not
+  [IDX]  app/models/contacts.py.user_id: Foreign key `user_id` in `contacts` table is used in WHERE c
+  [IDX]  app/models/interactions.py.contact_id: Foreign key `contact_id` in `interactions` table is likely t
+  [db_patcher] Injected known-good app/database.py
+
+=== RUNTIME VALIDATION (V6) ===
+Running runtime validation in: C:\Users\jerry\onedrive\Desktop\forgeai\generated_projects\simple_crm
+Using Python: C:\Users\jerry\onedrive\Desktop\forgeai\backend\venv\Scripts\python.exe
+Skipping pip install (packages pre-installed): C:\Users\jerry\onedrive\Desktop\forgeai\generated_projects\simple_crm\app\requirements.txt
+  [runner] Pre-flight DB init: OK
+Health Check /health: 200
+
+=== USER JOURNEY (CRUD WORKFLOW) ===
+  Journey FAIL — 6 passed / 5 failed
+    ✓ Register: 200 @ register
+    ✓ Login: 200 @ login
+    ✓ Detect entity: http://127.0.0.1:8001/contacts
+    ✗ Create entity: 500 (server error)
+    ✓ List entities: 200 count=0
+    ✗ Edit entity: no entity_id captured
+    ✗ Delete entity: no entity_id captured
+    ✗ Verify deletion: no entity_id
+    ✓ Logout: 200
+    ✓ Login again: re-login 200
+    ✗ Verify persistence: no entity_id
+
+=== ENDPOINT SMOKE TESTS ===
+  All endpoints responded without errors.
+
+  Endpoint pass rate: 100% (15/15 passed, 0 timeouts, 0 errors)
+
+  Runtime FAIL: CRUD workflow failed critical steps
+  Runtime: FAIL
+Runtime Fix Requested: {'success': False, 'healthy': True, 'exit_code': 0, 'stdout': 'INFO:     127.0.0.1:49672 - "GET /health HTTP/1.1" 200 OK\nINFO:     127.0.0.1:53437 - "GET /docs HTTP/1.1" 200 OK\nINFO:     127.0.0.1:53438 - "GET /openapi.json HTTP/1.1" 200 OK\nINFO:     127.0.0.1:53439 - "POST /auth/register HTTP/1.1" 200 OK\nINFO:     127.0.0.1:53440 - "GET /openapi.json HTTP/1.1" 200 OK\nINFO:     127.0.0.1:53441 - "POST /auth/login HTTP/1.1" 200 OK\nINFO:     127.0.0.1:52100 - "POST /seed HTTP/1.1" 500 Internal Server Error\nINFO:     127.0.0.1:52101 - "GET /contacts HTTP/1.1" 200 OK\nINFO:     127.0.0.1:59989 - "GET /openapi.json HTTP/1.1" 200 OK\nINFO:     127.0.0.1:59990 - "POST /contacts HTTP/1.1" 500 Internal Server Error\nINFO:     127.0.0.1:59991 - "GET /contacts HTTP/1.1" 200 OK\nINFO:     127.0.0.1:59992 - "POST /auth/logout HTTP/1.1" 200 OK\nINFO:     127.0.0.1:59993 - "POST /auth/login HTTP/1.1" 200 OK\nINFO:     127.0.0.1:59994 - "POST /auth/register HTTP/1.1" 422 Unprocessable Content\nINFO:     127.0.0.1:59995 - "POST /auth/login HTTP/1.1" 422 Unprocessable Content\nINFO:     127.0.0.1:59996 - "GET /users/me HTTP/1.1" 401 Unauthorized\nINFO:     127.0.0.1:59997 - "GET /contacts HTTP/1.1" 401 Unauthorized\nINFO:     127.0.0.1:59998 - "GET /contacts/1 HTTP/1.1" 401 Unauthorized\nINFO:     127.0.0.1:59999 - "POST /contacts HTTP/1.1" 401 Unauthorized\nINFO:     127.0.0.1:60000 - "PUT /contacts/1 HTTP/1.1" 401 Unauthorized\nINFO:     127.0.0.1:60001 - "DELETE /contacts/1 HTTP/1.1" 401 Unauthorized\nINFO:     127.0.0.1:60002 - "POST /contacts/1/notes HTTP/1.1" 401 Unauthorized\nINFO:     127.0.0.1:60003 - "GET /contacts/1/notes HTTP/1.1" 401 Unauthorized\nINFO:     127.0.0.1:60004 - "POST /contacts/1/interactions HTTP/1.1" 401 Unauthorized\nINFO:     127.0.0.1:60005 - "GET /contacts/1/interactions HTTP/1.1" 401 Unauthorized\nINFO:     127.0.0.1:60006 - "GET /stats/pipeline HTTP/1.1" 401 Unauthorized\nINFO:     127.0.0.1:60007 - "GET /contacts/search HTTP/1.1" 401 Unauthorized\n', 'stderr': 'INFO:     Started server process [35416]\nINFO:     Waiting for application startup.\nINFO:     Application startup complete.\nINFO:     Uvicorn running on http://127.0.0.1:8001 (Press CTRL+C to quit)\nC:\\Users\\jerry\\onedrive\\Desktop\\forgeai\\backend\\venv\\Lib\\site-packages\\jwt\\api_jwt.py:147: InsecureKeyLengthWarning: The HMAC key is 19 bytes long, which is below the minimum recommended length of 32 bytes for SHA256. See RFC 7518 Section 3.2.\n  return self._jws.encode(\nERROR:    Exception in ASGI application\nTraceback (most recent call last):\n  File "C:\\Users\\jerry\\onedrive\\Desktop\\forgeai\\backend\\venv\\Lib\\site-packages\\uvicorn\\protocols\\http\\httptools_impl.py", line 421, in run_asgi\n    result = await app(  # type: ignore[func-returns-value]\n             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n        self.scope, self.receive, self.send\n        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n    )\n    ^\n  File "C:\\Users\\jerry\\onedrive\\Desktop\\forgeai\\backend\\venv\\Lib\\site-packages\\uvicorn\\middleware\\proxy_headers.py", line 62, in __call__\n    return await self.app(scope, receive, send)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File "C:\\Users\\jerry\\onedrive\\Desktop\\forgeai\\backend\\venv\\Lib\\site-packages\\fastapi\\applications.py", line 1159, in __call__\n    await super().__call__(scope, receive, send)\n  File "C:\\Users\\jerry\\onedrive\\Desktop\\forgeai\\backend\\venv\\Lib\\site-packages\\starlette\\applications.py", line 90, in __call__\n    await self.middleware_stack(scope, receive, send)\n  File "C:\\Users\\jerry\\onedrive\\Desktop\\forgeai\\backend\\venv\\Lib\\site-packages\\starlette\\middleware\\errors.py", line 186, in __call__\n    raise exc\n  File "C:\\Users\\jerry\\onedrive\\Desktop\\forgeai\\backend\\venv\\Lib\\site-packages\\starlette\\middleware\\errors.py", line 164, in __call__\n    await self.app(scope, receive, _send)\n  File "C:\\Users\\jerry\\onedrive\\Desktop\\forgeai\\backend\\venv\\Lib\\site-packages\\starlette\\middleware\\cors.py", line 88, in __call__\n    await self.app(scope, receive, send)\n  File "C:\\Users\\jerry\\onedrive\\Desktop\\forgeai\\backend\\venv\\Lib\\site-packages\\starlette\\middleware\\exceptions.py", line 63, in __call__\n    await wrap_app_handling_exceptions(self.app, conn)(scope, receive, send)\n  File "C:\\Users\\jerry\\onedrive\\Desktop\\forgeai\\backend\\venv\\Lib\\site-packages\\starlette\\_exception_handler.py", line 53, in wrapped_app\n    raise exc\n  File "C:\\Users\\jerry\\onedrive\\Desktop\\forgeai\\backend\\venv\\Lib\\site-packages\\starlette\\_exception_handler.py", line 42, in wrapped_app\n    await app(scope, receive, sender)\n  File "C:\\Users\\jerry\\onedrive\\Desktop\\forgeai\\backend\\venv\\Lib\\site-packages\\fastapi\\middleware\\asyncexitstack.py", line 18, in __call__\n    await self.app(scope, receive, send)\n  File "C:\\Users\\jerry\\onedrive\\Desktop\\forgeai\\backend\\venv\\Lib\\site-packages\\starlette\\routing.py", line 660, in __call__\n    await self.middleware_stack(scope, receive, send)\n  File "C:\\Users\\jerry\\onedrive\\Desktop\\forgeai\\backend\\venv\\Lib\\site-packages\\starlette\\routing.py", line 680, in app\n    await route.handle(scope, receive, send)\n  File "C:\\Users\\jerry\\onedrive\\Desktop\\forgeai\\backend\\venv\\Lib\\site-packages\\starlette\\routing.py", line 276, in handle\n    await self.app(scope, receive, send)\n  File "C:\\Users\\jerry\\onedrive\\Desktop\\forgeai\\backend\\venv\\Lib\\site-packages\\fastapi\\routing.py", line 134, in app\n    await wrap_app_handling_exceptions(app, request)(scope, receive, send)\n  File "C:\\Users\\jerry\\onedrive\\Desktop\\forgeai\\backend\\venv\\Lib\\site-packages\\starlette\\_exception_handler.py", line 53, in wrapped_app\n    raise exc\n  File "C:\\Users\\jerry\\onedrive\\Desktop\\forgeai\\backend\\venv\\Lib\\site-packages\\starlette\\_exception_handler.py", line 42, in wrapped_app\n    await app(scope, receive, sender)\n  File "C:\\Users\\jerry\\onedrive\\Desktop\\forgeai\\backend\\venv\\Lib\\site-packages\\fastapi\\routing.py", line 120, in app\n    response = await f(request)\n               ^^^^^^^^^^^^^^^^\n  File "C:\\Users\\jerry\\onedrive\\Desktop\\forgeai\\backend\\venv\\Lib\\site-packages\\fastapi\\routing.py", line 674, in app\n    raw_response = await run_endpoint_function(\n                   ^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n    ...<3 lines>...\n    )\n    ^\n  File "C:\\Users\\jerry\\onedrive\\Desktop\\forgeai\\backend\\venv\\Lib\\site-packages\\fastapi\\routing.py", line 330, in run_endpoint_function\n    return await run_in_threadpool(dependant.call, **values)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File "C:\\Users\\jerry\\onedrive\\Desktop\\forgeai\\backend\\venv\\Lib\\site-packages\\starlette\\concurrency.py", line 34, in run_in_threadpool\n    return await anyio.to_thread.run_sync(func)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File "C:\\Users\\jerry\\onedrive\\Desktop\\forgeai\\backend\\venv\\Lib\\site-packages\\anyio\\to_thread.py", line 63, in run_sync\n    return await get_async_backend().run_sync_in_worker_thread(\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n        func, args, abandon_on_cancel=abandon_on_cancel, limiter=limiter\n        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n    )\n    ^\n  File "C:\\Users\\jerry\\onedrive\\Desktop\\forgeai\\backend\\venv\\Lib\\site-packages\\anyio\\_backends\\_asyncio.py", line 2518, in run_sync_in_worker_thread\n    return await future\n           ^^^^^^^^^^^^\n  File "C:\\Users\\jerry\\onedrive\\Desktop\\forgeai\\backend\\venv\\Lib\\site-packages\\anyio\\_backends\\_asyncio.py", line 1002, in run\n    result = context.run(func, *args)\n  File "C:\\Users\\jerry\\onedrive\\Desktop\\forgeai\\generated_projects\\simple_crm\\app\\routes\\seed_routes.py", line 115, in seed_database\n    Interaction.summary == interaction_data["summary"]\n    ^^^^^^^^^^^^^^^^^^^\nAttributeError: type object \'Interaction\' has no attribute \'summary\'\nC:\\Users\\jerry\\onedrive\\Desktop\\forgeai\\backend\\venv\\Lib\\site-packages\\jwt\\api_jwt.py:368: InsecureKeyLengthWarning: The HMAC key is 19 bytes long, which is below the minimum recommended length of 32 bytes for SHA256. See RFC 7518 Section 3.2.\n  decoded = self.decode_complete(\nERROR:    Exception in ASGI application\nTraceback (most recent call last):\n  File "C:\\Users\\jerry\\onedrive\\Desktop\\forgeai\\backend\\venv\\Lib\\site-packages\\uvicorn\\protocols\\http\\httptools_impl.py", line 421, in run_asgi\n    result = await app(  # type: ignore[func-returns-value]\n             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n        self.scope, self.receive, self.send\n        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n    )\n    ^\n  File "C:\\Users\\jerry\\onedrive\\Desktop\\forgeai\\backend\\venv\\Lib\\site-packages\\uvicorn\\middleware\\proxy_headers.py", line 62, in __call__\n    return await self.app(scope, receive, send)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File "C:\\Users\\jerry\\onedrive\\Desktop\\forgeai\\backend\\venv\\Lib\\site-packages\\fastapi\\applications.py", line 1159, in __call__\n    await super().__call__(scope, receive, send)\n  File "C:\\Users\\jerry\\onedrive\\Desktop\\forgeai\\backend\\venv\\Lib\\site-packages\\starlette\\applications.py", line 90, in __call__\n    await self.middleware_stack(scope, receive, send)\n  File "C:\\Users\\jerry\\onedrive\\Desktop\\forgeai\\backend\\venv\\Lib\\site-packages\\starlette\\middleware\\errors.py", line 186, in __call__\n    raise exc\n  File "C:\\Users\\jerry\\onedrive\\Desktop\\forgeai\\backend\\venv\\Lib\\site-packages\\starlette\\middleware\\errors.py", line 164, in __call__\n    await self.app(scope, receive, _send)\n  File "C:\\Users\\jerry\\onedrive\\Desktop\\forgeai\\backend\\venv\\Lib\\site-packages\\starlette\\middleware\\cors.py", line 88, in __call__\n    await self.app(scope, receive, send)\n  File "C:\\Users\\jerry\\onedrive\\Desktop\\forgeai\\backend\\venv\\Lib\\site-packages\\starlette\\middleware\\exceptions.py", line 63, in __call__\n    await wrap_app_handling_exceptions(self.app, conn)(scope, receive, send)\n  File "C:\\Users\\jerry\\onedrive\\Desktop\\forgeai\\backend\\venv\\Lib\\site-packages\\starlette\\_exception_handler.py", line 53, in wrapped_app\n    raise exc\n  File "C:\\Users\\jerry\\onedrive\\Desktop\\forgeai\\backend\\venv\\Lib\\site-packages\\starlette\\_exception_handler.py", line 42, in wrapped_app\n    await app(scope, receive, sender)\n  File "C:\\Users\\jerry\\onedrive\\Desktop\\forgeai\\backend\\venv\\Lib\\site-packages\\fastapi\\middleware\\asyncexitstack.py", line 18, in __call__\n    await self.app(scope, receive, send)\n  File "C:\\Users\\jerry\\onedrive\\Desktop\\forgeai\\backend\\venv\\Lib\\site-packages\\starlette\\routing.py", line 660, in __call__\n    await self.middleware_stack(scope, receive, send)\n  File "C:\\Users\\jerry\\onedrive\\Desktop\\forgeai\\backend\\venv\\Lib\\site-packages\\starlette\\routing.py", line 680, in app\n    await route.handle(scope, receive, send)\n  File "C:\\Users\\jerry\\onedrive\\Desktop\\forgeai\\backend\\venv\\Lib\\site-packages\\starlette\\routing.py", line 276, in handle\n    await self.app(scope, receive, send)\n  File "C:\\Users\\jerry\\onedrive\\Desktop\\forgeai\\backend\\venv\\Lib\\site-packages\\fastapi\\routing.py", line 134, in app\n    await wrap_app_handling_exceptions(app, request)(scope, receive, send)\n  File "C:\\Users\\jerry\\onedrive\\Desktop\\forgeai\\backend\\venv\\Lib\\site-packages\\starlette\\_exception_handler.py", line 53, in wrapped_app\n    raise exc\n  File "C:\\Users\\jerry\\onedrive\\Desktop\\forgeai\\backend\\venv\\Lib\\site-packages\\starlette\\_exception_handler.py", line 42, in wrapped_app\n    await app(scope, receive, sender)\n  File "C:\\Users\\jerry\\onedrive\\Desktop\\forgeai\\backend\\venv\\Lib\\site-packages\\fastapi\\routing.py", line 120, in app\n    response = await f(request)\n               ^^^^^^^^^^^^^^^^\n  File "C:\\Users\\jerry\\onedrive\\Desktop\\forgeai\\backend\\venv\\Lib\\site-packages\\fastapi\\routing.py", line 674, in app\n    raw_response = await run_endpoint_function(\n                   ^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n    ...<3 lines>...\n    )\n    ^\n  File "C:\\Users\\jerry\\onedrive\\Desktop\\forgeai\\backend\\venv\\Lib\\site-packages\\fastapi\\routing.py", line 330, in run_endpoint_function\n    return await run_in_threadpool(dependant.call, **values)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File "C:\\Users\\jerry\\onedrive\\Desktop\\forgeai\\backend\\venv\\Lib\\site-packages\\starlette\\concurrency.py", line 34, in run_in_threadpool\n    return await anyio.to_thread.run_sync(func)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File "C:\\Users\\jerry\\onedrive\\Desktop\\forgeai\\backend\\venv\\Lib\\site-packages\\anyio\\to_thread.py", line 63, in run_sync\n    return await get_async_backend().run_sync_in_worker_thread(\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n        func, args, abandon_on_cancel=abandon_on_cancel, limiter=limiter\n        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n    )\n    ^\n  File "C:\\Users\\jerry\\onedrive\\Desktop\\forgeai\\backend\\venv\\Lib\\site-packages\\anyio\\_backends\\_asyncio.py", line 2518, in run_sync_in_worker_thread\n    return await future\n           ^^^^^^^^^^^^\n  File "C:\\Users\\jerry\\onedrive\\Desktop\\forgeai\\backend\\venv\\Lib\\site-packages\\anyio\\_backends\\_asyncio.py", line 1002, in run\n    result = context.run(func, *args)\n  File "C:\\Users\\jerry\\onedrive\\Desktop\\forgeai\\generated_projects\\simple_crm\\app\\routes\\contact_routes.py", line 74, in create_contact\n    **{k: v for k, v in contact_in.items() if k in Contact.__table__.columns.keys()}.model_dump(exclude_unset=True),\n                        ^^^^^^^^^^^^^^^^\n  File "C:\\Users\\jerry\\onedrive\\Desktop\\forgeai\\backend\\venv\\Lib\\site-packages\\pydantic\\main.py", line 1042, in __getattr__\n    raise AttributeError(f\'{type(self).__name__!r} object has no attribute {item!r}\')\nAttributeError: \'ContactCreate\' object has no attribute \'items\'\n', 'startup_time': 4.612504005432129, 'behavioral_issues': [], 'total_endpoints': 15, 'timeout_count': 0, 'error_count': 0, 'endpoint_pass_rate': 1.0, 'crud_passed': False, 'journey': {'success': False, 'steps_passed': 6, 'steps_failed': 5, 'persistence_verified': False, 'skipped': False, 'skip_reason': '', 'entity': 'contacts', 'seed_summary': {}, 'steps': [{'name': 'Register', 'passed': True, 'detail': '200 @ register'}, {'name': 'Login', 'passed': True, 'detail': '200 @ login'}, {'name': 'Detect entity', 'passed': True, 'detail': 'http://127.0.0.1:8001/contacts'}, {'name': 'Create entity', 'passed': False, 'detail': '500 (server error)'}, {'name': 'List entities', 'passed': True, 'detail': '200 count=0'}, {'name': 'Edit entity', 'passed': False, 'detail': 'no entity_id captured'}, {'name': 'Delete entity', 'passed': False, 'detail': 'no entity_id captured'}, {'name': 'Verify deletion', 'passed': False, 'detail': 'no entity_id'}, {'name': 'Logout', 'passed': True, 'detail': '200'}, {'name': 'Login again', 'passed': True, 'detail': 're-login 200'}, {'name': 'Verify persistence', 'passed': False, 'detail': 'no entity_id'}], 'total_duration': 0.21}, 'parsed_error': {'type': 'AttributeError', 'error_file': 'C:\\Users\\jerry\\onedrive\\Desktop\\forgeai\\generated_projects\\simple_crm\\app\\routes\\contact_routes.py'}}
+Using Gemini
+  [patcher] Skipping stub for ['InteractionCreate', 'InteractionResponse'] in interaction.py — already defined in ['contact'].py (import path may need fixing, but no duplicate stub created)
+  [patcher] Patched 3 file(s) — passlib→bcrypt, async→sync, smart quotes
+  [field_patcher] Filtered dict-unpack constructor kwargs in contact_routes.py
+  [db_patcher] Injected known-good app/database.py
+Running runtime validation in: C:\Users\jerry\onedrive\Desktop\forgeai\generated_projects\simple_crm
+Using Python: C:\Users\jerry\onedrive\Desktop\forgeai\backend\venv\Scripts\python.exe
+Skipping pip install (packages pre-installed): C:\Users\jerry\onedrive\Desktop\forgeai\generated_projects\simple_crm\app\requirements.txt
+  [runner] Deleted stale DB: sql_app.db
+  [runner] Pre-flight DB init: OK
+Health Check /health: 200
+
+=== USER JOURNEY (CRUD WORKFLOW) ===
+  Journey FAIL — 6 passed / 5 failed
+    ✓ Register: 200 @ register
+    ✓ Login: 200 @ login
+    ✓ Detect entity: http://127.0.0.1:8001/contacts
+    ✗ Create entity: 500 (server error)
+    ✓ List entities: 200 count=0
+    ✗ Edit entity: no entity_id captured
+    ✗ Delete entity: no entity_id captured
+    ✗ Verify deletion: no entity_id
+    ✓ Logout: 200
+    ✓ Login again: re-login 200
+    ✗ Verify persistence: no entity_id
+
+=== ENDPOINT SMOKE TESTS ===
+  All endpoints responded without errors.
+
+  Endpoint pass rate: 100% (15/15 passed, 0 timeouts, 0 errors)
+
+  Runtime FAIL: CRUD workflow failed critical steps
+  Runtime: FAIL
+  [runtime fix] Failure signature unchanged — stopping retries
+
+  ZIP: C:\Users\jerry\onedrive\Desktop\forgeai\generated_projects\simple_crm.zip
+
+=== V6 SCORE: 45/100 (F) ===
+    Runtime:      30/100
+    Security:     60/100
+    Performance:  0/100
+    Maintainability: 64/100
+    Review:       77/100
+
+────────────────────────────────────────
+  LLM Calls
+  Planner            1
+  Architect          1
+  Tech Lead          1
+  Backend            27
+  Frontend           1
+  Reviews            4
+  Repairs            0
+  Runtime Fixes      1
+  ────────────────────
+  Total              36
+────────────────────────────────────────
+
+=== COST SUMMARY ===
+  LLM calls:    11
+  Total tokens: 72,742
+  Est. cost:    $0.0184
+  LLM time:     103.9s
+    backend_generation: 31,189 tokens  $0.0072
+    qa_review: 4,500 tokens  $0.0010
+    security_review: 8,887 tokens  $0.0023
+    code_review: 9,240 tokens  $0.0031
+    performance_review: 8,212 tokens  $0.0024
+    runtime_fix: 10,714 tokens  $0.0025
+[V15] OK generation [passed] (90429ms)
+  [patcher] Skipping stub for ['InteractionCreate', 'InteractionResponse'] in interaction.py — already defined in ['contact'].py (import path may need fixing, but no duplicate stub created)
+  [patcher] Patched 1 file(s) — passlib→bcrypt, async→sync, smart quotes
+  [db_patcher] Injected known-good app/database.py
+  [field_patcher] Added missing schema field(s) ['items'] to ContactCreate in contact.py
+  [field_patcher] Added missing schema field(s) ['items'] to NoteCreate in contact.py
+  [field_patcher] Added missing schema field(s) ['items'] to InteractionCreate in contact.py
+  [preflight] fix_postgres_url: applied
+  [preflight] fix_model_schema_notnull_gap: applied
+  [preflight] fix_missing_env: applied
+  [db_patcher] Injected known-good app/database.py
+  [preflight] fix_database_py: applied
+  [preflight] 4 deterministic fix(es) applied without LLM
+  [verify] 1/11 Static analysis...
+  [verify]       failed — 5 issues
+  [verify] 2/11 Compile check...
+  [verify]       passed — 0 syntax errors
+  [verify] 2a Import closure check...
+  [verify]       passed — 0 unresolved imports
+  [verify] 2a2 Contract conformance check (warn-only)...
+  [verify]       failed — 11 contract findings
+  [verify] 2b Frontend build...
+[Frontend] cwd:          C:\Users\jerry\OneDrive\Desktop\forgeAi\generated_projects\simple_crm
+[Frontend] cwd exists:   True
+[Frontend] package.json: ✓ exists
+[Frontend] npm:          C:\Program Files\nodejs\npm.CMD
+[Frontend] Building in: C:\Users\jerry\OneDrive\Desktop\forgeAi\generated_projects\simple_crm
+[Frontend] Installing dependencies (npm install)...
+[Frontend] npm install complete
+Running vite build...
+Frontend build PASSED in 33.18s
+  [verify]       passed — 0 build errors
+  [verify] 3/11 Runtime startup...
+Running runtime validation in: C:\Users\jerry\onedrive\Desktop\forgeai\generated_projects\simple_crm
+Using Python: C:\Users\jerry\onedrive\Desktop\forgeai\backend\venv\Scripts\python.exe
+Skipping pip install (packages pre-installed): C:\Users\jerry\onedrive\Desktop\forgeai\generated_projects\simple_crm\app\requirements.txt
+  [runner] Deleted stale DB: app.db
+  [runner] Deleted stale DB: sql_app.db
+  [runner] Deleted stale DB: app.db-wal
+  [runner] Deleted stale DB: app.db-shm
+  [runner] Pre-flight DB init: OK
+Health Check /health: 200
+
+=== USER JOURNEY (CRUD WORKFLOW) ===
+  Journey FAIL — 6 passed / 5 failed
+    ✓ Register: 200 @ register
+    ✓ Login: 200 @ login
+    ✓ Detect entity: http://127.0.0.1:8001/contacts
+    ✗ Create entity: 500 (server error)
+    ✓ List entities: 200 count=0
+    ✗ Edit entity: no entity_id captured
+    ✗ Delete entity: no entity_id captured
+    ✗ Verify deletion: no entity_id
+    ✓ Logout: 200
+    ✓ Login again: re-login 200
+    ✗ Verify persistence: no entity_id
+
+=== ENDPOINT SMOKE TESTS ===
+  All endpoints responded without errors.
+
+  Endpoint pass rate: 100% (15/15 passed, 0 timeouts, 0 errors)
+
+  Runtime FAIL: CRUD workflow failed critical steps
+  [verify]       failed
+  [verify] 4-9: Running HTTP / Schema-DB / Browser / Performance / Accessibility in parallel...
+  [verify]       http: failed — 1 issues
+  [verify]       schema_db_assertion: passed — 0 issues
+  [verify]       accessibility: failed — 1 issues
+  [verify]       browser: passed — 0 issues
+  [verify] 10/11 Workflow tests...
+  [verify]       failed
+  [verify] 11/11 LLM Judge...
+[LLM cache] HIT (llm_judge) — 0 tokens billed
+  [verify]       LLM Judge claimed a blank/empty page, but the browser stage found mounted DOM content with zero console errors -- treating as a likely vision misread and downgrading to medium severity
+  [verify]       LLM Judge: The application is displaying a blank page, which is a critical failure for any 
+
+------------------------------------------------------------
+  FORGE SCORE: 72.2/100  (C) [NEEDS REPAIR]
+  Coverage: 11/11 dimensions
+------------------------------------------------------------
+  + Compilation            [###################...........]  64.0  (wt:15%)
+      critical=0 high=0 medium=5 low=11
+  x Runtime Startup        [######........................]  20.0  (wt:20%)
+      started=True health=True success=False
+  + API Functionality      [##############################] 100.0  (wt:15%)
+      15/15 endpoints passed
+  + Frontend Load          [##############################] 100.0  (wt:10%)
+      loaded OK
+  + Browser UX             [##########################....]  88.0  (wt:15%)
+      console_errors=0 network_failures=0 forms=0/0
+  x Integration            [###################...........]  66.7  (wt:10%)
+      4/6 workflow steps passed
+  x Code Quality           [###############...............]  52.0  (wt:5%)
+      stubs=0 globals=0 other_contract=16
+  + Security               [##############################] 100.0  (wt:5%)
+      security_issues=0 cors=True server_up=True
+  + Completeness           [##############################] 100.0  (wt:3%)
+      planned=15 missing=0
+  + Performance            [###########################...]  90.0  (wt:2%)
+      health_latency_ms=0
+  + Visual Judge           [##############################] 100.0  (wt:5%)
+      llm_judge_severity=medium confidence=0.00
+------------------------------------------------------------
+
+[V15] Score: 72.2 (C) -- [needs repair]
+
+[retry] Attempt 1/5: Patch affected files with current model
+
+[V15] Fix attempt 1/5 -- strategy: patch_file
+  [fix] 11 lower-priority group(s) (11 diagnostic(s)) dropped this round due to max_groups=6 cap
+  [fix] 21 diagnostics → 6 groups
+  [fix] Group [1] Runtime crash: [AttributeError] TypeError: 'str' object is not callable  [CRUD j
+    [fix] Router: complexity=3 (medium) triggered=[email, search, login, note, simple] stage=fix_complex → gemini
+Using Gemini
+    [fix] Patched: C:\Users\jerry\onedrive\Desktop\forgeai\generated_projects\simple_crm\app\routes\contact_routes.py
+  [fix] Group [2] Frontend–backend integration failure: Workflow step failed: Create seed via API 
+    [fix] Seed-related group 4391acff: writing known-good seed_routes.py stub instead of calling the LLM
+  [fix] Group [3] API endpoint failure: POST /seed returned 500
+    [fix] Seed-related group ce1d9fc2: writing known-good seed_routes.py stub instead of calling the LLM
+  [fix] Group [4] Contract violation: Schema mismatch: app/schemas/contact.py: ContactCreate.name 
+    [fix] Router: complexity=3 (medium) triggered=[email, search, login, note, simple] stage=fix_complex → gemini
+Using Gemini
+    [fix] Patched: app/schemas/contact.py
+  [fix] Group [5] Contract violation: Schema mismatch: app/schemas/user.py: UserCreate.email requi
+    [fix] Cache HIT for group bca95a5b (seen 1x before) — skipping LLM
+    [fix] (cache) Patched: app/schemas/user.py
+  [fix] Group [6] Contract violation: Contract lists 'app/schemas/note.py' (schema) but it was nev
+    [fix] Router: complexity=3 (medium) triggered=[email, search, login, note, simple] stage=fix_complex → gemini
+Using Gemini
+    [fix] Patched: app/schemas/note.py
+  [patcher] Skipping stub for ['InteractionCreate', 'InteractionResponse'] in interaction.py — already defined in ['contact'].py (import path may need fixing, but no duplicate stub created)
+  [patcher] Made Response schema fields Optional in note.py
+  [patcher] Made nullable-column schema fields Optional in contact.py: ContactCreate.name, ContactCreate.status, ContactResponse.name, ContactResponse.status, NoteCreate.content
+  [patcher] Made nullable-column schema fields Optional in note.py: NoteBase.content
+  [schema_patcher] Added from_attributes=True to 1 schema file(s)
+  [patcher] Filtered **schema.dict() kwargs in contact_routes.py
+  [patcher] Patched 1 file(s) — passlib→bcrypt, async→sync, smart quotes
+  [db_patcher] Injected known-good app/database.py
+  [preflight] fix_postgres_url: applied
+  [db_patcher] Injected known-good app/database.py
+  [preflight] fix_database_py: applied
+  [preflight] 2 deterministic fix(es) applied without LLM
+  [verify] 1/11 Static analysis...
+  [verify]       failed — 13 issues
+  [verify] 2/11 Compile check...
+  [verify]       failed — 1 syntax errors
+  [verify] 2a Import closure check...
+  [verify]       passed — 0 unresolved imports
+  [verify] 2a2 Contract conformance check (warn-only)...
+  [verify]       failed — 10 contract findings
+  [verify] 2b Frontend build...
+[Frontend] cwd:          C:\Users\jerry\OneDrive\Desktop\forgeAi\generated_projects\simple_crm
+[Frontend] cwd exists:   True
+[Frontend] package.json: ✓ exists
+[Frontend] npm:          C:\Program Files\nodejs\npm.CMD
+[Frontend] Building in: C:\Users\jerry\OneDrive\Desktop\forgeAi\generated_projects\simple_crm
+[Frontend] node_modules exists — skipping npm install
+Running vite build...
+Frontend build PASSED in 4.12s
+  [verify]       passed — 0 build errors
+  [verify] 3/11 Runtime: SKIPPED (2 critical static errors)
+  [verify] SKIPPED http: backend not running
+  [verify] SKIPPED schema_db_assertion: backend not running
+  [verify] SKIPPED browser: backend not running
+  [verify] SKIPPED performance: backend not running
+  [verify] SKIPPED accessibility: backend not running
+  [verify] SKIPPED workflow: backend not running
+  [verify] 11/11 LLM Judge...
+  [verify]       LLM Judge: passed
+  [fix] REGRESSION: 14 new error(s) with no score improvement (72.2 -> 23.1)
+       ↳ Missing endpoint DELETE /contacts/{contact_id} (expected in app/routes/contact_r
+       ↳ Missing endpoint GET /contacts (expected in app/routes/contact_routes.py)
+       ↳ Missing endpoint GET /contacts/search (expected in app/routes/contact_routes.py)
+    [fix] Reverted to pre-fix snapshot
+  [verify] 1/11 Static analysis...
+  [verify]       failed — 5 issues
+  [verify] 2/11 Compile check...
+  [verify]       passed — 0 syntax errors
+  [verify] 2a Import closure check...
+  [verify]       passed — 0 unresolved imports
+  [verify] 2a2 Contract conformance check (warn-only)...
+  [verify]       failed — 11 contract findings
+  [verify] 2b Frontend build...
+[Frontend] cwd:          C:\Users\jerry\OneDrive\Desktop\forgeAi\generated_projects\simple_crm
+[Frontend] cwd exists:   True
+[Frontend] package.json: ✓ exists
+[Frontend] npm:          C:\Program Files\nodejs\npm.CMD
+[Frontend] Building in: C:\Users\jerry\OneDrive\Desktop\forgeAi\generated_projects\simple_crm
+[Frontend] package.json changed since last install — re-running npm install...
+[Frontend] npm install complete
+Running vite build...
+Frontend build PASSED in 5.05s
+  [verify]       passed — 0 build errors
+  [verify] 3/11 Runtime startup...
+Running runtime validation in: C:\Users\jerry\onedrive\Desktop\forgeai\generated_projects\simple_crm
+Using Python: C:\Users\jerry\onedrive\Desktop\forgeai\backend\venv\Scripts\python.exe
+Skipping pip install (packages pre-installed): C:\Users\jerry\onedrive\Desktop\forgeai\generated_projects\simple_crm\app\requirements.txt
+  [runner] Deleted stale DB: app.db
+  [runner] Deleted stale DB: sql_app.db
+  [runner] Deleted stale DB: app.db-wal
+  [runner] Deleted stale DB: app.db-shm
+  [runner] Pre-flight DB init: OK
+Health Check /health: 200
+
+=== USER JOURNEY (CRUD WORKFLOW) ===
+  Journey FAIL — 6 passed / 5 failed
+    ✓ Register: 200 @ register
+    ✓ Login: 200 @ login
+    ✓ Detect entity: http://127.0.0.1:8001/contacts
+    ✗ Create entity: 500 (server error)
+    ✓ List entities: 200 count=0
+    ✗ Edit entity: no entity_id captured
+    ✗ Delete entity: no entity_id captured
+    ✗ Verify deletion: no entity_id
+    ✓ Logout: 200
+    ✓ Login again: re-login 200
+    ✗ Verify persistence: no entity_id
+
+=== ENDPOINT SMOKE TESTS ===
+  All endpoints responded without errors.
+
+  Endpoint pass rate: 100% (15/15 passed, 0 timeouts, 0 errors)
+
+  Runtime FAIL: CRUD workflow failed critical steps
+  [verify]       failed
+  [verify] 4-9: Running HTTP / Schema-DB / Browser / Performance / Accessibility in parallel...
+  [verify]       http: failed — 1 issues
+  [verify]       schema_db_assertion: passed — 0 issues
+  [verify]       accessibility: failed — 1 issues
+  [verify]       browser: passed — 0 issues
+  [verify] 10/11 Workflow tests...
+  [verify]       failed
+  [verify] 11/11 LLM Judge...
+[LLM cache] HIT (llm_judge) — 0 tokens billed
+  [verify]       LLM Judge claimed a blank/empty page, but the browser stage found mounted DOM content with zero console errors -- treating as a likely vision misread and downgrading to medium severity
+  [verify]       LLM Judge: The application is displaying a blank page, which is a critical failure for any 
+
+------------------------------------------------------------
+  FORGE SCORE: 72.2/100  (C) [NEEDS REPAIR]
+  Coverage: 11/11 dimensions
+------------------------------------------------------------
+  + Compilation            [###################...........]  64.0  (wt:15%)
+      critical=0 high=0 medium=5 low=11
+  x Runtime Startup        [######........................]  20.0  (wt:20%)
+      started=True health=True success=False
+  + API Functionality      [##############################] 100.0  (wt:15%)
+      15/15 endpoints passed
+  + Frontend Load          [##############################] 100.0  (wt:10%)
+      loaded OK
+  + Browser UX             [##########################....]  88.0  (wt:15%)
+      console_errors=0 network_failures=0 forms=0/0
+  x Integration            [###################...........]  66.7  (wt:10%)
+      4/6 workflow steps passed
+  x Code Quality           [###############...............]  52.0  (wt:5%)
+      stubs=0 globals=0 other_contract=16
+  + Security               [##############################] 100.0  (wt:5%)
+      security_issues=0 cors=True server_up=True
+  + Completeness           [##############################] 100.0  (wt:3%)
+      planned=15 missing=0
+  + Performance            [###########################...]  90.0  (wt:2%)
+      health_latency_ms=0
+  + Visual Judge           [##############################] 100.0  (wt:5%)
+      llm_judge_severity=medium confidence=0.00
+------------------------------------------------------------
+
+[retry] Result: 72.2 → 72.2 (Δ=+0.0)
+[V15] Score: 72.2 (C) -- [needs repair]
+[V15] WARNING: Regression detected -- reverting fix
+
+[retry] Attempt 2/5: Patch with enriched prompt (full file context + examples)
+
+[V15] Fix attempt 2/5 -- strategy: patch_file
+  [fix] 11 lower-priority group(s) (11 diagnostic(s)) dropped this round due to max_groups=6 cap
+  [fix] 21 diagnostics → 6 groups
+  [fix] Group [1] Runtime crash: [AttributeError] TypeError: 'str' object is not callable  [CRUD j
+    [fix] Router: complexity=3 (medium) triggered=[email, search, login, note, simple] stage=fix_complex → gemini
+Using Gemini
+    [fix] Patched: C:\\Users\\jerry\\onedrive\\Desktop\\forgeai\\generated_projects\\simple_crm\\app\\routes\\contact_routes.py
+  [fix] Group [2] Frontend–backend integration failure: Workflow step failed: Create seed via API 
+    [fix] Seed-related group 278355f1: writing known-good seed_routes.py stub instead of calling the LLM
+  [fix] Group [3] API endpoint failure: POST /seed returned 500
+    [fix] Seed-related group 6edb6b22: writing known-good seed_routes.py stub instead of calling the LLM
+  [fix] Group [4] Contract violation: Schema mismatch: app/schemas/contact.py: ContactCreate.name 
+    [fix] Router: complexity=3 (medium) triggered=[email, search, login, note, simple] stage=fix_complex → gemini
+Using Gemini
+    [fix] Patched: app/schemas/contact.py
+  [fix] Group [5] Contract violation: Schema mismatch: app/schemas/user.py: UserCreate.email requi
+    [fix] Cache HIT for group cf0c92b0 (seen 1x before) — skipping LLM
+    [fix] (cache) Patched: app/schemas/user.py
+  [fix] Group [6] Contract violation: Contract lists 'app/schemas/note.py' (schema) but it was nev
+    [fix] Router: complexity=3 (medium) triggered=[email, search, login, note, simple] stage=fix_complex → gemini
+Using Gemini
+    [fix] Patched: app/schemas/note.py
+  [patcher] Skipping stub for ['NoteCreate', 'NoteResponse'] in note.py — already defined in ['contact'].py (import path may need fixing, but no duplicate stub created)
+  [patcher] Skipping stub for ['InteractionCreate', 'InteractionResponse'] in interaction.py — already defined in ['contact'].py (import path may need fixing, but no duplicate stub created)
+  [patcher] Made Response schema fields Optional in contact.py
+  [patcher] Made Response schema fields Optional in note.py
+  [patcher] Made nullable-column schema fields Optional in contact.py: ContactCreate.name, ContactCreate.status, NoteCreate.content, InteractionCreate.type
+  [patcher] Made nullable-column schema fields Optional in note.py: NoteBase.content
+  [schema_patcher] Added from_attributes=True to 1 schema file(s)
+  [patcher] Patched 2 file(s) — passlib→bcrypt, async→sync, smart quotes
+  [db_patcher] Injected known-good app/database.py
+  [preflight] fix_postgres_url: applied
+  [db_patcher] Injected known-good app/database.py
+  [preflight] fix_database_py: applied
+  [preflight] 2 deterministic fix(es) applied without LLM
+  [verify] 1/11 Static analysis...
+  [verify]       failed — 13 issues
+  [verify] 2/11 Compile check...
+  [verify]       failed — 1 syntax errors
+  [verify] 2a Import closure check...
+  [verify]       passed — 0 unresolved imports
+  [verify] 2a2 Contract conformance check (warn-only)...
+  [verify]       failed — 10 contract findings
+  [verify] 2b Frontend build...
+[Frontend] cwd:          C:\Users\jerry\OneDrive\Desktop\forgeAi\generated_projects\simple_crm
+[Frontend] cwd exists:   True
+[Frontend] package.json: ✓ exists
+[Frontend] npm:          C:\Program Files\nodejs\npm.CMD
+[Frontend] Building in: C:\Users\jerry\OneDrive\Desktop\forgeAi\generated_projects\simple_crm
+[Frontend] package.json changed since last install — re-running npm install...
+[Frontend] npm install complete
+Running vite build...
+Frontend build PASSED in 4.98s
+  [verify]       passed — 0 build errors
+  [verify] 3/11 Runtime: SKIPPED (2 critical static errors)
+  [verify] SKIPPED http: backend not running
+  [verify] SKIPPED schema_db_assertion: backend not running
+  [verify] SKIPPED browser: backend not running
+  [verify] SKIPPED performance: backend not running
+  [verify] SKIPPED accessibility: backend not running
+  [verify] SKIPPED workflow: backend not running
+  [verify] 11/11 LLM Judge...
+  [verify]       LLM Judge: passed
+  [fix] REGRESSION: 14 new error(s) with no score improvement (72.2 -> 23.1)
+       ↳ Missing endpoint DELETE /contacts/{contact_id} (expected in app/routes/contact_r
+       ↳ Missing endpoint GET /contacts (expected in app/routes/contact_routes.py)
+       ↳ Missing endpoint GET /contacts/search (expected in app/routes/contact_routes.py)
+    [fix] Reverted to pre-fix snapshot
+  [verify] 1/11 Static analysis...
+  [verify]       failed — 5 issues
+  [verify] 2/11 Compile check...
+  [verify]       passed — 0 syntax errors
+  [verify] 2a Import closure check...
+  [verify]       passed — 0 unresolved imports
+  [verify] 2a2 Contract conformance check (warn-only)...
+  [verify]       failed — 11 contract findings
+  [verify] 2b Frontend build...
+[Frontend] cwd:          C:\Users\jerry\OneDrive\Desktop\forgeAi\generated_projects\simple_crm
+[Frontend] cwd exists:   True
+[Frontend] package.json: ✓ exists
+[Frontend] npm:          C:\Program Files\nodejs\npm.CMD
+[Frontend] Building in: C:\Users\jerry\OneDrive\Desktop\forgeAi\generated_projects\simple_crm
+[Frontend] package.json changed since last install — re-running npm install...
+[Frontend] npm install complete
+Running vite build...
+Frontend build PASSED in 4.96s
+  [verify]       passed — 0 build errors
+  [verify] 3/11 Runtime startup...
+Running runtime validation in: C:\Users\jerry\onedrive\Desktop\forgeai\generated_projects\simple_crm
+Using Python: C:\Users\jerry\onedrive\Desktop\forgeai\backend\venv\Scripts\python.exe
+Skipping pip install (packages pre-installed): C:\Users\jerry\onedrive\Desktop\forgeai\generated_projects\simple_crm\app\requirements.txt
+  [runner] Deleted stale DB: app.db
+  [runner] Deleted stale DB: sql_app.db
+  [runner] Deleted stale DB: app.db-wal
+  [runner] Deleted stale DB: app.db-shm
+  [runner] Pre-flight DB init: OK
+Health Check /health: 200
+
+=== USER JOURNEY (CRUD WORKFLOW) ===
+  Journey FAIL — 6 passed / 5 failed
+    ✓ Register: 200 @ register
+    ✓ Login: 200 @ login
+    ✓ Detect entity: http://127.0.0.1:8001/contacts
+    ✗ Create entity: 500 (server error)
+    ✓ List entities: 200 count=0
+    ✗ Edit entity: no entity_id captured
+    ✗ Delete entity: no entity_id captured
+    ✗ Verify deletion: no entity_id
+    ✓ Logout: 200
+    ✓ Login again: re-login 200
+    ✗ Verify persistence: no entity_id
+
+=== ENDPOINT SMOKE TESTS ===
+  All endpoints responded without errors.
+
+  Endpoint pass rate: 100% (15/15 passed, 0 timeouts, 0 errors)
+
+  Runtime FAIL: CRUD workflow failed critical steps
+  [verify]       failed
+  [verify] 4-9: Running HTTP / Schema-DB / Browser / Performance / Accessibility in parallel...
+  [verify]       http: failed — 1 issues
+  [verify]       schema_db_assertion: passed — 0 issues
+  [verify]       accessibility: failed — 1 issues
+  [verify]       browser: passed — 0 issues
+  [verify] 10/11 Workflow tests...
+  [verify]       failed
+  [verify] 11/11 LLM Judge...
+[LLM cache] HIT (llm_judge) — 0 tokens billed
+  [verify]       LLM Judge claimed a blank/empty page, but the browser stage found mounted DOM content with zero console errors -- treating as a likely vision misread and downgrading to medium severity
+  [verify]       LLM Judge: The application is displaying a blank page, which is a critical failure for any 
+
+------------------------------------------------------------
+  FORGE SCORE: 72.2/100  (C) [NEEDS REPAIR]
+  Coverage: 11/11 dimensions
+------------------------------------------------------------
+  + Compilation            [###################...........]  64.0  (wt:15%)
+      critical=0 high=0 medium=5 low=11
+  x Runtime Startup        [######........................]  20.0  (wt:20%)
+      started=True health=True success=False
+  + API Functionality      [##############################] 100.0  (wt:15%)
+      15/15 endpoints passed
+  + Frontend Load          [##############################] 100.0  (wt:10%)
+      loaded OK
+  + Browser UX             [##########################....]  88.0  (wt:15%)
+      console_errors=0 network_failures=0 forms=0/0
+  x Integration            [###################...........]  66.7  (wt:10%)
+      4/6 workflow steps passed
+  x Code Quality           [###############...............]  52.0  (wt:5%)
+      stubs=0 globals=0 other_contract=16
+  + Security               [##############################] 100.0  (wt:5%)
+      security_issues=0 cors=True server_up=True
+  + Completeness           [##############################] 100.0  (wt:3%)
+      planned=15 missing=0
+  + Performance            [###########################...]  90.0  (wt:2%)
+      health_latency_ms=0
+  + Visual Judge           [##############################] 100.0  (wt:5%)
+      llm_judge_severity=medium confidence=0.00
+------------------------------------------------------------
+
+[retry] Result: 72.2 → 72.2 (Δ=+0.0)
+[V15] Score: 72.2 (C) -- [needs repair]
+[V15] WARNING: Regression detected -- reverting fix
+[V15] 2 consecutive fix attempts with no score improvement — stopping fix loop to save API credits (set FORGE_MAX_STALLED_FIX_ATTEMPTS to change)
+
+[V15] Score 72.2 < 80 — deployment skipped
+[V15] Best score across attempts: 72.2
+
+[V15] === Pipeline complete: generated ===
+
+  Deployment confidence: 34.5%  [##########....................]  F
+  Not deployment-ready — critical issues likely remain.
+  Factors:
+    base                         -0.500
+    overall_score                ++1.305
+    runtime_health               ++0.100
+    browser_ux                   ++0.264
+    compilation                  ++0.128
+    fix_penalty                  -0.800
+    critical_errors              -1.000
+    historical_base_rate         -0.137
+  Historical base rate: 25.5%  (n=51)
+
+======================================================================
+  V15 FINAL REPORT
+======================================================================
+  Project:       simple_crm
+  Forge Score:   72.2/100  (C)
+  Deployed:      NO
+  Fix Attempts:  2/5
+  Total Tokens:  87,063
+  Est. Cost:     $0.0230
+  Total Time:    264.38s
+  Score Track:   72 → 23 → 72 → 23 → 72
+======================================================================
+
+
+======================================================================
+  CANARY SUMMARY  (router-export-mismatch-fix)
+======================================================================
+  [OK        ] todo       score=91.2  build=True runtime=True crud=False browser=True deployed=False  (143.4s)
+  [OK        ] blog_cms   score=86.7  build=True runtime=True crud=True browser=True deployed=False  (166.4s)
+  [REGRESSION] crm        score=72.2  build=True runtime=False crud=False browser=True deployed=False  (264.4s)
+                 -- runtime regressed (was passing, now failing)
+                 -- forge score dropped 87.5 -> 72.2
+
+======================================================================
+  CANARY FAILED -- regression detected, do not proceed to next milestone
+======================================================================
+
