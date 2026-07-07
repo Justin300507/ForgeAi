@@ -1699,3 +1699,72 @@ reuses the existing patcher-dispatch pattern, zero new dependencies).
 **Cost**: $0 for the fix and its verification (no LLM calls in either);
 canary cost shared with the ordinary reliability-monitoring cadence, not
 attributable to this fix specifically since it never fired.
+
+## Experiment 022 — Fix dict-unpack-constructor patcher corrupting `.model_dump()` calls
+
+**Hypothesis**: `**{k: v for k, v in X.items() if k in Model.__table__.columns.keys()}.model_dump(exclude_unset=True)`
+— a guaranteed-AttributeError constructor call — recurred verbatim in two
+separate apps this session (`todo_list_app/task_routes.py`, Experiment
+020's canary; `simple_crm/contact_routes.py`, Experiment 021's canary,
+where it was the actual cause of that run's flagged crm regression, not
+the RouterExportMismatch fix under test that day). Given the exact same
+malformed shape recurred across independently-generated apps, this looked
+like systematic corruption, not LLM noise. Does tracing it to a root
+cause and fixing it there eliminate the pattern?
+
+**Root cause — not LLM noise, a bug in existing deterministic
+infrastructure**: `database_patcher.py`'s
+`patch_filter_dict_unpack_constructor_kwargs` uses
+`_BARE_DICT_UNPACK_RE = re.compile(r"\*\*(\w+)\b")` to find `**varname`
+constructor-unpack sites and wrap them in a dict comprehension filtering
+to the model's real columns. For input `**task_in.model_dump(exclude_unset=True)`,
+this regex's `\b` boundary stops matching at `task_in` (before the `.`),
+so the substitution replaces only that bare token with the dict
+comprehension and leaves `.model_dump(exclude_unset=True)` — text that
+was never part of the regex match — dangling on the dict literal it just
+inserted. A schema already serialized via `.model_dump(...)` was already
+correct and needed no filtering; this patcher was actively corrupting it
+every time it ran on such a call.
+
+**Fix** (commit 0f6e1bd): one negative lookahead,
+`_BARE_DICT_UNPACK_RE = re.compile(r"\*\*(\w+)\b(?!\s*\.)")` — excludes
+any `**varname` immediately followed by attribute/method access, so only
+genuinely bare dict-unpacks (the case this patcher was actually built for)
+get touched.
+
+**Verified locally** ($0, no LLM/server): two fixtures — a
+`**schema.model_dump(exclude_unset=True)` call (now correctly left
+untouched; previously corrupted) and a genuinely bare
+`Task(**raw_dict, extra_field="x")` call (still correctly filtered,
+unchanged behavior for the patcher's actual intended case). Both outputs
+`ast.parse` clean.
+
+**Canary** (`dictunpack-modeldump-fix`, `m4_canary_dictunpack_run.log`):
+`grep` for the target corruption pattern (`.items().*model_dump` /
+`model_dump.*\.items()`) returns **zero** matches anywhere in the log —
+the specific bug this fix targets did not recur. `CANARY FAILED` was
+flagged for blog_cms (CRUD regressed) and crm (score 72.2→36.4) — both
+confirmed unrelated on inspection: crm's runtime was skipped outright due
+to a `ModuleNotFoundError` (missing dependency) before the app ever
+started, compounded by a schema Contract violation on
+`ContactCreate.name` (a `Contact.name`/`ContactCreate` mismatch — notably
+the exact entity ADR-001's own original bug report was about; worth a
+closer look in a future cycle to confirm this is a fresh recurrence vs. a
+different field). Neither failure touches `database_patcher.py`'s
+dict-unpack logic.
+
+**Verdict: KEEP.** Correctness established by the two offline fixtures
+(exhaustive over the only two cases this regex distinguishes), consistent
+with the canary's independent confirmation that the specific corruption
+pattern is now absent. This run's flagged regressions are logged honestly
+as separate, uncaught-by-this-fix bottlenecks for the next cycle, not
+papered over.
+
+**Engineering effort**: S (11-line diff, one regex change plus a
+comment). **Cost**: $0 for the fix and its local verification.
+
+**Next bottleneck queued**: crm's `ModuleNotFoundError`
+(missing-dependency class, patterns.json count 9) skipped runtime
+entirely this run before CRUD was ever reached — higher severity than a
+CRUD-step failure, since it blocks everything downstream. Investigating
+next.
