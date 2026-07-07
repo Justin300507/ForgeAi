@@ -233,11 +233,15 @@ def _fix_config_missing_attrs(project_path: Path, diagnostics: list) -> bool:
          read, or vice versa) -- Python attribute names are case-sensitive,
          so only patching the canonical case misses this. Fix: guard-set
          both the canonical and lowercase spelling on the class.
-    Pydantic BaseSettings/BaseModel subclasses manage attributes through
-    their own __fields__/__dict__ machinery -- arbitrary class-level
-    setattr isn't guaranteed to surface through instance access the same
-    way, so those (and anything built via a factory function rather than a
-    plain class literal) keep the original instance-only guard unchanged.
+    Class-level patching applies to plain classes AND pydantic
+    BaseSettings/BaseModel subclasses alike (confirmed empirically
+    2026-07-07: a post-class-body `setattr(cls, name, value)` is invisible
+    to pydantic's model-building machinery -- that only intercepts
+    assignments made inside the class body -- so it's an ordinary class
+    attribute a fresh instance's normal attribute lookup falls through to,
+    same as any other class). Only skipped when the RHS isn't a plain
+    class actually defined in this file (an imported name or a factory
+    function -- "the actual class" can't be located to patch).
     """
     defaults = {
         "DATABASE_URL": 'os.getenv("DATABASE_URL", "sqlite:///./app.db")',
@@ -291,11 +295,25 @@ def _fix_config_missing_attrs(project_path: Path, diagnostics: list) -> bool:
         instance_name = m.group(1)
         class_name: Optional[str] = m.group(2)
         # Only class-patch if that name is a plain class actually defined in
-        # this file (not an imported name or a factory function) and it
-        # isn't a pydantic BaseSettings/BaseModel subclass.
+        # this file (not an imported name or a factory function).
+        #
+        # Previously also skipped pydantic BaseSettings/BaseModel subclasses
+        # here, on the theory that "arbitrary class-level setattr isn't
+        # guaranteed to surface through instance access the same way" for
+        # those. Confirmed empirically (2026-07-07) that this is wrong for
+        # a non-field extra attribute: `setattr(PydanticModel, "X", v)`
+        # after the class body has already executed is invisible to
+        # pydantic's model-building machinery entirely (that only
+        # intercepts assignments made INSIDE the class body, processed by
+        # the metaclass at class-creation time) -- it's an ordinary Python
+        # class attribute, and a fresh instance's normal attribute lookup
+        # falls through to it exactly like any other class, since the
+        # instance's own __dict__/model_fields never shadow it. This
+        # closes the actual observed gap: main.py sometimes builds its OWN
+        # `Config()`/`Settings()` instance instead of importing config.py's
+        # `settings` (see bug #1 above), and when Config is pydantic-based,
+        # that second instance was previously left completely unpatched.
         if not re.search(rf'^class\s+{re.escape(class_name)}\b', content, re.MULTILINE):
-            class_name = None
-        elif re.search(rf'class\s+{re.escape(class_name)}\s*\(\s*(?:BaseSettings|BaseModel)', content):
             class_name = None
     else:
         m2 = re.search(
