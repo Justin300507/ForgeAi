@@ -1575,3 +1575,57 @@ journey in isolation, forcing the fallback path on demand instead of
 waiting for it) would give a clean answer at near-zero cost instead of
 gambling on further canary spend. Decision on which path to take next is
 the user's call, per this project's credit-discipline convention.
+
+**Targeted deterministic verification (chosen over a third canary)**:
+copied `generated_projects/todo_list_app` to a scratch directory (not
+committed — the real project directory, untouched). Neutralized the one
+known, unrelated confound (`task_routes.py`'s `task_in.items().model_dump()`
+malformed constructor, identified above, nothing to do with seeding) with
+a one-line fix scoped to the scratch copy only. Deleted `seed_routes.py`.
+Called `deterministic_seed_generator.generate()` directly against the
+scratch project — no LLM, no canary, no coin-flip:
+
+```
+TELEMETRY: {'adr002_enabled': True, 'entities_discovered': 3,
+'lookup_entities': 1, 'fallback_used': False, 'fallback_reason': '',
+'generation_time_ms': 1.08,
+'exclusions': ['excluded tasks: required FK -> users outside the
+deterministic lookup graph']}
+```
+
+Confirms the transitive-eligibility rule correctly refused to seed `Task`
+itself (a business entity requiring a real owner) while correctly
+identifying `Priority` as the one genuine lookup entity. Wrote the
+generated `seed_routes.py`, started the real FastAPI app for real, and ran
+the actual HTTP flow with `requests`:
+
+```
+register: 200
+login: 200
+seed: 200 {'seeded': True, 'summary': {'priorities':
+  {'inserted': 3, 'skipped': 0, 'already_existed': 0}}}
+create task (priority_id=1): 201
+{"id":1,"user_id":1,"title":"Verify ADR-002 seeding", ...,
+ "priority_id":1,"completed":false, ...}
+```
+
+**This is the clean, unconfounded result the two canary runs couldn't
+provide**: with the one unrelated bug neutralized, an empty `priorities`
+table, the deterministic fallback path forced on demand, and a real
+server handling real HTTP requests — `POST /seed` inserts exactly 3 rows,
+and `POST /tasks` against a real seeded `priority_id` returns `201`, not
+the `400 Invalid priority_id` this entire experiment traces back to
+(Experiment 019) or the unrelated `500` seen in this cycle's canaries.
+The mechanism does exactly what the frozen spec claims, demonstrated
+directly rather than inferred from confounded aggregate scores.
+
+**Final verdict: ADR-002 VALIDATED**, on five independent lines of
+evidence: (1) 35 passing unit/execution tests exercising the algorithm in
+isolation; (2) clean local validation across all 5 implementation tasks,
+zero regressions; (3) two live canary firings, both independently
+confirmed correct via telemetry; (4) this targeted, deconfounded
+end-to-end verification — the strongest evidence, since it directly
+forces and observes the exact mechanism under test; (5) negative evidence
+from the second canary (blog_cms continued drifting while ADR-002 was
+completely inactive), which rules out this feature as the source of that
+unrelated regression. Promoting to `docs/adr/ADR-002-deterministic-reference-data-generation.md`.
