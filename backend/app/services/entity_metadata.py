@@ -61,15 +61,16 @@ class FieldDefinition:
 @dataclass
 class RelationshipDefinition:
     """A single `attr = relationship("Target", ...)` declaration -- captures
-    exactly what's stated in the call, nothing derived. Whether this is a
-    one-to-many/many-to-one/many-to-many/one-to-one relationship can't be
-    determined from one file alone (it requires matching back_populates
-    pairs across the target entity too) -- that cross-entity derivation is
-    deliberately a separate, later phase, not part of this extraction."""
+    exactly what's stated in the call, nothing derived at parse time.
+    `kind` starts unset; it's filled in by the separate cross-entity pass
+    `derive_relationship_kinds()` (Phase D), which needs the full entity
+    collection (matching back_populates pairs across both sides), not
+    just this one file."""
     attr_name: str
     target_class: str
     back_populates: str | None = None
     secondary: str | None = None  # association-table name, if many-to-many
+    kind: str | None = None  # "one_to_many" | "many_to_one" | "many_to_many" | "one_to_one" | None (undetermined)
 
 
 @dataclass
@@ -171,6 +172,77 @@ def extract_entity_definition(model_content: str, source_path: str = "") -> Enti
     )
 
 
+def derive_relationship_kinds(entities: list[EntityDefinition]) -> None:
+    """
+    ADR-001 extension, Phase D (docs/ADR-001-extension-investigation.md):
+    accurately derives each RelationshipDefinition.kind by matching
+    back_populates pairs across BOTH sides of a relationship, replacing
+    Phase B's per-file local heuristic (app/contract/adapter.py's
+    enrich_relationships_from_models, which only ever looked at one
+    entity's own FK columns in isolation) with a cross-entity-confirmed
+    classification.
+
+    Mutates `entities` in place -- sets `.kind` on every RelationshipDefinition
+    found. Deliberately leaves `kind=None` (rather than a guessed value)
+    whenever the evidence is ambiguous or the two sides of a relationship
+    disagree: an honest "undetermined" beats a confident wrong answer,
+    the same principle every extractor in this module already follows
+    (e.g. `find_model_for_resource` never guesses past a shim).
+    """
+    by_class = {e.class_name: e for e in entities}
+
+    for entity in entities:
+        own_fk_targets = {
+            f.fk_target.split(".")[0]
+            for f in entity.fields
+            if f.is_foreign_key and f.fk_target
+        }
+        for rel in entity.relationships:
+            target_entity = by_class.get(rel.target_class)
+            counterpart = None
+            if target_entity is not None and rel.back_populates:
+                counterpart = next(
+                    (r for r in target_entity.relationships
+                     if r.attr_name == rel.back_populates and r.target_class == entity.class_name),
+                    None,
+                )
+
+            if rel.secondary:
+                if counterpart is None or counterpart.secondary == rel.secondary:
+                    rel.kind = "many_to_many"
+                else:
+                    rel.kind = None  # counterpart declares a different/no secondary -- inconsistent
+                continue
+
+            target_table_guesses = {rel.target_class.lower(), rel.target_class.lower() + "s"}
+            this_side_has_fk = bool(own_fk_targets & target_table_guesses)
+
+            if counterpart is None or target_entity is None:
+                # No confirmed pair to cross-check against -- fall back to
+                # this entity's own FK evidence alone (the same signal
+                # Phase B used), still grounded in real Column data, not a
+                # blind guess.
+                rel.kind = "many_to_one" if this_side_has_fk else "one_to_many"
+                continue
+
+            other_target_guesses = {entity.class_name.lower(), entity.class_name.lower() + "s"}
+            other_side_has_fk = any(
+                f.is_foreign_key and f.fk_target and f.fk_target.split(".")[0] in other_target_guesses
+                for f in target_entity.fields
+            )
+
+            if this_side_has_fk and not other_side_has_fk:
+                rel.kind = "many_to_one"
+            elif other_side_has_fk and not this_side_has_fk:
+                rel.kind = "one_to_many"
+            else:
+                # Both sides (or neither) show a matching FK -- can't
+                # confidently distinguish this from the one-to-one case
+                # without parsing a uselist=False/unique constraint this
+                # module doesn't extract -- don't guess.
+                rel.kind = None
+
+
 def _singular(name: str) -> str:
     if name.endswith("ies"):
         return name[:-3] + "y"
@@ -221,7 +293,19 @@ def find_model_for_resource(
 
 def render_field_manifest(entity: EntityDefinition) -> str:
     """Render an explicit, unambiguous field list for prompt injection --
-    deliberately phrased as a binding contract, not advisory text."""
+    deliberately phrased as a binding contract, not advisory text.
+
+    Includes relationship guidance (ADR-001 extension, Phase D
+    integration) so the schema-generation LLM is told explicitly how to
+    expose each relationship type instead of guessing -- this is the
+    exact gap ADR-001 originally flagged as out of scope (Experiment 017:
+    blog_cms independently inventing a `tag_ids` field for its `tags`
+    many-to-many relationship, with nothing telling the schema-gen call
+    that field needed to exist or what shape it should take). Callers
+    that haven't run `derive_relationship_kinds()` over the full entity
+    collection first will see `kind=None` for every relationship here --
+    still renders a (less specific) hint rather than silently omitting
+    the relationship."""
     lines = [f"Table: {entity.table_name}  (SQLAlchemy class: {entity.class_name})"]
     for f in entity.fields:
         tags = []
@@ -235,4 +319,32 @@ def render_field_manifest(entity: EntityDefinition) -> str:
             tags.append("optional")
         tag_str = f"  ({'; '.join(tags)})" if tags else ""
         lines.append(f"  - {f.name}: {f.sqlalchemy_type}{tag_str}")
+
+    if entity.relationships:
+        lines.append("  Relationships (do not expose these as plain scalar columns):")
+        for r in entity.relationships:
+            if r.kind == "many_to_many":
+                suggested_field = f"{_singular(r.target_class.lower())}_ids"
+                lines.append(
+                    f"  - {r.attr_name}: many-to-many with {r.target_class} -- "
+                    f"expose as a list of {r.target_class} IDs in Create/Update schemas "
+                    f"(e.g. '{suggested_field}: list[int]'), not a nested object list"
+                )
+            elif r.kind == "many_to_one":
+                lines.append(
+                    f"  - {r.attr_name}: many-to-one to {r.target_class} -- "
+                    f"already covered by the foreign-key column above; do not add a "
+                    f"separate schema field for this relationship"
+                )
+            elif r.kind == "one_to_many":
+                lines.append(
+                    f"  - {r.attr_name}: one-to-many of {r.target_class} -- "
+                    f"read-only, only ever appears on the Response schema (e.g. as a "
+                    f"nested list), never required on Create/Update"
+                )
+            else:
+                lines.append(
+                    f"  - {r.attr_name}: relationship to {r.target_class} "
+                    f"(kind undetermined -- treat conservatively, prefer read-only exposure)"
+                )
     return "\n".join(lines)

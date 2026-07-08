@@ -33,7 +33,12 @@ from app.prompts.parallel_backend_prompt import (
 from app.memory.failure_memory import build_prompt_injection
 from app.templates.database_template import DATABASE_PY_TEMPLATE, AUTH_UTILS_TEMPLATE
 from app.utils.json_cleaner import extract_json
-from app.services.entity_metadata import find_model_for_resource, render_field_manifest
+from app.services.entity_metadata import (
+    derive_relationship_kinds,
+    extract_entity_definition,
+    find_model_for_resource,
+    render_field_manifest,
+)
 
 # Experiments 017/018: model-driven schema generation. PROMOTED TO DEFAULT
 # 2026-07-06 after two canaries confirmed the mechanism (Exp017: direct
@@ -645,6 +650,21 @@ def generate_backend_parallel(
     print(f"  [V6] Wave 3 — Schemas ({len(resource_groups)} resources, parallel)")
     t_wave = time.time()
 
+    # ADR-001 extension, Phase D integration: derive_relationship_kinds()
+    # needs the FULL set of parsed entities at once (it cross-matches
+    # back_populates pairs across two files) -- parse every model once,
+    # derive kinds once, then look up the already-derived entity by
+    # source_path below instead of re-parsing per resource.
+    _kind_derived_by_source: dict[str, object] = {}
+    if MODEL_DRIVEN_SCHEMA_GENERATION:
+        _all_parsed = [
+            e for e in (
+                extract_entity_definition(c, source_path=p) for p, c in model_contents.items()
+            ) if e is not None
+        ]
+        derive_relationship_kinds(_all_parsed)
+        _kind_derived_by_source = {e.source_path: e for e in _all_parsed}
+
     schema_tasks = []
     for resource, eps in resource_groups.items():
         # Find matching model content
@@ -657,6 +677,12 @@ def generate_backend_parallel(
         if MODEL_DRIVEN_SCHEMA_GENERATION:
             entity = find_model_for_resource(model_contents, resource)
             if entity is not None:
+                # Prefer the kind-derived copy of this same entity (matched
+                # by source_path) so the manifest includes accurate
+                # relationship guidance; fall back to the freshly-parsed
+                # one (kind=None on every relationship) if lookup ever
+                # misses -- never worse than before this integration.
+                entity = _kind_derived_by_source.get(entity.source_path, entity)
                 field_manifest = render_field_manifest(entity)
                 # The resolved real model may differ from the naive filename
                 # guess above (e.g. that guess found a re-export shim with no
