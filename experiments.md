@@ -1801,3 +1801,47 @@ Config fix, which it did cleanly.
 **Cost**: one canary run, ~$0.02-0.03 per the session's typical per-run
 cost (see COST SUMMARY in the log). Zero cost for the fix itself (local
 verification only, per Experiment 023's predecessor commit).
+
+## Experiment 024 — ADR-001 extension Phase A: relationship extraction
+
+**Hypothesis**: per `docs/ADR-001-extension-investigation.md`
+(APPROVE FOR IMPLEMENTATION verdict), can `entity_metadata.py`'s existing
+regex-based extractor be extended to deterministically capture
+`relationship()`/`back_populates`/`secondary` declarations, purely
+additively, with zero behavior change to existing consumers (ADR-001's
+schema generation, ADR-002's seeder)?
+
+**Implementation** (commit ddcf715): new `RelationshipDefinition`
+dataclass (attr_name, target_class, back_populates, secondary) and a new
+`relationships: list` field on `EntityDefinition` (default empty list).
+`extract_entity_definition()` now also parses `relationship(...)` lines
+from the same class body it already extracts `Column(...)` lines from.
+Per the user's explicit phase reordering (reject the investigation's
+original Phase A of "migrate regex to AST" as too much risk for too
+little gained value at this step): parsing stays regex-based, mirroring
+`_COLUMN_RE`'s own single-line-call limitation rather than reworking
+parser internals. "Relationship kind" derivation (o2m/m2o/m2m/o2o)
+deliberately deferred — needs a cross-entity pass, a separate phase.
+
+**Verified locally** ($0, no LLM/server): all 35 pre-existing ADR-002
+tests re-run and pass unchanged (zero regression — purely additive). 5
+new fixture tests using **real generated code**
+(`generated_projects/blogsphere/app/models/post.py`, `tag.py` — found
+during the investigation, not invented): all three of `Post`'s
+relationships extracted correctly (plain FK-backed `author`/`comments`,
+many-to-many `tags` with `secondary="post_tags"`), `Tag`'s mirrored
+many-to-many relationship, existing field/table_name extraction
+unaffected, an entity with no relationships defaults to an empty list,
+and the documented multi-line-call limitation proven intentional.
+
+**No benchmark run** — per the investigation's own advance finding, the
+fixed 3-app canary has zero `relationship()` usage in any current
+generation attempt and cannot measure this feature. Fixture validation
+is the correct verification method here, applying the rule the user
+proposed adding to `ENGINEERING_PRINCIPLES.md`: *"Never use a benchmark
+to validate functionality the benchmark does not exercise."*
+
+**Verdict: KEEP.** Phase A complete. Next: Phase B (extend the adapter
+to feed this data into `ContractEntity.relationships`, activating the
+already-live-but-inert `_check_relationship_targets_exist()` validator,
+with its own fixture tests — still no benchmark).
