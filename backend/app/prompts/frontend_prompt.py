@@ -491,6 +491,22 @@ const Header = ({{ dark, setDark, onLogout }}) => (
 API INTEGRATION
 ═══════════════════════════════════════════════════════
 
+NEVER call an endpoint path that isn't listed in the Architecture's
+api_endpoints above. Every `API.get(...)`/`API.post(...)`/etc. call MUST use
+one of those exact paths (with real path-param values substituted). If a
+page needs data that ISN'T covered by any listed endpoint (e.g. "show the
+current user's own posts" or "show this author's profile"), reuse the
+closest EXISTING endpoint instead of guessing a new resource name --
+prefer a query parameter or an existing user-scoped endpoint over
+inventing `/authors/{{id}}` or `/articles?author_id={{id}}` out of thin air
+when the architecture already declares `/users/{{user_id}}` and a `/posts`
+(or similar) endpoint that takes the same filter. A comment like
+"assuming an endpoint like /authors/{{id}}" is an explicit admission the
+call is fabricated, not grounded in the architecture -- if you catch
+yourself writing a comment like that, stop and use the real listed
+endpoint instead, even if it means composing the page's data from two
+existing calls rather than one convenient invented one.
+
 ALWAYS create src/api.js as a shared axios instance (every page imports from here):
 ```jsx
 import axios from 'axios';
