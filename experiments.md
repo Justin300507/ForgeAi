@@ -1929,3 +1929,64 @@ API divergence this fix closes either way.
 closed. Findings #2 (API URL patch narrow regex), #3 (dead Railway/Docker
 path), and #4 (CORS, unconfirmed) remain audit-only per instruction — not
 implemented, not approved for implementation this cycle.
+
+## Experiment 027 — ADR-001 extension Phase D + both remaining integrations
+
+**Hypothesis**: can the ADR-001 extension's remaining designed-but-not-built
+pieces (Phase D's cross-entity relationship-kind derivation, and the two
+named integrations: feeding it into the schema-generation prompt and into
+ADR-002's seeder) be completed cleanly, still following the fixture-based
+verification discipline (no benchmark, since the fixed 3-app canary has
+zero relationship usage) established in the original investigation?
+
+**Implementation** (commits 11527d0, 604183e, 8c4f6a8):
+- `derive_relationship_kinds()` (entity_metadata.py): cross-entity pass
+  matching `back_populates` pairs, replacing Phase B's per-file FK-only
+  heuristic. Leaves `kind=None` on ambiguous/inconsistent pairs rather
+  than guessing.
+- `render_field_manifest()` extended with explicit relationship guidance
+  (many_to_many → `<target>_ids: list[int]`; many_to_one → already
+  covered by the FK column; one_to_many → response-only), wired into
+  `parallel_backend_service.py`'s Wave 3 — closes the exact gap
+  Experiment 017 flagged as out of scope (blog_cms inventing a `tag_ids`
+  field with nothing telling the schema-gen call it needed to exist).
+- `extract_association_table()` (Phase C, the bare `Table()` construct —
+  confirmed against real code, `generated_projects/blogsphere/app/models/post_tags.py`)
+  and its integration into `deterministic_seed_generator.py`
+  (`discover_association_tables`, `find_seedable_association_tables`,
+  Core-style insert/count rendering for the non-ORM-mapped Table object).
+
+**Real design gap caught during implementation, not after**: tracing
+through the association-table integration by hand (not just running
+tests) surfaced that `find_lookup_entities()`'s candidacy computation
+only considered regular entities' own FK columns — a pure many-to-many
+join where nothing else references either side (the common case) would
+never make either side a candidate, so the association table itself
+could never be seedable. Fixed by folding association-table FK columns
+into the same candidacy set before writing the fix's tests, not
+discovered by a failing test afterward.
+
+**Also caught during test-writing**: the schema-manifest's suggested m2m
+field name used the relationship attribute name directly
+(`{attr_name}_ids`, producing "tags_ids"), not the idiomatic singularized
+target-class name ADR-001's own original bug report referenced
+("tag_ids"). Fixed before commit.
+
+**Verified locally** ($0, no LLM/server, per the original investigation's
+explicit validation strategy): 18 new tests across 5 files, including an
+execution-based test that runs a fully generated `seed_routes.py`
+(association table included) against a real in-memory SQLite database —
+confirms real inserts and confirms idempotency on a second call. All 66
+tests across every suite in this repo pass, zero regression at any step.
+
+**No benchmark run** — same reasoning throughout this whole extension:
+the fixed 3-app canary has zero relationship usage in any current
+generation attempt.
+
+**Verdict: KEEP.** The ADR-001 extension investigation is now fully
+implemented: Phases A-D plus both named integrations. Remaining
+out-of-scope items (per the original investigation's Section 2/Non-Goals):
+Enum member-value extraction (zero real-world usage observed), composite
+lookup entities beyond the 2-FK association-table shape, and a full
+regex-to-AST migration (still not needed — every phase shipped cleanly
+with the existing regex approach).
