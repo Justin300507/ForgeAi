@@ -1845,3 +1845,44 @@ to validate functionality the benchmark does not exercise."*
 to feed this data into `ContractEntity.relationships`, activating the
 already-live-but-inert `_check_relationship_targets_exist()` validator,
 with its own fixture tests — still no benchmark).
+
+## Experiment 025 — ADR-001 extension Phase B: activate dormant relationship validator
+
+**Hypothesis**: can `enrich_relationships_from_models()` feed Phase A's
+new relationship data into `ContractEntity.relationships`, activating
+`_check_relationship_targets_exist()` — permanently inert since
+`from_architecture_plan()` only derives entities from the architect's
+plan, which never carried relationship data — without touching any
+existing behavior?
+
+**Implementation** (commit 6f26146): new `enrich_relationships_from_models()`
+in `app/contract/adapter.py`, matching a parsed model to its
+`ContractEntity` by `table_name` and reusing Phase A's
+`extract_entity_definition()` (no duplicate parsing). Wired into
+`_run_contract_conformance_check` right after the contract is built.
+Relationship `kind` is a per-file local heuristic (secondary → m2m; own
+FK to target's table → m2o; else assumed o2m) — explicitly documented as
+NOT the accurate cross-entity derivation (needs a separate pass matching
+`back_populates` pairs, deferred), and irrelevant to the validator this
+phase activates, which only checks target existence.
+
+**Verified locally** ($0, no LLM/server): all 40 pre-existing tests
+(35 ADR-002 + 5 Phase A) re-run, pass unchanged. 5 new fixture tests,
+including a **direct proof of the "previously inert" claim**: the exact
+same contract shape, checked without enrichment, produces zero
+relationship-related diagnostics (nothing to find — the field was always
+empty); with enrichment, the newly-activated validator correctly flags a
+relationship pointing to a nonexistent entity and correctly passes a
+valid one.
+
+**No benchmark run** — same reasoning as Phase A: zero `relationship()`
+usage in any current fixed-canary generation attempt.
+
+**Verdict: KEEP.** Phases A and B of the ADR-001 extension are both
+complete. Per the user's own phase ordering, Phase C (evaluate regex→AST
+migration) is explicitly conditional — "only if regex genuinely becomes
+limiting" — and it hasn't: both phases shipped cleanly with the existing
+regex approach. Phase D (cross-entity relationship-kind derivation) and
+the follow-up integrations (ADR-002 seeder eligibility for association
+tables, ADR-001 schema-binding manifest) remain deliberately deferred,
+each its own future task per this investigation's phased plan.
