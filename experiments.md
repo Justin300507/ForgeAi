@@ -1886,3 +1886,46 @@ regex approach. Phase D (cross-entity relationship-kind derivation) and
 the follow-up integrations (ADR-002 seeder eligibility for association
 tables, ADR-001 schema-binding manifest) remain deliberately deferred,
 each its own future task per this investigation's phased plan.
+
+## Experiment 026 — Consolidate duplicated Render build/start commands
+
+**Hypothesis**: per `docs/V16_DEPLOYMENT_RELIABILITY_AUDIT.md` Finding
+#1, `render_provider.py`'s live REST API deploy payload and
+`deployment_config_service.py`'s `render.yaml` generation independently
+hardcode the identical `buildCommand`/`startCommand` strings — currently
+in sync by coincidence, not guarantee, with `render.yaml`'s copy
+invisible to every test/canary this project runs (only read by a human
+using Render's manual Blueprint flow). Can this be consolidated into one
+shared source of truth with zero behavior change?
+
+**Implementation** (commit 237ab74): new
+`app/deployments/render_config.py` holding
+`RENDER_BACKEND_BUILD_COMMAND`/`RENDER_BACKEND_START_COMMAND`. Both
+`render_provider.py`'s `_create_web_service()` API payload and
+`deployment_config_service.py`'s `_build_render_yaml()` now import and
+consume these instead of independently hardcoding the same two strings.
+No new abstractions beyond the shared constants module, no deployment
+flow redesign, no API changes — scoped strictly per instruction (Railway,
+Cloudflare, and deployment architecture untouched).
+
+**Verified locally** ($0, no LLM/server): `_build_render_yaml()`'s output
+confirmed byte-identical before and after the refactor. New unit test
+(`tests/deployment/test_render_config_sync.py`, 3 tests) proves both
+outputs stay synchronized — deliberately without hardcoding an expected
+literal command string in the test itself; both tests assert against the
+same imported constants the production code uses, and one test extracts
+both real outputs and compares them directly to each other (the actual
+synchronization guarantee the pre-fix code never had). Ran the full
+existing suite: all 43 tests across every test directory in this repo
+(40 pre-existing + 3 new) pass, zero regression.
+
+**No benchmark run** — per the audit's own validation strategy: this
+fix's correctness is provable by direct assertion (both outputs derive
+from the same constant), and the standard 3-app canary deploys through
+the API path only, so it could never have exercised the `render.yaml`-vs-
+API divergence this fix closes either way.
+
+**Verdict: KEEP.** Finding #1 of the deployment reliability audit is
+closed. Findings #2 (API URL patch narrow regex), #3 (dead Railway/Docker
+path), and #4 (CORS, unconfirmed) remain audit-only per instruction — not
+implemented, not approved for implementation this cycle.

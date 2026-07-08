@@ -1,6 +1,9 @@
 # ForgeAI V16 — Deployment Reliability Audit
 
 **Date**: 2026-07-09
+**Status**: Finding #1 implemented (commit 237ab74, 2026-07-09) — see
+"Finding #1 — Implemented" note at the top of Step 4 below. Findings
+#2-#4 remain audit-only, not yet approved for implementation.
 **Scope**: audit only — no code changes, no files modified, per instruction.
 **Method**: read every deployment-related source file directly (not
 assumed), cross-checked which paths are actually reachable from the live
@@ -234,6 +237,20 @@ was found.
 ---
 
 ## Step 4: Deep Dive — #1 Ranked Item (Config Duplication)
+
+> **IMPLEMENTED — commit 237ab74, 2026-07-09.** New module
+> `app/deployments/render_config.py` holds
+> `RENDER_BACKEND_BUILD_COMMAND`/`RENDER_BACKEND_START_COMMAND`; both
+> `render_provider.py` and `deployment_config_service.py` now import and
+> consume these instead of independently hardcoding the same two
+> strings. Verified `_build_render_yaml()`'s output is byte-identical
+> before/after (zero behavior change). New test
+> `tests/deployment/test_render_config_sync.py` (3 tests) proves both
+> outputs stay synchronized without hardcoding an expected literal in
+> the test itself — one test compares the two real outputs to each
+> other directly. All 43 tests across every suite in this repo (40
+> pre-existing + 3 new) pass, zero regression. Findings #2-#4 below
+> remain audit-only, not approved for implementation.
 
 **Hypothesis**: `render_provider.py`'s inline API buildCommand/startCommand
 and `deployment_config_service.py`'s `render.yaml` generation are two
