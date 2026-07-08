@@ -2019,3 +2019,67 @@ itself making with the WS/WEBSOCKET validator lead and the CORS
 theoretical concern — investigate before implementing, and don't build
 infrastructure for a problem the evidence says isn't currently occurring.
 This item is closed by verification, not by a code change.
+
+## Experiment 029 — MissingEndpoint: root cause past classification (commit bd804dc)
+
+**Hypothesis**: the V16 RC1 Remaining Work Report classified `MissingEndpoint`
+into 3 causes, one confirmed real (blog_cms's Article/Author-vs-Post
+naming mismatch), explicitly leaving it unfixed "pending more evidence."
+Can tracing the confirmed case into the actual generated project surface
+a root cause specific enough to justify a narrow, low-risk fix, without
+building the general `EndpointContract` mechanism the original ADR-003
+investigation explicitly deferred?
+
+**Investigation**: `build_frontend_prompt()` (frontend_prompt.py) already
+dumps the FULL architect-produced `Architecture` object — including
+`api_endpoints` — into the frontend generation prompt. This rules out the
+starting hypothesis (frontend and backend independently inventing entity
+names from divergent inputs): both waves see the same architecture.
+
+Traced into `generated_projects/forge_blog_cms` directly:
+`src/pages/AuthorDashboardPage.jsx` calls `/authors/${userId}` and
+`/articles?author_id=${userId}` with its own comment — "assuming an
+endpoint like /authors/{id}" — an explicit admission the call is
+fabricated, not grounded in the architecture. A real equivalent already
+exists (`/users/{user_id}`, `/posts` filtered by author).
+
+Checked the repair-loop logs (`m4_canary_dictunpack_run.log`): the
+current repair strategy for this diagnostic creates a BRAND NEW backend
+endpoint to satisfy the frontend's invented call every time
+(`article_routes.py` + `author_routes.py` + a redundant `Author` model,
+confirmed still present in `generated_projects/forge_blog_cms/app/routes/`
+alongside the original `post_routes.py`/`user_routes.py`) rather than
+redirecting the frontend to the endpoint that already serves the same
+data — explaining the 6/6-run recurrence: each fresh generation
+independently reproduces the same frontend hallucination, and the repair
+loop "fixes" it by building a redundant parallel backend rather than
+correcting the frontend, so nothing about the pattern itself ever
+changes between attempts.
+
+**Implementation**: added an explicit constraint to
+`frontend_prompt.py`'s API INTEGRATION section — every API call must use
+an exact path from the architecture's `api_endpoints`; if a page needs
+data not covered by any listed endpoint, reuse the closest existing
+endpoint instead of inventing a new resource name, naming the exact
+"assuming an endpoint like X" anti-pattern as the signal to stop.
+Deliberately NOT a deterministic runtime redirect mechanism — matching
+two differently-named endpoints as "equivalent" requires semantic
+judgment, which the original ADR-003 investigation already flagged as
+unsafe to automate. This is a generation-time guardrail, not a repair-time
+one.
+
+**Verified locally** ($0): prompt renders correctly, all 66 existing
+tests pass unaffected (prompt text has no direct unit tests — it's
+LLM-facing, not executable logic).
+
+**Canary validation deliberately DEFERRED** — user decision. Unlike every
+other fix this cycle, this one changes live LLM generation behavior and
+cannot be verified for $0; confirming it actually reduces blog_cms's
+MissingEndpoint recurrence needs a real Gemini/Groq generation run,
+intentionally held for a future deliberate validation cycle rather than
+spent immediately (credit-discipline practice: minimum spend per action).
+
+**Verdict: IMPLEMENTED, VALIDATION PENDING.** Not yet a confirmed "keep"
+— the next canary run should specifically check whether
+`generated_projects/*blog*` still produces an `AuthorDashboardPage.jsx`-style
+invented endpoint before this can be marked confirmed.
