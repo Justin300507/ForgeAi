@@ -46,6 +46,28 @@ _REL_TARGET_RE = re.compile(r'^\s*["\'](\w+)["\']')
 _REL_BACK_POPULATES_RE = re.compile(r'back_populates\s*=\s*["\'](\w+)["\']')
 _REL_SECONDARY_RE = re.compile(r'secondary\s*=\s*["\'](\w+)["\']')
 
+# ADR-001 extension, Phase C: bare module-level `name = Table("table",
+# Base.metadata, Column(...), ...)` association-table constructs --
+# structurally different from a `class X(Base):` model (invisible to
+# extract_entity_definition entirely), most commonly used for a
+# many-to-many association table. This construct is inherently multi-line
+# in essentially every real occurrence (it needs multiple Column(...)
+# sub-calls), unlike a single Column/relationship line -- so this is
+# deliberately scoped to just this one construct rather than a general
+# regex-to-AST migration, per the explicit instruction that AST migration
+# is an optimization to evaluate later, not this phase's goal.
+_TABLE_RE = re.compile(
+    r'^(\w+)\s*=\s*Table\(\s*["\'](\w+)["\']\s*,\s*Base\.metadata\s*,\s*(.*?)\n\)',
+    re.MULTILINE | re.DOTALL,
+)
+# Table()-style Column() calls give the column name as the first
+# positional string argument (`Column("post_id", Integer, ...)`) rather
+# than as the assignment target (`post_id = Column(Integer, ...)`) --
+# a different shape than _COLUMN_RE, needing its own pattern. Allows one
+# level of nested balanced parens (e.g. ForeignKey("posts.id")) via the
+# same idiom already used by deterministic_patcher.py's _DICT_UNPACK_CTOR_RE.
+_TABLE_COLUMN_RE = re.compile(r'Column\(\s*["\'](\w+)["\']\s*,\s*((?:[^()]|\([^()]*\))*)\)')
+
 
 @dataclass
 class FieldDefinition:
@@ -71,6 +93,21 @@ class RelationshipDefinition:
     back_populates: str | None = None
     secondary: str | None = None  # association-table name, if many-to-many
     kind: str | None = None  # "one_to_many" | "many_to_one" | "many_to_many" | "one_to_one" | None (undetermined)
+
+
+@dataclass
+class AssociationTable:
+    """A bare module-level `variable_name = Table("table_name",
+    Base.metadata, Column(...), ...)` construct. Composite primary key is
+    implicit: every column with is_primary_key=True (typically both
+    columns, for the common two-FK many-to-many association shape)."""
+    variable_name: str
+    table_name: str
+    source_path: str
+    columns: list[FieldDefinition] = field(default_factory=list)
+
+    def composite_primary_key(self) -> list[str]:
+        return [c.name for c in self.columns if c.is_primary_key]
 
 
 @dataclass
@@ -169,6 +206,36 @@ def extract_entity_definition(model_content: str, source_path: str = "") -> Enti
         source_path=source_path,
         fields=fields,
         relationships=relationships,
+    )
+
+
+def extract_association_table(content: str, source_path: str = "") -> AssociationTable | None:
+    """
+    Parse the FIRST bare `name = Table("table_name", Base.metadata, ...)`
+    construct in a generated file. Returns None if there's no such
+    construct (e.g. an ordinary class-based model file) or it has no
+    columns (malformed) -- same "don't guess past a shim" discipline as
+    extract_entity_definition.
+    """
+    if not content:
+        return None
+    m = _TABLE_RE.search(content)
+    if not m:
+        return None
+    variable_name, table_name, body = m.group(1), m.group(2), m.group(3)
+
+    columns = [
+        _parse_column(cm.group(1), cm.group(2))
+        for cm in _TABLE_COLUMN_RE.finditer(body)
+    ]
+    if not columns:
+        return None
+
+    return AssociationTable(
+        variable_name=variable_name,
+        table_name=table_name,
+        source_path=source_path,
+        columns=columns,
     )
 
 
