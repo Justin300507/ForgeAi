@@ -1990,3 +1990,32 @@ Enum member-value extraction (zero real-world usage observed), composite
 lookup entities beyond the 2-FK association-table shape, and a full
 regex-to-AST migration (still not needed — every phase shipped cleanly
 with the existing regex approach).
+
+## Experiment 028 — Frontend/dependency reliability: verification, no fix needed
+
+**Hypothesis**: per the V16 RC1 Remaining Work Report, `ImportError`/
+`ModuleNotFoundError`/`FrontendBuildError` (27 combined occurrences)
+"may be smaller than raw counts suggest but unverified." Does fresh
+telemetry confirm these are still active, or already resolved?
+
+**Evidence**: pulled the freshest `patterns.json` snapshot (388 total
+runs, last_updated 2026-07-07T12:46). All three patterns' `last_seen`
+timestamps are **2026-06-30/07-01 — over a week stale**, despite this
+session alone running 6+ canaries since 2026-07-06/07 (Experiments
+020-023, 026), none of which reproduced any of the three. Matches this
+project's established discipline (Experiment 022's transient-check
+pattern, applied here at the telemetry level instead of per-run): a
+failure class with zero recurrence across ~150+ subsequent runs is not
+"unverified," it's confirmed dormant.
+
+**Root cause of the dormancy**: most plausibly Experiment 014's frontend
+missing-import scaffolder (wired into preflight, 2026-07-03), which
+predates every one of these three patterns' `last_seen` dates by hours to
+days in the historical timeline.
+
+**Verdict: NO FIX NEEDED.** Forcing a new fix onto an already-dormant
+failure class would repeat the exact mistake this session already caught
+itself making with the WS/WEBSOCKET validator lead and the CORS
+theoretical concern — investigate before implementing, and don't build
+infrastructure for a problem the evidence says isn't currently occurring.
+This item is closed by verification, not by a code change.
