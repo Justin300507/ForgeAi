@@ -26,7 +26,7 @@ import re
 
 from app.contract.models import (
     AppContract, ContractApp, ContractEndpoint, ContractEntity, ContractField,
-    ContractFile, ContractFrontend, ContractRoute,
+    ContractFile, ContractFrontend, ContractRelationship, ContractRoute,
 )
 from app.models.architecture_models import ArchitecturePlan
 
@@ -179,3 +179,94 @@ def from_architecture_plan(
         ),
         files=files,
     )
+
+
+def enrich_relationships_from_models(contract: AppContract, project_path) -> int:
+    """
+    ADR-001 extension, Phase B (docs/ADR-001-extension-investigation.md):
+    populates each ContractEntity.relationships from the REAL generated
+    models on disk, activating check_contract_conformance's
+    `_check_relationship_targets_exist()` -- previously permanently inert,
+    since `from_architecture_plan()` only ever derives entities from the
+    architect's PLAN, which (per this module's own docstring) doesn't
+    carry relationship data at all.
+
+    Reuses entity_metadata.py's Phase A extraction (`extract_entity_definition`,
+    now populating `.relationships`) rather than re-parsing model files --
+    "entity_metadata.py is the only parser" holds for this extension too.
+
+    Matches a parsed model to its ContractEntity by `table_name` (both
+    ultimately reference the same real database table, more reliable than
+    matching on two independently-derived name strings). `rel.target_class`
+    is used directly as `ContractRelationship.target` -- this is the actual
+    SQLAlchemy class name, which `_table_to_entity_name()`'s singularization
+    (used to name every ContractEntity) matches for ordinary singular/plural
+    conventions but is not guaranteed to for irregular ones; a known,
+    accepted limitation of this best-effort adapter, same as
+    `_table_to_entity_name`'s own docstring already states for entity
+    naming in general.
+
+    `kind` is a per-file, LOCAL best-effort guess, not yet the fully
+    accurate cross-entity derivation (that needs a separate pass matching
+    back_populates pairs across both sides of a relationship -- Phase D,
+    deliberately not done here): `secondary` present -> "many_to_many";
+    else this entity itself holds a foreign key to the target's table ->
+    "many_to_one"; else assumed to be the reverse (target holds the FK) ->
+    "one_to_many". `_check_relationship_targets_exist()` doesn't read
+    `kind` at all, so this guess only matters if something else consumes
+    it later -- flagged here rather than silently relied upon.
+
+    Returns the number of relationships added (0 if app/models/ doesn't
+    exist or no entity matched).
+    """
+    import os as _os
+
+    from app.services.entity_metadata import extract_entity_definition
+
+    models_dir = _os.path.join(str(project_path), "app", "models")
+    if not _os.path.isdir(models_dir):
+        return 0
+
+    added = 0
+    for fname in _os.listdir(models_dir):
+        if not fname.endswith(".py") or fname == "__init__.py":
+            continue
+        fpath = _os.path.join(models_dir, fname)
+        try:
+            with open(fpath, "r", encoding="utf-8") as fh:
+                content = fh.read()
+        except OSError:
+            continue
+
+        entity_def = extract_entity_definition(content, source_path=fpath)
+        if entity_def is None or not entity_def.relationships:
+            continue
+
+        contract_entity = next(
+            (e for e in contract.entities if e.table_name == entity_def.table_name),
+            None,
+        )
+        if contract_entity is None:
+            continue  # not in the architect's plan -- nothing to enrich
+
+        own_fk_targets = {
+            f.fk_target.split(".")[0]
+            for f in entity_def.fields
+            if f.is_foreign_key and f.fk_target
+        }
+        for rel in entity_def.relationships:
+            target_table_guesses = {rel.target_class.lower(), rel.target_class.lower() + "s"}
+            if rel.secondary:
+                kind = "many_to_many"
+            elif own_fk_targets & target_table_guesses:
+                kind = "many_to_one"
+            else:
+                kind = "one_to_many"
+            contract_entity.relationships.append(ContractRelationship(
+                kind=kind,
+                target=rel.target_class,
+                back_populates=rel.back_populates,
+            ))
+            added += 1
+
+    return added

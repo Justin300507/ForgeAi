@@ -340,7 +340,7 @@ def _run_contract_conformance_check(ctx: GenerationContext) -> VerificationResul
         return VerificationResult(stage="contract_conformance", status=StageStatus.SKIPPED,
                                   metadata={"reason": "no architecture or project_path"}, duration_ms=_ms(t0))
     try:
-        from app.contract.adapter import from_architecture_plan
+        from app.contract.adapter import enrich_relationships_from_models, from_architecture_plan
         from app.contract.validator import check_contract_conformance
         from app.models.architecture_models import ArchitecturePlan
 
@@ -352,6 +352,12 @@ def _run_contract_conformance_check(ctx: GenerationContext) -> VerificationResul
             idea=ctx.idea, project_name=ctx.project_name,
             architecture=ArchitecturePlan(**arch_dict),
         )
+        # ADR-001 extension, Phase B: feed real relationship data (parsed
+        # from the already-generated models on disk) into the contract,
+        # activating _check_relationship_targets_exist() -- previously
+        # permanently inert since the architect-plan-only adapter never
+        # populated ContractEntity.relationships at all.
+        enrich_relationships_from_models(contract, ctx.project_path)
         diagnostics = check_contract_conformance(contract, ctx.project_path)
     except Exception as exc:
         return VerificationResult(
