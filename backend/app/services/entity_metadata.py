@@ -34,6 +34,18 @@ _TABLENAME_RE = re.compile(r'__tablename__\s*=\s*["\'](\w+)["\']')
 _COLUMN_RE = re.compile(r'^\s+(\w+)\s*=\s*Column\(([^\n]*)\)\s*$', re.MULTILINE)
 _FK_RE = re.compile(r'ForeignKey\(\s*["\'](\w+)\.(\w+)["\']')
 
+# ADR-001 extension (relationship/association metadata, Phase A -- see
+# docs/ADR-001-extension-investigation.md). Deliberately mirrors _COLUMN_RE's
+# own single-line-call limitation rather than reworking parsing internals:
+# this phase's objective is richer deterministic metadata, not parser
+# modernization. A relationship() call wrapped across multiple lines won't
+# match today, same pre-existing shape of limitation _COLUMN_RE already has
+# for Column(...).
+_RELATIONSHIP_RE = re.compile(r'^\s+(\w+)\s*=\s*relationship\(([^\n]*)\)\s*$', re.MULTILINE)
+_REL_TARGET_RE = re.compile(r'^\s*["\'](\w+)["\']')
+_REL_BACK_POPULATES_RE = re.compile(r'back_populates\s*=\s*["\'](\w+)["\']')
+_REL_SECONDARY_RE = re.compile(r'secondary\s*=\s*["\'](\w+)["\']')
+
 
 @dataclass
 class FieldDefinition:
@@ -47,11 +59,26 @@ class FieldDefinition:
 
 
 @dataclass
+class RelationshipDefinition:
+    """A single `attr = relationship("Target", ...)` declaration -- captures
+    exactly what's stated in the call, nothing derived. Whether this is a
+    one-to-many/many-to-one/many-to-many/one-to-one relationship can't be
+    determined from one file alone (it requires matching back_populates
+    pairs across the target entity too) -- that cross-entity derivation is
+    deliberately a separate, later phase, not part of this extraction."""
+    attr_name: str
+    target_class: str
+    back_populates: str | None = None
+    secondary: str | None = None  # association-table name, if many-to-many
+
+
+@dataclass
 class EntityDefinition:
     class_name: str
     table_name: str
     source_path: str
     fields: list[FieldDefinition] = field(default_factory=list)
+    relationships: list[RelationshipDefinition] = field(default_factory=list)
 
     def field_names(self) -> set[str]:
         return {f.name for f in self.fields}
@@ -87,6 +114,19 @@ def _parse_column(name: str, args: str) -> FieldDefinition:
     )
 
 
+def _parse_relationship(name: str, args: str) -> RelationshipDefinition:
+    target_match = _REL_TARGET_RE.match(args)
+    target_class = target_match.group(1) if target_match else "Unknown"
+    back_populates_match = _REL_BACK_POPULATES_RE.search(args)
+    secondary_match = _REL_SECONDARY_RE.search(args)
+    return RelationshipDefinition(
+        attr_name=name,
+        target_class=target_class,
+        back_populates=back_populates_match.group(1) if back_populates_match else None,
+        secondary=secondary_match.group(1) if secondary_match else None,
+    )
+
+
 def extract_entity_definition(model_content: str, source_path: str = "") -> EntityDefinition | None:
     """
     Parse the FIRST `class X(Base): ...` block in a generated SQLAlchemy
@@ -117,11 +157,17 @@ def extract_entity_definition(model_content: str, source_path: str = "") -> Enti
     if not fields:
         return None  # a shim or an otherwise columnless class -- not a real model
 
+    relationships = [
+        _parse_relationship(m.group(1), m.group(2))
+        for m in _RELATIONSHIP_RE.finditer(body)
+    ]
+
     return EntityDefinition(
         class_name=class_name,
         table_name=table_name,
         source_path=source_path,
         fields=fields,
+        relationships=relationships,
     )
 
 
