@@ -22,6 +22,7 @@ from typing import Optional
 import requests
 
 from app.deployments.base_provider import BaseDeploymentProvider, DeploymentResult
+from app.deployments.render_config import RENDER_BACKEND_BUILD_COMMAND, RENDER_BACKEND_START_COMMAND
 
 RENDER_API = "https://api.render.com/v1"
 
@@ -101,8 +102,8 @@ class RenderProvider(BaseDeploymentProvider):
             "serviceDetails": {
                 "env": "python",
                 "envSpecificDetails": {
-                    "buildCommand": "pip install -r app/requirements.txt",
-                    "startCommand": "uvicorn app.main:app --host 0.0.0.0 --port $PORT",
+                    "buildCommand": RENDER_BACKEND_BUILD_COMMAND,
+                    "startCommand": RENDER_BACKEND_START_COMMAND,
                 },
                 "plan": "free",
                 "region": "oregon",

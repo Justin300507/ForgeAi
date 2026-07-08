@@ -13,6 +13,8 @@ These replace LLM-generated versions which are often wrong or inconsistent.
 import re
 from pathlib import Path
 
+from app.deployments.render_config import RENDER_BACKEND_BUILD_COMMAND, RENDER_BACKEND_START_COMMAND
+
 
 # ── Helpers ──────────────────────────────────────────────────────────────────
 
@@ -59,8 +61,8 @@ services:
     name: {slug}-backend
     runtime: python
     plan: free
-    buildCommand: pip install -r app/requirements.txt
-    startCommand: uvicorn app.main:app --host 0.0.0.0 --port $PORT
+    buildCommand: {RENDER_BACKEND_BUILD_COMMAND}
+    startCommand: {RENDER_BACKEND_START_COMMAND}
     healthCheckPath: /health
     envVars:
 {env_block}
