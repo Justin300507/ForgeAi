@@ -2083,3 +2083,49 @@ spent immediately (credit-discipline practice: minimum spend per action).
 — the next canary run should specifically check whether
 `generated_projects/*blog*` still produces an `AuthorDashboardPage.jsx`-style
 invented endpoint before this can be marked confirmed.
+
+## Experiment 030 — Repair-cache + schema/serialization edge cases: verified, no fix needed
+
+**Hypothesis**: per the V16 RC1 Remaining Work Report, "repair-cache
+reuse and a few smaller schema/serialization edge cases — not
+investigated yet." Does investigation surface an actual fixable bug?
+
+**Repair-cache reuse** (`app/knowledge/failure_db.py`'s `FixCache` +
+`app/repair/orchestrator.py`'s usage): read both fully. The mechanism is
+already well-designed and has visible evidence of prior iteration — its
+own code comments document a real bug that was already found and fixed
+(caching a fix eagerly on overall score improvement, before verifying
+that specific group's own errors cleared, "poisoned the cache" on
+habit_forge; fixed by gating `.store()` per-group on that group's
+`error_id`s actually disappearing post-fix, not just on aggregate score).
+Checked live data: `repair_db.json` currently holds 45 unique cached
+patterns with 68 cumulative confirmed reuses, and a real "Cache HIT ...
+skipping LLM" was observed firing in this session's own canary logs
+(`m4_canary_dictunpack_run.log`). No evidence of a currently broken cache
+behavior.
+
+**Schema/serialization edge cases**: pulled `patterns.json`'s top failure
+classes by count. `ConfigAttributeError`'s last occurrence
+(2026-07-07T12:32:33Z) is ~16 minutes BEFORE the confirmed-fix freeze
+commit (3e3c2ac, 2026-07-07T12:48:45Z UTC-equivalent) — i.e. this is
+pre-freeze validation data, not a post-fix regression.
+`NotNullViolationError`'s last occurrence (2026-07-06T10:02:36Z) sits
+right at the boundary of the NOT NULL gap fix's final refinement
+(57b562b, committed minutes earlier) — ambiguous, most likely part of
+that same validation run, not a confirmed post-fix recurrence; the most
+recent CRM generation log entry (2026-07-07T12:47:03Z, well after the
+refinement) shows no NotNullViolationError in its `dominant_errors` at
+all. `PydanticSerializationError` (last seen 2026-07-01) is stale by the
+same margin as Experiment 028's dormant frontend patterns.
+
+**Verdict: NO FIX NEEDED.** Same conclusion as Experiment 028, reached
+independently: investigation found a well-functioning cache with
+documented prior maintenance, and no schema/serialization failure class
+with clear post-fix recurrence evidence. Closed by verification.
+
+This closes all four items from the "check and fix" pass following the
+deployment reliability audit: relationship extraction (Experiment 027,
+fixed + integrated), frontend/dependency reliability (Experiment 028, no
+fix needed), MissingEndpoint (Experiment 029, root-caused and fixed,
+canary validation pending), repair-cache + schema edge cases
+(Experiment 030, no fix needed).
