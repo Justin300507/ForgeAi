@@ -2129,3 +2129,60 @@ fixed + integrated), frontend/dependency reliability (Experiment 028, no
 fix needed), MissingEndpoint (Experiment 029, root-caused and fixed,
 canary validation pending), repair-cache + schema edge cases
 (Experiment 030, no fix needed).
+
+## Experiment 031 — Forge Motion & Theme Kit: deterministic frontend design system
+
+**Class**: Generation (frontend visual quality). Spec:
+`docs/superpowers/specs/2026-07-09-frontend-motion-theme-kit-design.md`.
+
+**Hypothesis**: generated-app visual polish is inconsistent because the
+design system's *foundation* (motion tokens, fonts, brand theming,
+skeletons, error handling) is LLM-remembered instead of scaffold-provided.
+Measured in real output: `todo_list_app`'s DashboardPage has 8 glass/motion
+markers, UsersPage has 0; Login/Register have no entrance animation; every
+app ships Inter + indigo `tailwind.config.js` + "ForgeAI App" title
+regardless of category/style; `style_system.py`'s font pairings were a
+**dead feature** (the @import instruction targeted the static index.css the
+LLM is forbidden from regenerating); a runtime render error white-screens
+the app (no error boundary).
+
+**Change** (all deterministic Python — $0 LLM cost):
+1. New `app/templates/theme_builder.py`: renders `src/index.css`,
+   `tailwind.config.js`, `index.html` (+ PWA manifest/html) per app from the
+   SAME `detect_category` + `select_style` selection the prompt uses — brand
+   CSS vars, style-pack Google-Fonts pairing (activates the dead feature),
+   real app title/theme-color, and a motion token library:
+   `animate-fade-in`/`-fade-in-up`/`-scale-in`/`-slide-in-right`/`-pop`
+   (spring cubic-bezier)/`-float-slow`/`-float-slower` + `.skeleton`
+   (shimmer sweep), `.live-dot` (pulsing live indicator),
+   `.gradient-animated` (slow pan). All transform/opacity only;
+   `prefers-reduced-motion` guard covers everything.
+2. `frontend_templates.py`: static constants now rendered from the same
+   master templates with DEFAULT_THEME (single source, fallback keeps the
+   full motion library); new provided `src/components/ErrorBoundary.jsx`
+   wrapped around `<App/>` in the static `main.jsx` (zero LLM coordination;
+   `console.error` preserved so failure detection still works).
+3. `file_writer_service.write_files` gains `idea` param + themed overlay
+   (env rollback `FORGE_THEMED_SCAFFOLD=0`, try/except fallback);
+   `v6_orchestrator` passes the idea through.
+4. Prompt updates: MOTION TOKENS section (use provided classes, never
+   redefine keyframes), `.skeleton` shimmer replaces plain animate-pulse,
+   toasts get `animate-scale-in`, ambient blobs get float classes,
+   dashboard live-dot, 4 new self-check items (20–22), style_system font
+   instruction now says "already wired, don't @import".
+
+**Verification ($0)**: (a) 35/35 category×style matrix renders pass
+(markers replaced, braces balanced, keyframes/tokens/fonts present, valid
+manifest JSON); (b) real `npm install && vite build` of the themed scaffold
++ a sample app exercising every token — build green, compiled CSS confirmed
+to contain all 9 motion tokens, Space Grotesk pairing, sky brand hex,
+reduced-motion guard; themed title/theme-color in dist HTML;
+(c) `build_frontend_prompt` renders for 5 ideas (f-string brace safety);
+(d) `file_writer_service` imports clean. Safety checks: orphan-route
+patcher only scans `src/pages/` (won't touch ErrorBoundary); template files
+are written after LLM files so scaffold always wins collisions.
+
+**Canary**: NOT yet run (quota/budget discipline — this change is
+scaffold+prompt only and cannot alter backend behavior; visual deltas need
+the next funded canary or screenshot review to score). Rollback:
+`FORGE_THEMED_SCAFFOLD=0`.

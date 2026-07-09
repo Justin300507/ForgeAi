@@ -244,7 +244,7 @@ def generate_project_v6(
             f["content"] = _ensure_main_py_quality(f["content"])
 
     project_name = plan["project_name"]
-    project_path = write_files(project_name, all_files, frontend_target=frontend_target)
+    project_path = write_files(project_name, all_files, frontend_target=frontend_target, idea=idea)
     initialize_git(project_path)
     print(f"\n=== FILES WRITTEN: {project_path} ({len(all_files)} files) ===")
 

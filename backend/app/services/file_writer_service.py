@@ -506,7 +506,7 @@ def _is_safe_to_write(path, content):
         return False
 
 
-def write_files(project_name, files, frontend_target: str = "web"):
+def write_files(project_name, files, frontend_target: str = "web", idea: str = ""):
 
     project_name = (
         project_name
@@ -609,6 +609,16 @@ def write_files(project_name, files, frontend_target: str = "web"):
     template_files = dict(FRONTEND_TEMPLATE_FILES)
     if frontend_target == "pwa":
         template_files.update(PWA_EXTRA_FILES)  # PWA overrides index.html + adds extras
+
+    # Overlay per-app themed scaffold (category brand color, style-pack fonts,
+    # motion tokens, real app title). FORGE_THEMED_SCAFFOLD=0 rolls back to the
+    # static indigo/Inter scaffold; any theming error also falls back silently.
+    if os.environ.get("FORGE_THEMED_SCAFFOLD", "1") != "0":
+        try:
+            from app.templates.theme_builder import build_themed_templates
+            template_files.update(build_themed_templates(idea, project_name, frontend_target))
+        except Exception as e:
+            print(f"  [V14] Themed scaffold skipped ({e}) — using static templates")
 
     for rel_path, content in template_files.items():
         full_path = os.path.join(base_dir, rel_path)

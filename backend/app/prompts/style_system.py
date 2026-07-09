@@ -216,10 +216,11 @@ style. This specific app is assigned **{style['label']}** instead
 (layout shape, page structure, accessibility rules, JSX-safety rules stay
 the same — only the surface/shadow/border/motion treatment changes).
 
-Font: replace the default font-family with this style's pairing —
-  {style['font_import']}
-  heading font-family: {style['font_heading']}
-  body font-family: {style['font_body']}
+Font: this style's pairing (heading {style['font_heading']}, body
+{style['font_body']}) is ALREADY wired into the provided index.html and
+src/index.css — the whole app renders in it automatically. Do NOT add any
+@import or font-family override; `font-display` (Tailwind) is available if a
+heading needs the display font explicitly.
 
 Do NOT use: {style['avoid']}
 {style['example']}

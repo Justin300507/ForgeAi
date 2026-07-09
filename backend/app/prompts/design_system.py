@@ -225,10 +225,12 @@ gradient blobs, fixed so they don't scroll, placed BEHIND the content with
 negative z-index. Purely decorative — do not let them intercept clicks):
 ```jsx
 <div className="fixed inset-0 overflow-hidden pointer-events-none -z-10">
-  <div className="absolute -top-24 -right-24 w-96 h-96 rounded-full bg-gradient-to-br {ds['gradient']} opacity-20 dark:opacity-10 blur-3xl" />
-  <div className="absolute bottom-0 left-1/4 w-72 h-72 rounded-full bg-gradient-to-br {ds['gradient']} opacity-10 dark:opacity-[0.07] blur-3xl" />
+  <div className="animate-float-slow absolute -top-24 -right-24 w-96 h-96 rounded-full bg-gradient-to-br {ds['gradient']} opacity-20 dark:opacity-10 blur-3xl" />
+  <div className="animate-float-slower absolute bottom-0 left-1/4 w-72 h-72 rounded-full bg-gradient-to-br {ds['gradient']} opacity-10 dark:opacity-[0.07] blur-3xl" />
 </div>
 ```
+The float classes are pre-defined motion tokens (slow transform-only drift) —
+they make the background feel alive instead of a static wallpaper.
 Place this as the FIRST child inside the outermost app-shell div (the one with
 `min-h-screen`), a sibling of the sidebar/main, not nested inside `<main>`.
 

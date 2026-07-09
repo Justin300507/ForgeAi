@@ -59,7 +59,9 @@ FILE RULES
 - Every path: starts with src/, forward slashes, ASCII only, ends with .jsx
 - Never import a file you did not also generate in this same response
 - Every component: export default ComponentName (no named exports)
-- src/index.css and src/main.jsx are already provided — DO NOT regenerate them
+- src/index.css, src/main.jsx, and src/components/ErrorBoundary.jsx are already
+  provided — DO NOT regenerate them (main.jsx already wraps <App /> in the
+  ErrorBoundary; never import or re-create an error boundary yourself)
 
 ═══════════════════════════════════════════════════════
 DESIGN SYSTEM  (use these patterns exactly)
@@ -75,6 +77,36 @@ APP-SPECIFIC DESIGN SYSTEM section above, never indigo-600 as a default):
   Borders:      border-slate-100  dark:border-slate-700
   Text primary: text-slate-900  dark:text-slate-100
   Text muted:   text-slate-500  dark:text-slate-400
+
+═══════════════════════════════════════════════════════
+MOTION TOKENS  (already defined in the scaffold — just use the class names)
+═══════════════════════════════════════════════════════
+
+These animation utilities are pre-wired in tailwind.config.js / index.css.
+Do NOT redefine any keyframes — apply the classes:
+
+  animate-fade-in        gentle opacity fade (0.4s)
+  animate-fade-in-up     fade + 12px rise — THE standard entrance
+  animate-scale-in       springy scale entrance — dialogs, toasts, popovers
+  animate-slide-in-right slide entrance for panels/drawers
+  animate-pop            success pop with overshoot — confirmation moments
+  animate-float-slow     slow ambient drift (18s) — background blob #1
+  animate-float-slower   slower counter-drift (26s) — background blob #2
+  .skeleton              shimmer loading block (moving highlight sweep)
+  .live-dot              pulsing brand-colored live-activity dot
+  .gradient-animated     slow gradient pan — add to bg-gradient-to-r hero/brand elements
+
+Usage rules (mandatory, not decoration):
+- Every page's main content wrapper gets `animate-fade-in-up`.
+- Every `.map()` rendering cards/rows adds BOTH `animate-fade-in-up` AND
+  `style={{{{ animationDelay: `${{index * 40}}ms` }}}}` so lists cascade in.
+- Toasts and modals enter with `animate-scale-in` (never appear instantly).
+- The two ambient background blobs get `animate-float-slow` and
+  `animate-float-slower` respectively so the background feels alive.
+- Dashboard "Recent activity"/live sections show `<span className="live-dot" />`
+  before the section title.
+- All of these are transform/opacity only and automatically disabled for
+  prefers-reduced-motion — use them freely, never invent new keyframes.
 
 ═══════════════════════════════════════════════════════
 VISUAL POLISH — mandatory, this is what separates "plain" from premium
@@ -97,12 +129,12 @@ not a shipped product. Apply ALL of these across every page:
 - Buttons get press feedback: `active:scale-[0.97] transition-transform
   duration-100` in addition to the hover color change — a button that only
   changes color on hover feels unresponsive on click.
-- Page entrance: wrap the main content return in a fade/slide-in —
-  `<div className="animate-[fadeIn_0.3s_ease-out]">` is enough (the
-  keyframe is already defined in src/index.css, do not redefine it).
+- Page entrance: wrap the main content return in
+  `<div className="animate-fade-in-up">` (token already defined — do not
+  redefine any keyframe).
 - List/grid entrances stagger: when mapping over an array to render cards,
   add `style={{{{ animationDelay: `${{index * 40}}ms` }}}}` alongside the same
-  fadeIn animation class so items cascade in rather than all popping at once.
+  `animate-fade-in-up` class so items cascade in rather than all popping at once.
 - Numbers and stats: use `font-bold tracking-tight` on large stat values
   (not just `font-bold`) — tight tracking on big numbers reads as more
   deliberate/designed.
@@ -152,7 +184,7 @@ above for the icon badge — never a hardcoded indigo badge here either.
   <div
     key={{item.id}}
     style={{{{ animationDelay: `${{index * 40}}ms` }}}}
-    className="animate-[fadeIn_0.3s_ease-out] bg-white/80 dark:bg-slate-800/70 backdrop-blur-xl rounded-xl border border-slate-100 dark:border-slate-700/60 ring-1 ring-black/5 dark:ring-white/5 p-4 flex items-center justify-between hover:shadow-md hover:-translate-y-0.5 transition-all duration-200 cursor-pointer"
+    className="animate-fade-in-up bg-white/80 dark:bg-slate-800/70 backdrop-blur-xl rounded-xl border border-slate-100 dark:border-slate-700/60 ring-1 ring-black/5 dark:ring-white/5 p-4 flex items-center justify-between hover:shadow-md hover:-translate-y-0.5 transition-all duration-200 cursor-pointer"
   >
     <div className="flex items-center gap-3">
       {{/* icon badge: use this app's stat_icon_bg / stat_icon_color tokens from the design system above */}}
@@ -218,8 +250,8 @@ background blobs, for the logo badge / link color / submit button):
 <div className="min-h-screen bg-slate-50 dark:bg-slate-900 flex items-center justify-center p-4 relative overflow-hidden">
   {{/* Ambient background blobs — same technique as the design system above */}}
   <div className="fixed inset-0 overflow-hidden pointer-events-none -z-10">
-    <div className="absolute -top-24 -right-24 w-96 h-96 rounded-full bg-gradient-to-br {{gradient}} opacity-20 dark:opacity-10 blur-3xl" />
-    <div className="absolute bottom-0 left-1/4 w-72 h-72 rounded-full bg-gradient-to-br {{gradient}} opacity-10 dark:opacity-[0.07] blur-3xl" />
+    <div className="animate-float-slow absolute -top-24 -right-24 w-96 h-96 rounded-full bg-gradient-to-br {{gradient}} opacity-20 dark:opacity-10 blur-3xl" />
+    <div className="animate-float-slower absolute bottom-0 left-1/4 w-72 h-72 rounded-full bg-gradient-to-br {{gradient}} opacity-10 dark:opacity-[0.07] blur-3xl" />
   </div>
   <div className="w-full max-w-sm">
     <div className="text-center mb-8">
@@ -370,7 +402,7 @@ const showToast = (msg, type = 'success') => {{
 const toastColorClass = toast && toast.type === 'success' ? 'bg-emerald-600' : 'bg-red-600';
 // In JSX:
 {{toast && (
-  <div className={{`fixed bottom-4 right-4 px-4 py-3 rounded-xl shadow-lg text-sm font-medium text-white z-50 ${{toastColorClass}}`}}>
+  <div className={{`animate-scale-in fixed bottom-4 right-4 px-4 py-3 rounded-xl shadow-lg text-sm font-medium text-white z-50 ${{toastColorClass}}`}}>
     {{toast.msg}}
   </div>
 )}}
@@ -388,14 +420,17 @@ identifier inside the JSX expression. If you find yourself writing a `${{`
 inside a `` {{`...`}} `` that is itself inside a JSX attribute, stop and pull
 it out into a variable first.
 
-LOADING STATES — every useEffect data fetch MUST show a skeleton:
+LOADING STATES — every useEffect data fetch MUST show a shimmer skeleton
+(use the provided `.skeleton` class — a moving highlight sweep, NOT plain
+animate-pulse gray boxes — and shape the blocks like the content they
+replace: stat-card-sized blocks for a stats grid, row-height blocks for a list):
 ```jsx
 const [loading, setLoading] = React.useState(true);
 // In JSX:
 {{loading ? (
-  <div className="animate-pulse space-y-3">
+  <div className="space-y-3">
     {{[...Array(5)].map((_, i) => (
-      <div key={{i}} className="h-16 bg-slate-200 dark:bg-slate-700 rounded-xl" />
+      <div key={{i}} className="skeleton h-16" />
     ))}}
   </div>
 ) : (
@@ -720,4 +755,7 @@ Before returning:
 17. Verify login stores display_name, user_id, user_email in localStorage from response
 18. Verify logout clears ALL keys: token, display_name, user_id, user_email
 19. Verify App.jsx has a root redirect (path="/") and wildcard (path="*") pointing to /dashboard so the root URL never shows a 404
+20. Verify EVERY page's main content wrapper has animate-fade-in-up, and every mapped card/row list has the staggered animationDelay — no page or list may appear instantly
+21. Verify loading states use the .skeleton class (shimmer), not plain animate-pulse boxes
+22. Verify toasts/modals enter with animate-scale-in, ambient blobs have animate-float-slow / animate-float-slower, and the dashboard's recent-activity section has a live-dot
 """
