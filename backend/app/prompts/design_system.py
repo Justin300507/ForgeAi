@@ -119,7 +119,7 @@ CATEGORIES: dict[str, dict] = {
         "accent_badge": "bg-sky-50 text-sky-700",
         "chart_color": "#0ea5e9",
         "chart_gradient_stop": "#67e8f9",
-        "icons": ["Users", "Phone", "Mail", "Building2", "Handshake",
+        "icons": ["Users", "Phone", "Mail", "Building2", "HeartHandshake",
                   "PieChart", "Target", "UserPlus", "Briefcase", "TrendingUp"],
         "keywords": ["crm", "customer", "lead", "sales", "contact", "client",
                      "deal", "pipeline", "account", "relationship", "prospect", "opportunity"],
@@ -297,7 +297,7 @@ CATEGORIES: dict[str, dict] = {
         "chart_color": "#d946ef",
         "chart_gradient_stop": "#f0abfc",
         "icons": ["Palette", "Image", "Layers", "Pen", "Camera",
-                  "Sparkles", "Grid3x3", "Eye", "Share2", "Star"],
+                  "Sparkles", "LayoutGrid", "Eye", "Share2", "Star"],
         "keywords": ["portfolio", "design", "gallery", "artist", "creative", "showcase",
                      "project", "photography", "illustration", "case study"],
         "components": ["Masonry / grid image gallery", "Case study detail with large imagery",
@@ -348,20 +348,28 @@ def build_design_system_injection(idea: str) -> str:
     style_block = build_style_injection(idea, ds)
 
     from app.prompts.component_library import build_component_reference
-    component_ref_block = build_component_reference(ds)
+    component_ref_block = build_component_reference(ds, style_key=select_style(idea))
 
+    # Design-intelligence brief (experience blueprint, design principles,
+    # layout plan) — deterministic, appended after the token/style sections.
+    brief_block = ""
+    try:
+        from app.design.brief import compose_design_brief
+        from app.design.render import render_brief_sections
+        brief_block = render_brief_sections(compose_design_brief(idea), ds)
+    except Exception:
+        # The brief enriches the prompt; its absence must never break a
+        # generation — the token/style sections alone are the proven core.
+        pass
+
+    # Design memory (V19): compare this app's planned design record against
+    # recent generations; when it would read as a re-skin of a recent app,
+    # inject a concrete NEW DIRECTION directive (within-style variations
+    # only — never switches the deterministic category/style/layout axes).
     diversity_note = ""
     try:
-        from app.memory.design_fingerprint import is_overrepresented
-        if is_overrepresented(category_key, select_style(idea)):
-            diversity_note = (
-                "\nDIVERSITY NOTE: this exact category+style combination has come up "
-                "frequently in recent generations. Stay fully within the assigned style's "
-                "rules above (don't switch styles), but vary the SPECIFIC accent choices — "
-                "which signature component you lead with, card corner radius within the "
-                "style's allowed range, icon selection from the vocabulary, heading "
-                "emphasis — so this app doesn't read as a carbon copy of recent ones.\n"
-            )
+        from app.design.design_memory import divergence_directive
+        diversity_note = divergence_directive(idea, ds)
     except Exception:
         pass
 
@@ -471,4 +479,4 @@ EXAMPLE STAT CARD for this category (glass-lite surface + ring + hover lift + gr
 Note the `/80` and `/70` opacity + `backdrop-blur-xl` on the card background —
 combined with the ambient blobs behind it, this is what gives the whole app
 its depth. A fully opaque `bg-white` card here looks flat again by comparison.
-{style_block}"""
+{style_block}{brief_block}"""

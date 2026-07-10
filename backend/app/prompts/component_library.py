@@ -245,33 +245,160 @@ const COLORS = ['{primary}', '{primary_dark}', '#cbd5e1', '#e2e8f0'];
 </div>
 ```""",
     },
+    "streaming_chat": {
+        "keywords": ["streaming chat", "response panel"],
+        "label": "Streaming chat / response panel",
+        "code": """```jsx
+const [streaming, setStreaming] = React.useState(false);
+const [displayed, setDisplayed] = React.useState('');
+const streamIn = (fullText) => {{
+  setStreaming(true);
+  setDisplayed('');
+  let i = 0;
+  const timer = setInterval(() => {{
+    i += 3;
+    setDisplayed(fullText.slice(0, i));
+    if (i >= fullText.length) {{ clearInterval(timer); setStreaming(false); }}
+  }}, 20);
+}};
+<div className="space-y-3">
+  {{messages.map((m, index) => {{
+    const bubbleClass = m.role === 'user'
+      ? 'ml-auto bg-gradient-to-r {gradient} text-white'
+      : 'mr-auto bg-white/80 dark:bg-slate-800/70 backdrop-blur-xl border border-slate-100 dark:border-slate-700/60 text-slate-700 dark:text-slate-200';
+    return (
+      <div key={{m.id}} style={{{{ animationDelay: `${{index * 40}}ms` }}}}
+        className={{`animate-fade-in-up max-w-[80%] rounded-2xl px-4 py-2.5 text-sm ${{bubbleClass}}`}}>
+        {{m.content}}
+      </div>
+    );
+  }})}}
+  {{streaming && (
+    <div className="mr-auto max-w-[80%] rounded-2xl px-4 py-2.5 text-sm bg-white/80 dark:bg-slate-800/70 border border-slate-100 dark:border-slate-700/60 text-slate-700 dark:text-slate-200">
+      {{displayed}}<span className="live-dot ml-1" aria-hidden="true" />
+    </div>
+  )}}
+</div>
+```""",
+    },
+    "photo_card_grid": {
+        "keywords": ["photography-forward", "menu grid", "destination cards", "hero imagery"],
+        "label": "Photography-forward card grid",
+        "code": """```jsx
+<div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5">
+  {{items.map((item, index) => (
+    <div key={{item.id}} style={{{{ animationDelay: `${{index * 50}}ms` }}}}
+      className="animate-fade-in-up group rounded-2xl overflow-hidden bg-white dark:bg-slate-800 border border-slate-100 dark:border-slate-700/60 shadow-sm hover:shadow-lg hover:-translate-y-1 transition-all duration-300 cursor-pointer">
+      <div className="relative h-44 overflow-hidden">
+        <img src={{item.imageUrl}} alt={{item.name}} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" />
+        <div className="absolute inset-0 bg-gradient-to-t from-black/50 via-transparent to-transparent" />
+        <p className="absolute bottom-2.5 left-3 text-white font-semibold drop-shadow">{{item.name}}</p>
+      </div>
+      <div className="p-4 flex items-center justify-between">
+        <p className="text-sm text-slate-500 dark:text-slate-400">{{item.subtitle}}</p>
+        <span className="text-sm font-bold tracking-tight text-slate-900 dark:text-white">{{item.price}}</span>
+      </div>
+    </div>
+  ))}}
+</div>
+```""",
+    },
+}
+
+# Component metadata — one entry per COMPONENTS key. `styles: "any"` means
+# the pattern adapts to every visual style via the STYLE OVERRIDE rules;
+# an explicit list restricts it to styles where the pattern reads natively.
+# Used to annotate injected snippets (adapt/a11y guidance) and available to
+# future selection agents (A/B design generation, vision critic).
+COMPONENT_META: dict[str, dict] = {
+    "kanban_board": {"categories": ["crm", "productivity"], "styles": "any", "complexity": "medium",
+                     "motion": "staggered card entrance per column",
+                     "a11y": "column headers are real text; keep cards keyboard-focusable"},
+    "streak_heatmap": {"categories": ["fitness", "productivity", "education"], "styles": "any",
+                       "complexity": "low", "motion": "cell-by-cell scale-in (15ms stagger)",
+                       "a11y": "pair cell color with an accessible title/aria-label per day"},
+    "progress_ring": {"categories": ["fitness", "productivity", "education", "finance"], "styles": "any",
+                      "complexity": "low", "motion": "value animates on mount via recharts",
+                      "a11y": "center label is real text, not color-only signal"},
+    "command_palette": {"categories": ["ai_saas", "crm", "productivity"], "styles": "any",
+                        "complexity": "medium", "motion": "scale-in entrance, Escape closes",
+                        "a11y": "role=dialog, autoFocus input, Escape-to-close wired"},
+    "sortable_table": {"categories": ["crm", "finance", "ecommerce", "healthcare"], "styles": "any",
+                       "complexity": "medium", "motion": "row entrance stagger (30ms)",
+                       "a11y": "sort state shown with a visible arrow, not color alone"},
+    "timeline": {"categories": ["crm", "healthcare", "travel", "ecommerce"], "styles": "any",
+                 "complexity": "low", "motion": "event-by-event fade-in-up (50ms stagger)",
+                 "a11y": "timestamps are text; dots are decorative only"},
+    "calendar_grid": {"categories": ["booking", "healthcare"], "styles": "any", "complexity": "medium",
+                      "motion": "slot scale-in (30ms stagger)",
+                      "a11y": "booked slots use disabled + muted text, never color alone"},
+    "stat_donut": {"categories": ["finance", "crm", "ecommerce"], "styles": "any", "complexity": "low",
+                   "motion": "recharts draw-in on mount",
+                   "a11y": "pair with a text legend list; tooltip is supplementary"},
+    "activity_feed": {"categories": ["social", "crm"], "styles": "any", "complexity": "low",
+                      "motion": "post entrance stagger (40ms)",
+                      "a11y": "avatar initials are aria-hidden; author name is the text label"},
+    "masonry_gallery": {"categories": ["portfolio", "travel", "restaurant"], "styles": "any",
+                        "complexity": "low", "motion": "scale-in stagger (50ms)",
+                        "a11y": "every img gets a meaningful alt from the item title"},
+    "achievement_grid": {"categories": ["fitness", "education"], "styles": "any", "complexity": "low",
+                         "motion": "animate-pop per badge (40ms stagger)",
+                         "a11y": "locked state shown via muted badge + label, not color alone"},
+    "streaming_chat": {"categories": ["ai_saas", "social"], "styles": "any", "complexity": "medium",
+                       "motion": "progressive text streaming + live-dot cursor",
+                       "a11y": "streaming region should be aria-live=polite"},
+    "photo_card_grid": {"categories": ["restaurant", "travel", "ecommerce", "portfolio"], "styles": "any",
+                        "complexity": "low", "motion": "image scales inside its frame on hover (500ms)",
+                        "a11y": "text over imagery always sits on the gradient contrast overlay"},
 }
 
 
-def build_component_reference(ds: dict) -> str:
-    """Pick up to 2 curated component snippets matching this category's
-    `components` hints and render them, tokens substituted with this
-    category's actual design-system values. Returns "" if nothing matches
-    (composition menu items covered elsewhere still apply)."""
+def select_components(ds: dict, style_key: str | None = None) -> list[str]:
+    """The component keys build_component_reference will inject for this
+    category+style — exposed separately so design_memory can record the
+    actual component mix each generation lands on."""
     hints = " | ".join(ds.get("components", [])).lower()
-    picked = []
+    picked: list[str] = []
     for key, comp in COMPONENTS.items():
+        meta = COMPONENT_META.get(key, {})
+        style_fit = meta.get("styles", "any")
+        if style_key and style_fit != "any" and style_key not in style_fit:
+            continue
         if any(kw in hints for kw in comp["keywords"]):
-            picked.append(comp)
+            picked.append(key)
         if len(picked) == 2:
             break
+    return picked
+
+
+def build_component_reference(ds: dict, style_key: str | None = None) -> str:
+    """Pick up to 2 curated component snippets matching this category's
+    `components` hints and render them, tokens substituted with this
+    category's actual design-system values. Components whose metadata
+    restricts them to specific styles are skipped when they don't fit the
+    assigned style. Returns "" if nothing matches (composition menu items
+    covered elsewhere still apply)."""
+    picked = [(key, COMPONENTS[key]) for key in select_components(ds, style_key)]
 
     if not picked:
         return ""
 
     blocks = []
-    for comp in picked:
+    for key, comp in picked:
         code = comp["code"].format(
             gradient=ds["gradient"],
             primary=ds["primary"],
             primary_dark=ds["primary_dark"],
             primary_name=ds["primary_name"],
         )
-        blocks.append(f"\n{comp['label']} — reference pattern (adapt data/props to this app, don't paste verbatim):\n{code}")
+        meta = COMPONENT_META.get(key, {})
+        notes = ""
+        if meta:
+            notes = (f"\n  motion: {meta.get('motion', '—')}"
+                     f"\n  accessibility: {meta.get('a11y', '—')}")
+        blocks.append(
+            f"\n{comp['label']} — reference pattern (adapt data/props to this app, "
+            f"don't paste verbatim; restyle surfaces per any STYLE OVERRIDE below):{notes}\n{code}"
+        )
 
     return "\nCOMPONENT REFERENCE (adapt, don't copy — these establish the shape/motion/token usage, not literal final content):" + "".join(blocks)

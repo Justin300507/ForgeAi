@@ -48,20 +48,37 @@ def _save(entries: list[dict]) -> None:
         pass
 
 
-def record_design(project_name: str, category_key: str, style_key: str) -> None:
-    """Append one generation's (category, style) pair. Never raises --
-    telemetry must not be able to break a generation run."""
+def record_design(project_name: str, category_key: str, style_key: str,
+                  extra: dict | None = None) -> None:
+    """Append one generation's design fingerprint. The core pair is
+    (category, style); `extra` carries the additional diversity dimensions
+    the design brief lands on (shell layout, heading font, posture, data
+    density). Never raises -- telemetry must not be able to break a
+    generation run."""
     try:
         entries = _load()
-        entries.append({
+        entry = {
             "project_name": project_name,
             "category": category_key,
             "style": style_key,
             "timestamp": datetime.now(timezone.utc).isoformat(),
-        })
+        }
+        if isinstance(extra, dict):
+            for k, v in extra.items():
+                entry.setdefault(k, v)
+        entries.append(entry)
         _save(entries)
     except Exception:
         pass
+
+
+def load_recent(n: int = 20) -> list[dict]:
+    """The last n recorded design records (oldest first). Public read API
+    for design_memory's similarity scoring. Returns [] on any error."""
+    try:
+        return _load()[-n:]
+    except Exception:
+        return []
 
 
 def recent_pair_frequency(category_key: str, style_key: str) -> float:

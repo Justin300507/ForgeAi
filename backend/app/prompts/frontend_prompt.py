@@ -179,7 +179,10 @@ ACCESSIBILITY — mandatory, not optional polish
   `window.matchMedia('(prefers-reduced-motion)')` checks in JSX, that would
   be redundant and risks fighting the global rule.
 
-SIDEBAR LAYOUT + NAV LINK PATTERN (use for ALL authenticated pages):
+SIDEBAR LAYOUT + NAV LINK PATTERN (use for ALL authenticated pages — UNLESS a
+"LAYOUT OVERRIDE — TOP-NAV SHELL" section appears in the design system above,
+in which case that override's top-nav shell replaces this entire sidebar
+pattern and the `ml-56` main margin):
 Use the EXAMPLE SIDEBAR code block from the APP-SPECIFIC DESIGN SYSTEM section
 above verbatim (gradient sidebar, gradient active nav pill, gradient brand
 text) — do not fall back to a flat white/indigo sidebar, that is the generic
@@ -790,4 +793,6 @@ Before returning:
 23. Verify every icon-only button has aria-label, and every interactive element has a focus-visible ring (not just hover)
 24. Verify at least 1-2 of the SIGNATURE COMPONENTS from the design system above are actually built somewhere, not just the generic list+form shell
 25. Verify this style's MOTION INTENSITY guidance (stagger timing, which entrance animation to prefer) was actually followed, not just the base motion tokens by default
+26. If a LAYOUT OVERRIDE — TOP-NAV SHELL section appears in the design system above, verify NO page renders a sidebar or ml-56 margin — every authenticated page uses the sticky top-nav shell with the centered max-w-6xl content column
+27. Verify the EXPERIENCE BLUEPRINT's delight moment and empty-state treatment are actually implemented (using the existing motion tokens), not just the generic empty-state fallback
 """

@@ -128,10 +128,20 @@ def run_frontend_critic(
     ds = detect_category(idea)
     style_label = STYLES.get(select_style(idea), {}).get("label", "Glassmorphism")
 
+    shell, experience_goal = "sidebar", ""
+    try:
+        from app.design.brief import compose_design_brief
+        brief = compose_design_brief(idea)
+        shell = brief.layout.shell
+        experience_goal = brief.experience.first_screen
+    except Exception:
+        pass  # the critic still works from category/style alone
+
     raw_text = ""
     try:
         prompt = build_frontend_critic_prompt(
             files, idea, ds["label"], style_label, ds.get("components", []),
+            shell=shell, experience_goal=experience_goal,
         )
         raw_text = generate_content(prompt, provider, max_tokens=6000, stage="frontend_critic")
         data = extract_json(raw_text)

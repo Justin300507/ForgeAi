@@ -4,12 +4,23 @@ def build_frontend_critic_prompt(
     category_label: str,
     style_label: str,
     signature_components: list[str],
+    shell: str = "sidebar",
+    experience_goal: str = "",
 ) -> str:
     file_blocks = "\n\n".join(
         f"=== {path} ===\n{content[:2500]}"
         for path, content in list(files.items())[:16]
     )
     components_str = ", ".join(signature_components) or "(none specified)"
+    shell_note = (
+        "top-nav content shell (sticky header + centered max-w column — this app "
+        "was DESIGNED without a sidebar; do NOT flag the missing sidebar as an issue)"
+        if shell == "topnav"
+        else "dark gradient sidebar shell"
+    )
+    experience_note = (
+        f"\nExperience goal for the first screen: {experience_goal}" if experience_goal else ""
+    )
 
     return f"""You are a senior product designer reviewing a generated React +
 Tailwind frontend, the way you would review a junior designer's PR before it
@@ -18,7 +29,8 @@ ships — not a code linter, a DESIGN reviewer. This app is supposed to be:
 
 Assigned category: {category_label}
 Assigned visual style: {style_label}
-Signature components this app was told to include somewhere: {components_str}
+Assigned app shell: {shell_note}
+Signature components this app was told to include somewhere: {components_str}{experience_note}
 
 PROJECT FILES:
 {file_blocks}
@@ -46,6 +58,9 @@ of reading as a templated CRUD scaffold:
      press feedback — are these actually present, or flat/bare?
    - Empty states, loading skeletons, toast feedback — present and styled,
      or missing/plain?
+   - MOTION QUALITY: do lists stagger in, do dialogs/toasts scale in, does
+     the app follow its style's motion intensity — or does everything
+     appear instantly / animate identically regardless of context?
    - Does this look "premium" or does it read as a wireframe with colors
      filled in?
 
@@ -54,6 +69,9 @@ of reading as a templated CRUD scaffold:
      depth — or does one page look like a different app?
    - Are icon sizes, badge shapes, and card patterns reused consistently
      across pages instead of reinvented per-page?
+   - ORIGINALITY: does this app have its own identity (domain-specific
+     components, the assigned style genuinely applied) — or would swapping
+     the accent color make it indistinguishable from any other CRUD app?
 
 For each real issue, include: file, severity (critical|high|medium|low),
 description (what's wrong, specifically), and a concrete fix instruction

@@ -622,10 +622,13 @@ def write_files(project_name, files, frontend_target: str = "web", idea: str = "
 
     if (idea or "").strip():
         try:
-            from app.prompts.design_system import detect_category_key
-            from app.prompts.style_system import select_style
+            from app.design.brief import compose_design_brief
+            from app.design.design_memory import build_design_record
             from app.memory.design_fingerprint import record_design
-            record_design(project_name, detect_category_key(idea), select_style(idea))
+            from app.prompts.design_system import CATEGORIES
+            brief = compose_design_brief(idea)
+            record = build_design_record(brief, CATEGORIES[brief.category_key], project_name)
+            record_design(project_name, brief.category_key, brief.style_key, extra=record)
         except Exception:
             pass  # telemetry only — never let this affect a generation run
 

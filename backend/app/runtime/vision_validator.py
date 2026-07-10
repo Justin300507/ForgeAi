@@ -52,17 +52,20 @@ _VISION_PROMPT = """Analyze these React app screenshots and return ONLY valid JS
 }
 
 Score guide:
-  90-100 = polished, modern design with consistent color theme, good typography, sidebar nav
+  90-100 = polished, modern design with consistent color theme, good typography, clear navigation (sidebar OR top nav bar — both are equally valid shells)
   75-89  = clean and functional, styled cards/forms, readable layout, minor imperfections
   60-74  = basic but working, minimal styling, some missing structure
   40-59  = broken layout elements, unstyled or white page with minimal content
   0-39   = blank white page, JS error visible, completely broken
 
 Be GENEROUS: if a page has a visible heading, styled buttons, and readable content, it scores at least 70.
-If it also has a sidebar, stats cards, and consistent color scheme, it scores 85+.
+If it also has clear navigation (a sidebar or a top nav bar — some apps are
+deliberately designed with a top-nav content shell instead of a sidebar; never
+penalize the absence of a sidebar when a top nav is present), stats cards, and
+a consistent color scheme, it scores 85+.
 Only score below 60 if something is genuinely broken (white page, error text, invisible content).
 Critical issues: blank white page, JS error shown on screen, layout completely broken.
-Warnings: missing sidebar nav, unstyled form inputs, no example data shown.
+Warnings: no visible navigation at all, unstyled form inputs, no example data shown.
 Info: minor alignment, color inconsistency, small UX suggestions."""
 
 
