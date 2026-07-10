@@ -111,8 +111,9 @@ export default function Dashboard() {
     <div className="app-shell">
       <NavBar />
       <div className="max-w-5xl mx-auto px-6 py-12">
-        {/* Greeting + Forge bar */}
-        <div className="anim-fade-up mb-10">
+        {/* Greeting + Forge bar — delayed 150ms so it slides in just after
+            the veil lifts from the camera-zoom exit off the landing page */}
+        <div className="anim-fade-up mb-10" style={{ "--d": "150ms" }}>
           <h1 className="hero-serif text-4xl sm:text-5xl text-white leading-tight">
             {greeting()}{firstName ? <span className="italic">, {firstName}</span> : ""}.
           </h1>

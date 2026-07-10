@@ -24,31 +24,58 @@ function detectStage(logs) {
   return null;
 }
 
-function PipelineBar({ logs, status }) {
+function PipelineBar({ logs, status, vertical }) {
   const active = detectStage(logs);
   const activeIdx = STAGES.findIndex(s => s.id === active);
   return (
-    <div className="flex items-center gap-1 overflow-x-auto py-1">
+    <div className={vertical
+      ? "flex flex-col gap-3"
+      : "flex items-center gap-1 overflow-x-auto py-1"}>
       {STAGES.map((stage, i) => {
         const past = activeIdx > i;
         const curr = activeIdx === i;
         const err  = status === "error" && curr;
         const fin  = status === "done" && stage.id === "done";
+        // Live, in-progress node gets the neon-emerald glow; everything
+        // else (done/error/upcoming) stays on the plain palette below.
+        const isLiveActive = curr && !err && !fin;
+        const node = (
+          <div className={`w-6 h-6 rounded-full flex items-center justify-center text-xs font-bold border-2 transition-all shrink-0 ${isLiveActive ? "stepper-node-active" : ""}`}
+            style={{
+              borderColor: err ? "#ef4444" : (fin||past) ? "#4ade80" : isLiveActive ? "#34d399" : "#2a2a3d",
+              background:  err ? "rgba(239,68,68,0.15)" : (fin||past) ? "rgba(74,222,128,0.15)" : isLiveActive ? "rgba(52,211,153,0.15)" : "#12121f",
+              color:       err ? "#f87171" : (fin||past) ? "#4ade80" : isLiveActive ? "#34d399" : "#444"
+            }}>
+            {(fin || past) ? "✓" : isLiveActive ? "…" : err ? "✕" : i+1}
+          </div>
+        );
+        const label = (
+          <span className="text-[9px] whitespace-nowrap font-medium"
+            style={{color: err ? "#f87171" : (fin||past) ? "#4ade80" : isLiveActive ? "#34d399" : "#444"}}>
+            {stage.label}
+          </span>
+        );
+        if (vertical) {
+          return (
+            <div key={stage.id} className="flex items-center gap-3">
+              <div className="flex flex-col items-center shrink-0">
+                {node}
+                {i < STAGES.length - 1 && (
+                  <div className="w-px h-4 mt-1 transition-all" style={{background: past ? "#4ade8050" : "#2a2a3d"}} />
+                )}
+              </div>
+              <span className="text-xs font-medium"
+                style={{color: err ? "#f87171" : (fin||past) ? "#4ade80" : isLiveActive ? "#34d399" : "#666"}}>
+                {stage.label}
+              </span>
+            </div>
+          );
+        }
         return (
           <React.Fragment key={stage.id}>
             <div className="flex flex-col items-center shrink-0 min-w-0">
-              <div className="w-6 h-6 rounded-full flex items-center justify-center text-xs font-bold border-2 transition-all"
-                style={{
-                  borderColor: err ? "#ef4444" : (fin||past) ? "#4ade80" : curr ? "#a78bfa" : "#2a2a3d",
-                  background:  err ? "rgba(239,68,68,0.15)" : (fin||past) ? "rgba(74,222,128,0.15)" : curr ? "rgba(167,139,250,0.15)" : "#12121f",
-                  color:       err ? "#f87171" : (fin||past) ? "#4ade80" : curr ? "#a78bfa" : "#444"
-                }}>
-                {(fin || past) ? "✓" : curr && !err ? "…" : err ? "✕" : i+1}
-              </div>
-              <span className="text-[9px] mt-1 whitespace-nowrap font-medium"
-                style={{color: err ? "#f87171" : (fin||past) ? "#4ade80" : curr ? "#a78bfa" : "#444"}}>
-                {stage.label}
-              </span>
+              {node}
+              <span className="mt-1">{label}</span>
             </div>
             {i < STAGES.length - 1 && (
               <div className="h-px flex-1 min-w-[8px] transition-all" style={{background: past ? "#4ade8050" : "#2a2a3d"}} />
@@ -236,77 +263,84 @@ export default function ProjectDetail() {
   return (
     <div className="app-shell">
       <NavBar />
-      <div className="max-w-5xl mx-auto px-6 py-8 space-y-4">
-        {/* Pipeline */}
-        <div className="anim-fade-up glass-panel rounded-2xl px-5 py-4">
-          <PipelineBar logs={logs} status={job.status} />
-        </div>
+      {/* Split workspace: left = stepper/status/context, right = the live
+          log. Each pane scrolls independently and is capped to the
+          viewport so a dense spec or a deep log can never blow out the
+          page layout. */}
+      <div className="max-w-7xl mx-auto px-6 py-8 grid grid-cols-1 lg:grid-cols-5 gap-4 items-start lg:h-[calc(100dvh-6.5rem)]">
+        {/* Left pane — 40% */}
+        <div className="lg:col-span-2 flex flex-col gap-4 lg:h-full min-h-0">
+          {/* Stepper header */}
+          <div className="anim-fade-up workspace-shell rounded-2xl px-5 py-4 shrink-0">
+            <PipelineBar logs={logs} status={job.status} vertical />
+          </div>
 
-        {/* Info card */}
-        <div className="anim-fade-up glass-panel rounded-2xl p-5" style={{ "--d": "80ms" }}>
-          <div className="flex items-start justify-between gap-4">
-            <div className="flex-1 min-w-0">
-              <div className="flex items-center gap-2 mb-3 flex-wrap">
-                <span className="flex items-center gap-1.5 text-xs px-2.5 py-1 rounded-full font-medium" style={{
-                  background: isActive ? "rgba(99,102,241,0.12)" : isDone ? "rgba(34,197,94,0.12)" : "rgba(239,68,68,0.12)",
-                  color:      isActive ? "#818cf8" : isDone ? "#4ade80" : "#f87171",
-                  border:     `1px solid ${isActive ? "rgba(99,102,241,0.25)" : isDone ? "rgba(34,197,94,0.25)" : "rgba(239,68,68,0.25)"}`
-                }}>
-                  {isActive && <span className="live-dot bg-indigo-400" style={{width:6, height:6}} aria-hidden="true" />}
-                  {job.status}
-                </span>
-                <span className="text-xs text-gray-600">{job.provider}</span>
+          {/* Info card — prompt context, status, results */}
+          <div className="anim-fade-up workspace-shell rounded-2xl p-5 pane-scroll lg:flex-1 min-h-0" style={{ "--d": "80ms" }}>
+            <div className="flex items-start justify-between gap-4">
+              <div className="flex-1 min-w-0">
+                <div className="flex items-center gap-2 mb-3 flex-wrap">
+                  <span className="flex items-center gap-1.5 text-xs px-2.5 py-1 rounded-full font-medium" style={{
+                    background: isActive ? "rgba(99,102,241,0.12)" : isDone ? "rgba(34,197,94,0.12)" : "rgba(239,68,68,0.12)",
+                    color:      isActive ? "#818cf8" : isDone ? "#4ade80" : "#f87171",
+                    border:     `1px solid ${isActive ? "rgba(99,102,241,0.25)" : isDone ? "rgba(34,197,94,0.25)" : "rgba(239,68,68,0.25)"}`
+                  }}>
+                    {isActive && <span className="live-dot bg-indigo-400" style={{width:6, height:6}} aria-hidden="true" />}
+                    {job.status}
+                  </span>
+                  <span className="text-xs text-gray-600">{job.provider}</span>
+                </div>
+                <p className="hero-serif text-xl sm:text-2xl text-white leading-snug">{job.idea}</p>
+                {job.error && <p className="text-red-400 text-xs mt-3 px-3 py-2 rounded-lg bg-red-500/8 border border-red-500/15">{job.error}</p>}
               </div>
-              <p className="hero-serif text-xl sm:text-2xl text-white leading-snug">{job.idea}</p>
-              {job.error && <p className="text-red-400 text-xs mt-3 px-3 py-2 rounded-lg bg-red-500/8 border border-red-500/15">{job.error}</p>}
+              {isDone && score != null && (
+                <div className="text-right shrink-0">
+                  <div className="hero-serif text-5xl" style={{color: score>=80?"#4ade80":score>=60?"#facc15":"#f87171"}}>{score}</div>
+                  <div className="text-gray-500 text-xs uppercase tracking-widest mt-1">({grade}) Forge Score</div>
+                </div>
+              )}
             </div>
-            {isDone && score != null && (
-              <div className="text-right shrink-0">
-                <div className="hero-serif text-5xl" style={{color: score>=80?"#4ade80":score>=60?"#facc15":"#f87171"}}>{score}</div>
-                <div className="text-gray-500 text-xs uppercase tracking-widest mt-1">({grade}) Forge Score</div>
+            {isDone && (
+              <div className="flex flex-wrap gap-2 mt-4 pt-4 border-t border-white/5">
+                {job.frontend_url && <a href={job.frontend_url} target="_blank" rel="noopener noreferrer"
+                  className="flex items-center gap-1.5 text-xs font-medium px-3 py-1.5 rounded-lg border transition-colors"
+                  style={{background:"rgba(124,58,237,0.12)",color:"#a78bfa",borderColor:"rgba(124,58,237,0.25)"}}>
+                  <Globe size={13} aria-hidden="true" /> Live frontend</a>}
+                {job.backend_url && (
+                  <a href={`${job.backend_url}/docs`} target="_blank" rel="noopener noreferrer"
+                    className="text-xs font-medium px-3 py-1.5 rounded-lg border border-white/8 text-gray-400 hover:text-white flex items-center gap-1.5"
+                    style={{background:"rgba(255,255,255,0.04)"}}>
+                    <BookOpen size={13} aria-hidden="true" /> API docs
+                    <span className="text-gray-600 font-normal">(backend building ~5 min)</span>
+                  </a>
+                )}
+                {job.github_url && <a href={job.github_url} target="_blank" rel="noopener noreferrer"
+                  className="flex items-center gap-1.5 text-xs font-medium px-3 py-1.5 rounded-lg border border-white/8 text-gray-400 hover:text-white"
+                  style={{background:"rgba(255,255,255,0.04)"}}>
+                  <Github size={13} aria-hidden="true" /> GitHub</a>}
+                {job.zip_path && <a href={`/api/download/${job.id}`} target="_blank"
+                  className="flex items-center gap-1.5 text-xs font-medium px-3 py-1.5 rounded-lg border border-white/8 text-gray-400 hover:text-white"
+                  style={{background:"rgba(255,255,255,0.04)"}}>
+                  <Download size={13} aria-hidden="true" /> Download zip</a>}
+              </div>
+            )}
+            {isDone && job.backend_url && (
+              <CheckPanel jobId={id} backendUrl={job.backend_url} />
+            )}
+            {isActive && (
+              <div className="mt-4 pt-4 border-t border-white/5">
+                <button onClick={async () => { await jobsAPI.cancel(id); fetchJob(); }}
+                  className="text-xs text-red-400 hover:text-red-300 border border-red-500/20 px-3 py-1.5 rounded-lg transition-colors">
+                  Cancel generation
+                </button>
               </div>
             )}
           </div>
-          {isDone && (
-            <div className="flex flex-wrap gap-2 mt-4 pt-4 border-t border-white/5">
-              {job.frontend_url && <a href={job.frontend_url} target="_blank" rel="noopener noreferrer"
-                className="flex items-center gap-1.5 text-xs font-medium px-3 py-1.5 rounded-lg border transition-colors"
-                style={{background:"rgba(124,58,237,0.12)",color:"#a78bfa",borderColor:"rgba(124,58,237,0.25)"}}>
-                <Globe size={13} aria-hidden="true" /> Live frontend</a>}
-              {job.backend_url && (
-                <a href={`${job.backend_url}/docs`} target="_blank" rel="noopener noreferrer"
-                  className="text-xs font-medium px-3 py-1.5 rounded-lg border border-white/8 text-gray-400 hover:text-white flex items-center gap-1.5"
-                  style={{background:"rgba(255,255,255,0.04)"}}>
-                  <BookOpen size={13} aria-hidden="true" /> API docs
-                  <span className="text-gray-600 font-normal">(backend building ~5 min)</span>
-                </a>
-              )}
-              {job.github_url && <a href={job.github_url} target="_blank" rel="noopener noreferrer"
-                className="flex items-center gap-1.5 text-xs font-medium px-3 py-1.5 rounded-lg border border-white/8 text-gray-400 hover:text-white"
-                style={{background:"rgba(255,255,255,0.04)"}}>
-                <Github size={13} aria-hidden="true" /> GitHub</a>}
-              {job.zip_path && <a href={`/api/download/${job.id}`} target="_blank"
-                className="flex items-center gap-1.5 text-xs font-medium px-3 py-1.5 rounded-lg border border-white/8 text-gray-400 hover:text-white"
-                style={{background:"rgba(255,255,255,0.04)"}}>
-                <Download size={13} aria-hidden="true" /> Download zip</a>}
-            </div>
-          )}
-          {isDone && job.backend_url && (
-            <CheckPanel jobId={id} backendUrl={job.backend_url} />
-          )}
-          {isActive && (
-            <div className="mt-4 pt-4 border-t border-white/5">
-              <button onClick={async () => { await jobsAPI.cancel(id); fetchJob(); }}
-                className="text-xs text-red-400 hover:text-red-300 border border-red-500/20 px-3 py-1.5 rounded-lg transition-colors">
-                Cancel generation
-              </button>
-            </div>
-          )}
         </div>
 
-        {/* Log terminal */}
-        <div className="anim-fade-up glass-panel rounded-2xl overflow-hidden" style={{ "--d": "160ms" }}>
-          <div className="flex items-center gap-2 px-4 py-3 border-b border-white/5">
+        {/* Right pane — 60%, the live log terminal */}
+        <div className="anim-fade-up lg:col-span-3 workspace-shell rounded-2xl overflow-hidden flex flex-col lg:h-full min-h-0" style={{ "--d": "160ms" }}>
+          <div className="flex items-center gap-2 px-4 py-3 border-b border-white/5 shrink-0">
             <span className="flex items-center gap-1.5 mr-2" aria-hidden="true">
               <span className="w-2.5 h-2.5 rounded-full bg-red-400/70" />
               <span className="w-2.5 h-2.5 rounded-full bg-yellow-400/70" />
@@ -317,7 +351,7 @@ export default function ProjectDetail() {
             {isActive && <span className="live-dot bg-violet-400 ml-1" aria-hidden="true" />}
           </div>
           <div ref={logsRef} onScroll={onScroll}
-            className="h-80 overflow-y-auto p-4 font-mono text-xs space-y-0.5"
+            className="pane-scroll h-80 lg:h-auto lg:flex-1 min-h-0 p-4 font-mono text-xs space-y-0.5"
             style={{background:"#07070f"}}>
             {logs.length === 0
               ? <p className="text-gray-700 italic">Waiting for pipeline output…</p>

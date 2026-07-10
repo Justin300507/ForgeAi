@@ -69,9 +69,36 @@ body {
   background: var(--surface);
   /* Warm sunset accent border — ties app cards to the hero horizon */
   border: 1px solid rgba(217, 119, 146, 0.10);
-  box-shadow: inset 0 1px 1px rgba(255, 255, 255, 0.05);
+  /* Ambient colorful bleed instead of a harsh flat-black drop shadow */
+  box-shadow:
+    inset 0 1px 1px rgba(255, 255, 255, 0.05),
+    0 20px 60px -24px rgba(124, 58, 237, 0.20),
+    0 10px 30px -12px rgba(217, 119, 146, 0.10);
   backdrop-filter: blur(12px);
   -webkit-backdrop-filter: blur(12px);
+}
+
+/* ── Workspace shell: the generation page's glass tokens ─────────────── */
+/* Slightly heavier glass than .glass-panel — this surface sits over the
+   busiest part of the twilight background (stepper + live log), so it
+   needs a touch more opacity/blur to keep text legible. */
+.workspace-shell {
+  background: rgba(25, 20, 38, 0.55);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  border: 1px solid rgba(217, 119, 146, 0.08);
+  box-shadow:
+    inset 0 1px 1px rgba(255, 255, 255, 0.05),
+    0 24px 70px -28px rgba(124, 58, 237, 0.22),
+    0 12px 34px -14px rgba(217, 119, 146, 0.10);
+}
+
+/* Independent-scroll panes for the split workspace layout — each pane owns
+   its own scrollbar and never lets the page grow past the viewport, even
+   when a huge spec / deep log is loaded. */
+.pane-scroll {
+  overflow-y: auto;
+  overscroll-behavior: contain;
 }
 
 /* ── App shell: ambient brand glow behind glass panels ───────────────── */
@@ -144,15 +171,16 @@ body {
 .scene-zoom {
   position: absolute;
   inset: 0;
-  transition:
-    transform 1s cubic-bezier(0.4, 0, 0.2, 1),
-    filter 1s cubic-bezier(0.4, 0, 0.2, 1);
-  will-change: transform;
+  transition: transform 0.75s cubic-bezier(0.25, 1, 0.5, 1),
+              opacity   0.75s cubic-bezier(0.25, 1, 0.5, 1),
+              filter    0.75s cubic-bezier(0.25, 1, 0.5, 1);
+  will-change: transform, opacity;
 }
 
 .scene-zoom.leaving {
-  transform: scale(1.5);
-  filter: blur(6px);
+  transform: scale(1.35);
+  opacity: 0;
+  filter: blur(4px);
 }
 
 .scene-fade {
@@ -298,6 +326,16 @@ body {
   animation: train-bob 3s ease-in-out infinite;
 }
 
+/* Active stepper node: crisp neon-emerald glow (vs. plain violet before) */
+@keyframes stepper-pulse {
+  0%, 100% { box-shadow: 0 0 0 0 rgba(52, 211, 153, 0.45), 0 0 14px 2px rgba(52, 211, 153, 0.35); }
+  50%      { box-shadow: 0 0 0 4px rgba(52, 211, 153, 0.08), 0 0 20px 4px rgba(52, 211, 153, 0.5); }
+}
+
+.stepper-node-active {
+  animation: stepper-pulse 1.8s ease-in-out infinite;
+}
+
 @media (prefers-reduced-motion: reduce) {
   .train-bob { animation: none; transform: scale(1.03); }
   .anim-fade-up, .anim-scale-in { animation: none; opacity: 1; transform: none; }
@@ -305,6 +343,7 @@ body {
   .live-dot { animation: none; }
   .app-shell::before, .app-shell::after { animation: none; }
   .forge-veil { display: none; }
+  .stepper-node-active { animation: none; }
   .hover-lift:hover { transform: none; }
   * { transition-duration: 0.01ms !important; }
 }
