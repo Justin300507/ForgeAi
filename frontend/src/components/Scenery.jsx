@@ -10,8 +10,8 @@ export default function Scenery() {
   return (
     <div className="scenery-layer" aria-hidden="true">
       <div className="scenery-image" style={{ backgroundImage: `url(${sceneryStill})` }} />
-      <div className="scenery-frame" style={{ backgroundImage: `url(${OVERLAY_PNG})` }} />
       <div className="scenery-scrim" />
+      <div className="scenery-frame" style={{ backgroundImage: `url(${OVERLAY_PNG})` }} />
     </div>
   );
 }
