@@ -101,26 +101,57 @@ body {
   overscroll-behavior: contain;
 }
 
+/* ── Scenery: the persistent blurred backdrop behind every app page ──── */
+/* One captured still from the landing's Golden Hour scene, blurred and
+   darkened -- "the same world, further inside it" instead of an abstract
+   gradient. Mounted once in App.jsx (not per-page), z-index -1 so it sits
+   behind every page's content without any per-page wiring. */
+
+.scenery-layer {
+  position: fixed;
+  inset: 0;
+  z-index: -1;
+  overflow: hidden;
+  pointer-events: none;
+}
+
+.scenery-image {
+  position: absolute;
+  inset: 0;
+  background-size: cover;
+  background-position: center;
+  filter: blur(28px);
+  transform: scale(1.08); /* hides the blur's soft edge artifacts */
+}
+
+/* The train-window silhouette, present but subtle -- a hint of "still
+   behind glass" rather than literal glass smudge. */
+.scenery-frame {
+  position: absolute;
+  inset: 0;
+  background-size: cover;
+  background-position: center;
+  filter: blur(40px);
+  opacity: 0.25;
+}
+
+.scenery-scrim {
+  position: absolute;
+  inset: 0;
+  background: rgba(9, 6, 13, 0.88);
+}
+
 /* ── App shell: ambient brand glow behind glass panels ───────────────── */
 
-/* "Stepping inside the cabin": deep night shadow blending toward the warm
-   horizon, with a sunset light leak bleeding in from the top-right — the
-   inner pages live in the same twilight as the hero's window view. */
+/* Background now lives in the shared, persistent <Scenery /> layer
+   (mounted once in App.jsx) instead of a per-page CSS gradient -- this
+   class only establishes the page's own stacking/scroll context and lets
+   Scenery's blurred still show through beneath it. The aurora glow
+   pseudo-elements below are unchanged and still layer on top of Scenery. */
 .app-shell {
   position: relative;
   min-height: 100vh;
   min-height: 100dvh;
-  background-color: var(--ink-bg);
-  /* The 85%/-8% glow used to sit almost entirely under NavBar's own
-     ~85%-opaque backdrop (a sticky bar covering the top ~70px) -- it read
-     as invisible because it never had a chance to hit visible content.
-     Pushed down + widened so its falloff actually bleeds into the page,
-     and bumped opacity since "subtle" was reading as "absent". */
-  background-image:
-    radial-gradient(720px 720px at 82% 14%, rgba(217, 119, 146, 0.22), transparent 65%),
-    radial-gradient(700px 460px at -10% 30%, rgba(59, 130, 246, 0.07), transparent 60%),
-    linear-gradient(135deg, #0b0813 0%, #1c1230 45%, #33182f 100%);
-  background-attachment: fixed;
   overflow-x: hidden;
 }
 

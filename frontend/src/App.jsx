@@ -2,6 +2,7 @@ import React from "react";
 import { Routes, Route, Navigate } from "react-router-dom";
 import { AuthProvider, useAuth } from "./AuthContext";
 import { VeilProvider } from "./components/Veil";
+import Scenery from "./components/Scenery";
 import Landing from "./pages/Landing";
 import Login from "./pages/Login";
 import Register from "./pages/Register";
@@ -35,9 +36,11 @@ function PublicRoute({ children }) {
 
 export default function App() {
   return (
-    <AuthProvider>
-      <VeilProvider>
-      <Routes>
+    <>
+      <Scenery />
+      <AuthProvider>
+        <VeilProvider>
+        <Routes>
         <Route path="/" element={<Landing />} />
         <Route path="/login" element={<PublicRoute><Login /></PublicRoute>} />
         <Route path="/register" element={<PublicRoute><Register /></PublicRoute>} />
@@ -46,8 +49,9 @@ export default function App() {
         <Route path="/projects/:id" element={<PrivateRoute><ProjectDetail /></PrivateRoute>} />
         <Route path="/settings" element={<PrivateRoute><CredentialsPage /></PrivateRoute>} />
         <Route path="*" element={<Navigate to="/" replace />} />
-      </Routes>
-      </VeilProvider>
-    </AuthProvider>
+        </Routes>
+        </VeilProvider>
+      </AuthProvider>
+    </>
   );
 }
