@@ -1,57 +1,99 @@
 import React, { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
+import { Eye, EyeOff, Loader2 } from "lucide-react";
 import { useAuth } from "../AuthContext";
+import AuthScene from "../components/AuthScene";
+import { IDEA_DRAFT_KEY } from "../lib/cinematic";
+
+const SANS = { fontFamily: "system-ui, sans-serif" };
 
 export default function Register() {
   const { register } = useAuth();
   const nav = useNavigate();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [showPw, setShowPw] = useState(false);
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
 
+  // If they typed an idea on the landing page, keep the thread going.
+  const hasDraft = Boolean(sessionStorage.getItem(IDEA_DRAFT_KEY));
+
   const submit = async (e) => {
     e.preventDefault(); setError(""); setLoading(true);
-    try { await register(email, password); nav("/dashboard"); }
+    try { await register(email, password); nav(hasDraft ? "/new" : "/dashboard"); }
     catch (err) { setError(err.response?.data?.detail || "Registration failed"); }
     finally { setLoading(false); }
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center px-4" style={{background:"#090912"}}>
-      <div className="w-full max-w-sm">
-        <Link to="/" className="flex items-center justify-center gap-2 mb-8">
-          <span className="text-2xl">⚡</span>
-          <span className="text-xl font-bold" style={{background:"linear-gradient(135deg,#a78bfa,#818cf8)",WebkitBackgroundClip:"text",WebkitTextFillColor:"transparent"}}>ForgeAI</span>
-        </Link>
-        <div className="rounded-2xl border border-white/8 p-8" style={{background:"#12121f"}}>
-          <h1 className="text-xl font-bold text-white mb-1">Create your account</h1>
-          <p className="text-gray-500 text-sm mb-6">Start building apps with AI</p>
-          {error && <div className="text-red-400 text-sm bg-red-500/10 border border-red-500/20 rounded-xl px-4 py-3 mb-4">{error}</div>}
-          <form onSubmit={submit} className="space-y-4">
-            <div>
-              <label className="block text-sm text-gray-400 mb-1.5">Email</label>
-              <input type="email" value={email} onChange={e => setEmail(e.target.value)} required placeholder="you@example.com"
-                className="w-full rounded-xl px-4 py-3 text-sm text-white placeholder:text-gray-600 border border-white/8 focus:outline-none focus:border-violet-500/60"
-                style={{background:"#090912"}} />
+    <AuthScene>
+      <div className="liquid-glass rounded-3xl p-8" style={SANS}>
+        <h1 className="hero-serif text-3xl text-white mb-1">
+          Create your account
+        </h1>
+        <p className="text-white/60 text-sm mb-6">
+          {hasDraft ? "One step away from forging your idea" : "Start building apps with AI"}
+        </p>
+        {error && (
+          <div role="alert" className="text-red-300 text-sm bg-red-500/15 border border-red-400/25 rounded-xl px-4 py-3 mb-4">
+            {error}
+          </div>
+        )}
+        <form onSubmit={submit} className="space-y-4">
+          <div>
+            <label htmlFor="register-email" className="block text-sm text-white/70 mb-1.5">Email</label>
+            <input
+              id="register-email"
+              type="email"
+              autoComplete="email"
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
+              required
+              placeholder="you@example.com"
+              className="w-full rounded-xl px-4 py-3 text-sm text-white placeholder:text-white/35 bg-black/30 border border-white/15 focus:border-violet-300/70 focus:outline-none transition-colors"
+            />
+          </div>
+          <div>
+            <label htmlFor="register-password" className="block text-sm text-white/70 mb-1.5">Password</label>
+            <div className="relative">
+              <input
+                id="register-password"
+                type={showPw ? "text" : "password"}
+                autoComplete="new-password"
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                required
+                minLength={6}
+                placeholder="Min 6 characters"
+                className="w-full rounded-xl pl-4 pr-11 py-3 text-sm text-white placeholder:text-white/35 bg-black/30 border border-white/15 focus:border-violet-300/70 focus:outline-none transition-colors"
+              />
+              <button
+                type="button"
+                onClick={() => setShowPw((v) => !v)}
+                aria-label={showPw ? "Hide password" : "Show password"}
+                className="absolute right-1 top-1/2 -translate-y-1/2 p-2.5 text-white/50 hover:text-white transition-colors"
+              >
+                {showPw ? <EyeOff size={16} aria-hidden="true" /> : <Eye size={16} aria-hidden="true" />}
+              </button>
             </div>
-            <div>
-              <label className="block text-sm text-gray-400 mb-1.5">Password</label>
-              <input type="password" value={password} onChange={e => setPassword(e.target.value)} required minLength={6} placeholder="Min 6 characters"
-                className="w-full rounded-xl px-4 py-3 text-sm text-white placeholder:text-gray-600 border border-white/8 focus:outline-none focus:border-violet-500/60"
-                style={{background:"#090912"}} />
-            </div>
-            <button type="submit" disabled={loading}
-              className="w-full font-semibold text-white py-3 rounded-xl text-sm disabled:opacity-50"
-              style={{background:"#7c3aed"}}>
-              {loading ? "Creating account…" : "Create account"}
-            </button>
-          </form>
-          <p className="text-sm text-gray-600 text-center mt-6">
-            Already have an account? <Link to="/login" className="text-violet-400 hover:text-violet-300">Sign in</Link>
-          </p>
-        </div>
+          </div>
+          <button
+            type="submit"
+            disabled={loading}
+            className="w-full flex items-center justify-center gap-2 font-medium bg-white text-slate-900 py-3 rounded-full text-sm hover:bg-white/90 transition-colors disabled:opacity-50"
+          >
+            {loading && <Loader2 size={15} className="animate-spin" aria-hidden="true" />}
+            {loading ? "Creating account…" : "Create account"}
+          </button>
+        </form>
+        <p className="text-sm text-white/50 text-center mt-6">
+          Already have an account?{" "}
+          <Link to="/login" className="text-white underline underline-offset-4 decoration-white/40 hover:decoration-white">
+            Sign in
+          </Link>
+        </p>
       </div>
-    </div>
+    </AuthScene>
   );
 }

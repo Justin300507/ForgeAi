@@ -1,5 +1,6 @@
 import React, { useEffect, useRef, useState, useCallback } from "react";
 import { useParams, Link } from "react-router-dom";
+import { Globe, BookOpen, Github, Download, ShieldCheck } from "lucide-react";
 import { jobsAPI } from "../api";
 import NavBar from "../components/NavBar";
 
@@ -112,10 +113,14 @@ function CheckPanel({ jobId, backendUrl }) {
           style={{background:"rgba(34,197,94,0.12)",color:"#4ade80",borderColor:"rgba(34,197,94,0.25)"}}>
           {checking ? (
             <span className="flex items-center gap-1.5">
-              <span className="w-2.5 h-2.5 rounded-full bg-green-400 animate-pulse inline-block" />
+              <span className="live-dot bg-green-400 inline-block" />
               Checking…
             </span>
-          ) : "🔍 Check & Fix deployed app"}
+          ) : (
+            <span className="flex items-center gap-1.5">
+              <ShieldCheck size={13} aria-hidden="true" /> Check &amp; Fix deployed app
+            </span>
+          )}
         </button>
         {checking && <span className="text-xs text-gray-600">Testing auth, CORS, endpoints… (~30s)</span>}
       </div>
@@ -209,11 +214,19 @@ export default function ProjectDetail() {
   }, [job?.status, id, fetchJob]);
 
   if (notFound) return (
-    <div className="min-h-screen flex items-center justify-center text-gray-500" style={{background:"#090912"}}>
+    <div className="app-shell flex items-center justify-center text-gray-500">
       <div className="text-center"><p className="mb-4">Job not found</p><Link to="/dashboard" className="text-violet-400">Back to dashboard</Link></div>
     </div>
   );
-  if (!job) return <div className="min-h-screen flex items-center justify-center text-gray-600" style={{background:"#090912"}}>Loading…</div>;
+  if (!job) return (
+    <div className="app-shell">
+      <div className="max-w-5xl mx-auto px-6 py-8 space-y-4" aria-label="Loading project">
+        <div className="skeleton h-20 rounded-2xl" />
+        <div className="skeleton h-40 rounded-2xl" />
+        <div className="skeleton h-80 rounded-2xl" />
+      </div>
+    </div>
+  );
 
   const isActive = job.status === "pending" || job.status === "running";
   const isDone   = job.status === "done";
@@ -221,16 +234,16 @@ export default function ProjectDetail() {
   const grade    = score >= 90 ? "A" : score >= 80 ? "B" : score >= 70 ? "C" : score >= 60 ? "D" : "F";
 
   return (
-    <div className="min-h-screen" style={{background:"#090912"}}>
+    <div className="app-shell">
       <NavBar />
       <div className="max-w-5xl mx-auto px-6 py-8 space-y-4">
         {/* Pipeline */}
-        <div className="rounded-2xl border border-white/5 px-5 py-4" style={{background:"#12121f"}}>
+        <div className="anim-fade-up glass-panel rounded-2xl px-5 py-4">
           <PipelineBar logs={logs} status={job.status} />
         </div>
 
         {/* Info card */}
-        <div className="rounded-2xl border border-white/5 p-5" style={{background:"#12121f"}}>
+        <div className="anim-fade-up glass-panel rounded-2xl p-5" style={{ "--d": "80ms" }}>
           <div className="flex items-start justify-between gap-4">
             <div className="flex-1 min-w-0">
               <div className="flex items-center gap-2 mb-2 flex-wrap">
@@ -254,22 +267,25 @@ export default function ProjectDetail() {
           {isDone && (
             <div className="flex flex-wrap gap-2 mt-4 pt-4 border-t border-white/5">
               {job.frontend_url && <a href={job.frontend_url} target="_blank" rel="noopener noreferrer"
-                className="text-xs font-medium px-3 py-1.5 rounded-lg border transition-colors"
-                style={{background:"rgba(124,58,237,0.12)",color:"#a78bfa",borderColor:"rgba(124,58,237,0.25)"}}>🌐 Live frontend</a>}
+                className="flex items-center gap-1.5 text-xs font-medium px-3 py-1.5 rounded-lg border transition-colors"
+                style={{background:"rgba(124,58,237,0.12)",color:"#a78bfa",borderColor:"rgba(124,58,237,0.25)"}}>
+                <Globe size={13} aria-hidden="true" /> Live frontend</a>}
               {job.backend_url && (
                 <a href={`${job.backend_url}/docs`} target="_blank" rel="noopener noreferrer"
                   className="text-xs font-medium px-3 py-1.5 rounded-lg border border-white/8 text-gray-400 hover:text-white flex items-center gap-1.5"
                   style={{background:"rgba(255,255,255,0.04)"}}>
-                  📖 API docs
+                  <BookOpen size={13} aria-hidden="true" /> API docs
                   <span className="text-gray-600 font-normal">(backend building ~5 min)</span>
                 </a>
               )}
               {job.github_url && <a href={job.github_url} target="_blank" rel="noopener noreferrer"
-                className="text-xs font-medium px-3 py-1.5 rounded-lg border border-white/8 text-gray-400 hover:text-white"
-                style={{background:"rgba(255,255,255,0.04)"}}>🐙 GitHub</a>}
+                className="flex items-center gap-1.5 text-xs font-medium px-3 py-1.5 rounded-lg border border-white/8 text-gray-400 hover:text-white"
+                style={{background:"rgba(255,255,255,0.04)"}}>
+                <Github size={13} aria-hidden="true" /> GitHub</a>}
               {job.zip_path && <a href={`/api/download/${job.id}`} target="_blank"
-                className="text-xs font-medium px-3 py-1.5 rounded-lg border border-white/8 text-gray-400 hover:text-white"
-                style={{background:"rgba(255,255,255,0.04)"}}>⬇️ Download zip</a>}
+                className="flex items-center gap-1.5 text-xs font-medium px-3 py-1.5 rounded-lg border border-white/8 text-gray-400 hover:text-white"
+                style={{background:"rgba(255,255,255,0.04)"}}>
+                <Download size={13} aria-hidden="true" /> Download zip</a>}
             </div>
           )}
           {isDone && job.backend_url && (
@@ -286,11 +302,11 @@ export default function ProjectDetail() {
         </div>
 
         {/* Log terminal */}
-        <div className="rounded-2xl border border-white/5 overflow-hidden" style={{background:"#12121f"}}>
+        <div className="anim-fade-up glass-panel rounded-2xl overflow-hidden" style={{ "--d": "160ms" }}>
           <div className="flex items-center gap-2 px-4 py-3 border-b border-white/5">
             <span className="text-xs font-medium text-gray-400">Generation log</span>
             <span className="text-xs text-gray-600">· {logs.length} lines</span>
-            {isActive && <span className="w-1.5 h-1.5 rounded-full bg-violet-400 animate-pulse ml-1" />}
+            {isActive && <span className="live-dot bg-violet-400 ml-1" aria-hidden="true" />}
           </div>
           <div ref={logsRef} onScroll={onScroll}
             className="h-80 overflow-y-auto p-4 font-mono text-xs space-y-0.5"

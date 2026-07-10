@@ -2,12 +2,149 @@
 @tailwind components;
 @tailwind utilities;
 
+:root {
+  --brand: #7c3aed;
+  --brand-soft: #a78bfa;
+  --ink-bg: #090912;
+  --surface: rgba(255, 255, 255, 0.03);
+}
+
 body {
-  background-color: #090912;
-  font-family: "Inter", sans-serif;
+  background-color: var(--ink-bg);
+  font-family: "Inter", system-ui, sans-serif;
   color: white;
 }
 
 ::-webkit-scrollbar { width: 6px; }
 ::-webkit-scrollbar-track { background: transparent; }
 ::-webkit-scrollbar-thumb { background: #2a2a3d; border-radius: 3px; }
+
+::selection { background: rgba(124, 58, 237, 0.45); }
+
+:focus-visible {
+  outline: 2px solid rgba(167, 139, 250, 0.75);
+  outline-offset: 2px;
+  border-radius: 4px;
+}
+
+/* ── Display serif (Instrument Serif) ────────────────────────────────── */
+
+.hero-serif {
+  font-family: "Instrument Serif", Georgia, serif;
+}
+
+/* ── Liquid glass (over video / imagery) ─────────────────────────────── */
+
+.liquid-glass {
+  background: rgba(255, 255, 255, 0.01);
+  background-blend-mode: luminosity;
+  backdrop-filter: blur(4px);
+  -webkit-backdrop-filter: blur(4px);
+  border: none;
+  box-shadow: inset 0 1px 1px rgba(255, 255, 255, 0.1);
+  position: relative;
+  overflow: hidden;
+}
+
+.liquid-glass::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  padding: 1.4px;
+  background: linear-gradient(180deg,
+    rgba(255,255,255,0.45) 0%, rgba(255,255,255,0.15) 20%,
+    rgba(255,255,255,0) 40%, rgba(255,255,255,0) 60%,
+    rgba(255,255,255,0.15) 80%, rgba(255,255,255,0.45) 100%);
+  -webkit-mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+  -webkit-mask-composite: xor;
+  mask-composite: exclude;
+  pointer-events: none;
+}
+
+/* ── Glass panel (over flat app background) ──────────────────────────── */
+
+.glass-panel {
+  background: var(--surface);
+  border: 1px solid rgba(255, 255, 255, 0.07);
+  box-shadow: inset 0 1px 1px rgba(255, 255, 255, 0.05);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+}
+
+/* ── App shell: ambient brand glow behind glass panels ───────────────── */
+
+.app-shell {
+  min-height: 100vh;
+  background-color: var(--ink-bg);
+  background-image:
+    radial-gradient(800px 500px at 85% -10%, rgba(124, 58, 237, 0.14), transparent 60%),
+    radial-gradient(700px 460px at -10% 30%, rgba(59, 130, 246, 0.07), transparent 60%);
+  background-attachment: fixed;
+}
+
+/* ── Motion tokens ───────────────────────────────────────────────────── */
+
+@keyframes fade-in-up {
+  from { opacity: 0; transform: translateY(16px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes scale-in {
+  from { opacity: 0; transform: scale(0.96); }
+  to   { opacity: 1; transform: scale(1); }
+}
+
+@keyframes shimmer {
+  from { background-position: 200% 0; }
+  to   { background-position: -200% 0; }
+}
+
+@keyframes live-pulse {
+  0%, 100% { opacity: 1; transform: scale(1); }
+  50%      { opacity: 0.45; transform: scale(0.8); }
+}
+
+@keyframes train-bob {
+  0%, 100% { transform: translateY(0) scale(1.03); }
+  50%      { transform: translateY(-6px) scale(1.03); }
+}
+
+/* Staggered entrance: set inline style {"--d": "120ms"} for delay */
+.anim-fade-up {
+  animation: fade-in-up 0.6s cubic-bezier(0.16, 1, 0.3, 1) both;
+  animation-delay: var(--d, 0ms);
+}
+
+.anim-scale-in {
+  animation: scale-in 0.45s cubic-bezier(0.16, 1, 0.3, 1) both;
+  animation-delay: var(--d, 0ms);
+}
+
+.skeleton {
+  background: linear-gradient(90deg,
+    rgba(255,255,255,0.04) 25%,
+    rgba(255,255,255,0.09) 50%,
+    rgba(255,255,255,0.04) 75%);
+  background-size: 200% 100%;
+  animation: shimmer 1.6s linear infinite;
+}
+
+.live-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 9999px;
+  animation: live-pulse 1.8s ease-in-out infinite;
+}
+
+.train-bob {
+  animation: train-bob 3s ease-in-out infinite;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .train-bob { animation: none; transform: scale(1.03); }
+  .anim-fade-up, .anim-scale-in { animation: none; opacity: 1; transform: none; }
+  .skeleton { animation: none; }
+  .live-dot { animation: none; }
+  * { transition-duration: 0.01ms !important; }
+}
