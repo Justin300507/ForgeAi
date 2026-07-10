@@ -12610,5 +12610,185 @@
     "forge_score": 66,
     "wall_time_s": 308.75,
     "timestamp": "2026-07-10T19:55:06"
+  },
+  {
+    "total_calls": 11,
+    "total_tokens": 55580,
+    "total_cost_usd": 0.011619,
+    "total_llm_time_s": 415.27,
+    "by_stage": {
+      "backend_generation": {
+        "calls": 6,
+        "tokens": 29702,
+        "cost_usd": 0.006204000000000001,
+        "time_s": 297.74
+      },
+      "fix": {
+        "calls": 1,
+        "tokens": 1915,
+        "cost_usd": 0.000368,
+        "time_s": 4.62
+      },
+      "qa_review": {
+        "calls": 1,
+        "tokens": 4409,
+        "cost_usd": 0.000962,
+        "time_s": 23.71
+      },
+      "security_review": {
+        "calls": 1,
+        "tokens": 7388,
+        "cost_usd": 0.001467,
+        "time_s": 7.91
+      },
+      "code_review": {
+        "calls": 1,
+        "tokens": 6069,
+        "cost_usd": 0.001316,
+        "time_s": 75.06
+      },
+      "performance_review": {
+        "calls": 1,
+        "tokens": 6097,
+        "cost_usd": 0.001302,
+        "time_s": 6.23
+      }
+    },
+    "project_name": "simple_crm",
+    "forge_score": 52,
+    "wall_time_s": 406.85,
+    "timestamp": "2026-07-10T20:02:19"
+  },
+  {
+    "total_calls": 5,
+    "total_tokens": 27520,
+    "total_cost_usd": 0.005749,
+    "total_llm_time_s": 823.5,
+    "by_stage": {
+      "backend_generation": {
+        "calls": 1,
+        "tokens": 3417,
+        "cost_usd": 0.000679,
+        "time_s": 140.15
+      },
+      "qa_review": {
+        "calls": 1,
+        "tokens": 4491,
+        "cost_usd": 0.000996,
+        "time_s": 230.97
+      },
+      "security_review": {
+        "calls": 1,
+        "tokens": 7587,
+        "cost_usd": 0.001571,
+        "time_s": 83.84
+      },
+      "code_review": {
+        "calls": 1,
+        "tokens": 5920,
+        "cost_usd": 0.001211,
+        "time_s": 362.49
+      },
+      "performance_review": {
+        "calls": 1,
+        "tokens": 6105,
+        "cost_usd": 0.001292,
+        "time_s": 6.05
+      }
+    },
+    "project_name": "simple_crm",
+    "forge_score": 54,
+    "wall_time_s": 830.25,
+    "timestamp": "2026-07-10T20:20:17"
+  },
+  {
+    "total_calls": 32,
+    "total_tokens": 186567,
+    "total_cost_usd": 0.046942,
+    "total_llm_time_s": 1573.18,
+    "by_stage": {
+      "product_manager": {
+        "calls": 1,
+        "tokens": 2002,
+        "cost_usd": 0.000878,
+        "time_s": 43.24
+      },
+      "architecture": {
+        "calls": 1,
+        "tokens": 4673,
+        "cost_usd": 0.001326,
+        "time_s": 42.09
+      },
+      "tech_lead": {
+        "calls": 1,
+        "tokens": 6576,
+        "cost_usd": 0.001337,
+        "time_s": 7.02
+      },
+      "backend_generation": {
+        "calls": 14,
+        "tokens": 57273,
+        "cost_usd": 0.011347,
+        "time_s": 373.3
+      },
+      "frontend_generation": {
+        "calls": 1,
+        "tokens": 26063,
+        "cost_usd": 0.009252,
+        "time_s": 69.14
+      },
+      "missing_file": {
+        "calls": 3,
+        "tokens": 20765,
+        "cost_usd": 0.005704000000000001,
+        "time_s": 72.35
+      },
+      "fix": {
+        "calls": 5,
+        "tokens": 25465,
+        "cost_usd": 0.008125,
+        "time_s": 141.23
+      },
+      "qa_review": {
+        "calls": 1,
+        "tokens": 4077,
+        "cost_usd": 0.000884,
+        "time_s": 23.6
+      },
+      "security_review": {
+        "calls": 1,
+        "tokens": 9103,
+        "cost_usd": 0.001847,
+        "time_s": 75.45
+      },
+      "code_review": {
+        "calls": 1,
+        "tokens": 6618,
+        "cost_usd": 0.00132,
+        "time_s": 640.28
+      },
+      "performance_review": {
+        "calls": 1,
+        "tokens": 6957,
+        "cost_usd": 0.001473,
+        "time_s": 68.57
+      },
+      "frontend_critic": {
+        "calls": 1,
+        "tokens": 8039,
+        "cost_usd": 0.001652,
+        "time_s": 8.69
+      },
+      "runtime_fix": {
+        "calls": 1,
+        "tokens": 8956,
+        "cost_usd": 0.001797,
+        "time_s": 8.22
+      }
+    },
+    "project_name": "lean_sales_crm",
+    "forge_score": 62,
+    "wall_time_s": 1305.02,
+    "timestamp": "2026-07-10T21:17:28"
   }
 ]

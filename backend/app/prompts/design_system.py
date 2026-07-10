@@ -1,9 +1,19 @@
 """
-ForgeAI Design System v1
+ForgeAI Design System v2
 
 Detects app category from the idea string and returns category-specific
 design tokens injected into the frontend prompt. Every app type gets its
-own color palette, icon vocabulary, chart style, and card pattern.
+own color palette, icon vocabulary, chart style, card pattern, and a short
+list of domain-specific "signature components" to build instead of a
+generic list/dashboard shell.
+
+v2 adds 6 categories (healthcare, ai_saas, restaurant, travel, education,
+portfolio -- 13 total) and a `components` field on every category. This is
+the deterministic, $0-LLM-cost half of ForgeAI's design-intelligence system
+(paired with style_system.py's structural STYLE axis and
+frontend_critic_service.py's one LLM review pass) -- selecting components
+and colors from a curated, hand-tuned catalog is more reliable than an
+extra LLM call per generation, and costs nothing.
 """
 
 CATEGORIES: dict[str, dict] = {
@@ -25,6 +35,8 @@ CATEGORIES: dict[str, dict] = {
         "icons": ["Dumbbell", "Activity", "Flame", "Trophy", "Timer", "Heart", "TrendingUp", "Zap", "Target", "BarChart2"],
         "keywords": ["gym", "fitness", "workout", "exercise", "training", "muscle", "sport",
                      "health", "weight", "run", "yoga", "progress", "lift", "cardio", "rep", "set"],
+        "components": ["Streak calendar heatmap", "Progress ring toward weekly goal",
+                        "Personal-record leaderboard", "Workout timer / set tracker"],
     },
     "finance": {
         "label": "Finance & Expense",
@@ -45,6 +57,8 @@ CATEGORIES: dict[str, dict] = {
                   "BarChart2", "PieChart", "Receipt", "ArrowUpRight", "ArrowDownRight"],
         "keywords": ["expense", "budget", "finance", "money", "spending", "income",
                      "saving", "payment", "invoice", "accounting", "transaction", "cost", "salary"],
+        "components": ["Budget category donut breakdown", "Spending trend area chart",
+                        "Bill / subscription due-date list", "Savings goal progress bar"],
     },
     "productivity": {
         "label": "Productivity & Tasks",
@@ -65,6 +79,8 @@ CATEGORIES: dict[str, dict] = {
                   "Star", "ListTodo", "Kanban", "AlarmClock"],
         "keywords": ["todo", "task", "project", "productivity", "habit", "goal",
                      "tracker", "planner", "schedule", "reminder", "deadline", "kanban", "backlog"],
+        "components": ["Kanban board (To Do / In Progress / Done)", "Streak calendar heatmap",
+                        "Priority-sorted task list with drag handles", "Progress ring for daily/weekly goals"],
     },
     "social": {
         "label": "Social & Chat",
@@ -85,6 +101,8 @@ CATEGORIES: dict[str, dict] = {
                   "Send", "ThumbsUp", "Image", "Hash"],
         "keywords": ["chat", "social", "message", "community", "forum", "network",
                      "post", "feed", "friend", "follow", "comment", "like", "share"],
+        "components": ["Activity feed with avatar stack", "Notification bell with unread badge",
+                        "Follower/following stat row", "Comment thread with nested replies"],
     },
     "crm": {
         "label": "CRM & Sales",
@@ -105,6 +123,8 @@ CATEGORIES: dict[str, dict] = {
                   "PieChart", "Target", "UserPlus", "Briefcase", "TrendingUp"],
         "keywords": ["crm", "customer", "lead", "sales", "contact", "client",
                      "deal", "pipeline", "account", "relationship", "prospect", "opportunity"],
+        "components": ["Kanban pipeline board (deal stages)", "Contact timeline / activity log",
+                        "Deal value funnel chart", "Lead scoring badge list"],
     },
     "booking": {
         "label": "Booking & Scheduling",
@@ -125,6 +145,8 @@ CATEGORIES: dict[str, dict] = {
                   "Star", "Ticket", "CalendarCheck", "Bell", "Navigation"],
         "keywords": ["booking", "appointment", "reservation", "schedule", "calendar",
                      "hotel", "restaurant", "service", "availability", "slot", "event"],
+        "components": ["Calendar / day-view time-slot grid", "Availability heatmap",
+                        "Booking confirmation timeline", "Resource/room occupancy list"],
     },
     "ecommerce": {
         "label": "E-commerce & Marketplace",
@@ -145,17 +167,151 @@ CATEGORIES: dict[str, dict] = {
                   "CreditCard", "Store", "Gift", "BarChart2", "ArrowUpRight"],
         "keywords": ["shop", "store", "product", "cart", "order", "inventory",
                      "marketplace", "sell", "buy", "ecommerce", "catalog", "listing"],
+        "components": ["Product grid with hover-zoom imagery",
+                        "Order status timeline (Placed -> Shipped -> Delivered)",
+                        "Inventory stock-level bars", "Cart / checkout summary card"],
+    },
+    "healthcare": {
+        "label": "Healthcare & Medical",
+        "primary_name": "blue",
+        "primary":  "#3b82f6",
+        "primary_dark": "#2563eb",
+        "gradient": "from-blue-500 to-cyan-500",
+        "sidebar": "bg-gradient-to-b from-slate-950 via-slate-950 to-blue-950",
+        "sidebar_text": "text-blue-100",
+        "sidebar_active": "bg-gradient-to-r from-blue-500 to-cyan-500 text-white shadow-lg shadow-blue-500/30",
+        "sidebar_idle": "text-blue-200/70 hover:bg-white/5 hover:text-white",
+        "stat_icon_bg": "bg-gradient-to-br from-blue-50 to-blue-100 dark:from-blue-900/40 dark:to-blue-900/20",
+        "stat_icon_color": "text-blue-600 dark:text-blue-400",
+        "accent_badge": "bg-blue-50 text-blue-700",
+        "chart_color": "#3b82f6",
+        "chart_gradient_stop": "#7dd3fc",
+        "icons": ["Stethoscope", "HeartPulse", "Pill", "Calendar", "ClipboardList",
+                  "UserPlus", "Activity", "Syringe", "FileText", "ShieldCheck"],
+        "keywords": ["patient", "doctor", "medical", "health", "clinic", "hospital",
+                     "appointment", "prescription", "diagnosis", "treatment", "nurse", "healthcare"],
+        "components": ["Patient record timeline", "Appointment calendar with time-slot grid",
+                        "Vitals trend chart", "Prescription / medication list with dosage badges"],
+    },
+    "ai_saas": {
+        "label": "AI & SaaS Tools",
+        "primary_name": "violet",
+        "primary":  "#8b5cf6",
+        "primary_dark": "#7c3aed",
+        "gradient": "from-violet-500 to-fuchsia-500",
+        "sidebar": "bg-gradient-to-b from-slate-950 via-slate-950 to-violet-950",
+        "sidebar_text": "text-violet-100",
+        "sidebar_active": "bg-gradient-to-r from-violet-500 to-fuchsia-500 text-white shadow-lg shadow-violet-500/30",
+        "sidebar_idle": "text-violet-200/70 hover:bg-white/5 hover:text-white",
+        "stat_icon_bg": "bg-gradient-to-br from-violet-50 to-violet-100 dark:from-violet-900/40 dark:to-violet-900/20",
+        "stat_icon_color": "text-violet-600 dark:text-violet-400",
+        "accent_badge": "bg-violet-50 text-violet-700",
+        "chart_color": "#8b5cf6",
+        "chart_gradient_stop": "#e879f9",
+        "icons": ["Sparkles", "Bot", "Zap", "Wand2", "Cpu", "MessageSquare",
+                  "Command", "Workflow", "Brain", "Rocket"],
+        "keywords": ["ai", "assistant", "chatbot", "workflow", "automation", "saas",
+                     "api", "agent", "prompt", "model", "generate", "copilot"],
+        "components": ["Command palette (Cmd+K quick actions)", "Streaming chat / response panel",
+                        "Usage / credits meter with gradient bar", "Prompt history sidebar"],
+    },
+    "restaurant": {
+        "label": "Restaurant & Food",
+        "primary_name": "amber",
+        "primary":  "#f59e0b",
+        "primary_dark": "#d97706",
+        "gradient": "from-amber-500 to-red-500",
+        "sidebar": "bg-gradient-to-b from-slate-950 via-slate-950 to-amber-950",
+        "sidebar_text": "text-amber-100",
+        "sidebar_active": "bg-gradient-to-r from-amber-500 to-red-500 text-white shadow-lg shadow-amber-500/30",
+        "sidebar_idle": "text-amber-200/70 hover:bg-white/5 hover:text-white",
+        "stat_icon_bg": "bg-gradient-to-br from-amber-50 to-amber-100 dark:from-amber-900/40 dark:to-amber-900/20",
+        "stat_icon_color": "text-amber-600 dark:text-amber-400",
+        "accent_badge": "bg-amber-50 text-amber-700",
+        "chart_color": "#f59e0b",
+        "chart_gradient_stop": "#fca5a5",
+        "icons": ["UtensilsCrossed", "ChefHat", "Soup", "Clock", "MapPin",
+                  "Star", "Flame", "Coffee", "Receipt", "Users"],
+        "keywords": ["restaurant", "menu", "recipe", "food", "meal", "kitchen",
+                     "chef", "dish", "order", "table", "reservation", "dining"],
+        "components": ["Warm photography-forward menu grid", "Table / reservation floor plan",
+                        "Order ticket queue", "Star-rating review cards"],
+    },
+    "travel": {
+        "label": "Travel & Adventure",
+        "primary_name": "cyan",
+        "primary":  "#06b6d4",
+        "primary_dark": "#0891b2",
+        "gradient": "from-cyan-500 to-blue-500",
+        "sidebar": "bg-gradient-to-b from-slate-950 via-slate-950 to-cyan-950",
+        "sidebar_text": "text-cyan-100",
+        "sidebar_active": "bg-gradient-to-r from-cyan-500 to-blue-500 text-white shadow-lg shadow-cyan-500/30",
+        "sidebar_idle": "text-cyan-200/70 hover:bg-white/5 hover:text-white",
+        "stat_icon_bg": "bg-gradient-to-br from-cyan-50 to-cyan-100 dark:from-cyan-900/40 dark:to-cyan-900/20",
+        "stat_icon_color": "text-cyan-600 dark:text-cyan-400",
+        "accent_badge": "bg-cyan-50 text-cyan-700",
+        "chart_color": "#06b6d4",
+        "chart_gradient_stop": "#67e8f9",
+        "icons": ["Plane", "MapPin", "Compass", "Luggage", "Globe2",
+                  "Sun", "Camera", "Mountain", "Ticket", "Navigation"],
+        "keywords": ["travel", "trip", "itinerary", "flight", "hotel", "destination",
+                     "vacation", "tour", "adventure", "journey", "explore"],
+        "components": ["Large hero imagery with destination cards", "Itinerary timeline by day",
+                        "Interactive map pin list", "Trip budget / expense split tracker"],
+    },
+    "education": {
+        "label": "Education & Learning",
+        "primary_name": "yellow",
+        "primary":  "#eab308",
+        "primary_dark": "#ca8a04",
+        "gradient": "from-yellow-500 to-orange-400",
+        "sidebar": "bg-gradient-to-b from-slate-950 via-slate-950 to-yellow-950",
+        "sidebar_text": "text-yellow-100",
+        "sidebar_active": "bg-gradient-to-r from-yellow-500 to-orange-400 text-white shadow-lg shadow-yellow-500/30",
+        "sidebar_idle": "text-yellow-200/70 hover:bg-white/5 hover:text-white",
+        "stat_icon_bg": "bg-gradient-to-br from-yellow-50 to-yellow-100 dark:from-yellow-900/40 dark:to-yellow-900/20",
+        "stat_icon_color": "text-yellow-600 dark:text-yellow-400",
+        "accent_badge": "bg-yellow-50 text-yellow-700",
+        "chart_color": "#eab308",
+        "chart_gradient_stop": "#fdba74",
+        "icons": ["GraduationCap", "BookOpen", "PenTool", "Award", "Users",
+                  "Video", "CheckSquare", "Brain", "Trophy", "Calendar"],
+        "keywords": ["course", "student", "lesson", "learn", "education", "quiz",
+                     "class", "teacher", "school", "study", "grade", "curriculum"],
+        "components": ["Course progress bar with module checklist", "Quiz / assessment score cards",
+                        "Lesson video player card", "Achievement badge grid"],
+    },
+    "portfolio": {
+        "label": "Portfolio & Creative",
+        "primary_name": "fuchsia",
+        "primary":  "#d946ef",
+        "primary_dark": "#c026d3",
+        "gradient": "from-fuchsia-500 to-pink-500",
+        "sidebar": "bg-gradient-to-b from-slate-950 via-slate-950 to-fuchsia-950",
+        "sidebar_text": "text-fuchsia-100",
+        "sidebar_active": "bg-gradient-to-r from-fuchsia-500 to-pink-500 text-white shadow-lg shadow-fuchsia-500/30",
+        "sidebar_idle": "text-fuchsia-200/70 hover:bg-white/5 hover:text-white",
+        "stat_icon_bg": "bg-gradient-to-br from-fuchsia-50 to-fuchsia-100 dark:from-fuchsia-900/40 dark:to-fuchsia-900/20",
+        "stat_icon_color": "text-fuchsia-600 dark:text-fuchsia-400",
+        "accent_badge": "bg-fuchsia-50 text-fuchsia-700",
+        "chart_color": "#d946ef",
+        "chart_gradient_stop": "#f0abfc",
+        "icons": ["Palette", "Image", "Layers", "Pen", "Camera",
+                  "Sparkles", "Grid3x3", "Eye", "Share2", "Star"],
+        "keywords": ["portfolio", "design", "gallery", "artist", "creative", "showcase",
+                     "project", "photography", "illustration", "case study"],
+        "components": ["Masonry / grid image gallery", "Case study detail with large imagery",
+                        "Skills / tools tag cloud", "Typography-forward about section"],
     },
 }
 
 _DEFAULT_CATEGORY = "productivity"
 
 
-def detect_category(idea: str) -> dict:
-    """
-    Detect the most likely app category from the idea string.
-    Returns the full category design token dict.
-    """
+def detect_category_key(idea: str) -> str:
+    """Detect the most likely app category from the idea string. Returns
+    the category's dict key (e.g. "crm"), not the full token dict --
+    used wherever only the key is needed (fingerprint tracking)."""
     idea_lower = idea.lower()
     best_match = None
     best_count = 0
@@ -166,19 +322,48 @@ def detect_category(idea: str) -> dict:
             best_count = count
             best_match = cat_key
 
-    return CATEGORIES[best_match or _DEFAULT_CATEGORY]
+    return best_match or _DEFAULT_CATEGORY
+
+
+def detect_category(idea: str) -> dict:
+    """
+    Detect the most likely app category from the idea string.
+    Returns the full category design token dict.
+    """
+    return CATEGORIES[detect_category_key(idea)]
 
 
 def build_design_system_injection(idea: str) -> str:
     """
     Return a design-system block to inject into the frontend prompt.
-    Tells the LLM exactly which colors, icons, and patterns to use for this specific app type.
+    Tells the LLM exactly which colors, icons, patterns, and signature
+    components to use for this specific app type.
     """
-    ds = detect_category(idea)
+    category_key = detect_category_key(idea)
+    ds = CATEGORIES[category_key]
     icons_str = ", ".join(ds["icons"][:8])
+    components_str = "\n".join(f"  - {c}" for c in ds.get("components", []))
 
-    from app.prompts.style_system import build_style_injection
+    from app.prompts.style_system import build_style_injection, select_style
     style_block = build_style_injection(idea, ds)
+
+    from app.prompts.component_library import build_component_reference
+    component_ref_block = build_component_reference(ds)
+
+    diversity_note = ""
+    try:
+        from app.memory.design_fingerprint import is_overrepresented
+        if is_overrepresented(category_key, select_style(idea)):
+            diversity_note = (
+                "\nDIVERSITY NOTE: this exact category+style combination has come up "
+                "frequently in recent generations. Stay fully within the assigned style's "
+                "rules above (don't switch styles), but vary the SPECIFIC accent choices — "
+                "which signature component you lead with, card corner radius within the "
+                "style's allowed range, icon selection from the vocabulary, heading "
+                "emphasis — so this app doesn't read as a carbon copy of recent ones.\n"
+            )
+    except Exception:
+        pass
 
     return f"""
 ═══════════════════════════════════════════════════════
@@ -207,6 +392,14 @@ ICON VOCABULARY  (import from lucide-react, use these icons throughout):
   {icons_str}
   — Use thematically appropriate icons from this list on every card, nav item, and button.
 
+SIGNATURE COMPONENTS  ← build at least 1-2 of these into the app somewhere
+(dashboard widget, a dedicated page, or a page section). This is what makes
+a {ds['label']} app look like it was actually designed for this domain
+instead of a reskinned generic CRUD list — a plain list+form pair covers
+the data but skips the thing that makes this category recognizable:
+{components_str}
+{component_ref_block}
+{diversity_note}
 TAILWIND GRADIENT (use on the sidebar logo/brand area, primary buttons, hero header, and ambient background blobs):
   className="bg-gradient-to-br {ds['gradient']} ..."
 

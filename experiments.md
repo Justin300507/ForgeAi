@@ -2239,3 +2239,51 @@ Both modules py_compile clean.
 **Next canary caveat**: the m2 entry (42.0/81.1/87.3) is now the last
 canary_history entry; compare the next run against
 `pydantic-config-patch-confirm` (91.2/85.9/87.8), not m2.
+
+---
+
+## Experiment 034 — m3 canary: relationship-normalization + import-dedupe fixes confirmed
+
+**Hypothesis:** Do Exp 033's two Gemini-3-idiom fixes (`Base.relationship`
+normalization in `parallel_backend_service.py`, `_patch_dedupe_frontend_imports`
+in `deterministic_patcher.py`) hold up on a fresh run, recovering todo/
+blog_cms from m2's collapse without regressing crm?
+
+**Date:** 2026-07-10, ~20:20 IST. `--provider gemini --no-deploy`
+(label `m3-relationship-dedupe-confirm`, log `m3_canary_relationship_dedupe_run.log`).
+
+**Results vs. both reference points:**
+| App | m2 (broken, pre-fix) | pydantic-config-patch-confirm (true baseline) | m3 (this run) |
+|---|---|---|---|
+| todo | 42.0, build✗ runtime✗ | 91.2 | **90.7**, build✅ runtime✅ |
+| blog_cms | 81.1 | 85.9 | **89.0**, build✅ runtime✅ |
+| crm | 87.3 | 87.8 | 82.9, build✗ (flagged REGRESSION) |
+
+**Target questions, answered directly:**
+1. **`Base.relationship` AttributeError eliminated** — YES. todo fully
+   recovered from m2's total build/runtime collapse (42.0 → 90.7, within
+   0.5 of true baseline) with zero occurrences of the AttributeError anywhere
+   in the log.
+2. **Duplicate-import esbuild crash eliminated** — YES. blog_cms not only
+   recovered but exceeded the true baseline (89.0 vs 85.9), zero duplicate-
+   declaration errors in the log.
+
+**crm's regression root-caused — unrelated to either fix under test:**
+`error during build: src/pages/RegisterPage.jsx (3:9): "Handshake" is not
+exported by "node_modules/lucide-react/dist/esm/lucide-react.mjs"` — a
+hallucinated lucide-react icon name, same generation-variance failure class
+flagged in nearly every prior experiment (a different app draws a fresh,
+unrelated bug most cycles). Neither fix under test touches icon imports or
+lucide-react at all. `deterministic_patcher.py` already has some lucide-
+icon handling, but it didn't cover this specific hallucinated name this
+run — a real, small, previously-uncatalogued gap (icon-name validation
+against the actual lucide-react export list), noted as a candidate for a
+future cycle, not investigated further here per the one-fix-at-a-time rule.
+
+**Conclusion — KEEP both Exp 033 fixes, confirmed on a second clean run.**
+Two independent recoveries (todo from total collapse, blog_cms above
+baseline) with zero recurrence of either targeted bug class. crm's dip has
+a fully identified, unrelated cause (icon hallucination) and does not
+implicate this experiment's changes.
+
+**Cost:** ~$0.03-0.06 (3-app canary, in line with prior runs).

@@ -40,6 +40,8 @@ STYLES: dict[str, dict] = {
     "bento": {
         "label": "Bento Grid",
         "mood": "Apple-style modular dashboard: varied card sizes, clean hierarchy, soft depth",
+        "motion_tier": "Crisp, not slow — hover transitions at duration-150/200 (not longer), "
+                        "no exaggerated overshoot. Entrance stagger stays at the base 40ms.",
         "font_import": "@import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap');",
         "font_heading": "'Plus Jakarta Sans', sans-serif",
         "font_body": "'Plus Jakarta Sans', sans-serif",
@@ -78,6 +80,11 @@ this style's polish comes from grid rhythm and shadow depth, not gradients.
     "neubrutalist": {
         "label": "Neubrutalist",
         "mood": "Flat bold color blocks, hard offset shadows, thick borders, punchy and confident",
+        "motion_tier": "Snappy and mechanical, not soft — shorten every transition/active duration "
+                        "shown elsewhere in this prompt to duration-100 (buttons, cards, hovers alike). "
+                        "Tighten entrance stagger to 25ms per item (not the base 40ms) so lists feel "
+                        "like they're clicking into place. Never use animate-pop or animate-scale-in's "
+                        "springy overshoot here — use animate-fade-in-up only, it reads as more precise.",
         "font_import": "@import url('https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;600;700&display=swap');",
         "font_heading": "'Space Grotesk', sans-serif",
         "font_body": "'Space Grotesk', sans-serif",
@@ -120,6 +127,11 @@ Section headings can go slightly bolder/uppercase for labels
     "soft_clay": {
         "label": "Soft Clay",
         "mood": "Pastel, rounded, tactile — bouncy dual soft shadows instead of blur or hard edges",
+        "motion_tier": "Bouncy and exaggerated. Loosen entrance stagger to 60ms per item (not the base "
+                        "40ms) so lists feel like they're settling into place one at a time. Prefer "
+                        "animate-pop over animate-scale-in for anything that appears (toasts, modals, "
+                        "new badges/achievements) — its overshoot reads as more tactile/springy, matching "
+                        "this style's whole point.",
         "font_import": "@import url('https://fonts.googleapis.com/css2?family=Nunito:wght@400;600;700;800&display=swap');",
         "font_heading": "'Nunito', sans-serif",
         "font_body": "'Nunito', sans-serif",
@@ -152,6 +164,14 @@ background decoration.
     "minimal_editorial": {
         "label": "Minimal Editorial",
         "mood": "Swiss-grid, black/white/single-accent, oversized type, huge whitespace, near-zero chrome",
+        "motion_tier": "Restrained — motion should be nearly invisible, never decorative. Use "
+                        "animate-fade-in (plain opacity, no rise) instead of animate-fade-in-up for page "
+                        "content. Halve entrance stagger to 20ms per item. Never use animate-pop or "
+                        "animate-scale-in's spring overshoot anywhere in this style — a toast/modal here "
+                        "gets a plain animate-fade-in instead. Skip the ambient float-slow/float-slower "
+                        "background blobs entirely (this style avoids decorative background elements by "
+                        "design) — the fixed-blob background block from the design system above does not "
+                        "apply to this style.",
         "font_import": "@import url('https://fonts.googleapis.com/css2?family=Archivo:wght@500;600;700;800;900&family=Inter:wght@400;500&display=swap');",
         "font_heading": "'Archivo', sans-serif",
         "font_body": "'Inter', sans-serif",
@@ -215,6 +235,8 @@ style. This specific app is assigned **{style['label']}** instead
 ({style['mood']}). Apply the overrides below on top of everything else
 (layout shape, page structure, accessibility rules, JSX-safety rules stay
 the same — only the surface/shadow/border/motion treatment changes).
+
+MOTION INTENSITY for this style: {style.get('motion_tier', 'Use the base motion tokens as documented, no intensity change for this style.')}
 
 Font: this style's pairing (heading {style['font_heading']}, body
 {style['font_body']}) is ALREADY wired into the provided index.html and

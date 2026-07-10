@@ -35,6 +35,7 @@ from app.services.security_reviewer_service import run_security_review, print_se
 from app.services.qa_reviewer_service import run_qa_review
 from app.services.code_review_service import run_code_review
 from app.services.performance_review_service import run_performance_review
+from app.services.frontend_critic_service import run_frontend_critic
 from app.services.agent_collaboration import AgentCollaboration
 from app.services.v6_score_service import calculate_v6_score
 from app.services.metadata_service import save_metadata
@@ -107,7 +108,7 @@ def generate_project_v6(
 
     # LLM call counter — printed at end of every run for visibility
     _llm = {"planner": 0, "architect": 0, "tech_lead": 0, "backend": 0,
-            "frontend": 0, "reviews": 0, "repairs": 0, "runtime_fixes": 0}
+            "frontend": 0, "reviews": 0, "polish": 0, "repairs": 0, "runtime_fixes": 0}
 
     print(f"\n{'#'*70}")
     print(f"# V6 AUTONOMOUS ENGINEERING TEAM")
@@ -278,6 +279,7 @@ def generate_project_v6(
     security_report = None
     code_review_report = None
     performance_report = None
+    frontend_critic_report = None
 
     # ------------------------------------------------------------------
     # Stage 7: Validation Loop (up to 4 fix attempts)
@@ -684,7 +686,61 @@ def generate_project_v6(
             rationale=f"Performance score: {performance_report.performance_score}/100",
             data={"score": performance_report.performance_score},
         )
-        _llm["reviews"] = 4
+
+        frontend_critic_report = run_frontend_critic(project_path, idea, provider)
+        collab.record_decision(
+            agent="frontend_critic",
+            decision="frontend_critic_complete",
+            rationale=f"Design score: {frontend_critic_report.design_score}/100",
+            data={"score": frontend_critic_report.design_score},
+        )
+        _llm["reviews"] = 5
+
+        # UI Polish pass — only spend an extra LLM call per flagged file when
+        # the critic found something genuinely critical/high severity (same
+        # bar the validation fix loop implicitly uses). Reuses the EXISTING
+        # generate_fix()/write_fix() machinery from the validation loop above
+        # instead of new patch-writing code.
+        polish_targets = frontend_critic_report.polish_targets
+        if polish_targets:
+            print(f"\n=== UI POLISH PASS ({len(polish_targets)} file(s)) ===")
+            _polish_snapshot: dict[str, str] = {}
+            _polished_any = False
+            for rel_path, fix_notes in polish_targets[:5]:
+                try:
+                    abs_path = os.path.join(project_path, _sanitize_path(rel_path))
+                    if not os.path.exists(abs_path):
+                        continue
+                    with open(abs_path, "r", encoding="utf-8") as fh:
+                        file_content = fh.read()
+                    _polish_snapshot[abs_path] = file_content
+                    polish_fix = generate_fix(rel_path, file_content, fix_notes, provider)
+                    _llm["polish"] += 1
+                    if isinstance(polish_fix, dict) and polish_fix.get("path") and polish_fix.get("content"):
+                        polish_fix["path"] = _sanitize_path(polish_fix["path"])
+                        write_fix(project_path, polish_fix)
+                        _polished_any = True
+                        print(f"  [polish] {rel_path} patched")
+                except Exception as pe:
+                    print(f"  [polish] {rel_path} failed: {pe}")
+
+            # A bad polish edit should never be allowed to ship a previously-
+            # passing app broken — revert every touched file if validation
+            # regresses, same safety net the main fix loop uses.
+            if _polished_any:
+                _prev_passed = validation["passed"]
+                validation = validate_project(project_path)
+                print(f"  Post-polish validation: {'PASS' if validation['passed'] else 'FAIL'}")
+                if _prev_passed and not validation["passed"]:
+                    print("  [polish] Regressed a passing app — reverting polish edits")
+                    for _ap, _content in _polish_snapshot.items():
+                        try:
+                            with open(_ap, "w", encoding="utf-8") as _fh:
+                                _fh.write(_content)
+                        except Exception:
+                            pass
+                    validation = validate_project(project_path)
+                    print(f"  [polish] Reverted: {'PASS' if validation['passed'] else 'FAIL'}")
     elif skip_reviews:
         print("\n  [skip_reviews=True] Skipping QA/Security/Code/Performance reviews")
     else:
@@ -817,6 +873,7 @@ def generate_project_v6(
     print(f"  {'Backend':<18} {_llm['backend']}")
     print(f"  {'Frontend':<18} {_llm['frontend']}")
     print(f"  {'Reviews':<18} {_llm['reviews']}")
+    print(f"  {'Polish':<18} {_llm['polish']}")
     print(f"  {'Repairs':<18} {_llm['repairs']}")
     print(f"  {'Runtime Fixes':<18} {_llm['runtime_fixes']}")
     print(f"  {'─'*20}")
@@ -907,6 +964,15 @@ def generate_project_v6(
             "large_payload_risks": performance_report.large_payload_risks if performance_report else 0,
             "slow_api_warnings": performance_report.slow_api_warnings if performance_report else 0,
             "skipped": True if performance_report is None else performance_report.skipped,
+        },
+        "frontend_critic": {
+            "design_score": frontend_critic_report.design_score if frontend_critic_report else None,
+            "hierarchy_score": frontend_critic_report.hierarchy_score if frontend_critic_report else None,
+            "compliance_score": frontend_critic_report.compliance_score if frontend_critic_report else None,
+            "polish_score": frontend_critic_report.polish_score if frontend_critic_report else None,
+            "consistency_score": frontend_critic_report.consistency_score if frontend_critic_report else None,
+            "files_polished": _llm["polish"],
+            "skipped": True if frontend_critic_report is None else frontend_critic_report.skipped,
         },
         "validation": validation,
         "runtime": runtime_result,

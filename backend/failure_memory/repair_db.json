@@ -89,9 +89,9 @@
     "fix_content": {
       "app/routes/seed_routes.py": "from fastapi import APIRouter, Depends\nfrom sqlalchemy.orm import Session\nfrom app.database import get_db\n\nseed_router = APIRouter()\n\n@seed_router.post('/seed')\ndef seed_data(db: Session = Depends(get_db)):\n    return {'seeded': True, 'message': 'Demo data ready'}\n"
     },
-    "success_count": 2,
+    "success_count": 3,
     "first_seen": "2026-07-05T10:01:42Z",
-    "last_seen": "2026-07-06T12:48:01Z",
+    "last_seen": "2026-07-10T14:32:55Z",
     "source_idea": "a recipe sharing platform"
   },
   "6967fc8aca1ae308": {
@@ -372,9 +372,9 @@
     "fix_content": {
       "app/schemas/contact.py": "from datetime import datetime\nfrom typing import Optional\nfrom pydantic import BaseModel, Field, ConfigDict\n\n\nclass ContactCreate(BaseModel):\n    model_config = {\"from_attributes\": True}\n    name: Optional[str] = Field(None, min_length=1)\n    email: Optional[str] = None\n    phone: Optional[str] = None\n    company: Optional[str] = None\n    status: Optional[str] = Field(None, min_length=1)\n\n\nclass ContactUpdate(BaseModel):\n    model_config = {\"from_attributes\": True}\n    name: Optional[str] = Field(None, min_length=1)\n    email: Optional[str] = None\n    phone: Optional[str] = None\n    company: Optional[str] = None\n    status: Optional[str] = Field(None, min_length=1)\n\n\nclass ContactResponse(BaseModel):\n    id: int\n    name: Optional[str] = None\n    email: Optional[str] = None\n    phone: Optional[str] = None\n    company: Optional[str] = None\n    status: Optional[str] = None\n    user_id: Optional[int] = None\n    created_at: Optional[datetime] = None\n    updated_at: Optional[datetime] = None\n\n    model_config = ConfigDict(from_attributes=True)\n\n\nclass ContactSearchResponse(BaseModel):\n    id: Optional[int] = None\n    model_config = {'from_attributes': True}\n"
     },
-    "success_count": 1,
+    "success_count": 2,
     "first_seen": "2026-07-06T12:48:01Z",
-    "last_seen": "2026-07-06T12:48:01Z",
+    "last_seen": "2026-07-10T14:32:55Z",
     "source_idea": "A simple CRM for small businesses with user login. Users manage contacts (name, email, phone, compan"
   },
   "832ef0af40f632f2": {
@@ -456,5 +456,45 @@
     "first_seen": "2026-07-07T12:08:51Z",
     "last_seen": "2026-07-07T12:08:51Z",
     "source_idea": "A blog CMS with author and reader roles. Authors write posts with title, content (markdown), tags, a"
+  },
+  "87823870f9dfc4a7": {
+    "fix_hash": "87823870f9dfc4a7",
+    "fix_content": {
+      "src/pages/LoginPage.jsx": "import React, { useState } from 'react';\nimport { Link, useNavigate } from 'react-router-dom';\nimport { Users, Mail, Lock } from 'lucide-react';\nimport API from '../api';\n\nexport default function LoginPage() {\n  const navigate = useNavigate();\n  const [email, setEmail] = useState('');\n  const [password, setPassword] = useState('');\n  const [error, setError] = useState('');\n  const [loading, setLoading] = useState(false);\n\n  const handleSubmit = async (e) => {\n    e.preventDefault();\n    setError('');\n    setLoading(true);\n\n    try {\n      const params = new URLSearchParams();\n      params.append('username', email);\n      params.append('password', password);\n\n      const response = await API.post('/auth/token', params, {\n        headers: {\n          'Content-Type': 'application/x-www-form-urlencoded',\n        },\n      });\n\n      localStorage.setItem('access_token', response.data.access_token);\n      navigate('/');\n    } catch (err) {\n      setError(err.response?.data?.detail || 'Invalid email or password');\n    } finally {\n      setLoading(false);\n    }\n  };\n\n  return (\n    <div className=\"min-h-screen bg-gray-50 flex flex-col justify-center py-12 sm:px-6 lg:px-8\">\n      <div className=\"sm:mx-auto sm:w-full sm:max-w-md\">\n        <div className=\"flex justify-center\">\n          <Users className=\"h-12 w-12 text-indigo-600\" />\n        </div>\n        <h2 className=\"mt-6 text-center text-3xl font-extrabold text-gray-900\">\n          Sign in to CRM\n        </h2>\n      </div>\n\n      <div className=\"mt-8 sm:mx-auto sm:w-full sm:max-w-md\">\n        <div className=\"bg-white py-8 px-4 shadow sm:rounded-lg sm:px-10\">\n          {error && (\n            <div className=\"mb-4 bg-red-50 border-l-4 border-red-400 p-4 text-sm text-red-700\">\n              {error}\n            </div>\n          )}\n\n          <form className=\"space-y-6\" onSubmit={handleSubmit}>\n            <div>\n              <label htmlFor=\"email\" className=\"block text-sm font-medium text-gray-700\">\n                Email address\n              </label>\n              <div className=\"mt-1 relative rounded-md shadow-sm\">\n                <div className=\"absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none\">\n                  <Mail className=\"h-5 w-5 text-gray-400\" aria-hidden=\"true\" />\n                </div>\n                <input\n                  id=\"email\"\n                  name=\"email\"\n                  type=\"email\"\n                  autoComplete=\"email\"\n                  required\n                  value={email}\n                  onChange={(e) => setEmail(e.target.value)}\n                  className=\"focus:ring-indigo-500 focus:border-indigo-500 block w-full pl-10 sm:text-sm border-gray-300 rounded-md\"\n                  placeholder=\"you@example.com\"\n                />\n              </div>\n            </div>\n\n            <div>\n              <label htmlFor=\"password\" className=\"block text-sm font-medium text-gray-700\">\n                Password\n              </label>\n              <div className=\"mt-1 relative rounded-md shadow-sm\">\n                <div className=\"absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none\">\n                  <Lock className=\"h-5 w-5 text-gray-400\" aria-hidden=\"true\" />\n                </div>\n                <input\n                  id=\"password\"\n                  name=\"password\"\n                  type=\"password\"\n                  autoComplete=\"current-password\"\n                  required\n                  value={password}\n                  onChange={(e) => setPassword(e.target.value)}\n                  className=\"focus:ring-indigo-500 focus:border-indigo-500 block w-full pl-10 sm:text-sm border-gray-300 rounded-md\"\n                  placeholder=\"••••••••\"\n                />\n              </div>\n            </div>\n\n            <div>\n              <button\n                type=\"submit\"\n                disabled={loading}\n                className=\"w-full flex justify-center py-2 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 disabled:opacity-50\"\n              >\n                {loading ? 'Signing in...' : 'Sign in'}\n              </button>\n            </div>\n          </form>\n\n          <div className=\"mt-6 text-center\">\n            <p className=\"text-sm text-gray-600\">\n              Don't have an account?{' '}\n              <Link to=\"/register\" className=\"font-medium text-indigo-600 hover:text-indigo-500\">\n                Register here\n              </Link>\n            </p>\n          </div>\n        </div>\n      </div>\n    </div>\n  );\n}"
+    },
+    "success_count": 1,
+    "first_seen": "2026-07-10T14:32:55Z",
+    "last_seen": "2026-07-10T14:32:55Z",
+    "source_idea": "A simple CRM for small businesses with user login. Users manage contacts (name, email, phone, compan"
+  },
+  "56222f1d1bc4d692": {
+    "fix_hash": "56222f1d1bc4d692",
+    "fix_content": {
+      "app/schemas/user.py": "from datetime import datetime\nfrom pydantic import BaseModel, Field\nfrom typing import Optional, List\n\nclass UserCreate(BaseModel):\n    model_config = {\"from_attributes\": True}\n    email: Optional[str] = Field(default=None, min_length=1)\n    password_hash: Optional[str] = Field(default=None, min_length=1)\n\nclass UserUpdate(BaseModel):\n    model_config = {\"from_attributes\": True}\n    email: Optional[str] = None\n    password_hash: Optional[str] = None\n\nclass UserResponse(BaseModel):\n    id: int\n    email: Optional[str] = None\n    created_at: Optional[datetime] = None\n    updated_at: Optional[datetime] = None\n    contacts: Optional[List[str]] = None\n\n    class Config:\n        from_attributes = True"
+    },
+    "success_count": 1,
+    "first_seen": "2026-07-10T14:32:55Z",
+    "last_seen": "2026-07-10T14:32:55Z",
+    "source_idea": "A simple CRM for small businesses with user login. Users manage contacts (name, email, phone, compan"
+  },
+  "a05604f980d0a7bb": {
+    "fix_hash": "a05604f980d0a7bb",
+    "fix_content": {
+      "app/schemas/note.py": "from datetime import datetime\nfrom pydantic import BaseModel, Field\n\n\nclass NoteBase(BaseModel):\n    title: str = Field(..., min_length=1, max_length=255)\n    content: str = Field(..., min_length=1)\n\n\nclass NoteCreate(NoteBase):\n    pass\n\n\nclass NoteUpdate(NoteBase):\n    title: str | None = Field(None, min_length=1, max_length=255)\n    content: str | None = Field(None, min_length=1)\n\n\nclass NoteResponse(NoteBase):\n    id: int\n    user_id: int\n    created_at: datetime\n    updated_at: datetime\n\n    class Config:\n        from_attributes = True\n"
+    },
+    "success_count": 1,
+    "first_seen": "2026-07-10T14:32:55Z",
+    "last_seen": "2026-07-10T14:32:55Z",
+    "source_idea": "A simple CRM for small businesses with user login. Users manage contacts (name, email, phone, compan"
+  },
+  "2d944a48979361c5": {
+    "fix_hash": "2d944a48979361c5",
+    "fix_content": {
+      "app/schemas/interaction.py": "from datetime import datetime\nfrom typing import Optional\nfrom pydantic import BaseModel, Field\n\nclass InteractionBase(BaseModel):\n    type: str = Field(..., min_length=1, max_length=50)\n    details: Optional[str] = Field(None, max_length=1000)\n    entity_type: str = Field(..., min_length=1, max_length=50)\n    entity_id: int\n\nclass InteractionCreate(InteractionBase):\n    pass\n\nclass InteractionUpdate(BaseModel):\n    type: Optional[str] = Field(None, min_length=1, max_length=50)\n    details: Optional[str] = Field(None, max_length=1000)\n    entity_type: Optional[str] = Field(None, min_length=1, max_length=50)\n    entity_id: Optional[int] = None\n\nclass InteractionResponse(InteractionBase):\n    id: int\n    created_at: datetime\n    user_id: int\n\n    model_config = {\n        \"from_attributes\": True\n    }\n"
+    },
+    "success_count": 1,
+    "first_seen": "2026-07-10T14:32:55Z",
+    "last_seen": "2026-07-10T14:32:55Z",
+    "source_idea": "A simple CRM for small businesses with user login. Users manage contacts (name, email, phone, compan"
   }
 }

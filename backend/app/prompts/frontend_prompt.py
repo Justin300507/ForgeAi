@@ -150,6 +150,35 @@ not a shipped product. Apply ALL of these across every page:
   than the badge would suggest (e.g. 18px icon in a 36px badge, not a 24px
   icon cramped into the same box) — breathing room reads as more refined.
 
+═══════════════════════════════════════════════════════
+ACCESSIBILITY — mandatory, not optional polish
+═══════════════════════════════════════════════════════
+
+- Every icon-only button (no visible text label — nav collapse toggle, row
+  "⋮" menu, close/X buttons, dark-mode toggle) gets `aria-label="..."`
+  describing the action, e.g. `<button aria-label="Delete item" onClick={{...}}>`.
+- Every form input already has a visible `<label>` per the FORM INPUT pattern
+  above — never rely on `placeholder` alone as the only label.
+- Every interactive element (button, link, input) needs a visible focus
+  state, not just hover: add `focus:outline-none focus-visible:ring-2
+  focus-visible:ring-{{primary_name}}-500 focus-visible:ring-offset-2
+  dark:focus-visible:ring-offset-slate-900` alongside its existing hover/
+  active classes (substitute this app's actual `primary_name` token from the
+  design system above, same as every other `{{primary_name}}` placeholder in
+  this prompt) — a sighted keyboard user tabbing through the page must be
+  able to see where focus is.
+- Modals/dialogs get `role="dialog" aria-modal="true"` and close on Escape
+  (`useEffect` with a `keydown` listener checking `e.key === 'Escape'`).
+- Never use color as the ONLY signal for status (a red dot with no text is
+  invisible to colorblind users) — pair every status color with an icon or
+  text label (the BADGE pattern below already does this correctly: colored
+  background + a text word, follow that model everywhere else too).
+- `prefers-reduced-motion` is already handled globally in the provided
+  src/index.css (a `* {{ animation-duration: 0.01ms !important; ... }}` rule
+  under that media query) — do NOT add your own
+  `window.matchMedia('(prefers-reduced-motion)')` checks in JSX, that would
+  be redundant and risks fighting the global rule.
+
 SIDEBAR LAYOUT + NAV LINK PATTERN (use for ALL authenticated pages):
 Use the EXAMPLE SIDEBAR code block from the APP-SPECIFIC DESIGN SYSTEM section
 above verbatim (gradient sidebar, gradient active nav pill, gradient brand
@@ -758,4 +787,7 @@ Before returning:
 20. Verify EVERY page's main content wrapper has animate-fade-in-up, and every mapped card/row list has the staggered animationDelay — no page or list may appear instantly
 21. Verify loading states use the .skeleton class (shimmer), not plain animate-pulse boxes
 22. Verify toasts/modals enter with animate-scale-in, ambient blobs have animate-float-slow / animate-float-slower, and the dashboard's recent-activity section has a live-dot
+23. Verify every icon-only button has aria-label, and every interactive element has a focus-visible ring (not just hover)
+24. Verify at least 1-2 of the SIGNATURE COMPONENTS from the design system above are actually built somewhere, not just the generic list+form shell
+25. Verify this style's MOTION INTENSITY guidance (stagger timing, which entrance animation to prefer) was actually followed, not just the base motion tokens by default
 """

@@ -620,6 +620,15 @@ def write_files(project_name, files, frontend_target: str = "web", idea: str = "
         except Exception as e:
             print(f"  [V14] Themed scaffold skipped ({e}) — using static templates")
 
+    if (idea or "").strip():
+        try:
+            from app.prompts.design_system import detect_category_key
+            from app.prompts.style_system import select_style
+            from app.memory.design_fingerprint import record_design
+            record_design(project_name, detect_category_key(idea), select_style(idea))
+        except Exception:
+            pass  # telemetry only — never let this affect a generation run
+
     for rel_path, content in template_files.items():
         full_path = os.path.join(base_dir, rel_path)
         os.makedirs(os.path.dirname(full_path), exist_ok=True)
