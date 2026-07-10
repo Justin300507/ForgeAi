@@ -7,20 +7,20 @@ import { useVeil } from "../components/Veil";
 import { IDEA_DRAFT_KEY } from "../lib/cinematic";
 import { Trash2, Wrench, Zap, ArrowRight } from "lucide-react";
 
-const STATUS_STYLE = {
-  pending:   {bg:"rgba(234,179,8,0.1)",   color:"#facc15", border:"rgba(234,179,8,0.2)"},
-  running:   {bg:"rgba(99,102,241,0.1)",  color:"#818cf8", border:"rgba(99,102,241,0.2)"},
-  done:      {bg:"rgba(34,197,94,0.1)",   color:"#4ade80", border:"rgba(34,197,94,0.2)"},
-  error:     {bg:"rgba(239,68,68,0.1)",   color:"#f87171", border:"rgba(239,68,68,0.2)"},
-  cancelled: {bg:"rgba(107,114,128,0.1)", color:"#9ca3af", border:"rgba(107,114,128,0.2)"},
+const STATUS_DOT = {
+  pending:   "#facc15",
+  running:   "#818cf8",
+  done:      "#4ade80",
+  error:     "#f87171",
+  cancelled: "#9ca3af",
 };
 
-function ScoreBadge({ score }) {
-  if (score == null) return null;
-  const grade = score >= 90 ? "A" : score >= 80 ? "B" : score >= 70 ? "C" : score >= 60 ? "D" : "F";
-  const color = score >= 80 ? "#4ade80" : score >= 60 ? "#facc15" : "#f87171";
-  return <span style={{color}} className="text-sm font-bold">{score} ({grade})</span>;
-}
+const TEMPLATES = [
+  { label: "SaaS", idea: "A multi-tenant SaaS starter with team workspaces, billing, and role-based permissions" },
+  { label: "CRM", idea: "A CRM with contacts, deals, and activity timeline" },
+  { label: "Habit Tracker", idea: "A habit tracker with streaks, badges, dark mode, and weekly reports" },
+  { label: "AI Agent", idea: "An AI agent dashboard with conversation history, tool-call logs, and usage analytics" },
+];
 
 function timeAgo(iso) {
   if (!iso) return "";
@@ -106,18 +106,17 @@ export default function Dashboard() {
     }
   };
 
-  const done = jobs.filter(j => j.status === "done");
   const running = jobs.filter(j => j.status === "running" || j.status === "pending").length;
-  const avgScore = done.length ? Math.round(done.reduce((s, j) => s + (j.forge_score || 0), 0) / done.length) : null;
   const firstName = user?.email ? user.email.split("@")[0] : null;
 
   return (
     <div className="app-shell">
       <NavBar />
       <div className="max-w-5xl mx-auto px-6 py-12">
-        {/* Greeting + Forge bar — delayed 150ms so it slides in just after
+        {/* Greeting + Forge bar — the hero, unchanged from the landing's
+            prompt-first framing. Delayed 150ms so it slides in just after
             the veil lifts from the camera-zoom exit off the landing page */}
-        <div className="anim-fade-up mb-10" style={{ "--d": "150ms" }}>
+        <div className="anim-fade-up mb-6" style={{ "--d": "150ms" }}>
           <h1 className="hero-serif text-4xl sm:text-5xl text-white leading-tight">
             {greeting()}{firstName ? <span className="italic">, {firstName}</span> : ""}.
           </h1>
@@ -144,26 +143,23 @@ export default function Dashboard() {
           </form>
         </div>
 
-        {/* Stats */}
-        <div className="grid grid-cols-3 gap-4 mb-12">
-          {[
-            { label:"Apps built",  value: jobs.length },
-            { label:"Completed",   value: done.length },
-            { label:"Avg score",   value: avgScore != null ? `${avgScore}/100` : "—" },
-          ].map(({ label, value }, i) => (
-            <div
-              key={label}
-              className="anim-fade-up glass-panel hover-lift rounded-2xl p-5"
-              style={{ "--d": `${100 + i * 70}ms` }}
+        {/* Templates — quick-fill chips, same pattern as New App's example
+            chips. No navigation, just prefills the prompt above. */}
+        <div className="anim-fade-up flex flex-wrap gap-2 mt-4 mb-10" style={{ "--d": "220ms" }}>
+          {TEMPLATES.map((t) => (
+            <button
+              key={t.label}
+              type="button"
+              onClick={() => setIdea(t.idea)}
+              className="text-xs text-gray-400 hover:text-gray-100 glass-panel hover:border-white/15 rounded-full px-3.5 py-1.5 transition-colors"
             >
-              <div className="hero-serif text-3xl sm:text-4xl stat-value mb-1">{value}</div>
-              <div className="text-xs uppercase tracking-widest text-gray-500">{label}</div>
-            </div>
+              {t.label}
+            </button>
           ))}
         </div>
 
         <div className="flex items-center justify-between mb-4">
-          <h2 className="hero-serif text-2xl text-white">Your Projects</h2>
+          <h2 className="hero-serif text-2xl text-white">Recent Projects</h2>
           <div className="flex items-center gap-2">
             {running > 0 && (
               <span className="flex items-center gap-1.5 text-xs px-2.5 py-1 rounded-full border" style={{background:"rgba(99,102,241,0.1)",color:"#818cf8",borderColor:"rgba(99,102,241,0.2)"}}>
@@ -174,8 +170,8 @@ export default function Dashboard() {
               <button
                 onClick={handleDeleteAll}
                 disabled={deletingAll}
-                className="flex items-center gap-1.5 text-xs px-2.5 py-1.5 rounded-full border text-gray-500 border-white/10 hover:text-red-400 hover:border-red-500/30 hover:bg-red-500/10 transition-colors disabled:opacity-40">
-                <Trash2 size={12} aria-hidden="true" /> {deletingAll ? "Deleting…" : "Delete all"}
+                className="text-xs text-gray-600 hover:text-red-400 transition-colors disabled:opacity-40 underline underline-offset-2 decoration-white/20 hover:decoration-red-400/50">
+                {deletingAll ? "Deleting…" : "Delete all"}
               </button>
             )}
           </div>
@@ -198,30 +194,39 @@ export default function Dashboard() {
         ) : (
           <div className="space-y-2">
             {jobs.map((job, i) => {
-              const s = STATUS_STYLE[job.status] || STATUS_STYLE.error;
               const isActive = job.status === "pending" || job.status === "running";
               const isDone = job.status === "done";
               const needsFix = isDone && (job.forge_score == null || job.forge_score < 80 || !job.backend_url);
+              const grade = job.forge_score != null
+                ? (job.forge_score >= 90 ? "A" : job.forge_score >= 80 ? "B" : job.forge_score >= 70 ? "C" : job.forge_score >= 60 ? "D" : "F")
+                : null;
+              const gradeColor = job.forge_score != null
+                ? (job.forge_score >= 80 ? "#4ade80" : job.forge_score >= 60 ? "#facc15" : "#f87171")
+                : null;
               return (
                 <div key={job.id}
                   className="anim-fade-up hover-lift flex items-center gap-4 glass-panel rounded-xl px-4 py-3.5 hover:border-white/15 group cursor-pointer"
                   style={{ "--d": `${Math.min(i, 8) * 40}ms` }}
                   onClick={() => navigate(`/projects/${job.id}`)}>
-                  <span className="flex items-center gap-1.5 text-xs px-2.5 py-1 rounded-full font-medium shrink-0"
-                    style={{background:s.bg, color:s.color, border:`1px solid ${s.border}`}}>
-                    {isActive && <span className="live-dot" style={{background:s.color, width:6, height:6}} aria-hidden="true" />}
-                    {job.status}
+                  <span className="flex items-center gap-1.5 text-xs shrink-0 w-24"
+                    style={{color: isDone && job.forge_score != null ? gradeColor : "#666"}}>
+                    {isDone && job.forge_score != null ? (
+                      <>✓ {job.forge_score} · {grade}</>
+                    ) : (
+                      <>
+                        <span className={`w-1.5 h-1.5 rounded-full shrink-0 ${isActive ? "live-dot" : ""}`}
+                          style={{background: STATUS_DOT[job.status] || STATUS_DOT.error}} aria-hidden="true" />
+                        {job.status}
+                      </>
+                    )}
                   </span>
                   <p className="flex-1 text-sm text-gray-300 group-hover:text-white transition-colors line-clamp-1">{job.idea}</p>
-                  <div className="shrink-0 text-right">
-                    {job.forge_score != null && <ScoreBadge score={job.forge_score} />}
-                    <div className="text-xs text-gray-600 mt-0.5">{timeAgo(job.created_at)}</div>
-                  </div>
+                  <span className="text-xs text-gray-600 shrink-0">{timeAgo(job.created_at)}</span>
                   {needsFix && (
                     <button
                       onClick={(e) => handleFix(e, job.id)}
                       title={`Score ${job.forge_score ?? '?'}/100 — click to fix and improve`}
-                      className="shrink-0 flex items-center gap-1 px-2 py-1.5 rounded-lg text-xs font-medium text-orange-400 border border-orange-500/30 hover:bg-orange-500/10 transition-colors">
+                      className="opacity-0 group-hover:opacity-100 transition-opacity duration-200 shrink-0 flex items-center gap-1 px-2 py-1.5 rounded-lg text-xs font-medium text-orange-400 border border-orange-500/30 hover:bg-orange-500/10">
                       <Wrench size={12} aria-hidden="true" /> Fix
                     </button>
                   )}
@@ -231,7 +236,7 @@ export default function Dashboard() {
                       disabled={deleting === job.id}
                       title="Delete project"
                       aria-label="Delete project"
-                      className="shrink-0 p-2 rounded-lg text-gray-600 hover:text-red-400 hover:bg-red-500/10 transition-colors disabled:opacity-40">
+                      className="opacity-0 group-hover:opacity-100 transition-opacity duration-200 shrink-0 p-2 rounded-lg text-gray-600 hover:text-red-400 hover:bg-red-500/10 disabled:opacity-40">
                       <Trash2 size={15} aria-hidden="true" />
                     </button>
                   )}
