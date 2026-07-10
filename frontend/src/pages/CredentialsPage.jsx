@@ -92,7 +92,7 @@ function ServiceCard({ service, status, credentials, onSave, onDisconnect }) {
 
   return (
     <div
-      className="glass-panel rounded-xl p-5 transition-colors"
+      className="glass-panel hover-lift rounded-xl p-5"
       style={{
         borderColor: connected ? "rgba(52,211,153,0.25)" : undefined,
       }}
@@ -243,7 +243,7 @@ export default function CredentialsPage() {
         )}
 
         <div className="anim-fade-up mt-8 glass-panel rounded-xl p-5" style={{ "--d": "120ms" }}>
-          <h3 className="text-sm font-semibold text-gray-300 mb-3">How one-click deployment works</h3>
+          <h3 className="hero-serif text-lg text-white mb-3">How one-click deployment works</h3>
           <ol className="text-xs text-gray-500 space-y-2 list-decimal list-inside leading-relaxed">
             <li>ForgeAI generates your full-stack app (FastAPI backend + React frontend)</li>
             <li>Pushes the code to a new GitHub repo under your account</li>

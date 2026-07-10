@@ -75,12 +75,65 @@ body {
 /* ── App shell: ambient brand glow behind glass panels ───────────────── */
 
 .app-shell {
+  position: relative;
   min-height: 100vh;
+  min-height: 100dvh;
   background-color: var(--ink-bg);
   background-image:
     radial-gradient(800px 500px at 85% -10%, rgba(124, 58, 237, 0.14), transparent 60%),
     radial-gradient(700px 460px at -10% 30%, rgba(59, 130, 246, 0.07), transparent 60%);
   background-attachment: fixed;
+  overflow-x: hidden;
+}
+
+/* Slow-drifting aurora blob — the inner pages' echo of the landing videos */
+.app-shell::before {
+  content: '';
+  position: fixed;
+  top: -25%;
+  right: -15%;
+  width: 70vw;
+  height: 70vh;
+  background:
+    radial-gradient(closest-side at 60% 40%, rgba(124, 58, 237, 0.16), transparent 70%),
+    radial-gradient(closest-side at 30% 70%, rgba(56, 132, 255, 0.10), transparent 70%);
+  filter: blur(50px);
+  animation: aurora-drift 26s ease-in-out infinite alternate;
+  pointer-events: none;
+  z-index: 0;
+}
+
+.app-shell > * {
+  position: relative;
+  z-index: 1;
+}
+
+@keyframes aurora-drift {
+  from { transform: translate3d(-3%, -2%, 0) scale(1); }
+  to   { transform: translate3d(4%, 5%, 0) scale(1.12); }
+}
+
+/* Interactive card lift */
+.hover-lift {
+  transition:
+    transform 0.25s cubic-bezier(0.16, 1, 0.3, 1),
+    border-color 0.25s ease,
+    background-color 0.25s ease,
+    box-shadow 0.25s ease;
+}
+
+.hover-lift:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.35);
+}
+
+/* Brand glow when a glass input group holds focus */
+.glow-focus:focus-within {
+  border-color: rgba(167, 139, 250, 0.5);
+  box-shadow:
+    inset 0 1px 1px rgba(255, 255, 255, 0.05),
+    0 0 0 1px rgba(167, 139, 250, 0.25),
+    0 0 28px rgba(124, 58, 237, 0.18);
 }
 
 /* ── Motion tokens ───────────────────────────────────────────────────── */
@@ -146,5 +199,7 @@ body {
   .anim-fade-up, .anim-scale-in { animation: none; opacity: 1; transform: none; }
   .skeleton { animation: none; }
   .live-dot { animation: none; }
+  .app-shell::before { animation: none; }
+  .hover-lift:hover { transform: none; }
   * { transition-duration: 0.01ms !important; }
 }

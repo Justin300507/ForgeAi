@@ -246,21 +246,24 @@ export default function ProjectDetail() {
         <div className="anim-fade-up glass-panel rounded-2xl p-5" style={{ "--d": "80ms" }}>
           <div className="flex items-start justify-between gap-4">
             <div className="flex-1 min-w-0">
-              <div className="flex items-center gap-2 mb-2 flex-wrap">
-                <span className="text-xs px-2.5 py-1 rounded-full font-medium" style={{
+              <div className="flex items-center gap-2 mb-3 flex-wrap">
+                <span className="flex items-center gap-1.5 text-xs px-2.5 py-1 rounded-full font-medium" style={{
                   background: isActive ? "rgba(99,102,241,0.12)" : isDone ? "rgba(34,197,94,0.12)" : "rgba(239,68,68,0.12)",
                   color:      isActive ? "#818cf8" : isDone ? "#4ade80" : "#f87171",
                   border:     `1px solid ${isActive ? "rgba(99,102,241,0.25)" : isDone ? "rgba(34,197,94,0.25)" : "rgba(239,68,68,0.25)"}`
-                }}>{job.status}</span>
+                }}>
+                  {isActive && <span className="live-dot bg-indigo-400" style={{width:6, height:6}} aria-hidden="true" />}
+                  {job.status}
+                </span>
                 <span className="text-xs text-gray-600">{job.provider}</span>
               </div>
-              <p className="text-gray-200 text-sm leading-relaxed">{job.idea}</p>
+              <p className="hero-serif text-xl sm:text-2xl text-white leading-snug">{job.idea}</p>
               {job.error && <p className="text-red-400 text-xs mt-3 px-3 py-2 rounded-lg bg-red-500/8 border border-red-500/15">{job.error}</p>}
             </div>
             {isDone && score != null && (
               <div className="text-right shrink-0">
-                <div className="text-4xl font-extrabold" style={{color: score>=80?"#4ade80":score>=60?"#facc15":"#f87171"}}>{score}</div>
-                <div className="text-gray-500 text-sm">({grade}) Forge Score</div>
+                <div className="hero-serif text-5xl" style={{color: score>=80?"#4ade80":score>=60?"#facc15":"#f87171"}}>{score}</div>
+                <div className="text-gray-500 text-xs uppercase tracking-widest mt-1">({grade}) Forge Score</div>
               </div>
             )}
           </div>
@@ -304,6 +307,11 @@ export default function ProjectDetail() {
         {/* Log terminal */}
         <div className="anim-fade-up glass-panel rounded-2xl overflow-hidden" style={{ "--d": "160ms" }}>
           <div className="flex items-center gap-2 px-4 py-3 border-b border-white/5">
+            <span className="flex items-center gap-1.5 mr-2" aria-hidden="true">
+              <span className="w-2.5 h-2.5 rounded-full bg-red-400/70" />
+              <span className="w-2.5 h-2.5 rounded-full bg-yellow-400/70" />
+              <span className="w-2.5 h-2.5 rounded-full bg-green-400/70" />
+            </span>
             <span className="text-xs font-medium text-gray-400">Generation log</span>
             <span className="text-xs text-gray-600">· {logs.length} lines</span>
             {isActive && <span className="live-dot bg-violet-400 ml-1" aria-hidden="true" />}
