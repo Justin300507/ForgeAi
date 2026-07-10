@@ -2,6 +2,7 @@ import React from "react";
 import { Routes, Route, Navigate } from "react-router-dom";
 import { AuthProvider, useAuth } from "./AuthContext";
 import { VeilProvider } from "./components/Veil";
+import { SceneryBoostProvider } from "./components/SceneryBoost";
 import Scenery from "./components/Scenery";
 import Landing from "./pages/Landing";
 import Login from "./pages/Login";
@@ -36,7 +37,7 @@ function PublicRoute({ children }) {
 
 export default function App() {
   return (
-    <>
+    <SceneryBoostProvider>
       <Scenery />
       <AuthProvider>
         <VeilProvider>
@@ -52,6 +53,6 @@ export default function App() {
         </Routes>
         </VeilProvider>
       </AuthProvider>
-    </>
+    </SceneryBoostProvider>
   );
 }

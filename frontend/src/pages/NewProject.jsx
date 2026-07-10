@@ -4,7 +4,9 @@ import { Zap, Download, Globe, Rocket, Github, Cloud, Train, Check, Loader2 } fr
 import { jobsAPI, credentialsAPI } from "../api";
 import NavBar from "../components/NavBar";
 import { useVeil } from "../components/Veil";
+import { useSceneryBoost } from "../components/SceneryBoost";
 import { IDEA_DRAFT_KEY } from "../lib/cinematic";
+import { STAGES } from "../lib/pipelineStages";
 
 const EXAMPLES = [
   "A habit tracker with streaks, badges, dark mode, and weekly reports",
@@ -14,10 +16,12 @@ const EXAMPLES = [
 
 // Cerebras is intentionally absent: the account returns 402 Payment Required
 // and the backend benches it, so offering it here is a dead-end choice.
+// Claude/OpenAI aren't wired into the backend's provider chain yet -- no
+// icon-only teaser entries here until they're actually selectable.
 const MODELS = [
   { id:"auto",   label:"Auto",   sub:"Best available" },
-  { id:"gemini", label:"Gemini", sub:"Google AI" },
-  { id:"groq",   label:"Groq",   sub:"Ultra fast" },
+  { id:"gemini", label:"Gemini", sub:"Google AI",  icon:"⚡" },
+  { id:"groq",   label:"Groq",   sub:"Ultra fast", icon:"🧠" },
 ];
 
 const DEPLOYMENTS = [
@@ -32,21 +36,15 @@ const SERVICE_META = {
   railway:    { label:"Railway",    Icon:Train },
 };
 
-const PIPELINE_STEPS = [
-  "Product spec from your sentence",
-  "Architecture + API contract",
-  "Backend & frontend in parallel",
-  "Verify, score, self-repair",
-  "Deploy & hand you the keys",
-];
-
 export default function NewProject() {
   const nav = useNavigate();
   const veil = useVeil();
+  const sceneryBoost = useSceneryBoost();
   const [idea, setIdea] = useState(() => sessionStorage.getItem(IDEA_DRAFT_KEY) || "");
   const [model, setModel] = useState("auto");
   const [deploy, setDeploy] = useState("none");
   const [loading, setLoading] = useState(false);
+  const [igniting, setIgniting] = useState(false);
   const [error, setError] = useState("");
   const [connStatus, setConnStatus] = useState(null);
 
@@ -64,7 +62,11 @@ export default function NewProject() {
   const submit = async (e) => {
     e.preventDefault();
     if (!idea.trim()) return;
-    setError(""); setLoading(true);
+    setError(""); setLoading(true); setIgniting(true);
+    // Fire immediately on click, independent of API latency -- the AI
+    // Pipeline card ignites and the Scenery backdrop brightens right away
+    // so the click feels instant regardless of network timing.
+    sceneryBoost?.boost();
     try {
       const res = await jobsAPI.create(idea.trim(), model, deploy, "web");
       // Same veil sweep as landing/auth: crossing into the live generation
@@ -76,6 +78,7 @@ export default function NewProject() {
       veil.lift();
       setError(err.response?.data?.detail || "Failed to start generation");
       setLoading(false);
+      setIgniting(false);
     }
   };
 
@@ -90,117 +93,120 @@ export default function NewProject() {
           One sentence in — a living full-stack app out.
         </p>
 
-        <div className="grid grid-cols-1 lg:grid-cols-5 gap-6">
+        <div className="grid grid-cols-1 lg:grid-cols-11 gap-6">
           {/* Left — form */}
-          <form onSubmit={submit} className="lg:col-span-3 space-y-8">
+          <form onSubmit={submit} className="lg:col-span-6 space-y-8">
             {error && (
               <div role="alert" className="text-red-400 text-sm bg-red-500/10 border border-red-500/20 rounded-xl px-4 py-3">{error}</div>
             )}
 
-            <div className="anim-fade-up" style={{ "--d": "100ms" }}>
-              <label htmlFor="idea" className="block text-sm font-medium text-gray-300 mb-2">The idea</label>
-              <div className="glass-panel glow-focus rounded-2xl p-1">
-                <textarea id="idea" value={idea} onChange={e => setIdea(e.target.value)} required rows={5}
-                  placeholder="A habit tracker with streaks, badges, dark mode, and weekly reports..."
-                  className="w-full bg-transparent rounded-xl px-4 py-3.5 text-sm text-white placeholder:text-gray-600 focus:outline-none resize-none" />
-              </div>
-              <div className="flex flex-wrap gap-2 mt-3">
-                {EXAMPLES.map((ex, i) => (
-                  <button key={i} type="button" onClick={() => setIdea(ex)}
-                    className="text-xs text-gray-500 hover:text-gray-200 glass-panel hover:border-white/15 rounded-full px-3 py-1.5 transition-colors">
-                    {ex.slice(0, 32)}…
-                  </button>
-                ))}
-              </div>
-            </div>
-
-            {/* Model segmented control */}
-            <fieldset className="anim-fade-up" style={{ "--d": "160ms" }}>
-              <legend className="block text-sm font-medium text-gray-300 mb-3">Model</legend>
-              <div className="liquid-glass rounded-full inline-flex p-1 gap-0.5">
-                {MODELS.map(m => (
-                  <button key={m.id} type="button" onClick={() => setModel(m.id)}
-                    aria-pressed={model === m.id}
-                    title={m.sub}
-                    className={
-                      model === m.id
-                        ? "bg-white text-slate-900 text-sm font-medium px-4 py-2 rounded-full transition-colors"
-                        : "text-white/60 hover:text-white text-sm px-4 py-2 rounded-full transition-colors"
-                    }>
-                    {m.label}
-                  </button>
-                ))}
-              </div>
-            </fieldset>
-
-            {/* Deployment cards */}
-            <fieldset className="anim-fade-up" style={{ "--d": "220ms" }}>
-              <legend className="block text-sm font-medium text-gray-300 mb-3">Deployment</legend>
-              <div className="space-y-2">
-                {DEPLOYMENTS.map(d => (
-                  <button key={d.id} type="button" onClick={() => setDeploy(d.id)}
-                    aria-pressed={deploy === d.id}
-                    className="w-full hover-lift flex items-center gap-4 rounded-xl px-4 py-3.5 border text-left glass-panel"
-                    style={{
-                      background: deploy === d.id ? "rgba(124,58,237,0.14)" : undefined,
-                      borderColor: deploy === d.id ? "rgba(167,139,250,0.6)" : undefined,
-                    }}>
-                    <span className="w-9 h-9 rounded-full liquid-glass flex items-center justify-center shrink-0">
-                      <d.Icon size={16} className={deploy === d.id ? "text-violet-200" : "text-gray-400"} aria-hidden="true" />
-                    </span>
-                    <div className="flex-1 min-w-0">
-                      <div className="text-sm font-semibold text-white">{d.label}</div>
-                      <div className="text-xs text-gray-500">{d.sub}</div>
-                    </div>
-                    {d.id !== "none" && deploy === d.id && (
-                      <span className="text-xs font-medium shrink-0" style={{color: allConnected ? "#34d399" : "#fbbf24"}}>
-                        {allConnected ? "Ready" : "Setup needed"}
-                      </span>
-                    )}
-                    {deploy === d.id && <Check size={16} className="text-violet-300 shrink-0" aria-hidden="true" />}
-                  </button>
-                ))}
+            <div className={`space-y-8 forge-recede${igniting ? " igniting" : ""}`}>
+              <div className="anim-fade-up" style={{ "--d": "100ms" }}>
+                <label htmlFor="idea" className="block text-sm font-medium text-gray-300 mb-2">The idea</label>
+                <div className="glass-panel glow-focus rounded-2xl p-1">
+                  <textarea id="idea" value={idea} onChange={e => setIdea(e.target.value)} required rows={5}
+                    placeholder="A habit tracker with streaks, badges, dark mode, and weekly reports..."
+                    className="w-full bg-transparent rounded-xl px-4 py-3.5 text-sm text-white placeholder:text-gray-600 focus:outline-none resize-none" />
+                </div>
+                <div className="flex flex-wrap gap-2 mt-3">
+                  {EXAMPLES.map((ex, i) => (
+                    <button key={i} type="button" onClick={() => setIdea(ex)}
+                      className="chip-magnetic text-xs text-gray-500 hover:text-gray-200 glass-panel hover:border-white/15 rounded-full px-3 py-1.5">
+                      {ex.slice(0, 32)}…
+                    </button>
+                  ))}
+                </div>
               </div>
 
-              {/* Required accounts */}
-              {requiredServices.length > 0 && (
-                <div className="mt-3 glass-panel rounded-xl p-4 space-y-2.5">
-                  <p className="text-xs text-gray-500 uppercase tracking-widest mb-1">Required accounts</p>
-                  {requiredServices.map(svc => {
-                    const meta = SERVICE_META[svc];
-                    const st = connStatus?.[svc];
-                    const connected = st?.connected === true;
-                    const acctLabel = st?.login || st?.name || st?.email || "Connected";
+              {/* Model segmented control */}
+              <fieldset className="anim-fade-up" style={{ "--d": "160ms" }}>
+                <legend className="block text-sm font-medium text-gray-300 mb-3">Model</legend>
+                <div className="liquid-glass rounded-full inline-flex p-1 gap-0.5">
+                  {MODELS.map(m => (
+                    <button key={m.id} type="button" onClick={() => setModel(m.id)}
+                      aria-pressed={model === m.id}
+                      title={m.sub}
+                      className={
+                        model === m.id
+                          ? "bg-white text-slate-900 text-sm font-medium px-4 py-2 rounded-full transition-colors"
+                          : "text-white/60 hover:text-white text-sm px-4 py-2 rounded-full transition-colors"
+                      }>
+                      {m.icon && <span className="mr-1" aria-hidden="true">{m.icon}</span>}{m.label}
+                    </button>
+                  ))}
+                </div>
+              </fieldset>
+
+              {/* Deployment cards */}
+              <fieldset className="anim-fade-up" style={{ "--d": "220ms" }}>
+                <legend className="block text-sm font-medium text-gray-300 mb-3">Deployment</legend>
+                <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                  {DEPLOYMENTS.map(d => {
+                    const isSelected = deploy === d.id;
                     return (
-                      <div key={svc} className="flex items-center gap-2.5">
-                        <meta.Icon size={15} className="text-gray-400 w-5 shrink-0" aria-hidden="true" />
-                        <span className="text-sm text-gray-300 w-20 shrink-0">{meta.label}</span>
-                        {connected ? (
-                          <span className="text-xs flex items-center gap-1" style={{color:"#34d399"}}>
-                            <Check size={12} aria-hidden="true" />
-                            <span className="truncate max-w-[140px]">{acctLabel}</span>
+                      <button key={d.id} type="button" onClick={() => setDeploy(d.id)}
+                        aria-pressed={isSelected}
+                        className={`deploy-card${isSelected ? " selected" : ""} liquid-glass rounded-2xl px-4 py-5 border text-center flex flex-col items-center gap-2`}
+                        style={{
+                          background: isSelected ? "rgba(124,58,237,0.14)" : undefined,
+                          borderColor: isSelected ? "rgba(167,139,250,0.6)" : "rgba(255,255,255,0.08)",
+                        }}>
+                        <span className="w-10 h-10 rounded-full liquid-glass flex items-center justify-center">
+                          <d.Icon size={17} className={isSelected ? "text-violet-200" : "text-gray-400"} aria-hidden="true" />
+                        </span>
+                        <div className="text-sm font-semibold text-white">{d.label}</div>
+                        <div className="text-xs text-gray-500">{d.sub}</div>
+                        {d.id !== "none" && isSelected && (
+                          <span className="text-xs font-medium" style={{color: allConnected ? "#34d399" : "#fbbf24"}}>
+                            {allConnected ? "Ready" : "Setup needed"}
                           </span>
-                        ) : (
-                          <Link to="/settings"
-                            className="text-xs underline underline-offset-2"
-                            style={{color:"var(--brand-soft)"}}>
-                            Connect →
-                          </Link>
                         )}
-                      </div>
+                        {isSelected && <Check size={15} className="text-violet-300" aria-hidden="true" />}
+                      </button>
                     );
                   })}
-                  {!allConnected && (
-                    <p className="text-xs pt-1 border-t border-white/5" style={{color:"#fbbf24",opacity:0.8}}>
-                      Connect all accounts to enable deployment.
-                    </p>
-                  )}
                 </div>
-              )}
-            </fieldset>
+
+                {/* Required accounts */}
+                {requiredServices.length > 0 && (
+                  <div className="mt-3 glass-panel rounded-xl p-4 space-y-2.5">
+                    <p className="text-xs text-gray-500 uppercase tracking-widest mb-1">Required accounts</p>
+                    {requiredServices.map(svc => {
+                      const meta = SERVICE_META[svc];
+                      const st = connStatus?.[svc];
+                      const connected = st?.connected === true;
+                      const acctLabel = st?.login || st?.name || st?.email || "Connected";
+                      return (
+                        <div key={svc} className="flex items-center gap-2.5">
+                          <meta.Icon size={15} className="text-gray-400 w-5 shrink-0" aria-hidden="true" />
+                          <span className="text-sm text-gray-300 w-20 shrink-0">{meta.label}</span>
+                          {connected ? (
+                            <span className="text-xs flex items-center gap-1" style={{color:"#34d399"}}>
+                              <Check size={12} aria-hidden="true" />
+                              <span className="truncate max-w-[140px]">{acctLabel}</span>
+                            </span>
+                          ) : (
+                            <Link to="/settings"
+                              className="text-xs underline underline-offset-2"
+                              style={{color:"var(--brand-soft)"}}>
+                              Connect →
+                            </Link>
+                          )}
+                        </div>
+                      );
+                    })}
+                    {!allConnected && (
+                      <p className="text-xs pt-1 border-t border-white/5" style={{color:"#fbbf24",opacity:0.8}}>
+                        Connect all accounts to enable deployment.
+                      </p>
+                    )}
+                  </div>
+                )}
+              </fieldset>
+            </div>
 
             <button type="submit" disabled={!canSubmit}
-              className="anim-fade-up w-full flex items-center justify-center gap-2 font-medium bg-white text-slate-900 py-3.5 rounded-full text-sm hover:bg-white/90 transition-all disabled:opacity-40"
+              className={`forge-btn-compress${igniting ? " igniting" : ""} anim-fade-up w-full flex items-center justify-center gap-2 font-medium bg-white text-slate-900 py-3.5 rounded-full text-sm hover:bg-white/90 transition-all disabled:opacity-40`}
               title={!allConnected && requiredServices.length > 0 ? "Connect all required accounts first" : undefined}
               style={{ "--d": "280ms" }}>
               {loading
@@ -209,18 +215,26 @@ export default function NewProject() {
             </button>
           </form>
 
-          {/* Right — what happens next */}
-          <div className="lg:col-span-2">
+          {/* Right — the AI Pipeline: idles with a slow ambient breathing
+              pulse per stage so the card never reads as static text; on
+              submit each stage ignites in sequence (see .igniting classes
+              below), briefly matching the real live stepper it hands off
+              to on the next page (ProjectDetail.jsx). */}
+          <div className="lg:col-span-5">
             <div className="anim-fade-up glass-panel rounded-2xl p-6 lg:sticky lg:top-24" style={{ "--d": "200ms" }}>
               <div className="w-12 h-12 rounded-full liquid-glass flex items-center justify-center mb-5">
                 <Zap size={20} className="text-violet-300" aria-hidden="true" />
               </div>
-              <h2 className="hero-serif text-xl text-white mb-4">While you watch</h2>
-              <ol className="space-y-3">
-                {PIPELINE_STEPS.map((step, i) => (
-                  <li key={step} className="flex items-start gap-3 text-sm text-gray-400">
-                    <span className="hero-serif italic text-violet-300/80 w-4 shrink-0 text-right">{i + 1}</span>
-                    <span>{step}</span>
+              <h2 className="hero-serif text-xl text-white mb-4">AI Pipeline</h2>
+              <ol className="space-y-3.5">
+                {STAGES.map((stage, i) => (
+                  <li key={stage.id} className="flex items-center gap-3 text-sm text-gray-400">
+                    <span
+                      className={`pipeline-node-dot w-2 h-2 rounded-full bg-violet-300 shrink-0${igniting ? " igniting" : ""}`}
+                      style={{ "--node-delay": `${i * 420}ms`, "--ignite-delay": `${i * 65}ms` }}
+                      aria-hidden="true" />
+                    <span>{stage.label}</span>
+                    <span className="text-xs text-gray-600 ml-auto">{igniting ? "…" : "Waiting…"}</span>
                   </li>
                 ))}
               </ol>

@@ -3,26 +3,7 @@ import { useParams, Link } from "react-router-dom";
 import { Globe, BookOpen, Github, Download, ShieldCheck } from "lucide-react";
 import { jobsAPI } from "../api";
 import NavBar from "../components/NavBar";
-
-const STAGES = [
-  { id:"plan",     label:"Planning",     keywords:["PRODUCT MANAGER"] },
-  { id:"arch",     label:"Architecture", keywords:["ARCHITECT","TECH LEAD"] },
-  { id:"backend",  label:"Backend",      keywords:["BACKEND TEAM","Wave 1","Wave 4"] },
-  { id:"frontend", label:"Frontend",     keywords:["FRONTEND TEAM","START FRONTEND"] },
-  { id:"validate", label:"Validation",   keywords:["VALIDATION LOOP","Fix attempt","PATCHER"] },
-  { id:"runtime",  label:"Runtime",      keywords:["RUNTIME","uvicorn","smoke test"] },
-  { id:"deploy",   label:"Deploy",       keywords:["Cloudflare","Render","GitHub","DEPLOY"] },
-  { id:"done",     label:"Complete",     keywords:["FINAL STATUS","V6 SCORE","Forge Score"] },
-];
-
-function detectStage(logs) {
-  for (let i = logs.length - 1; i >= 0; i--) {
-    for (let s = STAGES.length - 1; s >= 0; s--) {
-      if (STAGES[s].keywords.some(k => logs[i].includes(k))) return STAGES[s].id;
-    }
-  }
-  return null;
-}
+import { STAGES, detectStage } from "../lib/pipelineStages";
 
 function PipelineBar({ logs, status, vertical }) {
   const active = detectStage(logs);
