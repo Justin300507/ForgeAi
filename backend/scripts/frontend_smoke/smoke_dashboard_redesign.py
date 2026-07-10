@@ -42,7 +42,7 @@ with sync_playwright() as p:
     idea_value = page.input_value("input[placeholder*='imagine']")
     check("clicking a template fills the prompt", "habit tracker" in idea_value.lower())
 
-    check("done job shows score inline", "90" in body and "A" in body)
+    check("done job shows score inline", "90" in body and "· A" in body)
     check("running job shows plain status word", "running" in body.lower())
 
     delete_btn = page.locator("button[aria-label='Delete project']").first

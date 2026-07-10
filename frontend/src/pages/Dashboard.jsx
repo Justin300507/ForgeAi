@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from "react";
-import { Link, useNavigate } from "react-router-dom";
+import { useNavigate } from "react-router-dom";
 import { jobsAPI } from "../api";
 import NavBar from "../components/NavBar";
 import { useAuth } from "../AuthContext";
