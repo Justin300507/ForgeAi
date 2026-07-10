@@ -124,6 +124,11 @@ def generate_content(
             cached = get_cached("llm", cache_payload)
             if cached and cached.get("response"):
                 print(f"[LLM cache] HIT ({stage}) — 0 tokens billed")
+                try:
+                    from app.utils.cost_tracker import record_cache_hit
+                    record_cache_hit(stage, len(prompt) // 4, len(cached["response"]) // 4)
+                except Exception:
+                    pass
                 return cached["response"]
         except Exception:
             cache_enabled = False

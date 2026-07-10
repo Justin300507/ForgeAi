@@ -40,7 +40,14 @@ _session_calls: list[dict] = []  # in-memory log for the current run
 _run_totals = {
     "calls": 0, "prompt_tokens": 0, "completion_tokens": 0,
     "total_tokens": 0, "cost_usd": 0.0,
+    "cache_hits": 0, "cache_saved_tokens": 0, "cache_saved_usd": 0.0,
 }
+
+# Cache hits fire in ai_provider.generate_content() BEFORE a provider is ever
+# chosen, so we don't know which provider's rate would have applied. "auto"
+# (Gemini's rate, the priciest live provider) gives a conservative — i.e.
+# not-overstated — estimate of savings rather than guessing Groq's $0.
+_CACHE_HIT_RATE_BASIS = "auto"
 
 
 def record_llm_call(
@@ -73,6 +80,19 @@ def record_llm_call(
     _run_totals["completion_tokens"] += completion_tokens
     _run_totals["total_tokens"] += total_tokens
     _run_totals["cost_usd"] += estimated_cost
+
+
+def record_cache_hit(stage: str, prompt_tokens: int, completion_tokens: int) -> None:
+    """Call this when generate_content() serves a cached response instead of
+    billing a provider — makes the LLM cache's savings visible in the cost
+    report instead of the hit silently vanishing with 0 recorded tokens."""
+    saved_tokens = prompt_tokens + completion_tokens
+    in_rate = _COST_PER_1M_INPUT.get(_CACHE_HIT_RATE_BASIS, 1.00)
+    out_rate = _COST_PER_1M_OUTPUT.get(_CACHE_HIT_RATE_BASIS, 1.00)
+    saved_cost = (prompt_tokens / 1_000_000) * in_rate + (completion_tokens / 1_000_000) * out_rate
+    _run_totals["cache_hits"] += 1
+    _run_totals["cache_saved_tokens"] += saved_tokens
+    _run_totals["cache_saved_usd"] += saved_cost
 
 
 def get_run_totals() -> dict:
@@ -135,7 +155,7 @@ def reset_session() -> None:
     """Clear in-memory call log AND run totals for a new generation."""
     _session_calls.clear()
     for k in _run_totals:
-        _run_totals[k] = 0.0 if k == "cost_usd" else 0
+        _run_totals[k] = 0.0 if k.endswith("_usd") else 0
 
 
 def print_session_cost():
@@ -148,6 +168,11 @@ def print_session_cost():
     print(f"  LLM time:     {s['total_llm_time_s']:.1f}s")
     for stage, stats in s.get("by_stage", {}).items():
         print(f"    {stage}: {stats['tokens']:,} tokens  ${stats['cost_usd']:.4f}")
+    hits = _run_totals["cache_hits"]
+    if hits:
+        print(f"  Cache hits:   {hits} calls served free "
+              f"(~${_run_totals['cache_saved_usd']:.4f}, "
+              f"~{_run_totals['cache_saved_tokens']:,} tokens saved)")
 
 
 def load_cost_history() -> list[dict]:
