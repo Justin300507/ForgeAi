@@ -2287,3 +2287,101 @@ a fully identified, unrelated cause (icon hallucination) and does not
 implicate this experiment's changes.
 
 **Cost:** ~$0.03-0.06 (3-app canary, in line with prior runs).
+
+---
+
+## Experiment 035 — Design Intelligence v2 + Design Memory (V18/V19)
+
+**Hypothesis:** A deterministic design-brief pipeline (product analysis →
+experience blueprint → layout planning → inspiration principles) plus a
+similarity-gated design memory produces genuinely distinct per-app identities
+— specifically, that a top-nav-category app (restaurant) generates with the
+new shell, the style override correctly composed onto it, and no pipeline
+exceptions — at $0 added LLM cost per generation.
+
+**Date:** 2026-07-11, ~01:53 IST. One-app live validation (`dine_reserve`,
+restaurant idea, `--no-deploy`, provider auto), the minimum-spend probe for
+the one new code path static tests can't cover.
+
+**What shipped:**
+- `backend/app/design/` — product_analysis / experience / layout /
+  inspiration / brief / render, all pure functions of the idea string (same
+  determinism contract as select_style). Injected after the token/style
+  sections; wrapped in try/except so absence can never break generation.
+- Layout axis: restaurant/travel/portfolio → top-nav content shell
+  (LAYOUT OVERRIDE block, same countermand pattern as the style override);
+  all data-dense categories keep the battle-tested sidebar byte-for-byte.
+- Component metadata (COMPONENT_META) + streaming_chat & photo_card_grid
+  (their category hints previously matched no snippet).
+- Critic + vision judge made shell-aware (vision rubric previously
+  hard-coded "sidebar nav" as the 90+ signal — would have penalized every
+  top-nav app).
+- Design Memory (V19): full 12-dimension design record per generation in
+  design_fingerprints.json; weighted similarity vs last 20 different-idea
+  records; ≥0.75 injects a NEW DIRECTION directive (2 deterministic
+  within-style composition changes). Same-idea records excluded, so
+  Check & Fix re-runs can never fire against the app's own history.
+  Replaces the coarser is_overrepresented nudge.
+
+**Evidence:**
+1. 36 new asserts across 3 test files (brace balance of every category's
+   fenced JSX, determinism, layout assignments, forced-fire divergence,
+   same-idea exclusion, corrupt-store safety) + all pre-existing suites pass.
+2. Live: dine_reserve generated with Navbar.jsx/Footer.jsx, ZERO
+   sidebar/ml-56 markers, sticky top-nav + max-w-6xl column, and the
+   neubrutalist style override correctly restyled ONTO the top-nav header
+   (border-2, hard offset shadows, duration-100) with amber restaurant
+   tokens — three independent axes composing in real generation.
+3. Fingerprint record landed: restaurant/neubrutalist/topnav/consumer/low.
+4. CRM-vs-CRM sanity: two same-category ideas on different styles score
+   0.65 (below threshold — style axis already differentiates); an identical
+   category+style collision scores ~1.0 and fires.
+
+**Caveat (honest):** the run's backend needed the repair loop (5 missing
+files regenerated, auth-route symbol drift) — pre-existing generation-
+variance classes, none design-related; final forge score to be appended
+when the (quota-throttled) run exits. The design hypothesis itself is
+confirmed by the generated artifacts. **Cost:** 1 generation (~$0.01-0.02).
+
+---
+
+## Experiment 036 — Icon-validity guardrail: kill the "X is not exported" build-failure class
+
+**Hypothesis:** Every "'X' is not exported by lucide-react" vite build
+failure (2 of the last 10 failed generations, incl. the m3 crm dip) is
+mechanically preventable by validating icon names against the PINNED
+lucide-react version's true export list — no LLM fix attempt needed.
+
+**Root cause (found in real output):** three separate holes, one disease —
+nothing validated icon names against what lucide-react@0.263.1 actually
+exports:
+1. ForgeAI's own design vocabulary suggested 2 non-existent icons
+   (crm: Handshake, portfolio: Grid3x3) — self-inflicted build failures.
+2. The patcher's hand-written _LUCIDE_ICONS whitelist contained 10
+   non-exports (Grid3x3, LoaderCircle, NotebookPen, ...) — the
+   missing-import patcher could itself INJECT a build failure.
+3. No patcher fixed LLM-hallucinated icon imports at all (newer-lucide
+   names like ChartBar/CircleAlert/House, or inventions like Handshake) —
+   each one burned an LLM fix attempt on a mechanical mistake.
+
+**Fix (deterministic, $0):**
+- `app/knowledge/lucide_icon_exports.py` — ground-truth list (3702
+  bindings) extracted mechanically from the pinned package's d.ts export
+  statement (NOT the `declare const` lines — those miss alias exports).
+- Vocabulary: Handshake→HeartHandshake, Grid3x3→LayoutGrid.
+- _LUCIDE_ICONS sanitized by intersection with ground truth.
+- New `_patch_invalid_lucide_icons` (registered in run_frontend_patches
+  before the missing-import patcher): rewrites invalid imports via a
+  33-entry closest-real-icon map (Circle fallback), fixes usages,
+  preserves `X as Y` aliases, dedupes collisions.
+
+**Verification ($0, force-the-path):** 8 new asserts (vocab/snippets/prompt
+example/whitelist/rename-map all validated against ground truth; patcher
+tested on hallucinated + aliased + clean fixtures); then run on the REAL
+m3-canary crm output: 2 files patched (Handshake→HeartHandshake), zero
+invalid imports remain. All existing suites pass.
+
+**Next reliability targets (from last-25 telemetry, 60% first-try success):**
+JourneyCrudFailure "backend healthy but CRUD journey fails" (3×) is now the
+largest class; then missing-files-at-generation (dine_reserve needed 5
+regenerated). **Cost:** $0.

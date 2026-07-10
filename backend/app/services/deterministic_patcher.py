@@ -4440,6 +4440,38 @@ StickyNote NotebookPen Notebook Newspaper Rss Podcast Mic2 Music2 Music3 Music4
 Disc Disc2 Disc3 Radio Cast Airplay Bluetooth Cable Plug Plug2 PlugZap Usb
 """.split())
 
+# The curated list above is hand-written; sanitize it against the ground-truth
+# export list of the PINNED lucide-react version so the missing-import patcher
+# can never add a name the package doesn't actually export (found live: the
+# hand-written list contained Grid3x3/LoaderCircle/NotebookPen and 7 others
+# that 0.263.1 doesn't ship — each one a guaranteed vite build failure).
+from app.knowledge.lucide_icon_exports import VALID_LUCIDE_ICONS
+_LUCIDE_ICONS = _LUCIDE_ICONS & VALID_LUCIDE_ICONS
+
+# Closest real-icon substitute for names LLMs (and newer lucide versions)
+# use that the pinned lucide-react does NOT export. Anything not mapped here
+# falls back to Circle — always exported, visually neutral.
+_LUCIDE_INVALID_RENAMES = {
+    "Handshake": "HeartHandshake",
+    "Grid3x3": "LayoutGrid", "Grid3X3": "LayoutGrid",
+    "Grid2x2": "LayoutGrid", "Grid2X2": "LayoutGrid",
+    "LoaderCircle": "Loader2",
+    "SendHorizontal": "Send",
+    "NotebookPen": "PenSquare",
+    "Notebook": "BookOpen",
+    "Note": "StickyNote",
+    "ShieldX": "ShieldOff",
+    "TrafficCone": "Construction",
+    "Rabbit": "Bird",
+    "ChartBar": "BarChart2", "ChartLine": "LineChart", "ChartPie": "PieChart",
+    "ChartArea": "AreaChart", "ChartColumn": "BarChart3",
+    "CircleAlert": "AlertCircle", "CircleCheck": "CheckCircle",
+    "CircleX": "XCircle", "CircleHelp": "HelpCircle", "CircleUser": "UserCircle",
+    "SquarePen": "PenSquare", "SquareCheck": "CheckSquare",
+    "EllipsisVertical": "MoreVertical", "Ellipsis": "MoreHorizontal",
+    "House": "Home", "UserRound": "User", "UsersRound": "Users",
+}
+
 
 # A handful of heroicons component names whose closest lucide-react
 # equivalent isn't just "strip the Icon suffix" (heroicons and lucide don't
@@ -4931,6 +4963,92 @@ _ROUTER_COMPONENT_NAMES = frozenset({
 })
 
 
+def _patch_invalid_lucide_icons(project_path: Path) -> int:
+    """Replace lucide-react imports of icons the PINNED package version does
+    not export with a real equivalent.
+
+    LLMs hallucinate icon names constantly — either newer-lucide names
+    (ChartBar, CircleAlert, House) or plausible inventions (Handshake) that
+    don't exist in the pinned 0.263.1. Each one is a guaranteed vite build
+    failure ('\"X\" is not exported by node_modules/lucide-react/...'), which
+    today burns an LLM fix attempt on a mistake that's mechanically
+    correctable: swap the name for the closest real icon (see
+    _LUCIDE_INVALID_RENAMES) or the neutral Circle fallback, in both the
+    import statement and every JSX/expression usage. Seen live: the m3
+    canary's crm build failed on 'Handshake', and dine_reserve's telemetry
+    logged the same class ('\"Handshake\" is not exported').
+    """
+    import re
+    src_dir = project_path / "src"
+    if not src_dir.exists():
+        return 0
+
+    patched = 0
+    lucide_import_re = re.compile(r"import\s*\{([^}]*)\}\s*from\s*['\"]lucide-react['\"]\s*;?")
+
+    for jf in src_dir.rglob("*.jsx"):
+        try:
+            src = jf.read_text(encoding="utf-8", errors="replace")
+        except Exception:
+            continue
+
+        m = lucide_import_re.search(src)
+        if not m:
+            continue
+
+        entries = [e.strip() for e in m.group(1).split(",") if e.strip()]
+        new_entries: list[str] = []
+        renames: dict[str, str] = {}  # local usage name -> replacement usage name
+        changed = False
+        for entry in entries:
+            if " as " in entry:
+                orig, alias = [p.strip() for p in entry.split(" as ", 1)]
+                if orig in VALID_LUCIDE_ICONS:
+                    new_entries.append(entry)
+                else:
+                    # keep the alias the file already uses; only fix the source name
+                    repl = _LUCIDE_INVALID_RENAMES.get(orig, "Circle")
+                    new_entries.append(f"{repl} as {alias}")
+                    changed = True
+            else:
+                if entry in VALID_LUCIDE_ICONS:
+                    new_entries.append(entry)
+                else:
+                    repl = _LUCIDE_INVALID_RENAMES.get(entry, "Circle")
+                    renames[entry] = repl
+                    if repl not in new_entries:
+                        new_entries.append(repl)
+                    changed = True
+
+        if not changed:
+            continue
+
+        # Dedupe while preserving order (a replacement may collide with an
+        # icon the file already imported).
+        seen: set[str] = set()
+        deduped = []
+        for e in new_entries:
+            key = e.split(" as ")[-1].strip()
+            if key not in seen:
+                seen.add(key)
+                deduped.append(e)
+
+        new_import = "import { " + ", ".join(deduped) + " } from 'lucide-react';"
+        new_src = src[:m.start()] + new_import + src[m.end():]
+        for bad, good in renames.items():
+            new_src = re.sub(rf"\b{bad}\b", good, new_src)
+
+        try:
+            jf.write_text(new_src, encoding="utf-8")
+            patched += 1
+            fixed = sorted(set(renames) | {e.split(' as ')[0] for e in entries if ' as ' in e and e.split(' as ')[0].strip() not in VALID_LUCIDE_ICONS})
+            print(f"  [patcher] Replaced non-existent lucide icon(s) {fixed} in {jf.name}")
+        except Exception:
+            pass
+
+    return patched
+
+
 def _patch_missing_icon_imports(project_path: Path) -> int:
     """Add lucide-react icons (or react-router-dom components) that are USED in
     JSX but never imported.
@@ -5195,6 +5313,7 @@ def run_frontend_patches(project_path: Path) -> int:
     patched = 0
     patched += bool(_patch_frontend_package_json(project_path))
     patched += _patch_disallowed_icon_packages(project_path)
+    patched += _patch_invalid_lucide_icons(project_path)
     patched += _patch_missing_icon_imports(project_path)
     patched += _patch_frontend_auth_field_names(project_path)
     patched += _patch_frontend_signup_password_key(project_path)
