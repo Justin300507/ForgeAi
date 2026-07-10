@@ -36,6 +36,10 @@ with sync_playwright() as p:
     check("mist--b animates by default", animation_name(page, ".scenery-mist--b") != "none")
     check("light animates by default", animation_name(page, ".scenery-light") != "none")
 
+    check(".scenery-particle count is exactly 12", page.locator(".scenery-particle").count() == 12)
+    first_particle_animation = animation_name(page, ".scenery-particle")
+    check("first particle animates by default", first_particle_animation != "none")
+
     page.emulate_media(reduced_motion="reduce")
     page.reload(wait_until="networkidle")
     page.wait_for_timeout(400)
@@ -43,6 +47,13 @@ with sync_playwright() as p:
     check("mist--a suppressed under reduced-motion", animation_name(page, ".scenery-mist--a") == "none")
     check("mist--b suppressed under reduced-motion", animation_name(page, ".scenery-mist--b") == "none")
     check("light suppressed under reduced-motion", animation_name(page, ".scenery-light") == "none")
+
+    check("particle suppressed under reduced-motion", animation_name(page, ".scenery-particle") == "none")
+
+    page.emulate_media(reduced_motion="no-preference")
+    page.goto(BASE + "/new", wait_until="networkidle")
+    page.wait_for_timeout(400)
+    check("/new: .scenery-particle count is exactly 12", page.locator(".scenery-particle").count() == 12)
 
     real_errors = [e for e in console_errors if "Failed to load resource" not in e and "ERR_" not in e]
     check("no console errors", not real_errors)

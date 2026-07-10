@@ -201,6 +201,42 @@ body {
   100% { transform: translate(0, 0); }
 }
 
+.scenery-particle {
+  position: absolute;
+  border-radius: 50%;
+  pointer-events: none;
+  left: var(--particle-left);
+  top: var(--particle-top);
+  width: var(--particle-size);
+  height: var(--particle-size);
+  opacity: var(--particle-base-opacity);
+}
+
+.scenery-particle--dust {
+  background: rgba(226, 218, 255, 0.4);
+}
+
+.scenery-particle--firefly {
+  background: rgba(255, 200, 140, 0.55);
+  box-shadow: 0 0 6px rgba(255, 200, 140, 0.5);
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  .scenery-particle {
+    animation-name: scenery-particle-drift;
+    animation-timing-function: ease-in-out;
+    animation-iteration-count: infinite;
+    animation-duration: var(--particle-duration);
+    animation-delay: var(--particle-delay);
+  }
+}
+
+@keyframes scenery-particle-drift {
+  0%   { transform: translateY(0); opacity: var(--particle-base-opacity); }
+  50%  { transform: translateY(-18px); opacity: calc(var(--particle-base-opacity) * 1.6); }
+  100% { transform: translateY(0); opacity: var(--particle-base-opacity); }
+}
+
 /* ── App shell: ambient brand glow behind glass panels ───────────────── */
 
 /* Background now lives in the shared, persistent <Scenery /> layer

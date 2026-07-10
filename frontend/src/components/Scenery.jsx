@@ -1,6 +1,7 @@
 import React from "react";
 import { OVERLAY_PNG } from "../lib/cinematic";
 import sceneryStill from "../assets/scenery-golden-hour.jpg";
+import SceneryParticles from "./SceneryParticles";
 
 // The persistent blurred backdrop behind every authenticated page --
 // mounted once in App.jsx (sibling to Routes) so route changes never
@@ -15,6 +16,7 @@ export default function Scenery() {
       <div className="scenery-mist--a" />
       <div className="scenery-mist--b" />
       <div className="scenery-light" />
+      <SceneryParticles />
     </div>
   );
 }
