@@ -4,6 +4,7 @@ import time
 from app.providers.deepseek_provider import generate as deepseek_generate
 from app.providers.cerebras_provider import generate as cerebras_generate
 from app.providers.gemini_provider import generate as gemini_generate
+from app.providers.gemini_provider import current_model as gemini_current_model
 from app.providers.openrouter_provider import generate as openrouter_generate
 from app.providers.groq_provider import generate as groq_generate
 from app.providers.ollama_provider import generate as ollama_generate
@@ -79,7 +80,7 @@ def _auto_chain(prompt, stage, max_tokens, thinking_budget, skip: frozenset = fr
         for attempt in range(1, _GEMINI_RETRY_ATTEMPTS + 1):
             try:
                 print(f"Using Gemini{'' if attempt == 1 else f' (retry {attempt}/{_GEMINI_RETRY_ATTEMPTS})'}")
-                return _tracked("gemini", "gemini-2.5-flash", prompt, gemini_generate, stage,
+                return _tracked("gemini", gemini_current_model(), prompt, gemini_generate, stage,
                                 max_tokens=max_tokens, thinking_budget=thinking_budget)
             except Exception as e:
                 last_exc = e
@@ -197,7 +198,7 @@ def _generate_uncached(
             return _auto_chain(prompt, stage, max_tokens, thinking_budget, skip=frozenset({"gemini"}))
         try:
             print("Using Gemini")
-            return _tracked("gemini", "gemini-2.5-flash", prompt, gemini_generate, stage,
+            return _tracked("gemini", gemini_current_model(), prompt, gemini_generate, stage,
                             max_tokens=max_tokens, thinking_budget=thinking_budget)
         except Exception as e:
             print(f"Gemini failed ({e}) — falling back to auto chain")

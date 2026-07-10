@@ -105,9 +105,10 @@ def _call_via_openrouter(screenshots: list[dict], api_key: str) -> str:
 
 
 def _call_via_gemini(screenshots: list[dict], api_key: str) -> str:
-    """Use Gemini 2.0 Flash for vision analysis (google.genai new SDK)."""
+    """Use the current Gemini flash model for vision analysis (google.genai new SDK)."""
     from google import genai
     from google.genai import types
+    from app.providers.gemini_provider import current_model
     client = genai.Client(api_key=api_key)
     parts = []
     for shot in screenshots:
@@ -116,7 +117,7 @@ def _call_via_gemini(screenshots: list[dict], api_key: str) -> str:
         parts.append(types.Part.from_bytes(data=img_bytes, mime_type="image/png"))
     parts.append(types.Part.from_text(text=_VISION_PROMPT))
     response = client.models.generate_content(
-        model="gemini-2.0-flash",
+        model=current_model(),
         contents=[types.Content(parts=parts, role="user")],
     )
     return response.text

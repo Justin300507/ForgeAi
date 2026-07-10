@@ -2186,3 +2186,56 @@ are written after LLM files so scaffold always wins collisions.
 scaffold+prompt only and cannot alter backend behavior; visual deltas need
 the next funded canary or screenshot review to score). Rollback:
 `FORGE_THEMED_SCAFFOLD=0`.
+
+## Experiment 032 — Gemini model retirement: fallback-aware provider
+
+**Class**: Infrastructure (provider reliability). Google retired
+`gemini-2.5-flash` AND `gemini-2.0-flash` (~2026-07-10): generateContent
+404s "no longer available" while ListModels still lists them. Every Gemini
+call failed, the auto chain dumped all load onto Groq (12k TPM free tier),
+Groq collapsed with 413s, and the first m2 canary scored 0/0/0 at the
+generation stage (entry removed from canary_history — pure infra failure,
+nothing under test was exercised).
+
+**Change**: `gemini_provider.py` now tries an ordered candidate list —
+gemini-3.5-flash -> gemini-3-flash-preview -> gemini-3.1-flash-lite
+(`GEMINI_MODEL` env prepends an override). A 404 retirement blacklists the
+model for the process lifetime; a 503 "high demand" falls through to the
+next candidate within the same call. Cost-tracking label, llm_judge vision
+call, and vision_validator (both still on retired gemini-2.0-flash) now
+follow `current_model()`.
+
+**Verification**: live call — 3.5-flash 503'd, fell through to
+3-flash-preview, returned OK; all touched modules import clean.
+
+## Experiment 033 — m2 canary: two new-model failure patterns fixed deterministically
+
+**Canary m2-endpointfix-themekit** (validating Exp 029+031, now running on
+Gemini 3 after Exp 032): todo 91.2->42.0 (build+runtime FAIL), blog_cms
+85.9->81.1 (build/runtime/CRUD all PASS — first CRUD pass for blog_cms in a
+canary — browser judge failed), crm 87.8->87.3 (compilation flagged,
+repair recovered). Honest read: the regressions are NOT Exp 029/031 —
+they're gemini-3-flash-preview emitting idioms the deterministic passes
+didn't cover:
+
+1. **`Base.relationship("Task")`** in generated models (AttributeError at
+   import; killed todo's runtime). Fix: new Wave 2.5 normalization pass in
+   `parallel_backend_service.py` rewrites `Base./db.relationship(` to real
+   `sqlalchemy.orm.relationship` + guarantees the import, BEFORE the
+   back_populates/plural/no-FK passes.
+2. **Duplicate default-import** in App.jsx (`RegisterPage` imported twice —
+   LLM fix-loop rewrite + previously injected orphan import; esbuild hard
+   error). Fix: `_patch_dedupe_frontend_imports` in deterministic_patcher
+   removes re-declarations of an already-imported identifier across
+   src/**/*.jsx, registered before the orphan-route wirer. Always safe:
+   duplicate declaration is a guaranteed JS syntax error.
+
+**Verification ($0, force-the-path)**: fix 1 transform on the reconstructed
+broken model -> valid AST, import added, db.-variant covered, clean files
+untouched; fix 2 ran the REAL patcher on the REAL broken canary App.jsx
+(2 -> 1 RegisterPage declarations, all other imports preserved, idempotent).
+Both modules py_compile clean.
+
+**Next canary caveat**: the m2 entry (42.0/81.1/87.3) is now the last
+canary_history entry; compare the next run against
+`pydantic-config-patch-confirm` (91.2/85.9/87.8), not m2.

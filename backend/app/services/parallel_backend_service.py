@@ -418,6 +418,29 @@ def generate_backend_parallel(
             fr.content = modified
             model_contents[fr.path] = modified
 
+    # Normalize invalid relationship() call styles the LLM sometimes emits
+    # (first seen from gemini-3-flash-preview after the gemini-2.5-flash
+    # retirement): `Base.relationship("Task")` / `db.relationship("Task")`.
+    # Neither exists in plain SQLAlchemy — Base is a declarative base and
+    # db.* is a Flask-SQLAlchemy idiom — so the model file dies with
+    # AttributeError/NameError at import time (canary m2: todo runtime 42.0).
+    # Rewrite to the real sqlalchemy.orm.relationship and guarantee the
+    # import; the back_populates / plural-rename / no-FK passes below then
+    # treat it like any other relationship() call.
+    for fr in all_files:
+        if not fr.path.startswith("app/models/") or not fr.path.endswith(".py"):
+            continue
+        if not fr.success or not fr.content or "__init__" in fr.path:
+            continue
+        if not _re.search(r'\b(?:Base|db)\.relationship\(', fr.content):
+            continue
+        modified = _re.sub(r'\b(?:Base|db)\.relationship\(', 'relationship(', fr.content)
+        if not _re.search(r'^from sqlalchemy\.orm import .*\brelationship\b', modified, _re.MULTILINE):
+            modified = "from sqlalchemy.orm import relationship\n" + modified
+        fr.content = modified
+        model_contents[fr.path] = modified
+        print(f"  [V6] Wave 2.5 — normalized Base./db.relationship() to sqlalchemy.orm.relationship in {fr.path}")
+
     # Strip back_populates= and backref= from all relationship() calls in model files.
     # These cause InvalidRequestError ("has no property X") when both sides of a bidirectional
     # relationship don't have the matching attribute, and ArgumentError ("backref X already exists")

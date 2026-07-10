@@ -3839,6 +3839,46 @@ def _best_matching_path(comp_name: str, candidate_paths: list[str]) -> str | Non
     return best_path if best_score > 0 else None
 
 
+def _patch_dedupe_frontend_imports(project_path: Path) -> None:
+    """
+    Remove duplicate default-import declarations of the same identifier from
+    src/**/*.jsx. Duplicates arise when the LLM fix loop rewrites a file's
+    import block while an earlier deterministically-injected import (e.g.
+    from the orphan-route patcher below) is still present — esbuild then
+    refuses the whole build with 'The symbol "X" has already been declared'
+    (canary m2: todo App.jsx imported RegisterPage twice, build 42.0).
+    Removing every re-declaration after the first is always safe: a second
+    declaration of the same identifier is a guaranteed syntax error in JS.
+    """
+    src_dir = project_path / "src"
+    if not src_dir.is_dir():
+        return
+    import_decl_re = re.compile(r"^import\s+(\w+)\s+from\s+['\"][^'\"]+['\"];?\s*$")
+    for jsx in src_dir.rglob("*.jsx"):
+        try:
+            content = jsx.read_text(encoding="utf-8", errors="replace")
+        except Exception:
+            continue
+        if "import" not in content:
+            continue
+        seen: set[str] = set()
+        kept: list[str] = []
+        removed: list[str] = []
+        for line in content.split("\n"):
+            m = import_decl_re.match(line)
+            if m:
+                name = m.group(1)
+                if name in seen:
+                    removed.append(name)
+                    continue
+                seen.add(name)
+            kept.append(line)
+        if removed:
+            jsx.write_text("\n".join(kept), encoding="utf-8")
+            rel = jsx.relative_to(project_path)
+            print(f"  [import_dedupe] Removed duplicate import(s) {sorted(set(removed))} from {rel}")
+
+
 def _patch_wire_orphan_frontend_routes(project_path: Path) -> None:
     """
     Frontend mirror of _patch_wire_orphan_routers above: App.jsx routinely
@@ -5270,6 +5310,10 @@ def run_deterministic_patches(project_path: str, skip_protected_injections: bool
     # the LLM never generated them -- must run BEFORE the generic orphan
     # route wirer below, which would otherwise wrap these in PrivateRoute.
     patch_ensure_auth_pages(root)
+
+    # Duplicate import declarations are a hard esbuild error; dedupe before
+    # the route wirer so its own injected imports can't collide either.
+    _patch_dedupe_frontend_imports(root)
 
     # Frontend mirror: wire any page component App.jsx imports but never
     # mounted on a <Route> (see docstring for why this is invisible to

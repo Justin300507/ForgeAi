@@ -185,11 +185,13 @@ def _call_gemini_vision(prompt: str, image_b64: str) -> str:
     from google import genai
     from google.genai import types
 
+    from app.providers.gemini_provider import current_model
+
     client = genai.Client(api_key=os.getenv("GEMINI_API_KEY"))
     image_bytes = base64.b64decode(image_b64)
 
     response = client.models.generate_content(
-        model="gemini-2.0-flash",
+        model=current_model(),
         contents=[
             types.Part.from_bytes(data=image_bytes, mime_type="image/png"),
             types.Part.from_text(text=prompt),
