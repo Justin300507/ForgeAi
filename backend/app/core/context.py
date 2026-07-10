@@ -419,21 +419,36 @@ class GenerationContext:
 
     @property
     def is_deployment_ready(self) -> bool:
+        return self.deployment_block_reason is None
+
+    @property
+    def deployment_block_reason(self):
+        """Why deployment is blocked, or None if ready.
+
+        Single source of truth for the deploy gate — is_deployment_ready
+        delegates here, and the pipeline logs this string instead of
+        guessing (it used to print "Score X < threshold" even when the
+        score was fine and a hard-block was the real reason).
+        """
         # A high-confidence critical visual verdict (e.g. "this is a blank
         # page") is a real user-visible failure the numeric dimensions can
         # miss entirely -- see _dim_llm_judge_visual's docstring. It hard-
         # blocks here rather than only nudging the weighted average, which an
         # already-high score can absorb without ever dropping below threshold.
         if self.llm_judge_severity == ErrorSeverity.CRITICAL and self.llm_judge_confidence >= 0.6:
-            return False
+            return (f"visual judge flagged a critical user-visible failure "
+                    f"(confidence {self.llm_judge_confidence:.0%})")
         # Same reasoning for any critical stage that outright failed: a
         # renormalized score over the remaining dimensions can still clear
         # DEPLOY_THRESHOLD (that's the point of renormalization) even though
         # the build/runtime that Cloudflare/Render will reproduce is broken.
         for r in self.static_results:
             if r.stage in self.CRITICAL_STAGES and r.status == StageStatus.FAILED:
-                return False
-        return self.latest_score >= self.DEPLOY_THRESHOLD
+                return f"critical stage '{r.stage}' failed"
+        if self.latest_score < self.DEPLOY_THRESHOLD:
+            return (f"score {self.latest_score:.1f} below deployment "
+                    f"threshold ({self.DEPLOY_THRESHOLD:.0f})")
+        return None
 
     def record_score(self, score: QualityScore):
         self.current_score = score
