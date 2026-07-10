@@ -15,8 +15,16 @@ export default function Landing() {
   const { user } = useAuth();
   const { veilNav } = useVeil();
   const [activeVideo, setActiveVideo] = React.useState(0);
+  const [leaving, setLeaving] = React.useState(false);
   const [idea, setIdea] = React.useState("");
   const sceneRef = React.useRef(null);
+
+  // Camera-forward exit: zoom through the window glass while the veil
+  // sweeps in, so leaving the landing feels like entering the landscape.
+  const leave = (to) => {
+    setLeaving(true);
+    veilNav(to);
+  };
 
   // Ambient scenes cycle on their own — no controls, just weather.
   React.useEffect(() => {
@@ -35,7 +43,7 @@ export default function Landing() {
   const submitIdea = (e) => {
     e.preventDefault();
     if (idea.trim()) sessionStorage.setItem(IDEA_DRAFT_KEY, idea.trim());
-    veilNav(user ? "/new" : "/register");
+    leave(user ? "/new" : "/register");
   };
 
   const heroDark = activeVideo === 2;
@@ -55,44 +63,46 @@ export default function Landing() {
       className="relative w-full h-screen overflow-hidden bg-black"
       style={{ height: "100dvh" }}
     >
-      {/* Background video layer */}
-      {VIDEOS.map((video, index) => (
-        <video
-          key={video.src}
-          src={video.src}
-          autoPlay
-          muted
-          loop
-          playsInline
-          disablePictureInPicture
-          aria-hidden="true"
-          tabIndex={-1}
-          className={
-            index === activeVideo
-              ? "absolute inset-0 w-full h-full object-cover transition-opacity duration-1000 ease-in-out opacity-100"
-              : "absolute inset-0 w-full h-full object-cover transition-opacity duration-1000 ease-in-out opacity-0"
-          }
-        />
-      ))}
+      {/* Scene layer: videos + window frame, zoomed through on exit */}
+      <div className={`scene-zoom ${leaving ? "leaving" : ""}`}>
+        {VIDEOS.map((video, index) => (
+          <video
+            key={video.src}
+            src={video.src}
+            autoPlay
+            muted
+            loop
+            playsInline
+            disablePictureInPicture
+            aria-hidden="true"
+            tabIndex={-1}
+            className={
+              index === activeVideo
+                ? "absolute inset-0 w-full h-full object-cover transition-opacity duration-1000 ease-in-out opacity-100"
+                : "absolute inset-0 w-full h-full object-cover transition-opacity duration-1000 ease-in-out opacity-0"
+            }
+          />
+        ))}
 
-      {/* Transparent PNG overlay */}
-      <img
-        src={OVERLAY_PNG}
-        alt=""
-        aria-hidden="true"
-        onError={(e) => { e.currentTarget.style.display = "none"; }}
-        className="train-bob absolute inset-0 w-full h-full object-cover pointer-events-none z-[1]"
-      />
+        {/* Transparent PNG overlay */}
+        <img
+          src={OVERLAY_PNG}
+          alt=""
+          aria-hidden="true"
+          onError={(e) => { e.currentTarget.style.display = "none"; }}
+          className="train-bob absolute inset-0 w-full h-full object-cover pointer-events-none z-[1]"
+        />
+      </div>
 
       {/* Content layer */}
-      <div className="relative z-[2] flex flex-col h-full">
+      <div className={`scene-fade ${leaving ? "leaving" : ""} relative z-[2] flex flex-col h-full`}>
         {/* Navigation — wordmark and a single door in */}
         <nav className="flex items-center justify-between px-5 sm:px-10 py-5 sm:py-6">
           <Link to="/" className="hero-serif italic text-white text-xl sm:text-2xl">
             ForgeAI
           </Link>
           <button
-            onClick={() => veilNav(primaryCta.to)}
+            onClick={() => leave(primaryCta.to)}
             className="bg-white text-slate-900 text-sm font-medium px-5 py-2 rounded-full hover:bg-white/90 transition-colors"
             style={SANS}
           >
