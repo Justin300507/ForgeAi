@@ -135,7 +135,86 @@ _PATTERN_RULES = {
         "Always define: `oauth2_scheme = OAuth2PasswordBearer(tokenUrl='/auth/token')` "
         "Typos in OAuth variable names cause NameError crashes at startup."
     ),
+    "JourneyCRUDFailure": (
+        "The register->login->create->edit->delete journey fails most often from "
+        "silent contract drift, not crashes. Field names MUST be byte-identical "
+        "across the model, the create/update schemas, and the frontend payload "
+        "(if the model says `is_complete`, the schema and JSX must never say "
+        "`completed`). Every endpoint MUST return the status code and body shape "
+        "its architecture entry declares (POST that declares 201 returns 201 with "
+        "the created object; DELETE that declares 204 returns an empty 204). "
+        "Update endpoints MUST apply every field present in the update schema, "
+        "not just one."
+    ),
+    "ConfigAttributeError": (
+        "Every settings attribute accessed ANYWHERE (settings.SECRET_KEY, "
+        "settings.DATABASE_URL, settings.ALGORITHM, ...) MUST be defined on the "
+        "Settings class in app/config.py with a safe default. Accessing an "
+        "undefined settings attribute crashes the server at import time."
+    ),
+    "ImportError": (
+        "Only import names the source module ACTUALLY defines in this same "
+        "response. Never import helpers (SignupRequest, _make_user, get_current_"
+        "user) from another route file unless that file genuinely defines and "
+        "exports them — shared helpers belong in app/auth.py or app/dependencies.py, "
+        "imported from there by every consumer."
+    ),
+    "AttributeError": (
+        "Never call methods on values that can be str or None: convert datetimes "
+        "with datetime.fromisoformat() before .date()/.strftime(), guard Optional "
+        "relationship access, and never shadow a builtin or module name with a "
+        "local variable (e.g. a local named `date` or `list`)."
+    ),
+    "NotNullViolationError": (
+        "Every model column declared nullable=False WITHOUT a server_default MUST "
+        "appear as a required field in the create schema (and be sent by the "
+        "frontend form). A NOT NULL column missing from the create path is a "
+        "guaranteed IntegrityError on first insert."
+    ),
 }
+
+# ── Failure taxonomy: pattern key -> pipeline stage ──────────────────────────
+# Five stages, assigned automatically at record time so trends are visible per
+# stage, not just per pattern: generation (files/endpoints missing at
+# generation), build (static/compile/bundle), runtime (server boots then
+# crashes), integration (app runs but user journeys fail), deployment.
+_PATTERN_STAGES = {
+    "MissingRouteFile": "generation", "MissingAuthSchemasFile": "generation",
+    "MissingEndpoint": "generation", "StubHandler": "generation",
+    "MonolithicSchemaError": "generation", "MissingFile": "generation",
+    "RouterExportMismatch": "build", "SyntaxError": "build",
+    "FrontendBuildError": "build", "IconNotExported": "build",
+    "JSXNestedBrace": "build",
+    "ModuleNotFoundError": "runtime", "ImportError": "runtime",
+    "CircularImport": "runtime", "SQLAlchemyError": "runtime",
+    "NoReferencedTableError": "runtime", "ConfigAttributeError": "runtime",
+    "AttributeError": "runtime", "NotNullViolationError": "runtime",
+    "TimestampNotNullError": "runtime", "PydanticSerializationError": "runtime",
+    "ResponseValidationError": "runtime", "ValidationError": "runtime",
+    "RelationshipModelNotImported": "runtime", "RelationshipMissingError": "runtime",
+    "FastAPIError": "runtime", "AsyncEngineError": "runtime",
+    "WerkzeugImportError": "runtime", "SchemasNamespaceError": "runtime",
+    "NameErrorTypo": "runtime", "UserIdNotInjectedError": "runtime",
+    "InvalidDependsType": "runtime", "ModelFieldMismatchError": "runtime",
+    "PydanticOrmModeDeprecated": "runtime",
+    "JourneyCRUDFailure": "integration", "WorkflowStepFailure": "integration",
+    "BrowserUXFailure": "integration",
+    "DeployFailure": "deployment", "HealthCheckFailure": "deployment",
+}
+
+
+def stage_of(pattern_key: str) -> str:
+    return _PATTERN_STAGES.get(pattern_key, "runtime")
+
+
+def classify_failure(error_text: str) -> tuple[str, str] | None:
+    """Classify a raw failure string into (stage, pattern_key). The single
+    classification point for every failure signal — validation errors,
+    dominant_errors from generation_log, runtime tracebacks."""
+    key = _classify_validation_error(error_text)
+    if key:
+        return stage_of(key), key
+    return None
 
 
 def record_run(
@@ -155,49 +234,66 @@ def record_run(
 
     patterns = data.setdefault("patterns", {})
 
+    def _bump(key: str, error_text: str):
+        entry = patterns.setdefault(key, {"count": 0, "examples": [], "first_seen": datetime.utcnow().isoformat()})
+        entry["count"] += 1
+        entry["stage"] = stage_of(key)
+        if len(entry["examples"]) < 5:
+            entry["examples"].append({"project": project_name, "error": error_text[:200]})
+        entry["last_seen"] = datetime.utcnow().isoformat()
+
     # ── Static validation errors ─────────────────────────────────────────
     for error in validation_errors:
         key = _classify_validation_error(error)
         if key:
-            entry = patterns.setdefault(key, {"count": 0, "examples": [], "first_seen": datetime.utcnow().isoformat()})
-            entry["count"] += 1
-            if len(entry["examples"]) < 5:
-                entry["examples"].append({"project": project_name, "error": error[:200]})
-            entry["last_seen"] = datetime.utcnow().isoformat()
+            _bump(key, error)
 
     # ── Runtime errors ───────────────────────────────────────────────────
     if runtime_error_type and runtime_error_type not in ("Unknown",):
-        entry = patterns.setdefault(runtime_error_type, {"count": 0, "examples": [], "first_seen": datetime.utcnow().isoformat()})
-        entry["count"] += 1
-        if len(entry["examples"]) < 5:
-            entry["examples"].append({"project": project_name, "error": runtime_error_type})
-        entry["last_seen"] = datetime.utcnow().isoformat()
+        _bump(runtime_error_type, runtime_error_type)
 
     # ── Frontend build failures ──────────────────────────────────────────
     if frontend_build_failed:
-        entry = patterns.setdefault("FrontendBuildError", {"count": 0, "examples": [], "first_seen": datetime.utcnow().isoformat()})
-        entry["count"] += 1
-        if len(entry["examples"]) < 5:
-            entry["examples"].append({"project": project_name, "error": "vite build failed"})
-        entry["last_seen"] = datetime.utcnow().isoformat()
+        _bump("FrontendBuildError", "vite build failed")
 
     _save(data)
 
 
 def _classify_validation_error(error: str) -> str | None:
-    """Map a validation error string to a pattern key."""
+    """Map a raw failure string to a pattern key. Ordered: more specific
+    signatures first, so e.g. an icon-export build error never falls through
+    to the generic FrontendBuildError bucket."""
     checks = [
-        ("Router export mismatch", "RouterExportMismatch"),
-        ("Missing endpoint", "MissingEndpoint"),
-        ("Stub handler", "StubHandler"),
+        ("is not exported", "IconNotExported"),
+        ("expected '}'", "JSXNestedBrace"),
+        ("router export mismatch", "RouterExportMismatch"),
+        ("missing endpoint", "MissingEndpoint"),
+        ("missing symbol", "ImportError"),
+        ("missing file", "MissingFile"),
+        ("stub handler", "StubHandler"),
         ("orm_mode", "PydanticOrmModeDeprecated"),
-        ("SyntaxError", "SyntaxError"),
-        ("No module named", "ModuleNotFoundError"),
+        ("syntaxerror", "SyntaxError"),
+        ("no module named", "ModuleNotFoundError"),
         ("circular", "CircularImport"),
+        ("journeycrudfailure", "JourneyCRUDFailure"),
+        ("crud journey", "JourneyCRUDFailure"),
+        ("workflow step failed", "WorkflowStepFailure"),
+        ("error during build", "FrontendBuildError"),
+        ("operationalerror", "SQLAlchemyError"),
+        ("integrityerror", "NotNullViolationError"),
+        ("not null", "NotNullViolationError"),
+        ("sqlalchemy", "SQLAlchemyError"),
+        ("attributeerror", "AttributeError"),
+        ("importerror", "ImportError"),
+        ("config attribute", "ConfigAttributeError"),
+        ("responsevalidationerror", "ResponseValidationError"),
+        ("validationerror", "ValidationError"),
+        ("deploy failed", "DeployFailure"),
+        ("health check", "HealthCheckFailure"),
     ]
     error_lower = error.lower()
     for substr, key in checks:
-        if substr.lower() in error_lower:
+        if substr in error_lower:
             return key
     return None
 

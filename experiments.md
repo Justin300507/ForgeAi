@@ -2385,3 +2385,48 @@ invalid imports remain. All existing suites pass.
 JourneyCrudFailure "backend healthy but CRUD journey fails" (3×) is now the
 largest class; then missing-files-at-generation (dine_reserve needed 5
 regenerated). **Cost:** $0.
+
+---
+
+## Experiment 037 — V20 Reliability Engine: dashboard, staged taxonomy, prevention coverage for the #1 class
+
+**Hypothesis:** The reliability bottleneck isn't missing infrastructure —
+it's blind spots in the EXISTING failure-memory loop. Audit before build.
+
+**Audit findings ($0):** record→classify→inject already runs live
+(failure_memory.record_run → get_top_patterns → build_prompt_injection →
+architect+backend prompts, on the V15 path). But:
+1. **JourneyCRUDFailure — the #1 recorded pattern (29×) — had NO prevention
+   rule**, so the injection never mentioned it. Same for ConfigAttributeError
+   (13×), ImportError (12×), AttributeError (8×), NotNullViolationError (4×).
+2. The classifier mapped only 7 substrings; icon-export failures fell into
+   the generic FrontendBuildError bucket, journey/workflow/deploy failures
+   weren't classified at all.
+3. No stage-level view — per-pattern counts only, no
+   generation/build/runtime/integration/deployment trends, no
+   first-try-success number anywhere.
+
+**What shipped:**
+- Prevention rules for the 5 uncovered high-frequency patterns; the live
+  injection now leads with MissingEndpoint (46x) + JourneyCRUDFailure (29x).
+- `classify_failure()` — single classification point, 29 signatures →
+  (stage, class); stages stamped on entries at record time + backfilled
+  onto all 23 existing patterns.
+- `app/memory/reliability_metrics.py` + dashboard section in
+  scripts/failure_report.py. Deploy-rate semantics fixed: --no-deploy runs
+  don't count as deploy failures.
+
+**Baseline (last 30 generations) — the numbers every experiment must move:**
+| metric | value |
+|---|---|
+| Generation success | 53.3% |
+| **First-try success (0 fixes) — NORTH STAR** | **46.7%** |
+| Build / Runtime / CRUD / Browser | 79.1% / 40.3% / 13.3% / 93.3% |
+| Avg fix iterations | 1.37 |
+| Top recent failure | JourneyCRUDFailure (7 of last ~14 failures) |
+
+**Verification ($0):** 7 new asserts (real failure strings from telemetry
+classify into the right buckets, metrics math on synthetic fixtures,
+empty-telemetry safety, injection includes the journey rule); all 16 suites
+pass. **Cost:** $0. **Next:** root-cause JourneyCRUDFailure instances in
+real failed outputs — prevention rule is a mitigation, not the cure.

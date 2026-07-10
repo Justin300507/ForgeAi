@@ -43,10 +43,15 @@ def print_failure_taxonomy():
     total = sum(p["count"] for p in pats.values()) or 1
     rows = sorted(pats.items(), key=lambda x: -x[1]["count"])
 
+    import sys
+    sys.path.insert(0, str(_BACKEND_ROOT))
+    from app.memory.failure_memory import stage_of
+
     print(f"\n{'='*70}\n  FAILURE TAXONOMY  ({total} recorded instances)\n{'='*70}")
     for name, p in rows:
         pct = 100 * p["count"] / total
-        print(f"  {name:32s} {p['count']:4d}  {pct:5.1f}%   last_seen={p['last_seen'][:10]}")
+        stage = p.get("stage") or stage_of(name)
+        print(f"  [{stage:11s}] {name:30s} {p['count']:4d}  {pct:5.1f}%   last_seen={p['last_seen'][:10]}")
 
 
 def print_variance_report():
@@ -87,7 +92,27 @@ def print_variance_report():
         print(f"    {r.get('forge_score', 0):5.1f}  {r.get('idea', '')[:45]:45s}  {first_err}")
 
 
+def print_reliability_dashboard():
+    """The V20 reliability dashboard — the numbers every experiment must
+    move. Computation lives in app/memory/reliability_metrics.py (pure,
+    unit-tested); this just loads telemetry and renders."""
+    import sys
+    sys.path.insert(0, str(_BACKEND_ROOT))
+    from app.memory.reliability_metrics import compute_reliability_metrics, render_dashboard
+
+    gen_entries = _load_jsonl(FAILURE_DIR / "generation_log.jsonl")
+    canary_path = _BACKEND_ROOT / "benchmark_results" / "canary_history.json"
+    canary_runs = []
+    if canary_path.exists():
+        try:
+            canary_runs = json.loads(canary_path.read_text(encoding="utf-8")).get("runs", [])
+        except Exception:
+            pass
+    print(render_dashboard(compute_reliability_metrics(gen_entries, canary_runs)))
+
+
 if __name__ == "__main__":
+    print_reliability_dashboard()
     print_failure_taxonomy()
     print_variance_report()
     print()

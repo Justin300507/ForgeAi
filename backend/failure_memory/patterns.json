@@ -25,7 +25,8 @@
         }
       ],
       "first_seen": "2026-06-21T20:43:34.977754",
-      "last_seen": "2026-07-06T01:13:44.604568"
+      "last_seen": "2026-07-06T01:13:44.604568",
+      "stage": "build"
     },
     "NoReferencedTableError": {
       "count": 6,
@@ -52,7 +53,8 @@
         }
       ],
       "first_seen": "2026-06-21T20:43:34.977765",
-      "last_seen": "2026-06-27T14:53:33.736245"
+      "last_seen": "2026-06-27T14:53:33.736245",
+      "stage": "runtime"
     },
     "FrontendBuildError": {
       "count": 7,
@@ -79,7 +81,8 @@
         }
       ],
       "first_seen": "2026-06-21T20:43:34.978774",
-      "last_seen": "2026-06-30T00:47:12.165282"
+      "last_seen": "2026-06-30T00:47:12.165282",
+      "stage": "build"
     },
     "ModuleNotFoundError": {
       "count": 9,
@@ -106,7 +109,8 @@
         }
       ],
       "first_seen": "2026-06-21T21:19:46.461599",
-      "last_seen": "2026-07-01T19:49:17.134673"
+      "last_seen": "2026-07-01T19:49:17.134673",
+      "stage": "runtime"
     },
     "SQLAlchemyError": {
       "count": 11,
@@ -133,7 +137,8 @@
         }
       ],
       "first_seen": "2026-06-21T21:30:53.208370",
-      "last_seen": "2026-07-06T12:23:57.957873"
+      "last_seen": "2026-07-06T12:23:57.957873",
+      "stage": "runtime"
     },
     "ValidationError": {
       "count": 3,
@@ -152,7 +157,8 @@
         }
       ],
       "first_seen": "2026-06-21T23:42:14.421044",
-      "last_seen": "2026-07-01T17:05:10.204402"
+      "last_seen": "2026-07-01T17:05:10.204402",
+      "stage": "runtime"
     },
     "TimestampNotNullError": {
       "count": 1,
@@ -163,7 +169,8 @@
         }
       ],
       "first_seen": "2026-06-22T05:53:56.254135",
-      "last_seen": "2026-06-22T05:53:56.254146"
+      "last_seen": "2026-06-22T05:53:56.254146",
+      "stage": "runtime"
     },
     "ImportError": {
       "count": 12,
@@ -190,7 +197,8 @@
         }
       ],
       "first_seen": "2026-06-22T05:55:11.076646",
-      "last_seen": "2026-07-09T19:33:42.151366"
+      "last_seen": "2026-07-09T19:33:42.151366",
+      "stage": "runtime"
     },
     "MonolithicSchemaError": {
       "count": 1,
@@ -201,10 +209,11 @@
         }
       ],
       "first_seen": "2026-06-22T07:34:30.310083",
-      "last_seen": "2026-06-22T07:34:30.310089"
+      "last_seen": "2026-06-22T07:34:30.310089",
+      "stage": "generation"
     },
     "MissingEndpoint": {
-      "count": 44,
+      "count": 46,
       "examples": [
         {
           "project": "bug_tracker",
@@ -228,7 +237,8 @@
         }
       ],
       "first_seen": "2026-06-22T07:49:29.613937",
-      "last_seen": "2026-07-07T12:09:39.088488"
+      "last_seen": "2026-07-10T20:33:32.223014",
+      "stage": "generation"
     },
     "FastAPIError": {
       "count": 1,
@@ -239,7 +249,8 @@
         }
       ],
       "first_seen": "2026-06-22T10:09:33.395362",
-      "last_seen": "2026-06-22T10:09:33.395375"
+      "last_seen": "2026-06-22T10:09:33.395375",
+      "stage": "runtime"
     },
     "RelationshipModelNotImported": {
       "count": 3,
@@ -258,7 +269,8 @@
         }
       ],
       "first_seen": "2026-06-22T10:44:11.605211",
-      "last_seen": "2026-06-22T11:22:25.507048"
+      "last_seen": "2026-06-22T11:22:25.507048",
+      "stage": "runtime"
     },
     "RelationshipMissingError": {
       "count": 1,
@@ -269,7 +281,8 @@
         }
       ],
       "first_seen": "2026-06-27T15:15:34.575254",
-      "last_seen": "2026-06-27T15:15:34.575276"
+      "last_seen": "2026-06-27T15:15:34.575276",
+      "stage": "runtime"
     },
     "UserIdNotInjectedError": {
       "count": 1,
@@ -280,7 +293,8 @@
         }
       ],
       "first_seen": "2026-06-28T21:05:09.324006",
-      "last_seen": "2026-06-28T21:05:09.324044"
+      "last_seen": "2026-06-28T21:05:09.324044",
+      "stage": "runtime"
     },
     "PydanticSerializationError": {
       "count": 4,
@@ -303,7 +317,8 @@
         }
       ],
       "first_seen": "2026-06-29T23:39:46.755253",
-      "last_seen": "2026-07-01T20:13:11.496878"
+      "last_seen": "2026-07-01T20:13:11.496878",
+      "stage": "runtime"
     },
     "JourneyCRUDFailure": {
       "count": 29,
@@ -330,7 +345,8 @@
         }
       ],
       "first_seen": "2026-06-29T23:47:06.584012",
-      "last_seen": "2026-07-06T13:42:49.314630"
+      "last_seen": "2026-07-06T13:42:49.314630",
+      "stage": "integration"
     },
     "InvalidDependsType": {
       "count": 1,
@@ -341,7 +357,8 @@
         }
       ],
       "first_seen": "2026-06-30T00:08:24.188295",
-      "last_seen": "2026-06-30T00:08:24.188317"
+      "last_seen": "2026-06-30T00:08:24.188317",
+      "stage": "runtime"
     },
     "ModelFieldMismatchError": {
       "count": 1,
@@ -352,7 +369,8 @@
         }
       ],
       "first_seen": "2026-07-01T15:55:15.892683",
-      "last_seen": "2026-07-01T15:55:15.892695"
+      "last_seen": "2026-07-01T15:55:15.892695",
+      "stage": "runtime"
     },
     "NotNullViolationError": {
       "count": 4,
@@ -375,7 +393,8 @@
         }
       ],
       "first_seen": "2026-07-01T19:37:49.712563",
-      "last_seen": "2026-07-06T10:02:36.798218"
+      "last_seen": "2026-07-06T10:02:36.798218",
+      "stage": "runtime"
     },
     "AttributeError": {
       "count": 8,
@@ -402,7 +421,8 @@
         }
       ],
       "first_seen": "2026-07-01T22:56:38.596264",
-      "last_seen": "2026-07-07T11:47:43.660305"
+      "last_seen": "2026-07-07T11:47:43.660305",
+      "stage": "runtime"
     },
     "ConfigAttributeError": {
       "count": 13,
@@ -429,7 +449,8 @@
         }
       ],
       "first_seen": "2026-07-05T09:26:46.709471",
-      "last_seen": "2026-07-07T12:32:33.394516"
+      "last_seen": "2026-07-07T12:32:33.394516",
+      "stage": "runtime"
     },
     "ResponseValidationError": {
       "count": 2,
@@ -444,7 +465,8 @@
         }
       ],
       "first_seen": "2026-07-05T09:59:06.675979",
-      "last_seen": "2026-07-06T10:36:16.185918"
+      "last_seen": "2026-07-06T10:36:16.185918",
+      "stage": "runtime"
     },
     "SyntaxError": {
       "count": 5,
@@ -471,9 +493,10 @@
         }
       ],
       "first_seen": "2026-07-06T01:13:44.604581",
-      "last_seen": "2026-07-06T05:46:37.663703"
+      "last_seen": "2026-07-06T05:46:37.663703",
+      "stage": "build"
     }
   },
-  "total_runs": 396,
-  "last_updated": "2026-07-10T15:47:28.100789"
+  "total_runs": 397,
+  "last_updated": "2026-07-10T20:33:32.222966"
 }
