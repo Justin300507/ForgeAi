@@ -342,9 +342,9 @@
     "fix_content": {
       "app/schemas/tag.py": "from typing import Optional\nfrom pydantic import BaseModel, Field, ConfigDict\n\n\nclass TagCreate(BaseModel):\n    name: str = Field(min_length=1)\n\n    model_config = ConfigDict(from_attributes=True)\n\n\nclass TagUpdate(BaseModel):\n    name: Optional[str] = Field(None, min_length=1)\n\n    model_config = ConfigDict(from_attributes=True)\n\n\nclass TagResponse(BaseModel):\n    id: int\n    name: str # Changed from Optional[str] to str to match TagCreate and enforce non-nullability\n\n    model_config = ConfigDict(from_attributes=True)\n"
     },
-    "success_count": 1,
+    "success_count": 2,
     "first_seen": "2026-07-06T10:51:17Z",
-    "last_seen": "2026-07-06T10:51:17Z",
+    "last_seen": "2026-07-07T12:08:51Z",
     "source_idea": "A blog CMS with author and reader roles. Authors write posts with title, content (markdown), tags, a"
   },
   "569948f96b13c786": {
@@ -352,9 +352,9 @@
     "fix_content": {
       "app/schemas/post.py": "from typing import Optional\nfrom datetime import datetime\nfrom pydantic import BaseModel, Field, ConfigDict\n\n\nclass PostCreate(BaseModel):\n    model_config = ConfigDict(from_attributes=True)\n    title: str = Field(min_length=1)\n    content_markdown: str = Field(min_length=1)\n    cover_image_url: Optional[str] = None\n    tag_ids: Optional[str] = None\n\n\nclass PostUpdate(BaseModel):\n    model_config = ConfigDict(from_attributes=True)\n    title: Optional[str] = Field(None, min_length=1)\n    content_markdown: Optional[str] = Field(None, min_length=1)\n    cover_image_url: Optional[str] = None\n\n\nclass PostResponse(BaseModel):\n    id: int\n    title: str\n    content_markdown: str\n    cover_image_url: Optional[str] = None\n    status: Optional[str] = None\n    published_at: Optional[datetime] = None\n    created_at: Optional[datetime] = None\n    updated_at: Optional[datetime] = None\n    author_id: Optional[int] = None\n\n    model_config = ConfigDict(from_attributes=True)\n"
     },
-    "success_count": 1,
+    "success_count": 2,
     "first_seen": "2026-07-06T12:19:40Z",
-    "last_seen": "2026-07-06T12:19:40Z",
+    "last_seen": "2026-07-07T12:08:51Z",
     "source_idea": "A blog CMS with author and reader roles. Authors write posts with title, content (markdown), tags, a"
   },
   "3d8009264274f4a4": {
@@ -416,5 +416,45 @@
     "first_seen": "2026-07-06T12:48:14Z",
     "last_seen": "2026-07-06T12:48:14Z",
     "source_idea": "A simple CRM for small businesses with user login. Users manage contacts (name, email, phone, compan"
+  },
+  "d457659dd134a161": {
+    "fix_hash": "d457659dd134a161",
+    "fix_content": {
+      "app/routes/author_routes.py": "from fastapi import APIRouter, Depends, HTTPException, Query\nfrom sqlalchemy.orm import Session\nfrom typing import List, Optional\nimport datetime\n\nfrom app.database import get_db\nfrom app.models.author import Author  # Fixed: Changed from 'authors' to 'author'\nfrom app.models.posts import Post\nfrom app.models.user import User\nfrom app.schemas.authors import AuthorCreate, AuthorUpdate, AuthorResponse\nfrom app.schemas.post import PostResponse\nfrom app.utils.auth import get_current_user\n\nauthor_router = APIRouter()\n\n@author_router.post(\"/authors\", response_model=AuthorResponse, status_code=201)\ndef create_author(\n    author_in: AuthorCreate,\n    db: Session = Depends(get_db),\n    current_user: User = Depends(get_current_user)\n):\n    author = Author(\n        name=author_in.name,\n        bio=author_in.bio,\n        created_at=datetime.datetime.now(),\n        updated_at=datetime.datetime.now()\n    )\n    db.add(author)\n    db.commit()\n    db.refresh(author)\n    return author\n\n@author_router.get(\"/authors\", response_model=List[AuthorResponse])\ndef get_all_authors(\n    db: Session = Depends(get_db),\n    limit: int = Query(50, ge=1, le=500),\n    offset: int = Query(0, ge=0)\n):\n    authors = db.query(Author).offset(offset).limit(limit).all()\n    return authors\n\n@author_router.get(\"/authors/{author_id}\", response_model=AuthorResponse)\ndef get_author_by_id(\n    author_id: int,\n    db: Session = Depends(get_db)\n):\n    author = db.query(Author).filter(Author.id == author_id).first()\n    if not author:\n        raise HTTPException(status_code=404, detail=\"Author not found\")\n    return author\n\n@author_router.put(\"/authors/{author_id}\", response_model=AuthorResponse)\ndef update_author(\n    author_id: int,\n    author_in: AuthorUpdate,\n    db: Session = Depends(get_db),\n    current_user: User = Depends(get_current_user)\n):\n    author = db.query(Author).filter(Author.id == author_id).first()\n    if not author:\n        raise HTTPException(status_code=404, detail=\"Author not found\")\n    update_data = author_in.model_dump(exclude_unset=True)\n    for key, value in update_data.items():\n        setattr(author, key, value)\n    author.updated_at = datetime.datetime.now()\n    db.commit()\n    db.refresh(author)\n    return author\n\n@author_router.get(\"/authors/{author_id}/posts\", response_model=List[PostResponse])\ndef get_posts_by_author(\n    author_id: int,\n    db: Session = Depends(get_db),\n    limit: int = Query(50, ge=1, le=500),\n    offset: int = Query(0, ge=0),\n    status: Optional[str] = Query(None, description=\"Filter by post status (e.g., 'published', 'draft')\")\n):\n    query = db.query(Post).filter(Post.author_id == author_id)\n    if status:\n        query = query.filter(Post.status == status)\n    posts = query.offset(offset).limit(limit).all()\n    return posts\n"
+    },
+    "success_count": 1,
+    "first_seen": "2026-07-07T12:08:51Z",
+    "last_seen": "2026-07-07T12:08:51Z",
+    "source_idea": "A blog CMS with author and reader roles. Authors write posts with title, content (markdown), tags, a"
+  },
+  "9046d457c5e906d2": {
+    "fix_hash": "9046d457c5e906d2",
+    "fix_content": {
+      "app/schemas/user.py": "from pydantic import BaseModel, Field\n\n\nclass UserCreate(BaseModel):\n    class Config:\n        from_attributes = True\n    username: str = Field(min_length=1)\n    password_hash: str = Field(min_length=1)\n    role: str = Field(min_length=1)\n\n\nclass UserUpdate(BaseModel):\n    class Config:\n        from_attributes = True\n    username: str | None = None\n    password_hash: str | None = None\n    role: str | None = None\n\n\nclass UserResponse(BaseModel):\n    class Config:\n        from_attributes = True\n    id: int\n    username: str | None = None\n    role: str | None = None\n"
+    },
+    "success_count": 1,
+    "first_seen": "2026-07-07T12:08:51Z",
+    "last_seen": "2026-07-07T12:08:51Z",
+    "source_idea": "A blog CMS with author and reader roles. Authors write posts with title, content (markdown), tags, a"
+  },
+  "6bcc97abda72d309": {
+    "fix_hash": "6bcc97abda72d309",
+    "fix_content": {
+      "app/services/__init__.py": "from . import post_service\n"
+    },
+    "success_count": 1,
+    "first_seen": "2026-07-07T12:08:51Z",
+    "last_seen": "2026-07-07T12:08:51Z",
+    "source_idea": "A blog CMS with author and reader roles. Authors write posts with title, content (markdown), tags, a"
+  },
+  "92235e3f0294446f": {
+    "fix_hash": "92235e3f0294446f",
+    "fix_content": {
+      "app/routes/article_routes.py": "from fastapi import APIRouter, Depends, HTTPException, status\nfrom app.database import get_db\nfrom app.models.article import Article\nfrom app.schemas.article import ArticleCreate, ArticleResponse\nfrom app.utils.auth import get_current_user\nfrom sqlalchemy.orm import Session\n\narticle_router = APIRouter()\n\n@article_router.post('/articles', response_model=ArticleResponse)\nasync def create_article(article: ArticleCreate, db: Session = Depends(get_db), current_user: dict = Depends(get_current_user)):\n    new_article = Article(**article.dict(), author_id=current_user['id'])\n    db.add(new_article)\n    db.commit()\n    db.refresh(new_article)\n    return new_article"
+    },
+    "success_count": 1,
+    "first_seen": "2026-07-07T12:08:51Z",
+    "last_seen": "2026-07-07T12:08:51Z",
+    "source_idea": "A blog CMS with author and reader roles. Authors write posts with title, content (markdown), tags, a"
   }
 }

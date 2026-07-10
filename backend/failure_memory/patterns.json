@@ -166,7 +166,7 @@
       "last_seen": "2026-06-22T05:53:56.254146"
     },
     "ImportError": {
-      "count": 11,
+      "count": 12,
       "examples": [
         {
           "project": "inventory_system",
@@ -190,7 +190,7 @@
         }
       ],
       "first_seen": "2026-06-22T05:55:11.076646",
-      "last_seen": "2026-07-01T15:06:02.891817"
+      "last_seen": "2026-07-09T19:33:42.151366"
     },
     "MonolithicSchemaError": {
       "count": 1,
@@ -204,7 +204,7 @@
       "last_seen": "2026-06-22T07:34:30.310089"
     },
     "MissingEndpoint": {
-      "count": 36,
+      "count": 44,
       "examples": [
         {
           "project": "bug_tracker",
@@ -228,7 +228,7 @@
         }
       ],
       "first_seen": "2026-06-22T07:49:29.613937",
-      "last_seen": "2026-07-06T12:21:01.425642"
+      "last_seen": "2026-07-07T12:09:39.088488"
     },
     "FastAPIError": {
       "count": 1,
@@ -378,7 +378,7 @@
       "last_seen": "2026-07-06T10:02:36.798218"
     },
     "AttributeError": {
-      "count": 5,
+      "count": 8,
       "examples": [
         {
           "project": "gym_tracker",
@@ -402,10 +402,10 @@
         }
       ],
       "first_seen": "2026-07-01T22:56:38.596264",
-      "last_seen": "2026-07-06T11:52:24.191764"
+      "last_seen": "2026-07-07T11:47:43.660305"
     },
     "ConfigAttributeError": {
-      "count": 10,
+      "count": 13,
       "examples": [
         {
           "project": "forge_learn",
@@ -429,7 +429,7 @@
         }
       ],
       "first_seen": "2026-07-05T09:26:46.709471",
-      "last_seen": "2026-07-06T12:49:32.519866"
+      "last_seen": "2026-07-07T12:32:33.394516"
     },
     "ResponseValidationError": {
       "count": 2,
@@ -474,6 +474,6 @@
       "last_seen": "2026-07-06T05:46:37.663703"
     }
   },
-  "total_runs": 368,
-  "last_updated": "2026-07-06T13:48:23.959693"
+  "total_runs": 393,
+  "last_updated": "2026-07-10T14:25:06.395352"
 }
