@@ -12,6 +12,9 @@ export default function Scenery() {
       <div className="scenery-image" style={{ backgroundImage: `url(${sceneryStill})` }} />
       <div className="scenery-scrim" />
       <div className="scenery-frame" style={{ backgroundImage: `url(${OVERLAY_PNG})` }} />
+      <div className="scenery-mist--a" />
+      <div className="scenery-mist--b" />
+      <div className="scenery-light" />
     </div>
   );
 }
