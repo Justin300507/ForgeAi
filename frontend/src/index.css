@@ -111,26 +111,35 @@ body {
   min-height: 100vh;
   min-height: 100dvh;
   background-color: var(--ink-bg);
+  /* The 85%/-8% glow used to sit almost entirely under NavBar's own
+     ~85%-opaque backdrop (a sticky bar covering the top ~70px) -- it read
+     as invisible because it never had a chance to hit visible content.
+     Pushed down + widened so its falloff actually bleeds into the page,
+     and bumped opacity since "subtle" was reading as "absent". */
   background-image:
-    radial-gradient(600px 600px at 85% -8%, rgba(217, 119, 146, 0.12), transparent 62%),
+    radial-gradient(720px 720px at 82% 14%, rgba(217, 119, 146, 0.22), transparent 65%),
     radial-gradient(700px 460px at -10% 30%, rgba(59, 130, 246, 0.07), transparent 60%),
-    linear-gradient(135deg, #0b0813 0%, #171226 50%, #2c1635 100%);
+    linear-gradient(135deg, #0b0813 0%, #1c1230 45%, #33182f 100%);
   background-attachment: fixed;
   overflow-x: hidden;
 }
 
-/* Slow-drifting aurora blob — the sunset glow bleeding into the room */
+/* Slow-drifting aurora blob — the sunset glow bleeding into the room.
+   Same under-the-navbar problem as the static glow above: centered near
+   y=90px on a 900px-tall viewport, almost entirely behind NavBar's own
+   opaque backdrop. Shifted down and strengthened so it's visible in the
+   actual content area instead of hidden under the nav strip. */
 .app-shell::before {
   content: '';
   position: fixed;
-  top: -25%;
+  top: -8%;
   right: -15%;
   width: 70vw;
   height: 70vh;
   background:
-    radial-gradient(closest-side at 60% 40%, rgba(217, 119, 146, 0.14), transparent 70%),
+    radial-gradient(closest-side at 60% 45%, rgba(217, 119, 146, 0.22), transparent 70%),
     radial-gradient(closest-side at 30% 70%, rgba(124, 58, 237, 0.12), transparent 70%);
-  filter: blur(60px);
+  filter: blur(55px);
   animation: aurora-drift 26s ease-in-out infinite alternate;
   pointer-events: none;
   z-index: 0;

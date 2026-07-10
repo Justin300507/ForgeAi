@@ -25,7 +25,10 @@ export default function NavBar() {
     <nav
       className="flex items-center justify-between px-5 sm:px-8 py-4 sticky top-0 z-10"
       style={{
-        background: "linear-gradient(rgba(9,9,18,0.85), rgba(9,9,18,0.65))",
+        // A hair of the sunset tint instead of flat near-black — the nav
+        // shouldn't read as an opaque lid sitting on top of the twilight
+        // background it's meant to share.
+        background: "linear-gradient(rgba(20,12,24,0.85), rgba(15,10,20,0.65))",
         backdropFilter: "blur(18px)",
         WebkitBackdropFilter: "blur(18px)",
         borderBottom: "1px solid rgba(255,255,255,0.06)",
