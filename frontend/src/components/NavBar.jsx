@@ -46,12 +46,12 @@ export default function NavBar() {
           <NavLink to="/settings" className={linkCls}>Keys</NavLink>
         </div>
 
-        <NavLink
-          to="/new"
+        <button
+          onClick={() => veil.veilNav("/new")}
           className="flex items-center gap-1.5 text-sm font-medium bg-white text-slate-900 pl-3 pr-4 py-2 rounded-full hover:bg-white/90 transition-colors"
         >
           <Plus size={15} aria-hidden="true" /> New App
-        </NavLink>
+        </button>
         <button
           onClick={handleLogout}
           aria-label="Log out"

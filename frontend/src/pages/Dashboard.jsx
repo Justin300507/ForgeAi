@@ -3,6 +3,7 @@ import { Link, useNavigate } from "react-router-dom";
 import { jobsAPI } from "../api";
 import NavBar from "../components/NavBar";
 import { useAuth } from "../AuthContext";
+import { useVeil } from "../components/Veil";
 import { IDEA_DRAFT_KEY } from "../lib/cinematic";
 import { Trash2, Wrench, Zap, ArrowRight } from "lucide-react";
 
@@ -45,6 +46,7 @@ export default function Dashboard() {
   const [deletingAll, setDeletingAll] = useState(false);
   const [idea, setIdea] = useState("");
   const { user } = useAuth();
+  const { veilNav } = useVeil();
   const navigate = useNavigate();
 
   const fetchJobs = () => jobsAPI.list().then(r => setJobs(r.data.jobs || [])).catch(console.error).finally(() => setLoading(false));
@@ -53,7 +55,9 @@ export default function Dashboard() {
   const forgeIdea = (e) => {
     e.preventDefault();
     if (idea.trim()) sessionStorage.setItem(IDEA_DRAFT_KEY, idea.trim());
-    navigate("/new");
+    // Same cinematic hand-off as the landing page's "Forge It" — every
+    // "start something new" moment in the app gets the same veil sweep.
+    veilNav("/new");
   };
 
   const handleDelete = async (e, jobId) => {

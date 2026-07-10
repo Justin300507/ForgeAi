@@ -3,6 +3,7 @@ import { Link, useNavigate } from "react-router-dom";
 import { Zap, Download, Globe, Rocket, Github, Cloud, Train, Check, Loader2 } from "lucide-react";
 import { jobsAPI, credentialsAPI } from "../api";
 import NavBar from "../components/NavBar";
+import { useVeil } from "../components/Veil";
 import { IDEA_DRAFT_KEY } from "../lib/cinematic";
 
 const EXAMPLES = [
@@ -41,6 +42,7 @@ const PIPELINE_STEPS = [
 
 export default function NewProject() {
   const nav = useNavigate();
+  const veil = useVeil();
   const [idea, setIdea] = useState(() => sessionStorage.getItem(IDEA_DRAFT_KEY) || "");
   const [model, setModel] = useState("auto");
   const [deploy, setDeploy] = useState("none");
@@ -65,8 +67,13 @@ export default function NewProject() {
     setError(""); setLoading(true);
     try {
       const res = await jobsAPI.create(idea.trim(), model, deploy, "web");
+      // Same veil sweep as landing/auth: crossing into the live generation
+      // workspace is a scene change, not a plain route swap.
+      await veil.cover();
       nav(`/projects/${res.data.job_id}`);
+      veil.liftSoon();
     } catch (err) {
+      veil.lift();
       setError(err.response?.data?.detail || "Failed to start generation");
       setLoading(false);
     }
