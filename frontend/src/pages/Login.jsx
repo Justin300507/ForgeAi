@@ -3,11 +3,13 @@ import { Link, useNavigate } from "react-router-dom";
 import { Eye, EyeOff, Loader2 } from "lucide-react";
 import { useAuth } from "../AuthContext";
 import AuthScene from "../components/AuthScene";
+import { useVeil } from "../components/Veil";
 
 const SANS = { fontFamily: "system-ui, sans-serif" };
 
 export default function Login() {
   const { login } = useAuth();
+  const veil = useVeil();
   const nav = useNavigate();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -17,9 +19,19 @@ export default function Login() {
 
   const submit = async (e) => {
     e.preventDefault(); setError(""); setLoading(true);
-    try { await login(email, password); nav("/dashboard"); }
-    catch (err) { setError(err.response?.data?.detail || "Login failed"); }
-    finally { setLoading(false); }
+    // Cover with the veil while auth resolves, so the redirect into the
+    // app happens behind it and the dashboard is revealed, not swapped.
+    const covered = veil.cover();
+    try {
+      await login(email, password);
+      await covered;
+      nav("/dashboard");
+      veil.liftSoon();
+    } catch (err) {
+      veil.lift();
+      setError(err.response?.data?.detail || "Login failed");
+      setLoading(false);
+    }
   };
 
   return (

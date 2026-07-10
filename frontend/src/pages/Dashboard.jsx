@@ -151,7 +151,7 @@ export default function Dashboard() {
               className="anim-fade-up glass-panel hover-lift rounded-2xl p-5"
               style={{ "--d": `${100 + i * 70}ms` }}
             >
-              <div className="hero-serif text-3xl sm:text-4xl text-white mb-1">{value}</div>
+              <div className="hero-serif text-3xl sm:text-4xl stat-value mb-1">{value}</div>
               <div className="text-xs uppercase tracking-widest text-gray-500">{label}</div>
             </div>
           ))}

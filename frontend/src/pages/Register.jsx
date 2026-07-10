@@ -3,12 +3,14 @@ import { Link, useNavigate } from "react-router-dom";
 import { Eye, EyeOff, Loader2 } from "lucide-react";
 import { useAuth } from "../AuthContext";
 import AuthScene from "../components/AuthScene";
+import { useVeil } from "../components/Veil";
 import { IDEA_DRAFT_KEY } from "../lib/cinematic";
 
 const SANS = { fontFamily: "system-ui, sans-serif" };
 
 export default function Register() {
   const { register } = useAuth();
+  const veil = useVeil();
   const nav = useNavigate();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -21,9 +23,19 @@ export default function Register() {
 
   const submit = async (e) => {
     e.preventDefault(); setError(""); setLoading(true);
-    try { await register(email, password); nav(hasDraft ? "/new" : "/dashboard"); }
-    catch (err) { setError(err.response?.data?.detail || "Registration failed"); }
-    finally { setLoading(false); }
+    // Cover with the veil while the account is created, so the hop into
+    // the app is a reveal instead of a hard page swap.
+    const covered = veil.cover();
+    try {
+      await register(email, password);
+      await covered;
+      nav(hasDraft ? "/new" : "/dashboard");
+      veil.liftSoon();
+    } catch (err) {
+      veil.lift();
+      setError(err.response?.data?.detail || "Registration failed");
+      setLoading(false);
+    }
   };
 
   return (

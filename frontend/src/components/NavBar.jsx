@@ -2,6 +2,7 @@ import React from "react";
 import { Link, NavLink, useNavigate } from "react-router-dom";
 import { Plus, LogOut } from "lucide-react";
 import { useAuth } from "../AuthContext";
+import { useVeil } from "./Veil";
 
 const linkCls = ({ isActive }) =>
   isActive
@@ -10,8 +11,15 @@ const linkCls = ({ isActive }) =>
 
 export default function NavBar() {
   const { logout } = useAuth();
+  const veil = useVeil();
   const nav = useNavigate();
-  const handleLogout = () => { logout(); nav("/"); };
+  const handleLogout = async () => {
+    // Leave the same way we arrived: behind the veil, back to the scenery.
+    await veil.cover();
+    logout();
+    nav("/");
+    veil.liftSoon();
+  };
 
   return (
     <nav
