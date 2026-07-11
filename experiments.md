@@ -2832,3 +2832,132 @@ script's own behavior (LLM call pattern, subprocess management, or
 output buffering) rather than a flat wall-clock cap. Inconclusive until
 it either gets killed too or runs long enough to rule out a timeout
 entirely; follow up once it resolves.
+
+**Update:** the heartbeat ran uninterrupted past 30+ minutes -- longer
+than either killed canary survived -- and was only ever stopped by an
+explicit `Stop-Process -Force` issued while debugging an unrelated
+zombie-uvicorn issue (see Experiment 043), not by any environment
+timeout. This rules out a flat wall-clock cap on background tasks; the
+canary kills correlate with something canary-specific (LLM call pattern,
+subprocess/browser management, or output buffering), still unresolved.
+
+---
+
+## Experiment 043 — Deterministic Prevention Rate KPI + V20.1.5 Role-Aware Validation
+
+User feedback after Experiment 042, two concrete asks: (1) add a
+"Deterministic Prevention Rate" KPI tracking failures caught before
+runtime, broken down by mechanism; (2) insert a V20.1.5 "Role-Aware
+Validation" milestone before V20.2 (detect roles -> generate test
+identities -> run the appropriate CRUD journey -> score correctly). Both
+shipped this cycle.
+
+**Deterministic Prevention Rate (commit e64585b).**
+`run_deterministic_patches` (deterministic_patcher.py) previously called
+~40 individual patchers as bare statements with every return value
+discarded -- confirmed none of its 7 call sites ever read the return
+value, so widening it from a plain int to a full `{patcher_name: count}`
+dict was backward-compatible by construction, not just by inspection.
+`pipeline.py`'s `_deterministic_patch` now captures that dict plus 6
+`database_patcher.py` functions and the preflight registry's per-patcher
+results into `ctx.prevention_counts`; the static-validation stages'
+diagnostic counts (import_closure, symbol_closure, compile, contract_
+conformance, schema_db_assertion) are merged in right before
+`GenerationRecord` is built, so both "fixed it outright" and "caught it
+but left it for the repair loop" count as prevention. New
+`GenerationRecord.prevention_counts` field carries this through
+`generation_log.jsonl` (defaults to `{}`, backward-compatible with
+existing lines). `compute_prevention_rate`/`render_prevention_dashboard`
+roll ~50 raw mechanism names up into 8 categories (Import/Symbol/Schema/
+Entity/Syntax validation, Pydantic/Auth/Frontend patcher) via
+`DETERMINISTIC_PREVENTION_CATEGORIES`; anything not yet mapped falls into
+a visible "Other" bucket rather than silently vanishing. Wired into
+`failure_report.py`, printed right after the existing reliability
+dashboard. 9 new tests (aggregation, categorization, the "Other"
+catch-all, and a JSON-round-trip smoke test on the actual patcher
+entrypoint's return value, since it flows straight into a JSONL file).
+
+**V20.1.5 Role-Aware Validation -- three layers deep, all confirmed live
+on the real app that surfaced the chain (commits 86701d8, a4e7c1a):**
+
+1. *Root cause, not just test scoring.* Scoping the milestone surfaced
+   that the injected auth template (`_AUTH_ROUTES_TEMPLATE`, used
+   whenever a project has no working auth endpoints) unconditionally
+   hardcoded every signup's role to `"user"`, ignoring any app-specific
+   role vocabulary the LLM's own schema declared. A generated restaurant
+   app's `app/schemas/auth.py` declared
+   `role: str = Field("diner", pattern="^(diner|staff)$")` -- the app's
+   own design lets users self-select diner/staff -- but the injected
+   template silently threw that away. `menu_routes.py` gates Create on
+   `role in ("staff", "admin")`: a feature NO signup could EVER reach,
+   for any real end user of the deployed app, not just a test journey.
+   Building role-aware testing on top of a register endpoint that could
+   never produce an elevated role would have been testing against a
+   wall, so this had to be fixed first (user's own call, offered a
+   3-way choice, chose "fix the root cause first").
+   `_AUTH_ROUTES_TEMPLATE` (static constant) became
+   `_build_auth_routes_template(role_info)`, parameterized by a new
+   `_discover_role_vocabulary()` (conservative: only acts on a Field
+   default + regex pattern constraint, the one concrete pattern
+   confirmed live -- a bare `role: str` with no constraint is left
+   exactly as before). `role_info=None` is AST-identical to the
+   pre-change template (confirmed via `ast.dump` diff against the
+   pre-change version) -- zero functional change for the ~98% of apps
+   without an app-specific role field.
+2. *A second, independent bug in the same app, found while validating
+   #1 end-to-end.* The app ALSO has an LLM-authored
+   `app/routes/api_routes.py` serving the actual `/api/`-prefixed path
+   the architecture wants (the bare injected template only serves
+   unprefixed paths) -- it imports `_make_user`/`SignupRequest` from
+   `auth_routes.py` correctly, but calls `_make_user` with only 3
+   positional args, silently dropping `role`. A `role="staff"` signup
+   parsed fine, hit THIS handler, and still saved the default role --
+   no error, just silently wrong. New
+   `_patch_forward_role_to_duplicate_registrars` finds this exact call
+   shape in any route file (not `auth_routes.py` itself) importing
+   `_make_user` from it and forwards role via
+   `getattr(req, 'role', None)` -- never a bare attribute access, so
+   it's a no-op rather than an AttributeError anywhere the request type
+   genuinely has no role field. Only reachable when a vocabulary was
+   actually discovered -- inert for every other app by construction.
+3. *The journey itself.* `user_journey_runner.py`: on a 403 from Create,
+   discover the vocabulary (reusing #1's function, no duplicate
+   implementation) and, for each non-default role, register a second
+   identity and retry. One that unlocks Create makes the ENTIRE REST of
+   the journey (List/Edit/Delete/Verify/...) continue as that elevated
+   identity, and the step is recorded passed with the role noted (e.g.
+   `"201 id=1 (role=staff, elevated after 403)"`).
+
+**A fourth bug, in my own new code, caught by self-review before any
+test ran:** the elevation retry loop's `break` sat at the same
+indentation as `if retried.passed:` -- unconditional, so it stopped
+after the first role that successfully *registered*, even if Create
+still failed with that role, instead of trying the next candidate. Fixed
+before testing, not discovered by a test failure.
+
+**Validated end-to-end against the real app, not just units:** full CRUD
+journey went from 6/11 steps passing -- *permanently, for every real end
+user, not just this test* -- to 11/11. Debugging this took three
+supposedly-fresh DB attempts before the signal was clean: an orphaned
+uvicorn process from an earlier manual test outlived `Stop-Process`
+long enough to keep serving a stale, non-empty SQLite file across
+"isolated" runs, producing a red herring ("already registered" on a
+brand-new email) that looked exactly like a code bug until traced to
+the process table. Logged as a process-hygiene lesson for future manual
+live-testing in this environment, not a product bug.
+
+**Verification:** 16 new tests total (9 KPI + 7 role-aware: patcher
+shape-matching plus a genuine behavioral test against a real stdlib HTTP
+server reproducing the confirmed 403-then-201 shape, not just
+source-text assertions) + all 32 existing suites pass (0 regressions).
+Corpus-swept: only this one app (of 53) has a discoverable role
+vocabulary today, confirming both new patchers are narrowly and safely
+scoped, not a broad behavior change.
+
+**Not yet done:** `DETERMINISTIC_PREVENTION_CATEGORIES` doesn't yet
+include the two new role-aware patchers (their counts default to 0 via
+`_patch_auth_routes`'s existing `-> None` return, a pre-existing gap
+this cycle didn't touch) -- small follow-up, not urgent since role-aware
+firing is rare by construction. A fresh, uninterrupted canary run to
+observe `first_try_success_rate` move (the metric the user named as
+what matters most) remains the standing open item from Experiment 041.
