@@ -1186,12 +1186,23 @@ def _patch_param_order(project_path: Path) -> int:
         except Exception:
             continue
 
-        # Fast skip: only process files with syntax errors of this type
+        # Fast skip: only process files with syntax errors of this type.
+        # Exp052: Python's own wording for this SyntaxError changed between
+        # versions -- "non-default argument follows default argument" pre-3.10
+        # vs "parameter without a default follows parameter with a default"
+        # on the 3.14 interpreter this codebase actually runs on. Matching
+        # only the old string meant this function silently never fired on
+        # the current runtime, on any file, ever -- confirmed by direct
+        # execution (Exp052), not assumed.
         try:
             compile(original, str(rf), "exec")
             continue  # No syntax error — skip
         except SyntaxError as e:
-            if "non-default argument follows default argument" not in (e.msg or ""):
+            msg = e.msg or ""
+            if not (
+                "non-default argument follows default argument" in msg
+                or "parameter without a default follows parameter with a default" in msg
+            ):
                 continue
 
         content = original
@@ -3243,10 +3254,17 @@ def _patch_attr_access_mismatches(project_path: Path) -> int:
                     good_attr = next((c for c in candidates if c in valid_cols), None)
                     if not good_attr:
                         continue
-                    # Replace .bad_attr with .good_attr only in attribute access context
-                    # Use word boundary to avoid replacing "username_field" etc.
+                    # Replace .bad_attr with .good_attr only in attribute access context.
+                    # Exp052: CONFIRMED BUG, now fixed -- this used to require
+                    # a NON-word character immediately before the dot
+                    # ((?<!\w)\.), but real attribute access (obj.attr)
+                    # always has a word character right there (the object
+                    # name), so the old pattern could never match the
+                    # function's own primary use case. The trailing \b
+                    # already prevents matching "username_field" etc., so
+                    # the leading lookbehind was both wrong and redundant.
                     content = re.sub(
-                        r'(?<!\w)\.' + re.escape(bad_attr) + r'\b',
+                        r'\.' + re.escape(bad_attr) + r'\b',
                         '.' + good_attr,
                         content,
                     )
@@ -3770,9 +3788,16 @@ def _patch_orm_type_in_route_schemas(project_path: Path) -> int:
                 changed = True
 
         if changed:
-            # Ensure Any is imported
+            # Ensure Any is imported. Exp052: must check the ORIGINAL
+            # `content`, not `new_content` -- the substitutions above just
+            # inserted the literal text "Any" (as part of "List[Any]" /
+            # "Optional[Any]" / a bare rewritten annotation), so checking
+            # new_content for "Any" is always true post-rewrite and this
+            # branch never actually added the import, leaving a confirmed
+            # `NameError: name 'Any' is not defined` whenever the route
+            # file already had some other `from typing import ...` line.
             if "from typing import" in new_content:
-                if "Any" not in new_content:
+                if "Any" not in content:
                     new_content = re.sub(
                         r'(from typing import )([^\n]+)',
                         lambda m: m.group(0) if "Any" in m.group(2) else f"{m.group(1)}{m.group(2)}, Any",

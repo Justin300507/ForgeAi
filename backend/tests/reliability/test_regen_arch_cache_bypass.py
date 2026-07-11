@@ -84,6 +84,44 @@ def test_restores_unset_cache_env():
         assert "FORGE_LLM_CACHE" not in os.environ
 
 
+def test_restores_arbitrary_prior_cache_env_value():
+    # The prior value might not be "0"/"1" at all (e.g. a stray "true" a
+    # human set by hand) -- the restore must be exact-value, not just
+    # "flip back to 1".
+    with mock.patch.dict(os.environ, {"FORGE_LLM_CACHE": "banana"}, clear=False):
+        with mock.patch(
+            "app.services.v6_orchestrator.generate_project_v6",
+            return_value={"project_path": None},
+        ):
+            _regenerate_architecture(_FakeCtx(Path(".")), _fake_cfg())
+        assert os.environ.get("FORGE_LLM_CACHE") == "banana"
+
+
+def test_idempotent_across_repeated_calls_no_state_leakage():
+    # Exp052 Priority 4: calling the regen path twice in a row (as the
+    # live retry loop could, on two separate attempt-5 escalations across
+    # different generations sharing a process) must not leak env state
+    # from the first call into the second -- each call's bypass-then-restore
+    # must be self-contained.
+    calls = []
+
+    def fake_generate_project_v6(idea, provider="auto"):
+        calls.append(os.environ.get("FORGE_LLM_CACHE"))
+        return {"project_path": None}
+
+    with mock.patch.dict(os.environ, {"FORGE_LLM_CACHE": "1"}, clear=False):
+        with mock.patch(
+            "app.services.v6_orchestrator.generate_project_v6",
+            side_effect=fake_generate_project_v6,
+        ):
+            _regenerate_architecture(_FakeCtx(Path(".")), _fake_cfg())
+            assert os.environ.get("FORGE_LLM_CACHE") == "1"
+            _regenerate_architecture(_FakeCtx(Path(".")), _fake_cfg())
+            assert os.environ.get("FORGE_LLM_CACHE") == "1"
+
+    assert calls == ["0", "0"], "both calls must independently bypass the cache"
+
+
 if __name__ == "__main__":
     import traceback
     tests = [obj for name, obj in list(globals().items()) if name.startswith("test_")]

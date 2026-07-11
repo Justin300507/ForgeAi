@@ -193,6 +193,20 @@ def test_no_match_on_plain_static_classname():
     assert fixed == src
 
 
+def test_idempotent_second_pass_on_own_output_is_a_true_noop():
+    # Exp052 Priority 4: the collapsed output is a plain quoted string with
+    # no backticks or ${ left -- running the patcher again on its own
+    # output must find nothing (n == 0) and return byte-identical content,
+    # for every fixture that actually triggers a fix.
+    for broken in (BROKEN_DROPPED_DOLLAR, BROKEN_EMPTY_INTERP,
+                   BROKEN_CHAINED_TERNARY_WITH_TAG_SUFFIX):
+        once, n1 = _patch_broken_template_literal_classname(broken)
+        assert n1 == 1
+        twice, n2 = _patch_broken_template_literal_classname(once)
+        assert n2 == 0, "second pass on already-fixed output must not fire again"
+        assert twice == once, "second pass must be a byte-identical no-op"
+
+
 if __name__ == "__main__":
     import traceback
     tests = [obj for name, obj in list(globals().items()) if name.startswith("test_")]

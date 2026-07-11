@@ -173,6 +173,11 @@ def _fix_config_missing_settings_instance(project_path: Path, diagnostics: list)
     return True
 
 
+_POSTGRES_URL_ALREADY_FIXED_RE = re.compile(
+    r'DATABASE_URL\s*=\s*DATABASE_URL\.replace\(\s*["\']postgres://'
+)
+
+
 @preflight.register("fix_postgres_url", priority=15)
 def _fix_postgres_url(project_path: Path, diagnostics: list) -> bool:
     """Fix postgres:// → postgresql:// in database.py (SQLAlchemy 1.4+ requirement)."""
@@ -180,6 +185,18 @@ def _fix_postgres_url(project_path: Path, diagnostics: list) -> bool:
     if not db_file.exists():
         return False
     content = db_file.read_text(encoding="utf-8", errors="replace")
+    # Exp052: a working runtime guard/replace already covers this -- must
+    # check BEFORE the blind literal-replace below, which otherwise matches
+    # the exact quoted string "postgres://" wherever it appears, including
+    # as the SOURCE argument of an already-correct `.replace("postgres://",
+    # "postgresql://")` call. Rewriting that argument turns the call into a
+    # permanent self-no-op (confirmed via real generated_projects/ output,
+    # see test_preflight_fixes.py's CONFIRMED_BUG tests) and, since the
+    # corrupted guard still contains the substring "postgres://", the
+    # function re-fires on every subsequent call and appends another
+    # duplicate guard -- unbounded growth across repair-loop iterations.
+    if _POSTGRES_URL_ALREADY_FIXED_RE.search(content):
+        return False
     if "postgres://" not in content:
         return False
     new_content = content.replace(

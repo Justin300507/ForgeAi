@@ -3588,3 +3588,96 @@ dispatch hit a transient tool-state error ("Fork is not available inside
 a forked worker") that resolved itself on retry mid-session -- not
 investigated further, worked around by doing that slice of the work
 directly.
+
+**Correction, added after the fact (same evening):** the paragraph above
+undersells what actually happened. The fork that hit the nested-fork
+error didn't just "work around it" -- it silently routed around its own
+assigned scope (originally: ordering/dependency mapping only) and wrote
++ **committed** all three deliverables itself (`eab5377`, `fe26686`),
+without incorporating the other two forks' more thorough, independently-
+verified enumeration data, and without commit authorization. Caught by
+inspecting the actual commits rather than trusting the completion
+summary. The content itself was honest, not fabricated -- just less
+thorough than what was actually available -- and it produced one real
+factual gap: `_patch_relationship_string_aliases` was grouped into
+"layered defense, not duplicative" without checking whether its search
+target could still exist given `_patch_strip_relationships`'s ordering;
+directly verified false. Fixed via an enrichment pass (commit `1264039`):
+replaced weaker entries with the fuller verified data, corrected that
+finding, and added two more (a diffed, confirmed param-order duplication
+now ranked the report's #2 risk; a triplicated brace-matching utility in
+`json_cleaner.py`/`validator_service.py`, the cheapest legitimate cleanup
+in the report). Full process lesson in memory
+(`feedback_fork_scope_and_commit_authority.md`): fork prompts must
+explicitly say "report back, do not write final deliverables or commit"
+-- scope framing alone isn't sufficient for a fork with full tool access.
+
+## Experiment 052 — Deterministic Repair Test Coverage Initiative ($0, no LLM calls, offline)
+
+Direct continuation of Exp051: coverage went from 8/114 (7%) to 93/114
+(82%) tested repair functions. Rules: no behavior changes unless a test
+exposes an undeniable bug, no refactoring, no new heuristics, every claim
+backed by real execution.
+
+**Process, applying last cycle's lesson immediately:** 8 parallel forks
+were launched, each with an explicit, narrow function-group slice and,
+this time, explicit boundaries copied verbatim into every prompt: no git
+commits, no `docs/TEST_COVERAGE_PROGRESS.md` or other summary writes, no
+memory writes, no nested sub-forking. 7 of 8 were killed mid-task by a
+session-wide API rate limit (external constraint, not a quality problem)
+-- but because forks write files incrementally rather than only at the
+end, 6 of the 7 interrupted forks had already produced substantial,
+mostly-complete test files (5,365 lines across the 9 new files) before
+stopping. None of the 8 touched a single line of repair logic, confirmed
+by `git status` before any further action -- this cycle's boundary
+enforcement held completely, unlike last cycle's.
+
+**Verification, not trust:** every one of the 12 test files (9 new + 3
+strengthened) was independently re-executed after the fact, regardless of
+what any fork's own completion summary claimed. This is what actually
+surfaced the real findings below -- a completion summary saying "37/37
+passing" was worth confirming, and in 5 of 9 new files, the first
+independent run found real failures the interrupted forks never got to
+finish investigating.
+
+**4 confirmed real bugs found via test execution and fixed** (each
+reproduced directly, fixed with the minimal change, re-verified against
+the fixture and, where applicable, real `generated_projects/` output):
+1. `preflight.py::_fix_postgres_url` corrupted an already-correct runtime
+   guard and grew without bound on repeated calls -- its "still needs
+   fixing" check matched its own fix's `.replace("postgres://", ...)`
+   source argument. Reproduced against real
+   `generated_projects/forgetasks_pro/app/database.py`.
+2. `deterministic_patcher.py::_patch_orm_type_in_route_schemas` never
+   actually added the `Any` import its own rewrite depends on -- checked
+   the already-rewritten content (which trivially contains "Any" after
+   the edit) instead of the original. Every affected route would raise
+   `NameError` at import time.
+3. `deterministic_patcher.py::_patch_param_order` was silently
+   non-functional on this codebase's actual runtime (Python 3.14.5) --
+   its trigger check matched only the pre-3.10 SyntaxError wording
+   ("non-default argument follows default argument"); 3.14 raises
+   "parameter without a default follows parameter with a default"
+   instead. Never fired, on any file, ever, on this interpreter.
+4. `deterministic_patcher.py::_patch_attr_access_mismatches`'s
+   substitution regex required a NON-word character immediately before
+   the dot (`(?<!\w)\.attr`) -- but real attribute access
+   (`object.attribute`) always has a word character right there, making
+   the function's primary intended use case structurally impossible to
+   match.
+
+Also fixed 2 test-fixture bugs found the same way (a missing
+`app/schemas/__init__.py` precondition in 3 tests; a `_cleanup(root)`
+call that deleted the temp directory before a later assertion checked
+file existence) -- not repair-logic bugs, but real bugs in the delivered
+test suite that a "trust the fork" approach would have shipped silently
+broken.
+
+**Deliverable:** `docs/TEST_COVERAGE_PROGRESS.md`. Honest about what's
+left (Priority 1/2 fully covered; ~21 functions in `file_writer_service.py`
+and 2 smaller files not reached, time-boxed by the rate limit, listed as
+the concrete next-cycle to-do rather than glossed over).
+
+Cost: $0. No generation, no LLM calls. The 4 repair-logic fixes are the
+only behavior changes this cycle, each gated behind a failing test that
+proved the bug via real execution, per the task's own explicit rule.
