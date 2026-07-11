@@ -2706,6 +2706,172 @@ def _patch_attr_access_mismatches(project_path: Path) -> int:
     return patched
 
 
+_SCHEMA_CLASS_RE = re.compile(r'^class\s+(\w+)\s*\(([^)]*)\)\s*:', re.MULTILINE)
+_SCHEMA_FIELD_RE = re.compile(r'^\s{4}(\w+)\s*:', re.MULTILINE)
+
+
+def _schema_classes_and_fields(schemas_dir: Path) -> dict[str, tuple[Path, set[str]]]:
+    """{class_name: (file, {field_names})} for every Pydantic-looking class
+    (bases mention BaseModel, or inherits a sibling class already known to
+    be one -- e.g. `class WorkoutUpdate(WorkoutBase)`) across app/schemas/."""
+    out: dict[str, tuple[Path, set[str]]] = {}
+    if not schemas_dir.exists():
+        return out
+    for sf in schemas_dir.glob("*.py"):
+        try:
+            src = sf.read_text(encoding="utf-8", errors="replace")
+        except Exception:
+            continue
+        for m in _SCHEMA_CLASS_RE.finditer(src):
+            cls, bases = m.group(1), m.group(2)
+            if "BaseModel" not in bases and not any(b.strip() in out for b in bases.split(",")):
+                continue
+            body_start = m.end()
+            next_class = _SCHEMA_CLASS_RE.search(src, body_start)
+            body = src[body_start:next_class.start() if next_class else len(src)]
+            fields = set(_SCHEMA_FIELD_RE.findall(body))
+            out[cls] = (sf, fields)
+    return out
+
+
+def _patch_missing_create_update_fields(project_path: Path) -> int:
+    """
+    Add a field to a Create/Update Pydantic schema when a route handler
+    reads it off that schema's own parameter but the field was never
+    defined there -- crashes at request time with AttributeError, not
+    caught by anything static (the attribute genuinely doesn't exist on
+    the class; this isn't a typo _patch_attr_access_mismatches' synonym
+    map can fix, since there's no wrong name to rename FROM).
+
+    Confirmed live (2026-07-11): a generated gym-tracker app's
+    WorkoutCreate schema only declared title/description, but
+    workout_routes.py's create_workout() handler did
+    `Workout(title=workout_in.title, date=workout_in.date, ...)` --
+    date and notes were correctly present on WorkoutResponse (and the
+    SQLAlchemy model) but simply never carried over to WorkoutCreate.
+    AttributeError: 'WorkoutCreate' object has no attribute 'date' on
+    every single POST, 500ing the entire Create step of the CRUD journey.
+
+    Conservative by construction: only adds a field when ANOTHER schema
+    class for the same entity (matched by class-name prefix, e.g.
+    Workout{Base,Response,Update}) already declares that exact field name
+    -- i.e. corroborated evidence this is a real, intended field that
+    just didn't make it into this one class, not a genuine typo/
+    hallucination in the route handler that adding a field would silently
+    paper over. Always added as `Optional[Any] = None` (never guesses a
+    narrower type) so it can never itself introduce a new validation
+    failure.
+    """
+    routes_dir = project_path / "app" / "routes"
+    schemas_dir = project_path / "app" / "schemas"
+    if not routes_dir.exists() or not schemas_dir.exists():
+        return 0
+
+    classes = _schema_classes_and_fields(schemas_dir)
+    if not classes:
+        return 0
+
+    patched = 0
+    for rf in routes_dir.glob("*.py"):
+        try:
+            content = rf.read_text(encoding="utf-8", errors="replace")
+            tree = ast.parse(content)
+        except Exception:
+            continue
+
+        # Two functions in the same route file commonly share a parameter
+        # name (create_x(x_in: XCreate) / update_x(x_in: XUpdate)) -- a
+        # single file-wide {param_name: class} map lets the second
+        # function's type silently overwrite the first's, misattributing
+        # every access in between to the wrong schema. Scope per function.
+        missing_by_class: dict[str, set[str]] = {}
+        for fn in ast.walk(tree):
+            if not isinstance(fn, (ast.FunctionDef, ast.AsyncFunctionDef)):
+                continue
+            typed_params: dict[str, str] = {}
+            for arg in fn.args.args:
+                ann = arg.annotation
+                name = ann.id if isinstance(ann, ast.Name) else None
+                if name and (name.endswith("Create") or name.endswith("Update")) and name in classes:
+                    typed_params[arg.arg] = name
+            if not typed_params:
+                continue
+
+            for node in ast.walk(fn):
+                if not (isinstance(node, ast.Attribute) and isinstance(node.value, ast.Name)):
+                    continue
+                cls_name = typed_params.get(node.value.id)
+                if not cls_name:
+                    continue
+                _, fields = classes[cls_name]
+                if node.attr in fields or node.attr.startswith("_"):
+                    continue
+                # Corroborate: does another schema for the SAME entity
+                # already declare this field? Matched against this
+                # codebase's own established suffix convention (Base/
+                # Create/Update/Response/Read/Out/In/Detail/Summary), not a
+                # bare startswith(entity) -- that would also match an
+                # unrelated LONGER entity name sharing the same prefix
+                # (e.g. "Team" spuriously corroborated by "TeamMemberResponse").
+                prefix = re.match(r"[A-Za-z]+?(?=Create$|Update$)", cls_name)
+                entity = prefix.group(0) if prefix else cls_name
+                sibling_names = {entity + suf for suf in
+                                  ("Base", "Create", "Update", "Response",
+                                   "Read", "Out", "In", "Detail", "Summary")}
+                corroborated = any(
+                    node.attr in other_fields
+                    for other_cls, (_, other_fields) in classes.items()
+                    if other_cls != cls_name and other_cls in sibling_names
+                )
+                if corroborated:
+                    missing_by_class.setdefault(cls_name, set()).add(node.attr)
+
+        if not missing_by_class:
+            continue
+
+        for cls_name, missing_fields in missing_by_class.items():
+            schema_file, _ = classes[cls_name]
+            try:
+                sc = schema_file.read_text(encoding="utf-8", errors="replace")
+            except Exception:
+                continue
+            # Match only spaces/tabs (not \s, which also matches newlines)
+            # before the required trailing \n -- a greedy \s*\n here would
+            # swallow blank lines AND the body's own leading indentation,
+            # corrupting the file (confirmed live during corpus validation:
+            # a `pass`-only class body ended up de-indented to column 0,
+            # outside the class entirely).
+            m = re.search(rf'^class\s+{re.escape(cls_name)}\s*\([^)]*\)\s*:[ \t]*\n', sc, re.MULTILINE)
+            if not m:
+                continue
+            # Insert immediately after the class header, before any existing
+            # body content (docstring/model_config/pass/fields) -- simplest
+            # position that can never land mid-line or mid-indentation.
+            insert_at = m.end()
+            new_lines = "".join(f"    {f}: Optional[Any] = None\n" for f in sorted(missing_fields))
+            sc = sc[:insert_at] + new_lines + sc[insert_at:]
+
+            # Ensure both Optional and Any are importable regardless of what
+            # the existing `from typing import ...` line already has.
+            typing_import = re.search(r"^from typing import ([^\n]+)", sc, re.MULTILINE)
+            needed = {"Optional", "Any"}
+            if typing_import:
+                have = {n.strip() for n in typing_import.group(1).split(",")}
+                add = needed - have
+                if add:
+                    sc = (sc[:typing_import.start()]
+                          + f"from typing import {typing_import.group(1)}, {', '.join(sorted(add))}"
+                          + sc[typing_import.end():])
+            else:
+                sc = "from typing import Optional, Any\n" + sc
+            schema_file.write_text(sc, encoding="utf-8")
+            patched += 1
+            print(f"  [patcher] Added missing field(s) to {cls_name} in {schema_file.name}: "
+                  f"{sorted(missing_fields)}")
+
+    return patched
+
+
 def _patch_missing_pydantic_imports(project_path: Path) -> int:
     """
     Scan all .py files in app/schemas/ and ensure they import the pydantic symbols
@@ -5487,6 +5653,13 @@ def run_deterministic_patches(project_path: str, skip_protected_injections: bool
     # Fix attribute accesses (e.g. user.username when model only has email).
     # The field_patcher fixes constructor calls; this fixes dict literals and returns.
     _patch_attr_access_mismatches(root)
+
+    # Add a field to a Create/Update schema when a route handler reads it
+    # off that schema but it was never declared there, even though a
+    # sibling schema for the same entity (Response/Base) already has it --
+    # e.g. WorkoutCreate missing `date` while WorkoutResponse has it,
+    # crashing every Create request with AttributeError.
+    _patch_missing_create_update_fields(root)
 
     # Fix SQLAlchemy ORM models used as Pydantic field types in route files
     # (e.g. labels: List[Label] where Label is a SQLAlchemy model → List[Any])
