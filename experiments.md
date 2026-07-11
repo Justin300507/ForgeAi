@@ -2520,3 +2520,105 @@ Studio) — this cycle is only "stop throwing the evidence away."
 spend credits, confirm a real `JourneyCRUDFailure` produces a populated
 bundle file, then decide whether V20.2 (load a bundle, re-run the exact
 request) is next. **Cost:** $0.
+
+---
+
+## Experiment 039 — Kill the Playwright workflow harness's phantom CRUD failures (duplicate-implementation drift)
+
+**Hypothesis:** The reliability dashboard's dominant recent failure
+(`JourneyCRUDFailure`, 7 of the last ~14 recorded failures) and the
+Integration score dimension's chronically low numbers aren't purely
+generation bugs — `app/runtime/playwright_workflow.py` (Stage 10) carries
+its OWN second, hardcoded implementation of the Register/Login/Create/List
+journey, separate from and less capable than `user_journey_runner.py`
+(Stage 3). Two independent implementations of the same thing drift; if
+this one has drifted into false negatives, fixing it is pure signal
+recovery, not a generation change, and should be the highest-leverage,
+lowest-risk lever available.
+
+**Root-caused ($0, static read of both modules + real telemetry):**
+1. `playwright_workflow._detect_entity()` returned the first
+   non-auth/users/me endpoint path segment with **no CRUD-capability
+   check** (unlike Stage 3's `_detect_crud_entity()`, which requires
+   GET+POST+PUT+DELETE). Every generated app since ADR-002's deterministic
+   seeder exposes `POST /seed`, often listed before the real resource. On
+   `blog_cms`/`crm`-shaped apps this picked `"seed"` as the CRUD entity —
+   `POST /seed` may 200 or 500 depending on prior state, and `GET /seed`
+   doesn't exist (POST-only) so the List step got a **guaranteed 405**.
+   Matches `generation_log.jsonl`'s `"List seed via API (got 405, expected
+   [200])"`, present in essentially every blog_cms/crm canary entry from
+   2026-07-06 through 2026-07-10.
+2. The Login step's body was hardcoded `{"username", "password"}` with no
+   OpenAPI introspection, and 422 was an ACCEPTED status (`[200, 422]`).
+   Apps whose login schema requires `email` (the majority — see below)
+   "pass" login on a 422 without ever capturing a token, so every later
+   authenticated call 401s. Matches `"Create/List tasks via API (got 401,
+   expected [200,201,422]/[200])"`, present in essentially every todo
+   canary entry over the same window.
+3. Every one of these `steps_failed` entries fed a HIGH-severity
+   `ErrorCategory.INTEGRATION` diagnostic (`_run_workflow_tests` in
+   `engine.py`), so the repair loop was spending fix attempts chasing a
+   bug that existed only in the test harness.
+
+**What shipped (commit 88a513d):** `playwright_workflow.py` no longer
+reimplements the journey. `engine.py`'s Stage 3 now stashes the journey it
+already ran on `ctx.journey_result` unconditionally (success or fail);
+Stage 10 reuses those steps for the Integration score instead of
+re-deriving the entity and re-running a second, divergent CRUD pass
+against the same live DB. If no journey was reused (edge case), it now
+falls back to calling `run_user_journey()` itself — never its own logic —
+so there is exactly one implementation of "run the CRUD journey" in the
+codebase. Diagnostics for reused journey-step failures are suppressed
+(Stage 3 already raises `JourneyCRUDFailure` for them); only the two
+Playwright browser-navigation checks (`Load login page`, `Navigate to app
+dashboard` — genuinely new information Stage 3 can't produce) raise new
+diagnostics. Also fixed a pre-existing latent bug surfaced while wiring
+this through: the module hardcoded port 8001 everywhere instead of the
+caller's actual backend port (would misbehave under the V18 parallel batch
+runner's dynamic port assignment).
+
+**Verification:** 5 new unit tests + all 21 existing backend test suites
+pass (0 regressions). A scheduled 3-app canary
+(`--label reliability_mandate_evidence --no-deploy`) got killed partway
+through by the harness before writing a `canary_history.json` entry — but
+it ran against **pre-fix** code anyway (started before the fix was
+written), so it couldn't have validated the fix regardless. It did,
+however, leave three fully-generated real projects on disk
+(`todo_list_app`, `forge_blog_cms`, `simple_crm`) that made a $0, targeted,
+live verification possible — stronger evidence than an aggregate score
+comparison, because it isolates the exact mechanism instead of averaging
+it into one number:
+- `simple_crm`'s real architecture: `POST /seed` is literally endpoint #0
+  in the list, before `/auth/register`. Calling the OLD `_detect_entity()`
+  logic against it in-process returns `"seed"`; calling the NEW
+  `_detect_crud_entity()` (now the only implementation) returns
+  `"contacts"` — the correct, CRUD-capable resource. Confirmed by direct
+  side-by-side function call, not inference.
+- `todo_list_app`'s real, booted backend (port 8198, live SQLite DB):
+  POSTing the OLD hardcoded login body `{"username", "password"}` returns
+  a live `422 Field required: email` — proving the old bug's mechanism
+  exactly, on live running code, not just by reading the schema. The SAME
+  backend run through the NEW `run_user_journey()` (now shared by both
+  stages) passes **11/11 steps**: Register, Login, Detect entity (→
+  `tasks`, correct), Create, List, Edit, Delete, Verify deletion, Logout,
+  re-Login, Verify persistence — all PASS, using the real generated app
+  code unchanged. (Also noticed live: `run_endpoint_smoke_tests` has its
+  own separate hardcoded-8001 assumption, unrelated to this fix — logged
+  as a follow-up, not fixed this cycle to keep this change scoped.)
+
+**Honest gap:** this is targeted, deterministic, mechanism-level proof
+that the specific false-negative bug is gone, on real (if incidental)
+canary output — not a fresh aggregate `canary_history.json` before/after
+entry, since the in-flight canary was killed before finishing and a fresh
+one wasn't re-run this cycle. A follow-up canary will confirm the
+aggregate CRUD/Integration score movement when next convenient; expect
+Integration and CRUD-adjacent scores to rise materially on blog_cms/crm/
+todo-shaped apps specifically, since this bug reproduced on 2 of the 3
+fixed canary apps essentially every run. **Cost:** $0 (targeted
+verification reused an already-paid-for, already-killed canary's on-disk
+output; no new LLM calls).
+
+**Next reliability target:** run a fresh, uninterrupted canary to record
+the aggregate before/after `canary_history.json` comparison; separately,
+the `run_endpoint_smoke_tests` hardcoded-8001 assumption noticed above is
+a small, same-class follow-up.
