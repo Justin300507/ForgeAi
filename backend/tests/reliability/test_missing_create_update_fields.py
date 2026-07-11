@@ -214,6 +214,93 @@ def test_no_schemas_dir_is_a_noop():
     shutil.rmtree(root, ignore_errors=True)
 
 
+# ── Model-column fallback (added after schema-only corroboration missed a
+# real, confirmed bug -- see the function's own docstring for the Tag
+# .name-vs-.title incident) ─────────────────────────────────────────────
+
+_TAG_SCHEMA = (
+    "from typing import Optional\n"
+    "from pydantic import BaseModel, Field\n\n"
+    "class TagCreate(BaseModel):\n"
+    "    title: str = Field(min_length=1)\n\n"
+    "class TagUpdate(BaseModel):\n"
+    "    title: Optional[str] = None\n\n"
+    "class TagResponse(BaseModel):\n"
+    "    id: int\n"
+    "    title: Optional[str] = None\n"
+)
+_TAG_MODEL = (
+    "from sqlalchemy import Column, Integer, String\n"
+    "from app.database import Base\n\n"
+    "class Tag(Base):\n"
+    "    __tablename__ = 'tags'\n"
+    "    id = Column(Integer, primary_key=True)\n"
+    "    name = Column(String, nullable=False)\n"
+)
+_TAG_ROUTES = (
+    "from app.schemas.tag import TagCreate\n"
+    "def create_tag(tag_in: TagCreate):\n"
+    "    return Tag(name=tag_in.name)\n"
+)
+
+
+def test_falls_back_to_model_column_when_no_sibling_schema_corroborates():
+    """The real incident: every schema for Tag agrees with every OTHER
+    schema (all use `title`) -- schema-only corroboration would never fire.
+    Only the model (and the route handler that actually uses it) knows
+    about `name`."""
+    root = _make_project({
+        "app/schemas/tag.py": _TAG_SCHEMA,
+        "app/models/tag.py": _TAG_MODEL,
+        "app/routes/tag_routes.py": _TAG_ROUTES,
+    })
+    n = _patch_missing_create_update_fields(root)
+    content = (root / "app/schemas/tag.py").read_text(encoding="utf-8")
+    shutil.rmtree(root, ignore_errors=True)
+    assert n == 1
+    assert "name: Optional[Any] = None" in content.split("class TagCreate")[1].split("class TagUpdate")[0]
+
+
+def test_model_fallback_tolerates_plural_model_class_name():
+    root = _make_project({
+        "app/schemas/tag.py": _TAG_SCHEMA,
+        "app/models/tags.py": _TAG_MODEL.replace("class Tag(Base):", "class Tags(Base):"),
+        "app/routes/tag_routes.py": _TAG_ROUTES,
+    })
+    n = _patch_missing_create_update_fields(root)
+    shutil.rmtree(root, ignore_errors=True)
+    assert n == 1
+
+
+def test_no_model_fallback_without_any_matching_model_or_schema_evidence():
+    """No Tag model at all (or an unmatched name) -- must NOT guess; a
+    genuine route-handler typo/hallucination should surface, not be
+    silently papered over."""
+    root = _make_project({
+        "app/schemas/tag.py": _TAG_SCHEMA,
+        "app/routes/tag_routes.py": _TAG_ROUTES,
+    })
+    n = _patch_missing_create_update_fields(root)
+    shutil.rmtree(root, ignore_errors=True)
+    assert n == 0
+
+
+def test_model_fallback_does_not_add_field_the_model_also_lacks():
+    """A field neither any sibling schema NOR the model has (genuine typo)
+    must stay unfixed by either corroboration path."""
+    root = _make_project({
+        "app/schemas/tag.py": _TAG_SCHEMA,
+        "app/models/tag.py": _TAG_MODEL,
+        "app/routes/tag_routes.py":
+            "from app.schemas.tag import TagCreate\n"
+            "def create_tag(tag_in: TagCreate):\n"
+            "    return Tag(totally_made_up_field=tag_in.totally_made_up_field)\n",
+    })
+    n = _patch_missing_create_update_fields(root)
+    shutil.rmtree(root, ignore_errors=True)
+    assert n == 0
+
+
 if __name__ == "__main__":
     import traceback
     tests = [obj for name, obj in list(globals().items()) if name.startswith("test_")]

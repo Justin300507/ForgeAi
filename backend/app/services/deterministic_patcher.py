@@ -3076,6 +3076,44 @@ def _schema_classes_and_fields(schemas_dir: Path) -> dict[str, tuple[Path, set[s
     return out
 
 
+_MODEL_COLUMN_RE = re.compile(r'^\s{4}(\w+)\s*=\s*Column\(', re.MULTILINE)
+
+
+def _model_classes_and_columns(models_dir: Path) -> dict[str, set[str]]:
+    """{model_class_name: {column_names}} across every app/models/*.py file."""
+    out: dict[str, set[str]] = {}
+    if not models_dir.exists():
+        return out
+    for mf in models_dir.glob("*.py"):
+        try:
+            content = mf.read_text(encoding="utf-8", errors="replace")
+        except Exception:
+            continue
+        for m in _CLASS_DECL_RE.finditer(content):
+            cls_name = m.group(1)
+            next_m = _CLASS_DECL_RE.search(content, m.end())
+            body = content[m.end(): next_m.start() if next_m else len(content)]
+            cols = set(_MODEL_COLUMN_RE.findall(body))
+            if cols:
+                out[cls_name] = cols
+    return out
+
+
+def _find_model_columns_for_entity(entity: str, model_columns_by_class: dict[str, set[str]]) -> Optional[set[str]]:
+    """Match a schema-derived entity name (e.g. 'Tag' from 'TagCreate') to
+    its SQLAlchemy model class, tolerating the singular/plural drift
+    already established as endemic in this codebase's own generation
+    (see _dedupe_class_files/_patch_model_aliases). Returns None if no
+    plausible model match exists -- callers must treat that as "can't
+    corroborate," not "confirmed no such column"."""
+    entity_lower = entity.lower()
+    for cls_name, cols in model_columns_by_class.items():
+        c = cls_name.lower()
+        if c == entity_lower or c == entity_lower + "s" or c + "s" == entity_lower:
+            return cols
+    return None
+
+
 def _patch_missing_create_update_fields(project_path: Path) -> int:
     """
     Add a field to a Create/Update Pydantic schema when a route handler
@@ -3094,14 +3132,22 @@ def _patch_missing_create_update_fields(project_path: Path) -> int:
     AttributeError: 'WorkoutCreate' object has no attribute 'date' on
     every single POST, 500ing the entire Create step of the CRUD journey.
 
-    Conservative by construction: only adds a field when ANOTHER schema
-    class for the same entity (matched by class-name prefix, e.g.
+    Conservative by construction: adds a field when ANOTHER schema class
+    for the same entity (matched by class-name prefix, e.g.
     Workout{Base,Response,Update}) already declares that exact field name
-    -- i.e. corroborated evidence this is a real, intended field that
-    just didn't make it into this one class, not a genuine typo/
-    hallucination in the route handler that adding a field would silently
-    paper over. Always added as `Optional[Any] = None` (never guesses a
-    narrower type) so it can never itself introduce a new validation
+    -- corroborated evidence this is a real, intended field that just
+    didn't make it into this one class. Falls back to the SQLAlchemy
+    model's own columns only when NO sibling schema corroborates at all --
+    confirmed live (2026-07-11): a generated gym-tracker app's Tag model
+    has `name = Column(String, nullable=False)`, and tag_routes.py's
+    handler unconditionally does `Tag(name=tag_in.name)`, but EVERY
+    schema for Tag (Create/Update/Response) consistently uses `title`/
+    `description` instead -- no sibling schema was ever going to
+    corroborate `name` because none of them has it either. A corpus sweep
+    found this exact "route accesses a real model column no schema
+    anywhere declares" shape in 6 of 53 real projects (~11%). Either
+    corroboration path always adds `Optional[Any] = None` (never guesses
+    a narrower type) so it can never itself introduce a new validation
     failure.
     """
     routes_dir = project_path / "app" / "routes"
@@ -3112,6 +3158,8 @@ def _patch_missing_create_update_fields(project_path: Path) -> int:
     classes = _schema_classes_and_fields(schemas_dir)
     if not classes:
         return 0
+
+    model_columns_by_class = _model_classes_and_columns(project_path / "app" / "models")
 
     patched = 0
     for rf in routes_dir.glob("*.py"):
@@ -3165,6 +3213,14 @@ def _patch_missing_create_update_fields(project_path: Path) -> int:
                     for other_cls, (_, other_fields) in classes.items()
                     if other_cls != cls_name and other_cls in sibling_names
                 )
+                if not corroborated:
+                    # Fallback: no sibling SCHEMA has it, but does the
+                    # entity's own SQLAlchemy model have it as a real
+                    # column? (the Tag.name-vs-title shape -- every schema
+                    # agrees with every OTHER schema, just not with the
+                    # model or the route handler that actually uses it).
+                    model_cols = _find_model_columns_for_entity(entity, model_columns_by_class)
+                    corroborated = model_cols is not None and node.attr in model_cols
                 if corroborated:
                     missing_by_class.setdefault(cls_name, set()).add(node.attr)
 
