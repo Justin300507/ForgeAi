@@ -297,7 +297,7 @@
       "stage": "runtime"
     },
     "PydanticSerializationError": {
-      "count": 4,
+      "count": 5,
       "examples": [
         {
           "project": "blog_platform",
@@ -314,10 +314,14 @@
         {
           "project": "simple_notes_app",
           "error": "PydanticSerializationError"
+        },
+        {
+          "project": "forge_blog_cms",
+          "error": "PydanticSerializationError"
         }
       ],
       "first_seen": "2026-06-29T23:39:46.755253",
-      "last_seen": "2026-07-01T20:13:11.496878",
+      "last_seen": "2026-07-11T12:46:44.354537",
       "stage": "runtime"
     },
     "JourneyCRUDFailure": {
@@ -497,6 +501,6 @@
       "stage": "build"
     }
   },
-  "total_runs": 397,
-  "last_updated": "2026-07-10T20:33:32.222966"
+  "total_runs": 414,
+  "last_updated": "2026-07-11T12:50:10.603006"
 }

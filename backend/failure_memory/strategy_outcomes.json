@@ -5,6 +5,16 @@
       "tries": 2
     }
   },
+  "ImportError": {
+    "regenerate_module": {
+      "successes": 1,
+      "tries": 1
+    },
+    "switch_model": {
+      "successes": 1,
+      "tries": 1
+    }
+  },
   "SyntaxError": {
     "patch_file": {
       "successes": 2,
@@ -20,25 +30,33 @@
       "successes": 0,
       "tries": 3
     },
+    "regenerate_arch": {
+      "successes": 1,
+      "tries": 1
+    },
     "regenerate_module": {
       "successes": 0,
       "tries": 3
+    },
+    "switch_model": {
+      "successes": 2,
+      "tries": 2
     }
   },
   "browser": {
     "patch_file": {
-      "successes": 0,
-      "tries": 2
+      "successes": 1,
+      "tries": 3
     }
   },
   "contract": {
     "patch_file": {
-      "successes": 21,
-      "tries": 86
+      "successes": 27,
+      "tries": 97
     },
     "regenerate_arch": {
       "successes": 5,
-      "tries": 20
+      "tries": 21
     },
     "regenerate_module": {
       "successes": 0,

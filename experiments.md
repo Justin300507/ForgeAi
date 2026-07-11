@@ -3256,3 +3256,91 @@ fix worth building. Per the user's explicit instruction, the next spend is
 (and the 7 other fixes shipped this cycle) in a live generation and
 refreshes the Observatory's stale telemetry baseline in a single spend,
 rather than two.
+
+## Experiment 048 — Regen-strategy cache bypass: root-caused todo's regression, did NOT write a validator ($0 code, canary confounded by quota)
+
+The Experiment 047 canary flagged todo as a regression (`build_ok` True ->
+False, 90.7 -> 88.8) while blog_cms and crm improved on the same run. User's
+explicit instruction: investigate, don't patch -- find the one root cause,
+check whether crm could hit the same failure mode, only then consider a
+deterministic fix.
+
+**Root cause, found by reading the canary's own captured log (not
+guessing):** todo's final attempt (5/5) triggered `FixStrategy.REGENERATE_ARCH`
+-- the orchestrator's "nuclear option" (`_regenerate_architecture` in
+`backend/app/repair/orchestrator.py`), which re-runs the full V6 pipeline
+and unconditionally overwrites every project file with the result. The log
+showed the giveaway: at attempt 1, `[fix] Group [2] Frontend/browser
+failure... Patched: src/pages/DashboardPage.jsx` -- a JSX build error got
+fixed. Then at attempt 5's regen, `Frontend: [cache hit] -- skipping LLM
+call` -- the regen re-ran the same idea prompt, hit the global LLM response
+cache (keyed by prompt hash), and got back the *original, pre-patch*
+frontend content, including the bug attempt 1 had already fixed. The regen
+then blanket-copied that stale content over the patched files on disk. This
+is the last attempt (5/5) by design ("used only when all other strategies
+failed"), so there was zero budget left to re-fix the reintroduced bug --
+it survived straight through to the final report as the `Compilation`
+dimension's one remaining high-severity issue
+(`[vite:esbuild] Transform failed... DashboardPage.jsx:239:24: Expected "}"
+but`).
+
+**Is this todo-specific or systemic?** Systemic -- the mechanism has
+nothing to do with todo's idea text. Any app that reaches attempt 5 (all 4
+prior strategies exhausted) is equally exposed. crm simply never reached
+attempt 5 on that run (1 fix attempt total), so it didn't hit it -- that's
+why it improved while todo regressed on the *same* canary, not because crm
+is architecturally safer.
+
+**Checked for an existing deterministic fix first** (Exp047's "existing
+validators ruled out" discipline): grepped `app/` for any esbuild /
+brace-balance / JSX-syntax detection -- none exists. Frontend build errors
+are handled entirely by the LLM-driven fix loop today, with no deterministic
+backstop. Rather than build a JSX-syntax auto-repairer (high risk of
+corrupting further, and doesn't address the actual defect -- the cache
+silently discarding prior fixes), the fix targets the confirmed mechanism
+directly.
+
+**What shipped:** `_regenerate_architecture` now disables `FORGE_LLM_CACHE`
+(env-var, matches the existing cache-disable knob in
+`app/providers/ai_provider.py:119`) for the duration of its
+`generate_project_v6` call only, restored in a `finally` even on exception.
+Regen is rare by design (last-resort, fires only after 4 other strategies
+failed), so paying for one genuinely fresh generation there is bounded --
+this does not touch the cache for any other call site, so the $0
+cache-hit economics for every other stage/attempt are untouched.
+
+**Verified locally ($0, no LLM calls):** 3 new tests
+(`tests/reliability/test_regen_arch_cache_bypass.py`) covering the env var
+being set during the call, restored on success, and restored on exception
+(including the case where it wasn't set beforehand) -- all pass. Full
+existing `tests/reliability/` suite re-run (every file) -- zero regressions.
+
+**Live canary (`exp048-regen-cache-bypass`, `--no-deploy`): confounded,
+not a clean confirmation.** todo passed clean (score 99.7, A+, build=True,
+runtime=True, no regression) -- but didn't happen to reach attempt 5 this
+run (LLM variance), so the specific cache-bypass code path wasn't actually
+exercised. blog_cms and crm both came back as regressions (65.9 and 0.0),
+but the cause is unambiguous and unrelated to this change: Gemini returned
+`429 RESOURCE_EXHAUSTED -- prepayment credits are depleted` partway through
+blog_cms, and Groq hit its own daily token cap (`96015/100000 TPD`) shortly
+after -- crm's 0.0/14.3s result is both providers failing outright, not a
+code defect (`Fix Attempts: 0/5`, `Total Tokens: 0`). This canary burned
+through an unusually large amount of quota today: the Exp047 canary, an
+accidentally-duplicated concurrent re-run of it (an unrelated operator
+mistake, killed once caught), and this validation canary -- roughly 8
+app-generations' worth of calls in one day.
+
+**Disposition:** shipping the fix now rather than blocking on a stochastic
+condition (regen-path re-trigger) that may not reproduce again soon
+regardless of quota -- the change is small, isolated to one rare call site,
+and its correctness (cache bypassed only during regen, always restored) is
+fully proven by the unit tests, not dependent on empirical LLM behavior.
+Follow-up once quota resets: re-run the canary and specifically watch for
+attempt 5 firing on any app, to get a direct before/after on the
+regen-path bug itself. No new validator was written this cycle, per the
+user's explicit instruction.
+
+**Also flagged, not yet built:** a canary-lock (PID-mutex on
+`run_canary.py`, reject a second concurrent run) to prevent a repeat of
+today's accidental double-run. Small, cheap, queued for whenever this cycle
+wraps.

@@ -848,6 +848,19 @@ def _regenerate_architecture(ctx: GenerationContext, cfg: StrategyConfig) -> lis
     Used only on attempt 5 when all other strategies failed.
     """
     print("  [fix] REGENERATE ARCHITECTURE — redesigning from idea...")
+    # Regen exists only because every prior strategy on this same idea
+    # already failed. The LLM response cache is keyed by prompt, so a
+    # cache-hit regen would silently replay that exact same failing
+    # design -- including bugs earlier fix rounds had already patched on
+    # disk (e.g. a frontend page's JSX syntax error) -- and then
+    # unconditionally overwrite the patched files with the stale buggy
+    # ones below. That burns the pipeline's last fix attempt on a no-op.
+    # Bypass the cache for this call only: regen is the rare "nuclear
+    # option" (fires on the last attempt, after 4 other strategies
+    # failed), so paying for one genuinely fresh generation here is
+    # bounded and worth the correctness fix.
+    prev_cache_env = os.environ.get("FORGE_LLM_CACHE")
+    os.environ["FORGE_LLM_CACHE"] = "0"
     try:
         # Re-run the V6 generation pipeline from architecture stage onward
         from app.services.v6_orchestrator import generate_project_v6
@@ -870,6 +883,11 @@ def _regenerate_architecture(ctx: GenerationContext, cfg: StrategyConfig) -> lis
     except Exception as exc:
         print(f"    [fix] Architecture regen failed: {exc}")
         return []
+    finally:
+        if prev_cache_env is None:
+            os.environ.pop("FORGE_LLM_CACHE", None)
+        else:
+            os.environ["FORGE_LLM_CACHE"] = prev_cache_env
 
 
 # ── Regression protection ─────────────────────────────────────────────────────
