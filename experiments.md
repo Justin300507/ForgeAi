@@ -2430,3 +2430,93 @@ classify into the right buckets, metrics math on synthetic fixtures,
 empty-telemetry safety, injection includes the journey rule); all 16 suites
 pass. **Cost:** $0. **Next:** root-cause JourneyCRUDFailure instances in
 real failed outputs — prevention rule is a mitigation, not the cure.
+
+---
+
+## Experiment 038 — Forensic Bundle System (V20.1): generic, reusable failure evidence
+
+**Hypothesis:** Measurement before medicine. `JourneyCRUDFailure` examples in
+telemetry were truncated to 80 characters (`generation_log.jsonl`'s
+`dominant_errors`), or 200 characters in the separate, non-live `patterns.json`
+store — real request/response evidence was computed at failure time and then
+thrown away. Before building any replay tooling, stop discarding the
+evidence, in a schema generic enough for every future failure class
+(build/deploy/auth/vision), not journey-specific.
+
+**What shipped (4 tasks, subagent-driven, task-scoped review gate on each):**
+- `app/memory/forensic_bundle.py` — a standalone, failure-class-agnostic
+  bundle writer: `bundle_version`, `failure_id` (monotonic `FR-NNNNNN`),
+  timestamp, `forgeai_version`, `pipeline_version`, `commit_sha`, project,
+  provider/model/seed, `{stage, class, step}`, request/response, stderr,
+  a `generation` metadata slot (category/style/layout/design fingerprint —
+  nullable, not yet populated by any caller), and a reserved `artifacts`
+  slot (screenshot/console_log/network_log/playwright_trace — null today,
+  for V20.3 with no schema change). Also added, beyond the original plan,
+  a real `_redact_auth()` defense-in-depth pass inside `write_bundle()`
+  itself (strips any `Authorization` key, replaces `Bearer ...` values) —
+  review found the original design left the redaction guarantee entirely
+  up to callers, which didn't match the stated constraint.
+- `user_journey_runner.py`'s `_ExchangeRecorder` captures the last HTTP
+  request/response made by a failing step, without touching any of the
+  11 step closures' return signatures (a scoping trick — reassign the
+  local `requests` name, shadow a renamed module-level `_step` — verified
+  correct by two independent reviewers tracing Python's closure semantics
+  against the real call sites, not just trusting it compiled).
+- `engine.py`'s runtime stage writes a bundle on `JourneyCRUDFailure` via
+  a new `_write_journey_bundle()` helper, inserted as a minimal 3-line
+  change into the large, shared `_run_runtime_validation` — every other
+  diagnostic path (ModuleNotFoundError, SyntaxError, EndpointSmokeFailure,
+  etc.) is byte-for-byte unchanged, and bundle-write failures are swallowed
+  so telemetry can never break verification itself.
+- `pipeline.py`'s existing, already-confirmed-live `generation_log.jsonl`
+  write now carries `bundle_refs`, so `reliability_metrics.py`/
+  `failure_report.py` and any future dashboard can resolve a failure
+  straight to its full evidence file instead of an 80-character string.
+
+**A correction made mid-implementation, worth recording:** the original
+investigation (this plan's design phase) found `patterns.json`
+(`failure_memory.record_run`) is **not actually called from the live V15
+pipeline path** — traced every call site; it only fires from the older
+`project_service.py`/`v6_orchestrator.py` flows. The real live V15
+telemetry sink is `pipeline.py`'s `generation_log.jsonl` write, confirmed
+by that block's own comment about a prior silent-failure bug. Task 4 wires
+bundle refs there, not into `patterns.json`.
+
+**Bugs found and fixed during implementation (not part of the original
+plan, surfaced by the review-gate process):**
+1. A path-arithmetic off-by-one (`_MEM_DIR` landing at the repo root
+   instead of `backend/failure_memory/`) took three implementer rounds on
+   a cheap-tier model before the controller applied the fix directly —
+   and a *second*, independent off-by-one in the plan's own test code
+   (masking the first bug, since both were wrong in the same direction,
+   so "tests pass" was not sufficient evidence). The same test-code bug
+   pattern recurred once in Task 3's brief-given test; caught and fixed
+   the same way, second time round-trip-free.
+2. Two Important review findings on Task 1: tests were writing into the
+   real `backend/failure_memory/` store and advancing the real ID
+   sequence counter on every run (fixed via `tempfile.mkdtemp()`
+   redirection of the module's storage globals — same pattern reused for
+   Task 3's test); and the auth-redaction test was nearly vacuous (never
+   fed a real header through) — fixed alongside adding real redaction to
+   `write_bundle()` itself.
+
+**Verification ($0):** 13 new asserts across 4 test files (bundle schema +
+monotonic IDs + auth redaction + artifacts placeholder; recorder captures
+the right exchange and never stores a raw Authorization header; engine.py
+writes a bundle only when a failed step has evidence and attaches the
+ref; GenerationRecord round-trips bundle_refs through the same json path
+generation_log.jsonl already uses, staying backward-compatible with
+pre-existing log lines). Every task independently re-run by the
+controller in addition to the implementer's own run. No LLM calls, no
+canary run — this is a $0 telemetry change with no effect on generation
+behavior or score.
+
+**Explicitly deferred (per the user's stated order):** screenshots,
+browser console/network logs, replay execution, and any dashboard/heatmap
+UI. Those are V20.2 (Replay) / V20.3 (Browser Evidence) / V20.4 (Replay
+Studio) — this cycle is only "stop throwing the evidence away."
+
+**Next reliability target:** run a canary (`run_canary.py`) once ready to
+spend credits, confirm a real `JourneyCRUDFailure` produces a populated
+bundle file, then decide whether V20.2 (load a bundle, re-run the exact
+request) is next. **Cost:** $0.
