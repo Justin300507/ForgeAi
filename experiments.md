@@ -3970,3 +3970,60 @@ across all 5 runs -- the Cerebras-first reorder from earlier this session
 is doing real, active work, not just theoretical).
 
 Full report: `docs/EXP056_BASELINE.md`.
+
+---
+
+## Experiment 057 — Restore Runtime Repair Loop (targeted regression fix)
+
+**Goal:** fix exactly the regression Exp056 found and root-caused
+(commit f7d4dca, the Exp053 Stage-1 extraction), with the smallest
+possible change. Direct, immediate follow-up -- Exp056 explicitly left
+this unfixed per its own "measurement only" rule.
+
+**Fix:** widened the ALREADY-correctly-scoped
+`from app.services.database_patcher import patch_database_py` inside
+`generate_project_v6`'s Stage-12 block (proven correctly-scoped by its
+own working `patch_database_py(project_path)` call later in the same
+loop) to include the 5 names Exp053's extraction had silently unbound:
+`patch_model_field_mismatches, patch_add_missing_model_columns,
+patch_add_missing_schema_fields, patch_missing_required_constructor_kwargs,
+patch_filter_dict_unpack_constructor_kwargs`. One import statement
+widened, no new import statement added anywhere, no duplicate of
+`_run_initial_deterministic_patches`'s own separate import (left
+untouched, correctly still needed there for its own execution). 5-line
+diff total.
+
+**Verification (both structural and functional, against the REAL
+source, not a hand-copied reproduction):** 7 new tests in
+`tests/reliability/test_runtime_fix_loop_scope.py`. Structural checks
+(via `inspect.getsource`) confirm the widened import, no duplicate
+import statement, the helper extraction is intact and untouched, and no
+accidental third copy of the import was introduced. A functional harness
+extracts the REAL Stage-12 source text and executes it in a controlled,
+mocked scenario -- proving all 4 intended `validate_runtime` iterations
+now run on a persistently-failing app (vs. 1 before), success still
+breaks the loop immediately, and the PRE-EXISTING stagnation guard
+(untouched by this fix) still stops the loop identically to before --
+confirming Exp057 changed only the import, not retry-termination logic.
+
+**Exact replay of the Exp056 failure via `git stash`** (same
+before/after technique as Exp054/055): stashed the fix, re-ran the exact
+same scenario against the unmodified pre-fix code -- got a byte-for-byte
+match to Exp056's real canary logs:
+`runtime_result = {'success': False, 'error': "name 'patch_model_field_mismatches' is not defined"}`,
+`validate_runtime` called exactly 1 time instead of 4. Popped the stash,
+re-ran against the fix: all 4 calls happen, no error, 7/7 green.
+
+Full existing suite (48 files, up from 47) + adr002 orchestrator-wiring
+test passing before and after. `repair_project()` confirmed to not
+contain this loop pattern at all -- fix scoped to exactly the one
+function, one code path Exp056 identified.
+
+**Cost: $0.** No generation, no LLM calls, no prompt changes -- pure
+scoping fix backed by direct reproduction of both the failure and the
+fix. Live canary re-validation deferred to a future cycle with budget
+(this fix's correctness doesn't depend on it -- the exact-replay harness
+is a stronger, cheaper, more targeted signal for a scoping bug this
+precisely diagnosed).
+
+Full report: `docs/EXP057.md`.

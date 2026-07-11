@@ -780,7 +780,24 @@ def generate_project_v6(
     if validation["passed"]:
         # Re-run database patcher: the validation fix loop may have overwritten
         # database.py from fix cache with a version missing create_tables().
-        from app.services.database_patcher import patch_database_py
+        # Exp057: also brings the 5 model/schema cleanup patchers the
+        # runtime-fix loop below calls (line ~840) into scope. Before
+        # Exp053, those names were imported inline right at the
+        # top of this same function and stayed in scope for the rest of its
+        # body; Exp053 moved that import into a separate helper function
+        # (_run_initial_deterministic_patches) without noticing this loop,
+        # ~40 lines later but still in the SAME function, depended on it
+        # staying in scope -- silently turning every one of these bare calls
+        # into a NameError that the loop's own try/except swallowed. Widening
+        # this already-in-scope, already-correct import (proven correct by
+        # patch_database_py's own working use at line ~829 below) is the
+        # minimal fix -- no new import statement, no duplicate of the
+        # helper's own separately-scoped import.
+        from app.services.database_patcher import (
+            patch_database_py, patch_model_field_mismatches, patch_add_missing_model_columns,
+            patch_add_missing_schema_fields, patch_missing_required_constructor_kwargs,
+            patch_filter_dict_unpack_constructor_kwargs,
+        )
         patch_database_py(project_path)
 
         print("\n=== RUNTIME VALIDATION (V6) ===")
