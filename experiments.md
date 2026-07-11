@@ -3051,3 +3051,56 @@ the first success. That's the same "verify prevalence, corpus-sweep
 before shipping, live-validate on real output" discipline holding up
 under its own weight: each fix's own validation is what surfaced the
 next one.
+
+---
+
+## Experiment 045 — Model-column fallback for missing Create/Update fields ($0, no LLM calls)
+
+User directive after Experiment 044: freeze features/UI/benchmarks for a
+few days, spend $0 wherever telemetry/corpus/validation can answer the
+question instead of a generation. This cycle answers a question the
+`gym_tracker.notes` case (Experiment 042) explicitly deferred, entirely
+via corpus scan of the 50+ already-generated apps -- zero LLM calls.
+
+**Hypothesis:** `_patch_missing_create_update_fields`'s schema-only
+corroboration (a field must appear on ANOTHER schema for the same
+entity) has a structural blind spot: an entity where EVERY schema agrees
+with every OTHER schema, but none of them agrees with the model or the
+route handler that actually uses the field.
+
+**Prevalence check, in three passes (not one crude grep):**
+1. Naive "model column missing from all schemas" sweep: 38/53 apps
+   flagged -- almost entirely noise (server-set FKs, timestamps,
+   auth-flow alternates).
+2. Precise version -- "route handler accesses a Create/Update field
+   that's a real model column, absent from every schema for that entity":
+   12/53 apps.
+3. Cross-referenced against the EXISTING schema-corroboration path (most
+   of pass 2 was already fixed by Experiment 042's patcher): 6/53 apps
+   (~11%) with a genuine, currently-unfixable gap.
+
+**Confirmed live in the corpus (no generation needed):** a gym-tracker
+app's `Tag` model has `name = Column(String, nullable=False)`;
+`tag_routes.py` does `Tag(name=tag_in.name)` unconditionally; but
+`TagCreate`/`TagUpdate`/`TagResponse` all consistently use `title`/
+`description` instead -- no sibling schema was ever going to corroborate
+`name`. A second, more severe instance in the same sweep:
+`simple_notes_app`'s `UserCreate` never declared `password` at all --
+every registration would 500 on the literal signup path, not a secondary
+field.
+
+**What shipped (commit 4f72107):** `_model_classes_and_columns` /
+`_find_model_columns_for_entity` (same singular/plural tolerance already
+established elsewhere in this file) feed a fallback corroboration path:
+schema-sibling check first, model-column check only when that finds
+nothing. Still never guesses a type -- always `Optional[Any] = None`. A
+field neither any sibling schema nor the model has stays unfixed
+(confirmed by test) -- that's the genuine-typo case the conservative
+design exists to protect.
+
+**Verification:** 4 new tests + all 38 existing suites pass. Corpus-swept
+after shipping: 13/50 touched (up from 9), 0 crashes, 0 new syntax
+corruption (spot-checked every diff, including the `password` addition
+by hand given its security adjacency). **Cost: $0** -- corpus scan, live
+schema/model cross-reference, and patcher testing against real (already
+on-disk) generated output, no new generation.
