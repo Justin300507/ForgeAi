@@ -298,8 +298,15 @@ class BackendRunner:
                 crud_passed = None
 
             # ── Smoke tests after journey — they can hang/crash the server ──
+            # base_url must track the caller's actual port -- this used to
+            # default silently to 127.0.0.1:8001 regardless of `port`, so
+            # every run on a non-default port (e.g. the V18 parallel batch
+            # runner's dynamic port assignment) got a guaranteed connection-
+            # refused on every single endpoint. Same bug class as the
+            # playwright_workflow.py port fix (Experiment 039).
             print("\n=== ENDPOINT SMOKE TESTS ===")
-            behavioral_issues = run_endpoint_smoke_tests(architecture)
+            behavioral_issues = run_endpoint_smoke_tests(
+                architecture, base_url=f"http://127.0.0.1:{port}")
 
             for issue in behavioral_issues:
                 print(f"  {issue['method']} {issue['path']} -> {issue['issue']}")
