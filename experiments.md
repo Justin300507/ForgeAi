@@ -2961,3 +2961,93 @@ this cycle didn't touch) -- small follow-up, not urgent since role-aware
 firing is rare by construction. A fresh, uninterrupted canary run to
 observe `first_try_success_rate` move (the metric the user named as
 what matters most) remains the standing open item from Experiment 041.
+
+---
+
+## Experiment 044 — Observatory data quality + a 3-bug chain found by using V20.1.5 for real
+
+User feedback in two parts: (1) "don't add features to Observatory,
+improve the data quality" with three specific asks (confidence labeling,
+Experiment Attribution, Reliability Timeline); (2) after reviewing, asked
+to "continue" -- taken as license to keep pulling the thread V20.1.5
+opened rather than stop at the first fix.
+
+**Observatory data quality (commit 05f8f98).** All three additions read
+from data that already existed, nothing new collected:
+- `confidence_from_evidence(n)`: evidence-size label (not a significance
+  test) -- this project's own variance report puts single-run forge_score
+  stdev around 24 points, so small-n numbers get an explicit "don't
+  over-trust this yet" label. Applied to the North-Star rate and every
+  attribution entry.
+- `compute_reliability_timeline` / `compute_experiment_attribution`: read
+  from `canary_history.json`'s 23 already-labeled, already-dated runs
+  (generation_log.jsonl has no version tagging to build this from).
+  Confidence deliberately stays evidence-size-based, NOT delta-magnitude-
+  based -- verified by test that an 89-point swing on 3 apps of evidence
+  is still labeled Low, since a huge swing can mean a real fix or a
+  provider-quota confound just as easily (this project's own log
+  documents both).
+
+Real output on real data: every attribution entry reads Confidence: Low
+(n=3 per canary run) -- the honest signal the ask was for, not hidden or
+dressed up.
+
+**The chain (commits e535f9c, f81fea4), triggered by validating V20.1.5
+against a SECOND real app instead of stopping after one.** A corpus sweep
+for role-gating logic found it in 7/54 apps (~13%), not the 1 that
+motivated the original fix. Live-testing the second one (`forge_learn`, a
+course platform) surfaced two more independent, real bugs:
+
+1. **Role-vocabulary discovery was schema-only.** `forge_learn`'s schema
+   declared a bare `role: Optional[str] = None` -- zero vocabulary -- yet
+   course/lesson/enrollment/user routes gated on three distinct roles
+   (admin/instructor/student) found nowhere but the comparisons
+   themselves. New `_discover_role_vocabulary_from_routes` scans route-
+   level gate comparisons as a fallback, requiring 2+ distinct roles
+   before treating it as a real vocabulary (a single role repeated
+   everywhere -- confirmed live on `blog_platform` -- is a deliberate
+   security boundary, not a multi-role system, and stays untouched).
+   Case preserved exactly as written (confirmed live:
+   `volunteer_management_system` uses PascalCase "Volunteer"/"Admin").
+   6/53 apps now produce a discovered vocabulary, up from 1.
+
+2. **A response-schema-inheritance gap, exposed only by fix #1 actually
+   working.** With role discovery widened, the elevation retry reached an
+   authorized "instructor" identity for `forge_learn` for the first time
+   ever -- and immediately hit a 500 that hung the dev server.
+   Root cause: `CourseResponse(CourseBase)` inherits `price`/
+   `duration_hours`/`difficulty` as REQUIRED from `CourseBase`, but the
+   `Course` SQLAlchemy model has no such columns at all. The existing
+   `_patch_response_schemas_optional` only scans a class's OWN body text,
+   never an inherited base's -- this exact bug was unreachable by any
+   test until role-aware validation could get past the 403 in the first
+   place. New `_patch_response_schema_inherited_required_fields` walks
+   each Response class's base for required-but-unoverridden fields and
+   injects `Optional[Any] = None` overrides directly into the subclass
+   (never touches the base, so `*Create` keeps real requiredness).
+   26% prevalence (13/50) once swept -- a common LLM schema-inheritance
+   pattern, not a one-off.
+
+**Two bugs in fix #2's own implementation, caught before any test ran
+against real output** (same discipline every patcher this cycle has
+needed): a naive "any `=` suffix means defaulted" check treated
+`price: float = Field(ge=0.0)` (constraint metadata, no real default) as
+already-optional, missing exactly the case the patcher exists for; and
+the Response-class-name check reused the WRONG regex (one requiring a
+full `class X(bases):` declaration) against a bare class-name string that
+could structurally never match it, meaning the first working version
+fired on zero classes despite passing its own unit test. Both fixed
+before the corpus sweep, not discovered by one.
+
+**Combined live validation:** `forge_learn`'s full CRUD journey went from
+6/11 steps passing to 11/11, Create correctly annotated `"201 id=1
+(role=instructor, elevated after 403)"`. 14 new tests across both fixes
++ all 37 existing suites pass (0 regressions).
+
+**What this cycle demonstrates about the loop itself:** neither of the
+two new bugs was hypothesized in advance -- both were found by actually
+exercising the previous fix against a second real app instead of trusting
+the first success. That's the same "verify prevalence, corpus-sweep
+before shipping, live-validate on real output" discipline holding up
+under its own weight: each fix's own validation is what surfaced the
+next one.
