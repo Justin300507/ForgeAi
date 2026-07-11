@@ -12790,5 +12790,59 @@
     "forge_score": 62,
     "wall_time_s": 1305.02,
     "timestamp": "2026-07-10T21:17:28"
+  },
+  {
+    "total_calls": 25,
+    "total_tokens": 141626,
+    "total_cost_usd": 0.035108,
+    "total_llm_time_s": 906.18,
+    "by_stage": {
+      "product_manager": {
+        "calls": 1,
+        "tokens": 2171,
+        "cost_usd": 0.000979,
+        "time_s": 26.03
+      },
+      "architecture": {
+        "calls": 1,
+        "tokens": 5180,
+        "cost_usd": 0.001536,
+        "time_s": 22.54
+      },
+      "tech_lead": {
+        "calls": 1,
+        "tokens": 7040,
+        "cost_usd": 0.001398,
+        "time_s": 7.83
+      },
+      "backend_generation": {
+        "calls": 15,
+        "tokens": 61378,
+        "cost_usd": 0.012413,
+        "time_s": 441.51
+      },
+      "frontend_generation": {
+        "calls": 1,
+        "tokens": 27771,
+        "cost_usd": 0.009323,
+        "time_s": 64.3
+      },
+      "missing_file": {
+        "calls": 5,
+        "tokens": 32776,
+        "cost_usd": 0.008349,
+        "time_s": 274.79
+      },
+      "architecture_fix": {
+        "calls": 1,
+        "tokens": 5310,
+        "cost_usd": 0.00111,
+        "time_s": 69.18
+      }
+    },
+    "project_name": "dine_reserve",
+    "forge_score": 55,
+    "wall_time_s": 587.49,
+    "timestamp": "2026-07-11T02:03:32"
   }
 ]

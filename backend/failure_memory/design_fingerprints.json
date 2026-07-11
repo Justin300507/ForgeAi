@@ -4,5 +4,15 @@
     "category": "crm",
     "style": "minimal_editorial",
     "timestamp": "2026-07-10T15:29:56.328036+00:00"
+  },
+  {
+    "project_name": "dine_reserve",
+    "category": "restaurant",
+    "style": "neubrutalist",
+    "timestamp": "2026-07-10T20:27:44.826050+00:00",
+    "shell": "topnav",
+    "font_heading": "'Space Grotesk', sans-serif",
+    "posture": "consumer",
+    "data_density": "low"
   }
 ]
