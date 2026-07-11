@@ -98,7 +98,10 @@ def print_reliability_dashboard():
     unit-tested); this just loads telemetry and renders."""
     import sys
     sys.path.insert(0, str(_BACKEND_ROOT))
-    from app.memory.reliability_metrics import compute_reliability_metrics, render_dashboard
+    from app.memory.reliability_metrics import (
+        compute_reliability_metrics, render_dashboard,
+        compute_prevention_rate, render_prevention_dashboard,
+    )
 
     gen_entries = _load_jsonl(FAILURE_DIR / "generation_log.jsonl")
     canary_path = _BACKEND_ROOT / "benchmark_results" / "canary_history.json"
@@ -109,6 +112,8 @@ def print_reliability_dashboard():
         except Exception:
             pass
     print(render_dashboard(compute_reliability_metrics(gen_entries, canary_runs)))
+    print()
+    print(render_prevention_dashboard(compute_prevention_rate(gen_entries)))
 
 
 if __name__ == "__main__":

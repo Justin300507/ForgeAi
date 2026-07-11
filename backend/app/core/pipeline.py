@@ -339,6 +339,17 @@ class V15Pipeline:
             import hashlib
             arch_hash = hashlib.sha256(str(ctx.architecture)[:500].encode()).hexdigest()[:12]
             all_diags = ctx.all_diagnostics()
+            # Deterministic Prevention Rate: ctx.prevention_counts (set in
+            # _deterministic_patch) already has every preflight patcher's
+            # count; add the STATIC validation stages' diagnostic counts here
+            # (import_closure, symbol_closure, compile, contract) -- each one
+            # a failure caught before runtime, even when nothing auto-fixed
+            # it. See reliability_metrics.py's DETERMINISTIC_PREVENTION_CATEGORIES.
+            prevention_counts = dict(getattr(ctx, "prevention_counts", None) or {})
+            for r in ctx.static_results:
+                if r.diagnostics:
+                    prevention_counts[f"stage.{r.stage}"] = (
+                        prevention_counts.get(f"stage.{r.stage}", 0) + len(r.diagnostics))
             generation_log.record(GenerationRecord(
                 idea=ctx.idea[:200],
                 attempt_number=len(ctx.fix_attempts),
@@ -352,6 +363,7 @@ class V15Pipeline:
                 bundle_refs=[d.metadata["bundle_ref"] for d in all_diags
                              if isinstance(getattr(d, "metadata", None), dict)
                              and d.metadata.get("bundle_ref")],
+                prevention_counts=prevention_counts,
             ))
         except Exception as exc:
             print(f"[V15] generation_log write failed (non-fatal): {exc}")
@@ -438,16 +450,26 @@ class V15Pipeline:
                 patch_add_missing_schema_fields, patch_missing_required_constructor_kwargs,
                 patch_filter_dict_unpack_constructor_kwargs,
             )
-            run_deterministic_patches(str(ctx.project_path))
-            patch_database_py(str(ctx.project_path))
-            patch_model_field_mismatches(str(ctx.project_path))
-            patch_add_missing_model_columns(str(ctx.project_path))
-            patch_add_missing_schema_fields(str(ctx.project_path))
-            patch_missing_required_constructor_kwargs(str(ctx.project_path))
-            patch_filter_dict_unpack_constructor_kwargs(str(ctx.project_path))
+            # Every deterministic patcher's own count feeds ctx.prevention_counts
+            # -- each one a failure prevented before the app ever reaches
+            # verification/runtime. See reliability_metrics.py's
+            # DETERMINISTIC_PREVENTION_CATEGORIES for how these roll up into
+            # the reliability dashboard's "Deterministic Prevention Rate".
+            counts = dict(run_deterministic_patches(str(ctx.project_path)))
+            counts["patch_database_py"] = int(bool(patch_database_py(str(ctx.project_path))))
+            counts["patch_model_field_mismatches"] = patch_model_field_mismatches(str(ctx.project_path)) or 0
+            counts["patch_add_missing_model_columns"] = patch_add_missing_model_columns(str(ctx.project_path)) or 0
+            counts["patch_add_missing_schema_fields"] = patch_add_missing_schema_fields(str(ctx.project_path)) or 0
+            counts["patch_missing_required_constructor_kwargs"] = (
+                patch_missing_required_constructor_kwargs(str(ctx.project_path)) or 0)
+            counts["patch_filter_dict_unpack_constructor_kwargs"] = (
+                patch_filter_dict_unpack_constructor_kwargs(str(ctx.project_path)) or 0)
             # Preflight registry: deterministic fixes that don't need LLM
             from app.repair.preflight import preflight
-            preflight.run(ctx.project_path)
+            preflight_fired = preflight.run(ctx.project_path)
+            for name, fired in (preflight_fired or {}).items():
+                counts[f"preflight.{name}"] = int(bool(fired))
+            ctx.prevention_counts = counts
             ctx.end_stage(evt, StageStatus.PASSED)
         except Exception as exc:
             print(f"[V15] Deterministic patcher warning: {exc}")

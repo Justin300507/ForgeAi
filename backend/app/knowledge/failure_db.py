@@ -170,6 +170,10 @@ class GenerationRecord:
     dominant_errors:  list[str]     # top error messages
     architecture_hash: str          # sha256 of project structure (for "similar apps" lookup)
     bundle_refs:      list = field(default_factory=list)  # [{"failure_id", "bundle_path"}, ...]
+    # {patcher_or_stage_name: count} -- Deterministic Prevention Rate raw
+    # data (see reliability_metrics.py). Defaults to {} for backward
+    # compatibility with pre-existing generation_log.jsonl lines.
+    prevention_counts: dict = field(default_factory=dict)
     timestamp:        str = ""
 
 
