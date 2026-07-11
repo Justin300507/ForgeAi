@@ -282,48 +282,157 @@ constraint that produced the original note).
 pointing at the existing lead. Consolidation not attempted (would be a
 behavior change).
 
-### Investigated and ruled NOT duplicative: relationship-stripping family
+### Investigated and ruled NOT duplicative: relationship-stripping family — WITH ONE CORRECTION
 
 **Fact:** `_patch_strip_relationships`, `_patch_strip_back_populates`,
 `_patch_dangling_foreign_keys`, `_patch_model_aliases`,
 `_patch_relationship_string_aliases` look duplicative by name (all
-touch SQLAlchemy `relationship()`/FK declarations) but are confirmed, by
+touch SQLAlchemy `relationship()`/FK declarations) but are, by
 reading their bodies and the ordering comments in `REPAIR_GRAPH.md` §2,
-to be complementary layered defense: `_patch_strip_relationships` removes
+complementary layered defense: `_patch_strip_relationships` removes
 whole `relationship()` statements (which incidentally removes most
 `back_populates=`/`backref=` usages as a side effect of removing the
 containing statement); `_patch_strip_back_populates` is an explicitly
 documented defensive backstop ("in case any remain," line 6282) for any
-that survive the first pass through some other code path. Not duplication
-— correctly ruled out rather than assumed.
+that survive the first pass through some other code path. Not
+duplication for these two.
 
-### Confirmed duplicative: param-order fixing exists in three separate implementations
+**Correction (verified directly, 2026-07-11, same audit cycle):**
+`_patch_relationship_string_aliases` is a different case, not covered by
+the "layered defense" explanation above. Its own docstring: *"Scan all
+model files for relationship('X') where X is not a real registered
+class."* Its own search loop requires `relationship(` to be present in
+the file. But `_patch_strip_relationships` (`REPAIR_GRAPH.md` §2 step 13)
+runs earlier in the exact same `run_deterministic_patches` call and
+**unconditionally removes every single `relationship(...)` assignment**
+from every model file — confirmed by direct read: `if "relationship(" not
+in original: continue` is the only skip condition; every file that has
+one gets every one stripped. By the time `_patch_relationship_string_aliases`
+runs at step 19, there is no `relationship(` left in any model file for
+it to find. This is not "layered defense" — it is a function that is
+called every generation, and finds nothing every generation, structurally,
+by pipeline design. **Downgrading this one function out of the "ruled not
+duplicative" bucket and into a new, separate finding below.**
+
+### New finding — `_patch_relationship_string_aliases` is called but structurally inert
+
+**Fact:** confirmed above. Distinguish this from "dead code" in the usual
+sense (a function nothing ever calls) — this function IS called, every
+run, from `run_deterministic_patches`. It simply can never do anything,
+because an earlier step in the same call already eliminated its only
+possible input. The `run_deterministic_patches` telemetry (`counts[]`)
+presumably still records a `0` for this key every time, which is at least
+honest (not miscounted as a false success) — not independently verified
+in this pass whether the counts dict distinguishes "ran, found 0" from
+"didn't run."
+
+**Why Low-Medium, not Critical:** harmless in its current form — it
+costs a wasted file-glob-and-regex-scan pass per generation (negligible
+runtime cost) and doesn't corrupt anything. It's flagged here because it's
+exactly the shape of thing this whole audit exists to surface: a function
+that reads as intentional (a documented "fix wrong class name in
+relationship string" feature) but is actually inert by construction, and
+nothing in the codebase's own tests or telemetry would reveal that without
+this kind of direct ordering trace.
+
+**Recommendation**: either (a) delete the function and its call site (it
+can never fire — a "tiny, obviously correct cleanup" candidate per this
+audit's own rules, but deletion is still a behavior change to a live file
+and wasn't made in this read-only pass), or (b) move its call to
+*before* `_patch_strip_relationships` in the sequence if the intent was
+for it to fix string-aliased relationship targets before the stripping
+pass removes them wholesale (this would change behavior — currently
+`_patch_strip_relationships`'s own replacement `@property` logic resolves
+the target via `_build_model_index`'s FK map, not via the string arg
+`_patch_relationship_string_aliases` would have fixed, so it's not obvious
+running it first would even change the end result — needs a closer read
+of `_build_model_index` before concluding (b) is worth doing, out of
+scope for this pass).
+
+### Confirmed duplicative: param-order fixing exists in three separate implementations — UPGRADED to High confidence, diffed
 
 **Fact:** the same bug class — a route handler with `Path`/`Query`/`Depends`
 params ordered before a body param, a Python `SyntaxError`
 ("non-default argument follows default argument") — has three independent
 fixer implementations:
 - `deterministic_patcher.py::_patch_param_order` (line 1174, dispatch
-  mechanism 1)
+  mechanism 1) — uses `compile()` itself as the trigger check, then a
+  `(`/`)`-only paren-depth-tracking param-list splitter.
 - `preflight.py::_fix_param_order` (line 651, priority 26, dispatch
-  mechanism 2)
+  mechanism 2) — **delegates directly to `_patch_param_order` above; not
+  independent, no duplication here.**
 - `file_writer_service.py::_fix_fastapi_param_order` (line 247, chained
   inline inside `_normalize_newlines`/`_is_safe_to_write`, a fifth dispatch
-  pattern not in `REPAIR_GRAPH.md` §1)
+  pattern not in `REPAIR_GRAPH.md` §1) — an **independently-coded**
+  second implementation, with its own `_split_params` helper that tracks
+  `(`/`[`/`)`/`]` (one more bracket type than the version above), invoked
+  from a different call path entirely: when the repair loop's fix-writer
+  (`fix_writer_service.py`) writes a freshly LLM-generated fix file to
+  disk, not when the initial deterministic-patch sweep runs.
 
-Not resolved in this pass (would require reading and diffing all three
-regex implementations to know if they're identical, overlapping, or
-handle genuinely different malformed shapes — the same rigor that revealed
-the relationship-family functions were NOT duplicative despite similar
-names). Flagged as a lead, same treatment as the JSX/template-literal
-family.
+**Diffed in this enrichment pass (a separate parallel sub-audit read both
+bodies directly):** genuinely two different codebases solving the
+identical bug, reachable via two different trigger paths within the same
+repair pipeline. **This is the single highest-risk duplication found in
+the whole audit** — a future correctness fix applied to one implementation
+(e.g. handling a param-order edge case neither currently covers) will not
+propagate to the other, and which one fires depends on *how* the broken
+file arrived (initial generation vs. mid-loop LLM fix), not on anything
+visible to whoever is debugging a param-order failure later.
+
+**Recommendation**: consolidate `file_writer_service.py::_fix_fastapi_param_order`
+to call `deterministic_patcher.py::_patch_param_order`'s underlying logic
+instead of maintaining a second implementation — the same pattern
+`preflight.py::_fix_param_order` already correctly uses. Not attempted in
+this pass (behavior change, out of scope for a read-only audit), but this
+is the clearest "should actually get fixed" item in the whole report,
+ahead of the test-coverage gap in terms of concrete near-term bug risk
+(Risk 1 is about the unknown; this one is a known, already-diffed
+inconsistency).
 
 ### Confirmed duplicative: smart-quote normalization exists in at least two places
 
 **Fact:** `deterministic_patcher.py::_patch_smart_quotes` (line 1015) and
 `file_writer_service.py::_fix_smart_quotes` (line 178) both normalize
-Unicode smart quotes/dashes to ASCII. Not diffed for exact overlap in this
-pass.
+Unicode smart quotes/dashes to ASCII, reachable via the same two
+different-call-path pattern as the param-order duplication above (initial
+sweep vs. mid-loop fix-write). Not diffed byte-for-byte for exact overlap
+in this pass, but same structural risk shape as the param-order finding.
+
+### Confirmed duplicative: a string-aware "matching closing brace" utility is implemented three times
+
+**Fact (diffed in this enrichment pass — bodies read directly, not
+name-matched):** the identical ~15-line algorithm — walk forward from an
+opening `{`, track nesting depth, track whether inside a string with
+escape handling, return the span of the matching `}` — is implemented
+three separate times:
+- `app/utils/json_cleaner.py::_find_matching_close_brace` (line 267)
+- `app/utils/json_cleaner.py::try_repair_truncated` (line 63) — an inline,
+  unnamed duplicate of the *same* algorithm, inside the *same file* as the
+  named version above.
+- `app/services/validator_service.py::_extract_object_literal` (line 665)
+  — same algorithm again, in a different file, for a different purpose
+  (extracting a JS object literal from generated frontend source to
+  validate an auth POST body shape, vs. the two `json_cleaner.py` uses
+  which repair the LLM's own raw JSON response text).
+
+None of the three call a shared helper; variable names differ
+(`in_string`/`escape_next` vs `in_str`) but control flow is line-for-line
+equivalent.
+
+**Why this is the cheapest real fix in the report:** unlike the
+param-order and smart-quote duplications (which involve genuinely
+different call-site contexts and would need care to consolidate safely),
+this is one small, self-contained, side-effect-free utility function
+reimplemented three times for no structural reason — two of the three
+copies are in the *same file*. Extracting one shared
+`find_matching_brace(text, open_pos, quote_chars=...)` into `app/utils/`
+would remove all three duplicate implementations with, by inspection, no
+behavior change. **Not made in this pass** (still a code change, and this
+audit's rule is read-only unless "tiny AND obviously correct" — three
+call-site rewrites across two files is judged small enough to flag
+prominently but not small enough to make unilaterally without the user
+deciding whether to spend the cycle on it).
 
 ### Not independently re-verified in this pass
 
@@ -352,15 +461,25 @@ prioritized first.
 | Rank | Finding | Severity | Confirmed or inferred |
 |---|---|---|---|
 | 1 | 8/114 repair functions have any test coverage | Critical | Confirmed (grep-verified) |
-| 2 | `repair_project()` duplicates the main flow's 3-stage pattern | High | Confirmed (structural) |
-| 3 | Per-attempt repair pass skips 5 of 6 `database_patcher.py` functions the initial pass runs | High | Confirmed call-site gap; impact inferred |
-| 4 | 4 coexisting dispatch mechanisms, one with no failure isolation | Medium | Confirmed |
-| 5 | Docstring says 7 call sites, actually 8 | Medium | Confirmed |
-| 6 | `patch_ensure_auth_pages` runs twice per generation | Medium | Confirmed call, impact inferred (likely idempotent) |
-| 7 | Priority-registry execution order diverges from source order | Low | Confirmed, no active bug found |
+| 2 | Param-order fixing implemented independently twice (3 call sites, 2 codebases), diffed and confirmed genuinely redundant, not sequential | High | **Confirmed (both bodies read and diffed)** |
+| 3 | `repair_project()` duplicates the main flow's 3-stage pattern | High | Confirmed (structural) |
+| 4 | Per-attempt repair pass skips 5 of 6 `database_patcher.py` functions the initial pass runs | High | Confirmed call-site gap; impact inferred |
+| 5 | `_patch_relationship_string_aliases` is called every run but structurally cannot ever find anything (its target is unconditionally eliminated by an earlier step in the same call) | Low-Medium | **Confirmed (both function bodies read directly)** |
+| 6 | A string-aware brace-matching utility is reimplemented 3 times (2 in the same file) | Low (cheapest fix in the report) | **Confirmed (all 3 bodies read and diffed)** |
+| 7 | 4 coexisting dispatch mechanisms, one with no failure isolation | Medium | Confirmed |
+| 8 | Docstring says 7 call sites, actually 8 | Medium | Confirmed |
+| 9 | `patch_ensure_auth_pages` runs twice per generation | Medium | Confirmed call, impact inferred (likely idempotent) |
+| 10 | Priority-registry execution order diverges from source order | Low | Confirmed, no active bug found |
 | — | JSX/template-literal fixer overlap | (tracked separately, see Exp049 memory) | Confirmed overlap; interaction risk unconfirmed |
-| — | Param-order fixing implemented 3 times, smart-quote normalization 2 times | Medium (unranked, needs a diff pass) | Confirmed function existence + overlap by name/purpose; not diffed line-by-line |
-| — | No confirmed dead code in the audited surface | N/A (reassuring non-finding) | Confirmed after accounting for 3 indirect-dispatch patterns |
+| — | Smart-quote normalization implemented twice, same call-path pattern as param-order | Medium (unranked, not byte-diffed) | Confirmed function existence + overlap by name/purpose |
+| — | No confirmed *unreachable* dead code in the audited surface (distinct from Rank 5's "reachable but inert") | N/A (reassuring non-finding) | Confirmed after accounting for 3 indirect-dispatch patterns |
+
+*Ranks 2, 5, and 6 were added/upgraded in this same audit cycle's
+enrichment pass, after three additional dedicated sub-audits (full
+line-by-line re-read of `deterministic_patcher.py`; independent
+duplication sweep with body-level diffing) landed after the first
+synthesis pass was already written and committed. See each finding's own
+section above for what changed and why.*
 
 ---
 
