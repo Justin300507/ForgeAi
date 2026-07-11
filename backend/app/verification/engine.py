@@ -493,6 +493,10 @@ def _run_runtime_validation(ctx: GenerationContext) -> VerificationResult:
         result = run_backend_validation(str(ctx.project_path), port=ctx.backend_port,
                                         architecture=_arch_dict(ctx), keep_alive=True)
         ctx._backend_runner = result.get("_runner")  # stopped at the end of VerificationEngine.run()
+        # Stashed unconditionally (success or fail) so Stage 10 can reuse this
+        # exact journey instead of re-deriving the CRUD entity and re-running
+        # it with playwright_workflow's separate, less accurate implementation.
+        ctx.journey_result = result.get("journey") or {}
     except Exception as exc:
         crash_diag = _diag("runtime", f"RuntimeRunner crashed: {exc}", ErrorSeverity.CRITICAL, ErrorCategory.RUNTIME)
         ctx.runtime_result = RuntimeResult(success=False, diagnostics=[crash_diag], duration_ms=_ms(t0))
@@ -988,8 +992,17 @@ def _run_workflow_tests(ctx: GenerationContext, screenshots: list[str]) -> tuple
             architecture=_arch_dict(ctx),
             base_url=f"http://127.0.0.1:{ctx.frontend_port}",
             capture_screenshots=True,
+            journey=ctx.journey_result,
+            backend_port=ctx.backend_port,
         )
-        for step in (wf.steps_failed or []):
+        # steps_failed (used for the Integration score denominator) includes
+        # journey steps reused verbatim from Stage 3's already-executed
+        # run_user_journey() -- Stage 3 already raised a CRITICAL
+        # JourneyCRUDFailure diagnostic for those, so re-diagnosing them here
+        # would just duplicate it. Only nav_steps_failed (the Playwright
+        # browser-navigation checks, which Stage 3 never runs) is genuinely
+        # new information and gets a diagnostic of its own.
+        for step in (wf.nav_steps_failed or []):
             diagnostics.append(_diag("workflow", f"Workflow step failed: {step}",
                                      ErrorSeverity.HIGH, ErrorCategory.INTEGRATION,
                                      hint="Check API endpoint and frontend form binding for this step"))

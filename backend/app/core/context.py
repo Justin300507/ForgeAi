@@ -292,6 +292,12 @@ class GenerationContext:
         self.static_results:  list[VerificationResult] = []
         self.runtime_result:  Optional[RuntimeResult]  = None
         self.browser_result:  Optional[BrowserTestResult] = None
+        # The CRUD journey (user_journey_runner.run_user_journey) already run
+        # once, in Stage 3, against the live backend -- kept here so Stage 10
+        # (workflow tests) can reuse its steps instead of re-deriving the CRUD
+        # entity and re-running the journey with a second, divergent
+        # implementation. See _run_runtime_validation / _run_workflow_tests.
+        self.journey_result:  dict = {}
         # HTTP/performance/accessibility/workflow/LLM-judge results -- these
         # used to be computed and printed but never persisted anywhere
         # all_diagnostics()/detect_regression() could see, so the fix loop was
