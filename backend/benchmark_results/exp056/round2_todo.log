@@ -1,0 +1,1011 @@
+
+######################################################################
+# FORGEAI V15 — Autonomous Self-Healing Platform
+# Idea:   A todo list app with user accounts. Users can register and log in
+# Job ID: 9f010d6d40a74d18898011bbddd97f99
+# Deploy: False → both
+######################################################################
+
+[V15] >> generation ...
+[V15] Model router: complexity=3 (medium) triggered=[filter, register, todo, medium_description] stage=planning → gemini
+
+######################################################################
+# V6 AUTONOMOUS ENGINEERING TEAM
+# Idea: A todo list app with user accounts. Users can register and log in
+######################################################################
+
+=== PRODUCT MANAGER (V6) ===
+  [cache hit] A todo list app with user accounts. Users can register and l
+  Project: Personal Todo List
+  7 user stories | 7 features | 2 entities
+
+=== ARCHITECT (V6) ===
+
+=== ARCHITECT CACHE HIT — skipping LLM call ===
+
+=== TECH LEAD REVIEW (V6) ===
+  [cache hit]
+  Summary: The proposed architecture captures the core todo functionality and includes most required endpoints,
+  Issues: 5 critical, 2 warnings
+  [CRITICAL] Missing mandatory CORS middleware and /health endpoint in main.py
+    Fix: Add `from fastapi.middleware.cors import CORSMiddleware` and `app.add_middleware(CORSMiddleware, allow_origins=["*"], allow_credentials=True, allow_methods=["*"], allow_headers=["*"])` to main.py, and implement `@app.get("/health")` returning `{"status": "ok"}`.
+  [CRITICAL] Auth endpoint path does not match contract; contract requires POST /auth/signup, but architecture defines POST /auth/register
+    Fix: Rename the route to `/auth/signup` (or add an alias) and ensure the handler returns AuthResponse with id, email, display_name as specified.
+  [CRITICAL] Router variables do not follow naming convention; contract requires `<resource>_router = APIRouter()` (e.g., `user_router`), but architecture may use generic names
+    Fix: In each route file, declare the router with the exact name (`auth_router`, `user_router`, `task_router`, `seed_router`, `stats_router`). Update main.py to import and include these routers.
+
+=== BACKEND + FRONTEND — PARALLEL ===
+
+=== FRONTEND TEAM (V6) ===
+
+=== START FRONTEND ===
+
+=== BACKEND TEAM — PARALLEL GENERATION (V6) ===
+
+  [V6] Wave 1 — Foundation
+  [V6] Wave 2 — Models (4 tables, parallel)
+      [cache hit]
+    [model] users: OK (0.0s)
+      [cache hit]
+    [model] priorities: OK (0.0s)
+      [cache hit]
+    [model] tasks: OK (0.0s)
+      [cache hit]
+    [model] task_logs: OK (0.0s)
+  [V6] Wave 2 done in 0.0s
+  [V6] Wave 2.5 — stripped back_populates/backref from app/models/users.py
+  [V6] Wave 2.5 — stripped back_populates/backref from app/models/priorities.py
+  [V6] Wave 2.5 — stripped back_populates/backref from app/models/tasks.py
+  [V6] Wave 2.5 — stripped back_populates/backref from app/models/task_logs.py
+  [V6] Wave 2.5 — renaming plural class names: {'Users': 'User', 'Priorities': 'Priority', 'Tasks': 'Task', 'TaskLogs': 'TaskLog'}
+  [V6] Wave 2.5 — created shim app/models/user.py → User
+  [V6] Wave 2.5 — created shim app/models/priority.py → Priority
+  [V6] Wave 2.5 — created shim app/models/task.py → Task
+  [V6] Wave 2.5 — created shim app/models/task_log.py → TaskLog
+  [V6] Wave 2.5 — stripped no-FK relationship users → task_logs
+  [V6] Wave 3 — Schemas (5 resources, parallel)
+      [cache hit]
+    [schema] user: OK (0.0s)
+      [cache hit]
+    [schema] task: OK (0.0s)
+      [cache hit]
+    [schema] auth: OK (0.0s)
+      [cache hit]
+    [schema] seed: OK (0.0s)
+      [cache hit]
+    [schema] stats: OK (0.0s)
+  [V6] Wave 3 done in 0.0s
+  [V6] Wave 4 — Routes (5 files, parallel)
+Using Gemini
+Using Gemini
+Using Gemini
+Using Gemini
+Using Gemini
+Frontend: [cache hit] — skipping LLM call
+=== END FRONTEND ===
+Gemini failed (429 RESOURCE_EXHAUSTED. {'error': {'code': 429, 'message': 'Your prepayment credits are depleted. Please go to AI Studio at https://ai.studio/projects to manage your project and billing. Learn more at https://ai.google.dev/gemini-api/docs/billing#prepay. ', 'status': 'RESOURCE_EXHAUSTED'}}) — falling back to auto chain
+Using Cerebras (main)
+Gemini failed (429 RESOURCE_EXHAUSTED. {'error': {'code': 429, 'message': 'Your prepayment credits are depleted. Please go to AI Studio at https://ai.studio/projects to manage your project and billing. Learn more at https://ai.google.dev/gemini-api/docs/billing#prepay. ', 'status': 'RESOURCE_EXHAUSTED'}}) — falling back to auto chain
+Using Cerebras (main)
+Gemini failed (429 RESOURCE_EXHAUSTED. {'error': {'code': 429, 'message': 'Your prepayment credits are depleted. Please go to AI Studio at https://ai.studio/projects to manage your project and billing. Learn more at https://ai.google.dev/gemini-api/docs/billing#prepay. ', 'status': 'RESOURCE_EXHAUSTED'}}) — falling back to auto chain
+Using Cerebras (main)
+Gemini failed (429 RESOURCE_EXHAUSTED. {'error': {'code': 429, 'message': 'Your prepayment credits are depleted. Please go to AI Studio at https://ai.studio/projects to manage your project and billing. Learn more at https://ai.google.dev/gemini-api/docs/billing#prepay. ', 'status': 'RESOURCE_EXHAUSTED'}}) — falling back to auto chain
+Using Cerebras (main)
+Gemini failed (429 RESOURCE_EXHAUSTED. {'error': {'code': 429, 'message': 'Your prepayment credits are depleted. Please go to AI Studio at https://ai.studio/projects to manage your project and billing. Learn more at https://ai.google.dev/gemini-api/docs/billing#prepay. ', 'status': 'RESOURCE_EXHAUSTED'}}) — falling back to auto chain
+Using Cerebras (main)
+[CEREBRAS] Prompt=4467 Completion=1644 Reasoning=667 Total=6111
+    [route] app/routes/auth_routes.py: OK (6.4s)
+[CEREBRAS] Prompt=4458 Completion=806 Reasoning=512 Total=5264
+    [route] app/routes/stats_routes.py: OK (6.8s)
+[CEREBRAS] Prompt=4453 Completion=2277 Reasoning=1153 Total=6730
+    [route] app/routes/seed_routes.py: OK (7.0s)
+[CEREBRAS] Prompt=4529 Completion=2295 Reasoning=1129 Total=6824
+    [route] app/routes/task_routes.py: OK (7.7s)
+[CEREBRAS] Prompt=4519 Completion=2966 Reasoning=1752 Total=7485
+    [route] app/routes/user_routes.py: OK (8.0s)
+  [V6] Wave 4 done in 8.0s
+  [V6] Wave 5 — main.py (from 5 route files, 4 models)
+Using Gemini
+Gemini failed (429 RESOURCE_EXHAUSTED. {'error': {'code': 429, 'message': 'Your prepayment credits are depleted. Please go to AI Studio at https://ai.studio/projects to manage your project and billing. Learn more at https://ai.google.dev/gemini-api/docs/billing#prepay. ', 'status': 'RESOURCE_EXHAUSTED'}}) — falling back to auto chain
+Using Cerebras (main)
+[CEREBRAS] Prompt=2975 Completion=1670 Reasoning=1353 Total=4645
+    [main] app/main.py: OK (1.7s)
+
+  [V6] Parallel backend done: 28/28 files OK in 9.78s (parallel phase: 8.02s)
+  Generated 28 files in 9.8s (parallel phase: 8.0s)
+  Backend+Frontend done in 9.8s
+
+[V14] Deployment configs written: ['render.yaml', 'Procfile', '.env.example', '.github/workflows/deploy.yml', 'wrangler.toml']
+
+=== FILES WRITTEN: C:\Users\jerry\onedrive\Desktop\forgeai\generated_projects\todo_list_app (36 files) ===
+
+=== DETERMINISTIC PATCHER ===
+  [patcher] Stripped 1 relationship() declaration(s) from priorities.py
+  [patcher] Stripped 3 relationship() declaration(s) from tasks.py
+  [patcher] Stripped 1 relationship() declaration(s) from task_logs.py
+  [patcher] Stripped 1 relationship() declaration(s) from users.py
+  [patcher] Injected known-good app/utils/auth.py
+  [patcher] Injected known-good app/routes/auth_routes.py (dynamic password field + fast bcrypt)
+  [patcher] Made Response schema fields Optional in auth.py
+  [patcher] Made Response schema fields Optional in seed.py
+  [patcher] Made Response schema fields Optional in stats.py
+  [patcher] Made Response schema fields Optional in task.py
+  [patcher] Made Response schema fields Optional in user.py
+  [patcher] Response schema id/datetime fixes in task.py: TaskBase.id
+  [schema_patcher] Added from_attributes=True to 6 schema file(s)
+  [patcher] Filtered **schema.dict() kwargs in task_routes.py
+  [patcher] Fixed attribute accesses in auth_routes.py
+  [patcher] Fixed attribute accesses in seed_routes.py
+  [patcher] Fixed attribute accesses in task_routes.py
+  [patcher] Cleared stale status message on error path in RegisterPage.jsx
+  [patcher] Fixed response .data assumed to be wrapped (actually a bare array) in DashboardPage.jsx
+  [patcher] Fixed response .data assumed to be wrapped (actually a bare array) in TaskListPage.jsx
+  [patcher] Collapsed 2 broken template-literal className(s) in src\pages\DashboardPage.jsx
+  [patcher] Collapsed 1 broken template-literal className(s) in src\pages\TaskListPage.jsx
+  [patcher] Patched 3 file(s) — passlib→bcrypt, async→sync, smart quotes
+  [db_patcher] Injected known-good app/database.py
+  [field_patcher] Aligned model fields in seed_routes.py
+  [field_patcher] Aligned model fields in task_routes.py
+  [field_patcher] Added missing column(s) ['email'] to User in users.py
+  [scaffold] Synthesized missing src/App.jsx from existing pages
+  [field_patcher] Fixed model-field mismatches in 2 route file(s)
+
+=== VALIDATION LOOP (V6) ===
+  Validation: FAIL — 11 errors
+
+  Validation errors:
+    • Missing endpoint DELETE /users/{id} (expected in app/routes/user_routes.py)
+    • Missing endpoint GET /users (expected in app/routes/user_routes.py)
+    • Missing endpoint GET /users/{id} (expected in app/routes/user_routes.py)
+    • Missing endpoint POST /users (expected in app/routes/user_routes.py)
+    • Missing endpoint PUT /users/{id} (expected in app/routes/user_routes.py)
+    • Missing frontend import target: ./pages/UsersPage
+    • Frontend auth field mismatch: src/pages/LoginPage.jsx POSTs to a login endpoint with fields ['password', 'username'] but no 'email' — the backend's login schema requires email (per project contract), so every login attempt will fail with a 422 even though the form is filled in correctly (the UI will show a confusing generic 'Field required' error). Rename the field/state var to email and send { email, password } in the POST body.
+    • Frontend auth field mismatch: src/pages/RegisterPage.jsx POSTs to a register/signup endpoint with fields ['password', 'username'] but no 'email' — the backend's signup schema requires email (per project contract), so every registration will fail with a 422 and the UI will hang on its loading state. Add an email input and send { email, password, display_name } in the POST body.
+
+  Fix attempt 1/4 ...
+Using Gemini
+Gemini failed (429 RESOURCE_EXHAUSTED. {'error': {'code': 429, 'message': 'Your prepayment credits are depleted. Please go to AI Studio at https://ai.studio/projects to manage your project and billing. Learn more at https://ai.google.dev/gemini-api/docs/billing#prepay. ', 'status': 'RESOURCE_EXHAUSTED'}}) — falling back to auto chain
+Using Cerebras (main)
+[CEREBRAS] Prompt=2568 Completion=1742 Reasoning=532 Total=4310
+[LLM cache] HIT (missing_file) — 0 tokens billed
+      [fix cache hit] src/pages/LoginPage.jsx
+      [fix cache hit] src/pages/RegisterPage.jsx
+      [fix cache hit] app/models/users.py
+  [patcher] Fixed attribute accesses in seed_routes.py
+  [patcher] Fixed attribute accesses in task_routes.py
+  [route_patcher] Imported 1 orphan page file(s) into App.jsx: UsersPage
+    [route_patcher] Skipped UsersPage: couldn't find the anchor's page tag inside its own template to clone
+  [route_patcher] Wired 0 orphan page(s) into App.jsx: 
+  Post-fix 1: FAIL — 1 errors
+    • Duplicate class definition: 'UserResponse' is defined in multiple files (app/routes/user_routes.py, app/schemas/user.py) — this creates incompatible duplicate types
+
+  Fix attempt 2/4 ...
+Using Gemini
+Gemini failed (429 RESOURCE_EXHAUSTED. {'error': {'code': 429, 'message': 'Your prepayment credits are depleted. Please go to AI Studio at https://ai.studio/projects to manage your project and billing. Learn more at https://ai.google.dev/gemini-api/docs/billing#prepay. ', 'status': 'RESOURCE_EXHAUSTED'}}) — falling back to auto chain
+Using Cerebras (main)
+[CEREBRAS] Prompt=2473 Completion=1578 Reasoning=381 Total=4051
+    [route_patcher] Skipped UsersPage: couldn't find the anchor's page tag inside its own template to clone
+  Post-fix 2: PASS — 0 errors
+
+=== REVIEWS (QA / Security / Code / Performance) ===
+
+=== QA REVIEW (V6) ===
+Using Gemini
+Gemini failed (429 RESOURCE_EXHAUSTED. {'error': {'code': 429, 'message': 'Your prepayment credits are depleted. Please go to AI Studio at https://ai.studio/projects to manage your project and billing. Learn more at https://ai.google.dev/gemini-api/docs/billing#prepay. ', 'status': 'RESOURCE_EXHAUSTED'}}) — falling back to auto chain
+Using Cerebras (main)
+[CEREBRAS] Prompt=3148 Completion=1817 Reasoning=1017 Total=4965
+  QA score: 55/100 | Stories: 5/7 covered
+  Blockers: No pagination on list endpoints, Task‑modifying endpoints are not protected by authentication, Missing dedicated endpoint or logic to mark a task as complete
+  [MISSING] GET /tasks returns all tasks without pagination (limit/offset)
+  [MISSING] GET /users returns all users without pagination (limit/offset)
+  [MISSING] GET /tasks/{id} does not raise 404 when task is not found
+
+=== SECURITY REVIEW (V6) ===
+Using Gemini
+Gemini failed (429 RESOURCE_EXHAUSTED. {'error': {'code': 429, 'message': 'Your prepayment credits are depleted. Please go to AI Studio at https://ai.studio/projects to manage your project and billing. Learn more at https://ai.google.dev/gemini-api/docs/billing#prepay. ', 'status': 'RESOURCE_EXHAUSTED'}}) — falling back to auto chain
+Using Cerebras (main)
+[CEREBRAS] Prompt=7044 Completion=2046 Reasoning=1002 Total=9090
+  Security score: 74/100 | Risk: medium
+  Findings: 0 critical, 3 high, 9 total
+  Passed: No SQL injection found, Passwords properly hashed with bcrypt
+
+============================================================
+  SECURITY REPORT — Score: 74/100 [MEDIUM]
+  The codebase contains several high‑severity issues such as hard‑coded passwords, missing authentication on public endpoints, and an IDOR vulnerability in user retrieval. Additional concerns include mass‑assignment risks, lack of rate limiting, overly permissive CORS, and insufficient input validation. Addressing these findings will markedly improve the security posture before release.
+
+  Findings (9):
+  [HIGH    ] HardcodedSecret in app/routes/seed_routes.py
+             The seed endpoint creates several user accounts with hard‑coded plaintext passwords.
+             Fix: Remove the /seed route from production or generate passwords at runtime and store only hashed values. Do not commit any plaintext passwords to source.
+  [HIGH    ] AuthenticationGap in app/routes/seed_routes.py
+             The /seed endpoint is publicly accessible and does not require authentication.
+             Fix: Protect the endpoint with `Depends(get_current_user)` (or admin‑only guard) or delete it from production builds.
+  [HIGH    ] IDOR in app/routes/user_routes.py
+             GET /users/{id} returns any user record without verifying that the requester owns the record or has appropriate privileges.
+             Fix: Add an ownership/role check, e.g. `if current_user.id != id and not current_user.is_admin: raise HTTPException(403)`.
+  [MEDIUM  ] AuthenticationGap in app/routes/stats_routes.py
+             The statistics summary endpoint is exposed without any authentication guard.
+             Fix: Require authentication (and possibly admin rights) via `Depends(get_current_user)`.
+  [MEDIUM  ] MassAssignment in app/schemas/user.py
+             The schema allows the client to supply `hashed_password` directly, bypassing proper password hashing.
+             Fix: Replace `hashed_password` with a plain `password` field and hash it in the route handler before persisting.
+  [MEDIUM  ] MassAssignment in app/schemas/task.py
+             `id` is exposed as an input field, enabling a client to set primary keys manually.
+             Fix: Remove `id` from the request schemas (keep it only in response models) and let the database generate it.
+  [MEDIUM  ] MissingValidation in app/schemas/task.py
+             The `title` field has no maximum length, allowing arbitrarily long strings that could cause DoS or storage issues.
+             Fix: Add a `max_length` constraint, e.g. `Field(min_length=1, max_length=200)`.
+  [MEDIUM  ] RateLimitingAbsent in app/routes/auth_routes.py
+             Login and signup endpoints have no rate‑limiting, making them vulnerable to credential‑stuffing and brute‑force attacks.
+             Fix: Integrate a rate‑limiting middleware (e.g., `slowapi` or `starlette-limiter`) or implement per‑IP throttling.
+  [LOW     ] CORSIssue in app/main.py
+             CORS is configured to allow any origin, which is unsafe for a production environment.
+             Fix: Restrict `allow_origins` to the known frontend domains or configure it via environment variables.
+
+  Passed: No SQL injection found, Passwords properly hashed with bcrypt
+============================================================
+
+=== CODE REVIEW (V6) ===
+Using Gemini
+Gemini failed (429 RESOURCE_EXHAUSTED. {'error': {'code': 429, 'message': 'Your prepayment credits are depleted. Please go to AI Studio at https://ai.studio/projects to manage your project and billing. Learn more at https://ai.google.dev/gemini-api/docs/billing#prepay. ', 'status': 'RESOURCE_EXHAUSTED'}}) — falling back to auto chain
+Using Cerebras (main)
+[CEREBRAS] Prompt=5096 Completion=3022 Reasoning=1450 Total=8118
+  Code review: 33/100 overall | 1 critical, 6 high issues
+  Naming: 45 | Architecture: 30 | Maintainability: 35 | Tech Debt: 20
+  The project demonstrates good intentions with environment‑driven configuration, SQLite optimizations, and useful utility
+
+=== PERFORMANCE REVIEW (V6) ===
+Using Gemini
+Gemini failed (429 RESOURCE_EXHAUSTED. {'error': {'code': 429, 'message': 'Your prepayment credits are depleted. Please go to AI Studio at https://ai.studio/projects to manage your project and billing. Learn more at https://ai.google.dev/gemini-api/docs/billing#prepay. ', 'status': 'RESOURCE_EXHAUSTED'}}) — falling back to auto chain
+Using Cerebras (main)
+[CEREBRAS] Prompt=5219 Completion=2012 Reasoning=1011 Total=7231
+  Performance score: 70/100 | 9 issues total
+  N+1: 4 | Missing indexes: 3 | Large payloads: 1 | Slow APIs: 1
+  [N+1]  app/models/users.py: User.tasks property issues a separate query for each user when accessed, causing
+  [N+1]  app/models/priorities.py: Priority.tasks property performs a separate query per priority, leading to N+1 q
+  [IDX]  app/models/tasks.py.user_id: Foreign key column used in frequent filter (Task.user_id == 
+  [IDX]  app/models/tasks.py.priority_id: Foreign key column used for filtering and joining (Task.prio
+  [PAYLOAD] GET /tasks: Maximum allowed limit is 500 rows; a client could request th
+
+=== FRONTEND CRITIC (V6) ===
+[LLM cache] HIT (frontend_critic) — 0 tokens billed
+  Frontend critic: 53/100 design score | 1 critical, 3 high issues
+  Hierarchy: 62 | Compliance: 45 | Polish: 50 | Consistency: 58
+  This app cannot ship to a premium platform like Linear or Vercel in its current state. While the visual aesthetics of the login page and error boundar
+
+=== UI POLISH PASS (2 file(s)) ===
+      [fix cache hit] src/pages/DashboardPage.jsx
+  [polish] src/pages/DashboardPage.jsx patched
+      [fix cache hit] src/App.jsx
+  [polish] src/App.jsx patched
+  Post-polish validation: PASS
+  [db_patcher] Injected known-good app/database.py
+
+=== RUNTIME VALIDATION (V6) ===
+Running runtime validation in: C:\Users\jerry\onedrive\Desktop\forgeai\generated_projects\todo_list_app
+Using Python: C:\Users\jerry\onedrive\Desktop\forgeai\backend\venv\Scripts\python.exe
+Skipping pip install (packages pre-installed): C:\Users\jerry\onedrive\Desktop\forgeai\generated_projects\todo_list_app\app\requirements.txt
+  [runner] Pre-flight DB init: OK
+Health Check /docs: 200
+
+=== USER JOURNEY (CRUD WORKFLOW) ===
+  Journey FAIL — 3 passed / 8 failed
+    ✗ Register: 404 (no register/signup endpoint found)
+    ✓ Login: 422 @ login (server alive, auth format mismatch)
+    ✓ Detect entity: http://127.0.0.1:8001/tasks
+    ✗ Create entity: 401 (auth required, no valid token)
+    ✗ List entities: 401
+    ✗ Edit entity: no entity_id captured
+    ✗ Delete entity: no entity_id captured
+    ✗ Verify deletion: no entity_id
+    ✓ Logout: 401
+    ✗ Login again: re-login failed
+    ✗ Verify persistence: no entity_id
+
+=== ENDPOINT SMOKE TESTS ===
+  All endpoints responded without errors.
+
+  Endpoint pass rate: 100% (14/14 passed, 0 timeouts, 0 errors)
+
+  Runtime FAIL: CRUD workflow failed critical steps
+  Runtime: FAIL
+Runtime Fix Requested: {'success': False, 'healthy': True, 'exit_code': 0, 'stdout': 'INFO:     127.0.0.1:59322 - "GET /docs HTTP/1.1" 200 OK\nINFO:     127.0.0.1:59323 - "GET /docs HTTP/1.1" 200 OK\nINFO:     127.0.0.1:59324 - "GET /openapi.json HTTP/1.1" 200 OK\nINFO:     127.0.0.1:59325 - "POST /auth/register HTTP/1.1" 500 Internal Server Error\nINFO:     127.0.0.1:59326 - "POST /auth/signup HTTP/1.1" 500 Internal Server Error\nINFO:     127.0.0.1:59327 - "POST /auth/register HTTP/1.1" 500 Internal Server Error\nINFO:     127.0.0.1:59328 - "GET /openapi.json HTTP/1.1" 200 OK\nINFO:     127.0.0.1:59329 - "POST /auth/login HTTP/1.1" 401 Unauthorized\nINFO:     127.0.0.1:59330 - "POST /auth/login HTTP/1.1" 401 Unauthorized\nINFO:     127.0.0.1:59332 - "POST /auth/login HTTP/1.1" 422 Unprocessable Content\nINFO:     127.0.0.1:59333 - "POST /seed HTTP/1.1" 500 Internal Server Error\nINFO:     127.0.0.1:59334 - "GET /openapi.json HTTP/1.1" 200 OK\nINFO:     127.0.0.1:59335 - "POST /tasks HTTP/1.1" 401 Unauthorized\nINFO:     127.0.0.1:59336 - "GET /tasks HTTP/1.1" 401 Unauthorized\nINFO:     127.0.0.1:59337 - "POST /auth/logout HTTP/1.1" 401 Unauthorized\nINFO:     127.0.0.1:59338 - "POST /auth/login HTTP/1.1" 401 Unauthorized\nINFO:     127.0.0.1:59339 - "POST /auth/login HTTP/1.1" 422 Unprocessable Content\nINFO:     127.0.0.1:59340 - "GET /users HTTP/1.1" 401 Unauthorized\nINFO:     127.0.0.1:59341 - "GET /users/1 HTTP/1.1" 401 Unauthorized\nINFO:     127.0.0.1:59342 - "POST /users HTTP/1.1" 401 Unauthorized\nINFO:     127.0.0.1:59343 - "PUT /users/1 HTTP/1.1" 401 Unauthorized\nINFO:     127.0.0.1:59344 - "DELETE /users/1 HTTP/1.1" 401 Unauthorized\nINFO:     127.0.0.1:59345 - "GET /tasks HTTP/1.1" 401 Unauthorized\nINFO:     127.0.0.1:59346 - "GET /tasks/1 HTTP/1.1" 401 Unauthorized\nINFO:     127.0.0.1:59347 - "POST /tasks HTTP/1.1" 401 Unauthorized\nINFO:     127.0.0.1:59348 - "PUT /tasks/1 HTTP/1.1" 401 Unauthorized\nINFO:     127.0.0.1:59349 - "DELETE /tasks/1 HTTP/1.1" 401 Unauthorized\nINFO:     127.0.0.1:59350 - "POST /auth/register HTTP/1.1" 422 Unprocessable Content\nINFO:     127.0.0.1:59351 - "POST /auth/login HTTP/1.1" 422 Unprocessable Content\nINFO:     127.0.0.1:59352 - "GET /stats/summary HTTP/1.1" 200 OK\n', 'stderr': 'INFO:     Started server process [13248]\nINFO:     Waiting for application startup.\nINFO:     Application startup complete.\nINFO:     Uvicorn running on http://127.0.0.1:8001 (Press CTRL+C to quit)\nERROR:    Exception in ASGI application\nTraceback (most recent call last):\n  File "C:\\Users\\jerry\\onedrive\\Desktop\\forgeai\\backend\\venv\\Lib\\site-packages\\uvicorn\\protocols\\http\\httptools_impl.py", line 421, in run_asgi\n    result = await app(  # type: ignore[func-returns-value]\n             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n        self.scope, self.receive, self.send\n        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n    )\n    ^\n  File "C:\\Users\\jerry\\onedrive\\Desktop\\forgeai\\backend\\venv\\Lib\\site-packages\\uvicorn\\middleware\\proxy_headers.py", line 62, in __call__\n    return await self.app(scope, receive, send)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File "C:\\Users\\jerry\\onedrive\\Desktop\\forgeai\\backend\\venv\\Lib\\site-packages\\fastapi\\applications.py", line 1159, in __call__\n    await super().__call__(scope, receive, send)\n  File "C:\\Users\\jerry\\onedrive\\Desktop\\forgeai\\backend\\venv\\Lib\\site-packages\\starlette\\applications.py", line 90, in __call__\n    await self.middleware_stack(scope, receive, send)\n  File "C:\\Users\\jerry\\onedrive\\Desktop\\forgeai\\backend\\venv\\Lib\\site-packages\\starlette\\middleware\\errors.py", line 186, in __call__\n    raise exc\n  File "C:\\Users\\jerry\\onedrive\\Desktop\\forgeai\\backend\\venv\\Lib\\site-packages\\starlette\\middleware\\errors.py", line 164, in __call__\n    await self.app(scope, receive, _send)\n  File "C:\\Users\\jerry\\onedrive\\Desktop\\forgeai\\backend\\venv\\Lib\\site-packages\\starlette\\middleware\\cors.py", line 88, in __call__\n    await self.app(scope, receive, send)\n  File "C:\\Users\\jerry\\onedrive\\Desktop\\forgeai\\backend\\venv\\Lib\\site-packages\\starlette\\middleware\\exceptions.py", line 63, in __call__\n    await wrap_app_handling_exceptions(self.app, conn)(scope, receive, send)\n  File "C:\\Users\\jerry\\onedrive\\Desktop\\forgeai\\backend\\venv\\Lib\\site-packages\\starlette\\_exception_handler.py", line 53, in wrapped_app\n    raise exc\n  File "C:\\Users\\jerry\\onedrive\\Desktop\\forgeai\\backend\\venv\\Lib\\site-packages\\starlette\\_exception_handler.py", line 42, in wrapped_app\n    await app(scope, receive, sender)\n  File "C:\\Users\\jerry\\onedrive\\Desktop\\forgeai\\backend\\venv\\Lib\\site-packages\\fastapi\\middleware\\asyncexitstack.py", line 18, in __call__\n    await self.app(scope, receive, send)\n  File "C:\\Users\\jerry\\onedrive\\Desktop\\forgeai\\backend\\venv\\Lib\\site-packages\\starlette\\routing.py", line 660, in __call__\n    await self.middleware_stack(scope, receive, send)\n  File "C:\\Users\\jerry\\onedrive\\Desktop\\forgeai\\backend\\venv\\Lib\\site-packages\\starlette\\routing.py", line 680, in app\n    await route.handle(scope, receive, send)\n  File "C:\\Users\\jerry\\onedrive\\Desktop\\forgeai\\backend\\venv\\Lib\\site-packages\\starlette\\routing.py", line 276, in handle\n    await self.app(scope, receive, send)\n  File "C:\\Users\\jerry\\onedrive\\Desktop\\forgeai\\backend\\venv\\Lib\\site-packages\\fastapi\\routing.py", line 134, in app\n    await wrap_app_handling_exceptions(app, request)(scope, receive, send)\n  File "C:\\Users\\jerry\\onedrive\\Desktop\\forgeai\\backend\\venv\\Lib\\site-packages\\starlette\\_exception_handler.py", line 53, in wrapped_app\n    raise exc\n  File "C:\\Users\\jerry\\onedrive\\Desktop\\forgeai\\backend\\venv\\Lib\\site-packages\\starlette\\_exception_handler.py", line 42, in wrapped_app\n    await app(scope, receive, sender)\n  File "C:\\Users\\jerry\\onedrive\\Desktop\\forgeai\\backend\\venv\\Lib\\site-packages\\fastapi\\routing.py", line 120, in app\n    response = await f(request)\n               ^^^^^^^^^^^^^^^^\n  File "C:\\Users\\jerry\\onedrive\\Desktop\\forgeai\\backend\\venv\\Lib\\site-packages\\fastapi\\routing.py", line 674, in app\n    raw_response = await run_endpoint_function(\n                   ^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n    ...<3 lines>...\n    )\n    ^\n  File "C:\\Users\\jerry\\onedrive\\Desktop\\forgeai\\backend\\venv\\Lib\\site-packages\\fastapi\\routing.py", line 330, in run_endpoint_function\n    return await run_in_threadpool(dependant.call, **values)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File "C:\\Users\\jerry\\onedrive\\Desktop\\forgeai\\backend\\venv\\Lib\\site-packages\\starlette\\concurrency.py", line 34, in run_in_threadpool\n    return await anyio.to_thread.run_sync(func)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File "C:\\Users\\jerry\\onedrive\\Desktop\\forgeai\\backend\\venv\\Lib\\site-packages\\anyio\\to_thread.py", line 63, in run_sync\n    return await get_async_backend().run_sync_in_worker_thread(\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n        func, args, abandon_on_cancel=abandon_on_cancel, limiter=limiter\n        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n    )\n    ^\n  File "C:\\Users\\jerry\\onedrive\\Desktop\\forgeai\\backend\\venv\\Lib\\site-packages\\anyio\\_backends\\_asyncio.py", line 2518, in run_sync_in_worker_thread\n    return await future\n           ^^^^^^^^^^^^\n  File "C:\\Users\\jerry\\onedrive\\Desktop\\forgeai\\backend\\venv\\Lib\\site-packages\\anyio\\_backends\\_asyncio.py", line 1002, in run\n    result = context.run(func, *args)\n  File "C:\\Users\\jerry\\onedrive\\Desktop\\forgeai\\generated_projects\\todo_list_app\\app\\routes\\auth_routes.py", line 96, in signup\n    user = _make_user(req.email, req.password, req.username)\n                                               ^^^^^^^^^^^^\n  File "C:\\Users\\jerry\\onedrive\\Desktop\\forgeai\\backend\\venv\\Lib\\site-packages\\pydantic\\main.py", line 1042, in __getattr__\n    raise AttributeError(f\'{type(self).__name__!r} object has no attribute {item!r}\')\nAttributeError: \'SignupRequest\' object has no attribute \'username\'\nERROR:    Exception in ASGI application\nTraceback (most recent call last):\n  File "C:\\Users\\jerry\\onedrive\\Desktop\\forgeai\\backend\\venv\\Lib\\site-packages\\uvicorn\\protocols\\http\\httptools_impl.py", line 421, in run_asgi\n    result = await app(  # type: ignore[func-returns-value]\n             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n        self.scope, self.receive, self.send\n        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n    )\n    ^\n  File "C:\\Users\\jerry\\onedrive\\Desktop\\forgeai\\backend\\venv\\Lib\\site-packages\\uvicorn\\middleware\\proxy_headers.py", line 62, in __call__\n    return await self.app(scope, receive, send)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File "C:\\Users\\jerry\\onedrive\\Desktop\\forgeai\\backend\\venv\\Lib\\site-packages\\fastapi\\applications.py", line 1159, in __call__\n    await super().__call__(scope, receive, send)\n  File "C:\\Users\\jerry\\onedrive\\Desktop\\forgeai\\backend\\venv\\Lib\\site-packages\\starlette\\applications.py", line 90, in __call__\n    await self.middleware_stack(scope, receive, send)\n  File "C:\\Users\\jerry\\onedrive\\Desktop\\forgeai\\backend\\venv\\Lib\\site-packages\\starlette\\middleware\\errors.py", line 186, in __call__\n    raise exc\n  File "C:\\Users\\jerry\\onedrive\\Desktop\\forgeai\\backend\\venv\\Lib\\site-packages\\starlette\\middleware\\errors.py", line 164, in __call__\n    await self.app(scope, receive, _send)\n  File "C:\\Users\\jerry\\onedrive\\Desktop\\forgeai\\backend\\venv\\Lib\\site-packages\\starlette\\middleware\\cors.py", line 88, in __call__\n    await self.app(scope, receive, send)\n  File "C:\\Users\\jerry\\onedrive\\Desktop\\forgeai\\backend\\venv\\Lib\\site-packages\\starlette\\middleware\\exceptions.py", line 63, in __call__\n    await wrap_app_handling_exceptions(self.app, conn)(scope, receive, send)\n  File "C:\\Users\\jerry\\onedrive\\Desktop\\forgeai\\backend\\venv\\Lib\\site-packages\\starlette\\_exception_handler.py", line 53, in wrapped_app\n    raise exc\n  File "C:\\Users\\jerry\\onedrive\\Desktop\\forgeai\\backend\\venv\\Lib\\site-packages\\starlette\\_exception_handler.py", line 42, in wrapped_app\n    await app(scope, receive, sender)\n  File "C:\\Users\\jerry\\onedrive\\Desktop\\forgeai\\backend\\venv\\Lib\\site-packages\\fastapi\\middleware\\asyncexitstack.py", line 18, in __call__\n    await self.app(scope, receive, send)\n  File "C:\\Users\\jerry\\onedrive\\Desktop\\forgeai\\backend\\venv\\Lib\\site-packages\\starlette\\routing.py", line 660, in __call__\n    await self.middleware_stack(scope, receive, send)\n  File "C:\\Users\\jerry\\onedrive\\Desktop\\forgeai\\backend\\venv\\Lib\\site-packages\\starlette\\routing.py", line 680, in app\n    await route.handle(scope, receive, send)\n  File "C:\\Users\\jerry\\onedrive\\Desktop\\forgeai\\backend\\venv\\Lib\\site-packages\\starlette\\routing.py", line 276, in handle\n    await self.app(scope, receive, send)\n  File "C:\\Users\\jerry\\onedrive\\Desktop\\forgeai\\backend\\venv\\Lib\\site-packages\\fastapi\\routing.py", line 134, in app\n    await wrap_app_handling_exceptions(app, request)(scope, receive, send)\n  File "C:\\Users\\jerry\\onedrive\\Desktop\\forgeai\\backend\\venv\\Lib\\site-packages\\starlette\\_exception_handler.py", line 53, in wrapped_app\n    raise exc\n  File "C:\\Users\\jerry\\onedrive\\Desktop\\forgeai\\backend\\venv\\Lib\\site-packages\\starlette\\_exception_handler.py", line 42, in wrapped_app\n    await app(scope, receive, sender)\n  File "C:\\Users\\jerry\\onedrive\\Desktop\\forgeai\\backend\\venv\\Lib\\site-packages\\fastapi\\routing.py", line 120, in app\n    response = await f(request)\n               ^^^^^^^^^^^^^^^^\n  File "C:\\Users\\jerry\\onedrive\\Desktop\\forgeai\\backend\\venv\\Lib\\site-packages\\fastapi\\routing.py", line 674, in app\n    raw_response = await run_endpoint_function(\n                   ^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n    ...<3 lines>...\n    )\n    ^\n  File "C:\\Users\\jerry\\onedrive\\Desktop\\forgeai\\backend\\venv\\Lib\\site-packages\\fastapi\\routing.py", line 330, in run_endpoint_function\n    return await run_in_threadpool(dependant.call, **values)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File "C:\\Users\\jerry\\onedrive\\Desktop\\forgeai\\backend\\venv\\Lib\\site-packages\\starlette\\concurrency.py", line 34, in run_in_threadpool\n    return await anyio.to_thread.run_sync(func)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File "C:\\Users\\jerry\\onedrive\\Desktop\\forgeai\\backend\\venv\\Lib\\site-packages\\anyio\\to_thread.py", line 63, in run_sync\n    return await get_async_backend().run_sync_in_worker_thread(\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n        func, args, abandon_on_cancel=abandon_on_cancel, limiter=limiter\n        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n    )\n    ^\n  File "C:\\Users\\jerry\\onedrive\\Desktop\\forgeai\\backend\\venv\\Lib\\site-packages\\anyio\\_backends\\_asyncio.py", line 2518, in run_sync_in_worker_thread\n    return await future\n           ^^^^^^^^^^^^\n  File "C:\\Users\\jerry\\onedrive\\Desktop\\forgeai\\backend\\venv\\Lib\\site-packages\\anyio\\_backends\\_asyncio.py", line 1002, in run\n    result = context.run(func, *args)\n  File "C:\\Users\\jerry\\onedrive\\Desktop\\forgeai\\generated_projects\\todo_list_app\\app\\routes\\auth_routes.py", line 96, in signup\n    user = _make_user(req.email, req.password, req.username)\n                                               ^^^^^^^^^^^^\n  File "C:\\Users\\jerry\\onedrive\\Desktop\\forgeai\\backend\\venv\\Lib\\site-packages\\pydantic\\main.py", line 1042, in __getattr__\n    raise AttributeError(f\'{type(self).__name__!r} object has no attribute {item!r}\')\nAttributeError: \'SignupRequest\' object has no attribute \'username\'\nERROR:    Exception in ASGI application\nTraceback (most recent call last):\n  File "C:\\Users\\jerry\\onedrive\\Desktop\\forgeai\\backend\\venv\\Lib\\site-packages\\uvicorn\\protocols\\http\\httptools_impl.py", line 421, in run_asgi\n    result = await app(  # type: ignore[func-returns-value]\n             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n        self.scope, self.receive, self.send\n        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n    )\n    ^\n  File "C:\\Users\\jerry\\onedrive\\Desktop\\forgeai\\backend\\venv\\Lib\\site-packages\\uvicorn\\middleware\\proxy_headers.py", line 62, in __call__\n    return await self.app(scope, receive, send)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File "C:\\Users\\jerry\\onedrive\\Desktop\\forgeai\\backend\\venv\\Lib\\site-packages\\fastapi\\applications.py", line 1159, in __call__\n    await super().__call__(scope, receive, send)\n  File "C:\\Users\\jerry\\onedrive\\Desktop\\forgeai\\backend\\venv\\Lib\\site-packages\\starlette\\applications.py", line 90, in __call__\n    await self.middleware_stack(scope, receive, send)\n  File "C:\\Users\\jerry\\onedrive\\Desktop\\forgeai\\backend\\venv\\Lib\\site-packages\\starlette\\middleware\\errors.py", line 186, in __call__\n    raise exc\n  File "C:\\Users\\jerry\\onedrive\\Desktop\\forgeai\\backend\\venv\\Lib\\site-packages\\starlette\\middleware\\errors.py", line 164, in __call__\n    await self.app(scope, receive, _send)\n  File "C:\\Users\\jerry\\onedrive\\Desktop\\forgeai\\backend\\venv\\Lib\\site-packages\\starlette\\middleware\\cors.py", line 88, in __call__\n    await self.app(scope, receive, send)\n  File "C:\\Users\\jerry\\onedrive\\Desktop\\forgeai\\backend\\venv\\Lib\\site-packages\\starlette\\middleware\\exceptions.py", line 63, in __call__\n    await wrap_app_handling_exceptions(self.app, conn)(scope, receive, send)\n  File "C:\\Users\\jerry\\onedrive\\Desktop\\forgeai\\backend\\venv\\Lib\\site-packages\\starlette\\_exception_handler.py", line 53, in wrapped_app\n    raise exc\n  File "C:\\Users\\jerry\\onedrive\\Desktop\\forgeai\\backend\\venv\\Lib\\site-packages\\starlette\\_exception_handler.py", line 42, in wrapped_app\n    await app(scope, receive, sender)\n  File "C:\\Users\\jerry\\onedrive\\Desktop\\forgeai\\backend\\venv\\Lib\\site-packages\\fastapi\\middleware\\asyncexitstack.py", line 18, in __call__\n    await self.app(scope, receive, send)\n  File "C:\\Users\\jerry\\onedrive\\Desktop\\forgeai\\backend\\venv\\Lib\\site-packages\\starlette\\routing.py", line 660, in __call__\n    await self.middleware_stack(scope, receive, send)\n  File "C:\\Users\\jerry\\onedrive\\Desktop\\forgeai\\backend\\venv\\Lib\\site-packages\\starlette\\routing.py", line 680, in app\n    await route.handle(scope, receive, send)\n  File "C:\\Users\\jerry\\onedrive\\Desktop\\forgeai\\backend\\venv\\Lib\\site-packages\\starlette\\routing.py", line 276, in handle\n    await self.app(scope, receive, send)\n  File "C:\\Users\\jerry\\onedrive\\Desktop\\forgeai\\backend\\venv\\Lib\\site-packages\\fastapi\\routing.py", line 134, in app\n    await wrap_app_handling_exceptions(app, request)(scope, receive, send)\n  File "C:\\Users\\jerry\\onedrive\\Desktop\\forgeai\\backend\\venv\\Lib\\site-packages\\starlette\\_exception_handler.py", line 53, in wrapped_app\n    raise exc\n  File "C:\\Users\\jerry\\onedrive\\Desktop\\forgeai\\backend\\venv\\Lib\\site-packages\\starlette\\_exception_handler.py", line 42, in wrapped_app\n    await app(scope, receive, sender)\n  File "C:\\Users\\jerry\\onedrive\\Desktop\\forgeai\\backend\\venv\\Lib\\site-packages\\fastapi\\routing.py", line 120, in app\n    response = await f(request)\n               ^^^^^^^^^^^^^^^^\n  File "C:\\Users\\jerry\\onedrive\\Desktop\\forgeai\\backend\\venv\\Lib\\site-packages\\fastapi\\routing.py", line 674, in app\n    raw_response = await run_endpoint_function(\n                   ^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n    ...<3 lines>...\n    )\n    ^\n  File "C:\\Users\\jerry\\onedrive\\Desktop\\forgeai\\backend\\venv\\Lib\\site-packages\\fastapi\\routing.py", line 330, in run_endpoint_function\n    return await run_in_threadpool(dependant.call, **values)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File "C:\\Users\\jerry\\onedrive\\Desktop\\forgeai\\backend\\venv\\Lib\\site-packages\\starlette\\concurrency.py", line 34, in run_in_threadpool\n    return await anyio.to_thread.run_sync(func)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File "C:\\Users\\jerry\\onedrive\\Desktop\\forgeai\\backend\\venv\\Lib\\site-packages\\anyio\\to_thread.py", line 63, in run_sync\n    return await get_async_backend().run_sync_in_worker_thread(\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n        func, args, abandon_on_cancel=abandon_on_cancel, limiter=limiter\n        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n    )\n    ^\n  File "C:\\Users\\jerry\\onedrive\\Desktop\\forgeai\\backend\\venv\\Lib\\site-packages\\anyio\\_backends\\_asyncio.py", line 2518, in run_sync_in_worker_thread\n    return await future\n           ^^^^^^^^^^^^\n  File "C:\\Users\\jerry\\onedrive\\Desktop\\forgeai\\backend\\venv\\Lib\\site-packages\\anyio\\_backends\\_asyncio.py", line 1002, in run\n    result = context.run(func, *args)\n  File "C:\\Users\\jerry\\onedrive\\Desktop\\forgeai\\generated_projects\\todo_list_app\\app\\routes\\auth_routes.py", line 96, in signup\n    user = _make_user(req.email, req.password, req.username)\n                                               ^^^^^^^^^^^^\n  File "C:\\Users\\jerry\\onedrive\\Desktop\\forgeai\\backend\\venv\\Lib\\site-packages\\pydantic\\main.py", line 1042, in __getattr__\n    raise AttributeError(f\'{type(self).__name__!r} object has no attribute {item!r}\')\nAttributeError: \'SignupRequest\' object has no attribute \'username\'\nERROR:    Exception in ASGI application\nTraceback (most recent call last):\n  File "C:\\Users\\jerry\\onedrive\\Desktop\\forgeai\\backend\\venv\\Lib\\site-packages\\uvicorn\\protocols\\http\\httptools_impl.py", line 421, in run_asgi\n    result = await app(  # type: ignore[func-returns-value]\n             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n        self.scope, self.receive, self.send\n        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n    )\n    ^\n  File "C:\\Users\\jerry\\onedrive\\Desktop\\forgeai\\backend\\venv\\Lib\\site-packages\\uvicorn\\middleware\\proxy_headers.py", line 62, in __call__\n    return await self.app(scope, receive, send)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File "C:\\Users\\jerry\\onedrive\\Desktop\\forgeai\\backend\\venv\\Lib\\site-packages\\fastapi\\applications.py", line 1159, in __call__\n    await super().__call__(scope, receive, send)\n  File "C:\\Users\\jerry\\onedrive\\Desktop\\forgeai\\backend\\venv\\Lib\\site-packages\\starlette\\applications.py", line 90, in __call__\n    await self.middleware_stack(scope, receive, send)\n  File "C:\\Users\\jerry\\onedrive\\Desktop\\forgeai\\backend\\venv\\Lib\\site-packages\\starlette\\middleware\\errors.py", line 186, in __call__\n    raise exc\n  File "C:\\Users\\jerry\\onedrive\\Desktop\\forgeai\\backend\\venv\\Lib\\site-packages\\starlette\\middleware\\errors.py", line 164, in __call__\n    await self.app(scope, receive, _send)\n  File "C:\\Users\\jerry\\onedrive\\Desktop\\forgeai\\backend\\venv\\Lib\\site-packages\\starlette\\middleware\\cors.py", line 88, in __call__\n    await self.app(scope, receive, send)\n  File "C:\\Users\\jerry\\onedrive\\Desktop\\forgeai\\backend\\venv\\Lib\\site-packages\\starlette\\middleware\\exceptions.py", line 63, in __call__\n    await wrap_app_handling_exceptions(self.app, conn)(scope, receive, send)\n  File "C:\\Users\\jerry\\onedrive\\Desktop\\forgeai\\backend\\venv\\Lib\\site-packages\\starlette\\_exception_handler.py", line 53, in wrapped_app\n    raise exc\n  File "C:\\Users\\jerry\\onedrive\\Desktop\\forgeai\\backend\\venv\\Lib\\site-packages\\starlette\\_exception_handler.py", line 42, in wrapped_app\n    await app(scope, receive, sender)\n  File "C:\\Users\\jerry\\onedrive\\Desktop\\forgeai\\backend\\venv\\Lib\\site-packages\\fastapi\\middleware\\asyncexitstack.py", line 18, in __call__\n    await self.app(scope, receive, send)\n  File "C:\\Users\\jerry\\onedrive\\Desktop\\forgeai\\backend\\venv\\Lib\\site-packages\\starlette\\routing.py", line 660, in __call__\n    await self.middleware_stack(scope, receive, send)\n  File "C:\\Users\\jerry\\onedrive\\Desktop\\forgeai\\backend\\venv\\Lib\\site-packages\\starlette\\routing.py", line 680, in app\n    await route.handle(scope, receive, send)\n  File "C:\\Users\\jerry\\onedrive\\Desktop\\forgeai\\backend\\venv\\Lib\\site-packages\\starlette\\routing.py", line 276, in handle\n    await self.app(scope, receive, send)\n  File "C:\\Users\\jerry\\onedrive\\Desktop\\forgeai\\backend\\venv\\Lib\\site-packages\\fastapi\\routing.py", line 134, in app\n    await wrap_app_handling_exceptions(app, request)(scope, receive, send)\n  File "C:\\Users\\jerry\\onedrive\\Desktop\\forgeai\\backend\\venv\\Lib\\site-packages\\starlette\\_exception_handler.py", line 53, in wrapped_app\n    raise exc\n  File "C:\\Users\\jerry\\onedrive\\Desktop\\forgeai\\backend\\venv\\Lib\\site-packages\\starlette\\_exception_handler.py", line 42, in wrapped_app\n    await app(scope, receive, sender)\n  File "C:\\Users\\jerry\\onedrive\\Desktop\\forgeai\\backend\\venv\\Lib\\site-packages\\fastapi\\routing.py", line 120, in app\n    response = await f(request)\n               ^^^^^^^^^^^^^^^^\n  File "C:\\Users\\jerry\\onedrive\\Desktop\\forgeai\\backend\\venv\\Lib\\site-packages\\fastapi\\routing.py", line 674, in app\n    raw_response = await run_endpoint_function(\n                   ^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n    ...<3 lines>...\n    )\n    ^\n  File "C:\\Users\\jerry\\onedrive\\Desktop\\forgeai\\backend\\venv\\Lib\\site-packages\\fastapi\\routing.py", line 330, in run_endpoint_function\n    return await run_in_threadpool(dependant.call, **values)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File "C:\\Users\\jerry\\onedrive\\Desktop\\forgeai\\backend\\venv\\Lib\\site-packages\\starlette\\concurrency.py", line 34, in run_in_threadpool\n    return await anyio.to_thread.run_sync(func)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File "C:\\Users\\jerry\\onedrive\\Desktop\\forgeai\\backend\\venv\\Lib\\site-packages\\anyio\\to_thread.py", line 63, in run_sync\n    return await get_async_backend().run_sync_in_worker_thread(\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n        func, args, abandon_on_cancel=abandon_on_cancel, limiter=limiter\n        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n    )\n    ^\n  File "C:\\Users\\jerry\\onedrive\\Desktop\\forgeai\\backend\\venv\\Lib\\site-packages\\anyio\\_backends\\_asyncio.py", line 2518, in run_sync_in_worker_thread\n    return await future\n           ^^^^^^^^^^^^\n  File "C:\\Users\\jerry\\onedrive\\Desktop\\forgeai\\backend\\venv\\Lib\\site-packages\\anyio\\_backends\\_asyncio.py", line 1002, in run\n    result = context.run(func, *args)\n  File "C:\\Users\\jerry\\onedrive\\Desktop\\forgeai\\generated_projects\\todo_list_app\\app\\routes\\seed_routes.py", line 96, in seed\n    existing = db.query(Task).filter(Task.name == t["title"]).first()\n                                     ^^^^^^^^^\nAttributeError: type object \'Task\' has no attribute \'name\'\n', 'startup_time': 5.8585991859436035, 'behavioral_issues': [], 'total_endpoints': 14, 'timeout_count': 0, 'error_count': 0, 'endpoint_pass_rate': 1.0, 'crud_passed': False, 'journey': {'success': False, 'steps_passed': 3, 'steps_failed': 8, 'persistence_verified': False, 'skipped': False, 'skip_reason': '', 'entity': 'tasks', 'seed_summary': {}, 'steps': [{'name': 'Register', 'passed': False, 'detail': '404 (no register/signup endpoint found)', 'request': {'method': 'POST', 'url': 'http://127.0.0.1:8001/auth/register', 'json': {'email': 'journey@test.com', 'password': 'JourneyPass1!', 'display_name': 'Journey Tester'}, 'has_auth': False}, 'response': {'status_code': 500, 'body': 'Internal Server Error'}}, {'name': 'Login', 'passed': True, 'detail': '422 @ login (server alive, auth format mismatch)', 'request': None, 'response': None}, {'name': 'Detect entity', 'passed': True, 'detail': 'http://127.0.0.1:8001/tasks', 'request': None, 'response': None}, {'name': 'Create entity', 'passed': False, 'detail': '401 (auth required, no valid token)', 'request': {'method': 'POST', 'url': 'http://127.0.0.1:8001/tasks', 'json': {'title': 'Journey Test Item', 'name': 'Journey Test Item', 'description': 'created by V5.5 journey runner', 'priority_id': 1, 'due_date': '2026-01-01', 'completed': True}, 'has_auth': False}, 'response': {'status_code': 401, 'body': {'detail': 'Not authenticated'}}}, {'name': 'List entities', 'passed': False, 'detail': '401', 'request': {'method': 'GET', 'url': 'http://127.0.0.1:8001/tasks', 'json': None, 'has_auth': False}, 'response': {'status_code': 401, 'body': {'detail': 'Not authenticated'}}}, {'name': 'Edit entity', 'passed': False, 'detail': 'no entity_id captured', 'request': None, 'response': None}, {'name': 'Delete entity', 'passed': False, 'detail': 'no entity_id captured', 'request': None, 'response': None}, {'name': 'Verify deletion', 'passed': False, 'detail': 'no entity_id', 'request': None, 'response': None}, {'name': 'Logout', 'passed': True, 'detail': '401', 'request': None, 'response': None}, {'name': 'Login again', 'passed': False, 'detail': 're-login failed', 'request': {'method': 'POST', 'url': 'http://127.0.0.1:8001/auth/login', 'json': {'username': 'journey_test', 'password': 'JourneyPass1!'}, 'has_auth': False}, 'response': {'status_code': 422, 'body': {'detail': [{'type': 'missing', 'loc': ['body', 'email'], 'msg': 'Field required', 'input': {'username': 'journey_test', 'password': 'JourneyPass1!'}}]}}}, {'name': 'Verify persistence', 'passed': False, 'detail': 'no entity_id', 'request': None, 'response': None}], 'total_duration': 0.32}, 'parsed_error': {'type': 'AttributeError', 'error_file': 'C:\\Users\\jerry\\onedrive\\Desktop\\forgeai\\generated_projects\\todo_list_app\\app\\routes\\seed_routes.py'}}
+Using Gemini
+Gemini failed (429 RESOURCE_EXHAUSTED. {'error': {'code': 429, 'message': 'Your prepayment credits are depleted. Please go to AI Studio at https://ai.studio/projects to manage your project and billing. Learn more at https://ai.google.dev/gemini-api/docs/billing#prepay. ', 'status': 'RESOURCE_EXHAUSTED'}}) — falling back to auto chain
+Using Cerebras (main)
+[CEREBRAS] Prompt=7097 Completion=1555 Reasoning=395 Total=8652
+  [patcher] Fixed attribute accesses in seed_routes.py
+  [patcher] Patched 3 file(s) — passlib→bcrypt, async→sync, smart quotes
+  Runtime validation error: name 'patch_model_field_mismatches' is not defined
+
+  ZIP: C:\Users\jerry\onedrive\Desktop\forgeai\generated_projects\todo_list_app.zip
+
+=== V6 SCORE: 44/100 (F) ===
+    Runtime:      40/100
+    Security:     74/100
+    Performance:  16/100
+    Maintainability: 33/100
+    Review:       44/100
+
+────────────────────────────────────────
+  LLM Calls
+  Planner            1
+  Architect          1
+  Tech Lead          1
+  Backend            28
+  Frontend           1
+  Reviews            5
+  Polish             2
+  Repairs            6
+  Runtime Fixes      1
+  ────────────────────
+  Total              46
+────────────────────────────────────────
+
+=== COST SUMMARY ===
+  LLM calls:    13
+  Total tokens: 74,881
+  Est. cost:    $0.0449
+  LLM time:     33.5s
+    backend_generation: 31,494 tokens  $0.0189
+    fix: 7,595 tokens  $0.0046
+    qa_review: 4,047 tokens  $0.0024
+    security_review: 8,725 tokens  $0.0052
+    code_review: 7,151 tokens  $0.0043
+    performance_review: 6,635 tokens  $0.0040
+    runtime_fix: 9,234 tokens  $0.0055
+  Cache hits:   2 calls served free (~$0.0095, ~15,835 tokens saved)
+[V15] OK generation [passed] (50023ms)
+  [db_patcher] Injected known-good app/database.py
+  [field_patcher] Aligned model fields in seed_routes.py
+  [field_patcher] Aligned model fields in task_routes.py
+  [preflight] fix_model_schema_notnull_gap: applied
+  [preflight] fix_missing_env: applied
+  [db_patcher] Injected known-good app/database.py
+  [preflight] fix_database_py: applied
+  [preflight] 3 deterministic fix(es) applied without LLM
+  [verify] 1/11 Static analysis...
+  [verify]       failed — 4 issues
+  [verify] 2/11 Compile check...
+  [verify]       passed — 0 syntax errors
+  [verify] 2a Import closure check...
+  [verify]       passed — 0 unresolved imports
+  [verify] 2a Symbol closure check...
+  [verify]       passed — 0 undefined symbols
+  [verify] 2a2 Contract conformance check (warn-only)...
+  [verify]       failed — 1 contract findings
+  [verify] 2b Frontend build...
+[Frontend] cwd:          C:\Users\jerry\OneDrive\Desktop\forgeAi\generated_projects\todo_list_app
+[Frontend] cwd exists:   True
+[Frontend] package.json: ✓ exists
+[Frontend] npm:          C:\Program Files\nodejs\npm.CMD
+[Frontend] Building in: C:\Users\jerry\OneDrive\Desktop\forgeAi\generated_projects\todo_list_app
+[Frontend] Installing dependencies (npm install)...
+[Frontend] npm install complete
+Running vite build...
+Frontend build PASSED in 27.42s
+  [verify]       passed — 0 build errors
+  [verify] 3/11 Runtime startup...
+Running runtime validation in: C:\Users\jerry\onedrive\Desktop\forgeai\generated_projects\todo_list_app
+Using Python: C:\Users\jerry\onedrive\Desktop\forgeai\backend\venv\Scripts\python.exe
+Skipping pip install (packages pre-installed): C:\Users\jerry\onedrive\Desktop\forgeai\generated_projects\todo_list_app\app\requirements.txt
+  [runner] Deleted stale DB: app.db
+  [runner] Deleted stale DB: app.db-wal
+  [runner] Deleted stale DB: app.db-shm
+  [runner] Pre-flight DB init: OK
+Health Check /docs: 200
+
+=== USER JOURNEY (CRUD WORKFLOW) ===
+  Journey FAIL — 3 passed / 8 failed
+    ✗ Register: 404 (no register/signup endpoint found)
+    ✓ Login: 422 @ login (server alive, auth format mismatch)
+    ✓ Detect entity: http://127.0.0.1:8001/tasks
+    ✗ Create entity: 401 (auth required, no valid token)
+    ✗ List entities: 401
+    ✗ Edit entity: no entity_id captured
+    ✗ Delete entity: no entity_id captured
+    ✗ Verify deletion: no entity_id
+    ✓ Logout: 401
+    ✗ Login again: re-login failed
+    ✗ Verify persistence: no entity_id
+
+=== ENDPOINT SMOKE TESTS ===
+  All endpoints responded without errors.
+
+  Endpoint pass rate: 100% (14/14 passed, 0 timeouts, 0 errors)
+
+  Runtime FAIL: CRUD workflow failed critical steps
+  [verify]       failed
+  [verify] 4-9: Running HTTP / Schema-DB / Browser / Performance / Accessibility in parallel...
+  [verify]       http: passed — 0 issues
+  [verify]       schema_db_assertion: passed — 0 issues
+  [verify]       accessibility: failed — 1 issues
+  [verify]       browser: passed — 0 issues
+  [verify] 10/11 Workflow tests...
+  [verify]       passed
+  [verify] 11/11 LLM Judge...
+[LLM cache] HIT (llm_judge) — 0 tokens billed
+  [verify]       LLM Judge: The UI loads but immediately shows a blank screen with no login form or todo lis
+
+------------------------------------------------------------
+  FORGE SCORE: 70.7/100  (C) [NEEDS REPAIR]
+  Coverage: 11/11 dimensions
+------------------------------------------------------------
+  + Compilation            [#######################.......]  79.0  (wt:15%)
+      critical=0 high=0 medium=4 low=1
+  x Runtime Startup        [######........................]  20.0  (wt:20%)
+      started=True health=True success=False
+  + API Functionality      [##############################] 100.0  (wt:15%)
+      14/14 endpoints passed
+  + Frontend Load          [##############################] 100.0  (wt:10%)
+      loaded OK
+  + Browser UX             [##########################....]  88.0  (wt:15%)
+      console_errors=0 network_failures=0 forms=0/0
+  x Integration            [###########...................]  38.5  (wt:10%)
+      5/13 workflow steps passed
+  x Code Quality           [#########################.....]  85.0  (wt:5%)
+      stubs=0 globals=0 other_contract=5
+  + Security               [##############################] 100.0  (wt:5%)
+      security_issues=0 cors=True server_up=True
+  + Completeness           [##############################] 100.0  (wt:3%)
+      planned=14 missing=0
+  + Performance            [###########################...]  90.0  (wt:2%)
+      health_latency_ms=0
+  x Visual Judge           [#############.................]  45.4  (wt:5%)
+      llm_judge_severity=high confidence=0.78
+------------------------------------------------------------
+
+[V15] Score: 70.7 (C) -- [needs repair]
+
+[retry] Attempt 1/5: Patch affected files with current model
+
+[V15] Fix attempt 1/5 -- strategy: patch_file
+  [fix] 7 diagnostics → 5 groups
+  [fix] Group [1] Runtime crash: [AttributeError] AttributeError: 'SignupRequest' object has no at
+    [fix] Router: complexity=3 (medium) triggered=[filter, register, todo, medium_description] stage=fix_complex → gemini
+Using Gemini
+Gemini failed (429 RESOURCE_EXHAUSTED. {'error': {'code': 429, 'message': 'Your prepayment credits are depleted. Please go to AI Studio at https://ai.studio/projects to manage your project and billing. Learn more at https://ai.google.dev/gemini-api/docs/billing#prepay. ', 'status': 'RESOURCE_EXHAUSTED'}}) — falling back to auto chain
+Using Cerebras (main)
+[CEREBRAS] Prompt=1836 Completion=2277 Reasoning=888 Total=4113
+    [fix] Patched: app/routes/auth_routes.py
+  [fix] Group [2] Contract violation: Schema mismatch: app/schemas/task.py: TaskBase.title require
+    [fix] Cache HIT for group 8e77cd75 (seen 3x before) — skipping LLM
+    [fix] (cache) Patched: app/schemas/task.py
+  [fix] Group [3] Contract violation: Schema mismatch: app/schemas/user.py: UserCreate.username re
+    [fix] Cache HIT for group 563d235d (seen 2x before) — skipping LLM
+    [fix] (cache) Patched: app/schemas/user.py
+  [fix] Group [4] Contract violation: Contract lists 'app/config' (config) but it was never writte
+    [fix] Cache HIT for group 87765b92 (seen 3x before) — skipping LLM
+    [fix] (cache) Patched: app/config/settings.py
+    [fix] (cache) Patched: app/config/__init__.py
+  [fix] Group [5] Contract violation: TaskListPage.jsx: <input> may be missing a label
+    [fix] Cache HIT for group 4991e766 (seen 2x before) — skipping LLM
+    [fix] (cache) Patched: src/pages/TaskListPage.jsx
+  [patcher] Response schema id/datetime fixes in task.py: TaskBase.id
+  [patcher] Fixed attribute accesses in auth_routes.py
+  [patcher] Fixed attribute accesses in seed_routes.py
+  [patcher] Fixed attribute accesses in task_routes.py
+  [patcher] Fixed response .data assumed to be wrapped (actually a bare array) in TaskListPage.jsx
+  [patcher] Patched 1 file(s) — passlib→bcrypt, async→sync, smart quotes
+  [db_patcher] Injected known-good app/database.py
+  [db_patcher] Injected known-good app/database.py
+  [preflight] fix_database_py: applied
+  [preflight] 1 deterministic fix(es) applied without LLM
+  [verify] 1/11 Static analysis...
+  [verify]       failed — 5 issues
+  [verify] 2/11 Compile check...
+  [verify]       passed — 0 syntax errors
+  [verify] 2a Import closure check...
+  [verify]       passed — 0 unresolved imports
+  [verify] 2a Symbol closure check...
+  [verify]       passed — 0 undefined symbols
+  [verify] 2a2 Contract conformance check (warn-only)...
+  [verify]       passed — 0 contract findings
+  [verify] 2b Frontend build...
+[Frontend] cwd:          C:\Users\jerry\OneDrive\Desktop\forgeAi\generated_projects\todo_list_app
+[Frontend] cwd exists:   True
+[Frontend] package.json: ✓ exists
+[Frontend] npm:          C:\Program Files\nodejs\npm.CMD
+[Frontend] Building in: C:\Users\jerry\OneDrive\Desktop\forgeAi\generated_projects\todo_list_app
+[Frontend] node_modules exists — skipping npm install
+Running vite build...
+Frontend build PASSED in 10.16s
+  [verify]       passed — 0 build errors
+  [verify] 3/11 Runtime startup...
+Running runtime validation in: C:\Users\jerry\onedrive\Desktop\forgeai\generated_projects\todo_list_app
+Using Python: C:\Users\jerry\onedrive\Desktop\forgeai\backend\venv\Scripts\python.exe
+Skipping pip install (packages pre-installed): C:\Users\jerry\onedrive\Desktop\forgeai\generated_projects\todo_list_app\app\requirements.txt
+  [runner] Deleted stale DB: app.db
+  [runner] Deleted stale DB: app.db-wal
+  [runner] Deleted stale DB: app.db-shm
+  [runner] Pre-flight DB init: OK
+Health Check /docs: 200
+
+=== USER JOURNEY (CRUD WORKFLOW) ===
+  Journey FAIL — 2 passed / 9 failed
+    ✗ Register: 404 (no register/signup endpoint found)
+    ✗ Login: Login failed (tried 2 URL(s))
+    ✓ Detect entity: http://127.0.0.1:8001/tasks
+    ✗ Create entity: 401 (auth required, no valid token)
+    ✗ List entities: 401
+    ✗ Edit entity: no entity_id captured
+    ✗ Delete entity: no entity_id captured
+    ✗ Verify deletion: no entity_id
+    ✓ Logout: 404
+    ✗ Login again: re-login failed
+    ✗ Verify persistence: no entity_id
+
+=== ENDPOINT SMOKE TESTS ===
+  All endpoints responded without errors.
+
+  Endpoint pass rate: 100% (14/14 passed, 0 timeouts, 0 errors)
+
+  Runtime FAIL: CRUD workflow failed critical steps
+  [verify]       failed
+  [verify] 4-9: Running HTTP / Schema-DB / Browser / Performance / Accessibility in parallel...
+  [verify]       http: failed — 1 issues
+  [verify]       schema_db_assertion: passed — 0 issues
+  [verify]       accessibility: passed — 0 issues
+  [verify]       browser: passed — 0 issues
+  [verify] 10/11 Workflow tests...
+  [verify]       passed
+  [verify] 11/11 LLM Judge...
+[LLM cache] HIT (llm_judge) — 0 tokens billed
+  [verify]       LLM Judge claimed a blank/empty page, but the browser stage found mounted DOM content with zero console errors -- treating as a likely vision misread and downgrading to medium severity
+  [verify]       LLM Judge: The UI never renders the todo list or login/register forms because the client sc
+  [fix] 7 newly-visible diagnostic(s), but score improved 70.7 -> 71.0 — keeping fix
+
+------------------------------------------------------------
+  FORGE SCORE: 71.0/100  (C) [NEEDS REPAIR]
+  Coverage: 11/11 dimensions
+------------------------------------------------------------
+  + Compilation            [######################........]  75.0  (wt:15%)
+      critical=0 high=0 medium=5 low=0
+  x Runtime Startup        [######........................]  20.0  (wt:20%)
+      started=True health=True success=False
+  + API Functionality      [##############################] 100.0  (wt:15%)
+      14/14 endpoints passed
+  + Frontend Load          [##############################] 100.0  (wt:10%)
+      loaded OK
+  + Browser UX             [##########################....]  88.0  (wt:15%)
+      console_errors=0 network_failures=0 forms=0/0
+  x Integration            [#########.....................]  30.8  (wt:10%)
+      4/13 workflow steps passed
+  + Code Quality           [##############################] 100.0  (wt:5%)
+      stubs=0 globals=0 other_contract=0
+  + Security               [##############################] 100.0  (wt:5%)
+      security_issues=0 cors=True server_up=True
+  + Completeness           [##############################] 100.0  (wt:3%)
+      planned=14 missing=0
+  + Performance            [###########################...]  90.0  (wt:2%)
+      health_latency_ms=0
+  x Visual Judge           [###################...........]  64.8  (wt:5%)
+      llm_judge_severity=medium confidence=0.88
+------------------------------------------------------------
+
+[retry] Result: 70.7 ↑ 71.0 (Δ=+0.3)
+[V15] Score: 71.0 (C) -- [needs repair]
+[retry] Skipping patch_file for pattern 'api' -- proven ineffective in past runs, escalating
+[retry] Skipping regenerate_module for pattern 'api' -- proven ineffective in past runs, escalating
+
+[retry] Attempt 2/5: Switch to strongest available model and patch
+
+[V15] Fix attempt 4/5 -- strategy: switch_model
+  [fix] 7 diagnostics → 3 groups
+  [fix] Group [1] Runtime crash: [AttributeError] AttributeError: type object 'Task' has no attrib
+    [fix] Seed-related group 22a3efd4: writing known-good seed_routes.py stub instead of calling the LLM
+  [fix] Group [2] API endpoint failure: POST /seed returned 500
+    [fix] Seed-related group 69c7247d: writing known-good seed_routes.py stub instead of calling the LLM
+  [fix] Group [3] API endpoint failure: Missing endpoint POST /auth/login (expected in app/routes/
+Using Gemini
+Gemini failed (429 RESOURCE_EXHAUSTED. {'error': {'code': 429, 'message': 'Your prepayment credits are depleted. Please go to AI Studio at https://ai.studio/projects to manage your project and billing. Learn more at https://ai.google.dev/gemini-api/docs/billing#prepay. ', 'status': 'RESOURCE_EXHAUSTED'}}) — falling back to auto chain
+Using Cerebras (main)
+[CEREBRAS] Prompt=3642 Completion=4084 Reasoning=2330 Total=7726
+    [fix] Patched: app/routes/auth_routes.py
+  [patcher] Injected known-good app/routes/auth_routes.py (dynamic password field + fast bcrypt)
+  [schema_patcher] Added from_attributes=True to 1 schema file(s)
+  [patcher] Fixed attribute accesses in auth_routes.py
+  [patcher] Patched 1 file(s) — passlib→bcrypt, async→sync, smart quotes
+  [db_patcher] Injected known-good app/database.py
+  [db_patcher] Injected known-good app/database.py
+  [preflight] fix_database_py: applied
+  [preflight] 1 deterministic fix(es) applied without LLM
+  [verify] 1/11 Static analysis...
+  [verify]       passed — 0 issues
+  [verify] 2/11 Compile check...
+  [verify]       passed — 0 syntax errors
+  [verify] 2a Import closure check...
+  [verify]       passed — 0 unresolved imports
+  [verify] 2a Symbol closure check...
+  [verify]       passed — 0 undefined symbols
+  [verify] 2a2 Contract conformance check (warn-only)...
+  [verify]       passed — 0 contract findings
+  [verify] 2b Frontend build...
+[Frontend] cwd:          C:\Users\jerry\OneDrive\Desktop\forgeAi\generated_projects\todo_list_app
+[Frontend] cwd exists:   True
+[Frontend] package.json: ✓ exists
+[Frontend] npm:          C:\Program Files\nodejs\npm.CMD
+[Frontend] Building in: C:\Users\jerry\OneDrive\Desktop\forgeAi\generated_projects\todo_list_app
+[Frontend] node_modules exists — skipping npm install
+Running vite build...
+Frontend build PASSED in 10.31s
+  [verify]       passed — 0 build errors
+  [verify] 3/11 Runtime startup...
+Running runtime validation in: C:\Users\jerry\onedrive\Desktop\forgeai\generated_projects\todo_list_app
+Using Python: C:\Users\jerry\onedrive\Desktop\forgeai\backend\venv\Scripts\python.exe
+Skipping pip install (packages pre-installed): C:\Users\jerry\onedrive\Desktop\forgeai\generated_projects\todo_list_app\app\requirements.txt
+  [runner] Deleted stale DB: app.db
+  [runner] Deleted stale DB: app.db-wal
+  [runner] Deleted stale DB: app.db-shm
+  [runner] Pre-flight DB init: OK
+Health Check /docs: 200
+
+=== USER JOURNEY (CRUD WORKFLOW) ===
+  Journey FAIL — 3 passed / 8 failed
+    ✗ Register: 404 (no register/signup endpoint found)
+    ✓ Login: 422 @ login (server alive, auth format mismatch)
+    ✓ Detect entity: http://127.0.0.1:8001/tasks
+    ✗ Create entity: 401 (auth required, no valid token)
+    ✗ List entities: 401
+    ✗ Edit entity: no entity_id captured
+    ✗ Delete entity: no entity_id captured
+    ✗ Verify deletion: no entity_id
+    ✓ Logout: 401
+    ✗ Login again: re-login failed
+    ✗ Verify persistence: no entity_id
+
+=== ENDPOINT SMOKE TESTS ===
+  All endpoints responded without errors.
+
+  Endpoint pass rate: 100% (14/14 passed, 0 timeouts, 0 errors)
+
+  Runtime FAIL: CRUD workflow failed critical steps
+  [verify]       failed
+  [verify] 4-9: Running HTTP / Schema-DB / Browser / Performance / Accessibility in parallel...
+  [verify]       http: passed — 0 issues
+  [verify]       schema_db_assertion: passed — 0 issues
+  [verify]       accessibility: passed — 0 issues
+  [verify]       browser: passed — 0 issues
+  [verify] 10/11 Workflow tests...
+  [verify]       passed
+  [verify] 11/11 LLM Judge...
+[LLM cache] HIT (llm_judge) — 0 tokens billed
+  [verify]       LLM Judge: The UI loads but immediately shows a blank screen with no login form or todo lis
+  [fix] 1 newly-visible diagnostic(s), but score improved 71.0 -> 74.4 — keeping fix
+
+------------------------------------------------------------
+  FORGE SCORE: 74.4/100  (C) [NEEDS REPAIR]
+  Coverage: 11/11 dimensions
+------------------------------------------------------------
+  + Compilation            [##############################] 100.0  (wt:15%)
+      critical=0 high=0 medium=0 low=0
+  x Runtime Startup        [######........................]  20.0  (wt:20%)
+      started=True health=True success=False
+  + API Functionality      [##############################] 100.0  (wt:15%)
+      14/14 endpoints passed
+  + Frontend Load          [##############################] 100.0  (wt:10%)
+      loaded OK
+  + Browser UX             [##########################....]  88.0  (wt:15%)
+      console_errors=0 network_failures=0 forms=0/0
+  x Integration            [###########...................]  38.5  (wt:10%)
+      5/13 workflow steps passed
+  + Code Quality           [##############################] 100.0  (wt:5%)
+      stubs=0 globals=0 other_contract=0
+  + Security               [##############################] 100.0  (wt:5%)
+      security_issues=0 cors=True server_up=True
+  + Completeness           [##############################] 100.0  (wt:3%)
+      planned=14 missing=0
+  + Performance            [###########################...]  90.0  (wt:2%)
+      health_latency_ms=0
+  x Visual Judge           [#############.................]  45.4  (wt:5%)
+      llm_judge_severity=high confidence=0.78
+------------------------------------------------------------
+
+[retry] Result: 71.0 ↑ 74.4 (Δ=+3.4)
+[V15] Score: 74.4 (C) -- [needs repair]
+
+[retry] Attempt 3/5: Regenerate entire affected module (not just changed lines)
+
+[V15] Fix attempt 3/5 -- strategy: regenerate_module
+  [fix] 1 diagnostics → 1 groups
+  [fix] Group [1] Runtime crash: [AttributeError] AttributeError: 'SignupRequest' object has no at
+  [verify] 1/11 Static analysis...
+  [verify]       passed — 0 issues
+  [verify] 2/11 Compile check...
+  [verify]       passed — 0 syntax errors
+  [verify] 2a Import closure check...
+  [verify]       passed — 0 unresolved imports
+  [verify] 2a Symbol closure check...
+  [verify]       passed — 0 undefined symbols
+  [verify] 2a2 Contract conformance check (warn-only)...
+  [verify]       passed — 0 contract findings
+  [verify] 2b Frontend build...
+[Frontend] cwd:          C:\Users\jerry\OneDrive\Desktop\forgeAi\generated_projects\todo_list_app
+[Frontend] cwd exists:   True
+[Frontend] package.json: ✓ exists
+[Frontend] npm:          C:\Program Files\nodejs\npm.CMD
+[Frontend] Building in: C:\Users\jerry\OneDrive\Desktop\forgeAi\generated_projects\todo_list_app
+[Frontend] node_modules exists — skipping npm install
+Running vite build...
+Frontend build PASSED in 9.96s
+  [verify]       passed — 0 build errors
+  [verify] 3/11 Runtime startup...
+Running runtime validation in: C:\Users\jerry\onedrive\Desktop\forgeai\generated_projects\todo_list_app
+Using Python: C:\Users\jerry\onedrive\Desktop\forgeai\backend\venv\Scripts\python.exe
+Skipping pip install (packages pre-installed): C:\Users\jerry\onedrive\Desktop\forgeai\generated_projects\todo_list_app\app\requirements.txt
+  [runner] Deleted stale DB: app.db
+  [runner] Deleted stale DB: app.db-wal
+  [runner] Deleted stale DB: app.db-shm
+  [runner] Pre-flight DB init: OK
+Health Check /docs: 200
+
+=== USER JOURNEY (CRUD WORKFLOW) ===
+  Journey FAIL — 3 passed / 8 failed
+    ✗ Register: 404 (no register/signup endpoint found)
+    ✓ Login: 422 @ login (server alive, auth format mismatch)
+    ✓ Detect entity: http://127.0.0.1:8001/tasks
+    ✗ Create entity: 401 (auth required, no valid token)
+    ✗ List entities: 401
+    ✗ Edit entity: no entity_id captured
+    ✗ Delete entity: no entity_id captured
+    ✗ Verify deletion: no entity_id
+    ✓ Logout: 401
+    ✗ Login again: re-login failed
+    ✗ Verify persistence: no entity_id
+
+=== ENDPOINT SMOKE TESTS ===
+  All endpoints responded without errors.
+
+  Endpoint pass rate: 100% (14/14 passed, 0 timeouts, 0 errors)
+
+  Runtime FAIL: CRUD workflow failed critical steps
+  [verify]       failed
+  [verify] 4-9: Running HTTP / Schema-DB / Browser / Performance / Accessibility in parallel...
+  [verify]       http: passed — 0 issues
+  [verify]       schema_db_assertion: passed — 0 issues
+  [verify]       accessibility: passed — 0 issues
+  [verify]       browser: passed — 0 issues
+  [verify] 10/11 Workflow tests...
+  [verify]       passed
+  [verify] 11/11 LLM Judge...
+[LLM cache] HIT (llm_judge) — 0 tokens billed
+  [verify]       LLM Judge: The UI loads but immediately shows a blank screen with no login form or todo lis
+
+------------------------------------------------------------
+  FORGE SCORE: 74.4/100  (C) [NEEDS REPAIR]
+  Coverage: 11/11 dimensions
+------------------------------------------------------------
+  + Compilation            [##############################] 100.0  (wt:15%)
+      critical=0 high=0 medium=0 low=0
+  x Runtime Startup        [######........................]  20.0  (wt:20%)
+      started=True health=True success=False
+  + API Functionality      [##############################] 100.0  (wt:15%)
+      14/14 endpoints passed
+  + Frontend Load          [##############################] 100.0  (wt:10%)
+      loaded OK
+  + Browser UX             [##########################....]  88.0  (wt:15%)
+      console_errors=0 network_failures=0 forms=0/0
+  x Integration            [###########...................]  38.5  (wt:10%)
+      5/13 workflow steps passed
+  + Code Quality           [##############################] 100.0  (wt:5%)
+      stubs=0 globals=0 other_contract=0
+  + Security               [##############################] 100.0  (wt:5%)
+      security_issues=0 cors=True server_up=True
+  + Completeness           [##############################] 100.0  (wt:3%)
+      planned=14 missing=0
+  + Performance            [###########################...]  90.0  (wt:2%)
+      health_latency_ms=0
+  x Visual Judge           [#############.................]  45.4  (wt:5%)
+      llm_judge_severity=high confidence=0.78
+------------------------------------------------------------
+
+[retry] Result: 74.4 → 74.4 (Δ=+0.0)
+[V15] Score: 74.4 (C) -- [needs repair]
+
+[retry] Attempt 4/5: Switch to strongest available model and patch
+
+[V15] Fix attempt 4/5 -- strategy: switch_model
+  [fix] 1 diagnostics → 1 groups
+  [fix] Group [1] Runtime crash: [AttributeError] AttributeError: 'SignupRequest' object has no at
+    [fix] Cache HIT for group 5e456c55 (seen 1x before) — skipping LLM
+    [fix] (cache) Patched: app/routes/auth_routes.py
+  [patcher] Fixed attribute accesses in auth_routes.py
+  [patcher] Patched 1 file(s) — passlib→bcrypt, async→sync, smart quotes
+  [db_patcher] Injected known-good app/database.py
+  [db_patcher] Injected known-good app/database.py
+  [preflight] fix_database_py: applied
+  [preflight] 1 deterministic fix(es) applied without LLM
+  [verify] 1/11 Static analysis...
+  [verify]       failed — 5 issues
+  [verify] 2/11 Compile check...
+  [verify]       passed — 0 syntax errors
+  [verify] 2a Import closure check...
+  [verify]       passed — 0 unresolved imports
+  [verify] 2a Symbol closure check...
+  [verify]       passed — 0 undefined symbols
+  [verify] 2a2 Contract conformance check (warn-only)...
+  [verify]       passed — 0 contract findings
+  [verify] 2b Frontend build...
+[Frontend] cwd:          C:\Users\jerry\OneDrive\Desktop\forgeAi\generated_projects\todo_list_app
+[Frontend] cwd exists:   True
+[Frontend] package.json: ✓ exists
+[Frontend] npm:          C:\Program Files\nodejs\npm.CMD
+[Frontend] Building in: C:\Users\jerry\OneDrive\Desktop\forgeAi\generated_projects\todo_list_app
+[Frontend] node_modules exists — skipping npm install
+Running vite build...
+Frontend build PASSED in 9.82s
+  [verify]       passed — 0 build errors
+  [verify] 3/11 Runtime startup...
+Running runtime validation in: C:\Users\jerry\onedrive\Desktop\forgeai\generated_projects\todo_list_app
+Using Python: C:\Users\jerry\onedrive\Desktop\forgeai\backend\venv\Scripts\python.exe
+Skipping pip install (packages pre-installed): C:\Users\jerry\onedrive\Desktop\forgeai\generated_projects\todo_list_app\app\requirements.txt
+  [runner] Deleted stale DB: app.db
+  [runner] Deleted stale DB: app.db-wal
+  [runner] Deleted stale DB: app.db-shm
+  [runner] Pre-flight DB init: OK
+Health Check /docs: 200
+
+=== USER JOURNEY (CRUD WORKFLOW) ===
+  Journey FAIL — 2 passed / 9 failed
+    ✗ Register: 404 (no register/signup endpoint found)
+    ✗ Login: Login failed (tried 2 URL(s))
+    ✓ Detect entity: http://127.0.0.1:8001/tasks
+    ✗ Create entity: 401 (auth required, no valid token)
+    ✗ List entities: 401
+    ✗ Edit entity: no entity_id captured
+    ✗ Delete entity: no entity_id captured
+    ✗ Verify deletion: no entity_id
+    ✓ Logout: 404
+    ✗ Login again: re-login failed
+    ✗ Verify persistence: no entity_id
+
+=== ENDPOINT SMOKE TESTS ===
+  All endpoints responded without errors.
+
+  Endpoint pass rate: 100% (14/14 passed, 0 timeouts, 0 errors)
+
+  Runtime FAIL: CRUD workflow failed critical steps
+  [verify]       failed
+  [verify] 4-9: Running HTTP / Schema-DB / Browser / Performance / Accessibility in parallel...
+  [verify]       http: passed — 0 issues
+  [verify]       schema_db_assertion: passed — 0 issues
+  [verify]       accessibility: passed — 0 issues
+  [verify]       browser: passed — 0 issues
+  [verify] 10/11 Workflow tests...
+  [verify]       passed
+  [verify] 11/11 LLM Judge...
+[LLM cache] HIT (llm_judge) — 0 tokens billed
+  [verify]       LLM Judge: The UI loads but immediately shows a blank screen with no login form or todo lis
+  [fix] REGRESSION: 6 new error(s) with no score improvement (74.4 -> 70.1)
+       ↳ Missing endpoint POST /auth/login (expected in app/routes/auth_routes.py)
+       ↳ Missing endpoint POST /auth/register (expected in app/routes/auth_routes.py)
+       ↳ Missing endpoint POST /auth/login (expected in app/routes/auth_routes.py) -- cal
+    [fix] Reverted to pre-fix snapshot
+  [verify] 1/11 Static analysis...
+  [verify]       passed — 0 issues
+  [verify] 2/11 Compile check...
+  [verify]       passed — 0 syntax errors
+  [verify] 2a Import closure check...
+  [verify]       passed — 0 unresolved imports
+  [verify] 2a Symbol closure check...
+  [verify]       passed — 0 undefined symbols
+  [verify] 2a2 Contract conformance check (warn-only)...
+  [verify]       passed — 0 contract findings
+  [verify] 2b Frontend build...
+[Frontend] cwd:          C:\Users\jerry\OneDrive\Desktop\forgeAi\generated_projects\todo_list_app
+[Frontend] cwd exists:   True
+[Frontend] package.json: ✓ exists
+[Frontend] npm:          C:\Program Files\nodejs\npm.CMD
+[Frontend] Building in: C:\Users\jerry\OneDrive\Desktop\forgeAi\generated_projects\todo_list_app
+[Frontend] package.json changed since last install — re-running npm install...
+[Frontend] npm install complete
+Running vite build...
+Frontend build PASSED in 12.15s
+  [verify]       passed — 0 build errors
+  [verify] 3/11 Runtime startup...
+Running runtime validation in: C:\Users\jerry\onedrive\Desktop\forgeai\generated_projects\todo_list_app
+Using Python: C:\Users\jerry\onedrive\Desktop\forgeai\backend\venv\Scripts\python.exe
+Skipping pip install (packages pre-installed): C:\Users\jerry\onedrive\Desktop\forgeai\generated_projects\todo_list_app\app\requirements.txt
+  [runner] Deleted stale DB: app.db
+  [runner] Deleted stale DB: app.db-wal
+  [runner] Deleted stale DB: app.db-shm
+  [runner] Pre-flight DB init: OK
+Health Check /docs: 200
+
+=== USER JOURNEY (CRUD WORKFLOW) ===
+  Journey FAIL — 3 passed / 8 failed
+    ✗ Register: 404 (no register/signup endpoint found)
+    ✓ Login: 422 @ login (server alive, auth format mismatch)
+    ✓ Detect entity: http://127.0.0.1:8001/tasks
+    ✗ Create entity: 401 (auth required, no valid token)
+    ✗ List entities: 401
+    ✗ Edit entity: no entity_id captured
+    ✗ Delete entity: no entity_id captured
+    ✗ Verify deletion: no entity_id
+    ✓ Logout: 401
+    ✗ Login again: re-login failed
+    ✗ Verify persistence: no entity_id
+
+=== ENDPOINT SMOKE TESTS ===
+  All endpoints responded without errors.
+
+  Endpoint pass rate: 100% (14/14 passed, 0 timeouts, 0 errors)
+
+  Runtime FAIL: CRUD workflow failed critical steps
+  [verify]       failed
+  [verify] 4-9: Running HTTP / Schema-DB / Browser / Performance / Accessibility in parallel...
+  [verify]       http: passed — 0 issues
+  [verify]       schema_db_assertion: passed — 0 issues
+  [verify]       accessibility: passed — 0 issues
+  [verify]       browser: passed — 0 issues
+  [verify] 10/11 Workflow tests...
+  [verify]       passed
+  [verify] 11/11 LLM Judge...
+[LLM cache] HIT (llm_judge) — 0 tokens billed
+  [verify]       LLM Judge: The UI loads but immediately shows a blank screen with no login form or todo lis
+
+------------------------------------------------------------
+  FORGE SCORE: 74.4/100  (C) [NEEDS REPAIR]
+  Coverage: 11/11 dimensions
+------------------------------------------------------------
+  + Compilation            [##############################] 100.0  (wt:15%)
+      critical=0 high=0 medium=0 low=0
+  x Runtime Startup        [######........................]  20.0  (wt:20%)
+      started=True health=True success=False
+  + API Functionality      [##############################] 100.0  (wt:15%)
+      14/14 endpoints passed
+  + Frontend Load          [##############################] 100.0  (wt:10%)
+      loaded OK
+  + Browser UX             [##########################....]  88.0  (wt:15%)
+      console_errors=0 network_failures=0 forms=0/0
+  x Integration            [###########...................]  38.5  (wt:10%)
+      5/13 workflow steps passed
+  + Code Quality           [##############################] 100.0  (wt:5%)
+      stubs=0 globals=0 other_contract=0
+  + Security               [##############################] 100.0  (wt:5%)
+      security_issues=0 cors=True server_up=True
+  + Completeness           [##############################] 100.0  (wt:3%)
+      planned=14 missing=0
+  + Performance            [###########################...]  90.0  (wt:2%)
+      health_latency_ms=0
+  x Visual Judge           [#############.................]  45.4  (wt:5%)
+      llm_judge_severity=high confidence=0.78
+------------------------------------------------------------
+
+[retry] Result: 74.4 → 74.4 (Δ=+0.0)
+[V15] Score: 74.4 (C) -- [needs repair]
+[V15] WARNING: Regression detected -- reverting fix
+[V15] 2 consecutive fix attempts with no score improvement — stopping fix loop to save API credits (set FORGE_MAX_STALLED_FIX_ATTEMPTS to change)
+
+[V15] Deployment skipped — score 74.4 below deployment threshold (80) (score 74.4)
+[V15] Best score across attempts: 74.4
+
+[V15] === Pipeline complete: generated ===
+
+  Deployment confidence: 22.0%  [######........................]  F
+  Not deployment-ready — critical issues likely remain.
+  Factors:
+    base                         -0.500
+    overall_score                ++1.384
+    runtime_health               ++0.100
+    browser_ux                   ++0.264
+    compilation                  ++0.200
+    fix_penalty                  -1.600
+    critical_errors              -1.000
+    historical_base_rate         -0.113
+  Historical base rate: 35.9%  (n=78)
+
+======================================================================
+  V15 FINAL REPORT
+======================================================================
+  Project:       todo_list_app
+  Forge Score:   74.4/100  (C)
+  Deployed:      NO
+  Fix Attempts:  4/5
+  Total Tokens:  83,464
+  Est. Cost:     $0.0501
+  Total Time:    308.93s
+  Score Track:   71 → 71 → 74 → 74 → 70 → 74
+======================================================================
+

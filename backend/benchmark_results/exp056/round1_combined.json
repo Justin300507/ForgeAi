@@ -1,0 +1,2770 @@
+[
+  {
+    "round": 1,
+    "app": "todo",
+    "timestamp": "2026-07-11T20:41:49.791128+00:00",
+    "crashed": false,
+    "error": null,
+    "elapsed_s": 282.1,
+    "result": {
+      "job_id": "851dba12b640445d870c90e32f689411",
+      "idea": "A todo list app with user accounts. Users can register and log in. Each user sees only their own todos. Todos have a title, optional description, due date, priority (low/medium/high), and done/undone status. Users can create, edit, delete, and mark todos complete. Filter by status and priority.",
+      "project_name": "todo_list_app",
+      "forge_score": 74.4,
+      "grade": "C",
+      "deployed": false,
+      "frontend_deployed": false,
+      "backend_url": null,
+      "frontend_url": null,
+      "fix_attempts": 3,
+      "total_tokens": 89034,
+      "estimated_cost": 0.05342039999999999,
+      "elapsed_s": 282.13,
+      "providers_used": [],
+      "timeline": [
+        {
+          "stage": "generation",
+          "status": "passed",
+          "duration_ms": 0.0
+        },
+        {
+          "stage": "deterministic-patch",
+          "status": "passed",
+          "duration_ms": 438.9
+        },
+        {
+          "stage": "verification",
+          "status": "passed",
+          "duration_ms": 61761.5
+        },
+        {
+          "stage": "static-validation",
+          "status": "failed",
+          "duration_ms": 784.2
+        },
+        {
+          "stage": "runtime-validation",
+          "status": "failed",
+          "duration_ms": 5166.4
+        },
+        {
+          "stage": "parallel-checks",
+          "status": "passed",
+          "duration_ms": 11108.2
+        },
+        {
+          "stage": "static-validation",
+          "status": "passed",
+          "duration_ms": 5168.5
+        },
+        {
+          "stage": "runtime-validation",
+          "status": "failed",
+          "duration_ms": 5024.8
+        },
+        {
+          "stage": "parallel-checks",
+          "status": "passed",
+          "duration_ms": 10814.8
+        },
+        {
+          "stage": "static-validation",
+          "status": "failed",
+          "duration_ms": 5023.4
+        },
+        {
+          "stage": "runtime-validation",
+          "status": "failed",
+          "duration_ms": 5223.7
+        },
+        {
+          "stage": "parallel-checks",
+          "status": "passed",
+          "duration_ms": 10186.8
+        },
+        {
+          "stage": "static-validation",
+          "status": "passed",
+          "duration_ms": 4961.5
+        },
+        {
+          "stage": "runtime-validation",
+          "status": "failed",
+          "duration_ms": 5027.7
+        },
+        {
+          "stage": "parallel-checks",
+          "status": "passed",
+          "duration_ms": 10081.5
+        },
+        {
+          "stage": "static-validation",
+          "status": "passed",
+          "duration_ms": 4872.2
+        },
+        {
+          "stage": "runtime-validation",
+          "status": "failed",
+          "duration_ms": 4987.5
+        },
+        {
+          "stage": "parallel-checks",
+          "status": "passed",
+          "duration_ms": 12988.6
+        }
+      ],
+      "score_history": [
+        {
+          "attempt": 0,
+          "score": 71.61,
+          "grade": "C"
+        },
+        {
+          "attempt": 1,
+          "score": 74.4,
+          "grade": "C"
+        },
+        {
+          "attempt": 2,
+          "score": 70.09,
+          "grade": "C"
+        },
+        {
+          "attempt": 2,
+          "score": 74.4,
+          "grade": "C"
+        },
+        {
+          "attempt": 3,
+          "score": 74.4,
+          "grade": "C"
+        }
+      ],
+      "dimensions": [
+        {
+          "name": "Compilation",
+          "score": 100.0,
+          "passed": true,
+          "na": false
+        },
+        {
+          "name": "Runtime Startup",
+          "score": 20.0,
+          "passed": false,
+          "na": false
+        },
+        {
+          "name": "API Functionality",
+          "score": 100.0,
+          "passed": true,
+          "na": false
+        },
+        {
+          "name": "Frontend Load",
+          "score": 100.0,
+          "passed": true,
+          "na": false
+        },
+        {
+          "name": "Browser UX",
+          "score": 88.0,
+          "passed": true,
+          "na": false
+        },
+        {
+          "name": "Integration",
+          "score": 38.46153846153847,
+          "passed": false,
+          "na": false
+        },
+        {
+          "name": "Code Quality",
+          "score": 100.0,
+          "passed": true,
+          "na": false
+        },
+        {
+          "name": "Security",
+          "score": 100.0,
+          "passed": true,
+          "na": false
+        },
+        {
+          "name": "Completeness",
+          "score": 100.0,
+          "passed": true,
+          "na": false
+        },
+        {
+          "name": "Performance",
+          "score": 90,
+          "passed": true,
+          "na": false
+        },
+        {
+          "name": "Visual Judge",
+          "score": 45.4,
+          "passed": false,
+          "na": false
+        }
+      ],
+      "v6_result": {
+        "pipeline": "v6",
+        "project_name": "todo_list_app",
+        "project_path": "C:\\Users\\jerry\\onedrive\\Desktop\\forgeai\\generated_projects\\todo_list_app",
+        "zip_path": "C:\\Users\\jerry\\onedrive\\Desktop\\forgeai\\generated_projects\\todo_list_app.zip",
+        "metadata_path": "C:\\Users\\jerry\\onedrive\\Desktop\\forgeai\\generated_projects\\todo_list_app\\metadata.json",
+        "plan": {
+          "project_name": "todo_list_app",
+          "display_name": "Personal Todo List",
+          "features": [
+            "Allow users to create an account",
+            "Allow users to create new tasks",
+            "Allow users to log in to their account"
+          ],
+          "tech_stack": {
+            "backend": "FastAPI",
+            "database": "SQLite",
+            "auth": "JWT",
+            "frontend": "React + Vite"
+          },
+          "db_entities": [
+            "User",
+            "Task"
+          ],
+          "api_modules": [
+            "auth",
+            "tasks"
+          ],
+          "user_stories": [
+            {
+              "role": "User",
+              "want": "To register for an account",
+              "acceptance_criteria": [
+                "The user can enter a valid username and password to create an account",
+                "The user receives a confirmation message after successfully registering",
+                "The user is redirected to the login page after registration"
+              ]
+            },
+            {
+              "role": "User",
+              "want": "To log in to my account",
+              "acceptance_criteria": [
+                "The user can enter a valid username and password to log in",
+                "The user is redirected to the task list page after successful login",
+                "The user sees an error message if the login credentials are invalid"
+              ]
+            },
+            {
+              "role": "User",
+              "want": "To create a new task",
+              "acceptance_criteria": [
+                "The user can enter a task title and description",
+                "The user can select a due date and priority level for the task",
+                "The task is added to the user's task list after creation"
+              ]
+            },
+            {
+              "role": "User",
+              "want": "To edit an existing task",
+              "acceptance_criteria": [
+                "The user can select a task to edit",
+                "The user can update the task title, description, due date, and priority level",
+                "The task is updated in the user's task list after editing"
+              ]
+            },
+            {
+              "role": "User",
+              "want": "To delete a task",
+              "acceptance_criteria": [
+                "The user can select a task to delete",
+                "The task is removed from the user's task list after deletion",
+                "The user is prompted to confirm deletion before it is executed"
+              ]
+            },
+            {
+              "role": "User",
+              "want": "To mark a task as complete",
+              "acceptance_criteria": [
+                "The user can select a task to mark as complete",
+                "The task is updated to show as completed in the user's task list",
+                "The user can filter tasks by completion status"
+              ]
+            },
+            {
+              "role": "User",
+              "want": "To filter tasks by status and priority",
+              "acceptance_criteria": [
+                "The user can select a filter option (e.g. 'completed', 'high priority')",
+                "The task list is updated to show only tasks that match the selected filter",
+                "The user can clear the filter to show all tasks"
+              ]
+            }
+          ],
+          "non_functional_requirements": {
+            "authentication": "required — to ensure only authorized users can access their task list",
+            "authorization": "simple authentication, no role-based access",
+            "pagination": "not required — task lists are expected to be small",
+            "search": "not required — tasks can be filtered by status and priority",
+            "file_uploads": "no — no file uploads are needed",
+            "real_time": "no — real-time updates are not necessary"
+          },
+          "data_entities_detail": [
+            {
+              "name": "User",
+              "description": "Stores user account information",
+              "key_fields": [
+                "id",
+                "username",
+                "password"
+              ],
+              "relationships": [
+                "has many Tasks"
+              ]
+            },
+            {
+              "name": "Task",
+              "description": "Stores task information",
+              "key_fields": [
+                "id",
+                "title",
+                "description",
+                "due_date",
+                "priority",
+                "completed"
+              ],
+              "relationships": [
+                "belongs to User"
+              ]
+            }
+          ],
+          "out_of_scope": [
+            "team collaboration",
+            "task assignments",
+            "file uploads"
+          ]
+        },
+        "architecture": {
+          "api_endpoints": [
+            {
+              "method": "GET",
+              "path": "/users",
+              "description": "Retrieve a paginated list of users, optionally filtered by username search query.",
+              "file": "app\\routes\\user_routes.py"
+            },
+            {
+              "method": "GET",
+              "path": "/users/{id}",
+              "description": "Retrieve details of a specific user by ID.",
+              "file": "app\\routes\\user_routes.py"
+            },
+            {
+              "method": "POST",
+              "path": "/users",
+              "description": "Create a new user account with username and password.",
+              "file": "app\\routes\\user_routes.py"
+            },
+            {
+              "method": "PUT",
+              "path": "/users/{id}",
+              "description": "Update an existing user's information (e.g., username or password).",
+              "file": "app\\routes\\user_routes.py"
+            },
+            {
+              "method": "DELETE",
+              "path": "/users/{id}",
+              "description": "Delete a user account.",
+              "file": "app\\routes\\user_routes.py"
+            },
+            {
+              "method": "GET",
+              "path": "/tasks",
+              "description": "Retrieve a list of tasks for the authenticated user, supporting search by title/description and filters for status and priority.",
+              "file": "app\\routes\\task_routes.py"
+            },
+            {
+              "method": "GET",
+              "path": "/tasks/{id}",
+              "description": "Retrieve details of a specific task by ID.",
+              "file": "app\\routes\\task_routes.py"
+            },
+            {
+              "method": "POST",
+              "path": "/tasks",
+              "description": "Create a new task for the authenticated user.",
+              "file": "app\\routes\\task_routes.py"
+            },
+            {
+              "method": "PUT",
+              "path": "/tasks/{id}",
+              "description": "Update an existing task (title, description, due date, priority, completed flag).",
+              "file": "app\\routes\\task_routes.py"
+            },
+            {
+              "method": "DELETE",
+              "path": "/tasks/{id}",
+              "description": "Delete a task.",
+              "file": "app\\routes\\task_routes.py"
+            },
+            {
+              "method": "POST",
+              "path": "/auth/register",
+              "description": "Register a new user account (alias of POST /users).",
+              "file": "app\\routes\\auth_routes.py"
+            },
+            {
+              "method": "POST",
+              "path": "/auth/login",
+              "description": "Authenticate a user and return a JWT access token.",
+              "file": "app\\routes\\auth_routes.py"
+            },
+            {
+              "method": "POST",
+              "path": "/seed",
+              "description": "Populate the database with demo users, tasks, and priority levels.",
+              "file": "app\\routes\\seed_routes.py"
+            },
+            {
+              "method": "GET",
+              "path": "/stats/summary",
+              "description": "Return aggregate statistics such as total users, total tasks, and tasks per priority.",
+              "file": "app\\routes\\stats_routes.py"
+            }
+          ],
+          "database_schema": [
+            {
+              "table_name": "users",
+              "columns": [
+                {
+                  "name": "id",
+                  "type": "INTEGER",
+                  "is_primary_key": true,
+                  "is_nullable": false
+                },
+                {
+                  "name": "username",
+                  "type": "VARCHAR(150)",
+                  "is_primary_key": false,
+                  "is_nullable": false
+                },
+                {
+                  "name": "hashed_password",
+                  "type": "VARCHAR(255)",
+                  "is_primary_key": false,
+                  "is_nullable": false
+                },
+                {
+                  "name": "created_at",
+                  "type": "DATETIME",
+                  "is_primary_key": false,
+                  "is_nullable": false
+                }
+              ]
+            },
+            {
+              "table_name": "priorities",
+              "columns": [
+                {
+                  "name": "id",
+                  "type": "INTEGER",
+                  "is_primary_key": true,
+                  "is_nullable": false
+                },
+                {
+                  "name": "name",
+                  "type": "VARCHAR(50)",
+                  "is_primary_key": false,
+                  "is_nullable": false
+                },
+                {
+                  "name": "level",
+                  "type": "INTEGER",
+                  "is_primary_key": false,
+                  "is_nullable": false
+                }
+              ]
+            },
+            {
+              "table_name": "tasks",
+              "columns": [
+                {
+                  "name": "id",
+                  "type": "INTEGER",
+                  "is_primary_key": true,
+                  "is_nullable": false
+                },
+                {
+                  "name": "user_id",
+                  "type": "INTEGER",
+                  "is_primary_key": false,
+                  "is_nullable": false
+                },
+                {
+                  "name": "title",
+                  "type": "VARCHAR(200)",
+                  "is_primary_key": false,
+                  "is_nullable": false
+                },
+                {
+                  "name": "description",
+                  "type": "TEXT",
+                  "is_primary_key": false,
+                  "is_nullable": true
+                },
+                {
+                  "name": "due_date",
+                  "type": "DATETIME",
+                  "is_primary_key": false,
+                  "is_nullable": true
+                },
+                {
+                  "name": "priority_id",
+                  "type": "INTEGER",
+                  "is_primary_key": false,
+                  "is_nullable": true
+                },
+                {
+                  "name": "completed",
+                  "type": "BOOLEAN",
+                  "is_primary_key": false,
+                  "is_nullable": false
+                },
+                {
+                  "name": "created_at",
+                  "type": "DATETIME",
+                  "is_primary_key": false,
+                  "is_nullable": false
+                },
+                {
+                  "name": "updated_at",
+                  "type": "DATETIME",
+                  "is_primary_key": false,
+                  "is_nullable": true
+                }
+              ]
+            },
+            {
+              "table_name": "task_logs",
+              "columns": [
+                {
+                  "name": "id",
+                  "type": "INTEGER",
+                  "is_primary_key": true,
+                  "is_nullable": false
+                },
+                {
+                  "name": "task_id",
+                  "type": "INTEGER",
+                  "is_primary_key": false,
+                  "is_nullable": false
+                },
+                {
+                  "name": "action",
+                  "type": "VARCHAR(100)",
+                  "is_primary_key": false,
+                  "is_nullable": false
+                },
+                {
+                  "name": "timestamp",
+                  "type": "DATETIME",
+                  "is_primary_key": false,
+                  "is_nullable": false
+                }
+              ]
+            }
+          ],
+          "folder_structure": {
+            "backend": [
+              "app/models",
+              "app/schemas",
+              "app/routes",
+              "app/services",
+              "app/utils",
+              "app/config"
+            ]
+          },
+          "frontend_structure": {
+            "pages": [
+              "LoginPage",
+              "RegisterPage",
+              "DashboardPage",
+              "TaskListPage",
+              "TaskFormPage"
+            ],
+            "components": [
+              "Header",
+              "Footer",
+              "TaskCard",
+              "TaskForm",
+              "TaskFilterBar",
+              "AuthForm",
+              "Button",
+              "Input",
+              "Modal",
+              "Sidebar"
+            ]
+          }
+        },
+        "product_spec": {
+          "display_name": "Personal Todo List",
+          "tagline": "A simple todo list app for managing personal tasks",
+          "user_stories": 7,
+          "must_have_features": [
+            "User Registration",
+            "Task Creation",
+            "User Login"
+          ]
+        },
+        "tech_lead": {
+          "summary": "The proposed architecture captures the core todo functionality and includes most required endpoints, but it deviates from the strict contract in several key areas (auth endpoint naming, missing CORS/health, pagination, validation, and router naming). These gaps must be fixed before code generation to avoid runtime failures and contract violations.",
+          "critical_issues": 5,
+          "warnings": 2
+        },
+        "backend_generation": {
+          "parallel": true,
+          "files": 28
+        },
+        "qa": {
+          "score": 55,
+          "stories_covered": 5,
+          "blockers": [
+            "No pagination on list endpoints",
+            "Missing authentication on protected endpoints",
+            "Missing 404 handling on single‑resource endpoints",
+            "Lack of response_model definitions"
+          ],
+          "skipped": false
+        },
+        "security": {
+          "score": 70,
+          "risk_level": "medium",
+          "critical_count": 1,
+          "high_count": 3,
+          "skipped": false
+        },
+        "code_review": {
+          "naming_score": 65,
+          "architecture_score": 45,
+          "maintainability_score": 40,
+          "tech_debt_score": 30,
+          "overall_score": 45,
+          "skipped": false
+        },
+        "performance": {
+          "score": 75,
+          "n_plus_one_count": 4,
+          "missing_indexes": 5,
+          "large_payload_risks": 0,
+          "slow_api_warnings": 1,
+          "skipped": false
+        },
+        "frontend_critic": {
+          "design_score": 53,
+          "hierarchy_score": 62,
+          "compliance_score": 45,
+          "polish_score": 50,
+          "consistency_score": 58,
+          "files_polished": 2,
+          "skipped": false
+        },
+        "validation": {
+          "passed": true,
+          "errors": []
+        },
+        "runtime": {
+          "success": false,
+          "error": "name 'patch_model_field_mismatches' is not defined"
+        },
+        "forge_score": {
+          "score": 70,
+          "grade": "C"
+        },
+        "v6_score": {
+          "total": 43,
+          "grade": "F",
+          "dimensions": {
+            "runtime": 40,
+            "security": 55,
+            "performance": 20,
+            "maintainability": 45,
+            "review": 50
+          },
+          "breakdown": {
+            "forge_score": 70,
+            "runtime_passed": false,
+            "static_passed": true,
+            "security_score": 70,
+            "security_critical": 1,
+            "performance_score": 75,
+            "n_plus_one_count": 4,
+            "naming_score": 65,
+            "architecture_score": 45,
+            "maintainability_score": 40,
+            "tech_debt_score": 30,
+            "qa_score": 55,
+            "qa_blockers": 4
+          },
+          "weights": {
+            "runtime": 0.3,
+            "security": 0.25,
+            "performance": 0.15,
+            "maintainability": 0.15,
+            "review": 0.15
+          }
+        },
+        "collaboration_log": [
+          {
+            "agent": "product_manager",
+            "decision": "product_spec_created",
+            "rationale": "A simple todo list app for managing personal tasks",
+            "data": {
+              "features": 7,
+              "user_stories": 7,
+              "must_have": [
+                "User Registration",
+                "Task Creation",
+                "User Login"
+              ]
+            }
+          },
+          {
+            "agent": "architect",
+            "decision": "architecture_created",
+            "rationale": "14 endpoints across 5 files",
+            "data": {
+              "endpoints": 14
+            }
+          },
+          {
+            "agent": "tech_lead",
+            "decision": "constraints_set",
+            "rationale": "The proposed architecture captures the core todo functionality and includes most required endpoints, but it deviates from the strict contract in sever",
+            "data": {
+              "critical_issues": 5,
+              "auth_endpoints": 11,
+              "pagination_required": 2
+            }
+          },
+          {
+            "agent": "qa",
+            "decision": "qa_review_complete",
+            "rationale": "QA score: 55/100",
+            "data": {
+              "score": 55,
+              "blockers": [
+                "No pagination on list endpoints",
+                "Missing authentication on protected endpoints",
+                "Missing 404 handling on single‑resource endpoints",
+                "Lack of response_model definitions"
+              ]
+            }
+          },
+          {
+            "agent": "security",
+            "decision": "security_review_complete",
+            "rationale": "Security score: 70/100",
+            "data": {
+              "score": 70
+            }
+          },
+          {
+            "agent": "code_review",
+            "decision": "code_review_complete",
+            "rationale": "Maintainability: 40/100",
+            "data": {
+              "maintainability_score": 40
+            }
+          },
+          {
+            "agent": "performance",
+            "decision": "performance_review_complete",
+            "rationale": "Performance score: 75/100",
+            "data": {
+              "score": 75
+            }
+          },
+          {
+            "agent": "frontend_critic",
+            "decision": "frontend_critic_complete",
+            "rationale": "Design score: 53/100",
+            "data": {
+              "score": 53
+            }
+          },
+          {
+            "agent": "orchestrator",
+            "decision": "pipeline_complete",
+            "rationale": "V6 score: 43/100",
+            "data": {
+              "total_time": 50.38,
+              "can_export": false
+            }
+          }
+        ],
+        "generation_time_seconds": 50.38,
+        "fix_attempts": 2
+      },
+      "retry_history": [
+        {
+          "attempt": 1,
+          "strategy": "patch_file",
+          "provider": "auto",
+          "score_before": 71.61,
+          "score_after": 74.4,
+          "delta": 2.79
+        },
+        {
+          "attempt": 2,
+          "strategy": "patch_file",
+          "provider": "auto",
+          "score_before": 74.4,
+          "score_after": 74.4,
+          "delta": 0.0
+        },
+        {
+          "attempt": 3,
+          "strategy": "regenerate_module",
+          "provider": "auto",
+          "score_before": 74.4,
+          "score_after": 74.4,
+          "delta": 0.0
+        }
+      ],
+      "deployment": {
+        "skipped": true,
+        "reason": "Deployment skipped: score 74.4 below deployment threshold (80)"
+      },
+      "project_path": "C:\\Users\\jerry\\onedrive\\Desktop\\forgeai\\generated_projects\\todo_list_app",
+      "status": "done",
+      "confidence": {
+        "probability": 0.2973,
+        "pct": 29.73,
+        "grade": "F",
+        "factors": {
+          "base": -0.5,
+          "overall_score": 1.384,
+          "runtime_health": 0.1,
+          "browser_ux": 0.264,
+          "compilation": 0.2,
+          "fix_penalty": -1.2,
+          "critical_errors": -1.0,
+          "historical_base_rate": -0.108
+        },
+        "historical_rate": 0.36,
+        "historical_n": 75,
+        "verdict": "Not deployment-ready — critical issues likely remain."
+      }
+    }
+  },
+  {
+    "round": 1,
+    "app": "blog_cms",
+    "timestamp": "2026-07-11T20:51:43.610989+00:00",
+    "crashed": false,
+    "error": null,
+    "elapsed_s": 593.8,
+    "result": {
+      "job_id": "dbe5a00dc2584512a81033a0df276a17",
+      "idea": "A blog CMS with author and reader roles. Authors write posts with title, content (markdown), tags, and cover image URL. Posts can be saved as draft or published. Readers see all published posts, can filter by tag, and read individual posts. Authors manage their own posts (create, edit, delete, publish). Post list shows title, author, date, and tag list.",
+      "project_name": "forge_blog_cms",
+      "forge_score": 72.06,
+      "grade": "C",
+      "deployed": false,
+      "frontend_deployed": false,
+      "backend_url": null,
+      "frontend_url": null,
+      "fix_attempts": 4,
+      "total_tokens": 155701,
+      "estimated_cost": 0.09342060000000002,
+      "elapsed_s": 593.81,
+      "providers_used": [],
+      "timeline": [
+        {
+          "stage": "generation",
+          "status": "passed",
+          "duration_ms": 0.0
+        },
+        {
+          "stage": "deterministic-patch",
+          "status": "passed",
+          "duration_ms": 545.5
+        },
+        {
+          "stage": "verification",
+          "status": "passed",
+          "duration_ms": 53169.9
+        },
+        {
+          "stage": "static-validation",
+          "status": "failed",
+          "duration_ms": 858.7
+        },
+        {
+          "stage": "runtime-validation",
+          "status": "failed",
+          "duration_ms": 5117.4
+        },
+        {
+          "stage": "parallel-checks",
+          "status": "passed",
+          "duration_ms": 10952.3
+        },
+        {
+          "stage": "static-validation",
+          "status": "passed",
+          "duration_ms": 5286.1
+        },
+        {
+          "stage": "runtime-validation",
+          "status": "failed",
+          "duration_ms": 5106.2
+        },
+        {
+          "stage": "parallel-checks",
+          "status": "passed",
+          "duration_ms": 11096.7
+        },
+        {
+          "stage": "static-validation",
+          "status": "failed",
+          "duration_ms": 5153.2
+        },
+        {
+          "stage": "static-validation",
+          "status": "passed",
+          "duration_ms": 4974.8
+        },
+        {
+          "stage": "runtime-validation",
+          "status": "failed",
+          "duration_ms": 5020.6
+        },
+        {
+          "stage": "parallel-checks",
+          "status": "passed",
+          "duration_ms": 12089.1
+        },
+        {
+          "stage": "static-validation",
+          "status": "failed",
+          "duration_ms": 708.4
+        },
+        {
+          "stage": "runtime-validation",
+          "status": "failed",
+          "duration_ms": 5004.2
+        },
+        {
+          "stage": "parallel-checks",
+          "status": "passed",
+          "duration_ms": 10933.0
+        },
+        {
+          "stage": "static-validation",
+          "status": "passed",
+          "duration_ms": 5112.7
+        },
+        {
+          "stage": "runtime-validation",
+          "status": "failed",
+          "duration_ms": 5020.2
+        },
+        {
+          "stage": "parallel-checks",
+          "status": "passed",
+          "duration_ms": 11031.1
+        },
+        {
+          "stage": "static-validation",
+          "status": "failed",
+          "duration_ms": 739.1
+        },
+        {
+          "stage": "runtime-validation",
+          "status": "failed",
+          "duration_ms": 4978.3
+        },
+        {
+          "stage": "parallel-checks",
+          "status": "passed",
+          "duration_ms": 12212.2
+        },
+        {
+          "stage": "static-validation",
+          "status": "passed",
+          "duration_ms": 5097.3
+        },
+        {
+          "stage": "runtime-validation",
+          "status": "failed",
+          "duration_ms": 5069.9
+        },
+        {
+          "stage": "parallel-checks",
+          "status": "passed",
+          "duration_ms": 11297.3
+        },
+        {
+          "stage": "verification",
+          "status": "passed",
+          "duration_ms": 43769.7
+        },
+        {
+          "stage": "static-validation",
+          "status": "passed",
+          "duration_ms": 5422.9
+        },
+        {
+          "stage": "runtime-validation",
+          "status": "failed",
+          "duration_ms": 5212.3
+        },
+        {
+          "stage": "parallel-checks",
+          "status": "passed",
+          "duration_ms": 12870.4
+        }
+      ],
+      "score_history": [
+        {
+          "attempt": 0,
+          "score": 69.23,
+          "grade": "D"
+        },
+        {
+          "attempt": 1,
+          "score": 72.06,
+          "grade": "C"
+        },
+        {
+          "attempt": 2,
+          "score": 25.35,
+          "grade": "F"
+        },
+        {
+          "attempt": 2,
+          "score": 72.34,
+          "grade": "C"
+        },
+        {
+          "attempt": 5,
+          "score": 70.95,
+          "grade": "C"
+        },
+        {
+          "attempt": 5,
+          "score": 72.06,
+          "grade": "C"
+        },
+        {
+          "attempt": 5,
+          "score": 70.95,
+          "grade": "C"
+        },
+        {
+          "attempt": 5,
+          "score": 72.06,
+          "grade": "C"
+        },
+        {
+          "attempt": 4,
+          "score": 72.06,
+          "grade": "C"
+        }
+      ],
+      "dimensions": [
+        {
+          "name": "Compilation",
+          "score": 91.0,
+          "passed": true,
+          "na": false
+        },
+        {
+          "name": "Runtime Startup",
+          "score": 20.0,
+          "passed": false,
+          "na": false
+        },
+        {
+          "name": "API Functionality",
+          "score": 100.0,
+          "passed": true,
+          "na": false
+        },
+        {
+          "name": "Frontend Load",
+          "score": 100.0,
+          "passed": true,
+          "na": false
+        },
+        {
+          "name": "Browser UX",
+          "score": 88.0,
+          "passed": true,
+          "na": false
+        },
+        {
+          "name": "Integration",
+          "score": 46.15384615384615,
+          "passed": false,
+          "na": false
+        },
+        {
+          "name": "Code Quality",
+          "score": 73.0,
+          "passed": false,
+          "na": false
+        },
+        {
+          "name": "Security",
+          "score": 100.0,
+          "passed": true,
+          "na": false
+        },
+        {
+          "name": "Completeness",
+          "score": 100.0,
+          "passed": true,
+          "na": false
+        },
+        {
+          "name": "Performance",
+          "score": 90,
+          "passed": true,
+          "na": false
+        },
+        {
+          "name": "Visual Judge",
+          "score": 34.9,
+          "passed": false,
+          "na": false
+        }
+      ],
+      "v6_result": {
+        "pipeline": "v6",
+        "project_name": "forge_blog_cms",
+        "project_path": "C:\\Users\\jerry\\onedrive\\Desktop\\forgeai\\generated_projects\\forge_blog_cms",
+        "zip_path": "C:\\Users\\jerry\\onedrive\\Desktop\\forgeai\\generated_projects\\forge_blog_cms.zip",
+        "metadata_path": "C:\\Users\\jerry\\onedrive\\Desktop\\forgeai\\generated_projects\\forge_blog_cms\\metadata.json",
+        "plan": {
+          "project_name": "forge_blog_cms",
+          "display_name": "Forge Blog CMS",
+          "features": [
+            "Secure login for authors and role-based access control to ensure authors can only manage their own posts and readers can only view published content.",
+            "Authors can create new posts with title, markdown content, tags, and a cover image URL, and edit existing posts.",
+            "Authors can save posts as drafts for later editing and explicitly publish them when ready, making them visible to readers.",
+            "Authors can delete their own posts, removing them from the system.",
+            "Readers can view a list of all published posts, displaying title, author, date, and tags.",
+            "Readers can filter the list of published posts by selecting one or more tags.",
+            "Readers can click on a post to view its full content, including rendered markdown, title, author, date, tags, and cover image."
+          ],
+          "tech_stack": {
+            "backend": "FastAPI",
+            "database": "SQLite",
+            "auth": "JWT",
+            "frontend": "React + Vite"
+          },
+          "db_entities": [
+            "User",
+            "Post",
+            "Tag",
+            "PostTag"
+          ],
+          "api_modules": [
+            "auth",
+            "users",
+            "posts",
+            "tags"
+          ],
+          "user_stories": [
+            {
+              "role": "Author",
+              "want": "to create a new blog post",
+              "acceptance_criteria": [
+                "I can input a title, markdown content, tags, and a cover image URL.",
+                "The post is saved as a 'draft' by default upon creation.",
+                "I receive confirmation that my post has been successfully created."
+              ]
+            },
+            {
+              "role": "Author",
+              "want": "to save a post as a draft",
+              "acceptance_criteria": [
+                "When I save a post, its status is set to 'draft'.",
+                "Draft posts are not visible to readers.",
+                "I can access and edit my draft posts from my author dashboard."
+              ]
+            },
+            {
+              "role": "Author",
+              "want": "to publish a draft post",
+              "acceptance_criteria": [
+                "I can change the status of a draft post to 'published'.",
+                "The published post immediately appears in the list of posts visible to readers.",
+                "The published post displays its title, my name, the publication date, and its tags."
+              ]
+            },
+            {
+              "role": "Author",
+              "want": "to edit an existing post (draft or published)",
+              "acceptance_criteria": [
+                "I can modify the title, content, tags, and cover image URL of any of my posts.",
+                "If the post is published, the changes are reflected immediately for readers.",
+                "I receive confirmation that my post has been successfully updated."
+              ]
+            },
+            {
+              "role": "Reader",
+              "want": "to view a list of all published blog posts",
+              "acceptance_criteria": [
+                "I see a list of posts, each displaying its title, author, publication date, and tags.",
+                "Only 'published' posts are visible in this list.",
+                "The list is ordered by publication date, newest first."
+              ]
+            },
+            {
+              "role": "Reader",
+              "want": "to filter posts by a specific tag",
+              "acceptance_criteria": [
+                "I can select a tag to filter the post list.",
+                "Only posts containing the selected tag are displayed.",
+                "The filter can be cleared to show all published posts again."
+              ]
+            },
+            {
+              "role": "Reader",
+              "want": "to read a full blog post",
+              "acceptance_criteria": [
+                "When I click on a post title, I am taken to a dedicated page for that post.",
+                "The full content (markdown rendered), title, author, publication date, and cover image are displayed.",
+                "The post's tags are also visible on the individual post page."
+              ]
+            }
+          ],
+          "non_functional_requirements": {
+            "authentication": "required — Authors need to log in to manage posts; Readers do not need to log in to view posts.",
+            "authorization": "Authors can only create, edit, delete, and publish their own posts. Readers can only view published posts.",
+            "pagination": "required on: /posts (for readers), /authors/{author_id}/posts (for authors)",
+            "search": "none",
+            "file_uploads": "no",
+            "real_time": "no"
+          },
+          "data_entities_detail": [
+            {
+              "name": "User",
+              "description": "Stores user authentication and profile information.",
+              "key_fields": [
+                "id",
+                "username",
+                "password_hash",
+                "role"
+              ],
+              "relationships": [
+                "has many Post"
+              ]
+            },
+            {
+              "name": "Post",
+              "description": "Stores blog post content and metadata.",
+              "key_fields": [
+                "id",
+                "title",
+                "content_markdown",
+                "cover_image_url",
+                "status",
+                "published_at",
+                "created_at",
+                "updated_at",
+                "author_id"
+              ],
+              "relationships": [
+                "belongs to User",
+                "has many Tag"
+              ]
+            },
+            {
+              "name": "Tag",
+              "description": "Stores categories for blog posts.",
+              "key_fields": [
+                "id",
+                "name"
+              ],
+              "relationships": [
+                "has many Post"
+              ]
+            },
+            {
+              "name": "PostTag",
+              "description": "Junction table for many-to-many relationship between Posts and Tags.",
+              "key_fields": [
+                "post_id",
+                "tag_id"
+              ],
+              "relationships": [
+                "belongs to Post",
+                "belongs to Tag"
+              ]
+            }
+          ],
+          "out_of_scope": [
+            "User registration (authors will be pre-provisioned or invited)",
+            "Comments section for posts",
+            "Rich text editor (only markdown input)",
+            "Advanced search functionality (only tag filtering)",
+            "Analytics or readership metrics",
+            "User profile pages beyond basic author identification"
+          ]
+        },
+        "architecture": {
+          "api_endpoints": [
+            {
+              "method": "POST",
+              "path": "/seed",
+              "description": "Populates database with realistic demo data.",
+              "file": "app\\routes\\seed_routes.py"
+            },
+            {
+              "method": "GET",
+              "path": "/stats/summary",
+              "description": "Returns aggregate counts and key metrics for the dashboard.",
+              "file": "app\\routes\\stats_routes.py"
+            },
+            {
+              "method": "POST",
+              "path": "/auth/login",
+              "description": "Authenticates a user and returns a JWT token.",
+              "file": "app\\routes\\auth_routes.py"
+            },
+            {
+              "method": "GET",
+              "path": "/users/me",
+              "description": "Retrieves the profile of the currently authenticated user.",
+              "file": "app\\routes\\user_routes.py"
+            },
+            {
+              "method": "GET",
+              "path": "/posts",
+              "description": "Retrieves a paginated list of all published blog posts, with optional tag filtering.",
+              "file": "app\\routes\\post_routes.py"
+            },
+            {
+              "method": "GET",
+              "path": "/posts/{post_id}",
+              "description": "Retrieves a single published blog post by its ID.",
+              "file": "app\\routes\\post_routes.py"
+            },
+            {
+              "method": "GET",
+              "path": "/authors/{author_id}/posts",
+              "description": "Retrieves a paginated list of posts by a specific author, including drafts for the author themselves.",
+              "file": "app\\routes\\post_routes.py"
+            },
+            {
+              "method": "POST",
+              "path": "/posts",
+              "description": "Creates a new blog post (initially as a draft).",
+              "file": "app\\routes\\post_routes.py"
+            },
+            {
+              "method": "PUT",
+              "path": "/posts/{post_id}",
+              "description": "Updates an existing blog post by its ID.",
+              "file": "app\\routes\\post_routes.py"
+            },
+            {
+              "method": "PATCH",
+              "path": "/posts/{post_id}/publish",
+              "description": "Publishes a draft post, making it visible to readers.",
+              "file": "app\\routes\\post_routes.py"
+            },
+            {
+              "method": "PATCH",
+              "path": "/posts/{post_id}/unpublish",
+              "description": "Unpublishes a published post, making it a draft again.",
+              "file": "app\\routes\\post_routes.py"
+            },
+            {
+              "method": "DELETE",
+              "path": "/posts/{post_id}",
+              "description": "Deletes a blog post by its ID.",
+              "file": "app\\routes\\post_routes.py"
+            },
+            {
+              "method": "GET",
+              "path": "/tags",
+              "description": "Retrieves a list of all available tags.",
+              "file": "app\\routes\\tag_routes.py"
+            },
+            {
+              "method": "POST",
+              "path": "/tags",
+              "description": "Creates a new tag (admin/author only).",
+              "file": "app\\routes\\tag_routes.py"
+            },
+            {
+              "method": "DELETE",
+              "path": "/tags/{tag_id}",
+              "description": "Deletes a tag (admin/author only).",
+              "file": "app\\routes\\tag_routes.py"
+            }
+          ],
+          "database_schema": [
+            {
+              "table_name": "users",
+              "columns": [
+                {
+                  "name": "id",
+                  "type": "INTEGER",
+                  "is_primary_key": true,
+                  "is_nullable": false
+                },
+                {
+                  "name": "username",
+                  "type": "VARCHAR(50)",
+                  "is_primary_key": false,
+                  "is_nullable": false
+                },
+                {
+                  "name": "password_hash",
+                  "type": "VARCHAR(255)",
+                  "is_primary_key": false,
+                  "is_nullable": false
+                },
+                {
+                  "name": "role",
+                  "type": "VARCHAR(20)",
+                  "is_primary_key": false,
+                  "is_nullable": false
+                }
+              ]
+            },
+            {
+              "table_name": "posts",
+              "columns": [
+                {
+                  "name": "id",
+                  "type": "INTEGER",
+                  "is_primary_key": true,
+                  "is_nullable": false
+                },
+                {
+                  "name": "title",
+                  "type": "VARCHAR(255)",
+                  "is_primary_key": false,
+                  "is_nullable": false
+                },
+                {
+                  "name": "content_markdown",
+                  "type": "TEXT",
+                  "is_primary_key": false,
+                  "is_nullable": false
+                },
+                {
+                  "name": "cover_image_url",
+                  "type": "VARCHAR(255)",
+                  "is_primary_key": false,
+                  "is_nullable": true
+                },
+                {
+                  "name": "status",
+                  "type": "VARCHAR(20)",
+                  "is_primary_key": false,
+                  "is_nullable": false
+                },
+                {
+                  "name": "published_at",
+                  "type": "DATETIME",
+                  "is_primary_key": false,
+                  "is_nullable": true
+                },
+                {
+                  "name": "created_at",
+                  "type": "DATETIME",
+                  "is_primary_key": false,
+                  "is_nullable": false
+                },
+                {
+                  "name": "updated_at",
+                  "type": "DATETIME",
+                  "is_primary_key": false,
+                  "is_nullable": false
+                },
+                {
+                  "name": "author_id",
+                  "type": "INTEGER",
+                  "is_primary_key": false,
+                  "is_nullable": false
+                }
+              ]
+            },
+            {
+              "table_name": "tags",
+              "columns": [
+                {
+                  "name": "id",
+                  "type": "INTEGER",
+                  "is_primary_key": true,
+                  "is_nullable": false
+                },
+                {
+                  "name": "name",
+                  "type": "VARCHAR(50)",
+                  "is_primary_key": false,
+                  "is_nullable": false
+                }
+              ]
+            },
+            {
+              "table_name": "post_tags",
+              "columns": [
+                {
+                  "name": "post_id",
+                  "type": "INTEGER",
+                  "is_primary_key": true,
+                  "is_nullable": false
+                },
+                {
+                  "name": "tag_id",
+                  "type": "INTEGER",
+                  "is_primary_key": true,
+                  "is_nullable": false
+                }
+              ]
+            }
+          ],
+          "folder_structure": {
+            "backend": [
+              "app/",
+              "app/api/",
+              "app/core/",
+              "app/core/config.py",
+              "app/core/security.py",
+              "app/db/",
+              "app/db/base.py",
+              "app/db/session.py",
+              "app/models/",
+              "app/models/user.py",
+              "app/models/post.py",
+              "app/models/tag.py",
+              "app/models/post_tag.py",
+              "app/schemas/",
+              "app/schemas/user.py",
+              "app/schemas/post.py",
+              "app/schemas/tag.py",
+              "app/schemas/auth.py",
+              "app/services/",
+              "app/services/user_service.py",
+              "app/services/post_service.py",
+              "app/services/tag_service.py",
+              "app/routes/",
+              "app/routes/auth_routes.py",
+              "app/routes/user_routes.py",
+              "app/routes/post_routes.py",
+              "app/routes/tag_routes.py",
+              "app/routes/seed_routes.py",
+              "app/routes/stats_routes.py",
+              "app/main.py"
+            ]
+          },
+          "frontend_structure": {
+            "pages": [
+              "HomePage.jsx",
+              "LoginPage.jsx",
+              "PostListPage.jsx",
+              "PostDetailPage.jsx",
+              "AuthorDashboardPage.jsx",
+              "CreatePostPage.jsx",
+              "EditPostPage.jsx"
+            ],
+            "components": [
+              "Header.jsx",
+              "Footer.jsx",
+              "LoginForm.jsx",
+              "PostCard.jsx",
+              "TagFilter.jsx",
+              "Pagination.jsx",
+              "MarkdownRenderer.jsx",
+              "AuthorPostList.jsx",
+              "PostForm.jsx",
+              "AuthGuard.jsx",
+              "LoadingSpinner.jsx",
+              "ErrorMessage.jsx"
+            ]
+          }
+        },
+        "product_spec": {
+          "display_name": "Forge Blog CMS",
+          "tagline": "A simple, role-based content management system for authors to publish and readers to discover blog posts.",
+          "user_stories": 7,
+          "must_have_features": [
+            "User Authentication & Authorization",
+            "Post Creation & Editing",
+            "Draft & Publish Workflow",
+            "Post Deletion",
+            "Public Post Listing",
+            "Tag-Based Filtering",
+            "Individual Post View"
+          ]
+        },
+        "tech_lead": {
+          "summary": "The proposed architecture provides a solid foundation for the Forge Blog CMS, largely adhering to the project contract and product spec. Key areas for improvement include refining authentication endpoint paths, ensuring consistent authorization enforcement, and optimizing database relationships for performance.",
+          "critical_issues": 2,
+          "warnings": 3
+        },
+        "backend_generation": {
+          "parallel": true,
+          "files": 30
+        },
+        "qa": {
+          "score": 75,
+          "stories_covered": 7,
+          "blockers": [
+            "Protected endpoints lack authentication",
+            "Missing response_model declarations for GET endpoints"
+          ],
+          "skipped": false
+        },
+        "security": {
+          "score": 68,
+          "risk_level": "medium",
+          "critical_count": 1,
+          "high_count": 1,
+          "skipped": false
+        },
+        "code_review": {
+          "naming_score": 70,
+          "architecture_score": 55,
+          "maintainability_score": 50,
+          "tech_debt_score": 40,
+          "overall_score": 54,
+          "skipped": false
+        },
+        "performance": {
+          "score": 72,
+          "n_plus_one_count": 5,
+          "missing_indexes": 4,
+          "large_payload_risks": 0,
+          "slow_api_warnings": 0,
+          "skipped": false
+        },
+        "frontend_critic": {
+          "design_score": 56,
+          "hierarchy_score": 72,
+          "compliance_score": 45,
+          "polish_score": 50,
+          "consistency_score": 60,
+          "files_polished": 2,
+          "skipped": false
+        },
+        "validation": {
+          "passed": true,
+          "errors": []
+        },
+        "runtime": {
+          "success": false,
+          "error": "name 'patch_model_field_mismatches' is not defined"
+        },
+        "forge_score": {
+          "score": 70,
+          "grade": "C"
+        },
+        "v6_score": {
+          "total": 44,
+          "grade": "F",
+          "dimensions": {
+            "runtime": 40,
+            "security": 53,
+            "performance": 10,
+            "maintainability": 54,
+            "review": 64
+          },
+          "breakdown": {
+            "forge_score": 70,
+            "runtime_passed": false,
+            "static_passed": true,
+            "security_score": 68,
+            "security_critical": 1,
+            "performance_score": 72,
+            "n_plus_one_count": 5,
+            "naming_score": 70,
+            "architecture_score": 55,
+            "maintainability_score": 50,
+            "tech_debt_score": 40,
+            "qa_score": 75,
+            "qa_blockers": 2
+          },
+          "weights": {
+            "runtime": 0.3,
+            "security": 0.25,
+            "performance": 0.15,
+            "maintainability": 0.15,
+            "review": 0.15
+          }
+        },
+        "collaboration_log": [
+          {
+            "agent": "product_manager",
+            "decision": "product_spec_created",
+            "rationale": "A simple, role-based content management system for authors to publish and readers to discover blog posts.",
+            "data": {
+              "features": 7,
+              "user_stories": 7,
+              "must_have": [
+                "User Authentication & Authorization",
+                "Post Creation & Editing",
+                "Draft & Publish Workflow",
+                "Post Deletion",
+                "Public Post Listing",
+                "Tag-Based Filtering",
+                "Individual Post View"
+              ]
+            }
+          },
+          {
+            "agent": "architect",
+            "decision": "architecture_created",
+            "rationale": "15 endpoints across 6 files",
+            "data": {
+              "endpoints": 15
+            }
+          },
+          {
+            "agent": "tech_lead",
+            "decision": "constraints_set",
+            "rationale": "The proposed architecture provides a solid foundation for the Forge Blog CMS, largely adhering to the project contract and product spec. Key areas for",
+            "data": {
+              "critical_issues": 2,
+              "auth_endpoints": 9,
+              "pagination_required": 3
+            }
+          },
+          {
+            "agent": "qa",
+            "decision": "qa_review_complete",
+            "rationale": "QA score: 75/100",
+            "data": {
+              "score": 75,
+              "blockers": [
+                "Protected endpoints lack authentication",
+                "Missing response_model declarations for GET endpoints"
+              ]
+            }
+          },
+          {
+            "agent": "security",
+            "decision": "security_review_complete",
+            "rationale": "Security score: 68/100",
+            "data": {
+              "score": 68
+            }
+          },
+          {
+            "agent": "code_review",
+            "decision": "code_review_complete",
+            "rationale": "Maintainability: 50/100",
+            "data": {
+              "maintainability_score": 50
+            }
+          },
+          {
+            "agent": "performance",
+            "decision": "performance_review_complete",
+            "rationale": "Performance score: 72/100",
+            "data": {
+              "score": 72
+            }
+          },
+          {
+            "agent": "frontend_critic",
+            "decision": "frontend_critic_complete",
+            "rationale": "Design score: 56/100",
+            "data": {
+              "score": 56
+            }
+          },
+          {
+            "agent": "orchestrator",
+            "decision": "pipeline_complete",
+            "rationale": "V6 score: 44/100",
+            "data": {
+              "total_time": 48.85,
+              "can_export": false
+            }
+          }
+        ],
+        "generation_time_seconds": 48.85,
+        "fix_attempts": 3
+      },
+      "retry_history": [
+        {
+          "attempt": 1,
+          "strategy": "patch_file",
+          "provider": "auto",
+          "score_before": 69.23,
+          "score_after": 72.06,
+          "delta": 2.83
+        },
+        {
+          "attempt": 2,
+          "strategy": "patch_file",
+          "provider": "auto",
+          "score_before": 72.06,
+          "score_after": 72.34,
+          "delta": 0.28
+        },
+        {
+          "attempt": 3,
+          "strategy": "regenerate_arch",
+          "provider": "auto",
+          "score_before": 72.34,
+          "score_after": 72.06,
+          "delta": -0.28
+        },
+        {
+          "attempt": 4,
+          "strategy": "regenerate_arch",
+          "provider": "auto",
+          "score_before": 72.06,
+          "score_after": 72.06,
+          "delta": 0.0
+        }
+      ],
+      "deployment": {
+        "skipped": true,
+        "reason": "Deployment skipped: score 72.1 below deployment threshold (80)"
+      },
+      "project_path": "C:\\Users\\jerry\\onedrive\\Desktop\\forgeai\\generated_projects\\forge_blog_cms",
+      "status": "done",
+      "confidence": {
+        "probability": 0.2028,
+        "pct": 20.28,
+        "grade": "F",
+        "factors": {
+          "base": -0.5,
+          "overall_score": 1.298,
+          "runtime_health": 0.1,
+          "browser_ux": 0.264,
+          "compilation": 0.182,
+          "fix_penalty": -1.6,
+          "critical_errors": -1.0,
+          "historical_base_rate": -0.113
+        },
+        "historical_rate": 0.3553,
+        "historical_n": 76,
+        "verdict": "Not deployment-ready — critical issues likely remain."
+      }
+    }
+  },
+  {
+    "round": 1,
+    "app": "crm",
+    "timestamp": "2026-07-11T20:53:16.708978+00:00",
+    "crashed": false,
+    "error": null,
+    "elapsed_s": 93.1,
+    "result": {
+      "job_id": "28b942b85e6b4e7196a0878909c2c921",
+      "idea": "A simple CRM for small businesses with user login. Users manage contacts (name, email, phone, company, status: lead/prospect/customer/churned). Add notes to any contact with timestamps. Log interactions (call/email/meeting) with date and outcome. Pipeline view shows contacts grouped by status with counts. Search contacts by name or company.",
+      "project_name": "simple_crm",
+      "forge_score": 89.87,
+      "grade": "B",
+      "deployed": false,
+      "frontend_deployed": false,
+      "backend_url": null,
+      "frontend_url": null,
+      "fix_attempts": 0,
+      "total_tokens": 67331,
+      "estimated_cost": 0.0403986,
+      "elapsed_s": 93.09,
+      "providers_used": [],
+      "timeline": [
+        {
+          "stage": "generation",
+          "status": "passed",
+          "duration_ms": 0.0
+        },
+        {
+          "stage": "deterministic-patch",
+          "status": "passed",
+          "duration_ms": 442.2
+        },
+        {
+          "stage": "verification",
+          "status": "passed",
+          "duration_ms": 60642.3
+        },
+        {
+          "stage": "static-validation",
+          "status": "failed",
+          "duration_ms": 689.8
+        },
+        {
+          "stage": "runtime-validation",
+          "status": "passed",
+          "duration_ms": 4964.0
+        },
+        {
+          "stage": "parallel-checks",
+          "status": "passed",
+          "duration_ms": 11315.5
+        }
+      ],
+      "score_history": [
+        {
+          "attempt": 0,
+          "score": 89.87,
+          "grade": "B"
+        }
+      ],
+      "dimensions": [
+        {
+          "name": "Compilation",
+          "score": 69.0,
+          "passed": true,
+          "na": false
+        },
+        {
+          "name": "Runtime Startup",
+          "score": 100.0,
+          "passed": true,
+          "na": false
+        },
+        {
+          "name": "API Functionality",
+          "score": 100.0,
+          "passed": true,
+          "na": false
+        },
+        {
+          "name": "Frontend Load",
+          "score": 100.0,
+          "passed": true,
+          "na": false
+        },
+        {
+          "name": "Browser UX",
+          "score": 88.0,
+          "passed": true,
+          "na": false
+        },
+        {
+          "name": "Integration",
+          "score": 100.0,
+          "passed": true,
+          "na": false
+        },
+        {
+          "name": "Code Quality",
+          "score": 55.0,
+          "passed": false,
+          "na": false
+        },
+        {
+          "name": "Security",
+          "score": 100.0,
+          "passed": true,
+          "na": false
+        },
+        {
+          "name": "Completeness",
+          "score": 100.0,
+          "passed": true,
+          "na": false
+        },
+        {
+          "name": "Performance",
+          "score": 90,
+          "passed": true,
+          "na": false
+        },
+        {
+          "name": "Visual Judge",
+          "score": 65.2,
+          "passed": false,
+          "na": false
+        }
+      ],
+      "v6_result": {
+        "pipeline": "v6",
+        "project_name": "simple_crm",
+        "project_path": "C:\\Users\\jerry\\onedrive\\Desktop\\forgeai\\generated_projects\\simple_crm",
+        "zip_path": "C:\\Users\\jerry\\onedrive\\Desktop\\forgeai\\generated_projects\\simple_crm.zip",
+        "metadata_path": "C:\\Users\\jerry\\onedrive\\Desktop\\forgeai\\generated_projects\\simple_crm\\metadata.json",
+        "plan": {
+          "project_name": "simple_crm",
+          "display_name": "Simple CRM",
+          "features": [
+            "Secure user login and registration to access the CRM.",
+            "Create, view, update, and delete contacts with name, email, phone, company, and status (lead/prospect/customer/churned).",
+            "Add timestamped notes to any contact for internal context.",
+            "Log interactions (call/email/meeting) with a date and outcome for each contact.",
+            "Visualize contacts grouped by their status (Lead, Prospect, Customer, Churned) with counts for each group.",
+            "Search contacts by their name or company name."
+          ],
+          "tech_stack": {
+            "backend": "FastAPI",
+            "database": "SQLite",
+            "auth": "JWT",
+            "frontend": "React + Vite"
+          },
+          "db_entities": [
+            "User",
+            "Contact",
+            "Note",
+            "Interaction"
+          ],
+          "api_modules": [
+            "auth",
+            "users",
+            "contacts"
+          ],
+          "user_stories": [
+            {
+              "role": "Small Business User",
+              "want": "to log in securely to my CRM account",
+              "acceptance_criteria": [
+                "Given I am on the login page, when I enter valid credentials and click 'Login', then I am redirected to my contacts dashboard.",
+                "Given I am on the login page, when I enter invalid credentials and click 'Login', then I see an error message 'Invalid credentials'."
+              ]
+            },
+            {
+              "role": "Small Business User",
+              "want": "to add a new contact with their details",
+              "acceptance_criteria": [
+                "Given I am on the contacts page, when I click 'Add Contact' and fill in name, email, phone, company, and select a status, then the new contact appears in my contact list.",
+                "Given I am adding a new contact, when I leave a required field (e.g., name) blank, then I see a validation error and the contact is not created."
+              ]
+            },
+            {
+              "role": "Small Business User",
+              "want": "to add a note to a contact",
+              "acceptance_criteria": [
+                "Given I am viewing a contact's details, when I enter text into the 'Add Note' field and click 'Save Note', then the note appears in the contact's notes section with a timestamp.",
+                "Given a contact has multiple notes, when I view the contact's details, then the notes are displayed in chronological order (newest first)."
+              ]
+            },
+            {
+              "role": "Small Business User",
+              "want": "to log an interaction (call, email, meeting) with a contact",
+              "acceptance_criteria": [
+                "Given I am viewing a contact's details, when I select an interaction type (Call, Email, Meeting), a date, and an outcome, then the interaction is added to the contact's interaction log.",
+                "Given a contact has logged interactions, when I view the contact's details, then the interactions are displayed chronologically with type, date, and outcome."
+              ]
+            },
+            {
+              "role": "Small Business User",
+              "want": "to see my contacts grouped by their status in a pipeline view",
+              "acceptance_criteria": [
+                "Given I navigate to the 'Pipeline' view, then I see distinct sections for 'Lead', 'Prospect', 'Customer', and 'Churned' contacts.",
+                "Given I have contacts with different statuses, when I view the pipeline, then each status section displays the correct count of contacts assigned to that status."
+              ]
+            },
+            {
+              "role": "Small Business User",
+              "want": "to search for contacts by name or company",
+              "acceptance_criteria": [
+                "Given I am on the contacts list, when I type 'John' into the search bar, then only contacts with 'John' in their name are displayed.",
+                "Given I am on the contacts list, when I type 'Acme Corp' into the search bar, then only contacts associated with 'Acme Corp' are displayed."
+              ]
+            }
+          ],
+          "non_functional_requirements": {
+            "authentication": "required — users need to log in to access their private contact data.",
+            "authorization": "Users can only access and manage their own contacts and associated data.",
+            "pagination": "required on contacts list if the number of contacts exceeds a reasonable display limit (e.g., 50).",
+            "search": "contacts (by name, company)",
+            "file_uploads": "no",
+            "real_time": "no"
+          },
+          "data_entities_detail": [
+            {
+              "name": "User",
+              "description": "Stores user authentication information.",
+              "key_fields": [
+                "id",
+                "email",
+                "password_hash"
+              ],
+              "relationships": [
+                "has many Contact"
+              ]
+            },
+            {
+              "name": "Contact",
+              "description": "Stores details for each business contact.",
+              "key_fields": [
+                "id",
+                "name",
+                "email",
+                "phone",
+                "company",
+                "status",
+                "user_id"
+              ],
+              "relationships": [
+                "belongs to User",
+                "has many Note",
+                "has many Interaction"
+              ]
+            },
+            {
+              "name": "Note",
+              "description": "Stores timestamped notes related to a contact.",
+              "key_fields": [
+                "id",
+                "content",
+                "timestamp",
+                "contact_id"
+              ],
+              "relationships": [
+                "belongs to Contact"
+              ]
+            },
+            {
+              "name": "Interaction",
+              "description": "Stores logged interactions with a contact.",
+              "key_fields": [
+                "id",
+                "type",
+                "date",
+                "outcome",
+                "contact_id"
+              ],
+              "relationships": [
+                "belongs to Contact"
+              ]
+            }
+          ],
+          "out_of_scope": [
+            "Reporting/Analytics beyond pipeline counts",
+            "Email/Calendar integrations",
+            "Customizable fields for contacts",
+            "Task management",
+            "Multi-user accounts or team features"
+          ]
+        },
+        "architecture": {
+          "api_endpoints": [
+            {
+              "method": "POST",
+              "path": "/seed",
+              "description": "Populates database with realistic demo data.",
+              "file": "app\\routes\\seed_routes.py"
+            },
+            {
+              "method": "POST",
+              "path": "/auth/register",
+              "description": "Registers a new user.",
+              "file": "app\\routes\\auth_routes.py"
+            },
+            {
+              "method": "POST",
+              "path": "/auth/login",
+              "description": "Logs in a user and returns an access token.",
+              "file": "app\\routes\\auth_routes.py"
+            },
+            {
+              "method": "GET",
+              "path": "/users/me",
+              "description": "Retrieves the currently authenticated user's details.",
+              "file": "app\\routes\\user_routes.py"
+            },
+            {
+              "method": "GET",
+              "path": "/contacts",
+              "description": "Retrieves a list of contacts for the authenticated user, with optional search and pagination.",
+              "file": "app\\routes\\contact_routes.py"
+            },
+            {
+              "method": "GET",
+              "path": "/contacts/{contact_id}",
+              "description": "Retrieves details for a specific contact.",
+              "file": "app\\routes\\contact_routes.py"
+            },
+            {
+              "method": "POST",
+              "path": "/contacts",
+              "description": "Creates a new contact for the authenticated user.",
+              "file": "app\\routes\\contact_routes.py"
+            },
+            {
+              "method": "PUT",
+              "path": "/contacts/{contact_id}",
+              "description": "Updates an existing contact's details.",
+              "file": "app\\routes\\contact_routes.py"
+            },
+            {
+              "method": "DELETE",
+              "path": "/contacts/{contact_id}",
+              "description": "Deletes a contact.",
+              "file": "app\\routes\\contact_routes.py"
+            },
+            {
+              "method": "POST",
+              "path": "/contacts/{contact_id}/notes",
+              "description": "Adds a new note to a specific contact.",
+              "file": "app\\routes\\contact_routes.py"
+            },
+            {
+              "method": "GET",
+              "path": "/contacts/{contact_id}/notes",
+              "description": "Retrieves all notes for a specific contact.",
+              "file": "app\\routes\\contact_routes.py"
+            },
+            {
+              "method": "POST",
+              "path": "/contacts/{contact_id}/interactions",
+              "description": "Logs a new interaction for a specific contact.",
+              "file": "app\\routes\\contact_routes.py"
+            },
+            {
+              "method": "GET",
+              "path": "/contacts/{contact_id}/interactions",
+              "description": "Retrieves all interactions for a specific contact.",
+              "file": "app\\routes\\contact_routes.py"
+            },
+            {
+              "method": "GET",
+              "path": "/stats/pipeline",
+              "description": "Retrieves counts of contacts grouped by their status (Lead, Prospect, Customer, Churned).",
+              "file": "app\\routes\\stats_routes.py"
+            },
+            {
+              "method": "GET",
+              "path": "/contacts/search",
+              "description": "Searches contacts by name or company name.",
+              "file": "app\\routes\\contact_routes.py"
+            }
+          ],
+          "database_schema": [
+            {
+              "table_name": "users",
+              "columns": [
+                {
+                  "name": "id",
+                  "type": "INTEGER",
+                  "is_primary_key": true,
+                  "is_nullable": false
+                },
+                {
+                  "name": "email",
+                  "type": "VARCHAR(255)",
+                  "is_primary_key": false,
+                  "is_nullable": false
+                },
+                {
+                  "name": "password_hash",
+                  "type": "VARCHAR(255)",
+                  "is_primary_key": false,
+                  "is_nullable": false
+                }
+              ]
+            },
+            {
+              "table_name": "contacts",
+              "columns": [
+                {
+                  "name": "id",
+                  "type": "INTEGER",
+                  "is_primary_key": true,
+                  "is_nullable": false
+                },
+                {
+                  "name": "name",
+                  "type": "VARCHAR(255)",
+                  "is_primary_key": false,
+                  "is_nullable": false
+                },
+                {
+                  "name": "email",
+                  "type": "VARCHAR(255)",
+                  "is_primary_key": false,
+                  "is_nullable": true
+                },
+                {
+                  "name": "phone",
+                  "type": "VARCHAR(50)",
+                  "is_primary_key": false,
+                  "is_nullable": true
+                },
+                {
+                  "name": "company",
+                  "type": "VARCHAR(255)",
+                  "is_primary_key": false,
+                  "is_nullable": true
+                },
+                {
+                  "name": "status",
+                  "type": "VARCHAR(50)",
+                  "is_primary_key": false,
+                  "is_nullable": false
+                },
+                {
+                  "name": "user_id",
+                  "type": "INTEGER",
+                  "is_primary_key": false,
+                  "is_nullable": false
+                }
+              ]
+            },
+            {
+              "table_name": "notes",
+              "columns": [
+                {
+                  "name": "id",
+                  "type": "INTEGER",
+                  "is_primary_key": true,
+                  "is_nullable": false
+                },
+                {
+                  "name": "content",
+                  "type": "TEXT",
+                  "is_primary_key": false,
+                  "is_nullable": false
+                },
+                {
+                  "name": "timestamp",
+                  "type": "DATETIME",
+                  "is_primary_key": false,
+                  "is_nullable": false
+                },
+                {
+                  "name": "contact_id",
+                  "type": "INTEGER",
+                  "is_primary_key": false,
+                  "is_nullable": false
+                }
+              ]
+            },
+            {
+              "table_name": "interactions",
+              "columns": [
+                {
+                  "name": "id",
+                  "type": "INTEGER",
+                  "is_primary_key": true,
+                  "is_nullable": false
+                },
+                {
+                  "name": "type",
+                  "type": "VARCHAR(50)",
+                  "is_primary_key": false,
+                  "is_nullable": false
+                },
+                {
+                  "name": "date",
+                  "type": "DATE",
+                  "is_primary_key": false,
+                  "is_nullable": false
+                },
+                {
+                  "name": "outcome",
+                  "type": "TEXT",
+                  "is_primary_key": false,
+                  "is_nullable": true
+                },
+                {
+                  "name": "contact_id",
+                  "type": "INTEGER",
+                  "is_primary_key": false,
+                  "is_nullable": false
+                }
+              ]
+            }
+          ],
+          "folder_structure": {
+            "backend": [
+              "app/",
+              "app/main.py",
+              "app/database.py",
+              "app/models/",
+              "app/models/user.py",
+              "app/models/contact.py",
+              "app/models/note.py",
+              "app/models/interaction.py",
+              "app/schemas/",
+              "app/schemas/user.py",
+              "app/schemas/contact.py",
+              "app/schemas/note.py",
+              "app/schemas/interaction.py",
+              "app/schemas/auth.py",
+              "app/schemas/stats.py",
+              "app/services/",
+              "app/services/auth_service.py",
+              "app/services/user_service.py",
+              "app/services/contact_service.py",
+              "app/services/note_service.py",
+              "app/services/interaction_service.py",
+              "app/services/stats_service.py",
+              "app/routes/",
+              "app/routes/auth_routes.py",
+              "app/routes/user_routes.py",
+              "app/routes/contact_routes.py",
+              "app/routes/stats_routes.py",
+              "app/routes/seed_routes.py",
+              "app/utils/",
+              "app/utils/auth.py",
+              "app/utils/dependencies.py",
+              "app/utils/password.py",
+              "app/config.py"
+            ]
+          },
+          "frontend_structure": {
+            "pages": [
+              "LoginPage.jsx",
+              "RegisterPage.jsx",
+              "DashboardPage.jsx",
+              "ContactsListPage.jsx",
+              "ContactDetailPage.jsx",
+              "AddContactPage.jsx",
+              "EditContactPage.jsx",
+              "PipelinePage.jsx"
+            ],
+            "components": [
+              "Header.jsx",
+              "Footer.jsx",
+              "LoginForm.jsx",
+              "RegisterForm.jsx",
+              "ContactCard.jsx",
+              "ContactForm.jsx",
+              "NoteForm.jsx",
+              "NoteList.jsx",
+              "InteractionForm.jsx",
+              "InteractionList.jsx",
+              "SearchBar.jsx",
+              "Pagination.jsx",
+              "PipelineStatusColumn.jsx",
+              "ProtectedRoute.jsx",
+              "LoadingSpinner.jsx",
+              "ErrorMessage.jsx"
+            ]
+          }
+        },
+        "product_spec": {
+          "display_name": "Simple CRM",
+          "tagline": "A straightforward CRM for small businesses to manage contacts, track interactions, and visualize their sales pipeline.",
+          "user_stories": 6,
+          "must_have_features": [
+            "User Authentication",
+            "Contact Management",
+            "Contact Notes",
+            "Interaction Logging",
+            "Pipeline View",
+            "Contact Search"
+          ]
+        },
+        "tech_lead": {
+          "summary": "The proposed architecture for Simple CRM is largely sound and adheres to most project contract requirements. Key areas for improvement include ensuring consistent authentication across all user-data-touching endpoints, refining endpoint paths for better RESTfulness, and explicitly defining schema validation rules.",
+          "critical_issues": 0,
+          "warnings": 7
+        },
+        "backend_generation": {
+          "parallel": true,
+          "files": 28
+        },
+        "qa": {
+          "score": 80,
+          "stories_covered": 10,
+          "blockers": [
+            "Missing 404 handling on GET /contacts/{contact_id}",
+            "Missing response_model on notes and interactions POST endpoints",
+            "Notes and interactions not ordered chronologically as required"
+          ],
+          "skipped": false
+        },
+        "security": {
+          "score": 70,
+          "risk_level": "medium",
+          "critical_count": 0,
+          "high_count": 4,
+          "skipped": false
+        },
+        "code_review": {
+          "naming_score": 55,
+          "architecture_score": 45,
+          "maintainability_score": 40,
+          "tech_debt_score": 35,
+          "overall_score": 44,
+          "skipped": false
+        },
+        "performance": {
+          "score": 72,
+          "n_plus_one_count": 2,
+          "missing_indexes": 3,
+          "large_payload_risks": 1,
+          "slow_api_warnings": 0,
+          "skipped": false
+        },
+        "frontend_critic": {
+          "design_score": 68,
+          "hierarchy_score": 78,
+          "compliance_score": 62,
+          "polish_score": 65,
+          "consistency_score": 70,
+          "files_polished": 3,
+          "skipped": false
+        },
+        "validation": {
+          "passed": true,
+          "errors": []
+        },
+        "runtime": {
+          "success": true,
+          "healthy": true,
+          "exit_code": 0,
+          "stdout": "INFO:     127.0.0.1:62946 - \"GET /docs HTTP/1.1\" 200 OK\nINFO:     127.0.0.1:62947 - \"GET /docs HTTP/1.1\" 200 OK\nINFO:     127.0.0.1:62948 - \"GET /openapi.json HTTP/1.1\" 200 OK\nINFO:     127.0.0.1:62949 - \"POST /auth/register HTTP/1.1\" 200 OK\nINFO:     127.0.0.1:62950 - \"GET /openapi.json HTTP/1.1\" 200 OK\nINFO:     127.0.0.1:62951 - \"POST /auth/login HTTP/1.1\" 200 OK\nINFO:     127.0.0.1:62952 - \"POST /seed HTTP/1.1\" 500 Internal Server Error\nINFO:     127.0.0.1:62953 - \"GET /contacts HTTP/1.1\" 200 OK\nINFO:     127.0.0.1:62954 - \"GET /openapi.json HTTP/1.1\" 200 OK\nINFO:     127.0.0.1:62955 - \"POST /contacts HTTP/1.1\" 201 Created\nINFO:     127.0.0.1:62956 - \"GET /contacts HTTP/1.1\" 200 OK\nINFO:     127.0.0.1:62957 - \"PUT /contacts/1 HTTP/1.1\" 200 OK\nINFO:     127.0.0.1:62958 - \"DELETE /contacts/1 HTTP/1.1\" 204 No Content\nINFO:     127.0.0.1:62959 - \"GET /contacts/1 HTTP/1.1\" 404 Not Found\nINFO:     127.0.0.1:62960 - \"POST /auth/logout HTTP/1.1\" 200 OK\nINFO:     127.0.0.1:62961 - \"POST /auth/login HTTP/1.1\" 200 OK\nINFO:     127.0.0.1:62962 - \"GET /contacts HTTP/1.1\" 200 OK\nINFO:     127.0.0.1:62963 - \"POST /auth/register HTTP/1.1\" 422 Unprocessable Content\nINFO:     127.0.0.1:62964 - \"POST /auth/login HTTP/1.1\" 422 Unprocessable Content\nINFO:     127.0.0.1:62965 - \"GET /users/me HTTP/1.1\" 401 Unauthorized\nINFO:     127.0.0.1:62966 - \"GET /contacts HTTP/1.1\" 401 Unauthorized\nINFO:     127.0.0.1:62967 - \"GET /contacts/1 HTTP/1.1\" 401 Unauthorized\nINFO:     127.0.0.1:62968 - \"POST /contacts HTTP/1.1\" 401 Unauthorized\nINFO:     127.0.0.1:62969 - \"PUT /contacts/1 HTTP/1.1\" 401 Unauthorized\nINFO:     127.0.0.1:62970 - \"DELETE /contacts/1 HTTP/1.1\" 401 Unauthorized\nINFO:     127.0.0.1:62971 - \"POST /contacts/1/notes HTTP/1.1\" 401 Unauthorized\nINFO:     127.0.0.1:62972 - \"GET /contacts/1/notes HTTP/1.1\" 401 Unauthorized\nINFO:     127.0.0.1:62973 - \"POST /contacts/1/interactions HTTP/1.1\" 401 Unauthorized\nINFO:     127.0.0.1:62974 - \"GET /contacts/1/interactions HTTP/1.1\" 401 Unauthorized\nINFO:     127.0.0.1:62975 - \"GET /stats/pipeline HTTP/1.1\" 200 OK\nINFO:     127.0.0.1:62976 - \"GET /contacts/search HTTP/1.1\" 401 Unauthorized\n",
+          "stderr": "INFO:     Started server process [35344]\nINFO:     Waiting for application startup.\nINFO:     Application startup complete.\nINFO:     Uvicorn running on http://127.0.0.1:8001 (Press CTRL+C to quit)\nC:\\Users\\jerry\\onedrive\\Desktop\\forgeai\\backend\\venv\\Lib\\site-packages\\jwt\\api_jwt.py:147: InsecureKeyLengthWarning: The HMAC key is 19 bytes long, which is below the minimum recommended length of 32 bytes for SHA256. See RFC 7518 Section 3.2.\n  return self._jws.encode(\nERROR:    Exception in ASGI application\nTraceback (most recent call last):\n  File \"C:\\Users\\jerry\\onedrive\\Desktop\\forgeai\\backend\\venv\\Lib\\site-packages\\uvicorn\\protocols\\http\\httptools_impl.py\", line 421, in run_asgi\n    result = await app(  # type: ignore[func-returns-value]\n             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n        self.scope, self.receive, self.send\n        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n    )\n    ^\n  File \"C:\\Users\\jerry\\onedrive\\Desktop\\forgeai\\backend\\venv\\Lib\\site-packages\\uvicorn\\middleware\\proxy_headers.py\", line 62, in __call__\n    return await self.app(scope, receive, send)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"C:\\Users\\jerry\\onedrive\\Desktop\\forgeai\\backend\\venv\\Lib\\site-packages\\fastapi\\applications.py\", line 1159, in __call__\n    await super().__call__(scope, receive, send)\n  File \"C:\\Users\\jerry\\onedrive\\Desktop\\forgeai\\backend\\venv\\Lib\\site-packages\\starlette\\applications.py\", line 90, in __call__\n    await self.middleware_stack(scope, receive, send)\n  File \"C:\\Users\\jerry\\onedrive\\Desktop\\forgeai\\backend\\venv\\Lib\\site-packages\\starlette\\middleware\\errors.py\", line 186, in __call__\n    raise exc\n  File \"C:\\Users\\jerry\\onedrive\\Desktop\\forgeai\\backend\\venv\\Lib\\site-packages\\starlette\\middleware\\errors.py\", line 164, in __call__\n    await self.app(scope, receive, _send)\n  File \"C:\\Users\\jerry\\onedrive\\Desktop\\forgeai\\backend\\venv\\Lib\\site-packages\\starlette\\middleware\\cors.py\", line 88, in __call__\n    await self.app(scope, receive, send)\n  File \"C:\\Users\\jerry\\onedrive\\Desktop\\forgeai\\backend\\venv\\Lib\\site-packages\\starlette\\middleware\\exceptions.py\", line 63, in __call__\n    await wrap_app_handling_exceptions(self.app, conn)(scope, receive, send)\n  File \"C:\\Users\\jerry\\onedrive\\Desktop\\forgeai\\backend\\venv\\Lib\\site-packages\\starlette\\_exception_handler.py\", line 53, in wrapped_app\n    raise exc\n  File \"C:\\Users\\jerry\\onedrive\\Desktop\\forgeai\\backend\\venv\\Lib\\site-packages\\starlette\\_exception_handler.py\", line 42, in wrapped_app\n    await app(scope, receive, sender)\n  File \"C:\\Users\\jerry\\onedrive\\Desktop\\forgeai\\backend\\venv\\Lib\\site-packages\\fastapi\\middleware\\asyncexitstack.py\", line 18, in __call__\n    await self.app(scope, receive, send)\n  File \"C:\\Users\\jerry\\onedrive\\Desktop\\forgeai\\backend\\venv\\Lib\\site-packages\\starlette\\routing.py\", line 660, in __call__\n    await self.middleware_stack(scope, receive, send)\n  File \"C:\\Users\\jerry\\onedrive\\Desktop\\forgeai\\backend\\venv\\Lib\\site-packages\\starlette\\routing.py\", line 680, in app\n    await route.handle(scope, receive, send)\n  File \"C:\\Users\\jerry\\onedrive\\Desktop\\forgeai\\backend\\venv\\Lib\\site-packages\\starlette\\routing.py\", line 276, in handle\n    await self.app(scope, receive, send)\n  File \"C:\\Users\\jerry\\onedrive\\Desktop\\forgeai\\backend\\venv\\Lib\\site-packages\\fastapi\\routing.py\", line 134, in app\n    await wrap_app_handling_exceptions(app, request)(scope, receive, send)\n  File \"C:\\Users\\jerry\\onedrive\\Desktop\\forgeai\\backend\\venv\\Lib\\site-packages\\starlette\\_exception_handler.py\", line 53, in wrapped_app\n    raise exc\n  File \"C:\\Users\\jerry\\onedrive\\Desktop\\forgeai\\backend\\venv\\Lib\\site-packages\\starlette\\_exception_handler.py\", line 42, in wrapped_app\n    await app(scope, receive, sender)\n  File \"C:\\Users\\jerry\\onedrive\\Desktop\\forgeai\\backend\\venv\\Lib\\site-packages\\fastapi\\routing.py\", line 120, in app\n    response = await f(request)\n               ^^^^^^^^^^^^^^^^\n  File \"C:\\Users\\jerry\\onedrive\\Desktop\\forgeai\\backend\\venv\\Lib\\site-packages\\fastapi\\routing.py\", line 674, in app\n    raw_response = await run_endpoint_function(\n                   ^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n    ...<3 lines>...\n    )\n    ^\n  File \"C:\\Users\\jerry\\onedrive\\Desktop\\forgeai\\backend\\venv\\Lib\\site-packages\\fastapi\\routing.py\", line 330, in run_endpoint_function\n    return await run_in_threadpool(dependant.call, **values)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"C:\\Users\\jerry\\onedrive\\Desktop\\forgeai\\backend\\venv\\Lib\\site-packages\\starlette\\concurrency.py\", line 34, in run_in_threadpool\n    return await anyio.to_thread.run_sync(func)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"C:\\Users\\jerry\\onedrive\\Desktop\\forgeai\\backend\\venv\\Lib\\site-packages\\anyio\\to_thread.py\", line 63, in run_sync\n    return await get_async_backend().run_sync_in_worker_thread(\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n        func, args, abandon_on_cancel=abandon_on_cancel, limiter=limiter\n        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n    )\n    ^\n  File \"C:\\Users\\jerry\\onedrive\\Desktop\\forgeai\\backend\\venv\\Lib\\site-packages\\anyio\\_backends\\_asyncio.py\", line 2518, in run_sync_in_worker_thread\n    return await future\n           ^^^^^^^^^^^^\n  File \"C:\\Users\\jerry\\onedrive\\Desktop\\forgeai\\backend\\venv\\Lib\\site-packages\\anyio\\_backends\\_asyncio.py\", line 1002, in run\n    result = context.run(func, *args)\n  File \"C:\\Users\\jerry\\onedrive\\Desktop\\forgeai\\generated_projects\\simple_crm\\app\\routes\\seed_routes.py\", line 32, in seed\n    user = User(\n        email=u[\"email\"],\n        password_hash=get_password_hash(u[\"password\"]),\n        display_name=u[\"display_name\"],\n    )\n  File \"<string>\", line 4, in __init__\n  File \"C:\\Users\\jerry\\onedrive\\Desktop\\forgeai\\backend\\venv\\Lib\\site-packages\\sqlalchemy\\orm\\state.py\", line 596, in _initialize_instance\n    with util.safe_reraise():\n         ~~~~~~~~~~~~~~~~~^^\n  File \"C:\\Users\\jerry\\onedrive\\Desktop\\forgeai\\backend\\venv\\Lib\\site-packages\\sqlalchemy\\util\\langhelpers.py\", line 122, in __exit__\n    raise exc_value.with_traceback(exc_tb)\n  File \"C:\\Users\\jerry\\onedrive\\Desktop\\forgeai\\backend\\venv\\Lib\\site-packages\\sqlalchemy\\orm\\state.py\", line 594, in _initialize_instance\n    manager.original_init(*mixed[1:], **kwargs)\n    ~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^\n  File \"C:\\Users\\jerry\\onedrive\\Desktop\\forgeai\\backend\\venv\\Lib\\site-packages\\sqlalchemy\\orm\\decl_base.py\", line 2179, in _declarative_constructor\n    raise TypeError(\n        \"%r is an invalid keyword argument for %s\" % (k, cls_.__name__)\n    )\nTypeError: 'display_name' is an invalid keyword argument for User\nC:\\Users\\jerry\\onedrive\\Desktop\\forgeai\\backend\\venv\\Lib\\site-packages\\jwt\\api_jwt.py:368: InsecureKeyLengthWarning: The HMAC key is 19 bytes long, which is below the minimum recommended length of 32 bytes for SHA256. See RFC 7518 Section 3.2.\n  decoded = self.decode_complete(\n",
+          "startup_time": 5.832634687423706,
+          "behavioral_issues": [],
+          "total_endpoints": 15,
+          "timeout_count": 0,
+          "error_count": 0,
+          "endpoint_pass_rate": 1.0,
+          "crud_passed": true,
+          "journey": {
+            "success": true,
+            "steps_passed": 11,
+            "steps_failed": 0,
+            "persistence_verified": true,
+            "skipped": false,
+            "skip_reason": "",
+            "entity": "contacts",
+            "seed_summary": {},
+            "steps": [
+              {
+                "name": "Register",
+                "passed": true,
+                "detail": "200 @ register",
+                "request": null,
+                "response": null
+              },
+              {
+                "name": "Login",
+                "passed": true,
+                "detail": "200 @ login",
+                "request": null,
+                "response": null
+              },
+              {
+                "name": "Detect entity",
+                "passed": true,
+                "detail": "http://127.0.0.1:8001/contacts",
+                "request": null,
+                "response": null
+              },
+              {
+                "name": "Create entity",
+                "passed": true,
+                "detail": "201 id=1",
+                "request": null,
+                "response": null
+              },
+              {
+                "name": "List entities",
+                "passed": true,
+                "detail": "200 count=1",
+                "request": null,
+                "response": null
+              },
+              {
+                "name": "Edit entity",
+                "passed": true,
+                "detail": "200",
+                "request": null,
+                "response": null
+              },
+              {
+                "name": "Delete entity",
+                "passed": true,
+                "detail": "204",
+                "request": null,
+                "response": null
+              },
+              {
+                "name": "Verify deletion",
+                "passed": true,
+                "detail": "404 confirmed deleted",
+                "request": null,
+                "response": null
+              },
+              {
+                "name": "Logout",
+                "passed": true,
+                "detail": "200",
+                "request": null,
+                "response": null
+              },
+              {
+                "name": "Login again",
+                "passed": true,
+                "detail": "re-login 200",
+                "request": null,
+                "response": null
+              },
+              {
+                "name": "Verify persistence",
+                "passed": true,
+                "detail": "deleted item absent — persistence confirmed",
+                "request": null,
+                "response": null
+              }
+            ],
+            "total_duration": 0.31
+          }
+        },
+        "forge_score": {
+          "score": 100,
+          "grade": "A"
+        },
+        "v6_score": {
+          "total": 69,
+          "grade": "C",
+          "dimensions": {
+            "runtime": 100,
+            "security": 70,
+            "performance": 38,
+            "maintainability": 44,
+            "review": 62
+          },
+          "breakdown": {
+            "forge_score": 100,
+            "runtime_passed": true,
+            "static_passed": true,
+            "security_score": 70,
+            "security_critical": 0,
+            "performance_score": 72,
+            "n_plus_one_count": 2,
+            "naming_score": 55,
+            "architecture_score": 45,
+            "maintainability_score": 40,
+            "tech_debt_score": 35,
+            "qa_score": 80,
+            "qa_blockers": 3
+          },
+          "weights": {
+            "runtime": 0.3,
+            "security": 0.25,
+            "performance": 0.15,
+            "maintainability": 0.15,
+            "review": 0.15
+          }
+        },
+        "collaboration_log": [
+          {
+            "agent": "product_manager",
+            "decision": "product_spec_created",
+            "rationale": "A straightforward CRM for small businesses to manage contacts, track interactions, and visualize their sales pipeline.",
+            "data": {
+              "features": 6,
+              "user_stories": 6,
+              "must_have": [
+                "User Authentication",
+                "Contact Management",
+                "Contact Notes",
+                "Interaction Logging",
+                "Pipeline View",
+                "Contact Search"
+              ]
+            }
+          },
+          {
+            "agent": "architect",
+            "decision": "architecture_created",
+            "rationale": "15 endpoints across 5 files",
+            "data": {
+              "endpoints": 15
+            }
+          },
+          {
+            "agent": "tech_lead",
+            "decision": "constraints_set",
+            "rationale": "The proposed architecture for Simple CRM is largely sound and adheres to most project contract requirements. Key areas for improvement include ensurin",
+            "data": {
+              "critical_issues": 0,
+              "auth_endpoints": 11,
+              "pagination_required": 3
+            }
+          },
+          {
+            "agent": "qa",
+            "decision": "qa_review_complete",
+            "rationale": "QA score: 80/100",
+            "data": {
+              "score": 80,
+              "blockers": [
+                "Missing 404 handling on GET /contacts/{contact_id}",
+                "Missing response_model on notes and interactions POST endpoints",
+                "Notes and interactions not ordered chronologically as required"
+              ]
+            }
+          },
+          {
+            "agent": "security",
+            "decision": "security_review_complete",
+            "rationale": "Security score: 70/100",
+            "data": {
+              "score": 70
+            }
+          },
+          {
+            "agent": "code_review",
+            "decision": "code_review_complete",
+            "rationale": "Maintainability: 40/100",
+            "data": {
+              "maintainability_score": 40
+            }
+          },
+          {
+            "agent": "performance",
+            "decision": "performance_review_complete",
+            "rationale": "Performance score: 72/100",
+            "data": {
+              "score": 72
+            }
+          },
+          {
+            "agent": "frontend_critic",
+            "decision": "frontend_critic_complete",
+            "rationale": "Design score: 68/100",
+            "data": {
+              "score": 68
+            }
+          },
+          {
+            "agent": "orchestrator",
+            "decision": "pipeline_complete",
+            "rationale": "V6 score: 69/100",
+            "data": {
+              "total_time": 31.85,
+              "can_export": true
+            }
+          }
+        ],
+        "generation_time_seconds": 31.85,
+        "fix_attempts": 1
+      },
+      "retry_history": [],
+      "deployment": {
+        "skipped": true
+      },
+      "project_path": "C:\\Users\\jerry\\onedrive\\Desktop\\forgeai\\generated_projects\\simple_crm",
+      "status": "done",
+      "confidence": {
+        "probability": 0.9091,
+        "pct": 90.91,
+        "grade": "B+",
+        "factors": {
+          "base": -0.5,
+          "overall_score": 2.019,
+          "runtime_health": 0.5,
+          "browser_ux": 0.264,
+          "compilation": 0.138,
+          "historical_base_rate": -0.119
+        },
+        "historical_rate": 0.3506,
+        "historical_n": 77,
+        "verdict": "Likely to succeed — minor risks remain."
+      }
+    }
+  }
+]

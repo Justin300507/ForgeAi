@@ -1,0 +1,999 @@
+{
+  "round": 1,
+  "app": "blog_cms",
+  "timestamp": "2026-07-11T20:51:43.610989+00:00",
+  "crashed": false,
+  "error": null,
+  "elapsed_s": 593.8,
+  "result": {
+    "job_id": "dbe5a00dc2584512a81033a0df276a17",
+    "idea": "A blog CMS with author and reader roles. Authors write posts with title, content (markdown), tags, and cover image URL. Posts can be saved as draft or published. Readers see all published posts, can filter by tag, and read individual posts. Authors manage their own posts (create, edit, delete, publish). Post list shows title, author, date, and tag list.",
+    "project_name": "forge_blog_cms",
+    "forge_score": 72.06,
+    "grade": "C",
+    "deployed": false,
+    "frontend_deployed": false,
+    "backend_url": null,
+    "frontend_url": null,
+    "fix_attempts": 4,
+    "total_tokens": 155701,
+    "estimated_cost": 0.09342060000000002,
+    "elapsed_s": 593.81,
+    "providers_used": [],
+    "timeline": [
+      {
+        "stage": "generation",
+        "status": "passed",
+        "duration_ms": 0.0
+      },
+      {
+        "stage": "deterministic-patch",
+        "status": "passed",
+        "duration_ms": 545.5
+      },
+      {
+        "stage": "verification",
+        "status": "passed",
+        "duration_ms": 53169.9
+      },
+      {
+        "stage": "static-validation",
+        "status": "failed",
+        "duration_ms": 858.7
+      },
+      {
+        "stage": "runtime-validation",
+        "status": "failed",
+        "duration_ms": 5117.4
+      },
+      {
+        "stage": "parallel-checks",
+        "status": "passed",
+        "duration_ms": 10952.3
+      },
+      {
+        "stage": "static-validation",
+        "status": "passed",
+        "duration_ms": 5286.1
+      },
+      {
+        "stage": "runtime-validation",
+        "status": "failed",
+        "duration_ms": 5106.2
+      },
+      {
+        "stage": "parallel-checks",
+        "status": "passed",
+        "duration_ms": 11096.7
+      },
+      {
+        "stage": "static-validation",
+        "status": "failed",
+        "duration_ms": 5153.2
+      },
+      {
+        "stage": "static-validation",
+        "status": "passed",
+        "duration_ms": 4974.8
+      },
+      {
+        "stage": "runtime-validation",
+        "status": "failed",
+        "duration_ms": 5020.6
+      },
+      {
+        "stage": "parallel-checks",
+        "status": "passed",
+        "duration_ms": 12089.1
+      },
+      {
+        "stage": "static-validation",
+        "status": "failed",
+        "duration_ms": 708.4
+      },
+      {
+        "stage": "runtime-validation",
+        "status": "failed",
+        "duration_ms": 5004.2
+      },
+      {
+        "stage": "parallel-checks",
+        "status": "passed",
+        "duration_ms": 10933.0
+      },
+      {
+        "stage": "static-validation",
+        "status": "passed",
+        "duration_ms": 5112.7
+      },
+      {
+        "stage": "runtime-validation",
+        "status": "failed",
+        "duration_ms": 5020.2
+      },
+      {
+        "stage": "parallel-checks",
+        "status": "passed",
+        "duration_ms": 11031.1
+      },
+      {
+        "stage": "static-validation",
+        "status": "failed",
+        "duration_ms": 739.1
+      },
+      {
+        "stage": "runtime-validation",
+        "status": "failed",
+        "duration_ms": 4978.3
+      },
+      {
+        "stage": "parallel-checks",
+        "status": "passed",
+        "duration_ms": 12212.2
+      },
+      {
+        "stage": "static-validation",
+        "status": "passed",
+        "duration_ms": 5097.3
+      },
+      {
+        "stage": "runtime-validation",
+        "status": "failed",
+        "duration_ms": 5069.9
+      },
+      {
+        "stage": "parallel-checks",
+        "status": "passed",
+        "duration_ms": 11297.3
+      },
+      {
+        "stage": "verification",
+        "status": "passed",
+        "duration_ms": 43769.7
+      },
+      {
+        "stage": "static-validation",
+        "status": "passed",
+        "duration_ms": 5422.9
+      },
+      {
+        "stage": "runtime-validation",
+        "status": "failed",
+        "duration_ms": 5212.3
+      },
+      {
+        "stage": "parallel-checks",
+        "status": "passed",
+        "duration_ms": 12870.4
+      }
+    ],
+    "score_history": [
+      {
+        "attempt": 0,
+        "score": 69.23,
+        "grade": "D"
+      },
+      {
+        "attempt": 1,
+        "score": 72.06,
+        "grade": "C"
+      },
+      {
+        "attempt": 2,
+        "score": 25.35,
+        "grade": "F"
+      },
+      {
+        "attempt": 2,
+        "score": 72.34,
+        "grade": "C"
+      },
+      {
+        "attempt": 5,
+        "score": 70.95,
+        "grade": "C"
+      },
+      {
+        "attempt": 5,
+        "score": 72.06,
+        "grade": "C"
+      },
+      {
+        "attempt": 5,
+        "score": 70.95,
+        "grade": "C"
+      },
+      {
+        "attempt": 5,
+        "score": 72.06,
+        "grade": "C"
+      },
+      {
+        "attempt": 4,
+        "score": 72.06,
+        "grade": "C"
+      }
+    ],
+    "dimensions": [
+      {
+        "name": "Compilation",
+        "score": 91.0,
+        "passed": true,
+        "na": false
+      },
+      {
+        "name": "Runtime Startup",
+        "score": 20.0,
+        "passed": false,
+        "na": false
+      },
+      {
+        "name": "API Functionality",
+        "score": 100.0,
+        "passed": true,
+        "na": false
+      },
+      {
+        "name": "Frontend Load",
+        "score": 100.0,
+        "passed": true,
+        "na": false
+      },
+      {
+        "name": "Browser UX",
+        "score": 88.0,
+        "passed": true,
+        "na": false
+      },
+      {
+        "name": "Integration",
+        "score": 46.15384615384615,
+        "passed": false,
+        "na": false
+      },
+      {
+        "name": "Code Quality",
+        "score": 73.0,
+        "passed": false,
+        "na": false
+      },
+      {
+        "name": "Security",
+        "score": 100.0,
+        "passed": true,
+        "na": false
+      },
+      {
+        "name": "Completeness",
+        "score": 100.0,
+        "passed": true,
+        "na": false
+      },
+      {
+        "name": "Performance",
+        "score": 90,
+        "passed": true,
+        "na": false
+      },
+      {
+        "name": "Visual Judge",
+        "score": 34.9,
+        "passed": false,
+        "na": false
+      }
+    ],
+    "v6_result": {
+      "pipeline": "v6",
+      "project_name": "forge_blog_cms",
+      "project_path": "C:\\Users\\jerry\\onedrive\\Desktop\\forgeai\\generated_projects\\forge_blog_cms",
+      "zip_path": "C:\\Users\\jerry\\onedrive\\Desktop\\forgeai\\generated_projects\\forge_blog_cms.zip",
+      "metadata_path": "C:\\Users\\jerry\\onedrive\\Desktop\\forgeai\\generated_projects\\forge_blog_cms\\metadata.json",
+      "plan": {
+        "project_name": "forge_blog_cms",
+        "display_name": "Forge Blog CMS",
+        "features": [
+          "Secure login for authors and role-based access control to ensure authors can only manage their own posts and readers can only view published content.",
+          "Authors can create new posts with title, markdown content, tags, and a cover image URL, and edit existing posts.",
+          "Authors can save posts as drafts for later editing and explicitly publish them when ready, making them visible to readers.",
+          "Authors can delete their own posts, removing them from the system.",
+          "Readers can view a list of all published posts, displaying title, author, date, and tags.",
+          "Readers can filter the list of published posts by selecting one or more tags.",
+          "Readers can click on a post to view its full content, including rendered markdown, title, author, date, tags, and cover image."
+        ],
+        "tech_stack": {
+          "backend": "FastAPI",
+          "database": "SQLite",
+          "auth": "JWT",
+          "frontend": "React + Vite"
+        },
+        "db_entities": [
+          "User",
+          "Post",
+          "Tag",
+          "PostTag"
+        ],
+        "api_modules": [
+          "auth",
+          "users",
+          "posts",
+          "tags"
+        ],
+        "user_stories": [
+          {
+            "role": "Author",
+            "want": "to create a new blog post",
+            "acceptance_criteria": [
+              "I can input a title, markdown content, tags, and a cover image URL.",
+              "The post is saved as a 'draft' by default upon creation.",
+              "I receive confirmation that my post has been successfully created."
+            ]
+          },
+          {
+            "role": "Author",
+            "want": "to save a post as a draft",
+            "acceptance_criteria": [
+              "When I save a post, its status is set to 'draft'.",
+              "Draft posts are not visible to readers.",
+              "I can access and edit my draft posts from my author dashboard."
+            ]
+          },
+          {
+            "role": "Author",
+            "want": "to publish a draft post",
+            "acceptance_criteria": [
+              "I can change the status of a draft post to 'published'.",
+              "The published post immediately appears in the list of posts visible to readers.",
+              "The published post displays its title, my name, the publication date, and its tags."
+            ]
+          },
+          {
+            "role": "Author",
+            "want": "to edit an existing post (draft or published)",
+            "acceptance_criteria": [
+              "I can modify the title, content, tags, and cover image URL of any of my posts.",
+              "If the post is published, the changes are reflected immediately for readers.",
+              "I receive confirmation that my post has been successfully updated."
+            ]
+          },
+          {
+            "role": "Reader",
+            "want": "to view a list of all published blog posts",
+            "acceptance_criteria": [
+              "I see a list of posts, each displaying its title, author, publication date, and tags.",
+              "Only 'published' posts are visible in this list.",
+              "The list is ordered by publication date, newest first."
+            ]
+          },
+          {
+            "role": "Reader",
+            "want": "to filter posts by a specific tag",
+            "acceptance_criteria": [
+              "I can select a tag to filter the post list.",
+              "Only posts containing the selected tag are displayed.",
+              "The filter can be cleared to show all published posts again."
+            ]
+          },
+          {
+            "role": "Reader",
+            "want": "to read a full blog post",
+            "acceptance_criteria": [
+              "When I click on a post title, I am taken to a dedicated page for that post.",
+              "The full content (markdown rendered), title, author, publication date, and cover image are displayed.",
+              "The post's tags are also visible on the individual post page."
+            ]
+          }
+        ],
+        "non_functional_requirements": {
+          "authentication": "required — Authors need to log in to manage posts; Readers do not need to log in to view posts.",
+          "authorization": "Authors can only create, edit, delete, and publish their own posts. Readers can only view published posts.",
+          "pagination": "required on: /posts (for readers), /authors/{author_id}/posts (for authors)",
+          "search": "none",
+          "file_uploads": "no",
+          "real_time": "no"
+        },
+        "data_entities_detail": [
+          {
+            "name": "User",
+            "description": "Stores user authentication and profile information.",
+            "key_fields": [
+              "id",
+              "username",
+              "password_hash",
+              "role"
+            ],
+            "relationships": [
+              "has many Post"
+            ]
+          },
+          {
+            "name": "Post",
+            "description": "Stores blog post content and metadata.",
+            "key_fields": [
+              "id",
+              "title",
+              "content_markdown",
+              "cover_image_url",
+              "status",
+              "published_at",
+              "created_at",
+              "updated_at",
+              "author_id"
+            ],
+            "relationships": [
+              "belongs to User",
+              "has many Tag"
+            ]
+          },
+          {
+            "name": "Tag",
+            "description": "Stores categories for blog posts.",
+            "key_fields": [
+              "id",
+              "name"
+            ],
+            "relationships": [
+              "has many Post"
+            ]
+          },
+          {
+            "name": "PostTag",
+            "description": "Junction table for many-to-many relationship between Posts and Tags.",
+            "key_fields": [
+              "post_id",
+              "tag_id"
+            ],
+            "relationships": [
+              "belongs to Post",
+              "belongs to Tag"
+            ]
+          }
+        ],
+        "out_of_scope": [
+          "User registration (authors will be pre-provisioned or invited)",
+          "Comments section for posts",
+          "Rich text editor (only markdown input)",
+          "Advanced search functionality (only tag filtering)",
+          "Analytics or readership metrics",
+          "User profile pages beyond basic author identification"
+        ]
+      },
+      "architecture": {
+        "api_endpoints": [
+          {
+            "method": "POST",
+            "path": "/seed",
+            "description": "Populates database with realistic demo data.",
+            "file": "app\\routes\\seed_routes.py"
+          },
+          {
+            "method": "GET",
+            "path": "/stats/summary",
+            "description": "Returns aggregate counts and key metrics for the dashboard.",
+            "file": "app\\routes\\stats_routes.py"
+          },
+          {
+            "method": "POST",
+            "path": "/auth/login",
+            "description": "Authenticates a user and returns a JWT token.",
+            "file": "app\\routes\\auth_routes.py"
+          },
+          {
+            "method": "GET",
+            "path": "/users/me",
+            "description": "Retrieves the profile of the currently authenticated user.",
+            "file": "app\\routes\\user_routes.py"
+          },
+          {
+            "method": "GET",
+            "path": "/posts",
+            "description": "Retrieves a paginated list of all published blog posts, with optional tag filtering.",
+            "file": "app\\routes\\post_routes.py"
+          },
+          {
+            "method": "GET",
+            "path": "/posts/{post_id}",
+            "description": "Retrieves a single published blog post by its ID.",
+            "file": "app\\routes\\post_routes.py"
+          },
+          {
+            "method": "GET",
+            "path": "/authors/{author_id}/posts",
+            "description": "Retrieves a paginated list of posts by a specific author, including drafts for the author themselves.",
+            "file": "app\\routes\\post_routes.py"
+          },
+          {
+            "method": "POST",
+            "path": "/posts",
+            "description": "Creates a new blog post (initially as a draft).",
+            "file": "app\\routes\\post_routes.py"
+          },
+          {
+            "method": "PUT",
+            "path": "/posts/{post_id}",
+            "description": "Updates an existing blog post by its ID.",
+            "file": "app\\routes\\post_routes.py"
+          },
+          {
+            "method": "PATCH",
+            "path": "/posts/{post_id}/publish",
+            "description": "Publishes a draft post, making it visible to readers.",
+            "file": "app\\routes\\post_routes.py"
+          },
+          {
+            "method": "PATCH",
+            "path": "/posts/{post_id}/unpublish",
+            "description": "Unpublishes a published post, making it a draft again.",
+            "file": "app\\routes\\post_routes.py"
+          },
+          {
+            "method": "DELETE",
+            "path": "/posts/{post_id}",
+            "description": "Deletes a blog post by its ID.",
+            "file": "app\\routes\\post_routes.py"
+          },
+          {
+            "method": "GET",
+            "path": "/tags",
+            "description": "Retrieves a list of all available tags.",
+            "file": "app\\routes\\tag_routes.py"
+          },
+          {
+            "method": "POST",
+            "path": "/tags",
+            "description": "Creates a new tag (admin/author only).",
+            "file": "app\\routes\\tag_routes.py"
+          },
+          {
+            "method": "DELETE",
+            "path": "/tags/{tag_id}",
+            "description": "Deletes a tag (admin/author only).",
+            "file": "app\\routes\\tag_routes.py"
+          }
+        ],
+        "database_schema": [
+          {
+            "table_name": "users",
+            "columns": [
+              {
+                "name": "id",
+                "type": "INTEGER",
+                "is_primary_key": true,
+                "is_nullable": false
+              },
+              {
+                "name": "username",
+                "type": "VARCHAR(50)",
+                "is_primary_key": false,
+                "is_nullable": false
+              },
+              {
+                "name": "password_hash",
+                "type": "VARCHAR(255)",
+                "is_primary_key": false,
+                "is_nullable": false
+              },
+              {
+                "name": "role",
+                "type": "VARCHAR(20)",
+                "is_primary_key": false,
+                "is_nullable": false
+              }
+            ]
+          },
+          {
+            "table_name": "posts",
+            "columns": [
+              {
+                "name": "id",
+                "type": "INTEGER",
+                "is_primary_key": true,
+                "is_nullable": false
+              },
+              {
+                "name": "title",
+                "type": "VARCHAR(255)",
+                "is_primary_key": false,
+                "is_nullable": false
+              },
+              {
+                "name": "content_markdown",
+                "type": "TEXT",
+                "is_primary_key": false,
+                "is_nullable": false
+              },
+              {
+                "name": "cover_image_url",
+                "type": "VARCHAR(255)",
+                "is_primary_key": false,
+                "is_nullable": true
+              },
+              {
+                "name": "status",
+                "type": "VARCHAR(20)",
+                "is_primary_key": false,
+                "is_nullable": false
+              },
+              {
+                "name": "published_at",
+                "type": "DATETIME",
+                "is_primary_key": false,
+                "is_nullable": true
+              },
+              {
+                "name": "created_at",
+                "type": "DATETIME",
+                "is_primary_key": false,
+                "is_nullable": false
+              },
+              {
+                "name": "updated_at",
+                "type": "DATETIME",
+                "is_primary_key": false,
+                "is_nullable": false
+              },
+              {
+                "name": "author_id",
+                "type": "INTEGER",
+                "is_primary_key": false,
+                "is_nullable": false
+              }
+            ]
+          },
+          {
+            "table_name": "tags",
+            "columns": [
+              {
+                "name": "id",
+                "type": "INTEGER",
+                "is_primary_key": true,
+                "is_nullable": false
+              },
+              {
+                "name": "name",
+                "type": "VARCHAR(50)",
+                "is_primary_key": false,
+                "is_nullable": false
+              }
+            ]
+          },
+          {
+            "table_name": "post_tags",
+            "columns": [
+              {
+                "name": "post_id",
+                "type": "INTEGER",
+                "is_primary_key": true,
+                "is_nullable": false
+              },
+              {
+                "name": "tag_id",
+                "type": "INTEGER",
+                "is_primary_key": true,
+                "is_nullable": false
+              }
+            ]
+          }
+        ],
+        "folder_structure": {
+          "backend": [
+            "app/",
+            "app/api/",
+            "app/core/",
+            "app/core/config.py",
+            "app/core/security.py",
+            "app/db/",
+            "app/db/base.py",
+            "app/db/session.py",
+            "app/models/",
+            "app/models/user.py",
+            "app/models/post.py",
+            "app/models/tag.py",
+            "app/models/post_tag.py",
+            "app/schemas/",
+            "app/schemas/user.py",
+            "app/schemas/post.py",
+            "app/schemas/tag.py",
+            "app/schemas/auth.py",
+            "app/services/",
+            "app/services/user_service.py",
+            "app/services/post_service.py",
+            "app/services/tag_service.py",
+            "app/routes/",
+            "app/routes/auth_routes.py",
+            "app/routes/user_routes.py",
+            "app/routes/post_routes.py",
+            "app/routes/tag_routes.py",
+            "app/routes/seed_routes.py",
+            "app/routes/stats_routes.py",
+            "app/main.py"
+          ]
+        },
+        "frontend_structure": {
+          "pages": [
+            "HomePage.jsx",
+            "LoginPage.jsx",
+            "PostListPage.jsx",
+            "PostDetailPage.jsx",
+            "AuthorDashboardPage.jsx",
+            "CreatePostPage.jsx",
+            "EditPostPage.jsx"
+          ],
+          "components": [
+            "Header.jsx",
+            "Footer.jsx",
+            "LoginForm.jsx",
+            "PostCard.jsx",
+            "TagFilter.jsx",
+            "Pagination.jsx",
+            "MarkdownRenderer.jsx",
+            "AuthorPostList.jsx",
+            "PostForm.jsx",
+            "AuthGuard.jsx",
+            "LoadingSpinner.jsx",
+            "ErrorMessage.jsx"
+          ]
+        }
+      },
+      "product_spec": {
+        "display_name": "Forge Blog CMS",
+        "tagline": "A simple, role-based content management system for authors to publish and readers to discover blog posts.",
+        "user_stories": 7,
+        "must_have_features": [
+          "User Authentication & Authorization",
+          "Post Creation & Editing",
+          "Draft & Publish Workflow",
+          "Post Deletion",
+          "Public Post Listing",
+          "Tag-Based Filtering",
+          "Individual Post View"
+        ]
+      },
+      "tech_lead": {
+        "summary": "The proposed architecture provides a solid foundation for the Forge Blog CMS, largely adhering to the project contract and product spec. Key areas for improvement include refining authentication endpoint paths, ensuring consistent authorization enforcement, and optimizing database relationships for performance.",
+        "critical_issues": 2,
+        "warnings": 3
+      },
+      "backend_generation": {
+        "parallel": true,
+        "files": 30
+      },
+      "qa": {
+        "score": 75,
+        "stories_covered": 7,
+        "blockers": [
+          "Protected endpoints lack authentication",
+          "Missing response_model declarations for GET endpoints"
+        ],
+        "skipped": false
+      },
+      "security": {
+        "score": 68,
+        "risk_level": "medium",
+        "critical_count": 1,
+        "high_count": 1,
+        "skipped": false
+      },
+      "code_review": {
+        "naming_score": 70,
+        "architecture_score": 55,
+        "maintainability_score": 50,
+        "tech_debt_score": 40,
+        "overall_score": 54,
+        "skipped": false
+      },
+      "performance": {
+        "score": 72,
+        "n_plus_one_count": 5,
+        "missing_indexes": 4,
+        "large_payload_risks": 0,
+        "slow_api_warnings": 0,
+        "skipped": false
+      },
+      "frontend_critic": {
+        "design_score": 56,
+        "hierarchy_score": 72,
+        "compliance_score": 45,
+        "polish_score": 50,
+        "consistency_score": 60,
+        "files_polished": 2,
+        "skipped": false
+      },
+      "validation": {
+        "passed": true,
+        "errors": []
+      },
+      "runtime": {
+        "success": false,
+        "error": "name 'patch_model_field_mismatches' is not defined"
+      },
+      "forge_score": {
+        "score": 70,
+        "grade": "C"
+      },
+      "v6_score": {
+        "total": 44,
+        "grade": "F",
+        "dimensions": {
+          "runtime": 40,
+          "security": 53,
+          "performance": 10,
+          "maintainability": 54,
+          "review": 64
+        },
+        "breakdown": {
+          "forge_score": 70,
+          "runtime_passed": false,
+          "static_passed": true,
+          "security_score": 68,
+          "security_critical": 1,
+          "performance_score": 72,
+          "n_plus_one_count": 5,
+          "naming_score": 70,
+          "architecture_score": 55,
+          "maintainability_score": 50,
+          "tech_debt_score": 40,
+          "qa_score": 75,
+          "qa_blockers": 2
+        },
+        "weights": {
+          "runtime": 0.3,
+          "security": 0.25,
+          "performance": 0.15,
+          "maintainability": 0.15,
+          "review": 0.15
+        }
+      },
+      "collaboration_log": [
+        {
+          "agent": "product_manager",
+          "decision": "product_spec_created",
+          "rationale": "A simple, role-based content management system for authors to publish and readers to discover blog posts.",
+          "data": {
+            "features": 7,
+            "user_stories": 7,
+            "must_have": [
+              "User Authentication & Authorization",
+              "Post Creation & Editing",
+              "Draft & Publish Workflow",
+              "Post Deletion",
+              "Public Post Listing",
+              "Tag-Based Filtering",
+              "Individual Post View"
+            ]
+          }
+        },
+        {
+          "agent": "architect",
+          "decision": "architecture_created",
+          "rationale": "15 endpoints across 6 files",
+          "data": {
+            "endpoints": 15
+          }
+        },
+        {
+          "agent": "tech_lead",
+          "decision": "constraints_set",
+          "rationale": "The proposed architecture provides a solid foundation for the Forge Blog CMS, largely adhering to the project contract and product spec. Key areas for",
+          "data": {
+            "critical_issues": 2,
+            "auth_endpoints": 9,
+            "pagination_required": 3
+          }
+        },
+        {
+          "agent": "qa",
+          "decision": "qa_review_complete",
+          "rationale": "QA score: 75/100",
+          "data": {
+            "score": 75,
+            "blockers": [
+              "Protected endpoints lack authentication",
+              "Missing response_model declarations for GET endpoints"
+            ]
+          }
+        },
+        {
+          "agent": "security",
+          "decision": "security_review_complete",
+          "rationale": "Security score: 68/100",
+          "data": {
+            "score": 68
+          }
+        },
+        {
+          "agent": "code_review",
+          "decision": "code_review_complete",
+          "rationale": "Maintainability: 50/100",
+          "data": {
+            "maintainability_score": 50
+          }
+        },
+        {
+          "agent": "performance",
+          "decision": "performance_review_complete",
+          "rationale": "Performance score: 72/100",
+          "data": {
+            "score": 72
+          }
+        },
+        {
+          "agent": "frontend_critic",
+          "decision": "frontend_critic_complete",
+          "rationale": "Design score: 56/100",
+          "data": {
+            "score": 56
+          }
+        },
+        {
+          "agent": "orchestrator",
+          "decision": "pipeline_complete",
+          "rationale": "V6 score: 44/100",
+          "data": {
+            "total_time": 48.85,
+            "can_export": false
+          }
+        }
+      ],
+      "generation_time_seconds": 48.85,
+      "fix_attempts": 3
+    },
+    "retry_history": [
+      {
+        "attempt": 1,
+        "strategy": "patch_file",
+        "provider": "auto",
+        "score_before": 69.23,
+        "score_after": 72.06,
+        "delta": 2.83
+      },
+      {
+        "attempt": 2,
+        "strategy": "patch_file",
+        "provider": "auto",
+        "score_before": 72.06,
+        "score_after": 72.34,
+        "delta": 0.28
+      },
+      {
+        "attempt": 3,
+        "strategy": "regenerate_arch",
+        "provider": "auto",
+        "score_before": 72.34,
+        "score_after": 72.06,
+        "delta": -0.28
+      },
+      {
+        "attempt": 4,
+        "strategy": "regenerate_arch",
+        "provider": "auto",
+        "score_before": 72.06,
+        "score_after": 72.06,
+        "delta": 0.0
+      }
+    ],
+    "deployment": {
+      "skipped": true,
+      "reason": "Deployment skipped: score 72.1 below deployment threshold (80)"
+    },
+    "project_path": "C:\\Users\\jerry\\onedrive\\Desktop\\forgeai\\generated_projects\\forge_blog_cms",
+    "status": "done",
+    "confidence": {
+      "probability": 0.2028,
+      "pct": 20.28,
+      "grade": "F",
+      "factors": {
+        "base": -0.5,
+        "overall_score": 1.298,
+        "runtime_health": 0.1,
+        "browser_ux": 0.264,
+        "compilation": 0.182,
+        "fix_penalty": -1.6,
+        "critical_errors": -1.0,
+        "historical_base_rate": -0.113
+      },
+      "historical_rate": 0.3553,
+      "historical_n": 76,
+      "verdict": "Not deployment-ready — critical issues likely remain."
+    }
+  }
+}

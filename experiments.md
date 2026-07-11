@@ -3897,3 +3897,76 @@ telemetry integration not wired up).
 
 **Cost: $0.** No generation, no LLM calls, no prompt changes, no new
 repair heuristics.
+
+---
+
+## Experiment 056 — Post-Hardening Reliability Baseline (measurement only)
+
+**Goal:** establish a reliability baseline after Exp048-055's hardening
+work, with an explicit "do not fix anything" rule. First real API spend
+since Exp047 (all of Exp048-055 were $0/offline).
+
+**Method:** wrote a new, non-production measurement script
+(`backend/scripts/exp056_measure.py`) that reuses `run_canary.py`'s
+CANARY_APPS list, idea files, and concurrency lock (no changes to
+`run_canary.py` itself, which stays protected per `CLAUDE.md`), but
+captures the FULL `generate_project_v15` result dict (timeline,
+score_history, retry_history, confidence) plus complete stdout per app,
+instead of the stripped-down summary `run_canary.py`'s own `_check_result`
+keeps. Ran 2 rounds (5 of a possible 30 generations) before stopping
+early — round 3 was externally stopped after 2/3 apps; not restarted,
+since 5 data points across 2 rounds already showed a clear, reproducible,
+root-caused failure class, satisfying the budget's own "stop early"
+clause.
+
+**Headline finding: found and root-caused a real regression from
+Exp053**, not just measured symptoms. `app/services/v6_orchestrator.py:823`
+raises `NameError: name 'patch_model_field_mismatches' is not defined`
+inside `generate_project_v6`'s runtime-fix retry loop -- confirmed via
+`git show f7d4dca` that Exp053's Stage-1 extraction moved a local import
+this later, same-function call site depended on into a new helper's own
+scope. The `try/except` around the loop swallows the crash (no pipeline
+crash), but aborts the loop after its first fix-and-recheck cycle every
+time, discarding the intended 3 remaining retry attempts and the
+cleanup-patcher pass that follows. Confirmed present in 4/5 runs via two
+independent evidence sources: the literal error string in the logs, and
+(independently) every failing run's own `Runtime Fixes` LLM-call count
+stuck at exactly 1 despite `max_runtime_attempts=3` allowing up to 4.
+
+**Reliability summary (5 runs, todo x2/blog_cms x2/crm x1, --no-deploy):**
+first-pass success 1/5 (20%), final success 1/5 (20%) -- the repair loop
+never converted a single initially-failing app into a fully passing one
+in this sample. Most common failure: Runtime Startup + Integration/CRUD,
+4/5 runs. Second: Visual Judge low score, 5/5 runs (including the one
+success) -- universal but lower-severity, doesn't gate build/runtime/CRUD.
+Direct before/after: todo dropped 99.71 -> 74.4 (both rounds) vs. its
+last recorded pre-Exp053 canary score, the strongest single data point
+tying this to the Exp053 regression specifically.
+
+**Also found (not root-caused further, flagged for later):** a recurring
+schema/route field-name AttributeError pattern (`SignupRequest` missing
+`username`, `User` model missing `name`) in 2 different generated files
+-- plausibly entangled with the regression above (the very patcher meant
+to catch this never gets to run), re-measure after that ships.
+
+**Observatory updated and verified working**, not just appended:
+`canary_history.json` got both rounds as labeled entries
+(`exp056-baseline-r1`, `-r2`); confirmed by calling
+`compute_observatory`/`compute_reliability_timeline`/`compute_experiment_attribution`
+directly against the updated history and checking they process the new
+entries without error.
+
+**Ranked for Exp057:** #1 fix the NameError (trivial, low-risk, exact
+root cause known -- restores pre-Exp053 behavior, not a new heuristic).
+#2 re-measure the field-mismatch AttributeError pattern once #1 ships.
+#3 Visual Judge low scores (lower priority, doesn't gate).
+
+**Rule compliance:** no fixes implemented, no production code changed
+(confirmed via `git status` -- only a new measurement script,
+`benchmark_results/`, and this doc changed). Cost: ~532K tokens, ~$0.32
+estimated, ~31.5 min wall-clock, routed Cerebras-first (confirmed Gemini
+hit `429 RESOURCE_EXHAUSTED`/prepayment-depleted on every attempted call
+across all 5 runs -- the Cerebras-first reorder from earlier this session
+is doing real, active work, not just theoretical).
+
+Full report: `docs/EXP056_BASELINE.md`.

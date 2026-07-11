@@ -1,0 +1,460 @@
+
+######################################################################
+# FORGEAI V15 — Autonomous Self-Healing Platform
+# Idea:   A simple CRM for small businesses with user login. Users manage c
+# Job ID: 28b942b85e6b4e7196a0878909c2c921
+# Deploy: False → both
+######################################################################
+
+[V15] >> generation ...
+[V15] Model router: complexity=3 (medium) triggered=[email, search, login, note, simple] stage=planning → gemini
+
+######################################################################
+# V6 AUTONOMOUS ENGINEERING TEAM
+# Idea: A simple CRM for small businesses with user login. Users manage c
+######################################################################
+
+=== PRODUCT MANAGER (V6) ===
+  [cache hit] A simple CRM for small businesses with user login. Users man
+  Project: Simple CRM
+  6 user stories | 6 features | 4 entities
+
+=== ARCHITECT (V6) ===
+
+=== ARCHITECT CACHE HIT — skipping LLM call ===
+
+=== TECH LEAD REVIEW (V6) ===
+  [cache hit]
+  Summary: The proposed architecture for Simple CRM is largely sound and adheres to most project contract requi
+  Issues: 0 critical, 7 warnings
+
+=== BACKEND + FRONTEND — PARALLEL ===
+
+=== BACKEND TEAM — PARALLEL GENERATION (V6) ===
+
+=== FRONTEND TEAM (V6) ===
+
+=== START FRONTEND ===
+
+  [V6] Wave 1 — Foundation
+  [V6] Wave 2 — Models (4 tables, parallel)
+Frontend: [cache hit] — skipping LLM call
+=== END FRONTEND ===
+      [cache hit]
+    [model] users: OK (0.0s)
+      [cache hit]
+    [model] contacts: OK (0.0s)
+      [cache hit]
+    [model] notes: OK (0.0s)
+      [cache hit]
+    [model] interactions: OK (0.0s)
+  [V6] Wave 2 done in 0.0s
+  [V6] Wave 2.5 — stripped back_populates/backref from app/models/users.py
+  [V6] Wave 2.5 — stripped back_populates/backref from app/models/contacts.py
+  [V6] Wave 2.5 — stripped back_populates/backref from app/models/notes.py
+  [V6] Wave 2.5 — stripped back_populates/backref from app/models/interactions.py
+  [V6] Wave 2.5 — renaming plural class names: {'Users': 'User', 'Contacts': 'Contact', 'Notes': 'Note', 'Interactions': 'Interaction'}
+  [V6] Wave 2.5 — created shim app/models/user.py → User
+  [V6] Wave 2.5 — created shim app/models/contact.py → Contact
+  [V6] Wave 2.5 — created shim app/models/note.py → Note
+  [V6] Wave 2.5 — created shim app/models/interaction.py → Interaction
+  [V6] Wave 2.5 — stripped no-FK relationship users → notes
+  [V6] Wave 2.5 — stripped no-FK relationship users → interactions
+  [V6] Wave 3 — Schemas (5 resources, parallel)
+      [cache hit]
+    [schema] seed: OK (0.0s)
+      [cache hit]
+    [schema] auth: OK (0.0s)
+      [cache hit]
+    [schema] user: OK (0.0s)
+      [cache hit]
+    [schema] contact: OK (0.0s)
+      [cache hit]
+    [schema] stats: OK (0.0s)
+  [V6] Wave 3 done in 0.0s
+  [V6] Wave 4 — Routes (5 files, parallel)
+Using Gemini
+Using Gemini
+Using Gemini
+Using Gemini
+Using Gemini
+Gemini failed (429 RESOURCE_EXHAUSTED. {'error': {'code': 429, 'message': 'Your prepayment credits are depleted. Please go to AI Studio at https://ai.studio/projects to manage your project and billing. Learn more at https://ai.google.dev/gemini-api/docs/billing#prepay. ', 'status': 'RESOURCE_EXHAUSTED'}}) — falling back to auto chain
+Using Cerebras (main)
+Gemini failed (429 RESOURCE_EXHAUSTED. {'error': {'code': 429, 'message': 'Your prepayment credits are depleted. Please go to AI Studio at https://ai.studio/projects to manage your project and billing. Learn more at https://ai.google.dev/gemini-api/docs/billing#prepay. ', 'status': 'RESOURCE_EXHAUSTED'}}) — falling back to auto chain
+Using Cerebras (main)
+Gemini failed (429 RESOURCE_EXHAUSTED. {'error': {'code': 429, 'message': 'Your prepayment credits are depleted. Please go to AI Studio at https://ai.studio/projects to manage your project and billing. Learn more at https://ai.google.dev/gemini-api/docs/billing#prepay. ', 'status': 'RESOURCE_EXHAUSTED'}}) — falling back to auto chain
+Using Cerebras (main)
+Gemini failed (429 RESOURCE_EXHAUSTED. {'error': {'code': 429, 'message': 'Your prepayment credits are depleted. Please go to AI Studio at https://ai.studio/projects to manage your project and billing. Learn more at https://ai.google.dev/gemini-api/docs/billing#prepay. ', 'status': 'RESOURCE_EXHAUSTED'}}) — falling back to auto chain
+Using Cerebras (main)
+Gemini failed (429 RESOURCE_EXHAUSTED. {'error': {'code': 429, 'message': 'Your prepayment credits are depleted. Please go to AI Studio at https://ai.studio/projects to manage your project and billing. Learn more at https://ai.google.dev/gemini-api/docs/billing#prepay. ', 'status': 'RESOURCE_EXHAUSTED'}}) — falling back to auto chain
+Using Cerebras (main)
+[CEREBRAS] Prompt=4613 Completion=1392 Reasoning=884 Total=6005
+    [route] app/routes/user_routes.py: OK (3.2s)
+[CEREBRAS] Prompt=4628 Completion=871 Reasoning=587 Total=5499
+    [route] app/routes/stats_routes.py: OK (3.5s)
+[CEREBRAS] Prompt=4615 Completion=2978 Reasoning=1681 Total=7593
+    [route] app/routes/seed_routes.py: OK (3.7s)
+[CEREBRAS] Prompt=4627 Completion=2953 Reasoning=2292 Total=7580
+    [route] app/routes/auth_routes.py: OK (4.5s)
+[CEREBRAS] Prompt=4770 Completion=4633 Reasoning=2469 Total=9403
+    [route] app/routes/contact_routes.py: OK (5.3s)
+  [V6] Wave 4 done in 5.3s
+  [V6] Wave 5 — main.py (from 5 route files, 4 models)
+Using Gemini
+Gemini failed (429 RESOURCE_EXHAUSTED. {'error': {'code': 429, 'message': 'Your prepayment credits are depleted. Please go to AI Studio at https://ai.studio/projects to manage your project and billing. Learn more at https://ai.google.dev/gemini-api/docs/billing#prepay. ', 'status': 'RESOURCE_EXHAUSTED'}}) — falling back to auto chain
+Using Cerebras (main)
+[CEREBRAS] Prompt=2973 Completion=1250 Reasoning=942 Total=4223
+    [main] app/main.py: OK (1.3s)
+
+  [V6] Parallel backend done: 28/28 files OK in 6.63s (parallel phase: 5.29s)
+  Generated 28 files in 6.6s (parallel phase: 5.3s)
+  Backend+Frontend done in 6.6s
+
+[V14] Deployment configs written: ['render.yaml', 'Procfile', '.env.example', '.github/workflows/deploy.yml', 'wrangler.toml']
+
+=== FILES WRITTEN: C:\Users\jerry\onedrive\Desktop\forgeai\generated_projects\simple_crm (37 files) ===
+
+=== DETERMINISTIC PATCHER ===
+  [patcher] Stripped 3 relationship() declaration(s) from contacts.py
+  [patcher] Stripped 1 relationship() declaration(s) from interactions.py
+  [patcher] Stripped 1 relationship() declaration(s) from notes.py
+  [patcher] Stripped 1 relationship() declaration(s) from users.py
+  [route_patcher] Reordered shadowed static route(s) in contact_routes.py: GET /contacts/search
+  [patcher] Injected known-good app/utils/auth.py
+  [patcher] Injected known-good app/routes/auth_routes.py (dynamic password field + fast bcrypt)
+  [patcher] Added null guard for 'contact_objs' in seed_routes.py
+  [patcher] Made Response schema fields Optional in auth.py
+  [patcher] Made Response schema fields Optional in contact.py
+  [patcher] Made Response schema fields Optional in seed.py
+  [patcher] Made Response schema fields Optional in stats.py
+  [patcher] Made Response schema fields Optional in user.py
+  [patcher] Response schema id/datetime fixes in contact.py: ContactCreate.id, NoteCreate.id, InteractionCreate.id
+  [schema_patcher] Added from_attributes=True to 6 schema file(s)
+  [patcher] Added missing field(s) to ContactCreate in contact.py: ['company', 'email', 'status']
+  [patcher] Fixed ORM types in route schema in contact_routes.py
+  [refresh_patcher] Injected db.refresh() in seed_routes.py
+  [patcher] Patched 2 file(s) — passlib→bcrypt, async→sync, smart quotes
+  [db_patcher] Injected known-good app/database.py
+  [field_patcher] Added missing column(s) ['notes'] to Interaction in interactions.py
+  [field_patcher] Added missing schema field(s) ['notes'] to InteractionCreate in contact.py
+  [field_patcher] Added missing required constructor kwarg(s) in contact_routes.py
+
+=== VALIDATION LOOP (V6) ===
+  Validation: FAIL — 7 errors
+
+  Validation errors:
+    • Missing frontend import target: ./pages/ContactDetailPage
+    • Duplicate class definition: 'ContactCreate' is defined in multiple files (app/routes/contact_routes.py, app/schemas/contact.py) — this creates incompatible duplicate types
+    • Duplicate class definition: 'ContactUpdate' is defined in multiple files (app/routes/contact_routes.py, app/schemas/contact.py) — this creates incompatible duplicate types
+    • Duplicate class definition: 'NoteCreate' is defined in multiple files (app/routes/contact_routes.py, app/schemas/contact.py) — this creates incompatible duplicate types
+    • Duplicate class definition: 'InteractionCreate' is defined in multiple files (app/routes/contact_routes.py, app/schemas/contact.py) — this creates incompatible duplicate types
+    • Duplicate class definition: 'RegisterRequest' is defined in multiple files (app/routes/user_routes.py, app/schemas/auth.py) — this creates incompatible duplicate types
+    • Duplicate class definition: 'Token' is defined in multiple files (app/routes/user_routes.py, app/schemas/auth.py) — this creates incompatible duplicate types
+
+  Fix attempt 1/4 ...
+[LLM cache] HIT (missing_file) — 0 tokens billed
+Using Gemini
+Gemini failed (429 RESOURCE_EXHAUSTED. {'error': {'code': 429, 'message': 'Your prepayment credits are depleted. Please go to AI Studio at https://ai.studio/projects to manage your project and billing. Learn more at https://ai.google.dev/gemini-api/docs/billing#prepay. ', 'status': 'RESOURCE_EXHAUSTED'}}) — falling back to auto chain
+Using Cerebras (main)
+[CEREBRAS] Prompt=3363 Completion=4177 Reasoning=2256 Total=7540
+Using Gemini
+Gemini failed (429 RESOURCE_EXHAUSTED. {'error': {'code': 429, 'message': 'Your prepayment credits are depleted. Please go to AI Studio at https://ai.studio/projects to manage your project and billing. Learn more at https://ai.google.dev/gemini-api/docs/billing#prepay. ', 'status': 'RESOURCE_EXHAUSTED'}}) — falling back to auto chain
+Using Cerebras (main)
+[CEREBRAS] Prompt=1901 Completion=760 Reasoning=521 Total=2661
+  [patcher] Fixed attribute accesses in contact_routes.py
+  [patcher] Fixed attribute accesses in seed_routes.py
+  Post-fix 1: PASS — 0 errors
+
+=== REVIEWS (QA / Security / Code / Performance) ===
+
+=== QA REVIEW (V6) ===
+Using Gemini
+Gemini failed (429 RESOURCE_EXHAUSTED. {'error': {'code': 429, 'message': 'Your prepayment credits are depleted. Please go to AI Studio at https://ai.studio/projects to manage your project and billing. Learn more at https://ai.google.dev/gemini-api/docs/billing#prepay. ', 'status': 'RESOURCE_EXHAUSTED'}}) — falling back to auto chain
+Using Cerebras (main)
+[CEREBRAS] Prompt=3559 Completion=2366 Reasoning=1069 Total=5925
+  QA score: 80/100 | Stories: 10/12 covered
+  Blockers: Missing 404 handling on GET /contacts/{contact_id}, Missing response_model on notes and interactions POST endpoints, Notes and interactions not ordered chronologically as required
+  [MISSING] GET /contacts/{contact_id} does not raise a 404 when the contact does not exist.
+  [MISSING] GET /contacts/{contact_id}/notes does not guarantee newest‑first ordering.
+  [MISSING] GET /contacts/{contact_id}/interactions does not guarantee chronological ordering.
+
+=== SECURITY REVIEW (V6) ===
+Using Gemini
+Gemini failed (429 RESOURCE_EXHAUSTED. {'error': {'code': 429, 'message': 'Your prepayment credits are depleted. Please go to AI Studio at https://ai.studio/projects to manage your project and billing. Learn more at https://ai.google.dev/gemini-api/docs/billing#prepay. ', 'status': 'RESOURCE_EXHAUSTED'}}) — falling back to auto chain
+Using Cerebras (main)
+[CEREBRAS] Prompt=7028 Completion=2047 Reasoning=968 Total=9075
+  Security score: 70/100 | Risk: medium
+  Findings: 0 critical, 4 high, 9 total
+  Passed: No SQL injection found, Passwords properly hashed with bcrypt
+
+============================================================
+  SECURITY REPORT — Score: 70/100 [MEDIUM]
+  The codebase has several high‑severity issues, primarily missing authentication on sensitive endpoints and unsafe mass‑assignment schemas that could be exploited to manipulate data. Additional concerns include insufficient input validation, overly permissive CORS settings, and lack of rate limiting on auth routes. Addressing these findings will significantly improve the overall security posture.
+
+  Findings (9):
+  [HIGH    ] AuthenticationGap in app/routes/stats_routes.py
+             The `/stats/pipeline` endpoint is publicly accessible and does not require authentication, allowing any user to retrieve internal statistics.
+             Fix: Add a dependency on `get_current_user` (or equivalent OAuth2 dependency) to enforce authentication for this endpoint.
+  [HIGH    ] AuthenticationGap in app/routes/seed_routes.py
+             The `/seed` endpoint is unauthenticated, exposing a bulk‑data creation operation that can be abused by attackers.
+             Fix: Protect the endpoint with authentication (e.g., `Depends(get_current_user)`) and restrict it to admin roles only.
+  [HIGH    ] MassAssignment in app/schemas/contact.py
+             `ContactCreate` schema includes an optional `id` field, allowing a client to set the primary key and potentially overwrite existing records.
+             Fix: Remove the `id` field from the creation schema or mark it as read‑only (`exclude=True`) so it cannot be supplied by the client.
+  [HIGH    ] MassAssignment in app/schemas/user.py
+             `UserCreate` exposes a `password_hash` field, letting callers provide pre‑hashed passwords and bypass server‑side hashing logic.
+             Fix: Replace `password_hash` with a plain `password` field, hash it server‑side, and never accept a pre‑hashed password from the client.
+  [MEDIUM  ] MissingValidation in app/schemas/contact.py
+             String fields such as `email`, `phone`, `company`, and `status` lack `max_length` constraints, opening the door to excessively long inputs and potential DoS attacks.
+             Fix: Add `max_length` (e.g., `Field(max_length=255)`) to all string fields to enforce reasonable size limits.
+  [MEDIUM  ] MissingValidation in app/schemas/contact.py
+             `content` in `NoteCreate` has no maximum length, allowing arbitrarily large note bodies.
+             Fix: Add a `max_length` constraint (e.g., `Field(max_length=2000)`) to the `content` field.
+  [MEDIUM  ] MissingValidation in app/schemas/contact.py
+             `type` in `InteractionCreate` lacks a `max_length` limit, which could be abused for oversized payloads.
+             Fix: Add a `max_length` constraint (e.g., `Field(max_length=100)`) to the `type` field.
+  [MEDIUM  ] CORSIssue in app/main.py
+             CORS is configured with `allow_origins=["*"]`, which is unsafe for production as it permits any origin to access the API.
+             Fix: Restrict `allow_origins` to the specific frontend domains that need access.
+  [MEDIUM  ] RateLimiting in app/routes/auth_routes.py
+             Login and registration endpoints have no rate‑limiting, making them vulnerable to credential‑stuffing and brute‑force attacks.
+             Fix: Integrate a rate‑limiting solution (e.g., `slowapi` or a reverse‑proxy limit) on these endpoints.
+
+  Passed: No SQL injection found, Passwords properly hashed with bcrypt
+============================================================
+
+=== CODE REVIEW (V6) ===
+Using Gemini
+Gemini failed (429 RESOURCE_EXHAUSTED. {'error': {'code': 429, 'message': 'Your prepayment credits are depleted. Please go to AI Studio at https://ai.studio/projects to manage your project and billing. Learn more at https://ai.google.dev/gemini-api/docs/billing#prepay. ', 'status': 'RESOURCE_EXHAUSTED'}}) — falling back to auto chain
+Using Cerebras (main)
+[CEREBRAS] Prompt=4907 Completion=2870 Reasoning=1336 Total=7777
+  Code review: 44/100 overall | 3 critical, 3 high issues
+  Naming: 55 | Architecture: 45 | Maintainability: 40 | Tech Debt: 35
+  The project demonstrates solid foundational ideas—environment‑aware DB configuration, proper CORS handling, and health c
+
+=== PERFORMANCE REVIEW (V6) ===
+Using Gemini
+Gemini failed (429 RESOURCE_EXHAUSTED. {'error': {'code': 429, 'message': 'Your prepayment credits are depleted. Please go to AI Studio at https://ai.studio/projects to manage your project and billing. Learn more at https://ai.google.dev/gemini-api/docs/billing#prepay. ', 'status': 'RESOURCE_EXHAUSTED'}}) — falling back to auto chain
+Using Cerebras (main)
+[CEREBRAS] Prompt=5000 Completion=1577 Reasoning=758 Total=6577
+  Performance score: 72/100 | 6 issues total
+  N+1: 2 | Missing indexes: 3 | Large payloads: 1 | Slow APIs: 0
+  [N+1]  app/models/contacts.py: Contact model defines @property methods (interactions, notes, user) that issue s
+  [N+1]  app/models/users.py: User model defines a @property `contacts` that runs a separate query for each us
+  [IDX]  app/models/contacts.py.user_id: Foreign key column `user_id` is used in frequent filter clau
+  [IDX]  app/models/interactions.py.contact_id: Foreign key column `contact_id` is used in joins and filters
+  [PAYLOAD] GET /contacts: The endpoint allows a maximum `limit` of 500 records, which 
+
+=== FRONTEND CRITIC (V6) ===
+[LLM cache] HIT (frontend_critic) — 0 tokens billed
+  Frontend critic: 68/100 design score | 1 critical, 2 high issues
+  Hierarchy: 78 | Compliance: 62 | Polish: 65 | Consistency: 70
+  This CRM has a solid structural foundation, but it cannot ship in its current state because it fails to deliver on its core visual style and app shell
+
+=== UI POLISH PASS (3 file(s)) ===
+      [fix cache hit] src/components/Sidebar.jsx
+  [polish] src/components/Sidebar.jsx patched
+      [fix cache hit] src/pages/DashboardPage.jsx
+  [polish] src/pages/DashboardPage.jsx patched
+      [fix cache hit] src/pages/PipelinePage.jsx
+  [polish] src/pages/PipelinePage.jsx patched
+  Post-polish validation: PASS
+  [db_patcher] Injected known-good app/database.py
+
+=== RUNTIME VALIDATION (V6) ===
+Running runtime validation in: C:\Users\jerry\onedrive\Desktop\forgeai\generated_projects\simple_crm
+Using Python: C:\Users\jerry\onedrive\Desktop\forgeai\backend\venv\Scripts\python.exe
+Skipping pip install (packages pre-installed): C:\Users\jerry\onedrive\Desktop\forgeai\generated_projects\simple_crm\app\requirements.txt
+  [runner] Pre-flight DB init: OK
+Health Check /docs: 200
+
+=== USER JOURNEY (CRUD WORKFLOW) ===
+  Journey PASS — 11 passed / 0 failed
+    ✓ Register: 200 @ register
+    ✓ Login: 200 @ login
+    ✓ Detect entity: http://127.0.0.1:8001/contacts
+    ✓ Create entity: 201 id=1
+    ✓ List entities: 200 count=1
+    ✓ Edit entity: 200
+    ✓ Delete entity: 204
+    ✓ Verify deletion: 404 confirmed deleted
+    ✓ Logout: 200
+    ✓ Login again: re-login 200
+    ✓ Verify persistence: deleted item absent — persistence confirmed
+
+=== ENDPOINT SMOKE TESTS ===
+  All endpoints responded without errors.
+
+  Endpoint pass rate: 100% (15/15 passed, 0 timeouts, 0 errors)
+  Runtime: PASS
+
+  ZIP: C:\Users\jerry\onedrive\Desktop\forgeai\generated_projects\simple_crm.zip
+
+=== REPO DOCS GENERATED ===
+  4 files: README.md, API_DOCS.md, ARCHITECTURE.md, DEPLOYMENT.md
+  18 endpoints documented, 4 models in ER diagram
+
+=== V6 SCORE: 69/100 (C) ===
+    Runtime:      100/100
+    Security:     70/100
+    Performance:  38/100
+    Maintainability: 44/100
+    Review:       62/100
+
+────────────────────────────────────────
+  LLM Calls
+  Planner            1
+  Architect          1
+  Tech Lead          1
+  Backend            28
+  Frontend           1
+  Reviews            5
+  Polish             3
+  Repairs            3
+  Runtime Fixes      0
+  ────────────────────
+  Total              43
+────────────────────────────────────────
+
+=== COST SUMMARY ===
+  LLM calls:    12
+  Total tokens: 66,799
+  Est. cost:    $0.0401
+  LLM time:     30.6s
+    backend_generation: 32,218 tokens  $0.0193
+    fix: 7,736 tokens  $0.0046
+    qa_review: 5,081 tokens  $0.0030
+    security_review: 8,703 tokens  $0.0052
+    code_review: 6,882 tokens  $0.0041
+    performance_review: 6,179 tokens  $0.0037
+  Cache hits:   2 calls served free (~$0.0095, ~15,910 tokens saved)
+[V15] OK generation [passed] (31992ms)
+  [patcher] Patched 3 file(s) — passlib→bcrypt, async→sync, smart quotes
+  [db_patcher] Injected known-good app/database.py
+  [field_patcher] Aligned model fields in seed_routes.py
+  [field_patcher] Added missing schema field(s) ['notes'] to NoteCreate in contact.py
+  [preflight] fix_model_schema_notnull_gap: applied
+  [preflight] fix_missing_env: applied
+  [db_patcher] Injected known-good app/database.py
+  [preflight] fix_database_py: applied
+  [preflight] 3 deterministic fix(es) applied without LLM
+  [verify] 1/11 Static analysis...
+  [verify]       failed — 4 issues
+  [verify] 2/11 Compile check...
+  [verify]       passed — 0 syntax errors
+  [verify] 2a Import closure check...
+  [verify]       passed — 0 unresolved imports
+  [verify] 2a Symbol closure check...
+  [verify]       passed — 0 undefined symbols
+  [verify] 2a2 Contract conformance check (warn-only)...
+  [verify]       failed — 11 contract findings
+  [verify] 2b Frontend build...
+[Frontend] cwd:          C:\Users\jerry\OneDrive\Desktop\forgeAi\generated_projects\simple_crm
+[Frontend] cwd exists:   True
+[Frontend] package.json: ✓ exists
+[Frontend] npm:          C:\Program Files\nodejs\npm.CMD
+[Frontend] Building in: C:\Users\jerry\OneDrive\Desktop\forgeAi\generated_projects\simple_crm
+[Frontend] Installing dependencies (npm install)...
+[Frontend] npm install complete
+Running vite build...
+Frontend build PASSED in 34.22s
+  [verify]       passed — 0 build errors
+  [verify] 3/11 Runtime startup...
+Running runtime validation in: C:\Users\jerry\onedrive\Desktop\forgeai\generated_projects\simple_crm
+Using Python: C:\Users\jerry\onedrive\Desktop\forgeai\backend\venv\Scripts\python.exe
+Skipping pip install (packages pre-installed): C:\Users\jerry\onedrive\Desktop\forgeai\generated_projects\simple_crm\app\requirements.txt
+  [runner] Deleted stale DB: app.db
+  [runner] Deleted stale DB: app.db-wal
+  [runner] Deleted stale DB: app.db-shm
+  [runner] Pre-flight DB init: OK
+Health Check /docs: 200
+
+=== USER JOURNEY (CRUD WORKFLOW) ===
+  Journey PASS — 11 passed / 0 failed
+    ✓ Register: 200 @ register
+    ✓ Login: 200 @ login
+    ✓ Detect entity: http://127.0.0.1:8001/contacts
+    ✓ Create entity: 201 id=1
+    ✓ List entities: 200 count=1
+    ✓ Edit entity: 200
+    ✓ Delete entity: 204
+    ✓ Verify deletion: 404 confirmed deleted
+    ✓ Logout: 200
+    ✓ Login again: re-login 200
+    ✓ Verify persistence: deleted item absent — persistence confirmed
+
+=== ENDPOINT SMOKE TESTS ===
+  All endpoints responded without errors.
+
+  Endpoint pass rate: 100% (15/15 passed, 0 timeouts, 0 errors)
+  [verify]       passed
+  [verify] 4-9: Running HTTP / Schema-DB / Browser / Performance / Accessibility in parallel...
+  [verify]       http: failed — 1 issues
+  [verify]       schema_db_assertion: passed — 0 issues
+  [verify]       accessibility: failed — 1 issues
+  [verify]       browser: passed — 0 issues
+  [verify] 10/11 Workflow tests...
+  [verify]       passed
+  [verify] 11/11 LLM Judge...
+Using Cerebras (main)
+[CEREBRAS] Prompt=298 Completion=413 Reasoning=153 Total=711
+  [verify]       LLM Judge claimed a blank/empty page, but the browser stage found mounted DOM content with zero console errors -- treating as a likely vision misread and downgrading to medium severity
+  [verify]       LLM Judge: The UI never renders the CRM dashboard – it stays on a blank or loading screen b
+
+------------------------------------------------------------
+  FORGE SCORE: 89.9/100  (B) [DEPLOY READY]
+  Coverage: 11/11 dimensions
+------------------------------------------------------------
+  + Compilation            [####################..........]  69.0  (wt:15%)
+      critical=0 high=0 medium=4 low=11
+  + Runtime Startup        [##############################] 100.0  (wt:20%)
+      started=True health=True success=True
+  + API Functionality      [##############################] 100.0  (wt:15%)
+      15/15 endpoints passed
+  + Frontend Load          [##############################] 100.0  (wt:10%)
+      loaded OK
+  + Browser UX             [##########################....]  88.0  (wt:15%)
+      console_errors=0 network_failures=0 forms=0/0
+  + Integration            [##############################] 100.0  (wt:10%)
+      13/13 workflow steps passed
+  x Code Quality           [################..............]  55.0  (wt:5%)
+      stubs=0 globals=0 other_contract=15
+  + Security               [##############################] 100.0  (wt:5%)
+      security_issues=0 cors=True server_up=True
+  + Completeness           [##############################] 100.0  (wt:3%)
+      planned=15 missing=0
+  + Performance            [###########################...]  90.0  (wt:2%)
+      health_latency_ms=0
+  x Visual Judge           [###################...........]  65.2  (wt:5%)
+      llm_judge_severity=medium confidence=0.87
+------------------------------------------------------------
+
+[V15] Score: 89.9 (B) -- [DEPLOY READY]
+
+[V15] === Pipeline complete: generated ===
+
+  Deployment confidence: 90.9%  [###########################...]  B+
+  Likely to succeed — minor risks remain.
+  Factors:
+    base                         -0.500
+    overall_score                ++2.019
+    runtime_health               ++0.500
+    browser_ux                   ++0.264
+    compilation                  ++0.138
+    historical_base_rate         -0.119
+  Historical base rate: 35.1%  (n=77)
+  [arch_db] Stored arch for category 'crm' (score=89.9)
+
+======================================================================
+  V15 FINAL REPORT
+======================================================================
+  Project:       simple_crm
+  Forge Score:   89.9/100  (B)
+  Deployed:      NO
+  Fix Attempts:  0/5
+  Total Tokens:  67,331
+  Est. Cost:     $0.0404
+  Total Time:    93.09s
+  Score Track:   90
+======================================================================
+
