@@ -18,6 +18,54 @@ class JourneyStep:
     passed: bool
     duration_ms: float
     detail: str = ""
+    request: dict | None = None
+    response: dict | None = None
+
+
+class _ExchangeRecorder:
+    """
+    Thin wrapper around the `requests` module used only inside
+    run_user_journey(). Records the (method, url, json body) / (status,
+    body) of the LAST HTTP call made, so a failed step can attach that
+    exchange as forensic evidence without changing the return signature
+    of any of the step closures (do_register, do_create, ...). Never
+    records the raw Authorization header — only whether one was sent —
+    since bundles are written to a git-trackable directory.
+    """
+
+    def __init__(self, requests_mod):
+        self._requests = requests_mod
+        self.last_exchange: dict | None = None
+
+    def _wrap(self, verb: str):
+        real_fn = getattr(self._requests, verb)
+
+        def call(url, **kwargs):
+            resp = real_fn(url, **kwargs)
+            try:
+                body = resp.json()
+            except Exception:
+                body = (resp.text or "")[:1000]
+            self.last_exchange = {
+                "request": {
+                    "method": verb.upper(),
+                    "url": url,
+                    "json": kwargs.get("json"),
+                    "has_auth": bool((kwargs.get("headers") or {}).get("Authorization")),
+                },
+                "response": {
+                    "status_code": resp.status_code,
+                    "body": body,
+                },
+            }
+            return resp
+
+        return call
+
+    def __getattr__(self, name):
+        if name in ("post", "get", "put", "delete", "patch"):
+            return self._wrap(name)
+        return getattr(self._requests, name)
 
 
 @dataclass
@@ -284,7 +332,7 @@ def _detect_crud_entity(architecture: dict, api_prefix: str) -> str | None:
     return None
 
 
-def _step(name: str, fn) -> JourneyStep:
+def _run_step(name: str, fn) -> JourneyStep:
     t0 = time.time()
     try:
         ok, detail = fn()
@@ -312,6 +360,17 @@ def run_user_journey(
             skip_reason="pip install requests",
             total_duration=0,
         )
+
+    recorder = _ExchangeRecorder(requests)
+    requests = recorder
+
+    def _step(name: str, fn) -> JourneyStep:
+        recorder.last_exchange = None
+        step = _run_step(name, fn)
+        if not step.passed and recorder.last_exchange:
+            step.request = recorder.last_exchange["request"]
+            step.response = recorder.last_exchange["response"]
+        return step
 
     base = f"http://127.0.0.1:{backend_port}"
 

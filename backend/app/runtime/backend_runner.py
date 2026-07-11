@@ -270,7 +270,8 @@ class BackendRunner:
                     "entity": getattr(journey_result, "entity", ""),
                     "seed_summary": getattr(journey_result, "seed_summary", {}),
                     "steps": [
-                        {"name": s.name, "passed": s.passed, "detail": s.detail}
+                        {"name": s.name, "passed": s.passed, "detail": s.detail,
+                         "request": s.request, "response": s.response}
                         for s in journey_result.steps
                     ],
                     "total_duration": journey_result.total_duration,
