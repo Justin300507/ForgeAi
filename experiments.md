@@ -3681,3 +3681,88 @@ the concrete next-cycle to-do rather than glossed over).
 Cost: $0. No generation, no LLM calls. The 4 repair-logic fixes are the
 only behavior changes this cycle, each gated behind a failing test that
 proved the bug via real execution, per the task's own explicit rule.
+
+## Experiment 053 — Repair Pipeline Consolidation ($0, no LLM calls, offline)
+
+Direct continuation of Exp051's architectural findings. Goal: reduce
+maintenance risk by consolidating duplicate infrastructure WITHOUT
+changing repair behavior. Given the elevated risk of touching load-bearing
+dispatch code with no live-canary access this cycle, scope was
+deliberately narrower than all 6 requested tasks -- did 3 rigorously
+(brace-matcher dedup, failure isolation, partial repair_project()
+consolidation) and investigated 2 more with equal rigor, concluding "do
+not merge" with code-verified evidence for both, rather than forcing a
+consolidation the task's own rules would have flagged as unsafe.
+
+**Shipped, all verified by tests passing before AND after, not inspection
+alone:**
+
+1. **String-aware brace-matcher: 3 implementations -> 1.** `json_cleaner.py`
+   had one named function and one inline duplicate of the identical
+   algorithm in the same file; `validator_service.py` had a third,
+   genuinely different variant (3 quote chars for JS/JSX vs 1 for JSON).
+   Consolidated into `app/utils/brace_matching.py::find_matching_brace(text,
+   open_pos, quote_chars=...)`. Caught a real bug in my own first draft
+   before it shipped: a naive "any quote_chars toggles in_string"
+   simplification broke on a double-quoted string containing an
+   apostrophe -- caught by a test, fixed to track the SPECIFIC quote
+   character that opened the string, matching the original correct
+   behavior. `validator_service.py`'s `_extract_object_literal` had zero
+   prior test coverage; captured its exact behavior on 5 representative
+   cases before touching it, now has 20 dedicated regression tests.
+
+2. **Failure isolation added to `run_deterministic_patches`'s ~40-call
+   sequence** (the confirmed gap from Exp051's audit -- one unhandled
+   exception used to silently abort every remaining patcher, unlike
+   `preflight.py`'s registry which already isolates per-fix). Added
+   `_run_patch_isolated(counts, key, fn, *args)`, mechanically applied to
+   all 39 call sites via a verified regex transform (0 lines left
+   untransformed), preserving every ordering-dependency comment and the
+   exact `fn(root) or 0` -> `counts[key]` convention. Proved via an
+   end-to-end test: a real patcher mocked to raise no longer stops
+   `run_deterministic_patches` from completing or running patchers after
+   it.
+
+3. **`repair_project()`'s Stage 1 (initial deterministic patch) was
+   near-byte-identical to `generate_project_v6`'s Stage 1** -- extracted
+   into `_run_initial_deterministic_patches()`, both call sites now share
+   one implementation. **Stages 2 (architecture repair) and 3 (runtime fix
+   loop) were investigated with the same rigor and found to have REAL
+   divergence**: the main flow gates architecture repair on a
+   `target_files` extraction `repair_project()` doesn't have (a strictly
+   narrower trigger condition), and tracks LLM-call metrics
+   `repair_project()` doesn't. Not merged -- forcing it would either
+   change `repair_project()`'s behavior or complicate the main flow to
+   match, both out of scope for a "preserve behavior exactly" cycle.
+   Documented precisely in code and `docs/REPAIR_ARCHITECTURE.md`.
+
+4. **`RepairRegistry` designed and tested standalone**
+   (`app/repair/registry.py`, 10 passing tests) -- generalizes
+   `preflight.py`'s already-correct priority-ordered,
+   per-fix-isolated pattern. **Deliberately not wired into any live
+   dispatch mechanism.** Migrating either the ~40-call or 14-call hardcoded
+   sequences means replacing hand-commented ordering constraints with
+   priority numbers, and the only evidence strong enough to trust with the
+   live pipeline is a canary run this offline cycle has no access to.
+   `docs/REPAIR_REGISTRY.md` sketches the migration path for a future
+   cycle with canary access.
+
+**Investigated and explicitly NOT merged, both with code-level evidence
+(not just "looks similar"):**
+- **FastAPI param-order duplication**
+  (`deterministic_patcher.py::_patch_param_order` vs
+  `file_writer_service.py::_fix_fastapi_param_order`): read both
+  `_split_params` implementations directly. `deterministic_patcher.py`'s
+  only tracks `(`/`)` depth; `file_writer_service.py`'s tracks `(`/`[`
+  together. A parameter with a bracketed type hint containing a comma
+  (e.g. `Dict[str, int]`) would be mis-split by the narrower one. This is
+  a real, confirmed semantic difference, not cosmetic -- per the task's own
+  "do not merge if semantics differ" rule, left as two implementations.
+  Flagged as a genuine bug-fix candidate (upgrade the narrower one's
+  bracket-tracking) for a future dedicated Exp052-style cycle, not acted
+  on here (would be a behavior change, out of scope this cycle).
+
+**Cost: $0.** No generation, no LLM calls, no prompt changes. 40 new
+regression tests across 4 new test files. Full existing suite (37 files)
+re-run and confirmed passing before and after every individual change,
+not just at the end.

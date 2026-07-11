@@ -1,6 +1,8 @@
 import json
 import re
 
+from app.utils.brace_matching import find_matching_brace
+
 
 def _fix_path_backslashes(match):
     """
@@ -90,32 +92,10 @@ def try_repair_truncated(text: str) -> dict | None:
         if text[pos] != '{':
             break
 
-        # walk forward tracking JSON depth — skip the content of strings
-        depth = 0
-        in_string = False
-        escape_next = False
-        obj_end = -1
-
-        for i in range(pos, len(text)):
-            ch = text[i]
-            if escape_next:
-                escape_next = False
-                continue
-            if ch == '\\' and in_string:
-                escape_next = True
-                continue
-            if ch == '"':
-                in_string = not in_string
-                continue
-            if in_string:
-                continue
-            if ch == '{':
-                depth += 1
-            elif ch == '}':
-                depth -= 1
-                if depth == 0:
-                    obj_end = i
-                    break
+        # Exp053: was its own inline duplicate of _find_matching_close_brace's
+        # exact algorithm -- now the same shared implementation, verified
+        # byte-identical behavior via tests/reliability/test_json_cleaner_repairs.py.
+        obj_end = _find_matching_close_brace(text, pos)
 
         if obj_end == -1:
             break  # incomplete — truncation happened here
@@ -266,37 +246,20 @@ def _extract_single_file_object(text: str):
 
 def _find_matching_close_brace(text: str, open_pos: int) -> int:
     """
-    Given the index of a '{' in text, walk forward tracking string/escape
-    state to find the index of its MATCHING '}' -- correctly skipping braces
-    inside string literals, and stopping at the actual end of the JSON object
-    rather than grabbing a LATER '}' that happens to appear in trailing
-    non-JSON text the LLM appended after a complete, valid object (the
-    "Extra data" class of json.JSONDecodeError). Returns -1 if unmatched
-    (truncated response).
+    Given the index of a '{' in text, find the index of its MATCHING '}'
+    -- correctly skipping braces inside string literals, and stopping at
+    the actual end of the JSON object rather than grabbing a LATER '}'
+    that happens to appear in trailing non-JSON text the LLM appended
+    after a complete, valid object (the "Extra data" class of
+    json.JSONDecodeError). Returns -1 if unmatched (truncated response).
+
+    Exp053: thin wrapper over the shared app.utils.brace_matching
+    implementation (this function's own algorithm, extracted -- verified
+    byte-identical behavior before and after via
+    tests/reliability/test_json_cleaner_repairs.py, unchanged by this
+    refactor).
     """
-    depth = 0
-    in_string = False
-    escape_next = False
-    for i in range(open_pos, len(text)):
-        ch = text[i]
-        if escape_next:
-            escape_next = False
-            continue
-        if ch == '\\' and in_string:
-            escape_next = True
-            continue
-        if ch == '"':
-            in_string = not in_string
-            continue
-        if in_string:
-            continue
-        if ch == '{':
-            depth += 1
-        elif ch == '}':
-            depth -= 1
-            if depth == 0:
-                return i
-    return -1
+    return find_matching_brace(text, open_pos, quote_chars='"')
 
 
 def extract_json(text: str):

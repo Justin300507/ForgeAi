@@ -6242,6 +6242,28 @@ def run_frontend_patches(project_path: Path) -> int:
     return patched
 
 
+def _run_patch_isolated(counts: dict, key: str, fn, *args, **kwargs) -> None:
+    """
+    Exp053: run one project-wide patcher with its own exception boundary.
+
+    Confirmed gap from Experiment 051's audit: run_deterministic_patches's
+    ~40-call sequential list had NO per-call failure isolation -- unlike
+    preflight.py's PreflightRegistry, which wraps every fix in its own
+    try/except (see preflight.py's own comment on this exact contrast). A
+    single unhandled exception partway through this function used to abort
+    every remaining patcher in the sequence, silently -- including
+    unrelated ones with no connection to whatever raised. Sets counts[key]
+    = 0 and logs on failure; every subsequent patcher in the sequence
+    still gets to run.
+    """
+    try:
+        counts[key] = fn(*args, **kwargs) or 0
+    except Exception as exc:
+        counts[key] = 0
+        print(f"  [patcher] {key} raised {type(exc).__name__}: {exc} -- "
+              f"skipping, continuing with remaining patchers")
+
+
 def run_deterministic_patches(project_path: str, skip_protected_injections: bool = False) -> dict:
     """
     Run all deterministic patches on a generated project.
@@ -6302,130 +6324,129 @@ def run_deterministic_patches(project_path: str, skip_protected_injections: bool
     # Strip ALL relationship() declarations first — prevents SQLAlchemy mapper crash
     # (NoForeignKeysError) that hangs ALL endpoints when FK path is missing/ambiguous.
     # Must run before back_populates strip since we remove the whole statement.
-    counts["_patch_strip_relationships"] = _patch_strip_relationships(root) or 0
+    _run_patch_isolated(counts, "_patch_strip_relationships", _patch_strip_relationships, root)
 
     # Also strip residual back_populates/backref kwargs (defensive, in case any remain)
-    counts["_patch_strip_back_populates"] = _patch_strip_back_populates(root) or 0
+    _run_patch_isolated(counts, "_patch_strip_back_populates", _patch_strip_back_populates, root)
 
     # Strip FKs to non-existent tables (prevents NoReferencedTableError at startup)
-    counts["_patch_dangling_foreign_keys"] = _patch_dangling_foreign_keys(root) or 0
+    _run_patch_isolated(counts, "_patch_dangling_foreign_keys", _patch_dangling_foreign_keys, root)
 
     # Deduplicate model files (user.py + users.py both having class User → keep larger)
-    counts["_patch_deduplicate_models"] = _patch_deduplicate_models(root) or 0
+    _run_patch_isolated(counts, "_patch_deduplicate_models", _patch_deduplicate_models, root)
 
     # Same collision for schemas (expense.py + expenses.py both having
     # ExpenseCreate → keep larger). Must run before the import-redirect patcher
     # so any import left pointing at the dropped file gets resolved to the kept one.
-    counts["_patch_deduplicate_schemas"] = _patch_deduplicate_schemas(root) or 0
+    _run_patch_isolated(counts, "_patch_deduplicate_schemas", _patch_deduplicate_schemas, root)
 
     # Model class aliases (Games→Game etc) — run before FK import patcher
-    counts["_patch_model_aliases"] = _patch_model_aliases(root) or 0
+    _run_patch_isolated(counts, "_patch_model_aliases", _patch_model_aliases, root)
 
     # Relationship string aliases (Genre→Genres etc) — must run before FK import patcher
-    counts["_patch_relationship_string_aliases"] = _patch_relationship_string_aliases(root) or 0
+    _run_patch_isolated(counts, "_patch_relationship_string_aliases", _patch_relationship_string_aliases, root)
 
     # FK imports in main.py (must run after alias patch so class names are correct)
-    counts["_patch_main_fk_imports"] = _patch_main_fk_imports(root) or 0
+    _run_patch_isolated(counts, "_patch_main_fk_imports", _patch_main_fk_imports, root)
 
     # Router names: `router` → `{resource}_router` (eliminates RouterExportMismatch)
-    counts["_patch_router_names"] = _patch_router_names(root) or 0
+    _run_patch_isolated(counts, "_patch_router_names", _patch_router_names, root)
 
     # Parameter ordering: Path(...) before body param → SyntaxError → reorder
-    counts["_patch_param_order"] = _patch_param_order(root) or 0
+    _run_patch_isolated(counts, "_patch_param_order", _patch_param_order, root)
 
     # A static sub-route (e.g. /habits/streaks) registered after a
     # same-shaped parameterized route (/habits/{habit_id}) is permanently
     # unreachable -- the parameterized one matches first and "swallows" it.
-    counts["patch_reorder_shadowed_static_routes"] = patch_reorder_shadowed_static_routes(root) or 0
+    _run_patch_isolated(counts, "patch_reorder_shadowed_static_routes", patch_reorder_shadowed_static_routes, root)
 
     # Auth utils / routes: inject known-good templates on initial generation.
     # skip_protected_injections=True when called after Architecture Repair — the repair's
     # output is authoritative and must not be clobbered by the static template.
     if not skip_protected_injections:
-        counts["_patch_auth_utils"] = _patch_auth_utils(root) or 0
-        counts["_patch_auth_requirements"] = _patch_auth_requirements(root) or 0
-        counts["_patch_auth_routes"] = _patch_auth_routes(root) or 0
+        _run_patch_isolated(counts, "_patch_auth_utils", _patch_auth_utils, root)
+        _run_patch_isolated(counts, "_patch_auth_requirements", _patch_auth_requirements, root)
+        _run_patch_isolated(counts, "_patch_auth_routes", _patch_auth_routes, root)
 
     # Redirect `from app.routers.auth import ...` (and similar wrong paths) to the
     # module that actually defines the symbols — must run before router wiring so
     # main.py's imports resolve. Prevents the ModuleNotFoundError that made auth
     # 404 and every fix attempt regress-and-revert.
-    counts["_patch_redirect_missing_backend_imports"] = _patch_redirect_missing_backend_imports(root) or 0
+    _run_patch_isolated(counts, "_patch_redirect_missing_backend_imports", _patch_redirect_missing_backend_imports, root)
 
     # Wire ALL routers into main.py — runs after auth_routes injection so auth_router
     # is already in main.py; this catches every other generated router.
-    counts["_patch_wire_orphan_routers"] = _patch_wire_orphan_routers(root) or 0
+    _run_patch_isolated(counts, "_patch_wire_orphan_routers", _patch_wire_orphan_routers, root)
 
     # Synthesize LoginPage/RegisterPage if App.jsx redirects to /login but
     # the LLM never generated them -- must run BEFORE the generic orphan
     # route wirer below, which would otherwise wrap these in PrivateRoute.
-    counts["patch_ensure_auth_pages"] = patch_ensure_auth_pages(root) or 0
+    _run_patch_isolated(counts, "patch_ensure_auth_pages", patch_ensure_auth_pages, root)
 
     # Duplicate import declarations are a hard esbuild error; dedupe before
     # the route wirer so its own injected imports can't collide either.
-    counts["_patch_dedupe_frontend_imports"] = _patch_dedupe_frontend_imports(root) or 0
+    _run_patch_isolated(counts, "_patch_dedupe_frontend_imports", _patch_dedupe_frontend_imports, root)
 
     # Frontend mirror: wire any page component App.jsx imports but never
     # mounted on a <Route> (see docstring for why this is invisible to
     # every other automated check).
-    counts["_patch_wire_orphan_frontend_routes"] = _patch_wire_orphan_frontend_routes(root) or 0
+    _run_patch_isolated(counts, "_patch_wire_orphan_frontend_routes", _patch_wire_orphan_frontend_routes, root)
 
     # Must run after the line above: if the app's main authenticated page
     # isn't literally named "Dashboard", login/register's hardcoded
     # navigate('/dashboard') matches no route at all and silently bounces
     # back to /login even though auth succeeded (see docstring).
-    counts["_patch_login_redirect_target"] = _patch_login_redirect_target(root) or 0
+    _run_patch_isolated(counts, "_patch_login_redirect_target", _patch_login_redirect_target, root)
 
     # Seed robustness: guard against IndexError when parent entity inserts fail
-    counts["_patch_seed_robustness"] = _patch_seed_robustness(root) or 0
+    _run_patch_isolated(counts, "_patch_seed_robustness", _patch_seed_robustness, root)
 
     # Create stub schema files for any route imports that point to missing modules
     # (common after architecture repair generates new route files)
-    counts["_patch_create_missing_schemas"] = _patch_create_missing_schemas(root) or 0
+    _run_patch_isolated(counts, "_patch_create_missing_schemas", _patch_create_missing_schemas, root)
 
     # Make Response schema fields Optional so ORM field-name mismatches don't crash
     # (e.g. UserResponse.username required but User model uses email only)
-    counts["_patch_response_schemas_optional"] = _patch_response_schemas_optional(root) or 0
+    _run_patch_isolated(counts, "_patch_response_schemas_optional", _patch_response_schemas_optional, root)
 
     # Same fix for fields a *Response class INHERITS from a shared *Base
     # class rather than declaring itself -- the check above only sees a
     # class's own body text, so an inherited-but-missing field (e.g.
     # CourseResponse(CourseBase) inheriting `price` from CourseBase, which
     # the Course model has no column for at all) slips through untouched.
-    counts["_patch_response_schema_inherited_required_fields"] = (
-        _patch_response_schema_inherited_required_fields(root) or 0)
+    _run_patch_isolated(counts, "_patch_response_schema_inherited_required_fields", _patch_response_schema_inherited_required_fields, root)
 
     # Required schema fields on nullable model columns → Optional[T] = None
     # (kills the recurring "required but model allows NULL" validator error)
-    counts["_patch_schema_nullable_required_mismatch"] = _patch_schema_nullable_required_mismatch(root) or 0
+    _run_patch_isolated(counts, "_patch_schema_nullable_required_mismatch", _patch_schema_nullable_required_mismatch, root)
 
     # Response schemas must expose id (journey/frontends need it) and must
     # type DateTime columns as datetime, not str (else 500 on every row)
-    counts["_patch_response_schema_id_and_datetimes"] = _patch_response_schema_id_and_datetimes(root) or 0
+    _run_patch_isolated(counts, "_patch_response_schema_id_and_datetimes", _patch_response_schema_id_and_datetimes, root)
 
     # Inject model_config = {'from_attributes': True} into all Pydantic schemas
     # so FastAPI can serialize SQLAlchemy ORM objects returned from route handlers
-    counts["_patch_schemas_from_attributes"] = _patch_schemas_from_attributes(root) or 0
+    _run_patch_isolated(counts, "_patch_schemas_from_attributes", _patch_schemas_from_attributes, root)
 
     # Filter **schema.dict() unpacking to remove fields not on the SQLAlchemy model.
     # Prevents TypeError: 'status' is an invalid keyword argument for Task when the
     # Pydantic schema has extra fields that don't exist as columns on the model.
-    counts["_patch_star_dict_extra_fields"] = _patch_star_dict_extra_fields(root) or 0
+    _run_patch_isolated(counts, "_patch_star_dict_extra_fields", _patch_star_dict_extra_fields, root)
 
     # Fix the same filter if it was already generated with the older, unsafe
     # hasattr(Model, k) form -- passes a read-only @property through and
     # raises AttributeError: property 'x' has no setter on every create request.
-    counts["_patch_unsafe_model_hasattr_filter"] = _patch_unsafe_model_hasattr_filter(root) or 0
+    _run_patch_isolated(counts, "_patch_unsafe_model_hasattr_filter", _patch_unsafe_model_hasattr_filter, root)
 
     # Fix an already-filtered constructor call missing the exclusion for a
     # trailing kwarg that collides with a same-named schema field (e.g.
     # HabitCreate.user_id vs the route's own user_id=current_user.id) --
     # "got multiple values for keyword argument" on every create request.
-    counts["_patch_filtered_ctor_kwarg_collision"] = _patch_filtered_ctor_kwarg_collision(root) or 0
+    _run_patch_isolated(counts, "_patch_filtered_ctor_kwarg_collision", _patch_filtered_ctor_kwarg_collision, root)
 
     # Fix attribute accesses (e.g. user.username when model only has email).
     # The field_patcher fixes constructor calls; this fixes dict literals and returns.
-    counts["_patch_attr_access_mismatches"] = _patch_attr_access_mismatches(root) or 0
+    _run_patch_isolated(counts, "_patch_attr_access_mismatches", _patch_attr_access_mismatches, root)
 
     # Fix ownership-FK naming drift in query/filter expressions (e.g.
     # Contact.user_id used in a filter when the model's real FK to users
@@ -6433,39 +6454,39 @@ def run_deterministic_patches(project_path: str, skip_protected_injections: bool
     # the filter never matches any real user id. Class-qualified, checks
     # ForeignKey-typed columns only (see _model_fk_columns), so it won't
     # touch a genuinely unrelated same-named column on another model.
-    counts["_patch_ownership_fk_attribute_drift"] = _patch_ownership_fk_attribute_drift(root) or 0
+    _run_patch_isolated(counts, "_patch_ownership_fk_attribute_drift", _patch_ownership_fk_attribute_drift, root)
 
     # Add a field to a Create/Update schema when a route handler reads it
     # off that schema but it was never declared there, even though a
     # sibling schema for the same entity (Response/Base) already has it --
     # e.g. WorkoutCreate missing `date` while WorkoutResponse has it,
     # crashing every Create request with AttributeError.
-    counts["_patch_missing_create_update_fields"] = _patch_missing_create_update_fields(root) or 0
+    _run_patch_isolated(counts, "_patch_missing_create_update_fields", _patch_missing_create_update_fields, root)
 
     # Fix SQLAlchemy ORM models used as Pydantic field types in route files
     # (e.g. labels: List[Label] where Label is a SQLAlchemy model → List[Any])
-    counts["_patch_orm_type_in_route_schemas"] = _patch_orm_type_in_route_schemas(root) or 0
+    _run_patch_isolated(counts, "_patch_orm_type_in_route_schemas", _patch_orm_type_in_route_schemas, root)
 
     # Ensure all schema files that use BaseModel/Field/Optional actually import them.
-    counts["_patch_missing_pydantic_imports"] = _patch_missing_pydantic_imports(root) or 0
+    _run_patch_isolated(counts, "_patch_missing_pydantic_imports", _patch_missing_pydantic_imports, root)
 
     # Fix response_model=List[X] on handlers that return {"items": ..., "total": N}
     # → strip the List[] response_model so FastAPI passes the dict through unvalidated.
-    counts["_patch_list_response_model_mismatch"] = _patch_list_response_model_mismatch(root) or 0
+    _run_patch_isolated(counts, "_patch_list_response_model_mismatch", _patch_list_response_model_mismatch, root)
 
     # Create service stubs when route files import from app.services.X that doesn't exist.
     # LLMs sometimes generate a service layer but only generate routes, not services.
-    counts["_patch_create_missing_service_stubs"] = _patch_create_missing_service_stubs(root) or 0
+    _run_patch_isolated(counts, "_patch_create_missing_service_stubs", _patch_create_missing_service_stubs, root)
 
     # Inject db.refresh(obj) after db.commit() where missing — LLMs forget this, causing
     # POST handlers to return id=None because the ORM object isn't re-bound to the DB row.
-    counts["_patch_missing_db_refresh"] = _patch_missing_db_refresh(root) or 0
+    _run_patch_isolated(counts, "_patch_missing_db_refresh", _patch_missing_db_refresh, root)
 
     # All frontend-only fixes live in one bundle (see run_frontend_patches
     # below) so a standalone frontend resync (main.py's _resync_frontend,
     # used by "Check & Fix deployed app") can never silently drift out of
     # sync with this list again.
-    counts["run_frontend_patches"] = run_frontend_patches(root) or 0
+    _run_patch_isolated(counts, "run_frontend_patches", run_frontend_patches, root)
 
     if modified:
         print(f"  [patcher] Patched {modified} file(s) — passlib→bcrypt, async→sync, smart quotes")

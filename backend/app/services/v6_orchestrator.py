@@ -74,6 +74,47 @@ def _sanitize_architecture_paths(architecture: dict) -> None:
             ep["file"] = _sanitize_path(ep["file"])
 
 
+def _run_initial_deterministic_patches(project_path: str) -> int:
+    """
+    Exp053: Stage 1 of the repair pipeline's 3-stage pattern (initial
+    deterministic patch -> database-shape patches -> App.jsx scaffold),
+    extracted after confirming byte-identical logic between
+    generate_project_v6's initial pass and repair_project()'s initial pass
+    (Experiment 051's audit flagged this as duplicated structure -- a
+    future ordering/patcher-list change to one flow had no structural
+    forcing function to also apply it to the other).
+
+    Stages 2 (architecture repair) and 3 (runtime fix loop) were
+    investigated too and found to have REAL behavioral divergence --
+    the main flow gates architecture repair on a `target_files`
+    extraction repair_project() doesn't have, and tracks LLM-call metrics
+    repair_project() doesn't -- so those two stages were deliberately NOT
+    extracted, to avoid changing either flow's behavior. See
+    docs/REPAIR_ARCHITECTURE.md for the full comparison.
+
+    Returns the field-mismatch fix count. generate_project_v6 logs it;
+    repair_project() discards it -- both match their pre-existing
+    behavior exactly (repair_project() never logged this count before
+    this extraction either).
+    """
+    print("\n=== DETERMINISTIC PATCHER ===")
+    run_deterministic_patches(project_path)
+    from app.services.database_patcher import (
+        patch_database_py, patch_model_field_mismatches, patch_add_missing_model_columns,
+        patch_add_missing_schema_fields, patch_missing_required_constructor_kwargs,
+        patch_filter_dict_unpack_constructor_kwargs,
+    )
+    patch_database_py(project_path)
+    n_field_fixes = patch_model_field_mismatches(project_path)
+    patch_add_missing_model_columns(project_path)
+    patch_add_missing_schema_fields(project_path)
+    patch_missing_required_constructor_kwargs(project_path)
+    patch_filter_dict_unpack_constructor_kwargs(project_path)
+    if ensure_app_jsx(project_path):
+        print("  [scaffold] Synthesized missing src/App.jsx from existing pages")
+    return n_field_fixes or 0
+
+
 def generate_project_v6(
     idea: str,
     provider: str = "auto",
@@ -253,23 +294,9 @@ def generate_project_v6(
     # Deterministic patcher — runs before validation, no LLM cost
     # Fixes: passlib→bcrypt, missing FK imports, async+sync ORM, smart quotes
     # ------------------------------------------------------------------
-    print("\n=== DETERMINISTIC PATCHER ===")
-    run_deterministic_patches(project_path)
-    from app.services.database_patcher import (
-        patch_database_py, patch_model_field_mismatches, patch_add_missing_model_columns,
-        patch_add_missing_schema_fields, patch_missing_required_constructor_kwargs,
-        patch_filter_dict_unpack_constructor_kwargs,
-    )
-    patch_database_py(project_path)
-    _n_field_fixes = patch_model_field_mismatches(project_path)
+    _n_field_fixes = _run_initial_deterministic_patches(project_path)
     if _n_field_fixes:
         print(f"  [field_patcher] Fixed model-field mismatches in {_n_field_fixes} route file(s)")
-    patch_add_missing_model_columns(project_path)
-    patch_add_missing_schema_fields(project_path)
-    patch_missing_required_constructor_kwargs(project_path)
-    patch_filter_dict_unpack_constructor_kwargs(project_path)
-    if ensure_app_jsx(project_path):
-        print("  [scaffold] Synthesized missing src/App.jsx from existing pages")
 
     total_time_so_far = round(time.time() - start, 2)
     metadata_path = save_metadata(project_path, plan, architecture, provider, total_time_so_far)
@@ -1004,21 +1031,7 @@ def repair_project(
     print(f"{'#'*70}")
 
     # Deterministic patches first
-    print("\n=== DETERMINISTIC PATCHER ===")
-    run_deterministic_patches(project_path)
-    from app.services.database_patcher import (
-        patch_database_py, patch_model_field_mismatches, patch_add_missing_model_columns,
-        patch_add_missing_schema_fields, patch_missing_required_constructor_kwargs,
-        patch_filter_dict_unpack_constructor_kwargs,
-    )
-    patch_database_py(project_path)
-    patch_model_field_mismatches(project_path)
-    patch_add_missing_model_columns(project_path)
-    patch_add_missing_schema_fields(project_path)
-    patch_missing_required_constructor_kwargs(project_path)
-    patch_filter_dict_unpack_constructor_kwargs(project_path)
-    if ensure_app_jsx(project_path):
-        print("  [scaffold] Synthesized missing src/App.jsx from existing pages")
+    _run_initial_deterministic_patches(project_path)
 
     # Validation fix loop
     print("\n=== VALIDATION LOOP (REPAIR) ===")

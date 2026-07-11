@@ -2,6 +2,7 @@ import os
 import re
 import py_compile
 import ast
+from app.utils.brace_matching import find_matching_brace
 from app.services.undefined_symbol_validator import (
     validate_undefined_symbols
 )
@@ -665,31 +666,19 @@ _AUTH_POST_RE = re.compile(
 def _extract_object_literal(content, open_brace_pos):
     """
     From the position of an opening '{', return the full literal span up to
-    its matching '}', tracking string literals so braces inside strings
-    don't throw off the depth count. Returns None if unbalanced.
+    its matching '}', tracking string literals (single/double/backtick --
+    JS/JSX object literals can use any of the three) so braces inside
+    strings don't throw off the depth count. Returns None if unbalanced.
+
+    Exp053: thin wrapper over the shared app.utils.brace_matching
+    implementation (this function's own algorithm, extracted -- verified
+    byte-identical behavior before and after against a set of real and
+    representative object-literal fixtures, including a mixed-quote case
+    that a naive "any of quote_chars toggles in_string" simplification
+    would have broken).
     """
-    depth = 0
-    i = open_brace_pos
-    in_str = None  # None | "'" | '"' | '`'
-    n = len(content)
-    while i < n:
-        ch = content[i]
-        if in_str:
-            if ch == "\\":
-                i += 2
-                continue
-            if ch == in_str:
-                in_str = None
-        elif ch in ("'", '"', "`"):
-            in_str = ch
-        elif ch == "{":
-            depth += 1
-        elif ch == "}":
-            depth -= 1
-            if depth == 0:
-                return content[open_brace_pos:i + 1]
-        i += 1
-    return None
+    end = find_matching_brace(content, open_brace_pos, quote_chars="'\"`")
+    return content[open_brace_pos:end + 1] if end != -1 else None
 
 
 def _top_level_object_keys(literal):
