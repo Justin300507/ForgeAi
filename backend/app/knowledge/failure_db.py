@@ -174,6 +174,11 @@ class GenerationRecord:
     # data (see reliability_metrics.py). Defaults to {} for backward
     # compatibility with pre-existing generation_log.jsonl lines.
     prevention_counts: dict = field(default_factory=dict)
+    # Count of fix attempts where ctx.detect_regression() found new
+    # diagnostics with no offsetting score gain (Events.REGRESSION fires
+    # live for this but was never persisted for historical querying --
+    # Observatory's "Regression Alerts" reads this). 0 for pre-existing lines.
+    regression_count: int = 0
     timestamp:        str = ""
 
 

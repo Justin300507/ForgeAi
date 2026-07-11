@@ -237,3 +237,72 @@ def render_dashboard(m: dict) -> str:
         stages = "  ".join(f"{s}:{c}" for s, c in m["failure_stage_breakdown"].items())
         lines.append(f"\n  Failures by stage: {stages}")
     return "\n".join(lines)
+
+
+def compute_observatory(gen_entries: list[dict], canary_runs: list[dict], window: int = 30) -> dict:
+    """
+    The Observatory cockpit's single data source -- pure aggregation over
+    reliability_metrics.compute_reliability_metrics + compute_prevention_rate
+    + regression_count (GenerationRecord field) + canary_history.json.
+    Deliberately NOT a new subsystem: every number here already exists
+    somewhere in this module or generation_log.jsonl; this just answers
+    "what does the cockpit need, computed together" (trend deltas, a
+    now-vs-historically failure comparison, canary health) that no single
+    existing function produces on its own.
+    """
+    recent = [e for e in gen_entries if isinstance(e, dict)]
+    current = compute_reliability_metrics(recent, canary_runs, window=window)
+
+    # Trend: current window vs the window immediately before it (not vs
+    # all-time -- a slow-moving all-time average would mute a recent swing).
+    prev_slice = recent[-(window * 2):-window] if len(recent) > window else []
+    first_try_trend = None
+    if prev_slice:
+        previous = compute_reliability_metrics(prev_slice, [], window=window)
+        if (current["first_try_success_rate"] is not None
+                and previous["first_try_success_rate"] is not None):
+            first_try_trend = round(
+                current["first_try_success_rate"] - previous["first_try_success_rate"], 1)
+
+    # Top failure: all-time ("historically") vs last-window ("now") --
+    # the divergence itself is the signal (a class that was #1 all-time but
+    # isn't in the current window means it's been fixed; a new #1 in the
+    # current window that isn't the all-time leader is an emerging problem).
+    all_time = compute_reliability_metrics(recent, [], window=max(len(recent), 1))
+    top_failure_historically = all_time["top_failure_classes"][0][0] if all_time["top_failure_classes"] else None
+    top_failure_now = current["top_failure_classes"][0][0] if current["top_failure_classes"] else None
+
+    prevention = compute_prevention_rate(recent, window=window)
+
+    regression_alerts = sum((e.get("regression_count") or 0) for e in recent[-window:])
+
+    canary_health = "Unknown"
+    canary_label = "no canary runs recorded"
+    if canary_runs:
+        last_run = canary_runs[-1]
+        scores = [r.get("forge_score", 0) for r in (last_run.get("results") or [])
+                  if not r.get("crashed")]
+        crashed = any(r.get("crashed") for r in (last_run.get("results") or []))
+        if crashed or (scores and min(scores) < 50):
+            canary_health = "Unhealthy"
+        elif scores and min(scores) < 70:
+            canary_health = "Degraded"
+        elif scores:
+            canary_health = "Healthy"
+        canary_label = f"{last_run.get('label', '?')} @ {last_run.get('timestamp', '?')[:10]}"
+
+    return {
+        "window": current["window"],
+        "first_try_success_rate": current["first_try_success_rate"],
+        "first_try_trend": first_try_trend,
+        "top_failure_historically": top_failure_historically,
+        "top_failure_now": top_failure_now,
+        "prevention_by_category": prevention["by_category"],
+        "prevention_total": prevention["total_preventions"],
+        "avg_fix_iterations": current["avg_fix_iterations"],
+        "regression_alerts": regression_alerts,
+        "canary_health": canary_health,
+        "canary_label": canary_label,
+        "generation_success_rate": current["generation_success_rate"],
+        "deploy_rate": current["deploy_rate"],
+    }

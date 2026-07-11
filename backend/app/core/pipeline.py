@@ -364,6 +364,7 @@ class V15Pipeline:
                              if isinstance(getattr(d, "metadata", None), dict)
                              and d.metadata.get("bundle_ref")],
                 prevention_counts=prevention_counts,
+                regression_count=sum(1 for fa in ctx.fix_attempts if fa.regression_detected),
             ))
         except Exception as exc:
             print(f"[V15] generation_log write failed (non-fatal): {exc}")
