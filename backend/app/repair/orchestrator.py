@@ -322,6 +322,32 @@ def _jsx_tag_mismatches(content: str) -> list[str]:
     return mismatches
 
 
+def _python_syntax_error(content: str) -> Optional[str]:
+    """Detect invalid Python syntax in a patch before it's ever written to
+    disk -- the .py counterpart to _jsx_tag_mismatches() above.
+
+    Root cause this guards against: unlike the JSX path (which already
+    rejects a patch with unbalanced tags), a .py fix patch had NO syntax
+    gate at all -- extract_json()'s raw content went straight to
+    target.write_text() with zero validation. Confirmed live
+    (2026-07-11): a fix responding to a "Duplicate class definition"
+    diagnostic on a real generated CRM app rewrote contact_routes.py with
+    a multi-line `from app.schemas.contact import (` whose body had three
+    more complete `from ... import X` statements spliced into the middle
+    of the open parenthesis -- syntactically invalid, written straight to
+    disk, guaranteed to fail at the Compile stage on the very next
+    verification pass. This mirrors the JSX guard's own reasoning: nothing
+    caught it until a full verify cycle (LLM call + install + build +
+    runtime) had already been burned just to discover and revert it.
+    """
+    import ast
+    try:
+        ast.parse(content)
+        return None
+    except SyntaxError as e:
+        return f"line {e.lineno}: {e.msg}"
+
+
 _MISSING_BACKEND_IMPORT_RE = re.compile(r"Missing backend import target:\s*(\S+\.py)")
 
 
@@ -367,6 +393,12 @@ def _synthesize_missing_backend_files(
             continue
         if not fix or not fix.get("content"):
             continue
+        if target.suffix == ".py":
+            syntax_error = _python_syntax_error(fix["content"])
+            if syntax_error:
+                print(f"    [fix] REJECTED synthesized file {rel_path}: "
+                      f"invalid Python syntax -- {syntax_error}")
+                continue
         try:
             target.parent.mkdir(parents=True, exist_ok=True)
             target.write_text(fix["content"], encoding="utf-8")
@@ -721,6 +753,12 @@ def _apply_fix_group(
                 print(f"    [fix] REJECTED patch for {rel_path}: unbalanced JSX tag(s) "
                       f"-- {tag_mismatches[0]}")
                 continue
+        elif target.suffix == ".py":
+            syntax_error = _python_syntax_error(content)
+            if syntax_error:
+                print(f"    [fix] REJECTED patch for {rel_path}: invalid Python syntax "
+                      f"-- {syntax_error}")
+                continue
         try:
             target.parent.mkdir(parents=True, exist_ok=True)
             target.write_text(content, encoding="utf-8")
@@ -783,6 +821,12 @@ def _regenerate_module(
                 target = _safe_patch_target(ctx.project_path, rel)
                 if target is None:
                     continue
+                if target.suffix == ".py":
+                    syntax_error = _python_syntax_error(content)
+                    if syntax_error:
+                        print(f"    [fix] REJECTED module-regen patch for {rel}: "
+                              f"invalid Python syntax -- {syntax_error}")
+                        continue
                 target.parent.mkdir(parents=True, exist_ok=True)
                 target.write_text(content, encoding="utf-8")
                 modified.append(rel)
