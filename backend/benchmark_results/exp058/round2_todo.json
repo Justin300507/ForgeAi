@@ -1,0 +1,1091 @@
+{
+  "round": 2,
+  "app": "todo",
+  "timestamp": "2026-07-11T21:47:25.928604+00:00",
+  "crashed": false,
+  "error": null,
+  "elapsed_s": 399.4,
+  "result": {
+    "job_id": "33938383fc084bcca06f0996cb79912e",
+    "idea": "A todo list app with user accounts. Users can register and log in. Each user sees only their own todos. Todos have a title, optional description, due date, priority (low/medium/high), and done/undone status. Users can create, edit, delete, and mark todos complete. Filter by status and priority.",
+    "project_name": "todo_list_app",
+    "forge_score": 71.54,
+    "grade": "C",
+    "deployed": false,
+    "frontend_deployed": false,
+    "backend_url": null,
+    "frontend_url": null,
+    "fix_attempts": 3,
+    "total_tokens": 139121,
+    "estimated_cost": 0.08347260000000001,
+    "elapsed_s": 399.4,
+    "providers_used": [],
+    "timeline": [
+      {
+        "stage": "generation",
+        "status": "passed",
+        "duration_ms": 0.0
+      },
+      {
+        "stage": "deterministic-patch",
+        "status": "passed",
+        "duration_ms": 245.9
+      },
+      {
+        "stage": "verification",
+        "status": "passed",
+        "duration_ms": 49318.0
+      },
+      {
+        "stage": "static-validation",
+        "status": "failed",
+        "duration_ms": 388.8
+      },
+      {
+        "stage": "runtime-validation",
+        "status": "failed",
+        "duration_ms": 3524.8
+      },
+      {
+        "stage": "parallel-checks",
+        "status": "passed",
+        "duration_ms": 6558.3
+      },
+      {
+        "stage": "static-validation",
+        "status": "failed",
+        "duration_ms": 3114.0
+      },
+      {
+        "stage": "runtime-validation",
+        "status": "failed",
+        "duration_ms": 3565.1
+      },
+      {
+        "stage": "parallel-checks",
+        "status": "passed",
+        "duration_ms": 6559.8
+      },
+      {
+        "stage": "static-validation",
+        "status": "failed",
+        "duration_ms": 3035.8
+      },
+      {
+        "stage": "runtime-validation",
+        "status": "failed",
+        "duration_ms": 3925.8
+      },
+      {
+        "stage": "parallel-checks",
+        "status": "passed",
+        "duration_ms": 8777.4
+      },
+      {
+        "stage": "static-validation",
+        "status": "failed",
+        "duration_ms": 2794.9
+      },
+      {
+        "stage": "runtime-validation",
+        "status": "failed",
+        "duration_ms": 3633.0
+      },
+      {
+        "stage": "parallel-checks",
+        "status": "passed",
+        "duration_ms": 8814.8
+      },
+      {
+        "stage": "static-validation",
+        "status": "failed",
+        "duration_ms": 5251.8
+      },
+      {
+        "stage": "runtime-validation",
+        "status": "failed",
+        "duration_ms": 6758.3
+      },
+      {
+        "stage": "parallel-checks",
+        "status": "passed",
+        "duration_ms": 18771.3
+      },
+      {
+        "stage": "static-validation",
+        "status": "failed",
+        "duration_ms": 259.9
+      },
+      {
+        "stage": "runtime-validation",
+        "status": "failed",
+        "duration_ms": 2855.5
+      },
+      {
+        "stage": "parallel-checks",
+        "status": "passed",
+        "duration_ms": 4533.9
+      },
+      {
+        "stage": "static-validation",
+        "status": "failed",
+        "duration_ms": 2270.2
+      },
+      {
+        "stage": "runtime-validation",
+        "status": "failed",
+        "duration_ms": 2764.0
+      },
+      {
+        "stage": "parallel-checks",
+        "status": "passed",
+        "duration_ms": 5499.8
+      },
+      {
+        "stage": "verification",
+        "status": "passed",
+        "duration_ms": 20746.2
+      },
+      {
+        "stage": "static-validation",
+        "status": "failed",
+        "duration_ms": 2143.6
+      },
+      {
+        "stage": "runtime-validation",
+        "status": "failed",
+        "duration_ms": 2680.4
+      },
+      {
+        "stage": "parallel-checks",
+        "status": "passed",
+        "duration_ms": 4881.1
+      }
+    ],
+    "score_history": [
+      {
+        "attempt": 0,
+        "score": 71.54,
+        "grade": "C"
+      },
+      {
+        "attempt": 1,
+        "score": 70.09,
+        "grade": "C"
+      },
+      {
+        "attempt": 1,
+        "score": 71.82,
+        "grade": "C"
+      },
+      {
+        "attempt": 2,
+        "score": 70.09,
+        "grade": "C"
+      },
+      {
+        "attempt": 2,
+        "score": 71.82,
+        "grade": "C"
+      },
+      {
+        "attempt": 5,
+        "score": 66.53,
+        "grade": "D"
+      },
+      {
+        "attempt": 5,
+        "score": 71.54,
+        "grade": "C"
+      },
+      {
+        "attempt": 3,
+        "score": 71.54,
+        "grade": "C"
+      }
+    ],
+    "dimensions": [
+      {
+        "name": "Compilation",
+        "score": 84.0,
+        "passed": true,
+        "na": false
+      },
+      {
+        "name": "Runtime Startup",
+        "score": 20.0,
+        "passed": false,
+        "na": false
+      },
+      {
+        "name": "API Functionality",
+        "score": 100.0,
+        "passed": true,
+        "na": false
+      },
+      {
+        "name": "Frontend Load",
+        "score": 100.0,
+        "passed": true,
+        "na": false
+      },
+      {
+        "name": "Browser UX",
+        "score": 88.0,
+        "passed": true,
+        "na": false
+      },
+      {
+        "name": "Integration",
+        "score": 38.46153846153847,
+        "passed": false,
+        "na": false
+      },
+      {
+        "name": "Code Quality",
+        "score": 88.0,
+        "passed": false,
+        "na": false
+      },
+      {
+        "name": "Security",
+        "score": 100.0,
+        "passed": true,
+        "na": false
+      },
+      {
+        "name": "Completeness",
+        "score": 100.0,
+        "passed": true,
+        "na": false
+      },
+      {
+        "name": "Performance",
+        "score": 90,
+        "passed": true,
+        "na": false
+      },
+      {
+        "name": "Visual Judge",
+        "score": 45.4,
+        "passed": false,
+        "na": false
+      }
+    ],
+    "v6_result": {
+      "pipeline": "v6",
+      "project_name": "todo_list_app",
+      "project_path": "C:\\Users\\jerry\\onedrive\\Desktop\\forgeai\\generated_projects\\todo_list_app",
+      "zip_path": "C:\\Users\\jerry\\onedrive\\Desktop\\forgeai\\generated_projects\\todo_list_app.zip",
+      "metadata_path": "C:\\Users\\jerry\\onedrive\\Desktop\\forgeai\\generated_projects\\todo_list_app\\metadata.json",
+      "plan": {
+        "project_name": "todo_list_app",
+        "display_name": "Personal Todo List",
+        "features": [
+          "Allow users to create an account",
+          "Allow users to create new tasks",
+          "Allow users to log in to their account"
+        ],
+        "tech_stack": {
+          "backend": "FastAPI",
+          "database": "SQLite",
+          "auth": "JWT",
+          "frontend": "React + Vite"
+        },
+        "db_entities": [
+          "User",
+          "Task"
+        ],
+        "api_modules": [
+          "auth",
+          "tasks"
+        ],
+        "user_stories": [
+          {
+            "role": "User",
+            "want": "To register for an account",
+            "acceptance_criteria": [
+              "The user can enter a valid username and password to create an account",
+              "The user receives a confirmation message after successfully registering",
+              "The user is redirected to the login page after registration"
+            ]
+          },
+          {
+            "role": "User",
+            "want": "To log in to my account",
+            "acceptance_criteria": [
+              "The user can enter a valid username and password to log in",
+              "The user is redirected to the task list page after successful login",
+              "The user sees an error message if the login credentials are invalid"
+            ]
+          },
+          {
+            "role": "User",
+            "want": "To create a new task",
+            "acceptance_criteria": [
+              "The user can enter a task title and description",
+              "The user can select a due date and priority level for the task",
+              "The task is added to the user's task list after creation"
+            ]
+          },
+          {
+            "role": "User",
+            "want": "To edit an existing task",
+            "acceptance_criteria": [
+              "The user can select a task to edit",
+              "The user can update the task title, description, due date, and priority level",
+              "The task is updated in the user's task list after editing"
+            ]
+          },
+          {
+            "role": "User",
+            "want": "To delete a task",
+            "acceptance_criteria": [
+              "The user can select a task to delete",
+              "The task is removed from the user's task list after deletion",
+              "The user is prompted to confirm deletion before it is executed"
+            ]
+          },
+          {
+            "role": "User",
+            "want": "To mark a task as complete",
+            "acceptance_criteria": [
+              "The user can select a task to mark as complete",
+              "The task is updated to show as completed in the user's task list",
+              "The user can filter tasks by completion status"
+            ]
+          },
+          {
+            "role": "User",
+            "want": "To filter tasks by status and priority",
+            "acceptance_criteria": [
+              "The user can select a filter option (e.g. 'completed', 'high priority')",
+              "The task list is updated to show only tasks that match the selected filter",
+              "The user can clear the filter to show all tasks"
+            ]
+          }
+        ],
+        "non_functional_requirements": {
+          "authentication": "required — to ensure only authorized users can access their task list",
+          "authorization": "simple authentication, no role-based access",
+          "pagination": "not required — task lists are expected to be small",
+          "search": "not required — tasks can be filtered by status and priority",
+          "file_uploads": "no — no file uploads are needed",
+          "real_time": "no — real-time updates are not necessary"
+        },
+        "data_entities_detail": [
+          {
+            "name": "User",
+            "description": "Stores user account information",
+            "key_fields": [
+              "id",
+              "username",
+              "password"
+            ],
+            "relationships": [
+              "has many Tasks"
+            ]
+          },
+          {
+            "name": "Task",
+            "description": "Stores task information",
+            "key_fields": [
+              "id",
+              "title",
+              "description",
+              "due_date",
+              "priority",
+              "completed"
+            ],
+            "relationships": [
+              "belongs to User"
+            ]
+          }
+        ],
+        "out_of_scope": [
+          "team collaboration",
+          "task assignments",
+          "file uploads"
+        ]
+      },
+      "architecture": {
+        "api_endpoints": [
+          {
+            "method": "GET",
+            "path": "/users",
+            "description": "Retrieve a paginated list of users, optionally filtered by username search query.",
+            "file": "app\\routes\\user_routes.py"
+          },
+          {
+            "method": "GET",
+            "path": "/users/{id}",
+            "description": "Retrieve details of a specific user by ID.",
+            "file": "app\\routes\\user_routes.py"
+          },
+          {
+            "method": "POST",
+            "path": "/users",
+            "description": "Create a new user account with username and password.",
+            "file": "app\\routes\\user_routes.py"
+          },
+          {
+            "method": "PUT",
+            "path": "/users/{id}",
+            "description": "Update an existing user's information (e.g., username or password).",
+            "file": "app\\routes\\user_routes.py"
+          },
+          {
+            "method": "DELETE",
+            "path": "/users/{id}",
+            "description": "Delete a user account.",
+            "file": "app\\routes\\user_routes.py"
+          },
+          {
+            "method": "GET",
+            "path": "/tasks",
+            "description": "Retrieve a list of tasks for the authenticated user, supporting search by title/description and filters for status and priority.",
+            "file": "app\\routes\\task_routes.py"
+          },
+          {
+            "method": "GET",
+            "path": "/tasks/{id}",
+            "description": "Retrieve details of a specific task by ID.",
+            "file": "app\\routes\\task_routes.py"
+          },
+          {
+            "method": "POST",
+            "path": "/tasks",
+            "description": "Create a new task for the authenticated user.",
+            "file": "app\\routes\\task_routes.py"
+          },
+          {
+            "method": "PUT",
+            "path": "/tasks/{id}",
+            "description": "Update an existing task (title, description, due date, priority, completed flag).",
+            "file": "app\\routes\\task_routes.py"
+          },
+          {
+            "method": "DELETE",
+            "path": "/tasks/{id}",
+            "description": "Delete a task.",
+            "file": "app\\routes\\task_routes.py"
+          },
+          {
+            "method": "POST",
+            "path": "/auth/register",
+            "description": "Register a new user account (alias of POST /users).",
+            "file": "app\\routes\\auth_routes.py"
+          },
+          {
+            "method": "POST",
+            "path": "/auth/login",
+            "description": "Authenticate a user and return a JWT access token.",
+            "file": "app\\routes\\auth_routes.py"
+          },
+          {
+            "method": "POST",
+            "path": "/seed",
+            "description": "Populate the database with demo users, tasks, and priority levels.",
+            "file": "app\\routes\\seed_routes.py"
+          },
+          {
+            "method": "GET",
+            "path": "/stats/summary",
+            "description": "Return aggregate statistics such as total users, total tasks, and tasks per priority.",
+            "file": "app\\routes\\stats_routes.py"
+          }
+        ],
+        "database_schema": [
+          {
+            "table_name": "users",
+            "columns": [
+              {
+                "name": "id",
+                "type": "INTEGER",
+                "is_primary_key": true,
+                "is_nullable": false
+              },
+              {
+                "name": "username",
+                "type": "VARCHAR(150)",
+                "is_primary_key": false,
+                "is_nullable": false
+              },
+              {
+                "name": "hashed_password",
+                "type": "VARCHAR(255)",
+                "is_primary_key": false,
+                "is_nullable": false
+              },
+              {
+                "name": "created_at",
+                "type": "DATETIME",
+                "is_primary_key": false,
+                "is_nullable": false
+              }
+            ]
+          },
+          {
+            "table_name": "priorities",
+            "columns": [
+              {
+                "name": "id",
+                "type": "INTEGER",
+                "is_primary_key": true,
+                "is_nullable": false
+              },
+              {
+                "name": "name",
+                "type": "VARCHAR(50)",
+                "is_primary_key": false,
+                "is_nullable": false
+              },
+              {
+                "name": "level",
+                "type": "INTEGER",
+                "is_primary_key": false,
+                "is_nullable": false
+              }
+            ]
+          },
+          {
+            "table_name": "tasks",
+            "columns": [
+              {
+                "name": "id",
+                "type": "INTEGER",
+                "is_primary_key": true,
+                "is_nullable": false
+              },
+              {
+                "name": "user_id",
+                "type": "INTEGER",
+                "is_primary_key": false,
+                "is_nullable": false
+              },
+              {
+                "name": "title",
+                "type": "VARCHAR(200)",
+                "is_primary_key": false,
+                "is_nullable": false
+              },
+              {
+                "name": "description",
+                "type": "TEXT",
+                "is_primary_key": false,
+                "is_nullable": true
+              },
+              {
+                "name": "due_date",
+                "type": "DATETIME",
+                "is_primary_key": false,
+                "is_nullable": true
+              },
+              {
+                "name": "priority_id",
+                "type": "INTEGER",
+                "is_primary_key": false,
+                "is_nullable": true
+              },
+              {
+                "name": "completed",
+                "type": "BOOLEAN",
+                "is_primary_key": false,
+                "is_nullable": false
+              },
+              {
+                "name": "created_at",
+                "type": "DATETIME",
+                "is_primary_key": false,
+                "is_nullable": false
+              },
+              {
+                "name": "updated_at",
+                "type": "DATETIME",
+                "is_primary_key": false,
+                "is_nullable": true
+              }
+            ]
+          },
+          {
+            "table_name": "task_logs",
+            "columns": [
+              {
+                "name": "id",
+                "type": "INTEGER",
+                "is_primary_key": true,
+                "is_nullable": false
+              },
+              {
+                "name": "task_id",
+                "type": "INTEGER",
+                "is_primary_key": false,
+                "is_nullable": false
+              },
+              {
+                "name": "action",
+                "type": "VARCHAR(100)",
+                "is_primary_key": false,
+                "is_nullable": false
+              },
+              {
+                "name": "timestamp",
+                "type": "DATETIME",
+                "is_primary_key": false,
+                "is_nullable": false
+              }
+            ]
+          }
+        ],
+        "folder_structure": {
+          "backend": [
+            "app/models",
+            "app/schemas",
+            "app/routes",
+            "app/services",
+            "app/utils",
+            "app/config"
+          ]
+        },
+        "frontend_structure": {
+          "pages": [
+            "LoginPage",
+            "RegisterPage",
+            "DashboardPage",
+            "TaskListPage",
+            "TaskFormPage"
+          ],
+          "components": [
+            "Header",
+            "Footer",
+            "TaskCard",
+            "TaskForm",
+            "TaskFilterBar",
+            "AuthForm",
+            "Button",
+            "Input",
+            "Modal",
+            "Sidebar"
+          ]
+        }
+      },
+      "product_spec": {
+        "display_name": "Personal Todo List",
+        "tagline": "A simple todo list app for managing personal tasks",
+        "user_stories": 7,
+        "must_have_features": [
+          "User Registration",
+          "Task Creation",
+          "User Login"
+        ]
+      },
+      "tech_lead": {
+        "summary": "The proposed architecture captures the core todo functionality and includes most required endpoints, but it deviates from the strict contract in several key areas (auth endpoint naming, missing CORS/health, pagination, validation, and router naming). These gaps must be fixed before code generation to avoid runtime failures and contract violations.",
+        "critical_issues": 5,
+        "warnings": 2
+      },
+      "backend_generation": {
+        "parallel": true,
+        "files": 28
+      },
+      "qa": {
+        "score": 55,
+        "stories_covered": 5,
+        "blockers": [
+          "No pagination on list endpoints",
+          "Protected endpoints lack authentication",
+          "Missing proper 404 error handling",
+          "No explicit response models for endpoints"
+        ],
+        "skipped": false
+      },
+      "security": {
+        "score": 78,
+        "risk_level": "medium",
+        "critical_count": 0,
+        "high_count": 2,
+        "skipped": false
+      },
+      "code_review": {
+        "naming_score": 45,
+        "architecture_score": 40,
+        "maintainability_score": 35,
+        "tech_debt_score": 30,
+        "overall_score": 38,
+        "skipped": false
+      },
+      "performance": {
+        "score": 78,
+        "n_plus_one_count": 4,
+        "missing_indexes": 3,
+        "large_payload_risks": 0,
+        "slow_api_warnings": 0,
+        "skipped": false
+      },
+      "frontend_critic": {
+        "design_score": 53,
+        "hierarchy_score": 62,
+        "compliance_score": 45,
+        "polish_score": 50,
+        "consistency_score": 58,
+        "files_polished": 2,
+        "skipped": false
+      },
+      "validation": {
+        "passed": true,
+        "errors": []
+      },
+      "runtime": {
+        "success": false,
+        "healthy": true,
+        "exit_code": 0,
+        "stdout": "INFO:     127.0.0.1:50248 - \"GET /health HTTP/1.1\" 200 OK\nINFO:     127.0.0.1:50251 - \"GET /docs HTTP/1.1\" 200 OK\nINFO:     127.0.0.1:50252 - \"GET /openapi.json HTTP/1.1\" 200 OK\nINFO:     127.0.0.1:50253 - \"POST /auth/register HTTP/1.1\" 500 Internal Server Error\nINFO:     127.0.0.1:50254 - \"POST /auth/signup HTTP/1.1\" 500 Internal Server Error\nINFO:     127.0.0.1:50255 - \"POST /auth/register HTTP/1.1\" 500 Internal Server Error\nINFO:     127.0.0.1:50256 - \"GET /openapi.json HTTP/1.1\" 200 OK\nINFO:     127.0.0.1:50257 - \"POST /auth/login HTTP/1.1\" 401 Unauthorized\nINFO:     127.0.0.1:50258 - \"POST /auth/login HTTP/1.1\" 401 Unauthorized\nINFO:     127.0.0.1:50259 - \"POST /auth/login HTTP/1.1\" 422 Unprocessable Content\nINFO:     127.0.0.1:50260 - \"POST /seed HTTP/1.1\" 201 Created\nINFO:     127.0.0.1:50261 - \"GET /openapi.json HTTP/1.1\" 200 OK\nINFO:     127.0.0.1:50262 - \"POST /tasks HTTP/1.1\" 401 Unauthorized\nINFO:     127.0.0.1:50263 - \"GET /tasks HTTP/1.1\" 401 Unauthorized\nINFO:     127.0.0.1:50264 - \"POST /auth/logout HTTP/1.1\" 401 Unauthorized\nINFO:     127.0.0.1:50265 - \"POST /auth/login HTTP/1.1\" 401 Unauthorized\nINFO:     127.0.0.1:50266 - \"POST /auth/login HTTP/1.1\" 422 Unprocessable Content\nINFO:     127.0.0.1:50267 - \"GET /users HTTP/1.1\" 401 Unauthorized\nINFO:     127.0.0.1:50268 - \"GET /users/1 HTTP/1.1\" 401 Unauthorized\nINFO:     127.0.0.1:50269 - \"POST /users HTTP/1.1\" 422 Unprocessable Content\nINFO:     127.0.0.1:50270 - \"PUT /users/1 HTTP/1.1\" 401 Unauthorized\nINFO:     127.0.0.1:50271 - \"DELETE /users/1 HTTP/1.1\" 401 Unauthorized\nINFO:     127.0.0.1:50272 - \"GET /tasks HTTP/1.1\" 401 Unauthorized\nINFO:     127.0.0.1:50273 - \"GET /tasks/1 HTTP/1.1\" 401 Unauthorized\nINFO:     127.0.0.1:50274 - \"POST /tasks HTTP/1.1\" 401 Unauthorized\nINFO:     127.0.0.1:50275 - \"PUT /tasks/1 HTTP/1.1\" 401 Unauthorized\nINFO:     127.0.0.1:50276 - \"DELETE /tasks/1 HTTP/1.1\" 401 Unauthorized\nINFO:     127.0.0.1:50277 - \"POST /auth/register HTTP/1.1\" 422 Unprocessable Content\nINFO:     127.0.0.1:50278 - \"POST /auth/login HTTP/1.1\" 422 Unprocessable Content\nINFO:     127.0.0.1:50279 - \"GET /stats/summary HTTP/1.1\" 200 OK\n",
+        "stderr": "INFO:     Started server process [35644]\nINFO:     Waiting for application startup.\nINFO:     Application startup complete.\nINFO:     Uvicorn running on http://127.0.0.1:8001 (Press CTRL+C to quit)\nERROR:    Exception in ASGI application\nTraceback (most recent call last):\n  File \"C:\\Users\\jerry\\onedrive\\Desktop\\forgeai\\backend\\venv\\Lib\\site-packages\\uvicorn\\protocols\\http\\httptools_impl.py\", line 421, in run_asgi\n    result = await app(  # type: ignore[func-returns-value]\n             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n        self.scope, self.receive, self.send\n        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n    )\n    ^\n  File \"C:\\Users\\jerry\\onedrive\\Desktop\\forgeai\\backend\\venv\\Lib\\site-packages\\uvicorn\\middleware\\proxy_headers.py\", line 62, in __call__\n    return await self.app(scope, receive, send)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"C:\\Users\\jerry\\onedrive\\Desktop\\forgeai\\backend\\venv\\Lib\\site-packages\\fastapi\\applications.py\", line 1159, in __call__\n    await super().__call__(scope, receive, send)\n  File \"C:\\Users\\jerry\\onedrive\\Desktop\\forgeai\\backend\\venv\\Lib\\site-packages\\starlette\\applications.py\", line 90, in __call__\n    await self.middleware_stack(scope, receive, send)\n  File \"C:\\Users\\jerry\\onedrive\\Desktop\\forgeai\\backend\\venv\\Lib\\site-packages\\starlette\\middleware\\errors.py\", line 186, in __call__\n    raise exc\n  File \"C:\\Users\\jerry\\onedrive\\Desktop\\forgeai\\backend\\venv\\Lib\\site-packages\\starlette\\middleware\\errors.py\", line 164, in __call__\n    await self.app(scope, receive, _send)\n  File \"C:\\Users\\jerry\\onedrive\\Desktop\\forgeai\\backend\\venv\\Lib\\site-packages\\starlette\\middleware\\cors.py\", line 88, in __call__\n    await self.app(scope, receive, send)\n  File \"C:\\Users\\jerry\\onedrive\\Desktop\\forgeai\\backend\\venv\\Lib\\site-packages\\starlette\\middleware\\exceptions.py\", line 63, in __call__\n    await wrap_app_handling_exceptions(self.app, conn)(scope, receive, send)\n  File \"C:\\Users\\jerry\\onedrive\\Desktop\\forgeai\\backend\\venv\\Lib\\site-packages\\starlette\\_exception_handler.py\", line 53, in wrapped_app\n    raise exc\n  File \"C:\\Users\\jerry\\onedrive\\Desktop\\forgeai\\backend\\venv\\Lib\\site-packages\\starlette\\_exception_handler.py\", line 42, in wrapped_app\n    await app(scope, receive, sender)\n  File \"C:\\Users\\jerry\\onedrive\\Desktop\\forgeai\\backend\\venv\\Lib\\site-packages\\fastapi\\middleware\\asyncexitstack.py\", line 18, in __call__\n    await self.app(scope, receive, send)\n  File \"C:\\Users\\jerry\\onedrive\\Desktop\\forgeai\\backend\\venv\\Lib\\site-packages\\starlette\\routing.py\", line 660, in __call__\n    await self.middleware_stack(scope, receive, send)\n  File \"C:\\Users\\jerry\\onedrive\\Desktop\\forgeai\\backend\\venv\\Lib\\site-packages\\starlette\\routing.py\", line 680, in app\n    await route.handle(scope, receive, send)\n  File \"C:\\Users\\jerry\\onedrive\\Desktop\\forgeai\\backend\\venv\\Lib\\site-packages\\starlette\\routing.py\", line 276, in handle\n    await self.app(scope, receive, send)\n  File \"C:\\Users\\jerry\\onedrive\\Desktop\\forgeai\\backend\\venv\\Lib\\site-packages\\fastapi\\routing.py\", line 134, in app\n    await wrap_app_handling_exceptions(app, request)(scope, receive, send)\n  File \"C:\\Users\\jerry\\onedrive\\Desktop\\forgeai\\backend\\venv\\Lib\\site-packages\\starlette\\_exception_handler.py\", line 53, in wrapped_app\n    raise exc\n  File \"C:\\Users\\jerry\\onedrive\\Desktop\\forgeai\\backend\\venv\\Lib\\site-packages\\starlette\\_exception_handler.py\", line 42, in wrapped_app\n    await app(scope, receive, sender)\n  File \"C:\\Users\\jerry\\onedrive\\Desktop\\forgeai\\backend\\venv\\Lib\\site-packages\\fastapi\\routing.py\", line 120, in app\n    response = await f(request)\n               ^^^^^^^^^^^^^^^^\n  File \"C:\\Users\\jerry\\onedrive\\Desktop\\forgeai\\backend\\venv\\Lib\\site-packages\\fastapi\\routing.py\", line 674, in app\n    raw_response = await run_endpoint_function(\n                   ^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n    ...<3 lines>...\n    )\n    ^\n  File \"C:\\Users\\jerry\\onedrive\\Desktop\\forgeai\\backend\\venv\\Lib\\site-packages\\fastapi\\routing.py\", line 330, in run_endpoint_function\n    return await run_in_threadpool(dependant.call, **values)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"C:\\Users\\jerry\\onedrive\\Desktop\\forgeai\\backend\\venv\\Lib\\site-packages\\starlette\\concurrency.py\", line 34, in run_in_threadpool\n    return await anyio.to_thread.run_sync(func)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"C:\\Users\\jerry\\onedrive\\Desktop\\forgeai\\backend\\venv\\Lib\\site-packages\\anyio\\to_thread.py\", line 63, in run_sync\n    return await get_async_backend().run_sync_in_worker_thread(\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n        func, args, abandon_on_cancel=abandon_on_cancel, limiter=limiter\n        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n    )\n    ^\n  File \"C:\\Users\\jerry\\onedrive\\Desktop\\forgeai\\backend\\venv\\Lib\\site-packages\\anyio\\_backends\\_asyncio.py\", line 2518, in run_sync_in_worker_thread\n    return await future\n           ^^^^^^^^^^^^\n  File \"C:\\Users\\jerry\\onedrive\\Desktop\\forgeai\\backend\\venv\\Lib\\site-packages\\anyio\\_backends\\_asyncio.py\", line 1002, in run\n    result = context.run(func, *args)\n  File \"C:\\Users\\jerry\\onedrive\\Desktop\\forgeai\\generated_projects\\todo_list_app\\app\\routes\\auth_routes.py\", line 96, in signup\n    user = _make_user(req.email, req.password, req.username)\n                                               ^^^^^^^^^^^^\n  File \"C:\\Users\\jerry\\onedrive\\Desktop\\forgeai\\backend\\venv\\Lib\\site-packages\\pydantic\\main.py\", line 1042, in __getattr__\n    raise AttributeError(f'{type(self).__name__!r} object has no attribute {item!r}')\nAttributeError: 'SignupRequest' object has no attribute 'username'\nERROR:    Exception in ASGI application\nTraceback (most recent call last):\n  File \"C:\\Users\\jerry\\onedrive\\Desktop\\forgeai\\backend\\venv\\Lib\\site-packages\\uvicorn\\protocols\\http\\httptools_impl.py\", line 421, in run_asgi\n    result = await app(  # type: ignore[func-returns-value]\n             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n        self.scope, self.receive, self.send\n        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n    )\n    ^\n  File \"C:\\Users\\jerry\\onedrive\\Desktop\\forgeai\\backend\\venv\\Lib\\site-packages\\uvicorn\\middleware\\proxy_headers.py\", line 62, in __call__\n    return await self.app(scope, receive, send)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"C:\\Users\\jerry\\onedrive\\Desktop\\forgeai\\backend\\venv\\Lib\\site-packages\\fastapi\\applications.py\", line 1159, in __call__\n    await super().__call__(scope, receive, send)\n  File \"C:\\Users\\jerry\\onedrive\\Desktop\\forgeai\\backend\\venv\\Lib\\site-packages\\starlette\\applications.py\", line 90, in __call__\n    await self.middleware_stack(scope, receive, send)\n  File \"C:\\Users\\jerry\\onedrive\\Desktop\\forgeai\\backend\\venv\\Lib\\site-packages\\starlette\\middleware\\errors.py\", line 186, in __call__\n    raise exc\n  File \"C:\\Users\\jerry\\onedrive\\Desktop\\forgeai\\backend\\venv\\Lib\\site-packages\\starlette\\middleware\\errors.py\", line 164, in __call__\n    await self.app(scope, receive, _send)\n  File \"C:\\Users\\jerry\\onedrive\\Desktop\\forgeai\\backend\\venv\\Lib\\site-packages\\starlette\\middleware\\cors.py\", line 88, in __call__\n    await self.app(scope, receive, send)\n  File \"C:\\Users\\jerry\\onedrive\\Desktop\\forgeai\\backend\\venv\\Lib\\site-packages\\starlette\\middleware\\exceptions.py\", line 63, in __call__\n    await wrap_app_handling_exceptions(self.app, conn)(scope, receive, send)\n  File \"C:\\Users\\jerry\\onedrive\\Desktop\\forgeai\\backend\\venv\\Lib\\site-packages\\starlette\\_exception_handler.py\", line 53, in wrapped_app\n    raise exc\n  File \"C:\\Users\\jerry\\onedrive\\Desktop\\forgeai\\backend\\venv\\Lib\\site-packages\\starlette\\_exception_handler.py\", line 42, in wrapped_app\n    await app(scope, receive, sender)\n  File \"C:\\Users\\jerry\\onedrive\\Desktop\\forgeai\\backend\\venv\\Lib\\site-packages\\fastapi\\middleware\\asyncexitstack.py\", line 18, in __call__\n    await self.app(scope, receive, send)\n  File \"C:\\Users\\jerry\\onedrive\\Desktop\\forgeai\\backend\\venv\\Lib\\site-packages\\starlette\\routing.py\", line 660, in __call__\n    await self.middleware_stack(scope, receive, send)\n  File \"C:\\Users\\jerry\\onedrive\\Desktop\\forgeai\\backend\\venv\\Lib\\site-packages\\starlette\\routing.py\", line 680, in app\n    await route.handle(scope, receive, send)\n  File \"C:\\Users\\jerry\\onedrive\\Desktop\\forgeai\\backend\\venv\\Lib\\site-packages\\starlette\\routing.py\", line 276, in handle\n    await self.app(scope, receive, send)\n  File \"C:\\Users\\jerry\\onedrive\\Desktop\\forgeai\\backend\\venv\\Lib\\site-packages\\fastapi\\routing.py\", line 134, in app\n    await wrap_app_handling_exceptions(app, request)(scope, receive, send)\n  File \"C:\\Users\\jerry\\onedrive\\Desktop\\forgeai\\backend\\venv\\Lib\\site-packages\\starlette\\_exception_handler.py\", line 53, in wrapped_app\n    raise exc\n  File \"C:\\Users\\jerry\\onedrive\\Desktop\\forgeai\\backend\\venv\\Lib\\site-packages\\starlette\\_exception_handler.py\", line 42, in wrapped_app\n    await app(scope, receive, sender)\n  File \"C:\\Users\\jerry\\onedrive\\Desktop\\forgeai\\backend\\venv\\Lib\\site-packages\\fastapi\\routing.py\", line 120, in app\n    response = await f(request)\n               ^^^^^^^^^^^^^^^^\n  File \"C:\\Users\\jerry\\onedrive\\Desktop\\forgeai\\backend\\venv\\Lib\\site-packages\\fastapi\\routing.py\", line 674, in app\n    raw_response = await run_endpoint_function(\n                   ^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n    ...<3 lines>...\n    )\n    ^\n  File \"C:\\Users\\jerry\\onedrive\\Desktop\\forgeai\\backend\\venv\\Lib\\site-packages\\fastapi\\routing.py\", line 330, in run_endpoint_function\n    return await run_in_threadpool(dependant.call, **values)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"C:\\Users\\jerry\\onedrive\\Desktop\\forgeai\\backend\\venv\\Lib\\site-packages\\starlette\\concurrency.py\", line 34, in run_in_threadpool\n    return await anyio.to_thread.run_sync(func)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"C:\\Users\\jerry\\onedrive\\Desktop\\forgeai\\backend\\venv\\Lib\\site-packages\\anyio\\to_thread.py\", line 63, in run_sync\n    return await get_async_backend().run_sync_in_worker_thread(\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n        func, args, abandon_on_cancel=abandon_on_cancel, limiter=limiter\n        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n    )\n    ^\n  File \"C:\\Users\\jerry\\onedrive\\Desktop\\forgeai\\backend\\venv\\Lib\\site-packages\\anyio\\_backends\\_asyncio.py\", line 2518, in run_sync_in_worker_thread\n    return await future\n           ^^^^^^^^^^^^\n  File \"C:\\Users\\jerry\\onedrive\\Desktop\\forgeai\\backend\\venv\\Lib\\site-packages\\anyio\\_backends\\_asyncio.py\", line 1002, in run\n    result = context.run(func, *args)\n  File \"C:\\Users\\jerry\\onedrive\\Desktop\\forgeai\\generated_projects\\todo_list_app\\app\\routes\\auth_routes.py\", line 96, in signup\n    user = _make_user(req.email, req.password, req.username)\n                                               ^^^^^^^^^^^^\n  File \"C:\\Users\\jerry\\onedrive\\Desktop\\forgeai\\backend\\venv\\Lib\\site-packages\\pydantic\\main.py\", line 1042, in __getattr__\n    raise AttributeError(f'{type(self).__name__!r} object has no attribute {item!r}')\nAttributeError: 'SignupRequest' object has no attribute 'username'\nERROR:    Exception in ASGI application\nTraceback (most recent call last):\n  File \"C:\\Users\\jerry\\onedrive\\Desktop\\forgeai\\backend\\venv\\Lib\\site-packages\\uvicorn\\protocols\\http\\httptools_impl.py\", line 421, in run_asgi\n    result = await app(  # type: ignore[func-returns-value]\n             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n        self.scope, self.receive, self.send\n        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n    )\n    ^\n  File \"C:\\Users\\jerry\\onedrive\\Desktop\\forgeai\\backend\\venv\\Lib\\site-packages\\uvicorn\\middleware\\proxy_headers.py\", line 62, in __call__\n    return await self.app(scope, receive, send)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"C:\\Users\\jerry\\onedrive\\Desktop\\forgeai\\backend\\venv\\Lib\\site-packages\\fastapi\\applications.py\", line 1159, in __call__\n    await super().__call__(scope, receive, send)\n  File \"C:\\Users\\jerry\\onedrive\\Desktop\\forgeai\\backend\\venv\\Lib\\site-packages\\starlette\\applications.py\", line 90, in __call__\n    await self.middleware_stack(scope, receive, send)\n  File \"C:\\Users\\jerry\\onedrive\\Desktop\\forgeai\\backend\\venv\\Lib\\site-packages\\starlette\\middleware\\errors.py\", line 186, in __call__\n    raise exc\n  File \"C:\\Users\\jerry\\onedrive\\Desktop\\forgeai\\backend\\venv\\Lib\\site-packages\\starlette\\middleware\\errors.py\", line 164, in __call__\n    await self.app(scope, receive, _send)\n  File \"C:\\Users\\jerry\\onedrive\\Desktop\\forgeai\\backend\\venv\\Lib\\site-packages\\starlette\\middleware\\cors.py\", line 88, in __call__\n    await self.app(scope, receive, send)\n  File \"C:\\Users\\jerry\\onedrive\\Desktop\\forgeai\\backend\\venv\\Lib\\site-packages\\starlette\\middleware\\exceptions.py\", line 63, in __call__\n    await wrap_app_handling_exceptions(self.app, conn)(scope, receive, send)\n  File \"C:\\Users\\jerry\\onedrive\\Desktop\\forgeai\\backend\\venv\\Lib\\site-packages\\starlette\\_exception_handler.py\", line 53, in wrapped_app\n    raise exc\n  File \"C:\\Users\\jerry\\onedrive\\Desktop\\forgeai\\backend\\venv\\Lib\\site-packages\\starlette\\_exception_handler.py\", line 42, in wrapped_app\n    await app(scope, receive, sender)\n  File \"C:\\Users\\jerry\\onedrive\\Desktop\\forgeai\\backend\\venv\\Lib\\site-packages\\fastapi\\middleware\\asyncexitstack.py\", line 18, in __call__\n    await self.app(scope, receive, send)\n  File \"C:\\Users\\jerry\\onedrive\\Desktop\\forgeai\\backend\\venv\\Lib\\site-packages\\starlette\\routing.py\", line 660, in __call__\n    await self.middleware_stack(scope, receive, send)\n  File \"C:\\Users\\jerry\\onedrive\\Desktop\\forgeai\\backend\\venv\\Lib\\site-packages\\starlette\\routing.py\", line 680, in app\n    await route.handle(scope, receive, send)\n  File \"C:\\Users\\jerry\\onedrive\\Desktop\\forgeai\\backend\\venv\\Lib\\site-packages\\starlette\\routing.py\", line 276, in handle\n    await self.app(scope, receive, send)\n  File \"C:\\Users\\jerry\\onedrive\\Desktop\\forgeai\\backend\\venv\\Lib\\site-packages\\fastapi\\routing.py\", line 134, in app\n    await wrap_app_handling_exceptions(app, request)(scope, receive, send)\n  File \"C:\\Users\\jerry\\onedrive\\Desktop\\forgeai\\backend\\venv\\Lib\\site-packages\\starlette\\_exception_handler.py\", line 53, in wrapped_app\n    raise exc\n  File \"C:\\Users\\jerry\\onedrive\\Desktop\\forgeai\\backend\\venv\\Lib\\site-packages\\starlette\\_exception_handler.py\", line 42, in wrapped_app\n    await app(scope, receive, sender)\n  File \"C:\\Users\\jerry\\onedrive\\Desktop\\forgeai\\backend\\venv\\Lib\\site-packages\\fastapi\\routing.py\", line 120, in app\n    response = await f(request)\n               ^^^^^^^^^^^^^^^^\n  File \"C:\\Users\\jerry\\onedrive\\Desktop\\forgeai\\backend\\venv\\Lib\\site-packages\\fastapi\\routing.py\", line 674, in app\n    raw_response = await run_endpoint_function(\n                   ^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n    ...<3 lines>...\n    )\n    ^\n  File \"C:\\Users\\jerry\\onedrive\\Desktop\\forgeai\\backend\\venv\\Lib\\site-packages\\fastapi\\routing.py\", line 330, in run_endpoint_function\n    return await run_in_threadpool(dependant.call, **values)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"C:\\Users\\jerry\\onedrive\\Desktop\\forgeai\\backend\\venv\\Lib\\site-packages\\starlette\\concurrency.py\", line 34, in run_in_threadpool\n    return await anyio.to_thread.run_sync(func)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"C:\\Users\\jerry\\onedrive\\Desktop\\forgeai\\backend\\venv\\Lib\\site-packages\\anyio\\to_thread.py\", line 63, in run_sync\n    return await get_async_backend().run_sync_in_worker_thread(\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n        func, args, abandon_on_cancel=abandon_on_cancel, limiter=limiter\n        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n    )\n    ^\n  File \"C:\\Users\\jerry\\onedrive\\Desktop\\forgeai\\backend\\venv\\Lib\\site-packages\\anyio\\_backends\\_asyncio.py\", line 2518, in run_sync_in_worker_thread\n    return await future\n           ^^^^^^^^^^^^\n  File \"C:\\Users\\jerry\\onedrive\\Desktop\\forgeai\\backend\\venv\\Lib\\site-packages\\anyio\\_backends\\_asyncio.py\", line 1002, in run\n    result = context.run(func, *args)\n  File \"C:\\Users\\jerry\\onedrive\\Desktop\\forgeai\\generated_projects\\todo_list_app\\app\\routes\\auth_routes.py\", line 96, in signup\n    user = _make_user(req.email, req.password, req.username)\n                                               ^^^^^^^^^^^^\n  File \"C:\\Users\\jerry\\onedrive\\Desktop\\forgeai\\backend\\venv\\Lib\\site-packages\\pydantic\\main.py\", line 1042, in __getattr__\n    raise AttributeError(f'{type(self).__name__!r} object has no attribute {item!r}')\nAttributeError: 'SignupRequest' object has no attribute 'username'\n",
+        "startup_time": 4.427812099456787,
+        "behavioral_issues": [],
+        "total_endpoints": 14,
+        "timeout_count": 0,
+        "error_count": 0,
+        "endpoint_pass_rate": 1.0,
+        "crud_passed": false,
+        "journey": {
+          "success": false,
+          "steps_passed": 3,
+          "steps_failed": 8,
+          "persistence_verified": false,
+          "skipped": false,
+          "skip_reason": "",
+          "entity": "tasks",
+          "seed_summary": {},
+          "steps": [
+            {
+              "name": "Register",
+              "passed": false,
+              "detail": "404 (no register/signup endpoint found)",
+              "request": {
+                "method": "POST",
+                "url": "http://127.0.0.1:8001/auth/register",
+                "json": {
+                  "email": "journey@test.com",
+                  "password": "JourneyPass1!",
+                  "display_name": "Journey Tester"
+                },
+                "has_auth": false
+              },
+              "response": {
+                "status_code": 500,
+                "body": "Internal Server Error"
+              }
+            },
+            {
+              "name": "Login",
+              "passed": true,
+              "detail": "422 @ login (server alive, auth format mismatch)",
+              "request": null,
+              "response": null
+            },
+            {
+              "name": "Detect entity",
+              "passed": true,
+              "detail": "http://127.0.0.1:8001/tasks",
+              "request": null,
+              "response": null
+            },
+            {
+              "name": "Create entity",
+              "passed": false,
+              "detail": "401 (auth required, no valid token)",
+              "request": {
+                "method": "POST",
+                "url": "http://127.0.0.1:8001/tasks",
+                "json": {
+                  "title": "Journey Test Item",
+                  "name": "Journey Test Item",
+                  "description": "created by V5.5 journey runner",
+                  "due_date": "2026-01-01",
+                  "completed": true,
+                  "priority_id": 1
+                },
+                "has_auth": false
+              },
+              "response": {
+                "status_code": 401,
+                "body": {
+                  "detail": "Not authenticated"
+                }
+              }
+            },
+            {
+              "name": "List entities",
+              "passed": false,
+              "detail": "401",
+              "request": {
+                "method": "GET",
+                "url": "http://127.0.0.1:8001/tasks",
+                "json": null,
+                "has_auth": false
+              },
+              "response": {
+                "status_code": 401,
+                "body": {
+                  "detail": "Not authenticated"
+                }
+              }
+            },
+            {
+              "name": "Edit entity",
+              "passed": false,
+              "detail": "no entity_id captured",
+              "request": null,
+              "response": null
+            },
+            {
+              "name": "Delete entity",
+              "passed": false,
+              "detail": "no entity_id captured",
+              "request": null,
+              "response": null
+            },
+            {
+              "name": "Verify deletion",
+              "passed": false,
+              "detail": "no entity_id",
+              "request": null,
+              "response": null
+            },
+            {
+              "name": "Logout",
+              "passed": true,
+              "detail": "401",
+              "request": null,
+              "response": null
+            },
+            {
+              "name": "Login again",
+              "passed": false,
+              "detail": "re-login failed",
+              "request": {
+                "method": "POST",
+                "url": "http://127.0.0.1:8001/auth/login",
+                "json": {
+                  "username": "journey_test",
+                  "password": "JourneyPass1!"
+                },
+                "has_auth": false
+              },
+              "response": {
+                "status_code": 422,
+                "body": {
+                  "detail": [
+                    {
+                      "type": "missing",
+                      "loc": [
+                        "body",
+                        "email"
+                      ],
+                      "msg": "Field required",
+                      "input": {
+                        "username": "journey_test",
+                        "password": "JourneyPass1!"
+                      }
+                    }
+                  ]
+                }
+              }
+            },
+            {
+              "name": "Verify persistence",
+              "passed": false,
+              "detail": "no entity_id",
+              "request": null,
+              "response": null
+            }
+          ],
+          "total_duration": 0.38
+        },
+        "parsed_error": {
+          "type": "AttributeError",
+          "error_file": "C:\\Users\\jerry\\onedrive\\Desktop\\forgeai\\generated_projects\\todo_list_app\\app\\routes\\auth_routes.py"
+        }
+      },
+      "forge_score": {
+        "score": 50,
+        "grade": "F"
+      },
+      "v6_score": {
+        "total": 45,
+        "grade": "F",
+        "dimensions": {
+          "runtime": 30,
+          "security": 78,
+          "performance": 29,
+          "maintainability": 38,
+          "review": 46
+        },
+        "breakdown": {
+          "forge_score": 50,
+          "runtime_passed": false,
+          "static_passed": false,
+          "security_score": 78,
+          "security_critical": 0,
+          "performance_score": 78,
+          "n_plus_one_count": 4,
+          "naming_score": 45,
+          "architecture_score": 40,
+          "maintainability_score": 35,
+          "tech_debt_score": 30,
+          "qa_score": 55,
+          "qa_blockers": 4
+        },
+        "weights": {
+          "runtime": 0.3,
+          "security": 0.25,
+          "performance": 0.15,
+          "maintainability": 0.15,
+          "review": 0.15
+        }
+      },
+      "collaboration_log": [
+        {
+          "agent": "product_manager",
+          "decision": "product_spec_created",
+          "rationale": "A simple todo list app for managing personal tasks",
+          "data": {
+            "features": 7,
+            "user_stories": 7,
+            "must_have": [
+              "User Registration",
+              "Task Creation",
+              "User Login"
+            ]
+          }
+        },
+        {
+          "agent": "architect",
+          "decision": "architecture_created",
+          "rationale": "14 endpoints across 5 files",
+          "data": {
+            "endpoints": 14
+          }
+        },
+        {
+          "agent": "tech_lead",
+          "decision": "constraints_set",
+          "rationale": "The proposed architecture captures the core todo functionality and includes most required endpoints, but it deviates from the strict contract in sever",
+          "data": {
+            "critical_issues": 5,
+            "auth_endpoints": 11,
+            "pagination_required": 2
+          }
+        },
+        {
+          "agent": "qa",
+          "decision": "qa_review_complete",
+          "rationale": "QA score: 55/100",
+          "data": {
+            "score": 55,
+            "blockers": [
+              "No pagination on list endpoints",
+              "Protected endpoints lack authentication",
+              "Missing proper 404 error handling",
+              "No explicit response models for endpoints"
+            ]
+          }
+        },
+        {
+          "agent": "security",
+          "decision": "security_review_complete",
+          "rationale": "Security score: 78/100",
+          "data": {
+            "score": 78
+          }
+        },
+        {
+          "agent": "code_review",
+          "decision": "code_review_complete",
+          "rationale": "Maintainability: 35/100",
+          "data": {
+            "maintainability_score": 35
+          }
+        },
+        {
+          "agent": "performance",
+          "decision": "performance_review_complete",
+          "rationale": "Performance score: 78/100",
+          "data": {
+            "score": 78
+          }
+        },
+        {
+          "agent": "frontend_critic",
+          "decision": "frontend_critic_complete",
+          "rationale": "Design score: 53/100",
+          "data": {
+            "score": 53
+          }
+        },
+        {
+          "agent": "orchestrator",
+          "decision": "pipeline_complete",
+          "rationale": "V6 score: 45/100",
+          "data": {
+            "total_time": 60.23,
+            "can_export": false
+          }
+        }
+      ],
+      "generation_time_seconds": 60.23,
+      "fix_attempts": 2
+    },
+    "retry_history": [
+      {
+        "attempt": 1,
+        "strategy": "patch_file",
+        "provider": "auto",
+        "score_before": 71.54,
+        "score_after": 71.82,
+        "delta": 0.28
+      },
+      {
+        "attempt": 2,
+        "strategy": "patch_file",
+        "provider": "auto",
+        "score_before": 71.82,
+        "score_after": 71.82,
+        "delta": 0.0
+      },
+      {
+        "attempt": 3,
+        "strategy": "regenerate_arch",
+        "provider": "auto",
+        "score_before": 71.82,
+        "score_after": 71.54,
+        "delta": -0.28
+      }
+    ],
+    "deployment": {
+      "skipped": true,
+      "reason": "Deployment skipped: score 71.5 below deployment threshold (80)"
+    },
+    "project_path": "C:\\Users\\jerry\\onedrive\\Desktop\\forgeai\\generated_projects\\todo_list_app",
+    "status": "done",
+    "confidence": {
+      "probability": 0.2655,
+      "pct": 26.55,
+      "grade": "F",
+      "factors": {
+        "base": -0.5,
+        "overall_score": 1.279,
+        "runtime_health": 0.1,
+        "browser_ux": 0.264,
+        "compilation": 0.168,
+        "fix_penalty": -1.2,
+        "critical_errors": -1.0,
+        "historical_base_rate": -0.129
+      },
+      "historical_rate": 0.3457,
+      "historical_n": 81,
+      "verdict": "Not deployment-ready — critical issues likely remain."
+    }
+  }
+}

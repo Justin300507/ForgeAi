@@ -4027,3 +4027,48 @@ is a stronger, cheaper, more targeted signal for a scoping bug this
 precisely diagnosed).
 
 Full report: `docs/EXP057.md`.
+
+---
+
+## Experiment 058 — Live Regression Validation (Cerebras Budget)
+
+**Goal:** validate Exp057's fix live, minimum Cerebras spend. Used 2 of a
+possible 5 canary runs, todo-only (not the full 3-app canary -- every
+Primary Question was specifically about todo/Stage-12, and blog_cms/crm
+would have been "chasing secondary issues" per this experiment's own
+rule). New script `backend/scripts/exp058_validate.py`, same reuse
+pattern as `exp056_measure.py`.
+
+**Result: the fix is confirmed working correctly, with an important,
+honestly-reported nuance.** NameError: 0/2 runs (was 4/5 in Exp056).
+Stage-12's stagnation guard now fires legitimately (2 clean triggers per
+run, confirmed via log evidence) instead of the loop crashing on its
+first attempt. `Runtime Fixes` stayed at 1 in both rounds -- but this is
+now the CORRECT outcome of the (untouched, pre-existing) stagnation
+guard doing its job, not the old crash-truncation bug; confirmed by
+exact log-message evidence (`"Failure signature unchanged -- stopping
+retries"`), not inferred.
+
+**Todo score did NOT recover** (70.68, 71.54 vs Exp056's 74.4 baseline)
+-- honestly reported as a genuine finding, not smoothed over. Root cause:
+9 LLM cache hits/round meant this validation largely replayed Exp056's
+own cached generation sample, which carries the SAME separate,
+already-flagged-but-unfixed defect from Exp056 SS4 (a recurring
+SignupRequest/User schema-field AttributeError) -- Exp057 fixed the
+retry MECHANISM, never claimed to fix that underlying generation defect.
+No new dominant failure class emerged; the same one is now cleanly
+attributable without NameError noise.
+
+**Honest success-criteria verdict:** 2 of 4 stated criteria met (NameError
+gone, retry loop behaves correctly); 2 not met (score didn't improve,
+no different failure emerged) -- because those two criteria assumed the
+regression was the sole blocker, and Exp056's own report already flagged
+a second, separate defect as a candidate cap on todo's score. This
+validation confirms which one it actually is. Exp057's fix itself is
+validated; todo's score recovery is a separate, still-open question.
+
+Observatory + canary_history.json updated (labels `exp058-validation-r1`,
+`-r2`) and verified against the real compute functions. Full report:
+`docs/EXP058_VALIDATION.md`. Cost: 2 generations, ~12.8 min wall-clock,
+heavy cache reuse kept fresh spend low. Stopped at 2/5 rounds -- did not
+begin Exp059 in this experiment, per its own explicit instruction.
