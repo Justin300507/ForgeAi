@@ -25,6 +25,9 @@ from __future__ import annotations
 
 import argparse
 import json
+import os
+import platform
+import subprocess
 import sys
 import time
 from datetime import datetime, timezone
@@ -40,6 +43,7 @@ from app.services.v15_orchestrator import generate_project_v15
 
 BENCHMARKS_DIR = _BACKEND_ROOT.parent / "benchmarks" / "golden"
 HISTORY_PATH   = _BACKEND_ROOT / "benchmark_results" / "canary_history.json"
+LOCK_PATH      = _BACKEND_ROOT / "benchmark_results" / ".canary.lock"
 
 CANARY_APPS = [
     ("todo",     "01_todo.txt"),
@@ -140,6 +144,71 @@ def _regressed(prev: dict, curr: dict) -> list[str]:
     return reasons
 
 
+def _pid_alive(pid: int) -> bool:
+    """Best-effort process liveness check. On any doubt, say alive -- a
+    false positive just makes the operator delete a stale lock file; a
+    false negative lets two canaries run concurrently and double-spend
+    API quota against the same 3 apps (the actual incident this guards
+    against, 2026-07-11)."""
+    if platform.system() == "Windows":
+        try:
+            out = subprocess.run(
+                ["tasklist", "/FI", f"PID eq {pid}", "/NH"],
+                capture_output=True, text=True, timeout=5,
+            )
+            return str(pid) in out.stdout
+        except Exception:
+            return True
+    else:
+        # NOTE: do not use this branch's os.kill(pid, 0) on Windows -- there,
+        # Python's os.kill maps any non-CTRL_* signal to TerminateProcess,
+        # so a "liveness probe" would actually kill the target process.
+        try:
+            os.kill(pid, 0)
+            return True
+        except ProcessLookupError:
+            return False
+        except Exception:
+            return True
+
+
+def _acquire_lock(label: str | None):
+    """Refuse to start a second concurrent canary. Two canaries were
+    accidentally run at once on 2026-07-11 (an operator shell-cwd mistake),
+    wasting a full duplicate 3-app generation before it was caught -- this
+    makes that mistake impossible instead of relying on catching it by hand."""
+    if LOCK_PATH.exists():
+        try:
+            info = json.loads(LOCK_PATH.read_text(encoding="utf-8"))
+        except Exception:
+            info = {}
+        old_pid = info.get("pid")
+        if old_pid and _pid_alive(old_pid):
+            print(f"\n{'='*70}\n  CANARY ALREADY RUNNING\n{'='*70}")
+            print(f"  PID {old_pid} started {info.get('started', '?')} "
+                  f"(label={info.get('label') or '-'})")
+            print("  Refusing to start a second concurrent canary -- it would "
+                  "double-spend API quota\n  against the same 3 apps. If that "
+                  f"process is actually dead, delete:\n    {LOCK_PATH}")
+            print(f"{'='*70}\n")
+            sys.exit(2)
+        # else: stale lock (old PID gone) -- fall through and reclaim it
+
+    LOCK_PATH.parent.mkdir(parents=True, exist_ok=True)
+    LOCK_PATH.write_text(json.dumps({
+        "pid": os.getpid(),
+        "started": datetime.now(timezone.utc).isoformat(),
+        "label": label,
+    }), encoding="utf-8")
+
+
+def _release_lock():
+    try:
+        LOCK_PATH.unlink(missing_ok=True)
+    except Exception:
+        pass
+
+
 def main():
     parser = argparse.ArgumentParser(description="Canary benchmark: Todo/Blog CMS/CRM against V15Pipeline")
     parser.add_argument("--label", default=None, help="Label for this run (e.g. milestone name)")
@@ -149,49 +218,53 @@ def main():
                               "Gemini first with retries, falling back to Groq")
     args = parser.parse_args()
 
-    deploy = not args.no_deploy
-    history = _load_history()
-    prior_by_app = {}
-    if history["runs"]:
-        last_run = history["runs"][-1]
-        prior_by_app = {r["app"]: r for r in last_run["results"]}
+    _acquire_lock(args.label)
+    try:
+        deploy = not args.no_deploy
+        history = _load_history()
+        prior_by_app = {}
+        if history["runs"]:
+            last_run = history["runs"][-1]
+            prior_by_app = {r["app"]: r for r in last_run["results"]}
 
-    results = []
-    for idea_key, filename in CANARY_APPS:
-        idea = (BENCHMARKS_DIR / filename).read_text(encoding="utf-8").strip()
-        results.append(_check_result(idea_key, idea, deploy, provider=args.provider))
+        results = []
+        for idea_key, filename in CANARY_APPS:
+            idea = (BENCHMARKS_DIR / filename).read_text(encoding="utf-8").strip()
+            results.append(_check_result(idea_key, idea, deploy, provider=args.provider))
 
-    print(f"\n{'='*70}\n  CANARY SUMMARY{'  (' + args.label + ')' if args.label else ''}\n{'='*70}")
-    any_regression = False
-    for r in results:
-        prev = prior_by_app.get(r["app"])
-        regressions = _regressed(prev, r) if prev else []
-        status = "REGRESSION" if regressions else ("BASELINE" if not prev else "OK")
-        print(f"  [{status:10}] {r['app']:10} score={r['forge_score']:.1f}  "
-              f"build={r['build_ok']} runtime={r['runtime_ok']} crud={r['crud_ok']} "
-              f"browser={r['browser_ok']} deployed={r['deployed']}  ({r['elapsed_s']}s)")
-        for reason in regressions:
-            print(f"                 -- {reason}")
-            any_regression = True
+        print(f"\n{'='*70}\n  CANARY SUMMARY{'  (' + args.label + ')' if args.label else ''}\n{'='*70}")
+        any_regression = False
+        for r in results:
+            prev = prior_by_app.get(r["app"])
+            regressions = _regressed(prev, r) if prev else []
+            status = "REGRESSION" if regressions else ("BASELINE" if not prev else "OK")
+            print(f"  [{status:10}] {r['app']:10} score={r['forge_score']:.1f}  "
+                  f"build={r['build_ok']} runtime={r['runtime_ok']} crud={r['crud_ok']} "
+                  f"browser={r['browser_ok']} deployed={r['deployed']}  ({r['elapsed_s']}s)")
+            for reason in regressions:
+                print(f"                 -- {reason}")
+                any_regression = True
 
-    history["runs"].append({
-        "label": args.label,
-        "timestamp": datetime.now(timezone.utc).isoformat(),
-        "deploy": deploy,
-        "results": results,
-    })
-    history["runs"] = history["runs"][-50:]  # keep last 50 canary runs
-    _save_history(history)
+        history["runs"].append({
+            "label": args.label,
+            "timestamp": datetime.now(timezone.utc).isoformat(),
+            "deploy": deploy,
+            "results": results,
+        })
+        history["runs"] = history["runs"][-50:]  # keep last 50 canary runs
+        _save_history(history)
 
-    print(f"\n{'='*70}")
-    if any_regression:
-        print("  CANARY FAILED -- regression detected, do not proceed to next milestone")
-        print(f"{'='*70}\n")
-        sys.exit(1)
-    else:
-        print("  CANARY PASSED -- safe to continue")
-        print(f"{'='*70}\n")
-        sys.exit(0)
+        print(f"\n{'='*70}")
+        if any_regression:
+            print("  CANARY FAILED -- regression detected, do not proceed to next milestone")
+            print(f"{'='*70}\n")
+            sys.exit(1)
+        else:
+            print("  CANARY PASSED -- safe to continue")
+            print(f"{'='*70}\n")
+            sys.exit(0)
+    finally:
+        _release_lock()
 
 
 if __name__ == "__main__":

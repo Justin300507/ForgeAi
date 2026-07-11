@@ -3344,3 +3344,23 @@ user's explicit instruction.
 `run_canary.py`, reject a second concurrent run) to prevent a repeat of
 today's accidental double-run. Small, cheap, queued for whenever this cycle
 wraps.
+
+**Update, same day, still $0 (both providers' daily quota exhausted, so
+this and the item below are code-only):** shipped the canary-lock.
+`run_canary.py` now writes a PID+timestamp lock file
+(`backend/benchmark_results/.canary.lock`) before running and removes it in
+a `finally` on exit; a second invocation checks whether the recorded PID is
+still alive (`tasklist` on Windows, `os.kill(pid, 0)` on POSIX -- notably
+*not* `os.kill` on Windows, where Python maps non-CTRL_* signals to
+`TerminateProcess`, so a naive liveness probe there would actually kill the
+other run) and refuses with exit code 2 if so, self-healing (reclaiming the
+lock) if the recorded PID is dead. 4 new tests
+(`tests/reliability/test_canary_lock.py`), including the exact
+already-running scenario from today's incident, plus a manual CLI-level
+smoke test. Also checked whether `_regenerate_module` (the module-level
+sibling of `_regenerate_architecture`) shares Exp048's cache-replay bug --
+it doesn't: it only writes the files named in its diagnostic group (no
+blanket project-wide overwrite) and its prompt includes the current
+validation errors rather than a static idea string, so a stale-cache
+collision is both far less likely and far lower blast-radius. No fix
+needed there.
