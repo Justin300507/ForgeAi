@@ -7,6 +7,9 @@ Execution order:
     2.  Compile         — py_compile every .py file for fast syntax check
     2a. Import closure  — every import resolves to a file, a requirements.txt
                           dependency, or the stdlib -- statically, pre-boot
+    2a-sym. Symbol closure — every `from local.module import X` name is
+                          actually defined in that module, not just the
+                          module itself -- statically, pre-boot
     2a2. Contract check — AppContract conformance, warn-only (LOW severity
                           only; never gates anything -- see app/contract/)
     2b. Frontend build  — vite build (see below)
@@ -318,6 +321,174 @@ def _run_import_closure_check(ctx: GenerationContext) -> VerificationResult:
 
     status = StageStatus.PASSED if not diagnostics else StageStatus.FAILED
     return VerificationResult(stage="import_closure", status=status, diagnostics=diagnostics, duration_ms=_ms(t0))
+
+
+# ═══════════════════════════════════════════════════════════════
+#   STAGE 2a-symbols — Symbol closure (every imported NAME must exist,
+#   not just the module it's imported from)
+# ═══════════════════════════════════════════════════════════════
+
+def _module_to_file(module: str, project_path: Path) -> Optional[Path]:
+    """Resolve a local dotted module path (e.g. 'app.schemas.contact') to
+    the .py file it names, trying the plain-module form, the regular-package
+    form (__init__.py), and the namespace-package form (PEP 420: a plain
+    directory with no __init__.py is still importable in Python 3.3+ --
+    confirmed live: todoapp's app/schemas/ has no __init__.py but IS a real
+    importable package). Returns None if none of those exist (Stage 2a
+    already flags that case for the module-resolution half of this check)."""
+    rel = Path(*module.split("."))
+    candidate = project_path / rel.with_suffix(".py")
+    if candidate.exists():
+        return candidate
+    candidate = project_path / rel / "__init__.py"
+    if candidate.exists():
+        return candidate
+    dir_candidate = project_path / rel
+    if dir_candidate.is_dir():
+        return dir_candidate  # namespace package -- caller treats as unparseable, not missing
+    return None
+
+
+def _module_defined_names(file_path: Path) -> Optional[set[str]]:
+    """
+    Names importable via `from <module> import X` for the module at
+    file_path: top-level class/function/variable definitions, plus any
+    name the module itself imports at top level (those become attributes
+    of its namespace too -- a common re-export pattern). Returns None if
+    the module uses `from x import *` -- which names that actually exports
+    is undecidable statically, so the caller must skip symbol-checking
+    anything sourced through this module rather than risk a false positive.
+    """
+    import ast
+    try:
+        tree = ast.parse(file_path.read_text(encoding="utf-8", errors="replace"))
+    except Exception:
+        return None
+
+    names: set[str] = set()
+    for node in tree.body:  # top-level only -- names nested in a function/if aren't module attributes
+        if isinstance(node, (ast.ClassDef, ast.FunctionDef, ast.AsyncFunctionDef)):
+            names.add(node.name)
+        elif isinstance(node, ast.Assign):
+            names.update(t.id for t in node.targets if isinstance(t, ast.Name))
+        elif isinstance(node, ast.AnnAssign) and isinstance(node.target, ast.Name):
+            names.add(node.target.id)
+        elif isinstance(node, ast.ImportFrom):
+            for alias in node.names:
+                if alias.name == "*":
+                    return None
+                names.add(alias.asname or alias.name)
+        elif isinstance(node, ast.Import):
+            for alias in node.names:
+                names.add(alias.asname or alias.name.split(".")[0])
+    return names
+
+
+def _run_symbol_closure_check(ctx: GenerationContext) -> VerificationResult:
+    """
+    Static check: for every `from <local module> import (A, B, ...)` where
+    <local module> resolves to a project file, verify each imported NAME is
+    actually defined in that file's namespace.
+
+    Stage 2a (import closure) only checks that the MODULE resolves to a
+    file -- a route file that imports a schema CLASS the schema file never
+    defines (wrong name, a rename that missed one call site, a nested
+    sub-resource schema like NoteCreate vs the actual ContactNoteCreate)
+    passes Stage 2a silently and crashes at boot with a real ImportError,
+    indistinguishable from any other startup failure until someone reads
+    the traceback. Confirmed live (2026-07-11): a generated CRM app's
+    contact_routes.py imported NoteCreate/InteractionCreate from
+    app/schemas/contact.py, which only ever defined the prefixed
+    ContactNoteCreate/ContactInteractionCreate -- the app could not boot at
+    all, yet nothing upstream of the runtime crash flagged it. This is
+    exactly the class of bug the ImportError/ModuleNotFoundError family
+    already accounts for a large share of recorded failures for; this
+    catches it statically, in under a second, naming the exact missing
+    symbol instead of a runtime traceback.
+
+    Conservative by construction, matching Stage 2a's own philosophy:
+    skips relative imports, skips any module using `from x import *`
+    (undecidable which names it exports), only checks modules that resolve
+    to an actual project file, and treats `from package import submodule`
+    as valid whenever that submodule file exists on disk -- regardless of
+    whether __init__.py explicitly names it, since Python's import system
+    resolves that directly (confirmed live: todoapp's empty app/__init__.py
+    with real app/schemas.py, app/models/ would otherwise false-positive).
+    """
+    import ast
+    t0 = time.time()
+    diagnostics: list[Diagnostic] = []
+    try:
+        app_dir = ctx.project_path / "app"
+        if not app_dir.exists():
+            return VerificationResult(stage="symbol_closure", status=StageStatus.SKIPPED,
+                                      metadata={"reason": "no app/ directory"})
+
+        py_files = list(app_dir.rglob("*.py"))
+        main_py = ctx.project_path / "main.py"
+        if main_py.exists():
+            py_files.append(main_py)
+
+        defined_names_cache: dict[Path, Optional[set[str]]] = {}
+
+        for f in py_files:
+            try:
+                tree = ast.parse(f.read_text(encoding="utf-8", errors="replace"))
+            except Exception:
+                continue  # syntax errors are already caught by the compile stage
+
+            for node in ast.walk(tree):
+                if not isinstance(node, ast.ImportFrom) or node.level or not node.module:
+                    continue  # relative imports resolve within their own package -- skip
+
+                target = _module_to_file(node.module, ctx.project_path)
+                if target is None:
+                    continue  # unresolved module path -- Stage 2a already flags this
+
+                if target not in defined_names_cache:
+                    defined_names_cache[target] = _module_defined_names(target)
+                defined = defined_names_cache[target]
+                if defined is None:
+                    continue  # star-import in the target -- can't verify statically
+
+                rel_path = str(f.relative_to(ctx.project_path))
+                rel_target = str(target.relative_to(ctx.project_path))
+                for alias in node.names:
+                    if alias.name == "*" or alias.name in defined:
+                        continue
+                    # `from package import submodule` is valid Python whenever
+                    # package/submodule.py (or package/submodule/__init__.py)
+                    # exists on disk, regardless of whether __init__.py
+                    # explicitly names it -- Python's import system resolves
+                    # it directly. Confirmed live: todoapp's `from app import
+                    # schemas, models` (both real files, empty __init__.py)
+                    # would otherwise false-positive here.
+                    if _module_to_file(f"{node.module}.{alias.name}", ctx.project_path) is not None:
+                        continue
+                    diagnostics.append(Diagnostic(
+                        error_id=Diagnostic.make_id(
+                            "symbol_closure", ErrorCategory.RUNTIME,
+                            f"'{alias.name}' not defined in {node.module}", rel_path),
+                        category=ErrorCategory.RUNTIME,
+                        severity=ErrorSeverity.CRITICAL,
+                        source="symbol_closure",
+                        message=(f"{rel_path} imports '{alias.name}' from '{node.module}', but "
+                                 f"{rel_target} never defines it. This will crash the server with "
+                                 f"ImportError at startup."),
+                        file_path=rel_path,
+                        fix_hint=(f"Define '{alias.name}' in {rel_target}, fix the import to the "
+                                  f"name that actually exists there, or remove the unused import."),
+                    ))
+    except Exception as exc:
+        return VerificationResult(
+            stage="symbol_closure", status=StageStatus.FAILED,
+            diagnostics=[_diag("symbol_closure", f"Symbol closure checker crashed: {exc}",
+                               ErrorSeverity.MEDIUM, ErrorCategory.RUNTIME)],
+            duration_ms=_ms(t0),
+        )
+
+    status = StageStatus.PASSED if not diagnostics else StageStatus.FAILED
+    return VerificationResult(stage="symbol_closure", status=status, diagnostics=diagnostics, duration_ms=_ms(t0))
 
 
 # ═══════════════════════════════════════════════════════════════
@@ -1195,6 +1366,13 @@ class VerificationEngine:
         ctx.static_results.append(ic)
         results.append(ic)
         print(f"  [verify]       {ic.status.value} — {len(ic.diagnostics)} unresolved imports")
+
+        # ── Stage 2a-symbols: Symbol closure ──────────────────────────────────
+        print("  [verify] 2a Symbol closure check...")
+        sc = _run_symbol_closure_check(ctx)
+        ctx.static_results.append(sc)
+        results.append(sc)
+        print(f"  [verify]       {sc.status.value} — {len(sc.diagnostics)} undefined symbols")
 
         # ── Stage 2a2: Contract conformance (warn-only) ───────────────────────
         # FORGE_CONTRACT_CHECK=0 skips this stage entirely -- added solely to
