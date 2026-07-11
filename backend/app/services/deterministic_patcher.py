@@ -1587,30 +1587,18 @@ _ROLE_FIELD_RE = re.compile(
     r'pattern\s*=\s*r?"[\^]?\(([\w|-]+)\)[\$]?"',
 )
 
+# Route-level role GATE comparisons -- the fallback discovery path for apps
+# that never declared a role vocabulary in any schema at all (see
+# _discover_role_vocabulary_from_routes' docstring for why this exists).
+_ROLE_EQ_RE = re.compile(r'\.role\s*(?:!=|==)\s*["\'](\w+)["\']')
+_ROLE_IN_RE = re.compile(r'\.role\s+(?:not\s+)?in\s*[\[({]\s*((?:["\']\w+["\']\s*,?\s*)+)[\])}]')
+_ROLE_STR_RE = re.compile(r'["\'](\w+)["\']')
 
-def _discover_role_vocabulary(project_path: Path) -> Optional[tuple[str, list[str]]]:
-    """
-    Look for evidence the app itself declares an app-specific role
-    vocabulary (e.g. `role: str = Field("diner", pattern="^(diner|staff)$")`
-    in an LLM-authored schema) -- as opposed to a generic role column with
-    no declared meaning.
 
-    Root cause this feeds into: the injected auth template (below) used to
-    unconditionally hardcode every new signup's role to "user", regardless
-    of what the app's OWN schema intended. Confirmed live (2026-07-11):
-    a generated restaurant app's app/schemas/auth.py declared exactly the
-    pattern above (diner|staff, default diner), but the injected
-    auth_routes.py's _make_user() ignored it entirely and hardcoded "user"
-    -- menu_routes.py gates Create on role in ("staff", "admin"), which
-    NO signup could ever reach. Not just a test-scoring gap: a real,
-    permanently dead feature for every actual user of the deployed app.
-
-    Returns (default_role, [allowed_roles]) if found, else None. Only acts
-    on this one concrete, unambiguous pattern (Field default + regex
-    pattern constraint) -- conservative by design, matching every other
-    corroboration-gated patcher this cycle: no match means no change to
-    the existing safe "user" fallback.
-    """
+def _discover_role_vocabulary_from_schema(project_path: Path) -> Optional[tuple[str, list[str]]]:
+    """Precise path: an LLM-authored schema explicitly declares the
+    vocabulary (e.g. `role: str = Field("diner", pattern="^(diner|staff)$")`).
+    See _discover_role_vocabulary's docstring for the incident this fixes."""
     schemas_dir = project_path / "app" / "schemas"
     if not schemas_dir.exists():
         return None
@@ -1628,6 +1616,74 @@ def _discover_role_vocabulary(project_path: Path) -> Optional[tuple[str, list[st
             allowed.append(default_role)
         return default_role, allowed
     return None
+
+
+def _discover_role_vocabulary_from_routes(project_path: Path) -> Optional[tuple[str, list[str]]]:
+    """
+    Fallback path: no schema declares a vocabulary at all, but route
+    handlers still gate on specific role strings (`current_user.role !=
+    "instructor"`, `role not in ["staff", "admin"]`). Confirmed live
+    (2026-07-11): a generated course-platform app's schema had a bare
+    `role: Optional[str] = None` -- zero declared vocabulary -- yet
+    course/lesson/enrollment/user routes gated on three distinct roles
+    (admin, instructor, student) found nowhere but the comparisons
+    themselves. The model column had no default either, so there is no
+    single "the" default to anchor on; "user" (the template's existing
+    hardcoded fallback) is kept as the default and folded into the
+    allowed set, so ordinary signups are completely unaffected and only
+    an explicit, valid `role=` in the signup request can ever unlock
+    anything -- this only WIDENS what a caller can validly request, never
+    narrows the existing safe behavior.
+
+    Requires at least 2 distinct role strings across the whole app before
+    treating this as a real vocabulary (a single isolated string is as
+    likely to be a one-off admin lockout as a real multi-role system, and
+    guessing wrong there would incorrectly treat a security boundary as
+    something the elevation retry should try to route around).
+    """
+    routes_dir = project_path / "app" / "routes"
+    if not routes_dir.exists():
+        return None
+    found: set[str] = set()
+    for rf in routes_dir.glob("*.py"):
+        try:
+            content = rf.read_text(encoding="utf-8", errors="replace")
+        except Exception:
+            continue
+        for m in _ROLE_EQ_RE.finditer(content):
+            found.add(m.group(1))
+        for m in _ROLE_IN_RE.finditer(content):
+            for s in _ROLE_STR_RE.finditer(m.group(1)):
+                found.add(s.group(1))
+    if len(found) < 2:
+        return None
+    allowed = sorted(found) + (["user"] if "user" not in found else [])
+    return "user", allowed
+
+
+def _discover_role_vocabulary(project_path: Path) -> Optional[tuple[str, list[str]]]:
+    """
+    Look for evidence the app itself needs an app-specific role vocabulary
+    beyond the generic default every signup otherwise gets.
+
+    Root cause this feeds into: the injected auth template (below) used to
+    unconditionally hardcode every new signup's role to "user", regardless
+    of what the app's OWN schema or route logic intended. Confirmed live
+    (2026-07-11) in two independent apps: a restaurant app whose schema
+    declared a diner|staff pattern, and a course-platform app whose routes
+    gated on admin/instructor/student with NO schema declaration at all --
+    a corpus sweep afterward found role-gating logic in 7 of 54 real
+    projects (~13%), only one of which the schema-only check could see.
+    Not just a test-scoring gap: features permanently unreachable by any
+    real end user of the deployed app.
+
+    Tries the precise schema-declared path first, falls back to scanning
+    route-level gate comparisons only if the schema has nothing. Returns
+    (default_role, [allowed_roles]) or None -- conservative by design: no
+    match means no change to the existing safe "user" fallback.
+    """
+    return (_discover_role_vocabulary_from_schema(project_path)
+            or _discover_role_vocabulary_from_routes(project_path))
 
 
 def _build_auth_routes_template(role_info: Optional[tuple[str, list[str]]]) -> str:

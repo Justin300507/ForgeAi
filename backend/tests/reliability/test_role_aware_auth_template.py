@@ -28,6 +28,15 @@ from app.services.deterministic_patcher import (
 )
 
 
+def _make_project(files: dict) -> Path:
+    root = Path(tempfile.mkdtemp(prefix="roletest_"))
+    for rel, content in files.items():
+        p = root / rel
+        p.parent.mkdir(parents=True, exist_ok=True)
+        p.write_text(content, encoding="utf-8")
+    return root
+
+
 def test_discovers_real_dine_reserve_pattern():
     root = Path(tempfile.mkdtemp(prefix="roletest_"))
     schemas = root / "app" / "schemas"
@@ -63,6 +72,77 @@ def test_no_schemas_dir_returns_none():
     result = _discover_role_vocabulary(root)
     shutil.rmtree(root, ignore_errors=True)
     assert result is None
+
+
+def test_falls_back_to_route_scan_when_schema_declares_nothing():
+    """Confirmed live: a generated course-platform app's schema had a
+    bare `role: Optional[str] = None` (no vocabulary), but course/lesson/
+    enrollment/user routes gated on three distinct roles found nowhere
+    but the comparisons themselves."""
+    root = _make_project({
+        "app/schemas/user.py": "class UserOut:\n    role: str | None = None\n",
+        "app/routes/course_routes.py":
+            'if current_user.role != "instructor":\n    raise HTTPException(403)\n',
+        "app/routes/enrollment_routes.py":
+            'if current_user.role != "student":\n    raise HTTPException(403)\n',
+        "app/routes/user_routes.py":
+            'if current_user.role != "admin":\n    raise HTTPException(403)\n',
+    })
+    result = _discover_role_vocabulary(root)
+    shutil.rmtree(root, ignore_errors=True)
+    assert result is not None
+    default_role, allowed = result
+    assert default_role == "user"
+    assert set(allowed) == {"admin", "instructor", "student", "user"}
+
+
+def test_route_scan_preserves_case_sensitivity():
+    """`current_user.role != "Volunteer"` requires an exact-case match at
+    runtime -- discovery must not silently lowercase it."""
+    root = _make_project({
+        "app/routes/a.py": 'if current_user.role not in ("Organizer", "Admin"):\n    pass\n',
+        "app/routes/b.py": 'if current_user.role != "Volunteer":\n    pass\n',
+    })
+    result = _discover_role_vocabulary(root)
+    shutil.rmtree(root, ignore_errors=True)
+    assert result is not None
+    assert set(result[1]) == {"Organizer", "Admin", "Volunteer", "user"}
+
+
+def test_route_scan_requires_at_least_two_distinct_roles():
+    """A single role mentioned everywhere (e.g. a fixed admin-only lockout
+    repeated across many endpoints) is a deliberate security boundary, not
+    a multi-role vocabulary -- must not be treated as one, since that
+    would mean auto-elevating a test identity into an admin-only gate the
+    app never intended anyone to self-register into."""
+    root = _make_project({
+        "app/routes/a.py": 'if current_user.role != "admin":\n    pass\n',
+        "app/routes/b.py": 'if current_user.role != "admin":\n    pass\n',
+    })
+    result = _discover_role_vocabulary(root)
+    shutil.rmtree(root, ignore_errors=True)
+    assert result is None
+
+
+def test_route_scan_returns_none_without_routes_dir():
+    root = _make_project({"app/schemas/user.py": "role: str\n"})
+    result = _discover_role_vocabulary(root)
+    shutil.rmtree(root, ignore_errors=True)
+    assert result is None
+
+
+def test_schema_declaration_takes_precedence_over_route_scan():
+    """When BOTH signals exist, the precise schema declaration wins over
+    the route-scan fallback -- it's the more authoritative source."""
+    root = _make_project({
+        "app/schemas/auth.py":
+            'role: str = Field("diner", pattern="^(diner|staff)$")\n',
+        "app/routes/other.py":
+            'if current_user.role != "admin":\n    pass\nelif current_user.role != "manager":\n    pass\n',
+    })
+    result = _discover_role_vocabulary(root)
+    shutil.rmtree(root, ignore_errors=True)
+    assert result == ("diner", ["diner", "staff"])
 
 
 def test_generic_role_column_with_no_pattern_is_not_treated_as_app_specific():
