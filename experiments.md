@@ -3364,3 +3364,19 @@ blanket project-wide overwrite) and its prompt includes the current
 validation errors rather than a static idea string, so a stale-cache
 collision is both far less likely and far lower blast-radius. No fix
 needed there.
+
+**Retroactive scope check, still $0 (grepped/read old canary logs already
+on disk, no new generation):** wanted to know whether the cache-replay bug
+was a one-off or a pattern before overstating the fix's value. Historical
+canary logs show `REGENERATE ARCHITECTURE` firing 15-21+ times across the
+saved runs (`grep -c` across `m*_run.log`), not a rare event. Direct reads
+(not a loose grep window, which double-counted context across nearby
+occurrences and gave an unreliable count) of two independent historical
+occurrences -- `m1_canary_signuppage_run.log` and
+`m1_canary_statuscode_run.log`, both blog_cms regens -- confirm the exact
+same `Frontend: [cache hit] — skipping LLM call` line appears immediately
+in the frontend wave every time regen fires. Not an exhaustive count over
+every historical occurrence (diminishing returns for a already-shipped,
+already-tested fix), but enough to say this was a live, recurring defect
+across many past runs, not a todo-only fluke -- the fix's value is broader
+than the one regression that surfaced it.
