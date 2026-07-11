@@ -3472,3 +3472,62 @@ already-generated `generated_projects/` corpus on disk.
 **Not yet validated live** (both providers' quota still exhausted) --
 next canary should show `FrontendBuildError` drop from the current #1 slot
 once quota resets.
+
+## Experiment 050 — Observatory cockpit page ($0, no LLM calls, feature not a bug hunt)
+
+A 10-phase "Engineering Dashboard" platform proposal was floated twice,
+conflicting with the standing reliability-first freeze; asked the user to
+choose explicitly both times, both times the answer was reliability-first.
+A third, more direct instruction ("you've done enough bug hunting, stop
+adding pattern patchers, build features") was treated as the deciding
+signal -- scoped to the single lowest-risk, highest-leverage slice of that
+proposal rather than attempting all 10 phases: a **read-only** page
+surfacing telemetry that already exists. No validation-pipeline rewrite,
+no plugin-architecture refactor, nothing touching the live generation path.
+
+**Checked for existing infrastructure first** (same discipline as every
+prior experiment this cycle) and found most of the hard part already
+built: `app/memory/reliability_metrics.py` already has
+`compute_observatory`, `compute_reliability_timeline`, and
+`compute_experiment_attribution` -- clearly designed as a cockpit's data
+source (their own docstrings say so) but never wired to anything beyond
+`failure_report.py`'s CLI text renderer. No dashboard endpoint, no
+frontend page existed yet.
+
+**What shipped:**
+- `GET /observatory` (`backend/main.py`) -- aggregates
+  `generation_log.jsonl` + `canary_history.json` through the existing
+  `reliability_metrics` functions, plus a new
+  `app/memory/experiment_log.py::parse_recent_experiments` that turns
+  `experiments.md`'s own `## Experiment NNN — Title` headings into
+  structured entries (title + first-paragraph summary + a `$0` badge) --
+  7 new tests.
+- `frontend/src/pages/Observatory.jsx` -- cockpit stat row (first-try
+  success rate + trend, generation success, avg fix iterations, canary
+  health), failure-taxonomy shift (historically vs now), a hand-built SVG
+  trend chart (canary avg score over time, hover tooltip, single-hue line
+  per the dataviz skill's "sequential = one hue" rule, no dual axis),
+  deterministic-prevention bars by category, an experiment-attribution
+  list (before/after/delta per canary run with an honest confidence
+  label), and recent-experiment cards. Built entirely from the existing
+  `glass-panel`/`hero-serif`/`anim-fade-up`/`liquid-glass` house style --
+  no new design tokens, no visual language that doesn't already exist
+  elsewhere in the app.
+- Wired into `App.jsx` (route) and `NavBar.jsx` (nav link).
+
+**Verified in a real browser, not just typechecked:** the backend venv
+already had Playwright + Chromium installed (used by the generation
+pipeline's own browser verification stage), so registered a throwaway
+test account, logged in, and screenshotted the live page at both desktop
+(1440px) and mobile (390px) viewports, plus a hover-state screenshot of
+the trend chart's tooltip. Zero browser console errors. Confirmed
+responsive reflow, not just "renders."
+
+**Deliberately out of scope, still parked:** Validation Hub (Phase 1),
+Repair Analytics tracking (Phase 2 -- this cockpit reads existing
+prevention-count telemetry, it doesn't add new per-repair success/fail
+tracking), Repair Visualizer, Benchmark Center charts-over-releases,
+Design System component library, Plugin Architecture. Logged in memory
+(`project_dashboard_roadmap_proposal.md`) as the spec to scope from if a
+future cycle picks up another phase -- one phase at a time, same as this
+one.

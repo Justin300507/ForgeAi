@@ -41,11 +41,13 @@ export default function NavBar() {
       <div className="flex items-center gap-2 sm:gap-3">
         <div className="hidden sm:flex items-center gap-0.5 liquid-glass rounded-full px-1.5 py-1">
           <NavLink to="/dashboard" className={linkCls}>Dashboard</NavLink>
+          <NavLink to="/observatory" className={linkCls}>Observatory</NavLink>
           <NavLink to="/settings" className={linkCls}>Deploy Keys</NavLink>
         </div>
         {/* Mobile: plain links, no pill */}
         <div className="flex sm:hidden items-center gap-1">
           <NavLink to="/dashboard" className={linkCls}>Dashboard</NavLink>
+          <NavLink to="/observatory" className={linkCls}>Observatory</NavLink>
           <NavLink to="/settings" className={linkCls}>Keys</NavLink>
         </div>
 

@@ -11,6 +11,7 @@ import Dashboard from "./pages/Dashboard";
 import NewProject from "./pages/NewProject";
 import ProjectDetail from "./pages/ProjectDetail";
 import CredentialsPage from "./pages/CredentialsPage";
+import Observatory from "./pages/Observatory";
 
 function Spinner() {
   return (
@@ -49,6 +50,7 @@ export default function App() {
         <Route path="/new" element={<PrivateRoute><NewProject /></PrivateRoute>} />
         <Route path="/projects/:id" element={<PrivateRoute><ProjectDetail /></PrivateRoute>} />
         <Route path="/settings" element={<PrivateRoute><CredentialsPage /></PrivateRoute>} />
+        <Route path="/observatory" element={<PrivateRoute><Observatory /></PrivateRoute>} />
         <Route path="*" element={<Navigate to="/" replace />} />
         </Routes>
         </VeilProvider>

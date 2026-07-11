@@ -837,6 +837,58 @@ def cost_report():
     return {"history": load_cost_history()[-10:]}
 
 
+@app.get("/observatory")
+def observatory():
+    """
+    Read-only reliability cockpit. Pure aggregation over telemetry that
+    already exists -- generation_log.jsonl, canary_history.json,
+    experiments.md -- computed by app/memory/reliability_metrics.py (the
+    same functions the internal `failure_report.py` CLI dashboard uses).
+    No new tracking system, no generation calls; this just gives the
+    existing numbers a page instead of a terminal.
+    """
+    import json as _json
+    from pathlib import Path
+    from app.memory.reliability_metrics import (
+        compute_observatory, compute_reliability_timeline,
+        compute_experiment_attribution, compute_prevention_rate,
+    )
+    from app.memory.experiment_log import parse_recent_experiments
+
+    backend_root = Path(__file__).resolve().parent
+    failure_dir = backend_root / "failure_memory"
+
+    gen_entries: list[dict] = []
+    gen_log_path = failure_dir / "generation_log.jsonl"
+    if gen_log_path.exists():
+        for line in gen_log_path.read_text(encoding="utf-8").splitlines():
+            line = line.strip()
+            if not line:
+                continue
+            try:
+                gen_entries.append(_json.loads(line))
+            except Exception:
+                pass
+
+    canary_runs: list[dict] = []
+    canary_path = backend_root / "benchmark_results" / "canary_history.json"
+    if canary_path.exists():
+        try:
+            canary_runs = _json.loads(canary_path.read_text(encoding="utf-8")).get("runs", [])
+        except Exception:
+            pass
+
+    return {
+        "cockpit": compute_observatory(gen_entries, canary_runs),
+        "timeline": compute_reliability_timeline(canary_runs),
+        "attribution": compute_experiment_attribution(canary_runs),
+        "prevention": compute_prevention_rate(gen_entries),
+        "recent_experiments": parse_recent_experiments(
+            backend_root.parent / "experiments.md", limit=8
+        ),
+    }
+
+
 class V7Request(BaseModel):
     idea: str
     provider: str = "auto"
