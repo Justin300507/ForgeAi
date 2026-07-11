@@ -65,19 +65,27 @@ _GEMINI_RETRY_BACKOFF_SECONDS = 5
 
 def _auto_chain(prompt, stage, max_tokens, thinking_budget, skip: frozenset = frozenset()):
     """
-    Gemini (with retries) → Groq → Cerebras. Cerebras was excluded for a
-    while (402 Payment Required, confirmed via direct provider test) and is
-    back in the chain as of 2026-07-12 with a fresh key — last in line since
-    it's the newest/least-proven leg again, not because it's known-bad.
-    Groq was ALSO removed in an earlier pass on the theory it was
-    unreliable, but that was never actually confirmed — a direct test
-    showed Groq working fine, and removing it meant every one of Gemini's
-    "high demand" 503s (which ran unusually long in one stretch) became an
-    outright stage failure instead of falling through, which is what tanked
-    a run from 95 to 44. Gemini still gets a few retries first since most of
-    its 503s really are short-lived, but Groq is back as the real fallback
-    for when they aren't, with Cerebras as a last resort before failing out.
+    Cerebras → Gemini (with retries) → Groq. Cerebras is main as of
+    2026-07-12: it's on its own separate quota from Gemini/Groq (both of
+    which run close to their free-tier daily cap most days), so routing
+    the bulk of calls there first directly conserves the two legs that
+    actually run out. It was excluded for a while (402 Payment Required on
+    the old key, confirmed via direct provider test) and is back with a
+    fresh key, confirmed working via direct smoke test + a forced
+    auto_chain call. Gemini keeps its retries as the first paid-quota
+    fallback since most of its 503s are short-lived; Groq stays last —
+    it was proven reliable in an earlier confirmed test, so failing
+    through to it beats an outright stage failure, which is what tanked a
+    run from 95 to 44 the one time it got removed instead of demoted.
     """
+    if "cerebras" not in skip and not _on_cooldown("cerebras"):
+        try:
+            print("Using Cerebras (main)")
+            return _tracked("cerebras", "gpt-oss-120b", prompt, cerebras_generate, stage, max_tokens=max_tokens)
+        except Exception as e:
+            print(f"Cerebras failed: {e}")
+            _note_provider_result("cerebras", e)
+
     if "gemini" not in skip and not _on_cooldown("gemini"):
         last_exc: Exception | None = None
         for attempt in range(1, _GEMINI_RETRY_ATTEMPTS + 1):
@@ -102,15 +110,7 @@ def _auto_chain(prompt, stage, max_tokens, thinking_budget, skip: frozenset = fr
             print(f"Groq failed: {e}")
             _note_provider_result("groq", e)
 
-    if "cerebras" not in skip and not _on_cooldown("cerebras"):
-        try:
-            print("Using Cerebras (last-resort fallback)")
-            return _tracked("cerebras", "gpt-oss-120b", prompt, cerebras_generate, stage, max_tokens=max_tokens)
-        except Exception as e:
-            print(f"Cerebras failed: {e}")
-            _note_provider_result("cerebras", e)
-
-    raise RuntimeError("Gemini (after retries), Groq, and Cerebras all failed")
+    raise RuntimeError("Cerebras, Gemini (after retries), and Groq all failed")
 
 
 def generate_content(

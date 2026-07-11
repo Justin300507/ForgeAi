@@ -54,13 +54,15 @@ DEEPSEEK_API_KEY=...
 OPENAI_API_KEY=...
 ```
 
-`app/providers/ai_provider.py`'s `auto` mode chain is **Gemini (with
-retries) → Groq → Cerebras** (Cerebras re-added 2026-07-12 with a fresh
-key after being benched for 402 Payment Required; it's last in line as
-the least-proven leg, confirmed working via direct smoke test) —
-OpenRouter/DeepSeek/OpenAI are still not part of the auto chain. Gemini
-and Groq run close to their free-tier daily quota most days; check quota
-headroom before kicking off a multi-app run (see `experiments.md`).
+`app/providers/ai_provider.py`'s `auto` mode chain is **Cerebras (main)
+→ Gemini (with retries) → Groq** — Cerebras re-added 2026-07-12 with a
+fresh key (confirmed working via direct smoke test) and made the primary
+leg specifically to conserve Gemini/Groq's daily free-tier quota, which
+both run close to most days; Gemini/Groq are the fallback for when
+Cerebras itself fails or cools down. OpenRouter/DeepSeek/OpenAI are still
+not part of the auto chain. The response cache (`FORGE_LLM_CACHE`,
+default on) checks every call regardless of provider before any of this
+runs — an identical prompt costs $0 tokens on any leg.
 
 ## V15 Generation Pipeline (`app/core/pipeline.py`, `V15Pipeline`)
 
