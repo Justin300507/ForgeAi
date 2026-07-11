@@ -295,6 +295,7 @@ def compute_observatory(gen_entries: list[dict], canary_runs: list[dict], window
         "window": current["window"],
         "first_try_success_rate": current["first_try_success_rate"],
         "first_try_trend": first_try_trend,
+        "first_try_confidence": confidence_from_evidence(current["window"]),
         "top_failure_historically": top_failure_historically,
         "top_failure_now": top_failure_now,
         "prevention_by_category": prevention["by_category"],
@@ -306,3 +307,75 @@ def compute_observatory(gen_entries: list[dict], canary_runs: list[dict], window
         "generation_success_rate": current["generation_success_rate"],
         "deploy_rate": current["deploy_rate"],
     }
+
+
+def confidence_from_evidence(n: int) -> str:
+    """
+    Evidence-size confidence label, not a statistical significance test --
+    this project's own variance report puts single-run forge_score stdev
+    around 24 points, so small-n numbers deserve an explicit "don't over-
+    trust this yet" label rather than being presented with the same
+    weight as a well-evidenced one. Used for both the North-Star rate
+    (evidence = generations in the window) and experiment attribution
+    (evidence = canary app-results in a labeled run, typically 3).
+    """
+    if n >= 30:
+        return "High"
+    if n >= 10:
+        return "Medium"
+    return "Low"
+
+
+def compute_reliability_timeline(canary_runs: list[dict]) -> list[dict]:
+    """
+    One point per labeled canary run, chronological, average forge_score
+    across that run's (non-crashed) app results -- the closest thing to a
+    "first-try success over time" the canary data actually supports
+    (canary runs don't carry a fix-iteration count the way generation_log
+    entries do, so this is average QUALITY per milestone, not a first-try
+    rate; labeled honestly as such by the caller, not conflated with the
+    North-Star metric).
+    """
+    points = []
+    for run in canary_runs:
+        results = run.get("results") or []
+        scores = [r.get("forge_score", 0) for r in results if not r.get("crashed")]
+        if not scores:
+            continue
+        points.append({
+            "label": run.get("label", "?"),
+            "timestamp": run.get("timestamp", "")[:10],
+            "avg_score": round(sum(scores) / len(scores), 1),
+            "n": len(scores),
+        })
+    return points
+
+
+def compute_experiment_attribution(canary_runs: list[dict], limit: int = 8) -> list[dict]:
+    """
+    Before/after/delta for each consecutive PAIR of labeled canary runs --
+    "did this experiment actually move the number." Returns the most
+    recent `limit` comparisons, newest first. confidence_from_evidence()
+    scores each on its app-result count (n); the delta magnitude itself is
+    NOT a confidence signal here (a huge swing can just as easily mean a
+    provider-quota confound as a real fix -- this project's own
+    experiments.md repeatedly documents exactly that distinction), so
+    confidence stays purely evidence-size-based, same rule as the
+    North-Star metric, not dressed up as statistical significance.
+    """
+    points = compute_reliability_timeline(canary_runs)
+    pairs = []
+    for i in range(1, len(points)):
+        before, after = points[i - 1], points[i]
+        delta = round(after["avg_score"] - before["avg_score"], 1)
+        pairs.append({
+            "label": after["label"],
+            "timestamp": after["timestamp"],
+            "before": before["avg_score"],
+            "after": after["avg_score"],
+            "delta": delta,
+            "confidence": confidence_from_evidence(min(before["n"], after["n"])),
+            "evidence_n": after["n"],
+            "direction": "improved" if delta > 0 else ("regressed" if delta < 0 else "flat"),
+        })
+    return list(reversed(pairs[-limit:]))

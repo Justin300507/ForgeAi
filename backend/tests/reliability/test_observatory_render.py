@@ -3,7 +3,9 @@ Verifies scripts/observatory.py's render_html: produces well-formed HTML
 (via stdlib HTMLParser tag-balance check) for empty, populated, and
 divergent-failure telemetry states -- the states compute_observatory's
 own tests already cover data-correctness for; this checks the HTML layer
-doesn't break on any of them.
+doesn't break on any of them. Also covers the Reliability Timeline and
+Experiment Attribution sections added after the user's data-quality
+feedback (confidence labeling, before/after canary transitions).
 
 Run directly: python tests/reliability/test_observatory_render.py
 """
@@ -14,7 +16,10 @@ from html.parser import HTMLParser
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), "..", ".."))
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), "..", "..", "scripts"))
 
-from app.memory.reliability_metrics import compute_observatory, compute_reliability_metrics
+from app.memory.reliability_metrics import (
+    compute_observatory, compute_reliability_metrics,
+    compute_reliability_timeline, compute_experiment_attribution,
+)
 from observatory import render_html
 
 
@@ -44,10 +49,16 @@ def _assert_well_formed(html: str):
     assert not checker.stack, f"unclosed tags at EOF: {checker.stack}"
 
 
+def _render(entries, canary_runs, window=30):
+    obs = compute_observatory(entries, canary_runs, window=window)
+    rel = compute_reliability_metrics(entries, canary_runs, window=window)
+    timeline = compute_reliability_timeline(canary_runs)
+    attribution = compute_experiment_attribution(canary_runs)
+    return render_html(obs, rel, len(entries), len(canary_runs), timeline, attribution)
+
+
 def test_renders_well_formed_html_for_empty_telemetry():
-    obs = compute_observatory([], [])
-    rel = compute_reliability_metrics([], [])
-    html = render_html(obs, rel, 0, 0)
+    html = _render([], [])
     _assert_well_formed(html)
     assert "ForgeAI Observatory" in html
 
@@ -62,9 +73,7 @@ def test_renders_well_formed_html_for_populated_telemetry():
                 for _ in range(5)]
     canary_runs = [{"label": "x", "timestamp": "2026-07-01T00:00:00",
                      "results": [{"forge_score": 90, "crashed": False}]}]
-    obs = compute_observatory(entries, canary_runs)
-    rel = compute_reliability_metrics(entries, canary_runs)
-    html = render_html(obs, rel, len(entries), len(canary_runs))
+    html = _render(entries, canary_runs)
     _assert_well_formed(html)
     assert "Import validation" in html or "Schema validator" in html
 
@@ -74,12 +83,33 @@ def test_renders_well_formed_html_when_failure_shifted():
                       "final_score": 40, "fix_count": 2} for _ in range(20)]
     now = [{"succeeded": False, "dominant_errors": ["[SQLAlchemyError] y"],
             "final_score": 40, "fix_count": 2} for _ in range(5)]
-    obs = compute_observatory(historically + now, [], window=5)
-    rel = compute_reliability_metrics(historically + now, [], window=5)
-    html = render_html(obs, rel, 25, 0)
+    html = _render(historically + now, [], window=5)
     _assert_well_formed(html)
     assert "SQLAlchemyError" in html
     assert "JourneyCRUDFailure" in html
+
+
+def test_renders_timeline_and_attribution_with_multiple_canary_runs():
+    canary_runs = [
+        {"label": "m0-baseline", "timestamp": "2026-07-01T00:00:00",
+         "results": [{"forge_score": 46, "crashed": False}] * 3},
+        {"label": "m1-fix", "timestamp": "2026-07-05T00:00:00",
+         "results": [{"forge_score": 62, "crashed": False}] * 3},
+    ]
+    html = _render([], canary_runs)
+    _assert_well_formed(html)
+    assert "Reliability Timeline" in html
+    assert "Experiment Attribution" in html
+    assert "m0-baseline" in html
+    assert "m1-fix" in html
+    assert "Confidence: Low" in html  # north-star confidence, 0 generations
+
+
+def test_renders_confidence_pill_on_north_star():
+    entries = [{"succeeded": True, "fix_count": 0, "final_score": 90} for _ in range(35)]
+    html = _render(entries, [], window=35)
+    _assert_well_formed(html)
+    assert "Confidence: High" in html
 
 
 if __name__ == "__main__":

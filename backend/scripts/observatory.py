@@ -114,7 +114,76 @@ def _render_failure_shift(obs: dict) -> str:
     </div>'''
 
 
-def render_html(obs: dict, rel: dict, gen_count: int, canary_count: int) -> str:
+_CONFIDENCE_COLOR = {"High": "var(--good)", "Medium": "var(--warn)", "Low": "var(--text-faint)"}
+
+
+def _render_timeline_section(timeline: list[dict]) -> str:
+    if not timeline:
+        return '''  <div class="section-head"><h2 class="heading">Reliability Timeline</h2></div>
+  <div class="prevention-empty">No labeled canary runs recorded yet.</div>'''
+    max_score = max(p["avg_score"] for p in timeline) or 1
+    rows = []
+    for i, p in enumerate(timeline):
+        width = round(100 * p["avg_score"] / max_score)
+        connector = '<div class="timeline-connector"></div>' if i > 0 else ""
+        rows.append(f'''{connector}    <div class="timeline-row">
+      <div class="timeline-label">
+        <span class="timeline-name">{p["label"]}</span>
+        <span class="timeline-date mono">{p["timestamp"]}</span>
+      </div>
+      <div class="timeline-bar-track"><div class="timeline-bar-fill" style="width: {width}%;"></div></div>
+      <div class="timeline-score mono">{p["avg_score"]}</div>
+    </div>''')
+    return f'''  <div class="section-head">
+    <h2 class="heading">Reliability Timeline</h2>
+    <span class="total mono">{len(timeline)} canary milestones, avg forge score</span>
+  </div>
+  <div class="timeline-list">
+{chr(10).join(rows)}
+  </div>'''
+
+
+def _render_attribution_section(attribution: list[dict]) -> str:
+    if not attribution:
+        return '''  <div class="section-head"><h2 class="heading">Experiment Attribution</h2></div>
+  <div class="prevention-empty">Need at least two labeled canary runs to compute a before/after.</div>'''
+    cards = []
+    for a in attribution:
+        sign = "+" if a["delta"] >= 0 else ""
+        delta_color = "var(--good)" if a["direction"] == "improved" else (
+            "var(--bad)" if a["direction"] == "regressed" else "var(--text-faint)")
+        conf_color = _CONFIDENCE_COLOR[a["confidence"]]
+        cards.append(f'''    <div class="attribution-card">
+      <div class="attribution-head">
+        <span class="attribution-label">{a["label"]}</span>
+        <span class="attribution-date mono">{a["timestamp"]}</span>
+      </div>
+      <div class="attribution-grid">
+        <div><div class="eyebrow">Before</div><div class="mono attribution-num">{a["before"]}</div></div>
+        <div><div class="eyebrow">After</div><div class="mono attribution-num">{a["after"]}</div></div>
+        <div><div class="eyebrow">Change</div><div class="mono attribution-num" style="color: {delta_color};">{sign}{a["delta"]}</div></div>
+        <div><div class="eyebrow">Confidence</div><div class="attribution-num" style="color: {conf_color};">{a["confidence"]}</div></div>
+        <div><div class="eyebrow">Evidence</div><div class="mono attribution-num">{a["evidence_n"]} apps</div></div>
+      </div>
+    </div>''')
+    return f'''  <div class="section-head">
+    <h2 class="heading">Experiment Attribution</h2>
+    <span class="total mono">last {len(attribution)} labeled canary transitions</span>
+  </div>
+  <div class="attribution-list">
+{chr(10).join(cards)}
+  </div>
+  <p class="attribution-note">
+    Confidence reflects evidence size (canary app count), not delta
+    magnitude &mdash; a big swing can mean a real fix or a provider-quota
+    confound just as easily; this project's own experiment log documents
+    both. A 3-app canary is inherently Low confidence on its own; treat
+    single entries as directional, not conclusive.
+  </p>'''
+
+
+def render_html(obs: dict, rel: dict, gen_count: int, canary_count: int,
+                 timeline: list[dict], attribution: list[dict]) -> str:
     trend = obs["first_try_trend"]
     if trend is None:
         trend_html = '<span class="trend-pill" style="color: var(--text-faint); background: transparent; border-color: var(--border);">no prior window</span>'
@@ -131,6 +200,8 @@ def render_html(obs: dict, rel: dict, gen_count: int, canary_count: int) -> str:
 
     first_try = obs["first_try_success_rate"]
     first_try_display = f"{first_try}" if first_try is not None else "&mdash;"
+    confidence = obs["first_try_confidence"]
+    confidence_color = _CONFIDENCE_COLOR[confidence]
 
     stages = rel["stage_rates"]
     stage_items = []
@@ -232,6 +303,25 @@ def render_html(obs: dict, rel: dict, gen_count: int, canary_count: int) -> str:
   .observatory-footer {{ margin-top: 40px; padding-top: 20px; border-top: 1px solid var(--border);
     font-size: 0.78rem; color: var(--text-faint); line-height: 1.7; }}
   .observatory-footer code {{ font-family: "Cascadia Code", "SF Mono", Consolas, monospace; color: var(--text-muted); }}
+  .confidence-pill {{ font-size: 0.78rem; font-weight: 600; padding: 5px 10px; border: 1px solid; border-radius: 999px; }}
+  .timeline-list {{ display: flex; flex-direction: column; }}
+  .timeline-row {{ display: grid; grid-template-columns: 220px 1fr 52px; align-items: center; gap: 16px; padding: 9px 0; }}
+  .timeline-connector {{ width: 1px; height: 10px; background: var(--border); margin-left: 4px; }}
+  .timeline-label {{ display: flex; flex-direction: column; gap: 2px; }}
+  .timeline-name {{ font-size: 0.86rem; color: var(--text); }}
+  .timeline-date {{ font-size: 0.72rem; color: var(--text-faint); }}
+  .timeline-bar-track {{ height: 6px; background: var(--border-soft); border-radius: 1px; overflow: hidden; }}
+  .timeline-bar-fill {{ height: 100%; background: var(--accent); opacity: 0.85; border-radius: 1px; }}
+  .timeline-score {{ text-align: right; font-size: 0.9rem; color: var(--text); }}
+  .attribution-list {{ display: flex; flex-direction: column; gap: 1px; background: var(--border);
+    border: 1px solid var(--border); }}
+  .attribution-card {{ background: var(--panel); padding: 16px 20px; display: flex; flex-direction: column; gap: 12px; }}
+  .attribution-head {{ display: flex; align-items: baseline; justify-content: space-between; }}
+  .attribution-label {{ font-size: 0.92rem; color: var(--text); font-weight: 600; }}
+  .attribution-date {{ font-size: 0.76rem; color: var(--text-faint); }}
+  .attribution-grid {{ display: grid; grid-template-columns: repeat(5, 1fr); gap: 12px; }}
+  .attribution-num {{ font-size: 1rem; margin-top: 3px; }}
+  .attribution-note {{ font-size: 0.78rem; color: var(--text-faint); line-height: 1.6; margin-top: 14px; max-width: 68ch; }}
 </style>
 
 <div class="observatory-header">
@@ -249,11 +339,16 @@ def render_html(obs: dict, rel: dict, gen_count: int, canary_count: int) -> str:
   <div class="north-star-value-row">
     <div class="north-star-value mono">{first_try_display}<span class="unit">%</span></div>
     {trend_html}
+    <span class="confidence-pill" style="color: {confidence_color}; border-color: {confidence_color};">
+      Confidence: {confidence}
+    </span>
   </div>
   <p class="north-star-caption">
     Fraction of the last {obs["window"]} generations that reached deploy-ready
     with zero fix iterations. Computed from {gen_count} logged generations and
-    {canary_count} canary runs.
+    {canary_count} canary runs. Confidence is evidence size (generations in
+    the window), not a significance test &mdash; {obs["window"]} data points
+    is {confidence.lower()} evidence by this project's own variance history.
   </p>
   <div class="stage-rail">
 {chr(10).join(stage_items)}
@@ -282,6 +377,14 @@ def render_html(obs: dict, rel: dict, gen_count: int, canary_count: int) -> str:
 {_render_prevention_section(obs)}
 </section>
 
+<section class="section">
+{_render_timeline_section(timeline)}
+</section>
+
+<section class="section">
+{_render_attribution_section(attribution)}
+</section>
+
 <div class="observatory-footer">
   Generated from <code>generation_log.jsonl</code> ({gen_count} entries) and
   <code>canary_history.json</code> ({canary_count} runs) via
@@ -297,7 +400,10 @@ def main():
     parser.add_argument("--out", default=str(_BACKEND_ROOT / "observatory_report.html"))
     args = parser.parse_args()
 
-    from app.memory.reliability_metrics import compute_observatory, compute_reliability_metrics
+    from app.memory.reliability_metrics import (
+        compute_observatory, compute_reliability_metrics,
+        compute_reliability_timeline, compute_experiment_attribution,
+    )
 
     gen_entries = _load_jsonl(FAILURE_DIR / "generation_log.jsonl")
     canary_path = _BACKEND_ROOT / "benchmark_results" / "canary_history.json"
@@ -310,14 +416,17 @@ def main():
 
     obs = compute_observatory(gen_entries, canary_runs)
     rel = compute_reliability_metrics(gen_entries, canary_runs)
-    html = render_html(obs, rel, len(gen_entries), len(canary_runs))
+    timeline = compute_reliability_timeline(canary_runs)
+    attribution = compute_experiment_attribution(canary_runs)
+    html = render_html(obs, rel, len(gen_entries), len(canary_runs), timeline, attribution)
 
     out_path = Path(args.out)
     out_path.write_text(html, encoding="utf-8")
     print(f"Observatory written to {out_path}")
     print(f"First-try success: {obs['first_try_success_rate']}%  |  "
           f"Canary: {obs['canary_health']}  |  "
-          f"Prevention total: {obs['prevention_total']}")
+          f"Prevention total: {obs['prevention_total']}  |  "
+          f"Timeline points: {len(timeline)}  |  Attribution entries: {len(attribution)}")
 
 
 if __name__ == "__main__":
