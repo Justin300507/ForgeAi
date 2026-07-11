@@ -3531,3 +3531,60 @@ Design System component library, Plugin Architecture. Logged in memory
 (`project_dashboard_roadmap_proposal.md`) as the spec to scope from if a
 future cycle picks up another phase -- one phase at a time, same as this
 one.
+
+## Experiment 051 — Reliability Debt Audit of the repair pipeline ($0, no LLM calls, read-only)
+
+User's explicit instruction after Exp050: stop pattern-hunting for a
+cycle, audit the repair pipeline itself for reliability debt before it
+becomes future bugs. Read-only unless a tiny, obviously-correct cleanup
+surfaced (none did -- no code changed this cycle, only docs added).
+
+Full detail lives in the three deliverables, not duplicated here:
+`docs/REPAIR_INVENTORY.md` (all 114 repair functions across 10 files),
+`docs/REPAIR_GRAPH.md` (exact execution order, dispatch mechanisms,
+ordering dependencies, a Mermaid diagram), `docs/REPAIR_DEBT.md` (7 ranked
+findings, duplication leads, dead-code check).
+
+**Headline finding:** 8/114 (7%) repair functions have any test coverage
+at all. Every patcher predating this session's Exp047-049 work --
+including load-bearing ones like the relationship/FK-stripping family and
+all 17 `preflight.py` fixes -- is untested. Direct continuation of this
+session's own repeated lesson (Exp047's stale-telemetry catch, Exp049's
+85%-false-positive-rate catch): a regex patcher with no test regresses
+silently until corpus telemetry happens to surface it.
+
+**Other confirmed findings:** `repair_project()` (a separate top-level
+repair-only entry point) structurally duplicates the main generation
+flow's 3-stage repair-call pattern rather than sharing it; the
+`FixOrchestrator`'s per-repair-attempt cleanup pass calls only 1 of the 6
+`database_patcher.py` functions the initial pass calls (the other 5 never
+re-run after an LLM-driven mid-loop fix); param-order fixing exists in
+three separate implementations (`deterministic_patcher.py`, `preflight.py`,
+`file_writer_service.py`), smart-quote normalization in two; four
+different dispatch mechanisms coexist for conceptually the same kind of
+thing, one of them (the ~62-function hardcoded sequential list in
+`run_deterministic_patches`) with no per-call failure isolation unlike the
+others.
+
+**Non-finding, stated explicitly:** zero dead repair code confirmed, after
+tracing 21 initially-suspicious "no callers found" candidates through 3
+distinct indirect-dispatch patterns (a decorator-based priority registry,
+a decorator-based error-type dict registry, and a bare-function-reference
+callback) that a naive grep missed. Documented as a methodology note for
+future audits of this codebase.
+
+**Scope honestly noted, not overclaimed:** the request's Task 5
+(precision/false-positive/false-negative/scalability/maintainability
+graded per function, for all 114) was not completed at that granularity
+-- doing so rigorously for every function would be its own multi-day
+effort. `REPAIR_DEBT.md` says so directly rather than presenting a
+shallow blanket rating as if it were the same rigor as the 7 cited risk
+findings.
+
+**Process note:** four parallel forks were launched to split the
+discovery work; two returned no output before this audit completed
+directly via targeted grep/read instead, and a third/fourth fork
+dispatch hit a transient tool-state error ("Fork is not available inside
+a forked worker") that resolved itself on retry mid-session -- not
+investigated further, worked around by doing that slice of the work
+directly.
