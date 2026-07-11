@@ -2530,6 +2530,143 @@ def _patch_response_schemas_optional(project_path: Path) -> int:
     return patched
 
 
+_CLASS_DECL_RE = re.compile(r'^class\s+(\w+)\s*\(([^)]*)\)\s*:', re.MULTILINE)
+_CLASS_FIELD_LINE_RE = re.compile(r'^(\s{4})(\w+)\s*:\s*([^\n=#]+?)\s*(=.*)?$', re.MULTILINE)
+
+
+def _field_rhs_has_real_default(rhs: str) -> bool:
+    """
+    `field: T = Field(min_length=1)` has an `=` but is STILL REQUIRED --
+    Field(...) with no positional value and no default=/default_factory=
+    kwarg supplies constraint metadata, not a default. Confirmed live: a
+    naive "any `=` suffix means optional" check silently treated
+    `price: float = Field(ge=0.0)` as already-defaulted and skipped it,
+    missing exactly the case _patch_response_schema_inherited_required_fields
+    exists to catch.
+    """
+    rhs = rhs.strip().rstrip(",")
+    if not rhs:
+        return False
+    if rhs.startswith("Field("):
+        inner = rhs[len("Field("):].rstrip(")")
+        if re.search(r'\bdefault(_factory)?\s*=', inner):
+            return True
+        first_token = inner.split(",")[0].strip()
+        return bool(first_token) and first_token != "..." and "=" not in first_token
+    return True
+
+
+# Same name vocabulary as _RESPONSE_CLASS_RE, but matchable against a bare
+# class NAME (no trailing "(bases):") -- _RESPONSE_CLASS_RE itself requires
+# a full "class X(...)" declaration to match at all, which a bare name
+# string can never satisfy.
+_RESPONSE_CLASS_NAME_RE = re.compile(r'\w+(?:Response|Out|Read|List|Detail|Schema)\w*$', re.IGNORECASE)
+
+
+def _patch_response_schema_inherited_required_fields(project_path: Path) -> int:
+    """
+    _patch_response_schemas_optional (above) only widens fields declared
+    directly in a *Response class's own body -- it never sees fields the
+    class INHERITS from a shared *Base class, a pattern this codebase's
+    own generation increasingly produces:
+        class XBase(BaseModel): title: str; price: float; ...
+        class XCreate(XBase): pass
+        class XResponse(XBase): id: int
+    XResponse never re-declares price, so the direct-body scan above has
+    nothing to widen, and price stays required-and-inherited.
+
+    Confirmed live (2026-07-11): a generated course-platform app's
+    CourseResponse(CourseBase) inherited price/duration_hours/difficulty
+    as REQUIRED from CourseBase, but the Course SQLAlchemy model has no
+    such columns at all. FastAPI's response-model serialization tries to
+    read them off the returned ORM object, finds nothing, and the request
+    crashes. This exact bug was UNREACHABLE by any test until this
+    cycle's role-aware validation fix (V20.1.5) made it possible to
+    actually reach an authorized "instructor" identity for the first time
+    -- previously every test hit the 403 gate and never got far enough to
+    trigger it.
+
+    Never touches the base class itself (so XCreate keeps its real
+    requiredness) -- only injects `field: Optional[Any] = None` overrides
+    directly into the *Response subclass body, using the exact same
+    "insert immediately after the class header" placement
+    _patch_missing_create_update_fields already validated is safe against
+    a `pass`-only or docstring-led body (a naive skip-past-leading-content
+    regex corrupted 4/9 real projects it touched before that fix; this
+    reuses the corrected, simpler approach directly).
+    """
+    schemas_dir = project_path / "app" / "schemas"
+    if not schemas_dir.exists():
+        return 0
+
+    # Project-wide: class_name -> (file, base_name, {field_name: (type, has_default)})
+    class_info: dict[str, tuple] = {}
+    file_contents: dict[Path, str] = {}
+    for sf in schemas_dir.glob("*.py"):
+        try:
+            content = sf.read_text(encoding="utf-8", errors="replace")
+        except Exception:
+            continue
+        file_contents[sf] = content
+        for m in _CLASS_DECL_RE.finditer(content):
+            cls_name, bases = m.group(1), m.group(2)
+            base_name = bases.split(",")[0].strip() or None
+            next_m = _CLASS_DECL_RE.search(content, m.end())
+            body = content[m.end(): next_m.start() if next_m else len(content)]
+            fields = {}
+            for fm in _CLASS_FIELD_LINE_RE.finditer(body):
+                _indent, fname, ftype, has_default = fm.groups()
+                if fname in ("id", "pass"):
+                    continue
+                rhs = (has_default or "").lstrip("=").strip()
+                fields[fname] = (ftype.strip(), _field_rhs_has_real_default(rhs))
+            class_info[cls_name] = (sf, base_name, fields)
+
+    to_insert: dict[Path, list[tuple]] = {}  # file -> [(cls_name, {missing_field: type})]
+    for cls_name, (sf, base_name, fields) in class_info.items():
+        if not _RESPONSE_CLASS_NAME_RE.match(cls_name):
+            continue
+        if not base_name or base_name not in class_info:
+            continue
+        _, _, base_fields = class_info[base_name]
+        missing = {
+            fname for fname, (ftype, has_default) in base_fields.items()
+            if fname not in fields and not has_default and not ftype.startswith("Optional[")
+        }
+        if missing:
+            to_insert.setdefault(sf, []).append((cls_name, missing))
+
+    patched = 0
+    for sf, entries in to_insert.items():
+        content = file_contents[sf]
+        for cls_name, missing_fields in entries:
+            m = re.search(rf'^class\s+{re.escape(cls_name)}\s*\([^)]*\)\s*:[ \t]*\n', content, re.MULTILINE)
+            if not m:
+                continue
+            insert_at = m.end()
+            new_lines = "".join(f"    {f}: Optional[Any] = None\n" for f in sorted(missing_fields))
+            content = content[:insert_at] + new_lines + content[insert_at:]
+
+        typing_import = re.search(r"^from typing import ([^\n]+)", content, re.MULTILINE)
+        needed = {"Optional", "Any"}
+        if typing_import:
+            have = {n.strip() for n in typing_import.group(1).split(",")}
+            add = needed - have
+            if add:
+                content = (content[:typing_import.start()]
+                           + f"from typing import {typing_import.group(1)}, {', '.join(sorted(add))}"
+                           + content[typing_import.end():])
+        else:
+            content = "from typing import Optional, Any\n" + content
+
+        sf.write_text(content, encoding="utf-8")
+        patched += 1
+        names = ", ".join(c for c, _ in entries)
+        print(f"  [patcher] Added inherited-but-missing field override(s) to {names} in {sf.name}")
+
+    return patched
+
+
 # ── 14b. Inject from_attributes=True into all Pydantic schemas ──────────────
 # FastAPI needs model_config = {'from_attributes': True} in every Pydantic schema
 # that is used as a response_model, otherwise it raises PydanticSerializationError
@@ -5842,6 +5979,14 @@ def run_deterministic_patches(project_path: str, skip_protected_injections: bool
     # Make Response schema fields Optional so ORM field-name mismatches don't crash
     # (e.g. UserResponse.username required but User model uses email only)
     counts["_patch_response_schemas_optional"] = _patch_response_schemas_optional(root) or 0
+
+    # Same fix for fields a *Response class INHERITS from a shared *Base
+    # class rather than declaring itself -- the check above only sees a
+    # class's own body text, so an inherited-but-missing field (e.g.
+    # CourseResponse(CourseBase) inheriting `price` from CourseBase, which
+    # the Course model has no column for at all) slips through untouched.
+    counts["_patch_response_schema_inherited_required_fields"] = (
+        _patch_response_schema_inherited_required_fields(root) or 0)
 
     # Required schema fields on nullable model columns → Optional[T] = None
     # (kills the recurring "required but model allows NULL" validator error)
