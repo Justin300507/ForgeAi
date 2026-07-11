@@ -15,6 +15,8 @@ All fixes are regex/AST-free pattern matching — deterministic, fast, no LLM co
 import ast
 import keyword
 import re
+import time
+from dataclasses import dataclass
 from pathlib import Path
 
 
@@ -6235,6 +6237,112 @@ def _patch_response_data_assumed_wrapped(project_path: Path) -> int:
     return patched
 
 
+@dataclass
+class FrontendPatchResult:
+    """
+    Exp055: one row of observability for a single call inside
+    run_frontend_patches -- name, outcome, timing, and (on failure) the
+    exception, so a failure is diagnosable instead of just "silently
+    absorbed." `skipped` always False today (none of the 14 calls have a
+    gating condition -- see docs/REPAIR_FAILURE_ISOLATION.md §2) but the
+    field exists so a future gated patcher doesn't need a schema change.
+    """
+    name: str
+    success: bool
+    count: int
+    duration_ms: float
+    skipped: bool = False
+    exception: str | None = None
+
+
+def _run_frontend_patch_isolated(
+    results: list[FrontendPatchResult], name: str, fn, project_path: Path, *, as_bool: bool = False,
+) -> int:
+    """
+    Exp055: run one frontend patcher with its own exception boundary,
+    recording a FrontendPatchResult regardless of outcome.
+
+    Confirmed gap from Exp053 §6: run_frontend_patches's 14-call sequence
+    had the exact same missing-isolation shape run_deterministic_patches's
+    ~40-call sequence had before Exp053's `_run_patch_isolated` fixed it
+    there -- one unhandled exception here used to abort every remaining
+    frontend patcher, AND propagate uncaught out of run_frontend_patches
+    itself to both call sites (run_deterministic_patches, where Exp053's
+    outer isolation catches it but loses all 14 sub-results at once, and
+    main.py::_resync_frontend, which has no try/except at all around its
+    `run_frontend_patches(root)` call -- a single bad frontend patcher
+    could 500 the entire "Check & Fix deployed app" resync). This closes
+    both.
+
+    `as_bool=True` preserves _patch_frontend_package_json's original
+    `bool(...)` conversion exactly (it returns bool, not int, unlike every
+    other patcher in this list) -- same behavior, now isolated too.
+    """
+    t0 = time.perf_counter()
+    try:
+        raw = fn(project_path)
+        count = (1 if raw else 0) if as_bool else (raw or 0)
+        results.append(FrontendPatchResult(
+            name=name, success=True, count=count,
+            duration_ms=(time.perf_counter() - t0) * 1000,
+        ))
+        return count
+    except Exception as exc:
+        results.append(FrontendPatchResult(
+            name=name, success=False, count=0,
+            duration_ms=(time.perf_counter() - t0) * 1000,
+            exception=f"{type(exc).__name__}: {exc}",
+        ))
+        print(f"  [frontend_patcher] {name} raised {type(exc).__name__}: {exc} -- "
+              f"skipping, continuing with remaining frontend patches")
+        return 0
+
+
+def _run_frontend_patches_detailed(project_path: Path) -> tuple[int, list[FrontendPatchResult]]:
+    """
+    Exp055: the actual 14-call sequence, each call isolated, with a full
+    FrontendPatchResult list returned alongside the total count for
+    callers that want the per-patcher breakdown (tests, future
+    telemetry). run_frontend_patches() below is the original public
+    entry point -- same signature, same return type, same call order --
+    that just discards the detail list to stay byte-for-byte compatible
+    with its two existing callers.
+    """
+    results: list[FrontendPatchResult] = []
+    patched = 0
+    patched += _run_frontend_patch_isolated(
+        results, "_patch_frontend_package_json", _patch_frontend_package_json, project_path, as_bool=True)
+    patched += _run_frontend_patch_isolated(
+        results, "_patch_disallowed_icon_packages", _patch_disallowed_icon_packages, project_path)
+    patched += _run_frontend_patch_isolated(
+        results, "_patch_invalid_lucide_icons", _patch_invalid_lucide_icons, project_path)
+    patched += _run_frontend_patch_isolated(
+        results, "_patch_missing_icon_imports", _patch_missing_icon_imports, project_path)
+    patched += _run_frontend_patch_isolated(
+        results, "_patch_frontend_auth_field_names", _patch_frontend_auth_field_names, project_path)
+    patched += _run_frontend_patch_isolated(
+        results, "_patch_frontend_signup_password_key", _patch_frontend_signup_password_key, project_path)
+    patched += _run_frontend_patch_isolated(
+        results, "_patch_stale_status_on_error", _patch_stale_status_on_error, project_path)
+    patched += _run_frontend_patch_isolated(
+        results, "_patch_unsafe_optional_chain_before_array_method",
+        _patch_unsafe_optional_chain_before_array_method, project_path)
+    patched += _run_frontend_patch_isolated(
+        results, "_patch_response_data_used_as_bare_array", _patch_response_data_used_as_bare_array, project_path)
+    patched += _run_frontend_patch_isolated(
+        results, "_patch_response_data_assumed_wrapped", _patch_response_data_assumed_wrapped, project_path)
+    patched += _run_frontend_patch_isolated(
+        results, "_patch_hidden_loading_status", _patch_hidden_loading_status, project_path)
+    patched += _run_frontend_patch_isolated(
+        results, "_patch_pagination_component", _patch_pagination_component, project_path)
+    patched += _run_frontend_patch_isolated(
+        results, "_patch_broken_template_literal_classnames",
+        _patch_broken_template_literal_classnames, project_path)
+    patched += _run_frontend_patch_isolated(
+        results, "patch_ensure_auth_pages", patch_ensure_auth_pages, project_path)
+    return patched, results
+
+
 def run_frontend_patches(project_path: Path) -> int:
     """
     Every frontend-only deterministic patch, in one place.
@@ -6250,22 +6358,13 @@ def run_frontend_patches(project_path: Path) -> int:
     reached a live "Check & Fix" resync because of it). Routing both
     call sites through this one function makes that class of bug
     structurally impossible going forward.
+
+    Exp055: each of the 14 calls below now runs in its own exception
+    boundary (see _run_frontend_patches_detailed) -- one patcher raising
+    no longer aborts the rest or propagates out to either call site. See
+    docs/REPAIR_FAILURE_ISOLATION.md for the full before/after.
     """
-    patched = 0
-    patched += bool(_patch_frontend_package_json(project_path))
-    patched += _patch_disallowed_icon_packages(project_path)
-    patched += _patch_invalid_lucide_icons(project_path)
-    patched += _patch_missing_icon_imports(project_path)
-    patched += _patch_frontend_auth_field_names(project_path)
-    patched += _patch_frontend_signup_password_key(project_path)
-    patched += _patch_stale_status_on_error(project_path)
-    patched += _patch_unsafe_optional_chain_before_array_method(project_path)
-    patched += _patch_response_data_used_as_bare_array(project_path)
-    patched += _patch_response_data_assumed_wrapped(project_path)
-    patched += _patch_hidden_loading_status(project_path)
-    patched += _patch_pagination_component(project_path)
-    patched += _patch_broken_template_literal_classnames(project_path)
-    patched += patch_ensure_auth_pages(project_path)
+    patched, _results = _run_frontend_patches_detailed(project_path)
     return patched
 
 

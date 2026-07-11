@@ -3838,3 +3838,62 @@ architectural duplication -- squarely in scope for the reliability pivot.
 **Cost: $0.** No generation, no LLM calls, no prompt changes. Pure
 deterministic-code fix backed by direct reproduction, not a heuristic
 requiring corpus-prevalence measurement.
+
+---
+
+## Experiment 055 — Repair Failure Isolation: run_frontend_patches
+
+**Hypothesis:** Exp053 flagged (documented, not fixed) that
+`run_frontend_patches`'s 14-call frontend sequence has the exact same
+missing-isolation shape the ~40-call backend sequence had before Exp053's
+`_run_patch_isolated` fix. Is that gap real and exploitable, and does
+fixing it also close a live gap in `main.py::_resync_frontend`'s "Check &
+Fix deployed app" resync path?
+
+**Audit (Task 1):** Cross-checked against Exp051's own `docs/REPAIR_GRAPH.md`
+§3, which had already audited this exact function and found zero ordering
+comments among any of the 14 calls (the one ordering comment near
+`patch_ensure_auth_pages` governs a different call site entirely --
+`run_deterministic_patches`'s own direct call, step 29 vs step 31 --
+not anything inside `run_frontend_patches`). This meant full per-call
+isolation was safe with no "would corrupt later repairs" carve-out
+needed. Also found, by reading `main.py:425-459` directly: `_resync_frontend`
+calls `run_frontend_patches(root)` with **no try/except at all** -- a
+single bad frontend patcher could 500 the entire "Check & Fix deployed
+app" resync, discarding whatever the other 13 patchers would have fixed.
+
+**Reproduction of the "before" state (not just asserted):** used
+`git stash` to run the exact forced-exception regression test against the
+pre-fix code -- confirmed the RuntimeError propagates straight out of
+`run_frontend_patches` uncaught, exactly as the audit predicted.
+
+**Fix:** `FrontendPatchResult` dataclass (name, success, count,
+duration_ms, skipped, exception) + `_run_frontend_patch_isolated` (same
+try/except-and-record shape as Exp053's `_run_patch_isolated`, plus
+timing) + `_run_frontend_patches_detailed` (the real 14-call sequence,
+each call isolated, returns `(total, results_list)`). The public
+`run_frontend_patches(project_path) -> int` keeps its exact original
+signature and return type -- calls the detailed version, discards the
+list -- so both existing call sites need zero code changes and the happy
+path is byte-for-byte identical to before.
+
+**Verification:** 13 new tests in
+`tests/reliability/test_frontend_patch_isolation.py` -- isolation
+primitive in isolation, the real sequence on a clean project (order +
+success), public entry point's return value matching the detailed total,
+one patcher raising (other 13 still run, exact order preserved via a
+full name-list assertion, not just a count), the public entry point no
+longer raising on a forced crash (the literal `_resync_frontend`
+scenario), three simultaneous failures all isolated independently, and
+the `skipped` field's current always-False state. Full suite (47 files,
+up from 46) + `tests/adr002/test_orchestrator_wiring.py` passing before
+and after.
+
+**Documentation:** `docs/REPAIR_FAILURE_ISOLATION.md` -- full audit,
+before/after, why order is unchanged (backed by the Exp051 cross-check,
+not re-derived), limitations (double-call of `patch_ensure_auth_pages`
+still unaddressed, per-file-within-one-patcher granularity not attempted,
+telemetry integration not wired up).
+
+**Cost: $0.** No generation, no LLM calls, no prompt changes, no new
+repair heuristics.
