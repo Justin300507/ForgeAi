@@ -47,16 +47,18 @@ Create `backend/.env`:
 ```
 GEMINI_API_KEY=...
 GROQ_API_KEY=...
-# Optional, currently unused/dead in the live auto-fallback chain:
 CEREBRAS_API_KEY=...
+# Optional, not part of the live auto-fallback chain:
 OPENROUTER_API_KEY=...
 DEEPSEEK_API_KEY=...
 OPENAI_API_KEY=...
 ```
 
 `app/providers/ai_provider.py`'s `auto` mode chain is **Gemini (with
-retries) → Groq only** — Cerebras is excluded (dead, 402 Payment Required)
-and OpenRouter/DeepSeek/OpenAI are not part of the auto chain. Both Gemini
+retries) → Groq → Cerebras** (Cerebras re-added 2026-07-12 with a fresh
+key after being benched for 402 Payment Required; it's last in line as
+the least-proven leg, confirmed working via direct smoke test) —
+OpenRouter/DeepSeek/OpenAI are still not part of the auto chain. Gemini
 and Groq run close to their free-tier daily quota most days; check quota
 headroom before kicking off a multi-app run (see `experiments.md`).
 
