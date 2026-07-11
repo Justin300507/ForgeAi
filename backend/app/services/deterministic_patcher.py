@@ -736,13 +736,35 @@ def _patch_model_aliases(project_path: Path) -> None:
                     print(f"  [patcher] Added stub class(es) in {module}.py: {sorted(names - defined)}")
 
 
+_DEDUPE_CLASS_DECL_RE = re.compile(r"^class (\w+)\s*\(", re.MULTILINE)
+_DEDUPE_COLUMN_COUNT_RE = re.compile(r"^\s{4}\w+\s*=\s*Column\(", re.MULTILINE)
+
+
 def _dedupe_class_files(target_dir: Path, kind: str) -> int:
     """
     When both user.py and users.py (or expense.py and expenses.py) exist in the
-    same directory and both define the same class name, keep the file with more
-    content and delete the other. Any import still pointing at the dropped
-    file's module path is left for _patch_redirect_missing_backend_imports to
-    resolve (it runs later and indexes symbols across the whole app/ tree).
+    same directory, keep the file with the "real" model and delete the other.
+    Any import still pointing at the dropped file's module path is left for
+    _patch_redirect_missing_backend_imports to resolve (it runs later and
+    indexes symbols across the whole app/ tree).
+
+    Two distinct collision shapes are handled:
+      1. Both files define the SAME class name (e.g. both have `class
+         Expense`) -- keep the file with more content, drop the other.
+      2. Both files define DIFFERENT, singular/plural-variant class names
+         (e.g. user.py's `class User` vs users.py's `class Users`) -- this
+         is the more dangerous shape, since it silently creates TWO real
+         SQLAlchemy-mapped classes for one entity (confirmed live: a stub
+         `class User(Base): __tablename__='user'` with just an `id` column,
+         generated as an import-fallback by _patch_model_aliases, coexisting
+         with the real `class Users(Base)` that has every actual column).
+         The exact-name check above misses this entirely because `"User" &
+         "Users"` share no common element. Here we keep whichever class has
+         more real Column(...) declarations (not raw file length, which the
+         stub's own re-export/comment scaffolding can inflate past the real
+         file's length), and alias the dropped class name to the kept one so
+         `from app.models.<dropped-stem> import <DroppedName>` still
+         resolves -- to the one real mapped class, not a second, empty one.
 
     `kind` is just the noun used in the log line ("model" / "schema").
     """
@@ -771,24 +793,52 @@ def _dedupe_class_files(target_dir: Path, kind: str) -> int:
         except Exception:
             continue
 
-        classes1 = set(re.findall(r"^class (\w+)\s*\(", c1, re.MULTILINE))
-        classes2 = set(re.findall(r"^class (\w+)\s*\(", c2, re.MULTILINE))
-        shared = classes1 & classes2
-        if not shared:
+        classes1 = set(_DEDUPE_CLASS_DECL_RE.findall(c1))
+        classes2 = set(_DEDUPE_CLASS_DECL_RE.findall(c2))
+        exact_shared = classes1 & classes2
+
+        # Singular/plural class-NAME variants across the file pair -- see
+        # docstring case 2. Only pairs class names that aren't already an
+        # exact match.
+        variant_pairs: list[tuple[str, str]] = []
+        for n1 in classes1 - exact_shared:
+            for n2 in classes2 - exact_shared:
+                a, b = n1.lower(), n2.lower()
+                if a == b + "s" or b == a + "s":
+                    variant_pairs.append((n1, n2))
+
+        if not exact_shared and not variant_pairs:
             continue
 
-        # Keep the file with more content; delete the other, add alias
-        keep, drop = (f1, f2) if len(c1) >= len(c2) else (f2, f1)
+        if exact_shared:
+            keep, drop = (f1, f2) if len(c1) >= len(c2) else (f2, f1)
+        else:
+            cols1 = len(_DEDUPE_COLUMN_COUNT_RE.findall(c1))
+            cols2 = len(_DEDUPE_COLUMN_COUNT_RE.findall(c2))
+            if cols1 != cols2:
+                keep, drop = (f1, f2) if cols1 > cols2 else (f2, f1)
+            else:
+                keep, drop = (f1, f2) if len(c1) >= len(c2) else (f2, f1)
+
         keep_content = keep.read_text(encoding="utf-8", errors="ignore")
-        for cls in sorted(shared):
+        for cls in sorted(exact_shared):
             # Add alias for the drop-file's stem (so both imports resolve)
             alias_line = f"{cls} = {cls}  # deduplicated from {drop.stem}"
             if alias_line not in keep_content and f"\n{cls} = " not in keep_content:
                 keep_content = keep_content.rstrip() + f"\n# Removed duplicate {drop.name}\n"
                 break
+
+        keep_classes = classes1 if keep is f1 else classes2
+        for n1, n2 in variant_pairs:
+            dropped_name, real_name = (n2, n1) if n1 in keep_classes else (n1, n2)
+            alias_line = f"{dropped_name} = {real_name}  # dedup singular/plural alias: patcher"
+            if alias_line not in keep_content:
+                keep_content = keep_content.rstrip() + f"\n{alias_line}\n"
+
         keep.write_text(keep_content, encoding="utf-8")
         drop.unlink()
-        print(f"  [patcher] Removed duplicate {kind} {drop.name} (kept {keep.name}), shared classes: {shared}")
+        all_shared = exact_shared | {n for pair in variant_pairs for n in pair}
+        print(f"  [patcher] Removed duplicate {kind} {drop.name} (kept {keep.name}), shared classes: {all_shared}")
         removed += 1
 
     return removed

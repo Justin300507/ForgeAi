@@ -3175,3 +3175,84 @@ check before folding in.
 (`relationship()`, `back_populates`, `ForeignKey()`, `nullable`, `cascade`,
 `lazy` consistency), then Response Drift Audit (Model -> Schema -> Route
 -> Frontend) -- both $0, corpus-sweep-first, same discipline.
+
+## Experiment 047 — Model-integrity dedup: singular/plural class-name gap ($0, no LLM calls)
+
+User pushback after the Reliability Opportunity Report (Experiment 046's
+follow-on doc): don't jump straight to "Relationship Audit" -- measure
+which candidate actually has the ROI first. The report ranked
+Relationship/model-integrity drift #1 (4/53 apps, 7.5%, but startup-crash
+severity: mapper-configuration failure kills the whole backend). User's
+one process addition: rename the target to "Model Integrity" (broader
+umbrella covering relationship-target drift, back_populates mismatches,
+*and* duplicate model classes) and set explicit success criteria (4/53 ->
+0/53, zero false positives, zero syntax corruption, suites green).
+
+**Before writing any new code, checked "existing validators ruled out"
+(the report's own required step #3) -- and this changed the plan again.**
+Two of the report's three sub-mechanisms turned out to be already fully
+handled by code that simply postdates the 3 stale corpus samples that
+found them:
+- `_patch_strip_relationships` (shipped 2026-06-29) strips EVERY
+  `relationship()` declaration from every model file, replacing it with a
+  session-backed query property. Verified live: running the current
+  pipeline against a fresh copy of `sports_league_manager` fully resolves
+  the `relationship("Team", ...)` / `back_populates="score"` orphan issues
+  -- there are zero `relationship()` calls left afterward, so the
+  class-name-drift and orphaned-back_populates crash modes are structurally
+  impossible post-strip.
+- `_patch_relationship_string_aliases` (shipped 2026-06-28) is a second,
+  redundant safety net for any `relationship()` call that somehow survives
+  stripping.
+- `sports_league_manager`/`support_ticket_system`/`volunteer_management_system`
+  were all generated 2026-06-22 -- before either patcher existed. The
+  Reliability Opportunity Report's 7.5% figure was measuring stale,
+  pre-fix corpus output, not current pipeline behavior.
+
+**The one genuinely still-live gap:** `_dedupe_class_files` (existing
+duplicate-model patcher, shipped 2026-06-30) only matched files defining
+the exact same class name (`classes1 & classes2`). `gym_tracker` (generated
+2026-07-02, AFTER this patcher existed) still ships both a `user.py`
+stub (`class User`, 1 column, created by `_patch_model_aliases`'s
+import-fallback path) and the real `users.py` (`class Users`, 7 columns)
+-- `{"User"} & {"Users"}` is empty, so the existing check silently skips
+every case where the class names differ by singular/plural, even though
+the FILES are already a recognized pair.
+
+**What shipped (this commit):** extended `_dedupe_class_files` to also
+detect singular/plural class-NAME variants (not just identical names).
+When names differ, keeps whichever class has more real `Column(...)`
+declarations (not raw file length, which the stub's own re-export/comment
+scaffolding can inflate past the real file's length -- confirmed this
+would have picked the wrong file in a naive length-only version), and
+aliases the dropped name to the surviving class so
+`from app.models.<dropped-stem> import <DroppedName>` still resolves.
+Exact-name behavior (the pre-existing path) is untouched.
+
+**Verification against the report's own stated success criteria:**
+- Corpus prevalence: 4/53 -> 0/53, confirmed by re-running the current
+  pipeline against fresh copies of all 4 flagged apps and re-sweeping for
+  both relationship drift and duplicate classes -- 0 findings on both.
+- Zero false positives / zero syntax corruption: ran the full pipeline
+  against a fresh copy of **all 53 corpus apps**. Dedup fired on 5 (the 3
+  known cases plus `blog_platform` and `recipe_share`, both hitting the
+  *pre-existing* exact-name path, not the new code -- confirms the new
+  code only activates on genuine singular/plural variants). 16 syntax
+  errors appeared in the full-pipeline run, but a baseline comparison
+  (same 8 apps, same pipeline, this fix stashed out) reproduced the
+  identical 16 errors -- pre-existing bugs in unrelated patchers (mostly a
+  service-stub generator emitting `def (` for missing function names),
+  not caused by this change.
+- 7 new tests (`test_dedupe_singular_plural_models.py`) + all 20 existing
+  `tests/reliability/` suites pass, 0 regressions.
+
+**Cost: $0** -- no generation, no LLM calls. Corpus sweeps, live pipeline
+re-runs against already-generated output, and a stash-based baseline
+comparison to isolate this change's actual effect.
+
+**Per the report's own recommended sequencing:** this was the one
+fix worth building. Per the user's explicit instruction, the next spend is
+**one canary run** (3 apps, `--no-deploy`) -- it both confirms this fix
+(and the 7 other fixes shipped this cycle) in a live generation and
+refreshes the Observatory's stale telemetry baseline in a single spend,
+rather than two.
