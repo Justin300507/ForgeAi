@@ -3380,3 +3380,95 @@ every historical occurrence (diminishing returns for a already-shipped,
 already-tested fix), but enough to say this was a live, recurring defect
 across many past runs, not a todo-only fluke -- the fix's value is broader
 than the one regression that surfaced it.
+
+## Experiment 049 — Broken template-literal className collapse: FrontendBuildError's dominant root cause ($0 code, esbuild-validated, no LLM calls)
+
+Both providers' quota was still exhausted from the Exp048 canary, so this
+cycle stayed fully offline per explicit instruction: user flagged a
+standing conflict between this morning's "design pipeline frozen,
+reliability first" decision and a later sprawling 13-category redesign
+suggestion, asked which to follow; picked reliability-first. Continued
+straight off tonight's telemetry: `FrontendBuildError` is now the #1
+failure class in the last-30-generations window (5x, ahead of
+JourneyCRUDFailure's 3x), and a grep of `app/` confirmed zero deterministic
+detection exists for it anywhere -- every frontend build failure today
+depends entirely on the LLM-driven fix loop actually getting invoked and
+succeeding.
+
+**Root cause, found by reading actual cached LLM output, not guessing:**
+searched `backend/llm_cache/frontend_*.json` for the exact file
+(`DashboardPage.jsx`) and line (239) esbuild named in last night's canary
+log. Found it: `` className={`...duration-300 ` `` -- the LLM opened a
+template literal, then wrote what should have been the interpolation
+opener for an embedded ternary as a bare closing backtick instead of `` ${ ``,
+leaving `day.active / ? '...' : '...'` dangling outside any string,
+followed by a stray extra `` }`}` `` at the end. Swept all 12
+`frontend_*.json` cache entries containing a `DashboardPage.jsx` for
+"todo"/"task" content and found the same shape in **15 separate instances
+across 12 cache entries** -- not just Dashboard pages, but `Pagination.jsx`
+(6x independently), `CompletionCalendar.jsx`, `TaskDetailPage.jsx` (a
+toast's success/error color), `Register.jsx` (a role selector's active
+state), `TaskListPage.jsx`. One recurring LLM mistake, many components.
+
+**Checked for an existing fix first** (Exp047/048's "existing validators
+ruled out" discipline) and found a *partial* one:
+`_patch_pagination_component` already existed -- injects a known-good
+static `Pagination.jsx` whenever the file matches, exactly the "known-good
+fallback" pattern already used for `auth.py`/`database.py`. But it checked
+only the single fixed path `src/components/Pagination.jsx`; 2 of the 13
+sampled broken instances were path variants (`UI/Pagination.jsx`,
+`Common/Pagination.jsx`) it silently never saw. **Shipped:** widened it to
+`src_dir.rglob("Pagination.jsx")` (excluding node_modules), return type
+`bool -> int` so multiple matches in one project all get fixed, not just
+the first.
+
+**The general case (majority of the 13 samples -- app-specific pages that
+can't use a generic template swap) needed new code.** Considered full
+reconstruction of the original conditional styling; rejected it --
+getting arbitrary broken multi-line JS reconstruction exactly right by
+hand, across every shape the LLM might produce, is a real parser's job,
+and a wrong reconstruction could silently corrupt otherwise-working files
+(worse than doing nothing). Shipped instead: detect the broken pattern and
+collapse the whole attribute to a static className string (the literal
+text before the break), guaranteed-valid syntax at the cost of that one
+element's conditional styling.
+
+**This went through real false-positive iteration, not one-shot code:**
+first draft, tested only against the 13 curated llm_cache samples, showed
+13/13 fixed and passing esbuild -- looked done. Then swept the full
+`generated_projects/` corpus (882 `.jsx` files, live, already-generated
+output) as an independent check and found **20 files flagged, but only 3
+of them actually failed esbuild** -- 85% false positives, all real,
+already-valid JS the heuristic didn't understand: multi-line `${...}`
+interpolations (one legitimate segment per line), string concatenation via
+`+` with a parenthesized ternary, and attributes that close and continue
+(`>{x}</span>`) on the same line as the template literal. Three more
+rounds of refinement against those specific real examples, re-sweeping the
+full corpus after each, converged to **3/882 flagged -- exactly the 3
+confirmed genuinely-broken files, 0 false positives.** Final state
+verified twice: once via a standalone dev copy, once again against the
+function as actually ported into `deterministic_patcher.py` (identical
+result, confirming no transcription drift).
+
+**All validation used real esbuild parsing** (`frontend/node_modules/.bin/esbuild`),
+not a heuristic proxy -- the same tool Vite actually calls, and the same
+one that caught the 85% false-positive rate the first draft's "looks
+plausible" self-check missed entirely.
+
+**What shipped:** `_patch_broken_template_literal_classname` (detect +
+collapse) and `_patch_broken_template_literal_classnames` (project-wide
+file walker), wired into `run_frontend_patches`. 8 new tests
+(`tests/reliability/test_broken_template_literal_classname.py`), each
+checked against real esbuild when available -- 3 confirmed-broken shapes
+(dropped `${`, empty `${}`, chained ternary with a trailing tag) collapse
+and build clean; 4 confirmed-valid shapes (the exact false-positive
+patterns found during development) are left untouched byte-for-byte. Full
+existing `tests/reliability/` suite re-run, zero regressions.
+
+**Cost: $0** -- no generation, no LLM calls. Cache archaeology, a real
+Node/esbuild parser already present in `frontend/node_modules`, and the
+already-generated `generated_projects/` corpus on disk.
+
+**Not yet validated live** (both providers' quota still exhausted) --
+next canary should show `FrontendBuildError` drop from the current #1 slot
+once quota resets.

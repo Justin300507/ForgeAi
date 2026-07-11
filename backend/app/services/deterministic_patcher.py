@@ -1552,21 +1552,183 @@ export default Pagination;
 '''
 
 
-def _patch_pagination_component(project_path: Path) -> bool:
-    pagination_file = project_path / "src" / "components" / "Pagination.jsx"
-    if not pagination_file.exists():
-        return False
-    try:
-        content = pagination_file.read_text(encoding="utf-8", errors="replace")
-    except Exception:
-        return False
-    if "currentPage" not in content:
-        return False  # not actually the standard pagination component -- leave it alone
-    if content == _PAGINATION_TEMPLATE:
-        return False
-    pagination_file.write_text(_PAGINATION_TEMPLATE, encoding="utf-8")
-    print("  [patcher] Injected known-good src/components/Pagination.jsx")
-    return True
+def _patch_pagination_component(project_path: Path) -> int:
+    # Glob rather than a single fixed path -- the LLM places this component
+    # under src/components/Pagination.jsx most of the time, but also
+    # src/components/UI/Pagination.jsx or .../Common/Pagination.jsx often
+    # enough that a fixed path silently missed real, confirmed-broken
+    # instances (Experiment 049 corpus check, 2026-07-11: 2 of 13 sampled
+    # broken template-literal-ternary failures were path variants this
+    # fixed-path check never saw).
+    src_dir = project_path / "src"
+    if not src_dir.exists():
+        return 0
+    fixed = 0
+    for pagination_file in src_dir.rglob("Pagination.jsx"):
+        if "node_modules" in pagination_file.parts:
+            continue
+        try:
+            content = pagination_file.read_text(encoding="utf-8", errors="replace")
+        except Exception:
+            continue
+        if "currentPage" not in content:
+            continue  # not actually the standard pagination component -- leave it alone
+        if content == _PAGINATION_TEMPLATE:
+            continue
+        pagination_file.write_text(_PAGINATION_TEMPLATE, encoding="utf-8")
+        rel = pagination_file.relative_to(project_path)
+        print(f"  [patcher] Injected known-good {rel}")
+        fixed += 1
+    return fixed
+
+
+# ── 9c. Broken template-literal-ternary className collapse ───────────────────
+# The LLM's single most common way to break a Vite build (Experiment 049,
+# 2026-07-11): a dynamically-computed className built from a template
+# literal containing a multi-line ternary, where the `${` interpolation
+# opener gets dropped or left empty -- producing an unparseable fragment
+# (esbuild: `Expected "}" but found ...`). Seen across many unrelated
+# components (Pagination, Dashboard, Toast, Register, Calendar) with the
+# same shape every time, not just one app's quirk.
+#
+# Rather than fully reconstruct the broken multi-line expression (a real
+# JS/JSX parser's job, and risky to approximate by hand), this collapses
+# the whole broken attribute to a plain static className string built from
+# the literal text before the break -- guaranteed-valid syntax at the cost
+# of losing that one element's conditional styling. Validated against esbuild
+# directly (not just "looks plausible"): 13/13 confirmed-broken samples
+# pulled from backend/llm_cache/ now build clean after this patch, all 3
+# confirmed-broken files found by scanning the full generated_projects/
+# corpus (882 .jsx files) now build clean, and -- critically -- 0/882 files
+# in that same corpus are false-flagged (an earlier draft of this detector
+# had an 85% false-positive rate before three rounds of refinement against
+# real, already-valid multi-line template literals: `${...}` interpolations
+# spanning several lines, string concatenation via `+`, and same-line tag
+# closures).
+_TEMPLATE_LITERAL_OPEN_RE = re.compile(r'^(.*?)(\w[\w-]*)=\{`')
+_VALID_JSX_CONTINUATION_RE = re.compile(r'^([>/]|[A-Za-z_][\w-]*=(?!=)|\{/\*|//)')
+
+
+def _next_meaningful_line(lines: list[str], idx: int) -> str:
+    j = idx
+    while j < len(lines) and lines[j].strip() == "":
+        j += 1
+    return lines[j].strip() if j < len(lines) else ""
+
+
+def _patch_broken_template_literal_classname(content: str) -> tuple[str, int]:
+    lines = content.split("\n")
+    out: list[str] = []
+    i = 0
+    fixed = 0
+    n = len(lines)
+    while i < n:
+        line = lines[i]
+        m = _TEMPLATE_LITERAL_OPEN_RE.match(line)
+        broken = False
+        static_text = None
+        if m:
+            backtick_count = line.count("`")
+            if backtick_count % 2 == 1:
+                # Genuinely open multi-line template literal (e.g. a
+                # `${...}` interpolation whose condition spans several
+                # lines) is valid JS -- odd count on the opening line alone
+                # proves nothing. Only flag it broken if, before the
+                # literal's real closing backtick, we find a line that
+                # isn't part of a legitimately-open interpolation (the
+                # tell-tale sign the `${` got dropped before a bare
+                # ternary/condition).
+                first = line.index("`")
+                opener_text = line[first + 1:].rstrip()
+                interp_depth = 1 if opener_text.endswith("${") else 0
+                k = i + 1
+                window_end = min(n, i + 8)
+                saw_break = False
+                while k < window_end:
+                    probe = lines[k].strip()
+                    if probe.count("`") % 2 == 1:
+                        break  # closes the literal here -- legitimate multi-line string
+                    if interp_depth > 0:
+                        interp_depth += probe.count("{") - probe.count("}")
+                        if interp_depth <= 0:
+                            interp_depth = 0
+                    elif probe.startswith("${"):
+                        interp_depth = max(0, probe.count("{") - probe.count("}"))
+                    else:
+                        saw_break = True
+                        break
+                    k += 1
+                if saw_break:
+                    broken = True
+                    static_text = opener_text
+            else:
+                last_backtick = line.rindex("`")
+                same_line_rest = line[last_backtick + 1:].strip()
+                # The tag already closed (or continues validly) on this
+                # very line -- e.g. `...}}>{x}</span>`, `...}} />`, or a
+                # `+` string-concatenation with a (parenthesized) ternary
+                # -- so there's nothing to check on the next line at all.
+                already_valid = bool(same_line_rest) and (
+                    same_line_rest[0] in "}>/+" or _VALID_JSX_CONTINUATION_RE.match(same_line_rest)
+                )
+                if not already_valid:
+                    nxt = _next_meaningful_line(lines, i + 1)
+                    if nxt and not (nxt[0] in "<>/(" or _VALID_JSX_CONTINUATION_RE.match(nxt)):
+                        broken = True
+                        first = line.index("`")
+                        static_text = line[first + 1:last_backtick]
+            if static_text is not None:
+                static_text = static_text.strip()
+
+        terminator = None
+        if broken and static_text is not None:
+            # Every confirmed real example terminates within ~5 lines. A
+            # wide window risks latching onto a later, unrelated, valid
+            # `${...}\`}` on some other attribute and eating everything
+            # in between.
+            window_end = min(n, i + 8)
+            for j in range(i + 1, window_end):
+                if "`}" in lines[j]:
+                    terminator = j
+                    break
+
+        if broken and static_text is not None and terminator is not None:
+            prefix, attr = m.group(1), m.group(2)
+            term_line = lines[terminator]
+            # Everything that isn't a stray backtick/brace from the broken
+            # structure. Only trust it as a real continuation (tag close,
+            # next attribute) if it looks like one -- any other leftover
+            # text (e.g. extra CSS classes that trailed the ternary) is
+            # dropped rather than risk emitting invalid JSX by splicing it
+            # in as a bare suffix after a closed string attribute.
+            candidate = re.sub(r'[`}]', '', term_line).strip()
+            suffix = candidate if (not candidate or candidate[0] in '>/' or '=' in candidate) else ''
+            out.append(f'{prefix}{attr}="{static_text}"{(" " + suffix) if suffix else ""}')
+            i = terminator + 1
+            fixed += 1
+            continue
+
+        out.append(line)
+        i += 1
+    return "\n".join(out), fixed
+
+
+def _patch_broken_template_literal_classnames(project_path: Path) -> int:
+    fixed = 0
+    for jsx_file in project_path.rglob("*.jsx"):
+        if "node_modules" in jsx_file.parts:
+            continue
+        try:
+            content = jsx_file.read_text(encoding="utf-8", errors="replace")
+        except Exception:
+            continue
+        new_content, n = _patch_broken_template_literal_classname(content)
+        if n:
+            jsx_file.write_text(new_content, encoding="utf-8")
+            rel = jsx_file.relative_to(project_path)
+            print(f"  [patcher] Collapsed {n} broken template-literal className(s) in {rel}")
+            fixed += n
+    return fixed
 
 
 def _patch_auth_utils(project_path: Path) -> None:
@@ -6049,7 +6211,8 @@ def run_frontend_patches(project_path: Path) -> int:
     patched += _patch_response_data_used_as_bare_array(project_path)
     patched += _patch_response_data_assumed_wrapped(project_path)
     patched += _patch_hidden_loading_status(project_path)
-    patched += bool(_patch_pagination_component(project_path))
+    patched += _patch_pagination_component(project_path)
+    patched += _patch_broken_template_literal_classnames(project_path)
     patched += patch_ensure_auth_pages(project_path)
     return patched
 
