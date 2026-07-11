@@ -787,6 +787,61 @@ def run_user_journey(
         return False, f"{last_r.status_code if last_r is not None else '?'}"
     steps.append(_step("Create entity", do_create))
 
+    # ── Role-aware retry (V20.1.5) ──────────────────────────────────────
+    # A 403 on Create may reflect a legitimate, WORKING role gate rather
+    # than a broken/unreachable endpoint -- the plain journey-test user
+    # (always the app's default role) can never satisfy it, so scoring a
+    # bare 403 as a plain failure conflates "this endpoint is broken" with
+    # "this endpoint correctly requires a role this journey never tried."
+    # Confirmed live: a restaurant app's menu-create correctly requires
+    # role in (staff, admin); the deterministic auth-template fix (same
+    # cycle) made role-aware signup possible at all, but the JOURNEY still
+    # needs to actually use it. If the app's own schema declares a
+    # discoverable role vocabulary, register a second identity with each
+    # non-default role and retry Create -- if one unlocks it, the rest of
+    # the journey (List/Edit/Delete/Verify/...) continues as that elevated
+    # identity (token/headers are closure-shared with every later step),
+    # and this step is recorded as passed with the role noted, not as a
+    # phantom failure. No vocabulary discoverable, or no role unlocks it:
+    # left exactly as before -- still a real failure worth flagging.
+    if not steps[-1].passed and steps[-1].detail == "403":
+        try:
+            from pathlib import Path as _Path
+            from app.services.deterministic_patcher import _discover_role_vocabulary
+            role_info = _discover_role_vocabulary(_Path(project_path))
+        except Exception:
+            role_info = None
+        if role_info:
+            default_role, allowed_roles = role_info
+            register_candidates = (
+                [f"{base}{auth_paths['register']}"] if auth_paths.get("register") else []
+            ) + [f"{base}/auth/signup", f"{base}/auth/register"]
+            for candidate_role in (r for r in allowed_roles if r != default_role):
+                elevated_token = None
+                for reg_url in register_candidates:
+                    try:
+                        r_reg = requests.post(reg_url, json={
+                            "email": f"journey_elevated_{candidate_role}@test.com",
+                            "password": creds["password"], "role": candidate_role,
+                        }, timeout=5)
+                    except Exception:
+                        continue
+                    if r_reg.status_code in (200, 201):
+                        try:
+                            elevated_token = r_reg.json().get("access_token")
+                        except Exception:
+                            elevated_token = None
+                        break
+                if not elevated_token:
+                    continue
+                token = elevated_token
+                headers = {"Authorization": f"Bearer {token}"}
+                retried = _step("Create entity", do_create)
+                if retried.passed:
+                    retried.detail = f"{retried.detail} (role={candidate_role}, elevated after 403)"
+                    steps[-1] = retried
+                    break  # found a role that unlocks Create -- stop trying others
+
     # ── Step 5: List entities ─────────────────────────────────────────
     def do_list():
         nonlocal entity_id

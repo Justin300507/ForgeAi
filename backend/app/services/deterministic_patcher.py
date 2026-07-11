@@ -1810,6 +1810,66 @@ def logout(current_user=Depends(get_current_user)):
             .replace("__SIGNUP_CALL__", signup_call))
 
 
+_MAKE_USER_CALL_RE = re.compile(
+    r"_make_user\(\s*(\w+)\.email\s*,\s*\1\.password\s*,\s*\1\.display_name\s*\)"
+)
+
+
+def _patch_forward_role_to_duplicate_registrars(project_path: Path) -> int:
+    """
+    Some generated apps have a SECOND, LLM-authored registration endpoint
+    alongside the injected auth_routes.py -- typically because the
+    architecture wants a prefixed path (e.g. /api/auth/register) that the
+    bare injected template doesn't serve, so the LLM writes its own
+    wrapper elsewhere (api_routes.py, etc.) that imports and reuses
+    _make_user/SignupRequest from auth_routes.py rather than duplicating
+    them outright.
+
+    Confirmed live (2026-07-11): exactly this shape in a generated
+    restaurant app. app/routes/api_routes.py's api_register() imports
+    _make_user from auth_routes.py and calls it with only 3 positional
+    args (email, password, display_name) -- silently dropping the 4th
+    (role) that _build_auth_routes_template's role-aware signup depends
+    on. A signup request with role="staff" would parse correctly, reach
+    THIS handler (not auth_routes.py's own -- /api/auth/register and
+    /auth/register are different paths, both live), and still end up
+    hardcoded to the schema's default role, defeating the fix above
+    silently: no error, just the wrong role saved.
+
+    Finds `_make_user(X.email, X.password, X.display_name)` (the exact
+    3-arg shape _build_auth_routes_template's own call uses, so any
+    handler that copied it verbatim matches) in any route file that
+    imports _make_user from auth_routes, and forwards a `role` too --
+    via getattr(X, 'role', None), never a bare attribute access, so this
+    is a no-op (None) rather than an AttributeError if some other
+    request type at a call site genuinely has no role field.
+    """
+    routes_dir = project_path / "app" / "routes"
+    if not routes_dir.exists():
+        return 0
+    patched = 0
+    for rf in routes_dir.glob("*.py"):
+        if rf.name == "auth_routes.py":
+            continue
+        try:
+            content = rf.read_text(encoding="utf-8", errors="replace")
+        except Exception:
+            continue
+        if "_make_user" not in content or "from app.routes.auth_routes import" not in content:
+            continue
+
+        def _forward(m: re.Match) -> str:
+            var = m.group(1)
+            return f"_make_user({var}.email, {var}.password, {var}.display_name, getattr({var}, 'role', None))"
+
+        new_content, n = _MAKE_USER_CALL_RE.subn(_forward, content)
+        if n:
+            rf.write_text(new_content, encoding="utf-8")
+            patched += n
+            print(f"  [patcher] Forwarded role to {n} duplicate _make_user() call(s) in {rf.name}")
+    return patched
+
+
 def _patch_auth_routes(project_path: Path) -> None:
     """
     Inject a known-good auth_routes.py if the project has a User model but
@@ -1852,6 +1912,7 @@ def _patch_auth_routes(project_path: Path) -> None:
         msg = "  [patcher] Injected known-good app/routes/auth_routes.py (dynamic password field + fast bcrypt)"
         if role_info:
             msg += f" -- role-aware signup, vocabulary={sorted(role_info[1])} default={role_info[0]!r}"
+            _patch_forward_role_to_duplicate_registrars(project_path)
         print(msg)
 
     # Ensure main.py imports and includes auth_router
