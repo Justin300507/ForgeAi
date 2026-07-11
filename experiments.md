@@ -2622,3 +2622,61 @@ output; no new LLM calls).
 the aggregate before/after `canary_history.json` comparison; separately,
 the `run_endpoint_smoke_tests` hardcoded-8001 assumption noticed above is
 a small, same-class follow-up.
+
+---
+
+## Experiment 040 — Symbol Validation stage: catch missing imported names, not just missing files
+
+**Hypothesis:** Stage 2a (import closure, commit d6943f7) checks that a
+`from X import Y` module X resolves to a project file, but never checks Y
+is actually defined there. That gap should be closeable statically, at $0,
+and should catch a real, previously-invisible class of runtime startup
+failure (ImportError/ModuleNotFoundError are already the #2/#4 recorded
+patterns).
+
+**Trigger:** found live, by accident, while validating Experiment 039 —
+booting the real `simple_crm` output from the killed canary run, the
+backend didn't just fail its journey, it couldn't import at all:
+`contact_routes.py` imported `NoteCreate`/`InteractionCreate`/
+`NoteResponse`/`InteractionResponse` from `app/schemas/contact.py`, which
+only ever defined the prefixed `ContactNoteCreate`/`ContactInteractionCreate`/
+etc. Total runtime startup failure, yet nothing upstream flagged it.
+
+**What shipped (commit ef9be6c):** new Stage 2a-symbols
+(`_run_symbol_closure_check` in `engine.py`) parses every local
+`from module import (A, B, ...)`, resolves `module` to its file, parses
+THAT file's AST, and verifies each imported name is a top-level
+class/function/assignment or something the target module itself
+re-exports via its own top-level imports. CRITICAL severity, pre-boot,
+matches the mandate's own stated pipeline order (Import Validation →
+Symbol Validation → Schema Validation).
+
+**Validation methodology — swept the whole real corpus before trusting a
+CRITICAL gate:** ran the new check against all 53 real projects sitting in
+`generated_projects/` (accumulated across the project's history, not
+freshly generated — $0). First pass: 8/53 flagged (~15%), including 2
+false positives in `todoapp` (`from app import schemas` / `from app import
+models`) — Python's import system resolves a submodule directly off its
+parent package regardless of whether `__init__.py` names it, and
+`todoapp`'s `app/schemas/` is a directory with `.py` files and NO
+`__init__.py` at all (a namespace package, PEP 420) — both patterns are
+valid Python that the first version of this checker didn't account for.
+Fixed both (submodule-file resolution + namespace-package directory
+resolution), re-swept: still 8/53 flagged, hand-verified 4 of them
+(`simple_crm`, `todoapp`, `blogsphere`, `volunteer_management_system`)
+against the real source — all confirmed genuine bugs, 0 remaining false
+positives found.
+
+**Verification:** 8 new unit tests (true-positive detection, both
+false-positive patterns, star-import conservatism, re-export-via-import
+handling, and the Stage-2a handoff for fully-unresolved modules) + all 22
+existing suites pass (0 regressions). **Cost:** $0 — no new LLM calls;
+validated entirely against already-existing on-disk output.
+
+**Signal, not yet measured in canary numbers:** 8/53 (~15%) of the real
+corpus has this exact bug class, each one a 100%, unconditional runtime
+startup failure (the app cannot boot regardless of what else is correct).
+This should show up as a Runtime Startup dimension improvement once a
+generation run actually hits this bug pre-fix vs. post-fix — no canary run
+has done that head-to-head comparison yet (folded into the same "run a
+fresh, uninterrupted canary" next step as Experiment 039).
