@@ -169,6 +169,7 @@ class GenerationRecord:
     fix_count:        int
     dominant_errors:  list[str]     # top error messages
     architecture_hash: str          # sha256 of project structure (for "similar apps" lookup)
+    bundle_refs:      list = field(default_factory=list)  # [{"failure_id", "bundle_path"}, ...]
     timestamp:        str = ""
 
 

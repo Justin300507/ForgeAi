@@ -349,6 +349,9 @@ class V15Pipeline:
                                   if getattr(d, "severity", None) and
                                   d.severity.value in ("critical", "high")][:5],
                 architecture_hash=arch_hash,
+                bundle_refs=[d.metadata["bundle_ref"] for d in all_diags
+                             if isinstance(getattr(d, "metadata", None), dict)
+                             and d.metadata.get("bundle_ref")],
             ))
         except Exception as exc:
             print(f"[V15] generation_log write failed (non-fatal): {exc}")
