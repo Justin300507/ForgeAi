@@ -3766,3 +3766,75 @@ alone:**
 regression tests across 4 new test files. Full existing suite (37 files)
 re-run and confirmed passing before and after every individual change,
 not just at the end.
+
+---
+
+## Experiment 054 — Fix confirmed FastAPI param-order bracket-tracking bug
+
+**Hypothesis:** Exp053 flagged (investigated, not fixed) a real bug in
+`deterministic_patcher.py::_split_params`: it only tracks `(`/`)` depth,
+unlike the parallel implementation in `file_writer_service.py` which
+tracks `([`/`)]` together. A bracketed type hint with an internal comma
+(e.g. `Dict[str, int]`) should get mis-split. Is this reproducible, and
+if so, how bad is the actual impact?
+
+**Reproduction (before any fix):**
+```python
+_split_params('item_id: int = Path(...), filters: Dict[str, int] = Query({})')
+# -> ['item_id: int = Path(...)', 'filters: Dict[str', 'int] = Query({})']
+```
+Confirmed worse than expected: fed through `_reorder_sig` on a realistic
+3-param signature, the corrupted fragments also fool
+`_param_has_default`'s classification (the fragment `'int] = Query({})'`
+has no `:`, so the whole string is scanned for `=` and misread), and the
+reorder produces **syntactically invalid Python**:
+```python
+def list_items(
+    filters: Dict[str,
+    name: str,
+    item_id: int = Path(...),
+    int] = Query({}),
+):
+```
+Worse still: `_patch_param_order` wrote this to disk **unconditionally**
+-- no `ast.parse`/`compile` validation before writing, unlike
+`file_writer_service.py`'s version, which validates and reverts on
+`SyntaxError`. So this patcher could take a file with a well-understood,
+recoverable `SyntaxError` and turn it into unparseable garbage, silently,
+with no error surfaced. This is a real reliability bug, not just
+architectural duplication -- squarely in scope for the reliability pivot.
+
+**Fix (two parts, both required):**
+1. `_split_params` now tracks `[`/`]` depth alongside `(`/`)`, matching
+   `file_writer_service.py`'s already-correct approach. (The two
+   implementations remain separate -- see `docs/REPAIR_ARCHITECTURE.md`
+   §4 for why merging them outright isn't safe to do blind; this fixes
+   the confirmed defect in the narrower one without merging.)
+2. `_patch_param_order` now validates the fully-reordered file content
+   with `compile()` before writing; on `SyntaxError` it leaves the file
+   completely unpatched (not partially fixed) and logs why, instead of
+   ever writing invalid Python.
+
+**Verification:**
+- Re-ran the exact reproduction above post-fix: `_split_params` returns
+  the correct 2-element split; `_reorder_sig` on the 3-param signature
+  now produces valid Python that `ast.parse` accepts.
+- End-to-end test through the real entry point `_patch_param_order()`
+  against a temp project directory containing the previously-corrupting
+  route file: patched successfully, `Dict[str, int]` intact, file
+  compiles, and a second pass fast-skips (idempotent).
+- New regression test that directly exercises the write-time safety net
+  by forcing `_reorder_sig` to return invalid syntax (independent of
+  whether any known input can still trigger it post-fix) and confirming
+  `_patch_param_order` refuses to write it and leaves the original file
+  byte-identical.
+- 4 new tests added to `tests/reliability/test_inline_chain_repairs.py`
+  (the existing Exp052 file already covering `_patch_param_order`, kept
+  consolidated rather than starting a new file). Full existing suite (46
+  files, `PYTHONIOENCODING=utf-8` set per this project's Windows Unicode
+  requirement) plus `tests/adr002/test_orchestrator_wiring.py` re-run and
+  confirmed passing before and after.
+
+**Cost: $0.** No generation, no LLM calls, no prompt changes. Pure
+deterministic-code fix backed by direct reproduction, not a heuristic
+requiring corpus-prevalence measurement.

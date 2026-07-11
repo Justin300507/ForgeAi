@@ -1092,14 +1092,27 @@ _DEFAULT_MARKERS = re.compile(r"\b(Path|Query|Depends|Header|Cookie|Body|Form)\s
 
 
 def _split_params(sig: str) -> list[str]:
-    """Split a full parameter string into individual params respecting nested parens."""
+    """
+    Split a full parameter string into individual params respecting nested
+    parens AND brackets. Exp054: the original version only tracked `(`/`)`,
+    so a comma inside a bracketed type hint (e.g. `Dict[str, int]`) was
+    treated as a top-level param separator -- confirmed via direct
+    reproduction to corrupt `filters: Dict[str, int] = Query({})` into two
+    bogus fragments (`'filters: Dict[str'`, `'int] = Query({})'`), which
+    `_reorder_sig` then wrote out as syntactically invalid Python with no
+    validation. `file_writer_service.py::_fix_fastapi_param_order`'s own
+    `_split_params` already tracks `([`/`)]` together for exactly this
+    reason -- this brings the two into agreement on splitting semantics
+    (still two separate functions; see docs/REPAIR_ARCHITECTURE.md §4 for
+    why they aren't merged into one).
+    """
     raw: list[str] = []
     buf = ""
     depth = 0
     for ch in sig:
-        if ch == "(":
+        if ch in "([":
             depth += 1
-        elif ch == ")":
+        elif ch in ")]":
             depth -= 1
         if ch == "," and depth == 0:
             p = buf.strip()
@@ -1218,6 +1231,20 @@ def _patch_param_order(project_path: Path) -> int:
                 content = fixed
 
         if content != original:
+            # Exp054: validate before writing. _reorder_sig's param split can
+            # still misfire on signature shapes nobody's hit yet (e.g. a
+            # bracket-tracking edge case just like the one this experiment
+            # fixed) -- confirmed by direct reproduction that an unvalidated
+            # write can turn a recoverable SyntaxError into unparseable
+            # garbage. `file_writer_service.py`'s parallel implementation
+            # already validates before writing; this brings the same safety
+            # net here without touching the split/reorder logic itself.
+            try:
+                compile(content, str(rf), "exec")
+            except SyntaxError as e:
+                print(f"  [patcher] Param-order reorder for {rf.name} produced invalid "
+                      f"syntax ({e}) — leaving file unpatched")
+                continue
             rf.write_text(content, encoding="utf-8")
             patched += 1
             print(f"  [patcher] Fixed param order in {rf.name}")

@@ -27,6 +27,7 @@ from pathlib import Path
 
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), "..", ".."))
 
+import app.services.deterministic_patcher as _dp
 from app.services.deterministic_patcher import (
     _patch_wrong_auth_module,
     _patch_passlib,
@@ -39,6 +40,7 @@ from app.services.deterministic_patcher import (
     _patch_from_orm,
     _patch_orm_response_model,
     _patch_param_order,
+    _split_params,
     patch_reorder_shadowed_static_routes,
     _patch_router_names,
 )
@@ -511,6 +513,84 @@ def test_param_order_idempotent():
         n2 = _patch_param_order(project)
         assert n2 == 0, "already-compiling output must fast-skip on the second pass"
         assert rf.read_text(encoding="utf-8") == after_first
+
+
+# ── Exp054: _split_params bracket-tracking fix ────────────────────────────────
+#
+# CONFIRMED BUG (found via direct reproduction, not assumption): the original
+# _split_params only tracked `(`/`)` depth. A comma inside a bracketed type
+# hint (e.g. `Dict[str, int]`) was treated as a top-level param separator,
+# corrupting `filters: Dict[str, int] = Query({})` into two bogus fragments.
+# Fed through _reorder_sig, that corruption produced syntactically INVALID
+# Python that _patch_param_order then wrote straight to disk with no
+# validation -- turning a recoverable SyntaxError into unparseable garbage.
+# Both the split bug and the missing write-time validation are fixed here.
+
+def test_split_params_respects_bracket_type_hint_with_comma():
+    sig = "item_id: int = Path(...), filters: Dict[str, int] = Query({})"
+    assert _split_params(sig) == [
+        "item_id: int = Path(...)",
+        "filters: Dict[str, int] = Query({})",
+    ]
+
+
+def test_split_params_still_respects_nested_parens():
+    # Guard against a regression in the other direction -- bracket tracking
+    # must not break the paren-nesting case this function already handled.
+    sig = "a: int, b: str = Depends(get_thing(x, y))"
+    assert _split_params(sig) == [
+        "a: int",
+        "b: str = Depends(get_thing(x, y))",
+    ]
+
+
+_BROKEN_PARAM_ORDER_WITH_BRACKET_TYPE = '''\
+from fastapi import APIRouter, Path, Query
+from typing import Dict
+
+task_router = APIRouter()
+
+@task_router.get("/tasks")
+def list_tasks(item_id: int = Path(...), filters: Dict[str, int] = Query({}), name: str):
+    pass
+'''
+
+
+def test_param_order_fixes_broken_signature_with_bracket_type_hint():
+    # End-to-end reproduction of the confirmed corruption case: before the
+    # fix, this exact input got rewritten into invalid Python and written to
+    # disk unconditionally. Now it must both compile AND fast-skip on rerun.
+    with tempfile.TemporaryDirectory() as td:
+        project = Path(td)
+        rf = _write_route_file(project, _BROKEN_PARAM_ORDER_WITH_BRACKET_TYPE)
+        n = _patch_param_order(project)
+        assert n == 1
+        fixed = rf.read_text(encoding="utf-8")
+        compile(fixed, str(rf), "exec")  # must not raise
+        assert "Dict[str, int]" in fixed, "bracketed type hint must survive intact, not be split"
+
+        n2 = _patch_param_order(project)
+        assert n2 == 0, "fixed output must compile cleanly and fast-skip on rerun"
+
+
+def test_param_order_write_guard_skips_invalid_reorder():
+    # Directly exercises the new write-time safety net (Exp054), independent
+    # of whether any known input can still trigger _reorder_sig producing
+    # invalid syntax post-fix: force it to return garbage and confirm
+    # _patch_param_order refuses to write it.
+    original_reorder_sig = _dp._reorder_sig
+    try:
+        _dp._reorder_sig = lambda content, open_p, close_p, indent: "def broken(:\n    pass\n"
+        with tempfile.TemporaryDirectory() as td:
+            project = Path(td)
+            rf = _write_route_file(project, _BROKEN_PARAM_ORDER)
+            n = _patch_param_order(project)
+            assert n == 0, "a reorder that produces invalid syntax must not be counted as a fix"
+            assert rf.read_text(encoding="utf-8") == _BROKEN_PARAM_ORDER, (
+                "the file must be left completely unpatched, not partially corrupted"
+            )
+    finally:
+        _dp._reorder_sig = original_reorder_sig
 
 
 # ── patch_reorder_shadowed_static_routes ─────────────────────────────────────
