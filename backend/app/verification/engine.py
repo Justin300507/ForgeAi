@@ -462,6 +462,30 @@ def _find_route_file_for_entity(project_path: str, entity: str) -> Optional[str]
     return None
 
 
+def _write_journey_bundle(ctx, journey: dict) -> dict | None:
+    """
+    Persist a Forensic Bundle for the first failed journey step that
+    captured request/response evidence (Task 2's _ExchangeRecorder).
+    Returns None if the journey passed, or if the failing step never made
+    an HTTP call before raising (nothing to bundle).
+    """
+    steps = journey.get("steps", [])
+    failed = [s for s in steps if not s.get("passed") and (s.get("request") or s.get("response"))]
+    if not failed:
+        return None
+    target = failed[0]
+    from app.memory.forensic_bundle import write_bundle
+    return write_bundle(
+        project=getattr(ctx, "project_name", "unknown"),
+        stage="runtime",
+        failure_class="JourneyCRUDFailure",
+        step=target.get("name"),
+        provider=getattr(ctx, "current_provider", None),
+        request=target.get("request"),
+        response=target.get("response"),
+    )
+
+
 def _run_runtime_validation(ctx: GenerationContext) -> VerificationResult:
     t0 = time.time()
     try:
@@ -519,6 +543,7 @@ def _run_runtime_validation(ctx: GenerationContext) -> VerificationResult:
         # it. Only fall back to the journey/endpoint message when the parse was
         # generic ("Unknown"/"RuntimeError") or empty.
         has_specific = bool(parsed) and parsed.get("type") not in (None, "Unknown", "RuntimeError")
+        bundle_ref = None
         if has_specific:
             # The actual exception is at the TAIL of the traceback, not the head.
             tail = ""
@@ -534,6 +559,10 @@ def _run_runtime_validation(ctx: GenerationContext) -> VerificationResult:
             message = (f"Backend healthy but CRUD journey failed — {steps_txt}"
                        if steps_txt else "Backend healthy but CRUD journey failed")
             err_type = "JourneyCRUDFailure"
+            try:
+                bundle_ref = _write_journey_bundle(ctx, journey)
+            except Exception:
+                bundle_ref = None  # never let bundle writing break verification
         elif not journey_failed and message == "Backend failed to start":
             # Not a journey failure either — likely the endpoint-smoke-test pass
             # rate tripped runtime_success = False. Surface that instead of the
@@ -566,7 +595,7 @@ def _run_runtime_validation(ctx: GenerationContext) -> VerificationResult:
             # the head is just uvicorn's startup banner. Give the fix LLM the tail.
             stack_trace=stderr[-1500:] if stderr else None,
             fix_hint=parsed.get("hint"),
-            metadata={"parsed_error": parsed},
+            metadata={"parsed_error": parsed, "bundle_ref": bundle_ref},
         ))
 
     # The URL is valid whenever the server answered its health check — even
