@@ -2680,3 +2680,71 @@ This should show up as a Runtime Startup dimension improvement once a
 generation run actually hits this bug pre-fix vs. post-fix — no canary run
 has done that head-to-head comparison yet (folded into the same "run a
 fresh, uninterrupted canary" next step as Experiment 039).
+
+---
+
+## Experiment 041 — Endpoint smoke tests hardcoded to port 8001; same-cycle wrap-up
+
+**What shipped (commit af61466):** `BackendRunner.run()` accepts a `port`
+param (used for uvicorn, health checks, and the CRUD journey) but its call
+to `run_endpoint_smoke_tests()` never passed `base_url`, so smoke tests
+always hit `127.0.0.1:8001` regardless of the actual port — a guaranteed
+connection-refused on every endpoint whenever `port != 8001` (e.g. the
+V18 parallel batch runner's dynamic port assignment). Found as a
+side-effect of validating Experiment 039. Confirmed live: booted the real
+`todo_list_app` on port 8197 — endpoint pass rate was 7% (1/14, all
+connection-refused) before, 100% (14/14) after. 1 new test + all 23
+existing suites pass.
+
+**Investigated and deliberately NOT built:** routes defining their own
+Pydantic schema classes instead of importing from `app/schemas/` (the
+mandate's named "Schema Authority" pattern). Real and widespread — 23 of
+54 real `generated_projects/` on disk have a same-named schema class
+defined in two files. Spot-checked `todo_list_app` (`LoginRequest`) and
+`taskmaster` (`TaskCreate`, including a genuine field-level difference
+between the two copies): in every case checked, the `app/schemas/`
+copy has zero importers anywhere in the generated app — it's dead code
+the schema-generation stage writes and the route-generation stage never
+uses, not an active drift bug. Building a detection/repair system for
+this would be a code-quality / generation-cost win, not a first-try-
+success win — per the mandate's own stated rule ("if it doesn't move
+first-try success, don't build it"), deferred rather than built this
+cycle. Worth a future COST-focused cycle (wasted LLM calls generating an
+unused file), separate from this reliability-focused one.
+
+**Canary infrastructure finding:** two consecutive full 3-app canary
+attempts this session (`reliability_mandate_evidence`,
+`post_reliability_fixes`, both `--no-deploy`) were killed by the harness
+before writing a final `canary_history.json` entry — the first after 3-4
+app-generations over ~35 min, the second right after all 3 apps completed
+(all 3 cost_log entries present) but before the script's final
+aggregation/write step. Neither attempt's raw numbers made it into
+`canary_history.json` (last entry there is still `m3-relationship-dedupe-
+confirm`, 2026-07-10). This reproduced twice in a row under the same
+`run_in_background` mechanism — treat as a real environment constraint on
+long-running background canaries in this session, not a fluke; a third
+identical attempt wasn't made. Raw per-app scores were still recoverable
+from `cost_log.json` (which each app's pipeline run writes independently,
+regardless of whether the wrapping canary script finishes):
+
+| app | pre-fix (`reliability_mandate_evidence`) | post-fix (`post_reliability_fixes`) |
+|---|---|---|
+| todo | 57 | 65 |
+| blog_cms | 64 | 63 |
+| crm | 63 → 66 (2 attempts) | 66 |
+
+Directional, not conclusive — each run is a fresh LLM generation (real
+run-to-run variance this project has repeatedly documented), the specific
+bug patterns fixed this cycle (wrong-entity detection, silent auth-token
+loss, missing schema symbols) don't necessarily reproduce in every fresh
+generation the way they did in the cached, repeated architecture that
+originally surfaced them, and forge_score is a 10-dimension weighted
+aggregate where these fixes only move 2-3 dimensions directly. todo's +8
+is consistent with its fix (chronic 401s were todo-specific); blog_cms/crm
+are flat, which is also consistent (their specific bugs — `/seed`
+misdetection, `NoteCreate` mismatch — are architecture-dependent and
+weren't guaranteed to recur in these particular fresh generations). The
+mechanism-level, live-reboot verification already documented in
+Experiments 039/040 remains the primary evidence for these fixes; a clean
+aggregate before/after is still the open item for whenever canary
+infrastructure allows an uninterrupted run.
