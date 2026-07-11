@@ -17,7 +17,8 @@ from typing import Optional
 # its own frontend. Importing keeps the two permanently in sync.
 from app.services.deterministic_patcher import (
     _AUTH_UTILS_TEMPLATE,
-    _AUTH_ROUTES_TEMPLATE,
+    _build_auth_routes_template,
+    _discover_role_vocabulary,
 )
 
 
@@ -82,7 +83,8 @@ def _fix_auth_routes(project_path: Path) -> bool:
     routes_dir = project_path / "app" / "routes"
     routes_dir.mkdir(parents=True, exist_ok=True)
     auth_routes = routes_dir / "auth_routes.py"
-    auth_routes.write_text(_AUTH_ROUTES_TEMPLATE, encoding="utf-8")
+    auth_routes.write_text(_build_auth_routes_template(_discover_role_vocabulary(project_path)),
+                            encoding="utf-8")
 
     # Ensure auth_router is included in main.py
     main_py = project_path / "app" / "main.py"

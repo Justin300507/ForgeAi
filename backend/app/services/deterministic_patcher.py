@@ -19,7 +19,7 @@ from pathlib import Path
 
 
 # Classes always defined inline by the injected app/routes/auth_routes.py
-# template (_AUTH_ROUTES_TEMPLATE below) — never imported from app/schemas/.
+# template (_build_auth_routes_template below) — never imported from app/schemas/.
 # Shared by _patch_create_missing_schemas (don't stub these over) and
 # duplicate_class_validator (don't flag these as a real conflict).
 AUTH_DEFINED_CLASSES = {
@@ -1582,7 +1582,86 @@ def _patch_auth_requirements(project_path: Path) -> None:
 # injects a known-good auth_routes.py with signup/login/me.  Without this,
 # every CRUD endpoint that requires auth returns 401 and the journey fails entirely.
 
-_AUTH_ROUTES_TEMPLATE = '''\
+_ROLE_FIELD_RE = re.compile(
+    r'\brole\s*:\s*(?:Optional\[)?str\]?\s*=\s*Field\(\s*"([\w-]+)"[^)\n]*'
+    r'pattern\s*=\s*r?"[\^]?\(([\w|-]+)\)[\$]?"',
+)
+
+
+def _discover_role_vocabulary(project_path: Path) -> Optional[tuple[str, list[str]]]:
+    """
+    Look for evidence the app itself declares an app-specific role
+    vocabulary (e.g. `role: str = Field("diner", pattern="^(diner|staff)$")`
+    in an LLM-authored schema) -- as opposed to a generic role column with
+    no declared meaning.
+
+    Root cause this feeds into: the injected auth template (below) used to
+    unconditionally hardcode every new signup's role to "user", regardless
+    of what the app's OWN schema intended. Confirmed live (2026-07-11):
+    a generated restaurant app's app/schemas/auth.py declared exactly the
+    pattern above (diner|staff, default diner), but the injected
+    auth_routes.py's _make_user() ignored it entirely and hardcoded "user"
+    -- menu_routes.py gates Create on role in ("staff", "admin"), which
+    NO signup could ever reach. Not just a test-scoring gap: a real,
+    permanently dead feature for every actual user of the deployed app.
+
+    Returns (default_role, [allowed_roles]) if found, else None. Only acts
+    on this one concrete, unambiguous pattern (Field default + regex
+    pattern constraint) -- conservative by design, matching every other
+    corroboration-gated patcher this cycle: no match means no change to
+    the existing safe "user" fallback.
+    """
+    schemas_dir = project_path / "app" / "schemas"
+    if not schemas_dir.exists():
+        return None
+    for sf in schemas_dir.glob("*.py"):
+        try:
+            content = sf.read_text(encoding="utf-8", errors="replace")
+        except Exception:
+            continue
+        m = _ROLE_FIELD_RE.search(content)
+        if not m:
+            continue
+        default_role, alternatives = m.group(1), m.group(2)
+        allowed = [a for a in alternatives.split("|") if a]
+        if default_role not in allowed:
+            allowed.append(default_role)
+        return default_role, allowed
+    return None
+
+
+def _build_auth_routes_template(role_info: Optional[tuple[str, list[str]]]) -> str:
+    """
+    The known-good auth_routes.py template, optionally parameterized with
+    an app-specific role vocabulary discovered by _discover_role_vocabulary.
+    With role_info=None this is byte-for-byte the original generic
+    template (zero behavior change for the common case of no app-specific
+    role distinction) -- accepting an optional `role` in the signup
+    request and validating it against the discovered allowed set when
+    role_info is present.
+    """
+    if role_info:
+        default_role, allowed_roles = role_info
+        allowed_repr = repr(set(allowed_roles))
+        role_field = f'    role: str | None = None  # validated against {sorted(allowed_roles)} below\n'
+        role_assignment = (
+            f'    if "role" in cols:\n'
+            f'        kw["role"] = role if role in {allowed_repr} else "{default_role}"\n'
+        )
+        make_user_sig = 'def _make_user(email: str, password: str, display_name: str = "", role: str | None = None):'
+        signup_call = 'user = _make_user(req.email, req.password, req.display_name, req.role)'
+    else:
+        role_field = ""
+        role_assignment = '    if "role" in cols:\n        kw["role"] = "user"\n'
+        make_user_sig = 'def _make_user(email: str, password: str, display_name: str = ""):'
+        signup_call = 'user = _make_user(req.email, req.password, req.display_name)'
+
+    # Sentinel-token substitution, NOT an f-string -- this template is full
+    # of literal dict/set-comprehension braces ({c.name for c in ...},
+    # {k: v for k, v ...}) that an f-string would try to evaluate as
+    # placeholders. Plain string + targeted .replace() sidesteps having to
+    # escape every one of them.
+    template = '''\
 from fastapi import APIRouter, Depends, HTTPException
 from pydantic import BaseModel, Field
 from sqlalchemy.orm import Session
@@ -1600,6 +1679,7 @@ class SignupRequest(BaseModel):
     email: str = Field(min_length=1)
     password: str = Field(min_length=1)
     display_name: str = ""
+__ROLE_FIELD__
 
 
 class LoginRequest(BaseModel):
@@ -1611,7 +1691,7 @@ def _identifier_value(login_field: str, email: str) -> str:
     return email if login_field == "email" else email.split("@")[0]
 
 
-def _make_user(email: str, password: str, display_name: str = ""):
+__MAKE_USER_SIG__
     """Build a User instance regardless of which password/identifier field the model uses."""
     User = _get_user_model()
     cols = {c.name for c in User.__table__.columns}
@@ -1631,8 +1711,7 @@ def _make_user(email: str, password: str, display_name: str = ""):
         kw["username"] = email.split("@")[0]
     if "is_active" in cols:
         kw["is_active"] = True
-    if "role" in cols:
-        kw["role"] = "user"
+__ROLE_ASSIGNMENT__
     # Fill any remaining NOT NULL columns that have no default so injected auth
     # routes work even when the LLM adds custom non-nullable columns (e.g. status).
     _COL_STR_DEFAULTS = {
@@ -1675,7 +1754,7 @@ def signup(req: SignupRequest, db: Session = Depends(get_db)):
     identifier = _identifier_value(login_field, req.email)
     if db.query(User).filter(getattr(User, login_field) == identifier).first():
         raise HTTPException(status_code=400, detail="Email already registered")
-    user = _make_user(req.email, req.password, req.display_name)
+    __SIGNUP_CALL__
     db.add(user)
     db.commit()
     db.refresh(user)
@@ -1724,6 +1803,11 @@ def logout(current_user=Depends(get_current_user)):
     # This endpoint confirms the user is authenticated and acknowledges the request.
     return {"message": "Successfully logged out"}
 '''
+    return (template
+            .replace("__ROLE_FIELD__", role_field.rstrip("\n"))
+            .replace("__ROLE_ASSIGNMENT__", role_assignment.rstrip("\n"))
+            .replace("__MAKE_USER_SIG__", make_user_sig)
+            .replace("__SIGNUP_CALL__", signup_call))
 
 
 def _patch_auth_routes(project_path: Path) -> None:
@@ -1763,8 +1847,12 @@ def _patch_auth_routes(project_path: Path) -> None:
             needs_inject = True
 
     if needs_inject:
-        auth_routes_file.write_text(_AUTH_ROUTES_TEMPLATE, encoding="utf-8")
-        print("  [patcher] Injected known-good app/routes/auth_routes.py (dynamic password field + fast bcrypt)")
+        role_info = _discover_role_vocabulary(project_path)
+        auth_routes_file.write_text(_build_auth_routes_template(role_info), encoding="utf-8")
+        msg = "  [patcher] Injected known-good app/routes/auth_routes.py (dynamic password field + fast bcrypt)"
+        if role_info:
+            msg += f" -- role-aware signup, vocabulary={sorted(role_info[1])} default={role_info[0]!r}"
+        print(msg)
 
     # Ensure main.py imports and includes auth_router
     try:
