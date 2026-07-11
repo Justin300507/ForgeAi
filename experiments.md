@@ -3104,3 +3104,74 @@ corruption (spot-checked every diff, including the `password` addition
 by hand given its security adjacency). **Cost: $0** -- corpus scan, live
 schema/model cross-reference, and patcher testing against real (already
 on-disk) generated output, no new generation.
+
+## Experiment 046 — Foreign Key ownership drift audit ($0, no LLM calls)
+
+User directive: "The Compounding Phase" -- corpus sweeps before any
+generation, starting with Foreign Key Drift (`User.id` referenced
+inconsistently as `author_id`/`owner_id`/`creator_id`/`userId` across a
+project). $0 throughout; no app was generated for this cycle.
+
+**Hypothesis:** `_FIELD_SYNONYMS_PATCHER` (used by the existing, blanket
+`_patch_attr_access_mismatches`) has `creator_id`/`author_id` as keys
+mapping to `[owner_id, user_id, created_by]`, but is missing the reverse
+direction -- `owner_id`/`user_id` are never keys. If a model's real
+ownership FK is `owner_id` but a route filters on `.user_id`, nothing
+catches it.
+
+**Prevalence check:** swept all 53 corpus apps for route files calling
+`.<name>` where `<name>` is in the ownership family
+(`owner_id`/`user_id`/`userId`/`creator_id`/`author_id`/`created_by`/
+`ownerId`/`createdBy`) but is absent from the referenced model's real
+columns while a sibling ownership-family name IS present. 3/53 apps
+flagged: `blog_platform`, `lean_sales_crm`, `support_ticket_system`.
+
+**Spot-checked each candidate, not just the first:**
+- `blog_platform` -- **false positive.** `blog_post_in.author_id` is a
+  real, required field on `BlogPostCreate` used for an anti-tampering
+  check; the model correctly uses `user_id` set server-side. (Separately
+  noted, not chased: the journey runner doesn't know to supply a
+  current-user-matching value for such self-identity fields -- 1/53
+  prevalence, out of scope for this cycle.)
+- `lean_sales_crm` -- **confirmed, severe.** `Contact` has a real FK
+  `owner_id = Column(Integer, ForeignKey("users.id"), nullable=False)`
+  AND an unrelated `user_id = Column(Integer, default=0, nullable=False)`
+  that is never a ForeignKey and never set by any route.
+  `contact_routes.py` / `deal_routes.py` / `stats_routes.py` all filter on
+  `Contact.user_id == current_user.id` -- which can never match a real
+  user (the column is permanently 0). Every list/get/update/delete for a
+  user's own contacts silently returns nothing. Silent, permanent
+  data-isolation bug, live in generated output before any fix.
+
+**What shipped (this commit):** a new, narrower patcher --
+`_patch_ownership_fk_attribute_drift` -- deliberately NOT an extension of
+`_patch_attr_access_mismatches`'s blanket, file-wide substitution (too
+risky for common names like `user_id` that can be legitimately correct on
+a different model in the same file; confirmed necessary by the
+multi-model-same-file test). Instead it's class-qualified
+(`ClassName.bad_attr` only) and checks FOREIGN-KEY-typed columns
+specifically via a new `_model_fk_columns` helper -- NOT
+`_model_classes_and_columns`'s "any column" check, which was tried first
+and returned `patched: 0` against the real `lean_sales_crm` bug because
+`Contact.user_id` genuinely exists as *some* (non-FK) column, so an
+any-column check wrongly read that as "the model has it, not drift."
+
+**Verification:** 7 new tests (`test_ownership_fk_drift.py`, incl. a
+same-file two-different-models isolation test) + all 19 existing
+`tests/reliability/` suites pass, 0 regressions. Corpus-swept after
+shipping: fires on exactly 1/54 apps (`lean_sales_crm`, 3 files), 0 false
+positives, 0 crashes, 0 syntax corruption -- confirmed by both `ast.parse`
+on every touched file and a full corpus dry-run copy. **Cost: $0.**
+
+**Caveat/next scope (deliberately not done this cycle):** the same
+`lean_sales_crm` diff still leaves `Deal(**{...}, user_id=current_user.id)`
+in `deal_routes.py` -- a constructor-kwarg drift, not an attribute-access
+drift, and a different bug class already partially owned by
+`database_patcher.py`'s constructor-kwarg patchers. Not fixed here to
+keep this cycle to one measurable change; worth a follow-up prevalence
+check before folding in.
+
+**Next per the user's stated roadmap:** Relationship Audit
+(`relationship()`, `back_populates`, `ForeignKey()`, `nullable`, `cascade`,
+`lazy` consistency), then Response Drift Audit (Model -> Schema -> Route
+-> Frontend) -- both $0, corpus-sweep-first, same discipline.

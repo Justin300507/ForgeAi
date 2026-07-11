@@ -3048,6 +3048,91 @@ def _patch_attr_access_mismatches(project_path: Path) -> int:
     return patched
 
 
+# Ownership FK naming drift: the SAME conceptual "who owns this row" column
+# named differently across an app's own model vs. its route-level ownership
+# checks. _FIELD_SYNONYMS_PATCHER above already covers creator_id/author_id
+# as bad_attr keys, but deliberately NOT user_id/owner_id/created_by as
+# keys -- those are common enough as REAL, correct column names on OTHER
+# models in the same file that _patch_attr_access_mismatches' blanket,
+# file-wide (not class-qualified) substitution would risk damaging
+# unrelated, entirely correct code. This patcher covers exactly that gap
+# with class-qualified precision instead of a wider synonym key.
+_OWNERSHIP_FK_SYNONYMS = {
+    "owner_id":   ["user_id", "creator_id", "author_id", "created_by"],
+    "user_id":    ["owner_id", "creator_id", "author_id", "created_by"],
+    "creator_id": ["owner_id", "user_id", "author_id", "created_by"],
+    "author_id":  ["owner_id", "user_id", "creator_id", "created_by"],
+    "created_by": ["owner_id", "user_id", "creator_id", "author_id"],
+}
+
+
+def _patch_ownership_fk_attribute_drift(project_path: Path) -> int:
+    """
+    Fix `ModelClass.wrong_ownership_field` query/filter expressions where
+    the model actually uses a DIFFERENT ownership-FK column name.
+
+    Confirmed live (2026-07-11, found via corpus sweep, $0): a generated
+    CRM app's Contact/Deal models declare `owner_id` as the real FK to
+    users.id, but contact_routes.py/deal_routes.py/stats_routes.py filter
+    on `Contact.user_id == current_user.id` -- and Contact ALSO happens to
+    have an unrelated, non-FK `user_id` column that defaults to 0 and is
+    never set by any route. Every such query silently returns nothing for
+    every real user (0 never equals a real user id) -- a silent,
+    permanent data-isolation bug on GET/PUT/DELETE for contacts, not a
+    crash, so nothing else in this pipeline's error taxonomy would ever
+    surface it.
+
+    Checks FOREIGN-KEY-typed columns specifically, not "any column" --
+    Contact.user_id exists on the model (a real, if unrelated, non-FK
+    integer column that just happens to share the name), so a plain
+    "does this attribute exist anywhere on the model" check would wrongly
+    treat it as fine. Only a column actually declared with `ForeignKey(...)`
+    counts as "the model really has an ownership FK under this name."
+
+    Only rewrites `ClassName.bad_attr` where ClassName is a confirmed
+    local model class (not a bare `.bad_attr` on some other, unresolved
+    object) -- deliberately narrower than _patch_attr_access_mismatches'
+    file-wide substitution, since a route file legitimately referencing
+    multiple models could otherwise have a DIFFERENT class's genuinely
+    correct `.user_id` damaged by the same blanket replacement.
+    """
+    routes_dir = project_path / "app" / "routes"
+    models_dir = project_path / "app" / "models"
+    if not routes_dir.exists() or not models_dir.exists():
+        return 0
+
+    fk_cols = _model_fk_columns(models_dir)
+    if not fk_cols:
+        return 0
+
+    patched = 0
+    for rf in routes_dir.glob("*.py"):
+        try:
+            content = rf.read_text(encoding="utf-8", errors="replace")
+        except Exception:
+            continue
+
+        new_content = content
+        for cls_name, cols in fk_cols.items():
+            if cls_name not in new_content:
+                continue
+            for bad_attr, candidates in _OWNERSHIP_FK_SYNONYMS.items():
+                if bad_attr in cols:
+                    continue  # this model's FK genuinely has this name -- not drift
+                good_attr = next((c for c in candidates if c in cols), None)
+                if not good_attr:
+                    continue
+                pattern = re.compile(rf'\b{re.escape(cls_name)}\.{re.escape(bad_attr)}\b')
+                new_content = pattern.sub(f"{cls_name}.{good_attr}", new_content)
+
+        if new_content != content:
+            rf.write_text(new_content, encoding="utf-8")
+            patched += 1
+            print(f"  [patcher] Fixed ownership-FK attribute drift in {rf.name}")
+
+    return patched
+
+
 _SCHEMA_CLASS_RE = re.compile(r'^class\s+(\w+)\s*\(([^)]*)\)\s*:', re.MULTILINE)
 _SCHEMA_FIELD_RE = re.compile(r'^\s{4}(\w+)\s*:', re.MULTILINE)
 
@@ -3077,6 +3162,34 @@ def _schema_classes_and_fields(schemas_dir: Path) -> dict[str, tuple[Path, set[s
 
 
 _MODEL_COLUMN_RE = re.compile(r'^\s{4}(\w+)\s*=\s*Column\(', re.MULTILINE)
+_MODEL_FK_COLUMN_RE = re.compile(r'^\s{4}(\w+)\s*=\s*Column\([^\n]*ForeignKey', re.MULTILINE)
+
+
+def _model_fk_columns(models_dir: Path) -> dict[str, set[str]]:
+    """{model_class_name: {ForeignKey-typed column names}} across every
+    app/models/*.py file. Unlike _model_classes_and_columns (which returns
+    ALL Column(...) declarations), this only counts columns actually
+    declared with ForeignKey(...) -- a model can have a plain, unrelated
+    column that happens to share a name with a real ownership FK on
+    another model (e.g. Contact.user_id = Column(Integer, default=0) with
+    no ForeignKey, alongside the real Contact.owner_id FK), and treating
+    that as "the model has this FK" would hide genuine ownership-FK drift."""
+    out: dict[str, set[str]] = {}
+    if not models_dir.exists():
+        return out
+    for mf in models_dir.glob("*.py"):
+        try:
+            content = mf.read_text(encoding="utf-8", errors="replace")
+        except Exception:
+            continue
+        for m in _CLASS_DECL_RE.finditer(content):
+            cls_name = m.group(1)
+            next_m = _CLASS_DECL_RE.search(content, m.end())
+            body = content[m.end(): next_m.start() if next_m else len(content)]
+            cols = set(_MODEL_FK_COLUMN_RE.findall(body))
+            if cols:
+                out[cls_name] = cols
+    return out
 
 
 def _model_classes_and_columns(models_dir: Path) -> dict[str, set[str]]:
@@ -6075,6 +6188,14 @@ def run_deterministic_patches(project_path: str, skip_protected_injections: bool
     # Fix attribute accesses (e.g. user.username when model only has email).
     # The field_patcher fixes constructor calls; this fixes dict literals and returns.
     counts["_patch_attr_access_mismatches"] = _patch_attr_access_mismatches(root) or 0
+
+    # Fix ownership-FK naming drift in query/filter expressions (e.g.
+    # Contact.user_id used in a filter when the model's real FK to users
+    # is Contact.owner_id) -- a silent, permanent data-isolation bug since
+    # the filter never matches any real user id. Class-qualified, checks
+    # ForeignKey-typed columns only (see _model_fk_columns), so it won't
+    # touch a genuinely unrelated same-named column on another model.
+    counts["_patch_ownership_fk_attribute_drift"] = _patch_ownership_fk_attribute_drift(root) or 0
 
     # Add a field to a Create/Update schema when a route handler reads it
     # off that schema but it was never declared there, even though a
