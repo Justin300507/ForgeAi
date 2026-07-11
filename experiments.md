@@ -2748,3 +2748,87 @@ mechanism-level, live-reboot verification already documented in
 Experiments 039/040 remains the primary evidence for these fixes; a clean
 aggregate before/after is still the open item for whenever canary
 infrastructure allows an uninterrupted run.
+
+---
+
+## Experiment 042 — Reject syntactically invalid Python fixes + Create/Update schema field completion
+
+User explicitly asked to do two things at once: investigate the canary-kill
+finding from Experiment 041 empirically, and keep shipping reliability
+fixes using the same corpus-driven, live-verification methodology. Both
+ran in parallel this cycle.
+
+**Fix 1 (commit ef9eebc) — Python syntax gate in the repair loop.** While
+booting the freshest post-fix `simple_crm` output (from Experiment 041's
+`post_reliability_fixes` canary) to look for the next real bug,
+`contact_routes.py` turned out to have a genuine SyntaxError: a
+`from app.schemas.contact import (` whose body had three more complete
+`from ... import X` statements spliced into the middle of the open
+parenthesis. Traced to `fix_logs.json`: a real, pre-existing detector
+(`app/services/duplicate_class_validator.py`, "Duplicate class definition
+... creates incompatible duplicate types") correctly caught the route file
+duplicating classes already in `app/schemas/contact.py`, triggered the
+generic LLM-driven repair loop, and that fix's rewritten file was
+syntactically broken. Root cause: the `.jsx/.js/.tsx/.ts` patch path
+already rejects a fix with unbalanced JSX tags before writing it
+(`_jsx_tag_mismatches`) -- the `.py` path had **no equivalent gate at
+all** across all three of `orchestrator.py`'s `.py` write sites. New
+`_python_syntax_error()` (ast.parse-based) wired into all three; a patch
+that fails it is rejected before ever touching disk. 6 new tests
+(including the exact real malformed content, confirmed it would have been
+rejected) + all 24 existing suites passed.
+
+**Investigated and deliberately NOT built (same cycle):** the "Schema
+Authority" pattern (routes duplicating schema classes) that triggered the
+above -- per Experiment 041's finding, this is usually dead code, not
+active drift, so no detection/repair system was built for the pattern
+itself; only the downstream syntax-safety gap it exposed got fixed.
+
+**Fix 2 (commit 757b47f) — missing Create/Update schema fields.** Booted
+5 more real apps from the corpus (gym_tracker, habit_forge, lean_sales_crm,
+dine_reserve, forge_learn) looking for the next concrete bug: 4 of 5 had
+"Create entity" failing for real (not a harness false-negative this time).
+`gym_tracker`'s was a clean, unambiguous 500: `AttributeError:
+'WorkoutCreate' object has no attribute 'date'` -- `WorkoutResponse`
+correctly had `date`, `WorkoutCreate` simply never got it. New
+`_patch_missing_create_update_fields` (deterministic, $0, preflight):
+finds route-handler attribute accesses on a Create/Update-typed parameter
+that aren't declared on the class, and adds them as `Optional[Any] = None`
+-- but only when corroborated by an exact sibling schema for the same
+entity, never guessed or invented, so a genuine handler bug is left to
+surface rather than silently hidden.
+
+**Two bugs in this patcher caught by its own corpus sweep before
+shipping** (same discipline as Experiment 040's Symbol Validation): (1)
+the insertion-point regex was greedy enough to eat into a `pass`-only
+class body's indentation, de-indenting `pass` to column 0 (outside the
+class, invalid syntax) -- corrupted 4 of 9 real projects it touched on
+the first pass; fixed by always inserting immediately after the class
+header. (2) the entity-prefix corroboration used a bare `startswith()`,
+which could let an unrelated longer entity sharing a prefix
+(`TeamMemberResponse`) falsely corroborate a field for a shorter one
+(`TeamCreate`); tightened to an exact suffix-set match
+(Base/Create/Update/Response/Read/Out/In/Detail/Summary). Final state
+after both fixes: 9/50 real projects touched, 0 crashes, 0 syntax
+corruption. 7 new tests (both bugs above as explicit regressions) + all
+25 existing suites passed.
+
+**Deferred within Fix 2's own scope:** `gym_tracker`'s handler also reads
+`workout_in.notes`, which exists on the SQLAlchemy model but on NO schema
+at all (not even Response) -- outside this patcher's conservative
+corroboration design by construction. Extending corroboration to fall
+back to the model would need SQLAlchemy-column-to-Python-type inference,
+meaningfully riskier than schema-to-schema corroboration; left as a
+clearly-scoped next step rather than rushed into this commit.
+
+**Canary-kill investigation (parallel, still running):** launched a $0
+heartbeat diagnostic (`diag_heartbeat.log`, a bare Python loop printing
+every 30s, no LLM calls) in the background to empirically find the
+background-task wall-clock limit implicated in Experiment 041's two
+killed canaries, instead of guessing. Still running past 20+ minutes
+uninterrupted as of this entry -- longer than either killed canary
+attempt survived, suggesting the kill may correlate with the canary
+script's own behavior (LLM call pattern, subprocess management, or
+output buffering) rather than a flat wall-clock cap. Inconclusive until
+it either gets killed too or runs long enough to rule out a timeout
+entirely; follow up once it resolves.
