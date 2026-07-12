@@ -5672,3 +5672,80 @@ Exp078 before changing `should_skip()`'s logic (don't assume).
 `backend/benchmark_results/exp079_endpoint_preservation_invocations.json`,
 canary history entry (BASELINE, 88.2). **Cost: $0.0515, one live
 generation.**
+
+## Experiment 080: Investigate Retry Strategy Memory Staleness
+
+2026-07-12. Investigation only, $0, zero Cerebras calls. Evidence built
+entirely from `git log`/`git show` on already-committed telemetry
+(`backend/failure_memory/strategy_outcomes.json`) plus direct reading of
+`app/retry/strategy_memory.py` and `orchestrator.py`'s commit history.
+
+**Root cause confirmed**: `regenerate_module`'s 0-success blacklist for
+`contract`/`api`/`SyntaxError` is frozen using evidence at least 6 days
+stale, predating two confirmed material fixes to `_regenerate_module`
+itself. `strategy_outcomes.json` stores only a monotonic `{tries,
+successes}` tally per (pattern, strategy) — no timestamps, no version,
+no per-try history — so `should_skip()` has no way to know the underlying
+code changed. It's a self-reinforcing lock: crossing the 3-tries/
+0-successes threshold causes the retry manager to skip the strategy
+forever, which means the tally can never grow, which means it can never
+un-cross the threshold.
+
+**Evidence chain**: diffed `strategy_outcomes.json` across every commit
+that touched it, 2026-07-06 (`02acf4f`, earliest tracked) through today.
+`contract`/`api`/`SyntaxError`'s `regenerate_module` counts are
+byte-identical across all 5 snapshots spanning 6 days (0/3, 0/3, 0/2
+respectively, unchanged), while the same patterns' `patch_file` counts
+grew by 100+ tries in that same window (`contract/patch_file`: 6/22 →
+50/126) — direct, mechanical proof the skip is actively preventing any
+new evidence from ever being gathered, not just a coincidence of no
+`contract`-pattern runs happening. Confirmed two material
+`_regenerate_module` implementation changes since: `ef9eebc` (2026-07-11,
+added a syntax-validation gate before writing regen output to disk) and
+`aeb3fd8`/Exp078 (2026-07-12, the endpoint-preservation wiring). Both
+postdate when the frozen counts were already at their current values.
+(`AttributeError`'s entry first appears in the `aeb3fd8` sweep-commit
+rather than every prior snapshot — noted as "likely also stale, exact
+onset unconfirmed" rather than claiming the same 6-day proof.)
+
+**Statistical validity**: historical `regenerate_module` outcomes for
+these patterns are confounded (the strategy's implementation changed
+twice since) and small-n (2–3 tries) — not valid evidence about current
+behavior. `contract/patch_file` (50/126) and `contract/regenerate_arch`
+(9/42) are untouched by any relevant code change and remain valid; this
+investigation found no reason to distrust those, per the constraint to
+preserve retry behavior wherever evidence remains valid.
+
+**Correction mechanisms evaluated** (6, per the task): versioned strategy
+identity, implementation hash, experiment-generation tagging, bounded
+lookback, timestamp expiry, manual reset — full tradeoffs in
+`docs/EXP080_STRATEGY_MEMORY_STALENESS.md` §4.
+
+**Recommended correction**: experiment-generation tagging as the standing
+mechanism (one `"version": N` field per stored entry + a small per-strategy
+version table in `strategy_memory.py`, bumped when a numbered experiment
+materially changes that strategy — piggybacking on this project's
+existing "every change is an Exp N" discipline rather than inventing a new
+one), plus a one-time reset of the 4 confirmed-stale entries as the
+immediate unblock (generation-tagging alone doesn't retroactively fix data
+already frozen under the tagless format).
+
+**Estimated impact**: `contract` is the highest-volume failure pattern in
+the system (126 `patch_file` + 42 `regenerate_arch` tries, more than every
+other pattern combined) and the exact pattern both Exp077's confirmed-live
+incident and Exp079's canary hit. Unblocking `regenerate_module` lets
+Exp078's fix finally be evaluated against real `contract` failures instead
+of remaining permanently untested, and restores a middle-strength repair
+rung between `patch_file` and the expensive, only-21%-successful nuclear
+`regenerate_arch` option — a plausible reliability and cost improvement,
+not yet a measured one.
+
+**Recommendation for Exp081**: implement the generation-tag mechanism,
+scoped to `strategy_memory.py` only (no changes to `RetryManager`'s public
+interface or `_regenerate_module` itself). Offline-test against a
+reconstructed copy of today's exact frozen snapshot before any live
+validation. Only after that lands is another live-validation cycle for
+endpoint preservation worth the Cerebras spend.
+
+**Deliverables**: `docs/EXP080_STRATEGY_MEMORY_STALENESS.md`, this entry.
+No code changes, no Cerebras calls. **Cost: $0.**
