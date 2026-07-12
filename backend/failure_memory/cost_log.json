@@ -16366,5 +16366,107 @@
     "forge_score": 44,
     "wall_time_s": 80.71,
     "timestamp": "2026-07-12T23:25:13"
+  },
+  {
+    "total_calls": 11,
+    "total_tokens": 61256,
+    "total_cost_usd": 0.036754,
+    "total_llm_time_s": 110.53,
+    "by_stage": {
+      "backend_generation": {
+        "calls": 6,
+        "tokens": 32434,
+        "cost_usd": 0.019459999999999998,
+        "time_s": 93.00999999999999
+      },
+      "fix": {
+        "calls": 1,
+        "tokens": 3774,
+        "cost_usd": 0.002264,
+        "time_s": 9.44
+      },
+      "qa_review": {
+        "calls": 1,
+        "tokens": 4153,
+        "cost_usd": 0.002492,
+        "time_s": 1.76
+      },
+      "security_review": {
+        "calls": 1,
+        "tokens": 7806,
+        "cost_usd": 0.004684,
+        "time_s": 1.86
+      },
+      "code_review": {
+        "calls": 1,
+        "tokens": 6688,
+        "cost_usd": 0.004013,
+        "time_s": 2.7
+      },
+      "performance_review": {
+        "calls": 1,
+        "tokens": 6401,
+        "cost_usd": 0.003841,
+        "time_s": 1.76
+      }
+    },
+    "project_name": "todo_list_app",
+    "forge_score": 61,
+    "wall_time_s": 55.51,
+    "timestamp": "2026-07-13T00:21:17"
+  },
+  {
+    "total_calls": 13,
+    "total_tokens": 73795,
+    "total_cost_usd": 0.044277,
+    "total_llm_time_s": 304.77,
+    "by_stage": {
+      "backend_generation": {
+        "calls": 6,
+        "tokens": 31762,
+        "cost_usd": 0.019057,
+        "time_s": 266.37
+      },
+      "fix": {
+        "calls": 2,
+        "tokens": 8325,
+        "cost_usd": 0.004995,
+        "time_s": 12.729999999999999
+      },
+      "qa_review": {
+        "calls": 1,
+        "tokens": 3989,
+        "cost_usd": 0.002393,
+        "time_s": 3.83
+      },
+      "security_review": {
+        "calls": 1,
+        "tokens": 7833,
+        "cost_usd": 0.0047,
+        "time_s": 8.86
+      },
+      "code_review": {
+        "calls": 1,
+        "tokens": 7151,
+        "cost_usd": 0.004291,
+        "time_s": 3.36
+      },
+      "performance_review": {
+        "calls": 1,
+        "tokens": 6078,
+        "cost_usd": 0.003647,
+        "time_s": 3.48
+      },
+      "runtime_fix": {
+        "calls": 1,
+        "tokens": 8657,
+        "cost_usd": 0.005194,
+        "time_s": 6.14
+      }
+    },
+    "project_name": "todo_list_app",
+    "forge_score": 74,
+    "wall_time_s": 122.69,
+    "timestamp": "2026-07-13T00:26:41"
   }
 ]

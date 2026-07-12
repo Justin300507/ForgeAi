@@ -6303,3 +6303,13 @@ treat Exp087/088 as shipped and confirmed by their offline evidence.
 from the prior session), this entry,
 `backend/benchmark_results/exp089_orm_dict_response_invocations.json`
 (raw instrumentation output). **Cost: ~$0.04, one Cerebras canary.**
+
+**Addendum (second, independent run)**: a second canary against the same
+`todo` idea (same instrumentation, unmodified) scored 98.0/100 (A+),
+deploy-ready, full CRUD journey pass, no regression. Again, no Exp088
+conversion was injected — this generation's route files didn't produce
+the target bare-dict-wrapping-raw-ORM-list shape either. Consistent with
+the original finding above: two independent live runs now agree "no
+regression, mechanism not exercised this time" — strengthens confidence
+Exp088 is regression-free, still no live-fire confirmation. Disposition
+unchanged: closed, per the same credit-discipline reasoning above.

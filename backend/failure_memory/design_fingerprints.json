@@ -1581,5 +1581,55 @@
     "font_heading": "Inter",
     "shell": "sidebar",
     "data_density": "high"
+  },
+  {
+    "project_name": "todo_list_app",
+    "category": "productivity",
+    "style": "glass",
+    "timestamp": "2026-07-12T18:50:50.947290+00:00",
+    "design_id": "6b2937aaad26",
+    "idea_hash": "fa56465d8dc6",
+    "layout": "sidebar",
+    "navigation": "gradient sidebar",
+    "motion": "base motion tokens, standard 40ms stagger",
+    "typography": "Inter",
+    "component_mix": [
+      "kanban_board",
+      "streak_heatmap"
+    ],
+    "density": "high",
+    "hero_style": "greeting header + stats grid",
+    "palette": "indigo",
+    "interaction_style": "keyboard-first: command palette, focus rings, hinted shortcuts",
+    "experience_flow": "Today's list, already prioritized",
+    "posture": "prosumer",
+    "font_heading": "Inter",
+    "shell": "sidebar",
+    "data_density": "high"
+  },
+  {
+    "project_name": "todo_list_app",
+    "category": "productivity",
+    "style": "glass",
+    "timestamp": "2026-07-12T18:55:49.614054+00:00",
+    "design_id": "6b2937aaad26",
+    "idea_hash": "fa56465d8dc6",
+    "layout": "sidebar",
+    "navigation": "gradient sidebar",
+    "motion": "base motion tokens, standard 40ms stagger",
+    "typography": "Inter",
+    "component_mix": [
+      "kanban_board",
+      "streak_heatmap"
+    ],
+    "density": "high",
+    "hero_style": "greeting header + stats grid",
+    "palette": "indigo",
+    "interaction_style": "keyboard-first: command palette, focus rings, hinted shortcuts",
+    "experience_flow": "Today's list, already prioritized",
+    "posture": "prosumer",
+    "font_heading": "Inter",
+    "shell": "sidebar",
+    "data_density": "high"
   }
 ]
