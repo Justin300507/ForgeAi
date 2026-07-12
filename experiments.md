@@ -6113,3 +6113,72 @@ returns on further chasing, per Exp082's own established reasoning.
 `backend/benchmark_results/exp086_auth_completeness_invocations.json`,
 canary history entry (BASELINE, 76.9). **Cost: $0.0675, one live
 generation.**
+
+## Experiment 087: Root Cause Investigation of PydanticSerializationError
+
+2026-07-12. Investigation only, $0, zero Cerebras calls — reconstructed
+entirely via real, already-on-disk generated projects (todo_list_app
+from Exp086, plus forge_blog_cms, recipe_share, simple_notes_app), no
+live reproduction needed.
+
+**Collected**: 6 all-time instances (`patterns.json`), 2 with full detail
+in `generation_log.jsonl` (scores 65.9/76.9, both `succeeded=false`).
+
+**One root cause, not multiple subclasses** — confirmed by checking every
+still-on-disk project and finding the identical shape in all 4: route
+handlers annotate `response_model=dict`/`Dict`/`Dict[str, Any]` (a
+generic LLM "skip the real schema" habit, not scoped only to pagination —
+also seen on a non-list endpoint in `simple_notes_app`) while the actual
+return value nests a raw, unconverted SQLAlchemy ORM instance (typically
+via `query(...).all()`). `dict` carries no ORM-mode/`from_attributes`
+context, so FastAPI/Pydantic can't serialize the nested object —
+`Unable to serialize unknown type: <class 'app.models.X.Y'>`.
+
+**Reconstruction**: `todo_list_app/app/routes/task_routes.py` (captured
+live, un-repaired) traced end-to-end — a correctly-configured
+`TaskResponse(BaseSchema)` with `ConfigDict(from_attributes=True)`
+**already exists** in `app/schemas/tasks.py`; the list endpoint simply
+never routes through it (`response_model=dict`, raw `items =
+query.offset(...).limit(...).all()` returned directly). Corrects the
+existing auto-generated diagnostic hint ("add ConfigDict to every
+schema") as imprecise for this shape — the applicable schema is already
+correct and unreachable, not missing the config.
+
+**Origin**: backend generation (LLM writes the pagination wrapper
+directly, reaches for `dict`/`Dict` as a quick type annotation instead of
+a dedicated response schema) — not planner/architecture/runtime-rewrite.
+Repair infrastructure independently reinforces the same blind spot
+without originating it.
+
+**Existing infrastructure found (reusable, not to be duplicated)**: two
+patchers in `deterministic_patcher.py` already grapple with this class of
+mismatch and both currently *weaken* the type contract rather than fix
+it — `_patch_orm_response_model()`'s own fallback comment literally reads
+`# fallback: dict serializes fine` (false for this exact bug) when it
+can't match an ORM-typed response_model to a schema, and
+`_patch_list_response_model_mismatch()` strips a mismatched
+`response_model=List[X]` annotation entirely rather than fixing the
+shape. `_patch_orm_response_model()` already builds the exact
+`orm_classes`/`schema_map` lookup needed to do this properly instead.
+
+**Smallest deterministic repair candidate**: extend
+`_patch_orm_response_model()` (reusing its existing lookup machinery) to
+detect a `return {"items": <var>, ...}` pattern where `<var>` came from
+an ORM `.all()` query with a matching schema in `schema_map`, and inject
+a one-line `model_validate()` list-comprehension conversion before the
+return — so the returned value is JSON-safe regardless of the declared
+response_model. Scoped to that one function; `_patch_list_response_model_mismatch()`
+untouched (different mismatch shape).
+
+**Estimated impact**: reproduced identically across 4/4 examined,
+independent app categories (todo, blog, recipe, notes) — a general
+backend-generation habit likely to recur in any app with a paginated list
+endpoint, not a narrow edge case. Both recorded scores were capped below
+deploy-ready specifically by this bug.
+
+**Recommendation for Exp088**: implement the §6 extension, scoped to
+`_patch_orm_response_model()` only. Offline-test against the real,
+already-captured `todo_list_app` fixture before any live validation.
+
+**Deliverables**: `docs/EXP087_PYDANTIC_SERIALIZATION_ROOT_CAUSE.md`,
+this entry. No code changes, no Cerebras calls. **Cost: $0.**
