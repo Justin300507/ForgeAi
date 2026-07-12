@@ -31,6 +31,18 @@
       "tries": 1
     }
   },
+  "PydanticSerializationError": {
+    "patch_file": {
+      "generation": 1,
+      "successes": 0,
+      "tries": 1
+    },
+    "regenerate_module": {
+      "generation": 2,
+      "successes": 0,
+      "tries": 1
+    }
+  },
   "SyntaxError": {
     "patch_file": {
       "successes": 2,
@@ -70,8 +82,8 @@
   "contract": {
     "patch_file": {
       "generation": 1,
-      "successes": 51,
-      "tries": 127
+      "successes": 52,
+      "tries": 128
     },
     "regenerate_arch": {
       "successes": 9,

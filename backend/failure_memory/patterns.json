@@ -301,7 +301,7 @@
       "stage": "runtime"
     },
     "PydanticSerializationError": {
-      "count": 5,
+      "count": 6,
       "examples": [
         {
           "project": "blog_platform",
@@ -325,7 +325,7 @@
         }
       ],
       "first_seen": "2026-06-29T23:39:46.755253",
-      "last_seen": "2026-07-11T12:46:44.354537",
+      "last_seen": "2026-07-12T17:55:13.406226",
       "stage": "runtime"
     },
     "JourneyCRUDFailure": {
@@ -509,6 +509,6 @@
       "stage": "build"
     }
   },
-  "total_runs": 460,
-  "last_updated": "2026-07-12T15:57:06.332435"
+  "total_runs": 461,
+  "last_updated": "2026-07-12T17:55:13.406158"
 }

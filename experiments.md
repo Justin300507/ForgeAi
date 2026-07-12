@@ -6058,3 +6058,58 @@ entry, code diff in `backend/app/services/fix_writer_service.py` and
 `backend/app/repair/auth_completeness.py`, new test file
 `backend/tests/reliability/test_exp085_cross_file_auth_validation.py`.
 **Cost: $0, zero Cerebras calls.**
+
+## Experiment 086: Live Validation of Cross-File Auth Field Validation
+
+2026-07-12. Live, one `todo` canary (label `exp086-validation-r1`,
+provider `cerebras`, `--no-deploy`), $0.0675 / 112,544 tokens. Idea =
+`benchmarks/golden/01_todo.txt` (the exact idea behind all 9 of Exp083's
+recorded failures). New script `backend/scripts/exp086_canary.py`
+wrapping `v6_orchestrator.ensure_auth_completeness` to log every
+invocation's before/after `AuthCompletenessResult`.
+
+**Architecture Repair did not fire this run** (0 `ensure_auth_completeness()`
+invocations) — the retry ladder did reach attempt 3/5
+(`REGENERATE_MODULE`, confirming Exp081's fix still holds), but no
+diagnostic this run matched `ARCHITECTURE_ERROR_MARKERS`, so Exp085's
+specific fix path was never entered. Direct live activation evidence is
+still pending, not blocked.
+
+**What the run does confirm**: `✓ Register: 200` and `✓ Login: 200` —
+both clean, where the historical bug crashed with a 500
+`AttributeError`. Read the actual generated `auth_routes.py` directly:
+every access is `req.email`/`req.password`/`req.display_name` — no
+`req.username` anywhere. Endpoint inventory: planned=14, actual=17,
+missing=0. No regression (`BASELINE` status, no prior `todo`-keyed
+history entry to compare against).
+
+**A different, unrelated bug capped the score** (76.9/C, 10/11 journey
+steps passed): `GET /tasks` 500'd with `PydanticSerializationError:
+Unable to serialize unknown type: <class 'app.models.tasks.Task'>` — a
+response model missing `ConfigDict(from_attributes=True)`, an
+already-cataloged class (Exp083's taxonomy) entirely unrelated to auth.
+No new root cause found or fixed this cycle, per constraint.
+
+**Comparison vs. Exp083's historical failure**: register/signup now 200
+(was 500/`AttributeError`), auth handler fields all valid (was
+`.username`, invalid), score 76.9 higher than every one of the 9
+historical occurrences (70.7–74.4, all `succeeded=false`).
+
+**Observatory**: 0 live activations of detection/repair this run (not
+blocked, just not triggered); runtime PASS on every auth-related step,
+FAIL on one unrelated pre-existing bug; no dashboard counter added (same
+reasoning as every prior cycle — no real activation data yet).
+
+**Recommendation for Exp087**: pivot to the newly-surfaced
+`PydanticSerializationError` on list-response endpoints rather than
+continuing to spend Cerebras budget hunting for Exp085's mechanism to
+fire live — that thread already has a fully-diagnosed, implemented, and
+offline-verified fix (Exp085) plus this cycle's confirming live evidence
+that the specific historical bug shape is genuinely absent. Diminishing
+returns on further chasing, per Exp082's own established reasoning.
+
+**Deliverables**: `docs/EXP086_LIVE_VALIDATION_AUTH_FIX.md`, this entry,
+`backend/scripts/exp086_canary.py`,
+`backend/benchmark_results/exp086_auth_completeness_invocations.json`,
+canary history entry (BASELINE, 76.9). **Cost: $0.0675, one live
+generation.**
