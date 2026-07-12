@@ -2446,460 +2446,6 @@
           "User profile pages beyond basic author identification"
         ]
       },
-      "score": 85.87,
-      "success_count": 1,
-      "generation_id": "dc5cb08cf99f4457ae7ec050ea9c04a6",
-      "timestamp": "2026-07-07T12:44:10Z"
-    },
-    {
-      "category": "blog_cms",
-      "idea": "A blog CMS with author and reader roles. Authors write posts with title, content (markdown), tags, and cover image URL. Posts can be saved as draft or published. Readers see all published posts, can f",
-      "architecture": {
-        "api_endpoints": [
-          {
-            "method": "POST",
-            "path": "/seed",
-            "description": "Populates database with realistic demo data.",
-            "file": "app\\routes\\seed_routes.py"
-          },
-          {
-            "method": "GET",
-            "path": "/stats/summary",
-            "description": "Returns aggregate counts and key metrics for the dashboard.",
-            "file": "app\\routes\\stats_routes.py"
-          },
-          {
-            "method": "POST",
-            "path": "/auth/login",
-            "description": "Authenticates a user and returns a JWT token.",
-            "file": "app\\routes\\auth_routes.py"
-          },
-          {
-            "method": "GET",
-            "path": "/users/me",
-            "description": "Retrieves the profile of the currently authenticated user.",
-            "file": "app\\routes\\user_routes.py"
-          },
-          {
-            "method": "GET",
-            "path": "/posts",
-            "description": "Retrieves a paginated list of all published blog posts, with optional tag filtering.",
-            "file": "app\\routes\\post_routes.py"
-          },
-          {
-            "method": "GET",
-            "path": "/posts/{post_id}",
-            "description": "Retrieves a single published blog post by its ID.",
-            "file": "app\\routes\\post_routes.py"
-          },
-          {
-            "method": "GET",
-            "path": "/authors/{author_id}/posts",
-            "description": "Retrieves a paginated list of posts by a specific author, including drafts for the author themselves.",
-            "file": "app\\routes\\post_routes.py"
-          },
-          {
-            "method": "POST",
-            "path": "/posts",
-            "description": "Creates a new blog post (initially as a draft).",
-            "file": "app\\routes\\post_routes.py"
-          },
-          {
-            "method": "PUT",
-            "path": "/posts/{post_id}",
-            "description": "Updates an existing blog post by its ID.",
-            "file": "app\\routes\\post_routes.py"
-          },
-          {
-            "method": "PATCH",
-            "path": "/posts/{post_id}/publish",
-            "description": "Publishes a draft post, making it visible to readers.",
-            "file": "app\\routes\\post_routes.py"
-          },
-          {
-            "method": "PATCH",
-            "path": "/posts/{post_id}/unpublish",
-            "description": "Unpublishes a published post, making it a draft again.",
-            "file": "app\\routes\\post_routes.py"
-          },
-          {
-            "method": "DELETE",
-            "path": "/posts/{post_id}",
-            "description": "Deletes a blog post by its ID.",
-            "file": "app\\routes\\post_routes.py"
-          },
-          {
-            "method": "GET",
-            "path": "/tags",
-            "description": "Retrieves a list of all available tags.",
-            "file": "app\\routes\\tag_routes.py"
-          },
-          {
-            "method": "POST",
-            "path": "/tags",
-            "description": "Creates a new tag (admin/author only).",
-            "file": "app\\routes\\tag_routes.py"
-          },
-          {
-            "method": "DELETE",
-            "path": "/tags/{tag_id}",
-            "description": "Deletes a tag (admin/author only).",
-            "file": "app\\routes\\tag_routes.py"
-          }
-        ],
-        "database_schema": [
-          {
-            "table_name": "users",
-            "columns": [
-              {
-                "name": "id",
-                "type": "INTEGER",
-                "is_primary_key": true,
-                "is_nullable": false
-              },
-              {
-                "name": "username",
-                "type": "VARCHAR(50)",
-                "is_primary_key": false,
-                "is_nullable": false
-              },
-              {
-                "name": "password_hash",
-                "type": "VARCHAR(255)",
-                "is_primary_key": false,
-                "is_nullable": false
-              },
-              {
-                "name": "role",
-                "type": "VARCHAR(20)",
-                "is_primary_key": false,
-                "is_nullable": false
-              }
-            ]
-          },
-          {
-            "table_name": "posts",
-            "columns": [
-              {
-                "name": "id",
-                "type": "INTEGER",
-                "is_primary_key": true,
-                "is_nullable": false
-              },
-              {
-                "name": "title",
-                "type": "VARCHAR(255)",
-                "is_primary_key": false,
-                "is_nullable": false
-              },
-              {
-                "name": "content_markdown",
-                "type": "TEXT",
-                "is_primary_key": false,
-                "is_nullable": false
-              },
-              {
-                "name": "cover_image_url",
-                "type": "VARCHAR(255)",
-                "is_primary_key": false,
-                "is_nullable": true
-              },
-              {
-                "name": "status",
-                "type": "VARCHAR(20)",
-                "is_primary_key": false,
-                "is_nullable": false
-              },
-              {
-                "name": "published_at",
-                "type": "DATETIME",
-                "is_primary_key": false,
-                "is_nullable": true
-              },
-              {
-                "name": "created_at",
-                "type": "DATETIME",
-                "is_primary_key": false,
-                "is_nullable": false
-              },
-              {
-                "name": "updated_at",
-                "type": "DATETIME",
-                "is_primary_key": false,
-                "is_nullable": false
-              },
-              {
-                "name": "author_id",
-                "type": "INTEGER",
-                "is_primary_key": false,
-                "is_nullable": false
-              }
-            ]
-          },
-          {
-            "table_name": "tags",
-            "columns": [
-              {
-                "name": "id",
-                "type": "INTEGER",
-                "is_primary_key": true,
-                "is_nullable": false
-              },
-              {
-                "name": "name",
-                "type": "VARCHAR(50)",
-                "is_primary_key": false,
-                "is_nullable": false
-              }
-            ]
-          },
-          {
-            "table_name": "post_tags",
-            "columns": [
-              {
-                "name": "post_id",
-                "type": "INTEGER",
-                "is_primary_key": true,
-                "is_nullable": false
-              },
-              {
-                "name": "tag_id",
-                "type": "INTEGER",
-                "is_primary_key": true,
-                "is_nullable": false
-              }
-            ]
-          }
-        ],
-        "folder_structure": {
-          "backend": [
-            "app/",
-            "app/api/",
-            "app/core/",
-            "app/core/config.py",
-            "app/core/security.py",
-            "app/db/",
-            "app/db/base.py",
-            "app/db/session.py",
-            "app/models/",
-            "app/models/user.py",
-            "app/models/post.py",
-            "app/models/tag.py",
-            "app/models/post_tag.py",
-            "app/schemas/",
-            "app/schemas/user.py",
-            "app/schemas/post.py",
-            "app/schemas/tag.py",
-            "app/schemas/auth.py",
-            "app/services/",
-            "app/services/user_service.py",
-            "app/services/post_service.py",
-            "app/services/tag_service.py",
-            "app/routes/",
-            "app/routes/auth_routes.py",
-            "app/routes/user_routes.py",
-            "app/routes/post_routes.py",
-            "app/routes/tag_routes.py",
-            "app/routes/seed_routes.py",
-            "app/routes/stats_routes.py",
-            "app/main.py"
-          ]
-        },
-        "frontend_structure": {
-          "pages": [
-            "HomePage.jsx",
-            "LoginPage.jsx",
-            "PostListPage.jsx",
-            "PostDetailPage.jsx",
-            "AuthorDashboardPage.jsx",
-            "CreatePostPage.jsx",
-            "EditPostPage.jsx"
-          ],
-          "components": [
-            "Header.jsx",
-            "Footer.jsx",
-            "LoginForm.jsx",
-            "PostCard.jsx",
-            "TagFilter.jsx",
-            "Pagination.jsx",
-            "MarkdownRenderer.jsx",
-            "AuthorPostList.jsx",
-            "PostForm.jsx",
-            "AuthGuard.jsx",
-            "LoadingSpinner.jsx",
-            "ErrorMessage.jsx"
-          ]
-        }
-      },
-      "plan": {
-        "project_name": "forge_blog_cms",
-        "display_name": "Forge Blog CMS",
-        "features": [
-          "Secure login for authors and role-based access control to ensure authors can only manage their own posts and readers can only view published content.",
-          "Authors can create new posts with title, markdown content, tags, and a cover image URL, and edit existing posts.",
-          "Authors can save posts as drafts for later editing and explicitly publish them when ready, making them visible to readers.",
-          "Authors can delete their own posts, removing them from the system.",
-          "Readers can view a list of all published posts, displaying title, author, date, and tags.",
-          "Readers can filter the list of published posts by selecting one or more tags.",
-          "Readers can click on a post to view its full content, including rendered markdown, title, author, date, tags, and cover image."
-        ],
-        "tech_stack": {
-          "backend": "FastAPI",
-          "database": "SQLite",
-          "auth": "JWT",
-          "frontend": "React + Vite"
-        },
-        "db_entities": [
-          "User",
-          "Post",
-          "Tag",
-          "PostTag"
-        ],
-        "api_modules": [
-          "auth",
-          "users",
-          "posts",
-          "tags"
-        ],
-        "user_stories": [
-          {
-            "role": "Author",
-            "want": "to create a new blog post",
-            "acceptance_criteria": [
-              "I can input a title, markdown content, tags, and a cover image URL.",
-              "The post is saved as a 'draft' by default upon creation.",
-              "I receive confirmation that my post has been successfully created."
-            ]
-          },
-          {
-            "role": "Author",
-            "want": "to save a post as a draft",
-            "acceptance_criteria": [
-              "When I save a post, its status is set to 'draft'.",
-              "Draft posts are not visible to readers.",
-              "I can access and edit my draft posts from my author dashboard."
-            ]
-          },
-          {
-            "role": "Author",
-            "want": "to publish a draft post",
-            "acceptance_criteria": [
-              "I can change the status of a draft post to 'published'.",
-              "The published post immediately appears in the list of posts visible to readers.",
-              "The published post displays its title, my name, the publication date, and its tags."
-            ]
-          },
-          {
-            "role": "Author",
-            "want": "to edit an existing post (draft or published)",
-            "acceptance_criteria": [
-              "I can modify the title, content, tags, and cover image URL of any of my posts.",
-              "If the post is published, the changes are reflected immediately for readers.",
-              "I receive confirmation that my post has been successfully updated."
-            ]
-          },
-          {
-            "role": "Reader",
-            "want": "to view a list of all published blog posts",
-            "acceptance_criteria": [
-              "I see a list of posts, each displaying its title, author, publication date, and tags.",
-              "Only 'published' posts are visible in this list.",
-              "The list is ordered by publication date, newest first."
-            ]
-          },
-          {
-            "role": "Reader",
-            "want": "to filter posts by a specific tag",
-            "acceptance_criteria": [
-              "I can select a tag to filter the post list.",
-              "Only posts containing the selected tag are displayed.",
-              "The filter can be cleared to show all published posts again."
-            ]
-          },
-          {
-            "role": "Reader",
-            "want": "to read a full blog post",
-            "acceptance_criteria": [
-              "When I click on a post title, I am taken to a dedicated page for that post.",
-              "The full content (markdown rendered), title, author, publication date, and cover image are displayed.",
-              "The post's tags are also visible on the individual post page."
-            ]
-          }
-        ],
-        "non_functional_requirements": {
-          "authentication": "required — Authors need to log in to manage posts; Readers do not need to log in to view posts.",
-          "authorization": "Authors can only create, edit, delete, and publish their own posts. Readers can only view published posts.",
-          "pagination": "required on: /posts (for readers), /authors/{author_id}/posts (for authors)",
-          "search": "none",
-          "file_uploads": "no",
-          "real_time": "no"
-        },
-        "data_entities_detail": [
-          {
-            "name": "User",
-            "description": "Stores user authentication and profile information.",
-            "key_fields": [
-              "id",
-              "username",
-              "password_hash",
-              "role"
-            ],
-            "relationships": [
-              "has many Post"
-            ]
-          },
-          {
-            "name": "Post",
-            "description": "Stores blog post content and metadata.",
-            "key_fields": [
-              "id",
-              "title",
-              "content_markdown",
-              "cover_image_url",
-              "status",
-              "published_at",
-              "created_at",
-              "updated_at",
-              "author_id"
-            ],
-            "relationships": [
-              "belongs to User",
-              "has many Tag"
-            ]
-          },
-          {
-            "name": "Tag",
-            "description": "Stores categories for blog posts.",
-            "key_fields": [
-              "id",
-              "name"
-            ],
-            "relationships": [
-              "has many Post"
-            ]
-          },
-          {
-            "name": "PostTag",
-            "description": "Junction table for many-to-many relationship between Posts and Tags.",
-            "key_fields": [
-              "post_id",
-              "tag_id"
-            ],
-            "relationships": [
-              "belongs to Post",
-              "belongs to Tag"
-            ]
-          }
-        ],
-        "out_of_scope": [
-          "User registration (authors will be pre-provisioned or invited)",
-          "Comments section for posts",
-          "Rich text editor (only markdown input)",
-          "Advanced search functionality (only tag filtering)",
-          "Analytics or readership metrics",
-          "User profile pages beyond basic author identification"
-        ]
-      },
       "score": 89.0,
       "success_count": 1,
       "generation_id": "401d4503f60344f6be481fad91366f98",
@@ -4266,6 +3812,460 @@
       "success_count": 1,
       "generation_id": "0a0463477613422da8f6d0976979712a",
       "timestamp": "2026-07-11T11:34:53Z"
+    },
+    {
+      "category": "blog_cms",
+      "idea": "A blog CMS with author and reader roles. Authors write posts with title, content (markdown), tags, and cover image URL. Posts can be saved as draft or published. Readers see all published posts, can f",
+      "architecture": {
+        "api_endpoints": [
+          {
+            "method": "POST",
+            "path": "/seed",
+            "description": "Populates database with realistic demo data.",
+            "file": "app\\routes\\seed_routes.py"
+          },
+          {
+            "method": "GET",
+            "path": "/stats/summary",
+            "description": "Returns aggregate counts and key metrics for the dashboard.",
+            "file": "app\\routes\\stats_routes.py"
+          },
+          {
+            "method": "POST",
+            "path": "/auth/login",
+            "description": "Authenticates a user and returns a JWT token.",
+            "file": "app\\routes\\auth_routes.py"
+          },
+          {
+            "method": "GET",
+            "path": "/users/me",
+            "description": "Retrieves the profile of the currently authenticated user.",
+            "file": "app\\routes\\user_routes.py"
+          },
+          {
+            "method": "GET",
+            "path": "/posts",
+            "description": "Retrieves a paginated list of all published blog posts, with optional tag filtering.",
+            "file": "app\\routes\\post_routes.py"
+          },
+          {
+            "method": "GET",
+            "path": "/posts/{post_id}",
+            "description": "Retrieves a single published blog post by its ID.",
+            "file": "app\\routes\\post_routes.py"
+          },
+          {
+            "method": "GET",
+            "path": "/authors/{author_id}/posts",
+            "description": "Retrieves a paginated list of posts by a specific author, including drafts for the author themselves.",
+            "file": "app\\routes\\post_routes.py"
+          },
+          {
+            "method": "POST",
+            "path": "/posts",
+            "description": "Creates a new blog post (initially as a draft).",
+            "file": "app\\routes\\post_routes.py"
+          },
+          {
+            "method": "PUT",
+            "path": "/posts/{post_id}",
+            "description": "Updates an existing blog post by its ID.",
+            "file": "app\\routes\\post_routes.py"
+          },
+          {
+            "method": "PATCH",
+            "path": "/posts/{post_id}/publish",
+            "description": "Publishes a draft post, making it visible to readers.",
+            "file": "app\\routes\\post_routes.py"
+          },
+          {
+            "method": "PATCH",
+            "path": "/posts/{post_id}/unpublish",
+            "description": "Unpublishes a published post, making it a draft again.",
+            "file": "app\\routes\\post_routes.py"
+          },
+          {
+            "method": "DELETE",
+            "path": "/posts/{post_id}",
+            "description": "Deletes a blog post by its ID.",
+            "file": "app\\routes\\post_routes.py"
+          },
+          {
+            "method": "GET",
+            "path": "/tags",
+            "description": "Retrieves a list of all available tags.",
+            "file": "app\\routes\\tag_routes.py"
+          },
+          {
+            "method": "POST",
+            "path": "/tags",
+            "description": "Creates a new tag (admin/author only).",
+            "file": "app\\routes\\tag_routes.py"
+          },
+          {
+            "method": "DELETE",
+            "path": "/tags/{tag_id}",
+            "description": "Deletes a tag (admin/author only).",
+            "file": "app\\routes\\tag_routes.py"
+          }
+        ],
+        "database_schema": [
+          {
+            "table_name": "users",
+            "columns": [
+              {
+                "name": "id",
+                "type": "INTEGER",
+                "is_primary_key": true,
+                "is_nullable": false
+              },
+              {
+                "name": "username",
+                "type": "VARCHAR(50)",
+                "is_primary_key": false,
+                "is_nullable": false
+              },
+              {
+                "name": "password_hash",
+                "type": "VARCHAR(255)",
+                "is_primary_key": false,
+                "is_nullable": false
+              },
+              {
+                "name": "role",
+                "type": "VARCHAR(20)",
+                "is_primary_key": false,
+                "is_nullable": false
+              }
+            ]
+          },
+          {
+            "table_name": "posts",
+            "columns": [
+              {
+                "name": "id",
+                "type": "INTEGER",
+                "is_primary_key": true,
+                "is_nullable": false
+              },
+              {
+                "name": "title",
+                "type": "VARCHAR(255)",
+                "is_primary_key": false,
+                "is_nullable": false
+              },
+              {
+                "name": "content_markdown",
+                "type": "TEXT",
+                "is_primary_key": false,
+                "is_nullable": false
+              },
+              {
+                "name": "cover_image_url",
+                "type": "VARCHAR(255)",
+                "is_primary_key": false,
+                "is_nullable": true
+              },
+              {
+                "name": "status",
+                "type": "VARCHAR(20)",
+                "is_primary_key": false,
+                "is_nullable": false
+              },
+              {
+                "name": "published_at",
+                "type": "DATETIME",
+                "is_primary_key": false,
+                "is_nullable": true
+              },
+              {
+                "name": "created_at",
+                "type": "DATETIME",
+                "is_primary_key": false,
+                "is_nullable": false
+              },
+              {
+                "name": "updated_at",
+                "type": "DATETIME",
+                "is_primary_key": false,
+                "is_nullable": false
+              },
+              {
+                "name": "author_id",
+                "type": "INTEGER",
+                "is_primary_key": false,
+                "is_nullable": false
+              }
+            ]
+          },
+          {
+            "table_name": "tags",
+            "columns": [
+              {
+                "name": "id",
+                "type": "INTEGER",
+                "is_primary_key": true,
+                "is_nullable": false
+              },
+              {
+                "name": "name",
+                "type": "VARCHAR(50)",
+                "is_primary_key": false,
+                "is_nullable": false
+              }
+            ]
+          },
+          {
+            "table_name": "post_tags",
+            "columns": [
+              {
+                "name": "post_id",
+                "type": "INTEGER",
+                "is_primary_key": true,
+                "is_nullable": false
+              },
+              {
+                "name": "tag_id",
+                "type": "INTEGER",
+                "is_primary_key": true,
+                "is_nullable": false
+              }
+            ]
+          }
+        ],
+        "folder_structure": {
+          "backend": [
+            "app/",
+            "app/api/",
+            "app/core/",
+            "app/core/config.py",
+            "app/core/security.py",
+            "app/db/",
+            "app/db/base.py",
+            "app/db/session.py",
+            "app/models/",
+            "app/models/user.py",
+            "app/models/post.py",
+            "app/models/tag.py",
+            "app/models/post_tag.py",
+            "app/schemas/",
+            "app/schemas/user.py",
+            "app/schemas/post.py",
+            "app/schemas/tag.py",
+            "app/schemas/auth.py",
+            "app/services/",
+            "app/services/user_service.py",
+            "app/services/post_service.py",
+            "app/services/tag_service.py",
+            "app/routes/",
+            "app/routes/auth_routes.py",
+            "app/routes/user_routes.py",
+            "app/routes/post_routes.py",
+            "app/routes/tag_routes.py",
+            "app/routes/seed_routes.py",
+            "app/routes/stats_routes.py",
+            "app/main.py"
+          ]
+        },
+        "frontend_structure": {
+          "pages": [
+            "HomePage.jsx",
+            "LoginPage.jsx",
+            "PostListPage.jsx",
+            "PostDetailPage.jsx",
+            "AuthorDashboardPage.jsx",
+            "CreatePostPage.jsx",
+            "EditPostPage.jsx"
+          ],
+          "components": [
+            "Header.jsx",
+            "Footer.jsx",
+            "LoginForm.jsx",
+            "PostCard.jsx",
+            "TagFilter.jsx",
+            "Pagination.jsx",
+            "MarkdownRenderer.jsx",
+            "AuthorPostList.jsx",
+            "PostForm.jsx",
+            "AuthGuard.jsx",
+            "LoadingSpinner.jsx",
+            "ErrorMessage.jsx"
+          ]
+        }
+      },
+      "plan": {
+        "project_name": "forge_blog_cms",
+        "display_name": "Forge Blog CMS",
+        "features": [
+          "Secure login for authors and role-based access control to ensure authors can only manage their own posts and readers can only view published content.",
+          "Authors can create new posts with title, markdown content, tags, and a cover image URL, and edit existing posts.",
+          "Authors can save posts as drafts for later editing and explicitly publish them when ready, making them visible to readers.",
+          "Authors can delete their own posts, removing them from the system.",
+          "Readers can view a list of all published posts, displaying title, author, date, and tags.",
+          "Readers can filter the list of published posts by selecting one or more tags.",
+          "Readers can click on a post to view its full content, including rendered markdown, title, author, date, tags, and cover image."
+        ],
+        "tech_stack": {
+          "backend": "FastAPI",
+          "database": "SQLite",
+          "auth": "JWT",
+          "frontend": "React + Vite"
+        },
+        "db_entities": [
+          "User",
+          "Post",
+          "Tag",
+          "PostTag"
+        ],
+        "api_modules": [
+          "auth",
+          "users",
+          "posts",
+          "tags"
+        ],
+        "user_stories": [
+          {
+            "role": "Author",
+            "want": "to create a new blog post",
+            "acceptance_criteria": [
+              "I can input a title, markdown content, tags, and a cover image URL.",
+              "The post is saved as a 'draft' by default upon creation.",
+              "I receive confirmation that my post has been successfully created."
+            ]
+          },
+          {
+            "role": "Author",
+            "want": "to save a post as a draft",
+            "acceptance_criteria": [
+              "When I save a post, its status is set to 'draft'.",
+              "Draft posts are not visible to readers.",
+              "I can access and edit my draft posts from my author dashboard."
+            ]
+          },
+          {
+            "role": "Author",
+            "want": "to publish a draft post",
+            "acceptance_criteria": [
+              "I can change the status of a draft post to 'published'.",
+              "The published post immediately appears in the list of posts visible to readers.",
+              "The published post displays its title, my name, the publication date, and its tags."
+            ]
+          },
+          {
+            "role": "Author",
+            "want": "to edit an existing post (draft or published)",
+            "acceptance_criteria": [
+              "I can modify the title, content, tags, and cover image URL of any of my posts.",
+              "If the post is published, the changes are reflected immediately for readers.",
+              "I receive confirmation that my post has been successfully updated."
+            ]
+          },
+          {
+            "role": "Reader",
+            "want": "to view a list of all published blog posts",
+            "acceptance_criteria": [
+              "I see a list of posts, each displaying its title, author, publication date, and tags.",
+              "Only 'published' posts are visible in this list.",
+              "The list is ordered by publication date, newest first."
+            ]
+          },
+          {
+            "role": "Reader",
+            "want": "to filter posts by a specific tag",
+            "acceptance_criteria": [
+              "I can select a tag to filter the post list.",
+              "Only posts containing the selected tag are displayed.",
+              "The filter can be cleared to show all published posts again."
+            ]
+          },
+          {
+            "role": "Reader",
+            "want": "to read a full blog post",
+            "acceptance_criteria": [
+              "When I click on a post title, I am taken to a dedicated page for that post.",
+              "The full content (markdown rendered), title, author, publication date, and cover image are displayed.",
+              "The post's tags are also visible on the individual post page."
+            ]
+          }
+        ],
+        "non_functional_requirements": {
+          "authentication": "required — Authors need to log in to manage posts; Readers do not need to log in to view posts.",
+          "authorization": "Authors can only create, edit, delete, and publish their own posts. Readers can only view published posts.",
+          "pagination": "required on: /posts (for readers), /authors/{author_id}/posts (for authors)",
+          "search": "none",
+          "file_uploads": "no",
+          "real_time": "no"
+        },
+        "data_entities_detail": [
+          {
+            "name": "User",
+            "description": "Stores user authentication and profile information.",
+            "key_fields": [
+              "id",
+              "username",
+              "password_hash",
+              "role"
+            ],
+            "relationships": [
+              "has many Post"
+            ]
+          },
+          {
+            "name": "Post",
+            "description": "Stores blog post content and metadata.",
+            "key_fields": [
+              "id",
+              "title",
+              "content_markdown",
+              "cover_image_url",
+              "status",
+              "published_at",
+              "created_at",
+              "updated_at",
+              "author_id"
+            ],
+            "relationships": [
+              "belongs to User",
+              "has many Tag"
+            ]
+          },
+          {
+            "name": "Tag",
+            "description": "Stores categories for blog posts.",
+            "key_fields": [
+              "id",
+              "name"
+            ],
+            "relationships": [
+              "has many Post"
+            ]
+          },
+          {
+            "name": "PostTag",
+            "description": "Junction table for many-to-many relationship between Posts and Tags.",
+            "key_fields": [
+              "post_id",
+              "tag_id"
+            ],
+            "relationships": [
+              "belongs to Post",
+              "belongs to Tag"
+            ]
+          }
+        ],
+        "out_of_scope": [
+          "User registration (authors will be pre-provisioned or invited)",
+          "Comments section for posts",
+          "Rich text editor (only markdown input)",
+          "Advanced search functionality (only tag filtering)",
+          "Analytics or readership metrics",
+          "User profile pages beyond basic author identification"
+        ]
+      },
+      "score": 91.0,
+      "success_count": 1,
+      "generation_id": "582469af6fa14a598b5414af5ba4bd30",
+      "timestamp": "2026-07-12T15:59:36Z"
     }
   ],
   "food_restaurant": [

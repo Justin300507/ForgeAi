@@ -1532,5 +1532,29 @@
     "font_heading": "'Space Grotesk', sans-serif",
     "shell": "sidebar",
     "data_density": "medium"
+  },
+  {
+    "project_name": "forge_blog_cms",
+    "category": "social",
+    "style": "neubrutalist",
+    "timestamp": "2026-07-12T15:56:33.430745+00:00",
+    "design_id": "1ea532f95dbd",
+    "idea_hash": "e64f5df0111d",
+    "layout": "sidebar",
+    "navigation": "gradient sidebar",
+    "motion": "Snappy and mechanical, not soft",
+    "typography": "'Space Grotesk', sans-serif",
+    "component_mix": [
+      "activity_feed"
+    ],
+    "density": "medium",
+    "hero_style": "greeting header + stats grid",
+    "palette": "purple",
+    "interaction_style": "touch-first: generous tap targets, thumb-reachable primary actions",
+    "experience_flow": "A living feed with avatars and fresh timestamps",
+    "posture": "consumer",
+    "font_heading": "'Space Grotesk', sans-serif",
+    "shell": "sidebar",
+    "data_density": "medium"
   }
 ]

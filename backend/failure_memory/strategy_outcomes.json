@@ -5,8 +5,9 @@
       "tries": 2
     },
     "regenerate_module": {
+      "generation": 2,
       "successes": 0,
-      "tries": 3
+      "tries": 0
     },
     "switch_model": {
       "successes": 0,
@@ -21,8 +22,9 @@
   },
   "ImportError": {
     "regenerate_module": {
-      "successes": 1,
-      "tries": 1
+      "generation": 2,
+      "successes": 0,
+      "tries": 0
     },
     "switch_model": {
       "successes": 1,
@@ -35,8 +37,9 @@
       "tries": 6
     },
     "regenerate_module": {
+      "generation": 2,
       "successes": 0,
-      "tries": 2
+      "tries": 0
     }
   },
   "api": {
@@ -49,8 +52,9 @@
       "tries": 1
     },
     "regenerate_module": {
+      "generation": 2,
       "successes": 0,
-      "tries": 3
+      "tries": 0
     },
     "switch_model": {
       "successes": 4,
@@ -65,16 +69,18 @@
   },
   "contract": {
     "patch_file": {
-      "successes": 50,
-      "tries": 126
+      "generation": 1,
+      "successes": 51,
+      "tries": 127
     },
     "regenerate_arch": {
       "successes": 9,
       "tries": 42
     },
     "regenerate_module": {
+      "generation": 2,
       "successes": 0,
-      "tries": 3
+      "tries": 0
     },
     "switch_model": {
       "successes": 0,

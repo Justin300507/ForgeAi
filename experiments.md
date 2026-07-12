@@ -5804,3 +5804,67 @@ regenerate_module... proven ineffective."
 code diff in `backend/app/retry/strategy_memory.py`, new test file
 `backend/tests/reliability/test_exp081_strategy_memory_versioning.py`.
 **Cost: $0, zero Cerebras calls.**
+
+## Experiment 082: Live Validation of Regenerate Module Reactivation
+
+2026-07-12. Live, one `blog_cms` canary (label `exp082-validation-r1`,
+provider `cerebras`, `--no-deploy`), $0.0464 / 77,348 tokens. Reused
+Exp079's `scripts/exp079_canary.py` instrumentation verbatim, per
+constraint.
+
+**Migration confirmed live, exactly once**: backed up the real
+`strategy_outcomes.json` before the run (confirmed pristine — no
+`"generation"` field anywhere, untouched since Exp081 shipped). After:
+all 5 `regenerate_module` entries (`AttributeError`, `ImportError`,
+`SyntaxError`, `api`, `contract`) reset to `{generation: 2, successes: 0,
+tries: 0}`, exactly matching Exp081's offline prediction;
+`contract/patch_file` gained one real try + success from this run's own
+fix and was stamped `generation: 1` for the first time (live confirmation
+of stamp-on-write for a previously-untagged entry). Called `_load()`
+three more times post-run — file hash/mtime unchanged, confirming the
+migration doesn't repeat.
+
+**`should_skip()` confirmed live**: ran directly against the real
+post-migration file — `contract/regenerate_module`, `api/...`,
+`AttributeError/...`, `SyntaxError/...` all now `False` (were permanently
+`True`); `contract/switch_model` (untouched) correctly stays `True`.
+
+**`_regenerate_module()` did not execute this run** — but for a
+completely different, benign reason than Exp079: the fix loop resolved on
+attempt 1/5 via `patch_file` alone (score 79.7 → 91.0, deploy-ready), so
+`RetryManager` never escalated to attempt 3 where `regenerate_module`
+lives. Not a bug, no new root cause, nothing to fix. Since further live
+escalation depends on non-deterministic LLM output (not worth gambling
+more Cerebras spend on), added
+`backend/tests/reliability/test_exp082_retrymanager_reactivation.py`:
+drives `RetryManager` through a simulated two-attempt non-improving
+`patch_file` sequence using the exact real pre-migration snapshot shape —
+attempt 3 selects `REGENERATE_MODULE`, the exact selection Exp079 found
+permanently skipped. Negative control confirms this isn't overbroad: an
+entry already on the *current* generation with a genuine 0/3 record still
+correctly gets skipped. 3/3 pass.
+
+**Confirmed**: CRUD journey PASS 11/11, endpoint smoke 100% (15/15),
+endpoint inventory planned=15/actual=21/missing=0, canary status `OK`
+(91.0, improvement vs. Exp079's 88.2 baseline, not a regression).
+
+**Observatory**: migration event fired once live; strategy selected was
+`patch_file` (succeeded, attempt 1); `regenerate_module` eligible but not
+reached (proven reachable via the offline `RetryManager` test instead);
+endpoint-preservation activation still 0 (same underlying reason); final
+result PASS/91.0/A. No permanent dashboard counter added — same reasoning
+as prior cycles.
+
+**Recommendation for Exp083**: pivot away from this thread. The
+strategy-memory staleness question (Exp078→082) is now fully closed —
+root-caused, fixed, offline-verified, and live-confirmed both for the
+skip-check and the full `RetryManager` selection path. Four consecutive
+cycles have gone into one specific, apparently low-frequency middle-rung
+strategy; time to re-run the failure-taxonomy/prevalence check against
+current telemetry and pick the next target by measured prevalence ×
+severity, not by continuing this thread.
+
+**Deliverables**: `docs/EXP082_REGENERATE_MODULE_REACTIVATION.md`, this
+entry, new test file
+`backend/tests/reliability/test_exp082_retrymanager_reactivation.py`,
+canary history entry (OK, 91.0). **Cost: $0.0464, one live generation.**

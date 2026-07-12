@@ -342,9 +342,9 @@
     "fix_content": {
       "app/schemas/tag.py": "from typing import Optional\nfrom pydantic import BaseModel, Field, ConfigDict\n\n\nclass TagCreate(BaseModel):\n    name: str = Field(min_length=1)\n\n    model_config = ConfigDict(from_attributes=True)\n\n\nclass TagUpdate(BaseModel):\n    name: Optional[str] = Field(None, min_length=1)\n\n    model_config = ConfigDict(from_attributes=True)\n\n\nclass TagResponse(BaseModel):\n    id: int\n    name: str # Changed from Optional[str] to str to match TagCreate and enforce non-nullability\n\n    model_config = ConfigDict(from_attributes=True)\n"
     },
-    "success_count": 7,
+    "success_count": 8,
     "first_seen": "2026-07-06T10:51:17Z",
-    "last_seen": "2026-07-12T15:07:39Z",
+    "last_seen": "2026-07-12T15:59:36Z",
     "source_idea": "A blog CMS with author and reader roles. Authors write posts with title, content (markdown), tags, a"
   },
   "569948f96b13c786": {
@@ -432,9 +432,9 @@
     "fix_content": {
       "app/schemas/user.py": "from pydantic import BaseModel, Field\n\n\nclass UserCreate(BaseModel):\n    class Config:\n        from_attributes = True\n    username: str = Field(min_length=1)\n    password_hash: str = Field(min_length=1)\n    role: str = Field(min_length=1)\n\n\nclass UserUpdate(BaseModel):\n    class Config:\n        from_attributes = True\n    username: str | None = None\n    password_hash: str | None = None\n    role: str | None = None\n\n\nclass UserResponse(BaseModel):\n    class Config:\n        from_attributes = True\n    id: int\n    username: str | None = None\n    role: str | None = None\n"
     },
-    "success_count": 5,
+    "success_count": 6,
     "first_seen": "2026-07-07T12:08:51Z",
-    "last_seen": "2026-07-12T15:07:39Z",
+    "last_seen": "2026-07-12T15:59:36Z",
     "source_idea": "A blog CMS with author and reader roles. Authors write posts with title, content (markdown), tags, a"
   },
   "6bcc97abda72d309": {
@@ -733,9 +733,9 @@
     "fix_content": {
       "app/models/post.py": "from sqlalchemy import Column, Integer, String, Text, DateTime, ForeignKey, func\nfrom sqlalchemy.orm import relationship\nfrom app.database import Base\n\nclass Post(Base):\n    __tablename__ = \"posts\"\n\n    id = Column(Integer, primary_key=True, index=True)\n    title = Column(String, nullable=False)\n    content_markdown = Column(Text, nullable=False)\n    cover_image_url = Column(String, nullable=True)\n    status = Column(String, nullable=False)\n    published_at = Column(DateTime, nullable=True)\n    name = Column(String, nullable=True)\n    created_at = Column(DateTime, server_default=func.now(), nullable=False)\n    updated_at = Column(DateTime, server_default=func.now(), onupdate=func.now(), nullable=False)\n    author_id = Column(Integer, ForeignKey(\"users.id\"), nullable=False)\n\n    author = relationship(\"User\", back_populates=\"posts\")\n"
     },
-    "success_count": 3,
+    "success_count": 4,
     "first_seen": "2026-07-11T23:09:39Z",
-    "last_seen": "2026-07-12T15:07:39Z",
+    "last_seen": "2026-07-12T15:59:36Z",
     "source_idea": "A blog CMS with author and reader roles. Authors write posts with title, content (markdown), tags, a"
   },
   "f700e2d3bb960a16": {
@@ -743,9 +743,9 @@
     "fix_content": {
       "app/schemas/comment.py": "from __future__ import annotations\n\nfrom datetime import datetime\nfrom typing import Optional\n\nfrom pydantic import BaseModel, Field, ConfigDict\n\nclass CommentCreate(BaseModel):\n    model_config = ConfigDict(from_attributes=True)\n    content: Optional[str] = Field(\n        default=None,\n        description=\"The comment text. Optional because the underlying model allows NULL.\"\n    )\n    post_id: int\n    parent_comment_id: Optional[int] = None\n\nclass CommentUpdate(BaseModel):\n    model_config = ConfigDict(from_attributes=True)\n    content: Optional[str] = None\n    parent_comment_id: Optional[int] = None\n\nclass CommentResponse(BaseModel):\n    id: int\n    content: Optional[str] = None\n    post_id: Optional[int] = None\n    parent_comment_id: Optional[int] = None\n    author_id: Optional[int] = None\n    created_at: Optional[datetime] = None\n    updated_at: Optional[datetime] = None\n\n    model_config = ConfigDict(from_attributes=True)\n\nclass CommentRead(BaseModel):\n    id: int\n    content: Optional[str] = None\n    post_id: Optional[int] = None\n    parent_comment_id: Optional[int] = None\n    author_id: Optional[int] = None\n    created_at: Optional[datetime] = None\n    updated_at: Optional[datetime] = None\n\n    model_config = ConfigDict(from_attributes=True)\n"
     },
-    "success_count": 2,
+    "success_count": 3,
     "first_seen": "2026-07-11T23:09:39Z",
-    "last_seen": "2026-07-12T15:07:39Z",
+    "last_seen": "2026-07-12T15:59:36Z",
     "source_idea": "A blog CMS with author and reader roles. Authors write posts with title, content (markdown), tags, a"
   },
   "7dbf20e5b1206238": {
@@ -877,5 +877,15 @@
     "first_seen": "2026-07-12T10:27:53Z",
     "last_seen": "2026-07-12T10:27:53Z",
     "source_idea": "An inventory management system with user login. Users manage products (SKU, name, category, unit cos"
+  },
+  "57fc1bac4de2205c": {
+    "fix_hash": "57fc1bac4de2205c",
+    "fix_content": {
+      "app/routes/tag_routes.py": "from fastapi import APIRouter, Depends, HTTPException, Query, Response\nfrom sqlalchemy.orm import Session\nfrom typing import Dict, List\n\nfrom app.database import get_db\nfrom app.models.tags import Tag\nfrom app.schemas.tag import TagCreate, TagResponse\nfrom app.utils.auth import get_current_user\n\n# Router for tag operations\n\ntag_router = APIRouter()\n\ndef _require_admin_or_author(current_user: \"User\" = Depends(get_current_user)) -> \"User\":\n    \"\"\"Ensure the current user has a role that permits tag modifications.\n    The User model is imported lazily to avoid duplicate table imports.\n    \"\"\"\n    from app.models.users import User  # noqa: F401\n    if getattr(current_user, \"role\", None) not in {\"admin\", \"author\"}:\n        raise HTTPException(status_code=403, detail=\"Insufficient permissions\")\n    return current_user\n\n@tag_router.get(\"/tags\", response_model=Dict)\ndef list_tags(\n    limit: int = Query(50, ge=1, le=500),\n    offset: int = Query(0, ge=0),\n    db: Session = Depends(get_db),\n) -> Dict:\n    \"\"\"Retrieve a paginated list of tags.\n    Returns a dict with ``items`` (list of TagResponse) and ``total`` (int).\n    \"\"\"\n    total = db.query(Tag).count()\n    tags = db.query(Tag).offset(offset).limit(limit).all()\n    items: List[TagResponse] = [TagResponse.from_orm(tag) for tag in tags]\n    return {\"items\": items, \"total\": total}\n\n@tag_router.post(\"/tags\", response_model=TagResponse, status_code=201)\ndef create_tag(\n    tag_in: TagCreate,\n    db: Session = Depends(get_db),\n    _: \"User\" = Depends(_require_admin_or_author),\n) -> TagResponse:\n    \"\"\"Create a new tag. Only admin or author roles may access.\n    \"\"\"\n    tag = Tag(name=tag_in.name)\n    db.add(tag)\n    db.commit()\n    db.refresh(tag)\n    return TagResponse.from_orm(tag)\n\n@tag_router.delete(\"/tags/{tag_id}\", status_code=204)\ndef delete_tag(\n    tag_id: int,\n    db: Session = Depends(get_db),\n    _: \"User\" = Depends(_require_admin_or_author),\n) -> Response:\n    \"\"\"Delete a tag by ID. Only admin or author roles may access.\n    Returns 204 No Content on success.\n    \"\"\"\n    tag = db.query(Tag).filter(Tag.id == tag_id).first()\n    if not tag:\n        raise HTTPException(status_code=404, detail=\"Not found\")\n    db.delete(tag)\n    db.commit()\n    return Response(status_code=204)\n"
+    },
+    "success_count": 1,
+    "first_seen": "2026-07-12T15:59:36Z",
+    "last_seen": "2026-07-12T15:59:36Z",
+    "source_idea": "A blog CMS with author and reader roles. Authors write posts with title, content (markdown), tags, a"
   }
 }
