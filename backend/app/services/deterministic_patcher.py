@@ -3707,6 +3707,211 @@ def _patch_ownership_fk_attribute_drift(project_path: Path) -> int:
     return patched
 
 
+# Exp092: the CREATE-time counterpart to the drift fix above -- 17/23
+# (74%) of tracked JourneyCRUDFailure instances (Exp091) share one root
+# cause: a POST handler accepts current_user but never assigns the
+# constructed model's ownership FK before db.add(). Confirmed live in
+# generated_projects/inventory_manager/app/routes/product_routes.py's
+# create_product(): current_user accepted, never referenced again.
+# app/prompts/shared_contract.py already instructs this exact assignment
+# but scopes it to the literal string "user_id", missing owner_id/
+# author_id/creator_id/created_by -- and even an exact "user_id" match
+# isn't followed with full reliability (ordinary LLM instruction-
+# following variance, confirmed: todo_list_app's Task.user_id matches
+# the rule's own trigger string and still historically crashed).
+# Deliberately a SEPARATE function from _patch_ownership_fk_attribute_drift
+# above (different bug shape -- that one fixes existing query/filter
+# expressions using the wrong attribute name; this one injects a missing
+# insert-time assignment) that reuses its exact same two building blocks
+# (_model_fk_columns, _OWNERSHIP_FK_SYNONYMS) rather than duplicating them.
+
+def _has_post_decorator(func: "ast.FunctionDef | ast.AsyncFunctionDef") -> bool:
+    for dec in func.decorator_list:
+        if isinstance(dec, ast.Call) and isinstance(dec.func, ast.Attribute) and dec.func.attr == "post":
+            return True
+    return False
+
+
+def _current_user_param_name(func: "ast.FunctionDef | ast.AsyncFunctionDef"):
+    """Returns the parameter name bound to `Depends(get_current_user)`,
+    or None. Checks both regular (possibly-defaulted) params and
+    keyword-only params, matching how FastAPI handlers commonly mix
+    body/Depends/Query parameters."""
+    args = func.args
+    pairs = []
+    if args.defaults:
+        pairs.extend(zip(args.args[len(args.args) - len(args.defaults):], args.defaults))
+    pairs.extend((a, d) for a, d in zip(args.kwonlyargs, args.kw_defaults) if d is not None)
+    for param, default in pairs:
+        if (isinstance(default, ast.Call) and isinstance(default.func, ast.Name)
+                and default.func.id == "Depends" and default.args
+                and isinstance(default.args[0], ast.Name) and default.args[0].id == "get_current_user"):
+            return param.arg
+    return None
+
+
+def _assigns_attribute(func, var_name: str, attr_name: str) -> bool:
+    """True if `var_name.attr_name = ...` (any RHS) appears anywhere in
+    the function body -- preserves any pre-existing ownership logic,
+    correct or not, rather than second-guessing it (matches Exp088's
+    same "don't re-convert already-handled cases" philosophy)."""
+    for node in ast.walk(func):
+        if isinstance(node, ast.Assign):
+            for target in node.targets:
+                if (isinstance(target, ast.Attribute) and isinstance(target.value, ast.Name)
+                        and target.value.id == var_name and target.attr == attr_name):
+                    return True
+    return False
+
+
+def _find_db_add_lineno(func, var_name: str):
+    """Line number of the first `<session>.add(var_name)` call in the
+    function body, or None. Anchoring on the actual persistence call
+    (rather than right after construction) means any intervening
+    business logic that itself sets the field is naturally still caught
+    by _assigns_attribute before this is even consulted."""
+    for node in ast.walk(func):
+        if (isinstance(node, ast.Call) and isinstance(node.func, ast.Attribute)
+                and node.func.attr == "add" and len(node.args) == 1
+                and isinstance(node.args[0], ast.Name) and node.args[0].id == var_name):
+            return node.lineno
+    return None
+
+
+def _assigns_via_dict_unpack(func, call: ast.Call, attr_name: str) -> bool:
+    """True if `call` constructs the model via `Cls(**some_dict)` and
+    `some_dict[attr_name] = ...` (or `some_dict["attr_name"] = ...`) is
+    assigned anywhere earlier in the function body. Confirmed live
+    (generated_projects/recipe_forge/app/routes/recipe_routes.py):
+    `recipe_for_db["user_id"] = current_user.id` followed by
+    `Recipe(**recipe_for_db)` -- ownership already correctly assigned,
+    just via dict mutation rather than a literal keyword argument or a
+    post-construction attribute assignment, so _assigns_attribute alone
+    doesn't see it."""
+    dict_vars = {
+        kw.value.id for kw in call.keywords
+        if kw.arg is None and isinstance(kw.value, ast.Name)
+    }
+    if not dict_vars:
+        return False
+    for node in ast.walk(func):
+        if not isinstance(node, ast.Assign) or len(node.targets) != 1:
+            continue
+        target = node.targets[0]
+        if (isinstance(target, ast.Subscript) and isinstance(target.value, ast.Name)
+                and target.value.id in dict_vars):
+            key = target.slice
+            # Python <3.9 wraps the subscript key in ast.Index; unwrap ONLY that
+            # wrapper -- ast.Constant nodes also have their own .value attribute
+            # (the literal itself), so a blind getattr(key, "value", key) here
+            # would incorrectly unwrap a Constant down to a bare string, making
+            # the isinstance(key, ast.Constant) check below always fail.
+            if isinstance(key, ast.Index):  # pragma: no cover -- pre-3.9 compat only
+                key = key.value
+            if isinstance(key, ast.Constant) and key.value == attr_name:
+                return True
+    return False
+
+
+def _patch_missing_ownership_assignment(project_path: Path) -> int:
+    """
+    For each POST handler that accepts a current-user dependency and
+    constructs an instance of a model with a recognized ownership FK
+    (via _model_fk_columns/_OWNERSHIP_FK_SYNONYMS) without ever assigning
+    that field, injects `<var>.<fk_col> = <current_user_param>.id`
+    immediately before the corresponding `db.add(<var>)` call.
+
+    Conservative by construction, matching this file's own established
+    style: only acts on the exact shapes confirmed live (a bare
+    `ClassName(...)` assignment feeding a same-function `db.add(...)`
+    call) -- a handler using setattr(), a differently-named session
+    variable, or no db.add() call at all is left completely untouched,
+    not guessed at.
+    """
+    routes_dir = project_path / "app" / "routes"
+    models_dir = project_path / "app" / "models"
+    if not routes_dir.exists() or not models_dir.exists():
+        return 0
+
+    fk_cols = _model_fk_columns(models_dir)
+    if not fk_cols:
+        return 0
+
+    ownership_fk_by_class: dict[str, str] = {}
+    for cls_name, cols in fk_cols.items():
+        for col in sorted(cols):  # deterministic selection if a model somehow has >1 match
+            if col in _OWNERSHIP_FK_SYNONYMS:
+                ownership_fk_by_class[cls_name] = col
+                break
+    if not ownership_fk_by_class:
+        return 0
+
+    patched = 0
+    for rf in routes_dir.glob("*.py"):
+        try:
+            content = rf.read_text(encoding="utf-8", errors="replace")
+            tree = ast.parse(content)
+        except Exception:
+            continue
+
+        lines = content.split("\n")
+        insertions: list[tuple[int, str]] = []  # (0-based index to insert before, text)
+
+        for func in ast.walk(tree):
+            if not isinstance(func, (ast.FunctionDef, ast.AsyncFunctionDef)):
+                continue
+            if not _has_post_decorator(func):
+                continue
+            current_user_name = _current_user_param_name(func)
+            if not current_user_name:
+                continue
+
+            for stmt in ast.walk(func):
+                if not isinstance(stmt, ast.Assign) or not isinstance(stmt.value, ast.Call):
+                    continue
+                call = stmt.value
+                if not isinstance(call.func, ast.Name) or call.func.id not in ownership_fk_by_class:
+                    continue
+                if len(stmt.targets) != 1 or not isinstance(stmt.targets[0], ast.Name):
+                    continue
+                var_name = stmt.targets[0].id
+                fk_col = ownership_fk_by_class[call.func.id]
+
+                # Already assigned as a constructor kwarg (obj = Cls(user_id=..., ...))?
+                if any(kw.arg == fk_col for kw in call.keywords):
+                    continue
+                # Already assigned via a later obj.<fk_col> = ... anywhere in the handler?
+                if _assigns_attribute(func, var_name, fk_col):
+                    continue
+                # Already assigned via dict-mutation-then-**unpack (obj = Cls(**d) where
+                # d["fk_col"] = ... was set earlier)?
+                if _assigns_via_dict_unpack(func, call, fk_col):
+                    continue
+
+                add_lineno = _find_db_add_lineno(func, var_name)
+                if add_lineno is None:
+                    continue
+
+                idx = add_lineno - 1  # ast linenos are 1-based
+                indent = re.match(r"(\s*)", lines[idx]).group(1)
+                new_line = f"{indent}{var_name}.{fk_col} = {current_user_name}.id"
+                if idx > 0 and lines[idx - 1].strip() == new_line.strip():
+                    continue  # already patched (defense-in-depth alongside _assigns_attribute)
+                insertions.append((idx, new_line))
+
+        if insertions:
+            out = list(lines)
+            for idx, text in sorted(insertions, key=lambda t: -t[0]):
+                out.insert(idx, text)
+            new_content = "\n".join(out)
+            if new_content != content:
+                rf.write_text(new_content, encoding="utf-8")
+                patched += 1
+                print(f"  [patcher] Injected missing ownership assignment in {rf.name}")
+
+    return patched
+
+
 _SCHEMA_CLASS_RE = re.compile(r'^class\s+(\w+)\s*\(([^)]*)\)\s*:', re.MULTILINE)
 _SCHEMA_FIELD_RE = re.compile(r'^\s{4}(\w+)\s*:', re.MULTILINE)
 
@@ -6938,6 +7143,15 @@ def run_deterministic_patches(project_path: str, skip_protected_injections: bool
     # ForeignKey-typed columns only (see _model_fk_columns), so it won't
     # touch a genuinely unrelated same-named column on another model.
     _run_patch_isolated(counts, "_patch_ownership_fk_attribute_drift", _patch_ownership_fk_attribute_drift, root)
+
+    # Exp092: fix the CREATE-time counterpart -- a POST handler accepts
+    # current_user but never assigns the constructed model's ownership
+    # FK before db.add(), the confirmed root cause of 74% of tracked
+    # JourneyCRUDFailure instances (Exp091). Reuses the exact same
+    # _model_fk_columns/_OWNERSHIP_FK_SYNONYMS lookup as the drift-fix
+    # above; a separate function since it's a distinct bug shape
+    # (insert-time omission, not query/filter attribute-name drift).
+    _run_patch_isolated(counts, "_patch_missing_ownership_assignment", _patch_missing_ownership_assignment, root)
 
     # Add a field to a Create/Update schema when a route handler reads it
     # off that schema but it was never declared there, even though a

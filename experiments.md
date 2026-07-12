@@ -6447,3 +6447,65 @@ shapes before any live validation.
 
 **Deliverables**: `docs/EXP091_JOURNEYCRUD_CREATE_OWNERSHIP_ROOT_CAUSE.md`,
 this entry. No code changes, no Cerebras calls. **Cost: $0.**
+
+## Experiment 092: Deterministic Repair of Missing Ownership Assignment
+
+2026-07-13. Offline, $0, zero Cerebras calls. Implements Exp091's
+recommended correction: a new function,
+`_patch_missing_ownership_assignment()`
+(`app/services/deterministic_patcher.py`), reusing
+`_model_fk_columns()`/`_OWNERSHIP_FK_SYNONYMS` verbatim rather than
+extending the sibling `_patch_ownership_fk_attribute_drift` (confirmed a
+different bug shape — read-side query/filter drift vs. this
+experiment's write-side create-time omission).
+
+Detects: POST handler + `Depends(get_current_user)` parameter + a
+`var = ClassName(...)` construction where `ClassName` has a recognized
+ownership FK + no existing assignment + a reachable `db.add(var)` call —
+injects `var.<fk_col> = <current_user_param>.id` immediately before it.
+Preserves three confirmed already-assigned forms: constructor kwarg,
+post-construction attribute (any value — preserves custom logic), and
+dict-mutation-then-`**`unpack (found necessary mid-implementation by the
+replay itself, not anticipated up front).
+
+**Offline replay**: reconstructed fixtures matching Exp091's exact
+confirmed shapes (missing `user_id`, missing `author_id` — the exact
+prompt-scope gap) both correctly fixed, idempotent. **Full-corpus scan**
+of all 55 currently-on-disk generated projects (temp copies, originals
+untouched) found **2 genuine live hits**: `lean_sales_crm/deal_routes.py`
+(the exact `owner_id`-vs-unrelated-`user_id` collision the sibling
+drift-patcher's own docstring independently documented for this same
+app) and `support_ticket_system/message_routes.py` (missing `author_id`
+— also revealed a *separate*, pre-existing bug this fix correctly
+doesn't try to solve: an invalid `user_id` constructor kwarg for a model
+with no such column, flagged honestly as a future-cycle candidate, not
+silently claimed as fully resolved for that one instance). The scan also
+caught a real bug in the dict-unpack detection itself before shipping —
+a blind `ast.Index`-unwrap shim was over-unwrapping `ast.Constant` nodes
+too, fixed by checking the wrapper type explicitly.
+
+**Regression**: new test file
+`backend/tests/reliability/test_exp092_missing_ownership_assignment.py`
+(12/12 pass) covers injection (both naming gaps), idempotency, all three
+preservation forms, custom-logic preservation, no-ownership-FK models,
+no-auth-dependency handlers, no-reachable-`db.add()` handlers, and
+GET-handler exclusion. Existing sibling suite: 7/7 pass, unchanged. Full
+reliability suite: 49/52 (same 3 pre-existing unrelated failures).
+
+**Estimated improvement**: targets 17/23 (74%) of JourneyCRUDFailure —
+Exp090's #1 remaining active class — plus overlapping
+`NotNullViolationError`/`TimestampNotNullError` entries. Applies at
+generation time, converting a previously 0%-self-heal runtime crash
+(Exp090's own measurement) into a $0 correction — same category of gain
+as Exp088's `PydanticSerializationError` fix.
+
+**Recommendation for Exp093**: live-validate against
+`benchmarks/golden/01_todo.txt` and/or a CRM-shaped idea (matching the
+`owner_id`/`user_id`-collision shape), instrumenting
+`_patch_missing_ownership_assignment` similarly to Exp089's wrapper.
+
+**Deliverables**: `docs/EXP092_MISSING_OWNERSHIP_ASSIGNMENT_REPAIR.md`,
+this entry, code diff in `backend/app/services/deterministic_patcher.py`,
+new test file
+`backend/tests/reliability/test_exp092_missing_ownership_assignment.py`.
+**Cost: $0, zero Cerebras calls.**
