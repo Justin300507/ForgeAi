@@ -6565,3 +6565,71 @@ this entry, `backend/scripts/exp093_canary.py`,
 two canary history entries (`exp093-validation-r1` OK 92.0,
 `exp093-validation-r2` BASELINE 89.9).
 **Cost: $0.1022, two live generations.**
+
+---
+
+## Experiment 094: Root Cause Investigation of JourneyCRUDFailure (Edit / 405)
+
+2026-07-13. Investigation only, $0, zero Cerebras calls, zero code
+changes. Next active class after the Create-path ownership thread
+(Exp091-093, closed).
+
+**Root cause, proven via real saved architectures + the actual test
+harness code (imported and replayed directly, not reconstructed)**:
+`architect_prompt.py:68` ("ONLY use HTTP methods: GET, POST, PUT,
+PATCH, DELETE") grants unscoped permission for the architect LLM to
+choose PATCH for the *canonical* per-entity update endpoint, while the
+same prompt's own template (lines 87/219) and `planner_prompt.py:195`
+both model Update as PUT. When the architect's choice for the specific
+entity `user_journey_runner.py`'s `_detect_crud_entity()` selects lands
+on PATCH — confirmed directly in `sports_league_manager`'s saved
+architecture (`PATCH /leagues/{id}`, `/teams/{id}`, `/players/{id}` —
+no PUT anywhere in the whole app) — `do_edit()`'s hardcoded
+`requests.put(...)` (no PATCH fallback, no lookup of the
+architecture-declared method it already receives) produces a false
+`JourneyCRUDFailure`/405 against completely correct, spec-compliant
+generated code. Confirmed **not** a backend-generation divergence:
+`league_routes.py`'s `update_league()` is structurally identical to
+`inventory_manager`'s known-good `update_product()` (fetch-or-404,
+`model_dump(exclude_unset=True)` + setattr loop, commit/refresh/return)
+— only the decorator verb differs.
+
+**Quantified**: replaying the real `_detect_crud_entity()` against all
+49 currently-saved project architectures found **2/49 (4.1%) would
+405 today** (`sports_league_manager`: PATCH-only entity selected;
+`volunteer_management_system`: selected entity has no update endpoint
+at all — a distinct sub-cause, architecture completeness rather than
+verb mismatch). A broader scan found **11/49 (22.4%) have at least one
+PATCH-only update endpoint somewhere** — latent risk for any future
+regeneration where the architect's random verb choice lands on the
+selected entity, which is exactly what the 2026-07-11/12 bundle log
+shows happened to `inventory_manager` and `forge_blog_cms` (3 bundles
+each, but confirmed via timestamps to be **2 distinct generation runs**,
+each retried 3x by the repair loop and failed identically each time —
+0% self-heal, same pattern as Exp090's Create-path finding; raw bundle
+counts overstate distinct incidents, corrected per Exp084's lesson).
+
+**Existing infrastructure**: no `deterministic_patcher.py` function
+touches HTTP-verb selection. The one directly relevant piece already in
+place is `_detect_crud_entity()` itself, which already receives the
+full architecture dict (containing the ground-truth declared method per
+endpoint) but discards per-endpoint method info before `do_edit()` runs.
+
+**Smallest deterministic implementation candidate**: extend
+`_detect_crud_entity()` (or a sibling helper) to also return which of
+PUT/PATCH the architecture declared for the selected entity's update
+route, and have `do_edit()` use that method via `requests.request(...)`
+instead of a hardcoded `requests.put(...)`. Zero generated-code changes,
+zero new patcher — a test-harness correction, not a generation fix,
+since the confirmed cases are spec-compliant code being flagged by an
+overly-rigid test assumption.
+
+**Recommendation for Exp095**: implement the §8 candidate, offline-
+validate against `sports_league_manager` (PATCH case) and
+`inventory_manager` (PUT no-regression control) before any live canary.
+Do not fold in `volunteer_management_system`'s missing-update-endpoint
+case this cycle — different defect shape (1 confirmed instance so far),
+revisit only if a future scan shows it recurring.
+
+**Deliverables**: `docs/EXP094_EDIT_PATH_405_ROOT_CAUSE.md`, this entry.
+**Cost: $0, zero Cerebras calls, zero code changes.**
