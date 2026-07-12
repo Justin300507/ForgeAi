@@ -6379,3 +6379,71 @@ would just re-discover it at higher cost.
 
 **Deliverables**: `docs/EXP090_POST_STABILIZATION_ASSESSMENT.md`, this
 entry. No code changes, no Cerebras calls. **Cost: $0.**
+
+## Experiment 091: Root Cause Investigation of JourneyCRUDFailure (Create Ownership/FK)
+
+2026-07-13. Investigation only, $0, zero Cerebras calls — reconstructed
+entirely via real, already-on-disk generated projects
+(`inventory_manager`, `todo_list_app`, `forge_blog_cms`), no live
+reproduction needed.
+
+**Collected**: 23 JourneyCRUDFailure instances, 17 Create-path (74%), 6
+Edit-path (out of scope). All 17 Create-path instances resolve to **one
+dominant shape, no sub-variants**: the handler accepts an authenticated-
+user dependency but never assigns the corresponding ownership foreign
+key before `db.add()`/`db.commit()`.
+
+**Representative trace**: `generated_projects/inventory_manager/app/routes/product_routes.py`'s
+`create_product()` accepts `current_user: Users = Depends(get_current_user)`
+but never references it again — `Product(**{...})` builds the instance
+purely from the request body, `db.add(product)` / `db.commit()` follow
+with zero ownership assignment. This project's own `Product`/`Transaction`
+models happen to have no ownership FK column, so it doesn't crash here —
+still direct, live, on-disk proof of the generation-time habit that
+crashes precisely when the target model does have one (confirmed via
+earlier canary tracebacks: `IntegrityError: NOT NULL constraint failed:
+posts.author_id` / `tasks.user_id`).
+
+**Where it's lost**: backend generation (Wave 4). Traced to
+`app/prompts/shared_contract.py:185-187`, which explicitly instructs
+`obj.user_id = current_user.id before db.add(obj)` — but scopes the
+rule to the **literal string `user_id`**, missing `owner_id`,
+`author_id`, `creator_id`, `created_by` — four other ownership-FK
+names this same codebase already recognizes elsewhere
+(`_OWNERSHIP_FK_SYNONYMS`). Doesn't fully explain every instance alone:
+`todo_list_app`'s `Task.user_id` matches the rule's own trigger string
+exactly and still historically crashed — ordinary LLM instruction-
+following variance compounds with the naming-scope gap, not solely
+caused by it.
+
+**Existing infrastructure found (directly reusable, not duplicated)**:
+`_model_fk_columns()` and `_OWNERSHIP_FK_SYNONYMS`
+(`app/services/deterministic_patcher.py`) already exist and are used by
+a *sibling*, different-purpose patcher —
+`_patch_ownership_fk_attribute_drift()`, which fixes wrong-attribute-name
+query/filter expressions (a live-confirmed CRM data-isolation bug), not
+create-time field omission. Distinct, complementary bug shapes; the new
+fix reuses the same two building blocks for a different failure mode.
+
+**Quantified**: 17/23 (74%) of JourneyCRUDFailure is Create-path; 17/17
+(100%) share the exact same root cause. Very likely the same underlying
+mechanism as the separately-tracked `NotNullViolationError` (5) and
+`TimestampNotNullError` (2) — a single fix plausibly closes 3 taxonomy
+entries at once, matching Exp090's own prediction.
+
+**Smallest deterministic implementation candidate**: a new patcher that,
+for each POST handler accepting `current_user`, resolves the constructed
+ORM class's ownership FK via `_model_fk_columns()`/`_OWNERSHIP_FK_SYNONYMS`,
+checks whether it's already assigned from `current_user.id` anywhere in
+the handler body, and if not, injects the one-line assignment before
+`db.add()`. Deliberately not a prompt change (instruction-following
+reliability is part of the problem) and not an extension of the existing
+drift-patcher (different bug shape).
+
+**Recommendation for Exp092**: implement the patcher above, scoped to a
+new function reusing `_model_fk_columns`/`_OWNERSHIP_FK_SYNONYMS`.
+Offline-test against reconstructed fixtures matching both confirmed real
+shapes before any live validation.
+
+**Deliverables**: `docs/EXP091_JOURNEYCRUD_CREATE_OWNERSHIP_ROOT_CAUSE.md`,
+this entry. No code changes, no Cerebras calls. **Cost: $0.**
