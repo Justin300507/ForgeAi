@@ -6313,3 +6313,69 @@ the original finding above: two independent live runs now agree "no
 regression, mechanism not exercised this time" — strengthens confidence
 Exp088 is regression-free, still no live-fire confirmation. Disposition
 unchanged: closed, per the same credit-discipline reasoning above.
+
+## Experiment 090: Post-Stabilization Reliability Assessment
+
+2026-07-13. Investigation only, $0, zero Cerebras calls. Full re-scan of
+`patterns.json` (207 all-time instances), `generation_log.jsonl` (101
+entries, 2026-06-28→07-12), and `canary_history.json`'s 40-run history —
+no new generation.
+
+**Closed classes confirmed**: MissingEndpoint (Exp077–082), the dominant
+share of AttributeError — SignupRequest.username (Exp083–086),
+PydanticSerializationError (Exp087–089, 2 independent live runs since
+confirm zero recurrence), ConfigAttributeError, RouterExportMismatch
+(Exp021), FrontendBuildError (Exp049), and the UPDATE-path share of
+NotNullViolationError/TimestampNotNullError (Exp075/076).
+
+**#1 remaining active class: JourneyCRUDFailure** (32 all-time, 3 in the
+last 30, last seen today). Checked directly: **0% same-run self-heal
+rate across all 23 tracked non-resolving instances** (`fix_count` 2–5,
+never fixed) — a materially stronger signal than most other classes,
+where the repair loop at least sometimes recovers. Two distinct
+sub-shapes: "Create entity: 40x/50x" (the same ownership-FK-not-injected
+family already directly observed live in Exp079/082/086/089's own canary
+runs — NOT NULL UPDATE semantics only covered the UPDATE path) and "Edit
+entity: 405 / no entity_id captured" (a distinct, not-yet-root-caused
+shape, likely a route-method mismatch). Both recur across multiple
+unrelated app categories (todo, CRM, blog, inventory).
+
+**New finding**: filtering last-30 AttributeError (11) by the now-closed
+SignupRequest.username shape (9) leaves 2 residual instances, both
+co-occurring with `POST /seed returned 500` — a narrower, previously-
+unflagged seed-script field-mismatch tail, distinct from the closed auth
+shape.
+
+**Ranked (Impact = Frequency × Severity)**: JourneyCRUDFailure tops the
+list on any reasonable reading (highest severity among active classes,
+proven 0% self-heal, widest app-category spread), ahead of ImportError
+and ModuleNotFoundError (both model-quality, no single fixable root
+cause).
+
+**Cumulative improvement since Exp048** (same 64-vs-37-entry split,
+identical metric definitions the live dashboard uses): generation
+success 31.2% → 45.9% (+14.7 pts), first-try 25.0% → 29.7% (+4.7 pts),
+avg score 75.1 → 83.6 (+8.5 pts). Wider view (oldest 30 vs. newest 30,
+full project history): success 13.3% → 43.3% (+30 pts), first-try 6.7% →
+26.7% (+20 pts).
+
+**Beta readiness**: not yet — 45.9% post-repair success and 29.7%
+first-try mean over half of generations still need repair and over 70%
+never succeed unaided. Deployment success (0/52) is flagged as likely a
+measurement gap (canaries default to `--no-deploy`), not a confirmed
+0% deploy rate, and shouldn't be read as a blocker without clarifying
+that first.
+
+**Recommendation for Exp091**: one more deterministic-repair cycle on
+JourneyCRUDFailure's Create-path (ownership-FK-not-injected) first — it
+addresses 3 taxonomy entries at once (JourneyCRUDFailure,
+NotNullViolationError, TimestampNotNullError) and the repair loop's own
+proven 0% success rate against it rules out "just let the LLM retry
+more." Root-cause the Edit-path 405 shape as a follow-up. Only after that
+lands is this a good point for a ForgeBench milestone checkpoint (per
+`CLAUDE.md`'s own "reserved for milestone checkpoints" framing) —
+running it *before* fixing an already-characterized, high-impact bug
+would just re-discover it at higher cost.
+
+**Deliverables**: `docs/EXP090_POST_STABILIZATION_ASSESSMENT.md`, this
+entry. No code changes, no Cerebras calls. **Cost: $0.**
