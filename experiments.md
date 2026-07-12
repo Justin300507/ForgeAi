@@ -5926,3 +5926,78 @@ zero self-heal rate, and projected gain.
 
 **Deliverables**: `docs/EXP083_RELIABILITY_TAXONOMY_REFRESH.md`, this
 entry. No code changes, no Cerebras calls. **Cost: $0.**
+
+## Experiment 084: Root Cause Investigation of Auth Template Gating
+
+2026-07-12. Investigation only, $0, zero Cerebras calls — not required,
+the full mechanism was traced via direct code reading and process-of-
+elimination, no live reproduction needed.
+
+**Correction to Exp083 first**: the "100% correlation with
+`_patch_auth_routes` never firing" evidence was not real —
+`_run_patch_isolated` does `counts[key] = fn(...) or 0`, and
+`_patch_auth_routes()` has no `return` statement anywhere, so it's
+`None or 0 = 0` on **every single call, unconditionally**. Confirmed:
+`prevention_counts._patch_auth_routes` is `0` in all 98 `generation_log.jsonl`
+entries, successes and failures alike. This metric is completely
+uninformative; the real root cause below was found independently by
+reading every call site directly.
+
+**Real root cause, three independent gaps that must all fail together**:
+
+1. `run_deterministic_patches(project_path, skip_protected_injections=True)` —
+   called at exactly two places in the whole codebase, both immediately
+   after "Architecture Repair" (`v6_orchestrator.py:667` in
+   `generate_project_v6`, and its twin at `:1202` in `repair_project()`) —
+   deliberately disables `_patch_auth_routes`'s re-injection so the
+   repair's own LLM output isn't clobbered. Every other call site in the
+   codebase uses the default (fires normally).
+2. The intended safety net right after it, `ensure_auth_completeness()`,
+   only checks that `POST /auth/register`/`/login` exist as routes and are
+   wired into `main.py` (`check_auth_completeness()`,
+   `app/repair/auth_completeness.py:218-288`) — it never parses or checks
+   request-schema field names against what the handler body accesses, so
+   a `SignupRequest` missing `.username` is completely invisible to it as
+   long as the route path itself still exists.
+3. The one existing semantic guard that was literally built for this
+   exact error shape — `fix_writer_service.py::_check_request_field_consistency`
+   (Exp064) — is deliberately scoped "no cross-file resolution, same file
+   only" per its own docstring. The deterministic template defines
+   `SignupRequest` inline (safe, this guard would catch it), but ordinary
+   architecture-authored routes define request schemas in a separate
+   `app/schemas/*.py` file and import them — exactly the shape this guard
+   was scoped to skip.
+
+Architecture Repair triggers on `ARCHITECTURE_ERROR_MARKERS` in ANY file
+(not necessarily auth-related), can regenerate `auth_routes.py` via an LLM
+call given zero protective context (`required_exports={}`,
+`existing_symbols={}`), and once that happens, nothing else in the
+pipeline ever re-checks or re-fixes it for the rest of that generation —
+matching the observed 0% self-heal, `fix_count` 3-5, scores clustered
+70.7-74.4 across all 9 recorded occurrences.
+
+**Dependency**: not filename/model-naming (supersedes Exp083's original
+`has_user_model` hypothesis — unrelated to this mechanism). Depends on
+(a) directory layout — inline vs. cross-file `SignupRequest` — and (b)
+retry path — whether validation hit an architecture-level error routing
+through Architecture Repair. Not framework- or auth-variant-dependent.
+
+**Frequency**: by code-path elimination, all 9 (100%) of the recorded
+occurrences share this exact mechanism — no other call site can produce
+the observed permanent, 0%-self-heal signature. Not independently
+re-confirmed by replaying each historical run's console log (not
+retained; today's `todo_list_app` on disk already shows the corrected
+template from a later regeneration).
+
+**Recommended correction for Exp085**: extend `check_auth_completeness()`'s
+definition of "complete" to also run a field-consistency check (reusing
+Exp064's existing `_collect_basemodel_classes`/AST logic, extended with
+the one piece of cross-file resolution it explicitly scoped out) — when
+it fails, `ensure_auth_completeness()` already has the exact
+trigger-repair mechanism needed. Deliberately not removing
+`skip_protected_injections=True` (risks reintroducing the original
+problem it solved) and not a new semantic analyzer (reuses existing,
+tested machinery). Scoped to `app/repair/auth_completeness.py` only.
+
+**Deliverables**: `docs/EXP084_AUTH_TEMPLATE_GATING_ROOT_CAUSE.md`, this
+entry. No code changes, no Cerebras calls. **Cost: $0.**
