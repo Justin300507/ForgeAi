@@ -264,7 +264,58 @@ def _collect_param_attribute_accesses(func_node, param_name: str) -> list:
     return accesses
 
 
-def _check_request_field_consistency(path: str, content: str):
+def _resolve_import_module_path(project_path, module: str):
+    """
+    Resolve a dotted, project-local absolute import (e.g.
+    'app.schemas.auth') to its file path under project_path. Returns
+    None for anything that isn't this exact shape -- external packages,
+    relative imports, or a target that doesn't exist -- deliberately
+    conservative, matching this check's own "if nothing matches this
+    shape, no-op" philosophy. Reuses resolve_safe_path (already used
+    elsewhere in this file) rather than hand-rolling path-join safety.
+    """
+    if not module or not module.startswith("app."):
+        return None
+    rel = module.replace(".", "/") + ".py"
+    try:
+        candidate = resolve_safe_path(project_path, rel)
+    except PathTraversalError:
+        return None
+    return candidate if candidate.exists() else None
+
+
+def _collect_cross_file_basemodel_classes(project_path, tree: "ast.Module") -> dict:
+    """
+    Exp085: for every `from app.X.Y import Name[, Other as Alias]` in
+    this file, resolve Name's declared fields by parsing app/X/Y.py and
+    reusing _collect_basemodel_classes on it -- the exact same
+    field-collection logic Exp064 already uses for same-file classes,
+    just pointed at a different file. Only Pydantic BaseModel classes
+    are returned. Conservative by construction: an unresolvable import
+    (external package, missing file, name not found in the target file)
+    is silently skipped, never guessed at -- this only ever ADDS
+    information the same-file check couldn't already provide.
+    """
+    resolved: dict = {}
+    for node in ast.walk(tree):
+        if not isinstance(node, ast.ImportFrom) or not node.module:
+            continue
+        target = _resolve_import_module_path(project_path, node.module)
+        if target is None:
+            continue
+        try:
+            target_tree = ast.parse(target.read_text(encoding="utf-8", errors="replace"))
+        except (OSError, SyntaxError):
+            continue
+        target_classes = _collect_basemodel_classes(target_tree)
+        for alias in node.names:
+            local_name = alias.asname or alias.name
+            if alias.name in target_classes:
+                resolved[local_name] = target_classes[alias.name]
+    return resolved
+
+
+def _check_request_field_consistency(path: str, content: str, project_path=None):
     """
     Exp064's actual gate. Returns (True, None) when there's nothing to
     flag (not a .py file, doesn't parse -- _is_safe_to_write already
@@ -272,6 +323,13 @@ def _check_request_field_consistency(path: str, content: str):
     at all, or every access checks out). Returns (False, reason) on a
     confirmed attribute/field mismatch, `reason` describing exactly
     which access and which declared fields it didn't match.
+
+    Exp085: `project_path`, when given, additionally resolves request
+    classes imported from a project-local schemas file (a strict
+    superset of the original same-file-only check -- a same-file
+    definition always takes precedence if both exist, and every existing
+    caller that omits `project_path` gets byte-for-byte the original
+    behavior, since no cross-file lookup happens at all).
     """
     if not path.endswith(".py"):
         return True, None
@@ -281,7 +339,14 @@ def _check_request_field_consistency(path: str, content: str):
     except SyntaxError:
         return True, None  # not this check's job to report -- _is_safe_to_write does
 
-    classes = _collect_basemodel_classes(tree)
+    classes = dict(_collect_basemodel_classes(tree))
+    cross_file_names: set = set()
+    if project_path:
+        for name, fields in _collect_cross_file_basemodel_classes(project_path, tree).items():
+            if name not in classes:
+                classes[name] = fields
+                cross_file_names.add(name)
+
     if not classes:
         return True, None
 
@@ -300,9 +365,10 @@ def _check_request_field_consistency(path: str, content: str):
                 if attr_name.startswith("__") and attr_name.endswith("__"):
                     continue  # dunder attributes (e.g. __class__) are never fields
                 loc = f"{path}:{lineno}" if lineno else path
+                origin = "imported into this file" if class_name in cross_file_names else "defined in this same file"
                 reason = (
                     f"{loc}: '{arg.arg}.{attr_name}' accessed in {func.name}(), but "
-                    f"class {class_name} (defined in this same file) has no field "
+                    f"class {class_name} ({origin}) has no field "
                     f"'{attr_name}' -- declared fields: {sorted(declared)}"
                 )
                 return False, reason

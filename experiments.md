@@ -6001,3 +6001,60 @@ tested machinery). Scoped to `app/repair/auth_completeness.py` only.
 
 **Deliverables**: `docs/EXP084_AUTH_TEMPLATE_GATING_ROOT_CAUSE.md`, this
 entry. No code changes, no Cerebras calls. **Cost: $0.**
+
+## Experiment 085: Extend Auth Completeness with Cross-File Request Validation
+
+2026-07-12. Offline, $0, zero Cerebras calls. Implements Exp084's
+recommended correction, scoped to
+`backend/app/services/fix_writer_service.py` and
+`backend/app/repair/auth_completeness.py` only.
+
+`_check_request_field_consistency()` gains an optional `project_path`
+parameter (default `None` — every existing caller, i.e. `write_fix()`,
+gets byte-for-byte the original same-file-only behavior). When given, a
+new `_collect_cross_file_basemodel_classes()` resolves `from app.X.Y
+import Name` statements to their target file (via the existing
+`resolve_safe_path` helper) and reuses Exp064's own
+`_collect_basemodel_classes` on it, unmodified — a local definition
+always wins if both somehow exist. `check_auth_completeness()` now runs
+this extended check against every file that actually defines a
+required/recommended auth endpoint (not every `.py` file), setting
+`complete = False` with the specific mismatch reason when found.
+`ensure_auth_completeness()` itself needed zero changes — it already
+calls `_patch_auth_routes()` unconditionally on any incompleteness, and
+that function's full-file replacement (never importing an external
+schema) already covers this failure mode once it's detected.
+
+**Regression**: new test file
+`backend/tests/reliability/test_exp085_cross_file_auth_validation.py`
+(12/12 pass) covers same-file-identical-behavior, imported-schema
+matching/mismatching, unrelated/unresolvable/external-package imports
+(no false positives), and `check_auth_completeness()` integration
+(mismatch-only trigger, endpoint-gap-reported-first ordering). Existing
+Exp064 suite: 22/24 (same 2 pre-existing unrelated failures). Full
+reliability suite: 47/50 (same 3 pre-existing unrelated failures as
+Exp082's cycle). No new failures.
+
+**Offline replay**: reconstructed the exact Exp084-confirmed shape (a
+cross-file `SignupRequest` missing `.username`) —
+`check_auth_completeness()` now reports `complete=False` with the precise
+mismatch reason, `ensure_auth_completeness()` repairs it via the existing
+`_patch_auth_routes()` injection, and a re-check confirms `complete=True`.
+Full detect→repair→verify cycle now closes for a bug class that
+previously had a 0% self-heal rate.
+
+**Estimated reliability improvement**: same as Exp083's original
+projection (43.3% → up to 73.3% last-30 success rate, +30 points), now
+backed by an actual implemented and offline-verified fix.
+
+**Recommendation for Exp086**: live-validate against
+`benchmarks/golden/01_todo.txt` (the exact idea behind all 9 historical
+failures), ideally across enough attempts to trigger Architecture Repair
+at least once, and confirm the fix fires in the same cycle rather than
+persisting to a low final score.
+
+**Deliverables**: `docs/EXP085_CROSS_FILE_AUTH_VALIDATION.md`, this
+entry, code diff in `backend/app/services/fix_writer_service.py` and
+`backend/app/repair/auth_completeness.py`, new test file
+`backend/tests/reliability/test_exp085_cross_file_auth_validation.py`.
+**Cost: $0, zero Cerebras calls.**

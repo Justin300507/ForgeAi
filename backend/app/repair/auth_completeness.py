@@ -75,6 +75,7 @@ class AuthCompletenessResult:
     router_module: Optional[str] = None
     duplicate_registrations: list = field(default_factory=list)
     parse_errors: list = field(default_factory=list)
+    field_mismatches: list = field(default_factory=list)
     reason: str = ""
 
 
@@ -295,6 +296,44 @@ def check_auth_completeness(project_path: str) -> AuthCompletenessResult:
         if not has_include:
             missing.append("include_router")
         result.reason = f"auth router defined but not wired into main.py (missing: {', '.join(missing)})"
+        result.complete = False
+        return result
+
+    # Exp085: endpoints exist and are wired, but that alone doesn't mean
+    # the handler works -- Exp084 traced a confirmed-live failure class
+    # where Architecture Repair regenerates auth_routes.py referencing a
+    # request schema field that doesn't actually exist (e.g.
+    # `req.username` when SignupRequest only declares email/password/
+    # display_name). Reuses Exp064's existing field-consistency AST
+    # machinery (fix_writer_service.py), extended with cross-file
+    # resolution for exactly this reason -- ordinary architecture-authored
+    # routes import their request schemas from app/schemas/*.py rather
+    # than defining them inline, which is the shape Exp064's own
+    # same-file-only scope couldn't see. Scoped to the specific files that
+    # actually define an auth endpoint (not every .py file in the
+    # project) -- this is an auth-completeness check, not a general
+    # write-time gate.
+    from app.services.fix_writer_service import _check_request_field_consistency
+
+    auth_files = {
+        rel_file
+        for method, path in (*REQUIRED_AUTH_ENDPOINTS, *RECOMMENDED_AUTH_ENDPOINTS)
+        for rel_file, _router_var in found.get((method, path), [])
+    }
+    for rel_file in sorted(auth_files):
+        full_path = root / rel_file
+        try:
+            file_content = full_path.read_text(encoding="utf-8", errors="replace")
+        except OSError:
+            continue
+        ok, mismatch_reason = _check_request_field_consistency(
+            rel_file, file_content, project_path=str(root)
+        )
+        if not ok:
+            result.field_mismatches.append(mismatch_reason)
+
+    if result.field_mismatches:
+        result.reason = "request-field mismatch: " + "; ".join(result.field_mismatches)
         result.complete = False
         return result
 

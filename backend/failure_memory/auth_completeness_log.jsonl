@@ -2,3 +2,5 @@
 {"timestamp": "2026-07-12T09:36:38.519144+00:00", "project_name": "exp071_drift_test", "status": "complete", "missing_required_before": [], "reason_before": "complete"}
 {"timestamp": "2026-07-12T14:27:32.001188+00:00", "project_name": "exp071_drift_test", "status": "complete", "missing_required_before": [], "reason_before": "complete"}
 {"timestamp": "2026-07-12T15:10:42.714256+00:00", "project_name": "forge_blog_cms", "status": "complete", "missing_required_before": [], "reason_before": "complete"}
+{"timestamp": "2026-07-12T17:45:47.034317+00:00", "project_name": "exp071_drift_test", "status": "complete", "missing_required_before": [], "reason_before": "complete"}
+{"timestamp": "2026-07-12T17:46:46.882026+00:00", "project_name": "replay_test", "status": "repaired", "missing_required_before": [], "reason_before": "request-field mismatch: app/routes/auth_routes.py:8: 'req.username' accessed in signup(), but class SignupRequest (imported into this file) has no field 'username' -- declared fields: ['display_name', 'email', 'password']", "missing_required_after": [], "reason_after": "complete"}
