@@ -5868,3 +5868,61 @@ severity, not by continuing this thread.
 entry, new test file
 `backend/tests/reliability/test_exp082_retrymanager_reactivation.py`,
 canary history entry (OK, 91.0). **Cost: $0.0464, one live generation.**
+
+## Experiment 083: Current Reliability Taxonomy Refresh
+
+2026-07-12. Investigation only, $0, zero Cerebras calls. Method: reused
+`scripts/failure_report.py`, `failure_memory/patterns.json` (206 all-time
+instances across 23 classes), `failure_memory/generation_log.jsonl` (98
+entries) plus direct code reading and one real project on disk
+(`generated_projects/todo_list_app`) — no new generation.
+
+**Closed classes excluded from ranking**: MissingEndpoint (Exp077–082,
+48 all-time instances, 23.3% — the largest raw bucket but conclusively
+addressed), ConfigAttributeError (multiple validation runs, zero
+recurrences since 07-07), RouterExportMismatch (Exp021), FrontendBuildError
+(Exp049 fixed the dominant template-literal cause, zero recurrences since
+06-30).
+
+**Dominant active issue found**: `AttributeError: 'SignupRequest' object
+has no attribute 'username'`. Recency-weighted, this single exact error
+string is 9/30 (30%) of the last 30 generations and 6/20 of the most
+recent ~1 day — accounting for **53% of all failures in the last-30
+window**, more than every other active class combined. Grepped all 9
+occurrences: **100% correlate** with `prevention_counts._patch_auth_routes
+== 0` (the deterministic known-good-auth-template injection never fired),
+**100% terminal** (all `succeeded: false`, repair loop exhausted 3–5
+attempts and never fixed it — 0% same-run self-heal, worse than most
+other classes), scores tightly clustered 70.7–74.4. Read
+`_patch_auth_routes()` and its injected template directly: the template
+itself never references `.username` (uses email/password/display_name
+throughout), confirming the bug is 100% about the gate not firing, not
+about the template being wrong. Exact firing-failure mechanism not yet
+pinned to one specific cause (candidates: Wave 2.5 shim-creation timing,
+an unrecognized model filename shape, or a later fix-loop rewrite) — left
+as Exp084's first task, per this cycle's investigation-only scope.
+
+**Ranked table (Impact = Frequency × Severity)**: AttributeError
+(SignupRequest.username) tops the list at frequency=9(last-30)/severity=4
+= impact 36 — more than double the next entry (JourneyCRUDFailure,
+declining since its 07-06 spike, impact ~12). Highest-frequency
+deterministic: the same AttributeError class. Highest-severity
+deterministic: tied with the NotNullViolationError/JourneyCRUDFailure
+ownership-FK family, but the auth issue wins on frequency and total
+non-recovery. Highest-frequency model-quality issue: ModuleNotFoundError/
+ImportError (varies which module each generation).
+
+**Estimated reliability gain**: last-30 success rate is 43.3% (13/30); if
+this one class were eliminated and those 9 runs resolved similarly to
+comparable successful runs, projected success rate rises to (13+9)/30 =
+**73.3%** — up to +30 percentage points, nearly doubling the window's
+success rate. No other active class accounts for anywhere near 53% of a
+recent failure window.
+
+**Recommendation for Exp084**: root-cause and fix the
+`_patch_auth_routes()` injection gate's failure-to-fire condition — the
+clear single highest-impact target by frequency, severity, determinism,
+zero self-heal rate, and projected gain.
+
+**Deliverables**: `docs/EXP083_RELIABILITY_TAXONOMY_REFRESH.md`, this
+entry. No code changes, no Cerebras calls. **Cost: $0.**
