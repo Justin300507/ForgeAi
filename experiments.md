@@ -6182,3 +6182,74 @@ already-captured `todo_list_app` fixture before any live validation.
 
 **Deliverables**: `docs/EXP087_PYDANTIC_SERIALIZATION_ROOT_CAUSE.md`,
 this entry. No code changes, no Cerebras calls. **Cost: $0.**
+
+## Experiment 088: Repair Nested ORM Serialization in Generic Dict Responses
+
+2026-07-13. Offline, $0, zero Cerebras calls. Implements Exp087's
+recommended correction, scoped to `_patch_orm_response_model()`
+(`app/services/deterministic_patcher.py`) only — no parallel patcher, no
+removed `response_model` annotations.
+
+New `_inject_orm_dict_response_conversion()`: for a route with a bare
+`dict`/`Dict` response_model, finds a `return {"items": <var>, ...}`
+statement (single- or multi-line) and, if the same function body queries
+a known ORM class with a matching `schema_map` entry, injects
+`<var> = [<SchemaCls>.model_validate(x, from_attributes=True) for x in
+<var>]` immediately before the return. Wired in right after the existing
+substitution passes, reusing the same `orm_classes`/`schema_map` already
+built.
+
+**Offline replay against all 4 confirmed real projects surfaced and fixed
+two adjacent pre-existing bugs** in `schema_map`'s own construction,
+neither introduced by this experiment but both directly exposed by it:
+(1) the schema-scanning regex only matched classes directly naming
+`BaseModel` as a base, missing any class inheriting through a local
+`BaseSchema(BaseModel)` — switched to reusing
+`fix_writer_service._collect_basemodel_classes()` (Exp064's own
+fixed-point resolver) instead; (2) when multiple schema classes matched,
+alphabetical glob order could pick an incomplete duplicate-cleanup shim
+(`TaskRead`, only declaring `id`) over the real `TaskResponse` — now
+prefers the conventionally-named `<Base>Response` class. Also fixed a
+duplicate-import bug (exact-string check missed a class already present
+in a combined `from X import A, B, schema_cls` statement).
+
+**Offline replay results** (all 4 real, on-disk projects, not synthetic):
+`todo_list_app` and `recipe_share/rating_routes.py` (a multi-line,
+4-key pagination dict) both correctly get the conversion injected and
+verified idempotent; `simple_notes_app/user_routes.py` correctly
+resolves the actual variable name (`users`, not literally "items");
+three cases were correctly left **untouched** by design:
+`recipe_share/recipe_routes.py` and `forge_blog_cms/tag_routes.py`
+(already converted inline) and `simple_notes_app/note_routes.py` (a
+deliberate custom field-rename shim, `_note_to_dict`, mapping
+`content`→`description` — re-wrapping its output would have silently
+overridden intentional logic; caught by requiring `items_var`'s own last
+assignment to be a direct `.all()` call, not a comprehension over an
+already-processed value).
+
+**Regression**: new test file
+`backend/tests/reliability/test_exp088_orm_dict_response_conversion.py`
+(12/12 pass) covers every required scenario (paginated lists, empty
+lists, mixed metadata, genuine dict responses, missing schema) plus the
+two "don't re-convert" cases found via real-project replay. Existing
+`_patch_orm_response_model` suite: 58/58 pass, unchanged. Full
+reliability suite: 48/51 (same 3 pre-existing unrelated failures as
+prior cycles).
+
+**Estimated improvement**: this bug was the sole cause of both recorded
+`generation_log.jsonl` failures (65.9, 76.9, both capped below deploy-
+ready) and reproduced identically across 4/4 examined app categories — a
+general, recurring pattern, not a narrow edge case. Fix applies at
+generation time (before runtime verification), converting a runtime
+crash into zero additional cost.
+
+**Recommendation for Exp089**: live-validate against
+`benchmarks/golden/01_todo.txt` or a recipe/notes-shaped idea,
+instrumenting `run_deterministic_patches`/`_patch_orm_response_model`
+similarly to Exp086's `ensure_auth_completeness` wrapper.
+
+**Deliverables**: `docs/EXP088_ORM_DICT_RESPONSE_CONVERSION.md`, this
+entry, code diff in `backend/app/services/deterministic_patcher.py`, new
+test file
+`backend/tests/reliability/test_exp088_orm_dict_response_conversion.py`.
+**Cost: $0, zero Cerebras calls.**

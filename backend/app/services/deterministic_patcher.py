@@ -877,6 +877,145 @@ _RESPONSE_MODEL_ATTR = re.compile(r"\bresponse_model\s*=\s*(List\[)?(\w+)(])?")
 # since it only looked for the `response_model=` keyword.
 _RETURN_TYPE_ANNOTATION = re.compile(r"(->\s*)(List\[)?(\w+)(\])?(\s*:)")
 
+# Exp088: the OTHER half of Exp087's confirmed PydanticSerializationError
+# root cause -- a route annotated response_model=dict/Dict (this
+# patcher's own existing fallback two rules up, or an LLM-authored
+# pagination wrapper) whose handler still returns a raw, unconverted ORM
+# query result nested inside (`return {"items": <query>.all(), ...}`).
+# `dict`/`Dict` carries no from_attributes/ORM-mode context, so FastAPI's
+# serializer crashes on the nested ORM instance regardless of what the
+# matching schema class's own config says.
+_DICT_RESPONSE_MODEL_RE = re.compile(r"response_model\s*=\s*(dict|Dict)\b(\[[^\]]*\])?")
+_RETURN_DICT_START_RE = re.compile(r"^\s*return\s*\{")
+_ITEMS_KEY_VALUE_RE = re.compile(r"[\"']items[\"']\s*:\s*(\w+)")
+_DB_QUERY_CLASS_RE = re.compile(r"\.query\(\s*(\w+)\s*\)")
+_RETURN_ITEMS_LOOKAHEAD = 10  # bounded scan for a pagination dict literal's closing brace
+
+
+def _inject_orm_dict_response_conversion(content: str, orm_classes: set, schema_map: dict) -> str:
+    """
+    Exp088: for a route whose response_model is a bare dict/Dict, find a
+    `return {"items": <var>, ...}` statement -- single-line
+    (`return {"items": items, "total": total}`) or multi-line (opening
+    `return {` with `"items": <var>,` on a following line, confirmed live
+    on recipe_share/rating_routes.py's 4-key pagination dict) -- and, if
+    the same function body also queries a known ORM class
+    (`db.query(ClassName)`) with a matching schema in schema_map, inject
+    one line immediately BEFORE the `return {` statement itself (never
+    inside a multi-line dict literal, which would be a syntax error):
+    `<var> = [<SchemaCls>.model_validate(x, from_attributes=True) for x
+    in <var>]`. This makes the returned value JSON-safe regardless of
+    what response_model says, without touching response_model itself,
+    without touching any other key in the returned dict (pagination
+    metadata like "total"/"limit"/"offset" is never referenced), and
+    without affecting any route that doesn't match this exact shape.
+
+    Deliberately conservative, matching this file's own established
+    detection style (see _patch_list_response_model_mismatch):
+    `.query(ClassName)` only (not SQLAlchemy 2.0 `select()`), one queried
+    class assumed per route body, a bounded lookahead for the dict
+    literal's closing brace rather than a full parser. Any of these not
+    matching -- or no schema_map entry for the queried class, or
+    items_var already converted earlier in the same body -- leaves the
+    route completely untouched.
+    """
+    lines = content.split("\n")
+    n = len(lines)
+    insertions: list[tuple[int, str]] = []
+
+    i = 0
+    while i < n:
+        if not _DICT_RESPONSE_MODEL_RE.search(lines[i]):
+            i += 1
+            continue
+
+        # Find this route's def line (immediately below the decorator, or
+        # a few lines down for a multi-line signature/decorator).
+        k = i
+        while k < n and not lines[k].lstrip().startswith(("def ", "async def ")):
+            k += 1
+            if k - i > 8:
+                break
+        if k >= n:
+            i += 1
+            continue
+
+        # Scan the function body (until the next decorator/def) for the
+        # queried ORM class and a `return {"items": <var>, ...}` statement
+        # -- items_line_idx always ends up pointing at the `return {` line
+        # itself, whether "items" appears on that same line (single-line
+        # form) or a following one (multi-line form), since the
+        # conversion must always be inserted before the whole statement.
+        queried_class = None
+        items_line_idx = None
+        items_var = None
+        m = k + 1
+        while m < n:
+            bl = lines[m]
+            if re.match(r"@\w+_router", bl.strip()) or bl.lstrip().startswith(("def ", "async def ")):
+                break
+            if queried_class is None:
+                qm = _DB_QUERY_CLASS_RE.search(bl)
+                if qm and qm.group(1) in orm_classes:
+                    queried_class = qm.group(1)
+            if items_line_idx is None and _RETURN_DICT_START_RE.match(bl):
+                for look in range(m, min(m + _RETURN_ITEMS_LOOKAHEAD, n)):
+                    im = _ITEMS_KEY_VALUE_RE.search(lines[look])
+                    if im:
+                        items_line_idx = m
+                        items_var = im.group(1)
+                        break
+                    if look > m and "}" in lines[look]:
+                        break  # dict literal closed without an "items" key -- not this shape
+            m += 1
+
+        if queried_class is not None and items_line_idx is not None and queried_class in schema_map:
+            # Exp088: only act when items_var's own MOST RECENT assignment
+            # is a direct ORM query terminal call (ends in `.all()`) --
+            # not a comprehension over some other, already-processed
+            # value. Confirmed live on simple_notes_app/note_routes.py:
+            # `items = [_note_to_dict(n) for n in notes]` is a deliberate
+            # custom field-rename shim (content -> description) sitting
+            # between the raw query and the return; blindly wrapping ITS
+            # output in a generic schema re-validation would silently
+            # override that intentional mapping instead of fixing
+            # anything (harmless by luck in that one case since the
+            # renamed dict happens to satisfy the schema, but the
+            # principle -- don't second-guess an existing custom
+            # conversion -- must hold generally). Also serves as the
+            # already-converted guard: a `model_validate(...)` call on
+            # this same line fails the `.all()` suffix check too.
+            last_items_assignment = None
+            for x in range(k + 1, items_line_idx):
+                if re.match(rf"^\s*{re.escape(items_var)}\s*(:[^=]+)?=", lines[x]):
+                    last_items_assignment = lines[x]
+            if last_items_assignment is None or not re.search(r"\.all\(\)\s*$", last_items_assignment.rstrip()):
+                i = m
+                continue
+
+            schema_cls, _ = schema_map[queried_class]
+            indent = re.match(r"(\s*)", lines[items_line_idx]).group(1)
+            conversion_line = (
+                f"{indent}{items_var} = [{schema_cls}.model_validate(x, from_attributes=True) "
+                f"for x in {items_var}]"
+            )
+            already_applied = (
+                items_line_idx > 0 and lines[items_line_idx - 1].strip() == conversion_line.strip()
+            )
+            if not already_applied:
+                insertions.append((items_line_idx, conversion_line))
+
+        i = m
+
+    if not insertions:
+        return content
+
+    out = list(lines)
+    for idx, conv_line in sorted(insertions, key=lambda t: -t[0]):
+        out.insert(idx, conv_line)
+
+    return "\n".join(out)
+
 
 def _patch_orm_response_model(content: str, filepath: str, project_path: Path = None) -> str:
     norm = filepath.replace("\\", "/")
@@ -897,25 +1036,51 @@ def _patch_orm_response_model(content: str, filepath: str, project_path: Path = 
     # Build a map of orm_class_name -> (schema_class_name, schema_module) from app/schemas/
     # e.g. "User" -> ("UserResponse", "app.schemas.user") or ("UserSchema", "app.schemas.user")
     schema_map: dict[str, tuple[str, str]] = {}
+    schema_candidates: dict[str, list[tuple[str, str]]] = {}
     if project_path:
+        # Exp088: reuses fix_writer_service.py's _collect_basemodel_classes
+        # (Exp064's own fixed-point local-inheritance resolver) instead of
+        # a bare regex requiring literal "BaseModel" in the class
+        # declaration. Confirmed live on generated_projects/todo_list_app:
+        # the real response schema was `class TaskResponse(BaseSchema)`,
+        # where BaseSchema itself inherits BaseModel -- the old regex
+        # (`class \\w+\\(.*BaseModel.*\\)`) only ever matched BaseSchema
+        # itself, never TaskResponse/TaskCreate/TaskUpdate, silently
+        # making the entire real schema file invisible to this function.
+        from app.services.fix_writer_service import _collect_basemodel_classes
+
         schemas_dir = project_path / "app" / "schemas"
         if schemas_dir.exists():
             for sf in schemas_dir.glob("*.py"):
                 if sf.name.startswith("_"):
                     continue
                 try:
-                    sc = sf.read_text(encoding="utf-8", errors="ignore")
+                    sc_tree = ast.parse(sf.read_text(encoding="utf-8", errors="ignore"))
                 except Exception:
                     continue
                 module_name = f"app.schemas.{sf.stem}"
-                for cls_m in re.finditer(r"^class (\w+)\s*\(.*BaseModel.*\)", sc, re.MULTILINE):
-                    schema_cls = cls_m.group(1)
+                for schema_cls in _collect_basemodel_classes(sc_tree):
                     # Match: UserResponse -> User, UserSchema -> User, UserBase -> User, etc.
                     for orm_cls in orm_classes:
                         base = orm_cls.rstrip("s")  # "Users" -> "User", "User" -> "User"
                         if schema_cls.startswith(base) and schema_cls != orm_cls:
-                            if orm_cls not in schema_map:
-                                schema_map[orm_cls] = (schema_cls, module_name)
+                            schema_candidates.setdefault(orm_cls, []).append((schema_cls, module_name))
+
+    # Exp088: when more than one schema class matches (e.g. a duplicate-
+    # model-cleanup shim like "TaskRead" sitting alongside the real
+    # "TaskResponse"), prefer the conventionally-named "<Base>Response"
+    # class. The previous first-glob-order-wins behavior could land on an
+    # incomplete stub shim -- confirmed live on generated_projects/todo_list_app,
+    # where alphabetical glob order (task.py before tasks.py) picked a
+    # shim TaskRead declaring only `id`, which would have silently dropped
+    # every other field instead of fixing the actual serialization crash.
+    # Falls back to the first-found candidate, unchanged, when there's no
+    # exact "<Base>Response" match -- identical to prior behavior whenever
+    # only one candidate exists (every existing test fixture's case).
+    for orm_cls, candidates in schema_candidates.items():
+        base = orm_cls.rstrip("s")
+        preferred = next((c for c in candidates if c[0] == f"{base}Response"), None)
+        schema_map[orm_cls] = preferred or candidates[0]
 
     def _replace_rm(m: re.Match) -> str:
         prefix = m.group(1) or ""   # "List[" or ""
@@ -943,11 +1108,29 @@ def _patch_orm_response_model(content: str, filepath: str, project_path: Path = 
 
     new_content = _RETURN_TYPE_ANNOTATION.sub(_replace_rt, new_content)
 
-    # Add imports for any schema classes we substituted in
+    # Exp088: convert nested ORM collections under a generic dict/Dict
+    # response_model instead of leaving them to crash serialization.
+    new_content = _inject_orm_dict_response_conversion(new_content, orm_classes, schema_map)
+
+    # Add imports for any schema classes we substituted in (the loop below
+    # already scans for schema_cls anywhere in new_content, so a class
+    # referenced only by the Exp088 conversion above is picked up here too).
     for orm_cls, (schema_cls, module_name) in schema_map.items():
         if orm_cls in orm_classes and schema_cls in new_content:
             import_line = f"from {module_name} import {schema_cls}"
-            if import_line not in new_content:
+            # Exp088: schema_cls may already be imported as part of a
+            # combined statement (`from X import A, B, schema_cls`) --
+            # confirmed live on recipe_share/simple_notes_app, where the
+            # old exact-string check didn't recognize that shape and
+            # added a second, redundant (if harmless) import line every
+            # time. Checks for schema_cls as a name anywhere in an
+            # existing `from module_name import ...` line, not just an
+            # exact match of this single-name form.
+            already_imported = bool(re.search(
+                rf"^from {re.escape(module_name)} import\s+.*\b{re.escape(schema_cls)}\b",
+                new_content, re.MULTILINE,
+            ))
+            if not already_imported:
                 # Insert after the last "from app." import line
                 last_import_end = 0
                 for im in re.finditer(r"^from app\.[^\n]+\n", new_content, re.MULTILINE):
