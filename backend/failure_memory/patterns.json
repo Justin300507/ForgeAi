@@ -85,7 +85,7 @@
       "stage": "build"
     },
     "ModuleNotFoundError": {
-      "count": 9,
+      "count": 10,
       "examples": [
         {
           "project": "HydroTrack",
@@ -109,7 +109,7 @@
         }
       ],
       "first_seen": "2026-06-21T21:19:46.461599",
-      "last_seen": "2026-07-01T19:49:17.134673",
+      "last_seen": "2026-07-12T14:26:04.306990",
       "stage": "runtime"
     },
     "SQLAlchemyError": {
@@ -161,19 +161,23 @@
       "stage": "runtime"
     },
     "TimestampNotNullError": {
-      "count": 1,
+      "count": 2,
       "examples": [
         {
           "project": "expense_tracker_app",
           "error": "TimestampNotNullError"
+        },
+        {
+          "project": "inventory_manager",
+          "error": "TimestampNotNullError"
         }
       ],
       "first_seen": "2026-06-22T05:53:56.254135",
-      "last_seen": "2026-06-22T05:53:56.254146",
+      "last_seen": "2026-07-12T10:26:48.860705",
       "stage": "runtime"
     },
     "ImportError": {
-      "count": 12,
+      "count": 14,
       "examples": [
         {
           "project": "inventory_system",
@@ -197,7 +201,7 @@
         }
       ],
       "first_seen": "2026-06-22T05:55:11.076646",
-      "last_seen": "2026-07-09T19:33:42.151366",
+      "last_seen": "2026-07-12T08:59:26.024558",
       "stage": "runtime"
     },
     "MonolithicSchemaError": {
@@ -213,7 +217,7 @@
       "stage": "generation"
     },
     "MissingEndpoint": {
-      "count": 46,
+      "count": 48,
       "examples": [
         {
           "project": "bug_tracker",
@@ -237,7 +241,7 @@
         }
       ],
       "first_seen": "2026-06-22T07:49:29.613937",
-      "last_seen": "2026-07-10T20:33:32.223014",
+      "last_seen": "2026-07-11T23:12:06.641076",
       "stage": "generation"
     },
     "FastAPIError": {
@@ -325,7 +329,7 @@
       "stage": "runtime"
     },
     "JourneyCRUDFailure": {
-      "count": 29,
+      "count": 32,
       "examples": [
         {
           "project": "BlogSphere",
@@ -349,7 +353,7 @@
         }
       ],
       "first_seen": "2026-06-29T23:47:06.584012",
-      "last_seen": "2026-07-06T13:42:49.314630",
+      "last_seen": "2026-07-12T09:54:56.178011",
       "stage": "integration"
     },
     "InvalidDependsType": {
@@ -377,7 +381,7 @@
       "stage": "runtime"
     },
     "NotNullViolationError": {
-      "count": 4,
+      "count": 5,
       "examples": [
         {
           "project": "todo_list_app",
@@ -394,14 +398,18 @@
         {
           "project": "simple_crm",
           "error": "NotNullViolationError"
+        },
+        {
+          "project": "inventory_manager",
+          "error": "NotNullViolationError"
         }
       ],
       "first_seen": "2026-07-01T19:37:49.712563",
-      "last_seen": "2026-07-06T10:02:36.798218",
+      "last_seen": "2026-07-12T09:15:54.727920",
       "stage": "runtime"
     },
     "AttributeError": {
-      "count": 8,
+      "count": 22,
       "examples": [
         {
           "project": "gym_tracker",
@@ -425,7 +433,7 @@
         }
       ],
       "first_seen": "2026-07-01T22:56:38.596264",
-      "last_seen": "2026-07-07T11:47:43.660305",
+      "last_seen": "2026-07-12T09:08:55.024642",
       "stage": "runtime"
     },
     "ConfigAttributeError": {
@@ -473,7 +481,7 @@
       "stage": "runtime"
     },
     "SyntaxError": {
-      "count": 5,
+      "count": 7,
       "examples": [
         {
           "project": "forge_blog_cms",
@@ -497,10 +505,10 @@
         }
       ],
       "first_seen": "2026-07-06T01:13:44.604581",
-      "last_seen": "2026-07-06T05:46:37.663703",
+      "last_seen": "2026-07-12T09:12:02.349391",
       "stage": "build"
     }
   },
-  "total_runs": 414,
-  "last_updated": "2026-07-11T12:50:10.603006"
+  "total_runs": 456,
+  "last_updated": "2026-07-12T14:26:04.306926"
 }

@@ -101,6 +101,7 @@ def print_reliability_dashboard():
     from app.memory.reliability_metrics import (
         compute_reliability_metrics, render_dashboard,
         compute_prevention_rate, render_prevention_dashboard,
+        compute_auth_completeness_metrics, render_auth_completeness_dashboard,
     )
 
     gen_entries = _load_jsonl(FAILURE_DIR / "generation_log.jsonl")
@@ -114,6 +115,8 @@ def print_reliability_dashboard():
     print(render_dashboard(compute_reliability_metrics(gen_entries, canary_runs)))
     print()
     print(render_prevention_dashboard(compute_prevention_rate(gen_entries)))
+    print()
+    print(render_auth_completeness_dashboard(compute_auth_completeness_metrics()))
 
 
 if __name__ == "__main__":

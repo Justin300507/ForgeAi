@@ -2,6 +2,24 @@ import ast
 import os
 import re
 
+from app.core.context import Diagnostic, ErrorCategory, ErrorSeverity
+
+
+def _add_schema(errors, diagnostics, msg, rel_path):
+    errors.append(msg)
+    if diagnostics is not None:
+        # category=CONTRACT, severity=MEDIUM: exact parity with engine.py's
+        # existing "schema" substring match (category) and default (severity).
+        diagnostics.append(Diagnostic(
+            error_id=Diagnostic.make_id("static", ErrorCategory.CONTRACT, msg, rel_path),
+            category=ErrorCategory.CONTRACT,
+            severity=ErrorSeverity.MEDIUM,
+            source="static",
+            message=msg,
+            file_path=rel_path,
+            validator_name="validate_schema_model_consistency",
+        ))
+
 
 _RESPONSE_MODEL_RE = re.compile(
     r"response_model\s*=\s*(?:List\[|list\[)?(\w+)\]?"
@@ -71,7 +89,8 @@ def _is_optional_annotation(annotation):
 
 def validate_schema_model_consistency(
     project_path,
-    errors
+    errors,
+    diagnostics=None
 ):
 
     models = {}
@@ -242,10 +261,10 @@ def validate_schema_model_consistency(
                     and schema_fields[field]
                 ):
 
-                    errors.append(
+                    _add_schema(errors, diagnostics,
                         f"Schema mismatch: {schema_file}: "
-                        f"{schema_name}.{field} required but model allows NULL"
-                    )
+                        f"{schema_name}.{field} required but model allows NULL",
+                        schema_file)
 
             # A field required by a response_model schema but entirely absent
             # from the model is a guaranteed ResponseValidationError at
@@ -260,9 +279,9 @@ def validate_schema_model_consistency(
 
                     if required and field not in model_fields:
 
-                        errors.append(
+                        _add_schema(errors, diagnostics,
                             f"Schema mismatch: {schema_file}: "
                             f"{schema_name}.{field} is required in the response "
                             f"schema but '{field}' does not exist as a column on "
-                            f"the {model_name} model"
-                        )
+                            f"the {model_name} model",
+                            schema_file)

@@ -1,0 +1,1031 @@
+{
+  "app": "crm",
+  "timestamp": "2026-07-11T23:26:05.586317+00:00",
+  "crashed": false,
+  "error": null,
+  "elapsed_s": 62.4,
+  "result": {
+    "job_id": "971d65fb040d4e4297aef98618beec6e",
+    "idea": "A simple CRM for small businesses with user login. Users manage contacts (name, email, phone, company, status: lead/prospect/customer/churned). Add notes to any contact with timestamps. Log interactions (call/email/meeting) with date and outcome. Pipeline view shows contacts grouped by status with counts. Search contacts by name or company.",
+    "project_name": "simple_crm",
+    "forge_score": 88.59,
+    "grade": "B",
+    "deployed": false,
+    "frontend_deployed": false,
+    "backend_url": null,
+    "frontend_url": null,
+    "fix_attempts": 0,
+    "total_tokens": 99029,
+    "estimated_cost": 0.05941739999999998,
+    "elapsed_s": 62.41,
+    "providers_used": [],
+    "timeline": [
+      {
+        "stage": "generation",
+        "status": "passed",
+        "duration_ms": 0.0
+      },
+      {
+        "stage": "deterministic-patch",
+        "status": "passed",
+        "duration_ms": 168.3
+      },
+      {
+        "stage": "verification",
+        "status": "passed",
+        "duration_ms": 26983.4
+      },
+      {
+        "stage": "static-validation",
+        "status": "failed",
+        "duration_ms": 264.3
+      },
+      {
+        "stage": "runtime-validation",
+        "status": "passed",
+        "duration_ms": 2696.0
+      },
+      {
+        "stage": "parallel-checks",
+        "status": "passed",
+        "duration_ms": 4863.4
+      }
+    ],
+    "score_history": [
+      {
+        "attempt": 0,
+        "score": 88.59,
+        "grade": "B"
+      }
+    ],
+    "dimensions": [
+      {
+        "name": "Compilation",
+        "score": 69.0,
+        "passed": true,
+        "na": false
+      },
+      {
+        "name": "Runtime Startup",
+        "score": 100.0,
+        "passed": true,
+        "na": false
+      },
+      {
+        "name": "API Functionality",
+        "score": 100.0,
+        "passed": true,
+        "na": false
+      },
+      {
+        "name": "Frontend Load",
+        "score": 100.0,
+        "passed": true,
+        "na": false
+      },
+      {
+        "name": "Browser UX",
+        "score": 88.0,
+        "passed": true,
+        "na": false
+      },
+      {
+        "name": "Integration",
+        "score": 100.0,
+        "passed": true,
+        "na": false
+      },
+      {
+        "name": "Code Quality",
+        "score": 55.0,
+        "passed": false,
+        "na": false
+      },
+      {
+        "name": "Security",
+        "score": 100.0,
+        "passed": true,
+        "na": false
+      },
+      {
+        "name": "Completeness",
+        "score": 100.0,
+        "passed": true,
+        "na": false
+      },
+      {
+        "name": "Performance",
+        "score": 90,
+        "passed": true,
+        "na": false
+      },
+      {
+        "name": "Visual Judge",
+        "score": 38.4,
+        "passed": false,
+        "na": false
+      }
+    ],
+    "v6_result": {
+      "pipeline": "v6",
+      "project_name": "simple_crm",
+      "project_path": "C:\\Users\\jerry\\onedrive\\Desktop\\forgeai\\generated_projects\\simple_crm",
+      "zip_path": "C:\\Users\\jerry\\onedrive\\Desktop\\forgeai\\generated_projects\\simple_crm.zip",
+      "metadata_path": "C:\\Users\\jerry\\onedrive\\Desktop\\forgeai\\generated_projects\\simple_crm\\metadata.json",
+      "plan": {
+        "project_name": "simple_crm",
+        "display_name": "Simple CRM",
+        "features": [
+          "Secure user login and registration to access the CRM.",
+          "Create, view, update, and delete contacts with name, email, phone, company, and status (lead/prospect/customer/churned).",
+          "Add timestamped notes to any contact for internal context.",
+          "Log interactions (call/email/meeting) with a date and outcome for each contact.",
+          "Visualize contacts grouped by their status (Lead, Prospect, Customer, Churned) with counts for each group.",
+          "Search contacts by their name or company name."
+        ],
+        "tech_stack": {
+          "backend": "FastAPI",
+          "database": "SQLite",
+          "auth": "JWT",
+          "frontend": "React + Vite"
+        },
+        "db_entities": [
+          "User",
+          "Contact",
+          "Note",
+          "Interaction"
+        ],
+        "api_modules": [
+          "auth",
+          "users",
+          "contacts"
+        ],
+        "user_stories": [
+          {
+            "role": "Small Business User",
+            "want": "to log in securely to my CRM account",
+            "acceptance_criteria": [
+              "Given I am on the login page, when I enter valid credentials and click 'Login', then I am redirected to my contacts dashboard.",
+              "Given I am on the login page, when I enter invalid credentials and click 'Login', then I see an error message 'Invalid credentials'."
+            ]
+          },
+          {
+            "role": "Small Business User",
+            "want": "to add a new contact with their details",
+            "acceptance_criteria": [
+              "Given I am on the contacts page, when I click 'Add Contact' and fill in name, email, phone, company, and select a status, then the new contact appears in my contact list.",
+              "Given I am adding a new contact, when I leave a required field (e.g., name) blank, then I see a validation error and the contact is not created."
+            ]
+          },
+          {
+            "role": "Small Business User",
+            "want": "to add a note to a contact",
+            "acceptance_criteria": [
+              "Given I am viewing a contact's details, when I enter text into the 'Add Note' field and click 'Save Note', then the note appears in the contact's notes section with a timestamp.",
+              "Given a contact has multiple notes, when I view the contact's details, then the notes are displayed in chronological order (newest first)."
+            ]
+          },
+          {
+            "role": "Small Business User",
+            "want": "to log an interaction (call, email, meeting) with a contact",
+            "acceptance_criteria": [
+              "Given I am viewing a contact's details, when I select an interaction type (Call, Email, Meeting), a date, and an outcome, then the interaction is added to the contact's interaction log.",
+              "Given a contact has logged interactions, when I view the contact's details, then the interactions are displayed chronologically with type, date, and outcome."
+            ]
+          },
+          {
+            "role": "Small Business User",
+            "want": "to see my contacts grouped by their status in a pipeline view",
+            "acceptance_criteria": [
+              "Given I navigate to the 'Pipeline' view, then I see distinct sections for 'Lead', 'Prospect', 'Customer', and 'Churned' contacts.",
+              "Given I have contacts with different statuses, when I view the pipeline, then each status section displays the correct count of contacts assigned to that status."
+            ]
+          },
+          {
+            "role": "Small Business User",
+            "want": "to search for contacts by name or company",
+            "acceptance_criteria": [
+              "Given I am on the contacts list, when I type 'John' into the search bar, then only contacts with 'John' in their name are displayed.",
+              "Given I am on the contacts list, when I type 'Acme Corp' into the search bar, then only contacts associated with 'Acme Corp' are displayed."
+            ]
+          }
+        ],
+        "non_functional_requirements": {
+          "authentication": "required — users need to log in to access their private contact data.",
+          "authorization": "Users can only access and manage their own contacts and associated data.",
+          "pagination": "required on contacts list if the number of contacts exceeds a reasonable display limit (e.g., 50).",
+          "search": "contacts (by name, company)",
+          "file_uploads": "no",
+          "real_time": "no"
+        },
+        "data_entities_detail": [
+          {
+            "name": "User",
+            "description": "Stores user authentication information.",
+            "key_fields": [
+              "id",
+              "email",
+              "password_hash"
+            ],
+            "relationships": [
+              "has many Contact"
+            ]
+          },
+          {
+            "name": "Contact",
+            "description": "Stores details for each business contact.",
+            "key_fields": [
+              "id",
+              "name",
+              "email",
+              "phone",
+              "company",
+              "status",
+              "user_id"
+            ],
+            "relationships": [
+              "belongs to User",
+              "has many Note",
+              "has many Interaction"
+            ]
+          },
+          {
+            "name": "Note",
+            "description": "Stores timestamped notes related to a contact.",
+            "key_fields": [
+              "id",
+              "content",
+              "timestamp",
+              "contact_id"
+            ],
+            "relationships": [
+              "belongs to Contact"
+            ]
+          },
+          {
+            "name": "Interaction",
+            "description": "Stores logged interactions with a contact.",
+            "key_fields": [
+              "id",
+              "type",
+              "date",
+              "outcome",
+              "contact_id"
+            ],
+            "relationships": [
+              "belongs to Contact"
+            ]
+          }
+        ],
+        "out_of_scope": [
+          "Reporting/Analytics beyond pipeline counts",
+          "Email/Calendar integrations",
+          "Customizable fields for contacts",
+          "Task management",
+          "Multi-user accounts or team features"
+        ]
+      },
+      "architecture": {
+        "api_endpoints": [
+          {
+            "method": "POST",
+            "path": "/seed",
+            "description": "Populates database with realistic demo data.",
+            "file": "app\\routes\\seed_routes.py"
+          },
+          {
+            "method": "POST",
+            "path": "/auth/register",
+            "description": "Registers a new user.",
+            "file": "app\\routes\\auth_routes.py"
+          },
+          {
+            "method": "POST",
+            "path": "/auth/login",
+            "description": "Logs in a user and returns an access token.",
+            "file": "app\\routes\\auth_routes.py"
+          },
+          {
+            "method": "GET",
+            "path": "/users/me",
+            "description": "Retrieves the currently authenticated user's details.",
+            "file": "app\\routes\\user_routes.py"
+          },
+          {
+            "method": "GET",
+            "path": "/contacts",
+            "description": "Retrieves a list of contacts for the authenticated user, with optional search and pagination.",
+            "file": "app\\routes\\contact_routes.py"
+          },
+          {
+            "method": "GET",
+            "path": "/contacts/{contact_id}",
+            "description": "Retrieves details for a specific contact.",
+            "file": "app\\routes\\contact_routes.py"
+          },
+          {
+            "method": "POST",
+            "path": "/contacts",
+            "description": "Creates a new contact for the authenticated user.",
+            "file": "app\\routes\\contact_routes.py"
+          },
+          {
+            "method": "PUT",
+            "path": "/contacts/{contact_id}",
+            "description": "Updates an existing contact's details.",
+            "file": "app\\routes\\contact_routes.py"
+          },
+          {
+            "method": "DELETE",
+            "path": "/contacts/{contact_id}",
+            "description": "Deletes a contact.",
+            "file": "app\\routes\\contact_routes.py"
+          },
+          {
+            "method": "POST",
+            "path": "/contacts/{contact_id}/notes",
+            "description": "Adds a new note to a specific contact.",
+            "file": "app\\routes\\contact_routes.py"
+          },
+          {
+            "method": "GET",
+            "path": "/contacts/{contact_id}/notes",
+            "description": "Retrieves all notes for a specific contact.",
+            "file": "app\\routes\\contact_routes.py"
+          },
+          {
+            "method": "POST",
+            "path": "/contacts/{contact_id}/interactions",
+            "description": "Logs a new interaction for a specific contact.",
+            "file": "app\\routes\\contact_routes.py"
+          },
+          {
+            "method": "GET",
+            "path": "/contacts/{contact_id}/interactions",
+            "description": "Retrieves all interactions for a specific contact.",
+            "file": "app\\routes\\contact_routes.py"
+          },
+          {
+            "method": "GET",
+            "path": "/stats/pipeline",
+            "description": "Retrieves counts of contacts grouped by their status (Lead, Prospect, Customer, Churned).",
+            "file": "app\\routes\\stats_routes.py"
+          },
+          {
+            "method": "GET",
+            "path": "/contacts/search",
+            "description": "Searches contacts by name or company name.",
+            "file": "app\\routes\\contact_routes.py"
+          }
+        ],
+        "database_schema": [
+          {
+            "table_name": "users",
+            "columns": [
+              {
+                "name": "id",
+                "type": "INTEGER",
+                "is_primary_key": true,
+                "is_nullable": false
+              },
+              {
+                "name": "email",
+                "type": "VARCHAR(255)",
+                "is_primary_key": false,
+                "is_nullable": false
+              },
+              {
+                "name": "password_hash",
+                "type": "VARCHAR(255)",
+                "is_primary_key": false,
+                "is_nullable": false
+              }
+            ]
+          },
+          {
+            "table_name": "contacts",
+            "columns": [
+              {
+                "name": "id",
+                "type": "INTEGER",
+                "is_primary_key": true,
+                "is_nullable": false
+              },
+              {
+                "name": "name",
+                "type": "VARCHAR(255)",
+                "is_primary_key": false,
+                "is_nullable": false
+              },
+              {
+                "name": "email",
+                "type": "VARCHAR(255)",
+                "is_primary_key": false,
+                "is_nullable": true
+              },
+              {
+                "name": "phone",
+                "type": "VARCHAR(50)",
+                "is_primary_key": false,
+                "is_nullable": true
+              },
+              {
+                "name": "company",
+                "type": "VARCHAR(255)",
+                "is_primary_key": false,
+                "is_nullable": true
+              },
+              {
+                "name": "status",
+                "type": "VARCHAR(50)",
+                "is_primary_key": false,
+                "is_nullable": false
+              },
+              {
+                "name": "user_id",
+                "type": "INTEGER",
+                "is_primary_key": false,
+                "is_nullable": false
+              }
+            ]
+          },
+          {
+            "table_name": "notes",
+            "columns": [
+              {
+                "name": "id",
+                "type": "INTEGER",
+                "is_primary_key": true,
+                "is_nullable": false
+              },
+              {
+                "name": "content",
+                "type": "TEXT",
+                "is_primary_key": false,
+                "is_nullable": false
+              },
+              {
+                "name": "timestamp",
+                "type": "DATETIME",
+                "is_primary_key": false,
+                "is_nullable": false
+              },
+              {
+                "name": "contact_id",
+                "type": "INTEGER",
+                "is_primary_key": false,
+                "is_nullable": false
+              }
+            ]
+          },
+          {
+            "table_name": "interactions",
+            "columns": [
+              {
+                "name": "id",
+                "type": "INTEGER",
+                "is_primary_key": true,
+                "is_nullable": false
+              },
+              {
+                "name": "type",
+                "type": "VARCHAR(50)",
+                "is_primary_key": false,
+                "is_nullable": false
+              },
+              {
+                "name": "date",
+                "type": "DATE",
+                "is_primary_key": false,
+                "is_nullable": false
+              },
+              {
+                "name": "outcome",
+                "type": "TEXT",
+                "is_primary_key": false,
+                "is_nullable": true
+              },
+              {
+                "name": "contact_id",
+                "type": "INTEGER",
+                "is_primary_key": false,
+                "is_nullable": false
+              }
+            ]
+          }
+        ],
+        "folder_structure": {
+          "backend": [
+            "app/",
+            "app/main.py",
+            "app/database.py",
+            "app/models/",
+            "app/models/user.py",
+            "app/models/contact.py",
+            "app/models/note.py",
+            "app/models/interaction.py",
+            "app/schemas/",
+            "app/schemas/user.py",
+            "app/schemas/contact.py",
+            "app/schemas/note.py",
+            "app/schemas/interaction.py",
+            "app/schemas/auth.py",
+            "app/schemas/stats.py",
+            "app/services/",
+            "app/services/auth_service.py",
+            "app/services/user_service.py",
+            "app/services/contact_service.py",
+            "app/services/note_service.py",
+            "app/services/interaction_service.py",
+            "app/services/stats_service.py",
+            "app/routes/",
+            "app/routes/auth_routes.py",
+            "app/routes/user_routes.py",
+            "app/routes/contact_routes.py",
+            "app/routes/stats_routes.py",
+            "app/routes/seed_routes.py",
+            "app/utils/",
+            "app/utils/auth.py",
+            "app/utils/dependencies.py",
+            "app/utils/password.py",
+            "app/config.py"
+          ]
+        },
+        "frontend_structure": {
+          "pages": [
+            "LoginPage.jsx",
+            "RegisterPage.jsx",
+            "DashboardPage.jsx",
+            "ContactsListPage.jsx",
+            "ContactDetailPage.jsx",
+            "AddContactPage.jsx",
+            "EditContactPage.jsx",
+            "PipelinePage.jsx"
+          ],
+          "components": [
+            "Header.jsx",
+            "Footer.jsx",
+            "LoginForm.jsx",
+            "RegisterForm.jsx",
+            "ContactCard.jsx",
+            "ContactForm.jsx",
+            "NoteForm.jsx",
+            "NoteList.jsx",
+            "InteractionForm.jsx",
+            "InteractionList.jsx",
+            "SearchBar.jsx",
+            "Pagination.jsx",
+            "PipelineStatusColumn.jsx",
+            "ProtectedRoute.jsx",
+            "LoadingSpinner.jsx",
+            "ErrorMessage.jsx"
+          ]
+        }
+      },
+      "product_spec": {
+        "display_name": "Simple CRM",
+        "tagline": "A straightforward CRM for small businesses to manage contacts, track interactions, and visualize their sales pipeline.",
+        "user_stories": 6,
+        "must_have_features": [
+          "User Authentication",
+          "Contact Management",
+          "Contact Notes",
+          "Interaction Logging",
+          "Pipeline View",
+          "Contact Search"
+        ]
+      },
+      "tech_lead": {
+        "summary": "The proposed architecture for Simple CRM is largely sound and adheres to most project contract requirements. Key areas for improvement include ensuring consistent authentication across all user-data-touching endpoints, refining endpoint paths for better RESTfulness, and explicitly defining schema validation rules.",
+        "critical_issues": 0,
+        "warnings": 7
+      },
+      "backend_generation": {
+        "parallel": true,
+        "files": 28
+      },
+      "qa": {
+        "score": 80,
+        "stories_covered": 8,
+        "blockers": [
+          "Missing 404 handling on single‑resource endpoints",
+          "POST /contacts lacks a response_model",
+          "Notes and interactions are not returned in the required chronological order"
+        ],
+        "skipped": false
+      },
+      "security": {
+        "score": 78,
+        "risk_level": "medium",
+        "critical_count": 0,
+        "high_count": 3,
+        "skipped": false
+      },
+      "code_review": {
+        "naming_score": 78,
+        "architecture_score": 55,
+        "maintainability_score": 50,
+        "tech_debt_score": 40,
+        "overall_score": 56,
+        "skipped": false
+      },
+      "performance": {
+        "score": 78,
+        "n_plus_one_count": 1,
+        "missing_indexes": 4,
+        "large_payload_risks": 0,
+        "slow_api_warnings": 0,
+        "skipped": false
+      },
+      "frontend_critic": {
+        "design_score": 68,
+        "hierarchy_score": 78,
+        "compliance_score": 62,
+        "polish_score": 65,
+        "consistency_score": 70,
+        "files_polished": 3,
+        "skipped": false
+      },
+      "validation": {
+        "passed": true,
+        "errors": [],
+        "diagnostics": []
+      },
+      "runtime": {
+        "success": true,
+        "healthy": true,
+        "exit_code": 0,
+        "stdout": "INFO:     127.0.0.1:53368 - \"GET /health HTTP/1.1\" 200 OK\nINFO:     127.0.0.1:53371 - \"GET /docs HTTP/1.1\" 200 OK\nINFO:     127.0.0.1:53372 - \"GET /openapi.json HTTP/1.1\" 200 OK\nINFO:     127.0.0.1:53373 - \"POST /auth/register HTTP/1.1\" 200 OK\nINFO:     127.0.0.1:53374 - \"GET /openapi.json HTTP/1.1\" 200 OK\nINFO:     127.0.0.1:53375 - \"POST /auth/login HTTP/1.1\" 200 OK\nINFO:     127.0.0.1:53376 - \"POST /seed HTTP/1.1\" 201 Created\nINFO:     127.0.0.1:53377 - \"GET /contacts HTTP/1.1\" 200 OK\nINFO:     127.0.0.1:53378 - \"GET /openapi.json HTTP/1.1\" 200 OK\nINFO:     127.0.0.1:53379 - \"POST /contacts HTTP/1.1\" 201 Created\nINFO:     127.0.0.1:53380 - \"GET /contacts HTTP/1.1\" 200 OK\nINFO:     127.0.0.1:53381 - \"PUT /contacts/1 HTTP/1.1\" 200 OK\nINFO:     127.0.0.1:53382 - \"DELETE /contacts/1 HTTP/1.1\" 204 No Content\nINFO:     127.0.0.1:53383 - \"GET /contacts/1 HTTP/1.1\" 404 Not Found\nINFO:     127.0.0.1:53384 - \"POST /auth/logout HTTP/1.1\" 200 OK\nINFO:     127.0.0.1:53385 - \"POST /auth/login HTTP/1.1\" 200 OK\nINFO:     127.0.0.1:53386 - \"GET /contacts HTTP/1.1\" 200 OK\nINFO:     127.0.0.1:53387 - \"POST /auth/register HTTP/1.1\" 422 Unprocessable Content\nINFO:     127.0.0.1:53388 - \"POST /auth/login HTTP/1.1\" 422 Unprocessable Content\nINFO:     127.0.0.1:53389 - \"GET /users/me HTTP/1.1\" 401 Unauthorized\nINFO:     127.0.0.1:53390 - \"GET /contacts HTTP/1.1\" 401 Unauthorized\nINFO:     127.0.0.1:53391 - \"GET /contacts/1 HTTP/1.1\" 401 Unauthorized\nINFO:     127.0.0.1:53392 - \"POST /contacts HTTP/1.1\" 401 Unauthorized\nINFO:     127.0.0.1:53393 - \"PUT /contacts/1 HTTP/1.1\" 401 Unauthorized\nINFO:     127.0.0.1:53394 - \"DELETE /contacts/1 HTTP/1.1\" 401 Unauthorized\nINFO:     127.0.0.1:53395 - \"POST /contacts/1/notes HTTP/1.1\" 401 Unauthorized\nINFO:     127.0.0.1:53396 - \"GET /contacts/1/notes HTTP/1.1\" 401 Unauthorized\nINFO:     127.0.0.1:53397 - \"POST /contacts/1/interactions HTTP/1.1\" 401 Unauthorized\nINFO:     127.0.0.1:53398 - \"GET /contacts/1/interactions HTTP/1.1\" 401 Unauthorized\nINFO:     127.0.0.1:53399 - \"GET /stats/pipeline HTTP/1.1\" 200 OK\nINFO:     127.0.0.1:53400 - \"GET /contacts/search HTTP/1.1\" 401 Unauthorized\n",
+        "stderr": "INFO:     Started server process [36548]\nINFO:     Waiting for application startup.\nINFO:     Application startup complete.\nINFO:     Uvicorn running on http://127.0.0.1:8001 (Press CTRL+C to quit)\nC:\\Users\\jerry\\onedrive\\Desktop\\forgeai\\backend\\venv\\Lib\\site-packages\\jwt\\api_jwt.py:147: InsecureKeyLengthWarning: The HMAC key is 19 bytes long, which is below the minimum recommended length of 32 bytes for SHA256. See RFC 7518 Section 3.2.\n  return self._jws.encode(\nC:\\Users\\jerry\\onedrive\\Desktop\\forgeai\\backend\\venv\\Lib\\site-packages\\jwt\\api_jwt.py:368: InsecureKeyLengthWarning: The HMAC key is 19 bytes long, which is below the minimum recommended length of 32 bytes for SHA256. See RFC 7518 Section 3.2.\n  decoded = self.decode_complete(\n",
+        "startup_time": 4.197139024734497,
+        "behavioral_issues": [],
+        "total_endpoints": 15,
+        "timeout_count": 0,
+        "error_count": 0,
+        "endpoint_pass_rate": 1.0,
+        "crud_passed": true,
+        "journey": {
+          "success": true,
+          "steps_passed": 11,
+          "steps_failed": 0,
+          "persistence_verified": true,
+          "skipped": false,
+          "skip_reason": "",
+          "entity": "contacts",
+          "seed_summary": {},
+          "steps": [
+            {
+              "name": "Register",
+              "passed": true,
+              "detail": "200 @ register",
+              "request": null,
+              "response": null
+            },
+            {
+              "name": "Login",
+              "passed": true,
+              "detail": "200 @ login",
+              "request": null,
+              "response": null
+            },
+            {
+              "name": "Detect entity",
+              "passed": true,
+              "detail": "http://127.0.0.1:8001/contacts",
+              "request": null,
+              "response": null
+            },
+            {
+              "name": "Create entity",
+              "passed": true,
+              "detail": "201 id=1",
+              "request": null,
+              "response": null
+            },
+            {
+              "name": "List entities",
+              "passed": true,
+              "detail": "200 count=1",
+              "request": null,
+              "response": null
+            },
+            {
+              "name": "Edit entity",
+              "passed": true,
+              "detail": "200",
+              "request": null,
+              "response": null
+            },
+            {
+              "name": "Delete entity",
+              "passed": true,
+              "detail": "204",
+              "request": null,
+              "response": null
+            },
+            {
+              "name": "Verify deletion",
+              "passed": true,
+              "detail": "404 confirmed deleted",
+              "request": null,
+              "response": null
+            },
+            {
+              "name": "Logout",
+              "passed": true,
+              "detail": "200",
+              "request": null,
+              "response": null
+            },
+            {
+              "name": "Login again",
+              "passed": true,
+              "detail": "re-login 200",
+              "request": null,
+              "response": null
+            },
+            {
+              "name": "Verify persistence",
+              "passed": true,
+              "detail": "deleted item absent — persistence confirmed",
+              "request": null,
+              "response": null
+            }
+          ],
+          "total_duration": 0.3
+        }
+      },
+      "forge_score": {
+        "score": 100,
+        "grade": "A"
+      },
+      "v6_score": {
+        "total": 76,
+        "grade": "B",
+        "dimensions": {
+          "runtime": 100,
+          "security": 78,
+          "performance": 56,
+          "maintainability": 56,
+          "review": 68
+        },
+        "breakdown": {
+          "forge_score": 100,
+          "runtime_passed": true,
+          "static_passed": true,
+          "security_score": 78,
+          "security_critical": 0,
+          "performance_score": 78,
+          "n_plus_one_count": 1,
+          "naming_score": 78,
+          "architecture_score": 55,
+          "maintainability_score": 50,
+          "tech_debt_score": 40,
+          "qa_score": 80,
+          "qa_blockers": 3
+        },
+        "weights": {
+          "runtime": 0.3,
+          "security": 0.25,
+          "performance": 0.15,
+          "maintainability": 0.15,
+          "review": 0.15
+        }
+      },
+      "collaboration_log": [
+        {
+          "agent": "product_manager",
+          "decision": "product_spec_created",
+          "rationale": "A straightforward CRM for small businesses to manage contacts, track interactions, and visualize their sales pipeline.",
+          "data": {
+            "features": 6,
+            "user_stories": 6,
+            "must_have": [
+              "User Authentication",
+              "Contact Management",
+              "Contact Notes",
+              "Interaction Logging",
+              "Pipeline View",
+              "Contact Search"
+            ]
+          }
+        },
+        {
+          "agent": "architect",
+          "decision": "architecture_created",
+          "rationale": "15 endpoints across 5 files",
+          "data": {
+            "endpoints": 15
+          }
+        },
+        {
+          "agent": "tech_lead",
+          "decision": "constraints_set",
+          "rationale": "The proposed architecture for Simple CRM is largely sound and adheres to most project contract requirements. Key areas for improvement include ensurin",
+          "data": {
+            "critical_issues": 0,
+            "auth_endpoints": 11,
+            "pagination_required": 3
+          }
+        },
+        {
+          "agent": "qa",
+          "decision": "qa_review_complete",
+          "rationale": "QA score: 80/100",
+          "data": {
+            "score": 80,
+            "blockers": [
+              "Missing 404 handling on single‑resource endpoints",
+              "POST /contacts lacks a response_model",
+              "Notes and interactions are not returned in the required chronological order"
+            ]
+          }
+        },
+        {
+          "agent": "security",
+          "decision": "security_review_complete",
+          "rationale": "Security score: 78/100",
+          "data": {
+            "score": 78
+          }
+        },
+        {
+          "agent": "code_review",
+          "decision": "code_review_complete",
+          "rationale": "Maintainability: 50/100",
+          "data": {
+            "maintainability_score": 50
+          }
+        },
+        {
+          "agent": "performance",
+          "decision": "performance_review_complete",
+          "rationale": "Performance score: 78/100",
+          "data": {
+            "score": 78
+          }
+        },
+        {
+          "agent": "frontend_critic",
+          "decision": "frontend_critic_complete",
+          "rationale": "Design score: 68/100",
+          "data": {
+            "score": 68
+          }
+        },
+        {
+          "agent": "orchestrator",
+          "decision": "pipeline_complete",
+          "rationale": "V6 score: 76/100",
+          "data": {
+            "total_time": 35.22,
+            "can_export": true
+          }
+        }
+      ],
+      "generation_time_seconds": 35.22,
+      "fix_attempts": 2
+    },
+    "retry_history": [],
+    "deployment": {
+      "skipped": true
+    },
+    "project_path": "C:\\Users\\jerry\\onedrive\\Desktop\\forgeai\\generated_projects\\simple_crm",
+    "status": "done",
+    "confidence": {
+      "probability": 0.9014,
+      "pct": 90.14,
+      "grade": "B+",
+      "factors": {
+        "base": -0.5,
+        "overall_score": 1.962,
+        "runtime_health": 0.5,
+        "browser_ux": 0.264,
+        "compilation": 0.138,
+        "historical_base_rate": -0.151
+      },
+      "historical_rate": 0.3294,
+      "historical_n": 85,
+      "verdict": "Likely to succeed — minor risks remain."
+    }
+  },
+  "observed": {
+    "validate_project_calls": [
+      {
+        "elapsed_ms": 264.2,
+        "errors": [
+          "Schema mismatch: app/schemas/contact.py: ContactCreate.name required but model allows NULL",
+          "Schema mismatch: app/schemas/contact.py: ContactCreate.status required but model allows NULL",
+          "Schema mismatch: app/schemas/user.py: UserCreate.email required but model allows NULL",
+          "Schema mismatch: app/schemas/user.py: UserCreate.password_hash required but model allows NULL"
+        ],
+        "diagnostics": [
+          {
+            "validator_name": "validate_schema_model_consistency",
+            "category": "contract",
+            "severity": "medium",
+            "file_path": "app/schemas/contact.py",
+            "message": "Schema mismatch: app/schemas/contact.py: ContactCreate.name required but model allows NULL"
+          },
+          {
+            "validator_name": "validate_schema_model_consistency",
+            "category": "contract",
+            "severity": "medium",
+            "file_path": "app/schemas/contact.py",
+            "message": "Schema mismatch: app/schemas/contact.py: ContactCreate.status required but model allows NULL"
+          },
+          {
+            "validator_name": "validate_schema_model_consistency",
+            "category": "contract",
+            "severity": "medium",
+            "file_path": "app/schemas/user.py",
+            "message": "Schema mismatch: app/schemas/user.py: UserCreate.email required but model allows NULL"
+          },
+          {
+            "validator_name": "validate_schema_model_consistency",
+            "category": "contract",
+            "severity": "medium",
+            "file_path": "app/schemas/user.py",
+            "message": "Schema mismatch: app/schemas/user.py: UserCreate.password_hash required but model allows NULL"
+          }
+        ]
+      }
+    ],
+    "static_validator_stage_calls": [
+      {
+        "status": "failed",
+        "diagnostics": [
+          {
+            "validator_name": "validate_schema_model_consistency",
+            "legacy_adapter_used": false,
+            "category": "contract",
+            "severity": "medium",
+            "file_path": "app/schemas/contact.py",
+            "message": "Schema mismatch: app/schemas/contact.py: ContactCreate.name required but model allows NULL"
+          },
+          {
+            "validator_name": "validate_schema_model_consistency",
+            "legacy_adapter_used": false,
+            "category": "contract",
+            "severity": "medium",
+            "file_path": "app/schemas/contact.py",
+            "message": "Schema mismatch: app/schemas/contact.py: ContactCreate.status required but model allows NULL"
+          },
+          {
+            "validator_name": "validate_schema_model_consistency",
+            "legacy_adapter_used": false,
+            "category": "contract",
+            "severity": "medium",
+            "file_path": "app/schemas/user.py",
+            "message": "Schema mismatch: app/schemas/user.py: UserCreate.email required but model allows NULL"
+          },
+          {
+            "validator_name": "validate_schema_model_consistency",
+            "legacy_adapter_used": false,
+            "category": "contract",
+            "severity": "medium",
+            "file_path": "app/schemas/user.py",
+            "message": "Schema mismatch: app/schemas/user.py: UserCreate.password_hash required but model allows NULL"
+          }
+        ]
+      }
+    ],
+    "write_fix_calls": [
+      {
+        "path": "src\\pages\\ContactDetailPage.jsx",
+        "has_content": true,
+        "write_succeeded": true
+      },
+      {
+        "path": "app\\routes\\contact_routes.py",
+        "has_content": true,
+        "write_succeeded": true
+      },
+      {
+        "path": "app\\routes\\user_routes.py",
+        "has_content": true,
+        "write_succeeded": true
+      },
+      {
+        "path": "app\\schemas\\contact.py",
+        "has_content": true,
+        "write_succeeded": true
+      },
+      {
+        "path": "src\\components\\Sidebar.jsx",
+        "has_content": true,
+        "write_succeeded": true
+      },
+      {
+        "path": "src\\pages\\DashboardPage.jsx",
+        "has_content": true,
+        "write_succeeded": true
+      },
+      {
+        "path": "src\\pages\\PipelinePage.jsx",
+        "has_content": true,
+        "write_succeeded": true
+      }
+    ]
+  }
+}

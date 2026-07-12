@@ -64,8 +64,21 @@ def _run_static_validators(ctx: GenerationContext) -> VerificationResult:
             duration_ms=_ms(t0),
         )
 
+    # Exp060: validate_project() now optionally returns a "diagnostics" list
+    # of native Diagnostic objects, one per migrated validator's error,
+    # keyed here by exact message match (each migrated validator builds its
+    # message once into a local var and uses that SAME string for both the
+    # legacy `errors` entry and the Diagnostic's `.message`, so this lookup
+    # is exact, not fuzzy). Where a native Diagnostic exists it's used
+    # as-is -- validator-supplied file_path/category/severity, no regex
+    # guessing needed. Any error NOT yet in `diagnostics` (validator not
+    # migrated this cycle) falls through to the exact same regex-based
+    # construction as before -- byte-identical behavior for those, per
+    # docs/VALIDATOR_MIGRATION.md's "no flag day rewrite" design.
+    _diag_by_message = {d.message: d for d in validation.get("diagnostics", [])}
+
     diagnostics = [
-        Diagnostic(
+        _diag_by_message[err] if err in _diag_by_message else Diagnostic(
             error_id=Diagnostic.make_id("static", _categorise_static(err), err),
             category=_categorise_static(err),
             severity=_severity_static(err),

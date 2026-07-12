@@ -1,10 +1,13 @@
 import ast
 import os
 
+from app.core.context import Diagnostic, ErrorCategory, ErrorSeverity
+
 
 def validate_router_exports(
     project_path,
-    errors
+    errors,
+    diagnostics=None
 ):
 
     routes_dir = os.path.join(
@@ -87,9 +90,23 @@ def validate_router_exports(
 
         if not found:
 
-            errors.append(
+            msg = (
                 f"Router export mismatch "
                 f"in app/routes/{file}. "
                 f"Expected "
                 f"'{expected_router}'"
             )
+            errors.append(msg)
+            if diagnostics is not None:
+                # category=CONTRACT, severity=HIGH: exact parity with
+                # engine.py's existing "router export" heuristic match.
+                rel_path = f"app/routes/{file}"
+                diagnostics.append(Diagnostic(
+                    error_id=Diagnostic.make_id("static", ErrorCategory.CONTRACT, msg, rel_path),
+                    category=ErrorCategory.CONTRACT,
+                    severity=ErrorSeverity.HIGH,
+                    source="static",
+                    message=msg,
+                    file_path=rel_path,
+                    validator_name="validate_router_exports",
+                ))

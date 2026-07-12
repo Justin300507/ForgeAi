@@ -2,6 +2,8 @@ import ast
 import os
 import re
 
+from app.core.context import Diagnostic, ErrorCategory, ErrorSeverity
+
 
 def _normalize_path(path):
     """Collapse any {param_name} segment to {} so path comparison
@@ -93,7 +95,8 @@ def extract_actual_backend_routes(project_path):
 def validate_endpoints(
     project_path,
     metadata,
-    errors
+    errors,
+    diagnostics=None
 ):
 
     architecture = metadata.get(
@@ -142,17 +145,32 @@ def validate_endpoints(
             resource = original_path.strip("/").split("/")[0].rstrip("s")
             expected_file = f"app/routes/{resource}_routes.py"
 
-        errors.append(
+        msg = (
             f"Missing endpoint {method} {original_path} "
             f"(expected in {expected_file})"
         )
+        errors.append(msg)
+        if diagnostics is not None:
+            # category=API, severity=MEDIUM: exact parity with engine.py's
+            # existing "missing endpoint" heuristic match (category) and
+            # default (severity -- no severity-specific pattern matches).
+            diagnostics.append(Diagnostic(
+                error_id=Diagnostic.make_id("static", ErrorCategory.API, msg, expected_file),
+                category=ErrorCategory.API,
+                severity=ErrorSeverity.MEDIUM,
+                source="static",
+                message=msg,
+                file_path=expected_file,
+                validator_name="validate_endpoints",
+                metadata={"method": method, "path": original_path},
+            ))
 
 
 _API_IMPORT_RE = re.compile(r"import\s+(\w+)\s+from\s+['\"][./]*api['\"]")
 _METHOD_MAP = {"get": "GET", "post": "POST", "put": "PUT", "patch": "PATCH", "delete": "DELETE"}
 
 
-def validate_frontend_api_calls(project_path, errors):
+def validate_frontend_api_calls(project_path, errors, diagnostics=None):
     """Cross-check every `API.<verb>(...)` call the frontend actually makes
     against the backend routes that actually exist.
 
@@ -217,15 +235,31 @@ def validate_frontend_api_calls(project_path, errors):
         # uses, so this flows through the existing fix-loop file-attribution
         # and ARCHITECTURE_ERROR_MARKERS dispatch without new wiring — the
         # loop already knows how to turn that message into a real route.
-        errors.append(
+        msg = (
             f"Missing endpoint {method} {original_path} (expected in {expected_file}) "
             f"-- called from {relpath} but never implemented on the backend"
         )
+        errors.append(msg)
+        if diagnostics is not None:
+            # category=API, severity=MEDIUM: exact parity with engine.py's
+            # existing "missing endpoint" heuristic match. file_path points
+            # at the frontend file that actually exists and makes the call
+            # (expected_file doesn't exist yet -- nothing to attribute to).
+            diagnostics.append(Diagnostic(
+                error_id=Diagnostic.make_id("static", ErrorCategory.API, msg, relpath),
+                category=ErrorCategory.API,
+                severity=ErrorSeverity.MEDIUM,
+                source="static",
+                message=msg,
+                file_path=relpath,
+                validator_name="validate_frontend_api_calls",
+                metadata={"method": method, "path": original_path, "expected_backend_file": expected_file},
+            ))
 
 
 # app/services/endpoint_validator.py — replace validate_orphan_routes with this
 
-def validate_orphan_routes(project_path, metadata, errors):
+def validate_orphan_routes(project_path, metadata, errors, diagnostics=None):
     routes_dir = os.path.join(project_path, "app", "routes")
     if not os.path.exists(routes_dir):
         return
@@ -247,6 +281,18 @@ def validate_orphan_routes(project_path, metadata, errors):
         # Only flag files that main.py never imports — those are truly dead
         module_name = file.replace(".py", "")
         if module_name not in main_content and file not in main_content:
-            errors.append(
-                f"Orphan file: app/routes/{file} is not imported by main.py"
-            )
+            msg = f"Orphan file: app/routes/{file} is not imported by main.py"
+            errors.append(msg)
+            if diagnostics is not None:
+                # category=CONTRACT, severity=MEDIUM: exact parity with
+                # engine.py's default classification.
+                rel_path = f"app/routes/{file}"
+                diagnostics.append(Diagnostic(
+                    error_id=Diagnostic.make_id("static", ErrorCategory.CONTRACT, msg, rel_path),
+                    category=ErrorCategory.CONTRACT,
+                    severity=ErrorSeverity.MEDIUM,
+                    source="static",
+                    message=msg,
+                    file_path=rel_path,
+                    validator_name="validate_orphan_routes",
+                ))

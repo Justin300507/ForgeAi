@@ -1,8 +1,10 @@
 import ast
 import os
 
+from app.core.context import Diagnostic, ErrorCategory, ErrorSeverity
 
-def validate_self_shadowing_functions(project_path, errors):
+
+def validate_self_shadowing_functions(project_path, errors, diagnostics=None):
     """Detect a function definition that shadows an imported symbol
     of the same name, where the function body then calls that name —
     causing infinite self-recursion instead of calling the intended
@@ -70,10 +72,25 @@ def validate_self_shadowing_functions(project_path, errors):
 
                 if calls_self:
 
-                    errors.append(
+                    rel_path = os.path.relpath(file_path, project_path).replace(os.sep, "/")
+                    msg = (
                         f"Self-shadowing recursion risk in "
                         f"{os.path.relpath(file_path, project_path)}: "
                         f"function '{func_name}' has the same name as "
                         f"an imported symbol and calls itself instead "
                         f"of the intended import"
                     )
+                    errors.append(msg)
+                    if diagnostics is not None:
+                        # category=CONTRACT, severity=MEDIUM: exact parity
+                        # with engine.py's default classification (no
+                        # substring here matches a specific heuristic).
+                        diagnostics.append(Diagnostic(
+                            error_id=Diagnostic.make_id("static", ErrorCategory.CONTRACT, msg, rel_path),
+                            category=ErrorCategory.CONTRACT,
+                            severity=ErrorSeverity.MEDIUM,
+                            source="static",
+                            message=msg,
+                            file_path=rel_path,
+                            validator_name="validate_self_shadowing_functions",
+                        ))

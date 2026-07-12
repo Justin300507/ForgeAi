@@ -914,5 +914,91 @@
       "expected_delta": "+8% pass rate"
     },
     "summary": "Scores have fallen sharply after June 30 due to a surge in import‑related and routing errors. The core issues are inconsistent router naming, missing model imports, and incomplete endpoint scaffolding. Implementing import validation, stricter router naming enforcement, and unified model imports should collectively lift the pass rate by 30% or more."
+  },
+  {
+    "timestamp": "2026-07-12T19:56:17",
+    "trend": "stable",
+    "trend_explanation": "Scores fluctuate between low (22) and perfect (100) with no clear upward or downward trajectory. The two perfect scores are isolated spikes; the majority of recent runs hover around 50-70, indicating a plateau rather than consistent improvement.",
+    "regression_detected": false,
+    "regression_details": "",
+    "root_causes": [
+      {
+        "cause": "Inconsistent enforcement of architecture specifications",
+        "evidence": "MissingEndpoint appears in 48 out of 20 runs (48x count) and often coincides with RouterExportMismatch.",
+        "fix_type": "prompt_rule"
+      },
+      {
+        "cause": "Silent contract drift in CRUD journeys",
+        "evidence": "JourneyCRUDFailure occurs 32 times, typically after the register step when schemas change without updating route logic.",
+        "fix_type": "validator_addition"
+      },
+      {
+        "cause": "Improper handling of nullable values leading to runtime AttributeErrors",
+        "evidence": "AttributeError shows up 22 times, caused by calling methods on variables that may be None or string.",
+        "fix_type": "prompt_rule"
+      },
+      {
+        "cause": "Over‑importing undefined helper modules",
+        "evidence": "ImportError (14) and ModuleNotFoundError (10) together represent 24 occurrences, indicating imports are generated before the corresponding files exist.",
+        "fix_type": "pipeline"
+      },
+      {
+        "cause": "Mismatched router export names",
+        "evidence": "RouterExportMismatch appears in 9 runs, directly breaking FastAPI app inclusion.",
+        "fix_type": "prompt_rule"
+      }
+    ],
+    "pattern_clusters": [
+      {
+        "name": "Import & File Presence Failures",
+        "patterns": [
+          "ModuleNotFoundError",
+          "ImportError",
+          "MissingEndpoint",
+          "RouterExportMismatch"
+        ],
+        "frequency": 0.68,
+        "insight": "These errors co‑occur because main.py imports route modules before they are generated, and missing endpoint definitions cause both import and routing mismatches."
+      },
+      {
+        "name": "Runtime Type Errors",
+        "patterns": [
+          "AttributeError",
+          "ConfigAttributeError",
+          "SQLAlchemyError"
+        ],
+        "frequency": 0.45,
+        "insight": "Generated code frequently assumes non‑null values or imported models, leading to crashes when inputs are optional or foreign‑key models are absent."
+      }
+    ],
+    "top_improvements": [
+      {
+        "rank": 1,
+        "improvement": "Introduce a pre‑commit validator that scans main.py for import statements and verifies that each referenced route file and exported router variable exist before finalizing generation.",
+        "expected_impact": "+15% pass rate",
+        "effort": "low",
+        "type": "validator"
+      },
+      {
+        "rank": 2,
+        "improvement": "Add explicit prompt rules enforcing exact router naming conventions and mandatory endpoint definitions for every resource listed in the architecture plan.",
+        "expected_impact": "+10% pass rate",
+        "effort": "medium",
+        "type": "prompt_rule"
+      },
+      {
+        "rank": 3,
+        "improvement": "Implement a post‑generation type‑safety checker that inserts guard clauses (e.g., isinstance checks) for any variable that may be None or a string before calling methods on it.",
+        "expected_impact": "+8% pass rate",
+        "effort": "medium",
+        "type": "validator"
+      }
+    ],
+    "hypothesis": {
+      "statement": "Adding a pre‑generation import existence check will cut ModuleNotFoundError and ImportError occurrences by at least 50%, raising overall pass rate by ~8 points.",
+      "test_method": "Run 10 benchmark projects with the validator enabled versus 10 without; compare pass rates and failure pattern counts.",
+      "expected_delta": "+8% pass rate"
+    },
+    "summary": "The benchmark scores are currently stable with occasional high outliers, while pass rates remain low due to recurring architecture and import errors. Root causes stem from lax enforcement of naming conventions, missing endpoint implementations, and unsafe handling of nullable values. Targeted validators and stricter prompt rules are expected to deliver the biggest gains, especially by eliminating import‑related failures."
   }
 ]

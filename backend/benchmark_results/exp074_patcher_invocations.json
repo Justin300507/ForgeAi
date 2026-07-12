@@ -1,0 +1,61 @@
+{
+  "label": "exp074-validation-r1",
+  "invocations": [
+    {
+      "app": "blog_cms",
+      "file": "post_routes.py",
+      "patched_count_returned": 1,
+      "rewrites": [
+        {
+          "object": "post",
+          "original_attribute": "description",
+          "replacement_attribute": "title",
+          "before_line": "post.description = getattr(post_in, \"description\", post.description)",
+          "after_line": "post.title = getattr(post_in, \"description\", post.title)"
+        }
+      ]
+    },
+    {
+      "app": "blog_cms",
+      "file": "post_routes.py",
+      "patched_count_returned": 1,
+      "rewrites": [
+        {
+          "object": "post",
+          "original_attribute": "description",
+          "replacement_attribute": "title",
+          "before_line": "post.description = (",
+          "after_line": "post.title = ("
+        },
+        {
+          "object": "post",
+          "original_attribute": "description",
+          "replacement_attribute": "title",
+          "before_line": "post_in.description if post_in.description is not None else post.description",
+          "after_line": "post_in.description if post_in.description is not None else post.title"
+        }
+      ]
+    },
+    {
+      "app": "blog_cms",
+      "file": "post_routes.py",
+      "patched_count_returned": 1,
+      "rewrites": [
+        {
+          "object": "post",
+          "original_attribute": "description",
+          "replacement_attribute": "title",
+          "before_line": "post.description = (",
+          "after_line": "post.title = ("
+        },
+        {
+          "object": "post",
+          "original_attribute": "description",
+          "replacement_attribute": "title",
+          "before_line": "post_in.description if post_in.description is not None else post.description",
+          "after_line": "post_in.description if post_in.description is not None else post.title"
+        }
+      ]
+    }
+  ]
+}

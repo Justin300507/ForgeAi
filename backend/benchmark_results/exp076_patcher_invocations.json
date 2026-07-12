@@ -1,0 +1,34 @@
+{
+  "label": "exp076-validation-r2",
+  "invocations": [
+    {
+      "app": "inventory",
+      "file": "product_routes.py",
+      "fix_returned_changed": true,
+      "edits": [
+        {
+          "guard_line": "if product_in.unit_cost is not None:",
+          "original_line": "product.unit_cost = product_in.unit_cost",
+          "guarded_line": "product.unit_cost = product_in.unit_cost"
+        }
+      ],
+      "line_count_before": 180,
+      "line_count_after": 182
+    },
+    {
+      "app": "inventory",
+      "file": "transaction_routes.py",
+      "fix_returned_changed": true,
+      "edits": [
+        {
+          "guard_line": "if transaction_in.quantity is not None:",
+          "original_line": "transaction.quantity = transaction_in.quantity",
+          "guarded_line": "transaction.quantity = transaction_in.quantity"
+        }
+      ],
+      "line_count_before": 144,
+      "line_count_after": 146
+    }
+  ],
+  "model_files_changed": false
+}

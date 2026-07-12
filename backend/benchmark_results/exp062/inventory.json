@@ -1,0 +1,1359 @@
+{
+  "app": "inventory",
+  "timestamp": "2026-07-11T23:30:06.341442+00:00",
+  "crashed": false,
+  "error": null,
+  "elapsed_s": 211.7,
+  "result": {
+    "job_id": "be9b2faf3f6b4eeba1227f360cda9415",
+    "idea": "An inventory management system with user login. Users manage products (SKU, name, category, unit cost, selling price, current stock, reorder threshold). Add stock via purchase orders (supplier name, quantity, unit cost, date). Deduct stock via sales records (customer name, quantity, date). Dashboard shows low-stock alerts (items below reorder threshold), total inventory value, and recent movements. Search and filter products by category.",
+    "project_name": "inventory_manager",
+    "forge_score": 78.14,
+    "grade": "C",
+    "deployed": false,
+    "frontend_deployed": false,
+    "backend_url": null,
+    "frontend_url": null,
+    "fix_attempts": 4,
+    "total_tokens": 196284,
+    "estimated_cost": 0.11777040000000001,
+    "elapsed_s": 211.68,
+    "providers_used": [],
+    "timeline": [
+      {
+        "stage": "generation",
+        "status": "passed",
+        "duration_ms": 0.0
+      },
+      {
+        "stage": "deterministic-patch",
+        "status": "passed",
+        "duration_ms": 139.5
+      },
+      {
+        "stage": "verification",
+        "status": "passed",
+        "duration_ms": 21874.0
+      },
+      {
+        "stage": "static-validation",
+        "status": "failed",
+        "duration_ms": 316.4
+      },
+      {
+        "stage": "static-validation",
+        "status": "failed",
+        "duration_ms": 2068.9
+      },
+      {
+        "stage": "static-validation",
+        "status": "failed",
+        "duration_ms": 2088.0
+      },
+      {
+        "stage": "runtime-validation",
+        "status": "failed",
+        "duration_ms": 2788.7
+      },
+      {
+        "stage": "parallel-checks",
+        "status": "passed",
+        "duration_ms": 4959.1
+      },
+      {
+        "stage": "static-validation",
+        "status": "failed",
+        "duration_ms": 2086.2
+      },
+      {
+        "stage": "runtime-validation",
+        "status": "failed",
+        "duration_ms": 2609.9
+      },
+      {
+        "stage": "parallel-checks",
+        "status": "passed",
+        "duration_ms": 4586.7
+      },
+      {
+        "stage": "static-validation",
+        "status": "failed",
+        "duration_ms": 2066.3
+      },
+      {
+        "stage": "runtime-validation",
+        "status": "failed",
+        "duration_ms": 2724.2
+      },
+      {
+        "stage": "parallel-checks",
+        "status": "passed",
+        "duration_ms": 4580.3
+      },
+      {
+        "stage": "static-validation",
+        "status": "failed",
+        "duration_ms": 2007.0
+      },
+      {
+        "stage": "runtime-validation",
+        "status": "failed",
+        "duration_ms": 2568.4
+      },
+      {
+        "stage": "parallel-checks",
+        "status": "passed",
+        "duration_ms": 4649.8
+      },
+      {
+        "stage": "static-validation",
+        "status": "failed",
+        "duration_ms": 2051.7
+      },
+      {
+        "stage": "runtime-validation",
+        "status": "failed",
+        "duration_ms": 2724.8
+      },
+      {
+        "stage": "parallel-checks",
+        "status": "passed",
+        "duration_ms": 4685.9
+      }
+    ],
+    "score_history": [
+      {
+        "attempt": 0,
+        "score": 24.43,
+        "grade": "F"
+      },
+      {
+        "attempt": 1,
+        "score": 28.07,
+        "grade": "F"
+      },
+      {
+        "attempt": 4,
+        "score": 78.14,
+        "grade": "C"
+      },
+      {
+        "attempt": 4,
+        "score": 75.01,
+        "grade": "C"
+      },
+      {
+        "attempt": 4,
+        "score": 78.14,
+        "grade": "C"
+      },
+      {
+        "attempt": 4,
+        "score": 75.01,
+        "grade": "C"
+      },
+      {
+        "attempt": 4,
+        "score": 78.14,
+        "grade": "C"
+      }
+    ],
+    "dimensions": [
+      {
+        "name": "Compilation",
+        "score": 93.0,
+        "passed": true,
+        "na": false
+      },
+      {
+        "name": "Runtime Startup",
+        "score": 20.0,
+        "passed": false,
+        "na": false
+      },
+      {
+        "name": "API Functionality",
+        "score": 100.0,
+        "passed": true,
+        "na": false
+      },
+      {
+        "name": "Frontend Load",
+        "score": 100.0,
+        "passed": true,
+        "na": false
+      },
+      {
+        "name": "Browser UX",
+        "score": 88.0,
+        "passed": true,
+        "na": false
+      },
+      {
+        "name": "Integration",
+        "score": 92.3076923076923,
+        "passed": true,
+        "na": false
+      },
+      {
+        "name": "Code Quality",
+        "score": 94.0,
+        "passed": false,
+        "na": false
+      },
+      {
+        "name": "Security",
+        "score": 100.0,
+        "passed": true,
+        "na": false
+      },
+      {
+        "name": "Completeness",
+        "score": 100.0,
+        "passed": true,
+        "na": false
+      },
+      {
+        "name": "Performance",
+        "score": 90,
+        "passed": true,
+        "na": false
+      },
+      {
+        "name": "Visual Judge",
+        "score": 43.3,
+        "passed": false,
+        "na": false
+      }
+    ],
+    "v6_result": {
+      "pipeline": "v6",
+      "project_name": "inventory_manager",
+      "project_path": "C:\\Users\\jerry\\onedrive\\Desktop\\forgeai\\generated_projects\\inventory_manager",
+      "zip_path": "C:\\Users\\jerry\\onedrive\\Desktop\\forgeai\\generated_projects\\inventory_manager.zip",
+      "metadata_path": "C:\\Users\\jerry\\onedrive\\Desktop\\forgeai\\generated_projects\\inventory_manager\\metadata.json",
+      "plan": {
+        "project_name": "inventory_manager",
+        "display_name": "Inventory Management System",
+        "features": [
+          "Secure login using email/password and JWT tokens for API protection",
+          "CRUD endpoints for products with fields like SKU, name, category, costs, stock, and reorder threshold",
+          "Create purchase and sale transactions that automatically adjust product stock levels",
+          "Shows low‑stock alerts, total inventory value, and recent stock movements"
+        ],
+        "tech_stack": {
+          "backend": "FastAPI",
+          "database": "SQLite",
+          "auth": "JWT",
+          "frontend": "React + Vite"
+        },
+        "db_entities": [
+          "User",
+          "Product",
+          "Transaction"
+        ],
+        "api_modules": [
+          "auth",
+          "products",
+          "transactions"
+        ],
+        "user_stories": [
+          {
+            "role": "Business owner",
+            "want": "to log in to the system",
+            "acceptance_criteria": [
+              "Valid email and password return a JWT token with 200 status",
+              "The token must be required for all subsequent API calls (401 if missing/invalid)",
+              "Invalid credentials return a 401 error with an appropriate error message"
+            ]
+          },
+          {
+            "role": "Business owner",
+            "want": "to add a new product",
+            "acceptance_criteria": [
+              "POST /products with all required fields creates a product and returns 201",
+              "The newly created product appears in the GET /products list",
+              "current_stock is initialized to 0 and cannot be negative"
+            ]
+          },
+          {
+            "role": "Business owner",
+            "want": "to record a purchase order",
+            "acceptance_criteria": [
+              "POST /transactions with type='purchase' updates product.current_stock = previous + quantity",
+              "The transaction is persisted with correct product_id, quantity, unit_cost, date, and partner_name",
+              "Response includes the updated product stock value"
+            ]
+          },
+          {
+            "role": "Business owner",
+            "want": "to record a sale",
+            "acceptance_criteria": [
+              "POST /transactions with type='sale' reduces product.current_stock by quantity",
+              "If quantity exceeds current_stock, the API returns 400 with an error message",
+              "The sale transaction is stored with all supplied fields"
+            ]
+          },
+          {
+            "role": "Business owner",
+            "want": "to view a dashboard",
+            "acceptance_criteria": [
+              "GET /dashboard returns a list of products where current_stock < reorder_threshold",
+              "Response includes total_inventory_value = sum(product.current_stock * product.unit_cost)",
+              "Response includes the 5 most recent transactions sorted by date descending"
+            ]
+          },
+          {
+            "role": "Business owner",
+            "want": "to search products by category",
+            "acceptance_criteria": [
+              "GET /products?category=Electronics returns only products in the Electronics category",
+              "Search is case‑insensitive and trims whitespace",
+              "Pagination parameters (page, limit) work and default to page=1, limit=20"
+            ]
+          },
+          {
+            "role": "Business owner",
+            "want": "to edit product details",
+            "acceptance_criteria": [
+              "PATCH /products/{id} updates allowed fields and returns 200 with the updated product",
+              "Changing SKU to a value that already exists on another product returns 400",
+              "Updated fields are reflected in subsequent GET /products calls"
+            ]
+          }
+        ],
+        "non_functional_requirements": {
+          "authentication": "required — protects all data endpoints",
+          "authorization": "any authenticated user can perform CRUD; no role hierarchy needed",
+          "pagination": "required on GET /products and GET /transactions endpoints",
+          "search": "products endpoint supports category filter and name/SKU search",
+          "file_uploads": "no",
+          "real_time": "no"
+        },
+        "data_entities_detail": [
+          {
+            "name": "User",
+            "description": "Stores login credentials and basic profile information",
+            "key_fields": [
+              "id",
+              "email"
+            ],
+            "relationships": []
+          },
+          {
+            "name": "Product",
+            "description": "Represents an inventory item with pricing and stock thresholds",
+            "key_fields": [
+              "id",
+              "sku"
+            ],
+            "relationships": [
+              "has many Transaction"
+            ]
+          },
+          {
+            "name": "Transaction",
+            "description": "Records a purchase or sale that modifies product stock",
+            "key_fields": [
+              "id",
+              "product_id",
+              "type"
+            ],
+            "relationships": [
+              "belongs to Product"
+            ]
+          }
+        ],
+        "out_of_scope": [
+          "Role‑based permissions beyond simple authentication",
+          "Supplier or customer management beyond name fields in transactions",
+          "Advanced reporting, export/import, or email notifications",
+          "Multi‑tenant or organization support"
+        ]
+      },
+      "architecture": {
+        "api_endpoints": [
+          {
+            "method": "POST",
+            "path": "/auth/register",
+            "description": "Register a new user with email and password",
+            "file": "app\\routes\\auth_routes.py"
+          },
+          {
+            "method": "POST",
+            "path": "/auth/login",
+            "description": "Authenticate user and return JWT token",
+            "file": "app\\routes\\auth_routes.py"
+          },
+          {
+            "method": "GET",
+            "path": "/auth/me",
+            "description": "Get current authenticated user profile",
+            "file": "app\\routes\\auth_routes.py"
+          },
+          {
+            "method": "GET",
+            "path": "/products",
+            "description": "Retrieve paginated list of products with optional search by name or SKU and filter by category",
+            "file": "app\\routes\\product_routes.py"
+          },
+          {
+            "method": "GET",
+            "path": "/products/{id}",
+            "description": "Get details of a single product by its ID",
+            "file": "app\\routes\\product_routes.py"
+          },
+          {
+            "method": "POST",
+            "path": "/products",
+            "description": "Create a new product; current_stock is initialized to 0",
+            "file": "app\\routes\\product_routes.py"
+          },
+          {
+            "method": "PUT",
+            "path": "/products/{id}",
+            "description": "Replace an existing product with new data; validates unique SKU",
+            "file": "app\\routes\\product_routes.py"
+          },
+          {
+            "method": "DELETE",
+            "path": "/products/{id}",
+            "description": "Delete a product by its ID",
+            "file": "app\\routes\\product_routes.py"
+          },
+          {
+            "method": "GET",
+            "path": "/transactions",
+            "description": "Retrieve paginated list of transactions with optional filter by type and date range",
+            "file": "app\\routes\\transaction_routes.py"
+          },
+          {
+            "method": "GET",
+            "path": "/transactions/{id}",
+            "description": "Get details of a single transaction by its ID",
+            "file": "app\\routes\\transaction_routes.py"
+          },
+          {
+            "method": "POST",
+            "path": "/transactions",
+            "description": "Create a purchase or sale transaction; updates product stock accordingly",
+            "file": "app\\routes\\transaction_routes.py"
+          },
+          {
+            "method": "PUT",
+            "path": "/transactions/{id}",
+            "description": "Update an existing transaction; stock adjustments are re‑applied",
+            "file": "app\\routes\\transaction_routes.py"
+          },
+          {
+            "method": "DELETE",
+            "path": "/transactions/{id}",
+            "description": "Delete a transaction and revert its stock effect",
+            "file": "app\\routes\\transaction_routes.py"
+          },
+          {
+            "method": "POST",
+            "path": "/seed",
+            "description": "Populate the database with demo data for users, categories, products, and transactions",
+            "file": "app\\routes\\seed_routes.py"
+          },
+          {
+            "method": "GET",
+            "path": "/dashboard/summary",
+            "description": "Return low‑stock alerts, total inventory value, and recent transactions for dashboard display",
+            "file": "app\\routes\\stats_routes.py"
+          }
+        ],
+        "database_schema": [
+          {
+            "table_name": "users",
+            "columns": [
+              {
+                "name": "id",
+                "type": "INTEGER",
+                "is_primary_key": true,
+                "is_nullable": false
+              },
+              {
+                "name": "email",
+                "type": "VARCHAR(255)",
+                "is_primary_key": false,
+                "is_nullable": false
+              },
+              {
+                "name": "hashed_password",
+                "type": "VARCHAR(255)",
+                "is_primary_key": false,
+                "is_nullable": false
+              },
+              {
+                "name": "created_at",
+                "type": "DATETIME",
+                "is_primary_key": false,
+                "is_nullable": false
+              }
+            ]
+          },
+          {
+            "table_name": "categories",
+            "columns": [
+              {
+                "name": "id",
+                "type": "INTEGER",
+                "is_primary_key": true,
+                "is_nullable": false
+              },
+              {
+                "name": "name",
+                "type": "VARCHAR(100)",
+                "is_primary_key": false,
+                "is_nullable": false
+              }
+            ]
+          },
+          {
+            "table_name": "products",
+            "columns": [
+              {
+                "name": "id",
+                "type": "INTEGER",
+                "is_primary_key": true,
+                "is_nullable": false
+              },
+              {
+                "name": "sku",
+                "type": "VARCHAR(50)",
+                "is_primary_key": false,
+                "is_nullable": false
+              },
+              {
+                "name": "name",
+                "type": "VARCHAR(200)",
+                "is_primary_key": false,
+                "is_nullable": false
+              },
+              {
+                "name": "category_id",
+                "type": "INTEGER",
+                "is_primary_key": false,
+                "is_nullable": false
+              },
+              {
+                "name": "unit_cost",
+                "type": "FLOAT",
+                "is_primary_key": false,
+                "is_nullable": false
+              },
+              {
+                "name": "current_stock",
+                "type": "INTEGER",
+                "is_primary_key": false,
+                "is_nullable": false
+              },
+              {
+                "name": "reorder_threshold",
+                "type": "INTEGER",
+                "is_primary_key": false,
+                "is_nullable": false
+              },
+              {
+                "name": "created_at",
+                "type": "DATETIME",
+                "is_primary_key": false,
+                "is_nullable": false
+              }
+            ]
+          },
+          {
+            "table_name": "transactions",
+            "columns": [
+              {
+                "name": "id",
+                "type": "INTEGER",
+                "is_primary_key": true,
+                "is_nullable": false
+              },
+              {
+                "name": "product_id",
+                "type": "INTEGER",
+                "is_primary_key": false,
+                "is_nullable": false
+              },
+              {
+                "name": "type",
+                "type": "VARCHAR(20)",
+                "is_primary_key": false,
+                "is_nullable": false
+              },
+              {
+                "name": "quantity",
+                "type": "INTEGER",
+                "is_primary_key": false,
+                "is_nullable": false
+              },
+              {
+                "name": "unit_price",
+                "type": "FLOAT",
+                "is_primary_key": false,
+                "is_nullable": false
+              },
+              {
+                "name": "partner_name",
+                "type": "VARCHAR(200)",
+                "is_primary_key": false,
+                "is_nullable": true
+              },
+              {
+                "name": "transaction_date",
+                "type": "DATETIME",
+                "is_primary_key": false,
+                "is_nullable": false
+              },
+              {
+                "name": "created_at",
+                "type": "DATETIME",
+                "is_primary_key": false,
+                "is_nullable": false
+              }
+            ]
+          }
+        ],
+        "folder_structure": {
+          "backend": [
+            "app/models",
+            "app/schemas",
+            "app/routes",
+            "app/services",
+            "app/utils",
+            "app/config",
+            "app/dependencies",
+            "app/auth"
+          ]
+        },
+        "frontend_structure": {
+          "pages": [
+            "LoginPage",
+            "DashboardPage",
+            "ProductsPage",
+            "ProductFormPage",
+            "TransactionsPage",
+            "TransactionFormPage",
+            "SettingsPage"
+          ],
+          "components": [
+            "Navbar",
+            "ProductCard",
+            "TransactionItem",
+            "SearchBar",
+            "Pagination",
+            "ProductForm",
+            "TransactionForm",
+            "DashboardStats",
+            "LowStockAlert",
+            "CategoryFilter"
+          ]
+        }
+      },
+      "product_spec": {
+        "display_name": "Inventory Management System",
+        "tagline": "Simple web app for tracking product stock, purchases, and sales.",
+        "user_stories": 7,
+        "must_have_features": [
+          "User Authentication",
+          "Product Management",
+          "Transaction Management",
+          "Dashboard Overview"
+        ]
+      },
+      "tech_lead": {
+        "summary": "The overall architecture covers the core features but deviates from several mandatory contract requirements (auth endpoint naming, stats endpoint path, health endpoint, pagination style) and misses a PATCH product endpoint. Security, validation, and DB relationship handling are mostly sound but need adjustments to fully comply.",
+        "critical_issues": 3,
+        "warnings": 2
+      },
+      "backend_generation": {
+        "parallel": true,
+        "files": 28
+      },
+      "qa": {
+        "score": 60,
+        "stories_covered": 2,
+        "blockers": [
+          "Missing pagination defaults (page/limit) as required by spec",
+          "Missing PATCH endpoint for product edits",
+          "Transaction endpoints do not enforce stock rules or return required error responses"
+        ],
+        "skipped": false
+      },
+      "security": {
+        "score": 78,
+        "risk_level": "medium",
+        "critical_count": 1,
+        "high_count": 3,
+        "skipped": false
+      },
+      "code_review": {
+        "naming_score": 80,
+        "architecture_score": 60,
+        "maintainability_score": 55,
+        "tech_debt_score": 40,
+        "overall_score": 59,
+        "skipped": false
+      },
+      "performance": {
+        "score": 68,
+        "n_plus_one_count": 1,
+        "missing_indexes": 4,
+        "large_payload_risks": 1,
+        "slow_api_warnings": 1,
+        "skipped": false
+      },
+      "frontend_critic": {
+        "design_score": 24,
+        "hierarchy_score": 30,
+        "compliance_score": 22,
+        "polish_score": 25,
+        "consistency_score": 20,
+        "files_polished": 1,
+        "skipped": false
+      },
+      "validation": {
+        "passed": true,
+        "errors": [],
+        "diagnostics": []
+      },
+      "runtime": {
+        "success": false,
+        "healthy": false,
+        "exit_code": 1,
+        "stdout": "",
+        "stderr": "Traceback (most recent call last):\n  File \"<frozen runpy>\", line 203, in _run_module_as_main\n  File \"<frozen runpy>\", line 88, in _run_code\n  File \"C:\\Users\\jerry\\onedrive\\Desktop\\forgeai\\backend\\venv\\Lib\\site-packages\\uvicorn\\__main__.py\", line 4, in <module>\n    uvicorn.main()\n    ~~~~~~~~~~~~^^\n  File \"C:\\Users\\jerry\\onedrive\\Desktop\\forgeai\\backend\\venv\\Lib\\site-packages\\click\\core.py\", line 1524, in __call__\n    return self.main(*args, **kwargs)\n           ~~~~~~~~~^^^^^^^^^^^^^^^^^\n  File \"C:\\Users\\jerry\\onedrive\\Desktop\\forgeai\\backend\\venv\\Lib\\site-packages\\click\\core.py\", line 1445, in main\n    rv = self.invoke(ctx)\n  File \"C:\\Users\\jerry\\onedrive\\Desktop\\forgeai\\backend\\venv\\Lib\\site-packages\\click\\core.py\", line 1308, in invoke\n    return ctx.invoke(self.callback, **ctx.params)\n           ~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"C:\\Users\\jerry\\onedrive\\Desktop\\forgeai\\backend\\venv\\Lib\\site-packages\\click\\core.py\", line 877, in invoke\n    return callback(*args, **kwargs)\n  File \"C:\\Users\\jerry\\onedrive\\Desktop\\forgeai\\backend\\venv\\Lib\\site-packages\\uvicorn\\main.py\", line 441, in main\n    run(\n    ~~~^\n        app,\n        ^^^^\n    ...<48 lines>...\n        reset_contextvars=reset_contextvars,\n        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n    )\n    ^\n  File \"C:\\Users\\jerry\\onedrive\\Desktop\\forgeai\\backend\\venv\\Lib\\site-packages\\uvicorn\\main.py\", line 609, in run\n    config.load_app()\n    ~~~~~~~~~~~~~~~^^\n  File \"C:\\Users\\jerry\\onedrive\\Desktop\\forgeai\\backend\\venv\\Lib\\site-packages\\uvicorn\\config.py\", line 415, in load_app\n    return import_from_string(self.app)\n  File \"C:\\Users\\jerry\\onedrive\\Desktop\\forgeai\\backend\\venv\\Lib\\site-packages\\uvicorn\\importer.py\", line 19, in import_from_string\n    module = importlib.import_module(module_str)\n  File \"C:\\Users\\jerry\\AppData\\Local\\Python\\pythoncore-3.14-64\\Lib\\importlib\\__init__.py\", line 88, in import_module\n    return _bootstrap._gcd_import(name[level:], package, level)\n           ~~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"<frozen importlib._bootstrap>\", line 1406, in _gcd_import\n  File \"<frozen importlib._bootstrap>\", line 1371, in _find_and_load\n  File \"<frozen importlib._bootstrap>\", line 1342, in _find_and_load_unlocked\n  File \"<frozen importlib._bootstrap>\", line 938, in _load_unlocked\n  File \"<frozen importlib._bootstrap_external>\", line 759, in exec_module\n  File \"<frozen importlib._bootstrap>\", line 491, in _call_with_frames_removed\n  File \"C:\\Users\\jerry\\onedrive\\Desktop\\forgeai\\generated_projects\\inventory_manager\\app\\main.py\", line 36, in <module>\n    from app.routes.product_routes import product_router\n  File \"C:\\Users\\jerry\\onedrive\\Desktop\\forgeai\\generated_projects\\inventory_manager\\app\\routes\\product_routes.py\", line 14\n    from app.schemas.product import ProductCreate\n    ^^^^\nSyntaxError: invalid syntax\n\nHealth Check Failed",
+        "startup_time": 7.633432149887085,
+        "behavioral_issues": [],
+        "total_endpoints": 0,
+        "timeout_count": 0,
+        "error_count": 0,
+        "endpoint_pass_rate": 0.0,
+        "crud_passed": null,
+        "journey": null,
+        "parsed_error": {
+          "type": "SyntaxError",
+          "error_file": "C:\\Users\\jerry\\onedrive\\Desktop\\forgeai\\generated_projects\\inventory_manager\\app\\routes\\product_routes.py"
+        }
+      },
+      "forge_score": {
+        "score": 70,
+        "grade": "C"
+      },
+      "v6_score": {
+        "total": 51,
+        "grade": "D",
+        "dimensions": {
+          "runtime": 40,
+          "security": 63,
+          "performance": 41,
+          "maintainability": 59,
+          "review": 59
+        },
+        "breakdown": {
+          "forge_score": 70,
+          "runtime_passed": false,
+          "static_passed": true,
+          "security_score": 78,
+          "security_critical": 1,
+          "performance_score": 68,
+          "n_plus_one_count": 1,
+          "naming_score": 80,
+          "architecture_score": 60,
+          "maintainability_score": 55,
+          "tech_debt_score": 40,
+          "qa_score": 60,
+          "qa_blockers": 3
+        },
+        "weights": {
+          "runtime": 0.3,
+          "security": 0.25,
+          "performance": 0.15,
+          "maintainability": 0.15,
+          "review": 0.15
+        }
+      },
+      "collaboration_log": [
+        {
+          "agent": "product_manager",
+          "decision": "product_spec_created",
+          "rationale": "Simple web app for tracking product stock, purchases, and sales.",
+          "data": {
+            "features": 5,
+            "user_stories": 7,
+            "must_have": [
+              "User Authentication",
+              "Product Management",
+              "Transaction Management",
+              "Dashboard Overview"
+            ]
+          }
+        },
+        {
+          "agent": "architect",
+          "decision": "architecture_created",
+          "rationale": "15 endpoints across 5 files",
+          "data": {
+            "endpoints": 15
+          }
+        },
+        {
+          "agent": "tech_lead",
+          "decision": "constraints_set",
+          "rationale": "The overall architecture covers the core features but deviates from several mandatory contract requirements (auth endpoint naming, stats endpoint path",
+          "data": {
+            "critical_issues": 3,
+            "auth_endpoints": 13,
+            "pagination_required": 2
+          }
+        },
+        {
+          "agent": "qa",
+          "decision": "qa_review_complete",
+          "rationale": "QA score: 60/100",
+          "data": {
+            "score": 60,
+            "blockers": [
+              "Missing pagination defaults (page/limit) as required by spec",
+              "Missing PATCH endpoint for product edits",
+              "Transaction endpoints do not enforce stock rules or return required error responses"
+            ]
+          }
+        },
+        {
+          "agent": "security",
+          "decision": "security_review_complete",
+          "rationale": "Security score: 78/100",
+          "data": {
+            "score": 78
+          }
+        },
+        {
+          "agent": "code_review",
+          "decision": "code_review_complete",
+          "rationale": "Maintainability: 55/100",
+          "data": {
+            "maintainability_score": 55
+          }
+        },
+        {
+          "agent": "performance",
+          "decision": "performance_review_complete",
+          "rationale": "Performance score: 68/100",
+          "data": {
+            "score": 68
+          }
+        },
+        {
+          "agent": "frontend_critic",
+          "decision": "frontend_critic_complete",
+          "rationale": "Design score: 24/100",
+          "data": {
+            "score": 24
+          }
+        },
+        {
+          "agent": "orchestrator",
+          "decision": "pipeline_complete",
+          "rationale": "V6 score: 51/100",
+          "data": {
+            "total_time": 68.35,
+            "can_export": false
+          }
+        }
+      ],
+      "generation_time_seconds": 68.35,
+      "fix_attempts": 2
+    },
+    "retry_history": [
+      {
+        "attempt": 1,
+        "strategy": "patch_file",
+        "provider": "auto",
+        "score_before": 24.43,
+        "score_after": 28.07,
+        "delta": 3.64
+      },
+      {
+        "attempt": 2,
+        "strategy": "switch_model",
+        "provider": "gemini",
+        "score_before": 28.07,
+        "score_after": 78.14,
+        "delta": 50.07
+      },
+      {
+        "attempt": 3,
+        "strategy": "switch_model",
+        "provider": "openrouter",
+        "score_before": 78.14,
+        "score_after": 78.14,
+        "delta": 0.0
+      },
+      {
+        "attempt": 4,
+        "strategy": "switch_model",
+        "provider": "cerebras",
+        "score_before": 78.14,
+        "score_after": 78.14,
+        "delta": 0.0
+      }
+    ],
+    "deployment": {
+      "skipped": true,
+      "reason": "Deployment skipped: score 78.1 below deployment threshold (80)"
+    },
+    "project_path": "C:\\Users\\jerry\\onedrive\\Desktop\\forgeai\\generated_projects\\inventory_manager",
+    "status": "done",
+    "confidence": {
+      "probability": 0.2371,
+      "pct": 23.71,
+      "grade": "F",
+      "factors": {
+        "base": -0.5,
+        "overall_score": 1.526,
+        "runtime_health": 0.1,
+        "browser_ux": 0.264,
+        "compilation": 0.186,
+        "fix_penalty": -1.6,
+        "critical_errors": -1.0,
+        "historical_base_rate": -0.145
+      },
+      "historical_rate": 0.3372,
+      "historical_n": 86,
+      "verdict": "Not deployment-ready — critical issues likely remain."
+    }
+  },
+  "observed": {
+    "validate_project_calls": [
+      {
+        "elapsed_ms": 316.3,
+        "errors": [
+          "Missing endpoint DELETE /products/{id} (expected in app/routes/product_routes.py)",
+          "Missing endpoint GET /products (expected in app/routes/product_routes.py)",
+          "Missing endpoint GET /products/{id} (expected in app/routes/product_routes.py)",
+          "Missing endpoint POST /products (expected in app/routes/product_routes.py)",
+          "Missing endpoint PUT /products/{id} (expected in app/routes/product_routes.py)",
+          "Schema mismatch: app/schemas/product.py: ProductCreate.sku required but model allows NULL",
+          "Schema mismatch: app/schemas/product.py: ProductCreate.name required but model allows NULL",
+          "Schema mismatch: app/schemas/transaction.py: TransactionCreate.type required but model allows NULL",
+          "Syntax error in app\\routes\\product_routes.py:   File \"C:\\Users\\jerry\\onedrive\\Desktop\\forgeai\\generated_projects\\inventory_manager\\app\\routes\\product_routes.py\", line 14\n    from app.schemas.product import ProductCreate\n    ^^^^\nSyntaxError: invalid syntax\n"
+        ],
+        "diagnostics": [
+          {
+            "validator_name": "validate_endpoints",
+            "category": "api",
+            "severity": "medium",
+            "file_path": "app/routes/product_routes.py",
+            "message": "Missing endpoint DELETE /products/{id} (expected in app/routes/product_routes.py)"
+          },
+          {
+            "validator_name": "validate_endpoints",
+            "category": "api",
+            "severity": "medium",
+            "file_path": "app/routes/product_routes.py",
+            "message": "Missing endpoint GET /products (expected in app/routes/product_routes.py)"
+          },
+          {
+            "validator_name": "validate_endpoints",
+            "category": "api",
+            "severity": "medium",
+            "file_path": "app/routes/product_routes.py",
+            "message": "Missing endpoint GET /products/{id} (expected in app/routes/product_routes.py)"
+          },
+          {
+            "validator_name": "validate_endpoints",
+            "category": "api",
+            "severity": "medium",
+            "file_path": "app/routes/product_routes.py",
+            "message": "Missing endpoint POST /products (expected in app/routes/product_routes.py)"
+          },
+          {
+            "validator_name": "validate_endpoints",
+            "category": "api",
+            "severity": "medium",
+            "file_path": "app/routes/product_routes.py",
+            "message": "Missing endpoint PUT /products/{id} (expected in app/routes/product_routes.py)"
+          },
+          {
+            "validator_name": "validate_schema_model_consistency",
+            "category": "contract",
+            "severity": "medium",
+            "file_path": "app/schemas/product.py",
+            "message": "Schema mismatch: app/schemas/product.py: ProductCreate.sku required but model allows NULL"
+          },
+          {
+            "validator_name": "validate_schema_model_consistency",
+            "category": "contract",
+            "severity": "medium",
+            "file_path": "app/schemas/product.py",
+            "message": "Schema mismatch: app/schemas/product.py: ProductCreate.name required but model allows NULL"
+          },
+          {
+            "validator_name": "validate_schema_model_consistency",
+            "category": "contract",
+            "severity": "medium",
+            "file_path": "app/schemas/transaction.py",
+            "message": "Schema mismatch: app/schemas/transaction.py: TransactionCreate.type required but model allows NULL"
+          }
+        ]
+      },
+      {
+        "elapsed_ms": 2068.8,
+        "errors": [
+          "Missing endpoint DELETE /products/{id} (expected in app/routes/product_routes.py)",
+          "Missing endpoint GET /products (expected in app/routes/product_routes.py)",
+          "Missing endpoint GET /products/{id} (expected in app/routes/product_routes.py)",
+          "Missing endpoint POST /products (expected in app/routes/product_routes.py)",
+          "Missing endpoint PUT /products/{id} (expected in app/routes/product_routes.py)",
+          "Syntax error in app\\routes\\product_routes.py:   File \"C:\\Users\\jerry\\onedrive\\Desktop\\forgeai\\generated_projects\\inventory_manager\\app\\routes\\product_routes.py\", line 14\n    from app.schemas.product import ProductCreate\n    ^^^^\nSyntaxError: invalid syntax\n"
+        ],
+        "diagnostics": [
+          {
+            "validator_name": "validate_endpoints",
+            "category": "api",
+            "severity": "medium",
+            "file_path": "app/routes/product_routes.py",
+            "message": "Missing endpoint DELETE /products/{id} (expected in app/routes/product_routes.py)"
+          },
+          {
+            "validator_name": "validate_endpoints",
+            "category": "api",
+            "severity": "medium",
+            "file_path": "app/routes/product_routes.py",
+            "message": "Missing endpoint GET /products (expected in app/routes/product_routes.py)"
+          },
+          {
+            "validator_name": "validate_endpoints",
+            "category": "api",
+            "severity": "medium",
+            "file_path": "app/routes/product_routes.py",
+            "message": "Missing endpoint GET /products/{id} (expected in app/routes/product_routes.py)"
+          },
+          {
+            "validator_name": "validate_endpoints",
+            "category": "api",
+            "severity": "medium",
+            "file_path": "app/routes/product_routes.py",
+            "message": "Missing endpoint POST /products (expected in app/routes/product_routes.py)"
+          },
+          {
+            "validator_name": "validate_endpoints",
+            "category": "api",
+            "severity": "medium",
+            "file_path": "app/routes/product_routes.py",
+            "message": "Missing endpoint PUT /products/{id} (expected in app/routes/product_routes.py)"
+          }
+        ]
+      },
+      {
+        "elapsed_ms": 2087.9,
+        "errors": [
+          "Missing endpoint PUT /products/{id} (expected in app/routes/product_routes.py)"
+        ],
+        "diagnostics": [
+          {
+            "validator_name": "validate_endpoints",
+            "category": "api",
+            "severity": "medium",
+            "file_path": "app/routes/product_routes.py",
+            "message": "Missing endpoint PUT /products/{id} (expected in app/routes/product_routes.py)"
+          }
+        ]
+      },
+      {
+        "elapsed_ms": 2086.2,
+        "errors": [
+          "Missing endpoint DELETE /products/{id} (expected in app/routes/product_routes.py)"
+        ],
+        "diagnostics": [
+          {
+            "validator_name": "validate_endpoints",
+            "category": "api",
+            "severity": "medium",
+            "file_path": "app/routes/product_routes.py",
+            "message": "Missing endpoint DELETE /products/{id} (expected in app/routes/product_routes.py)"
+          }
+        ]
+      },
+      {
+        "elapsed_ms": 2066.3,
+        "errors": [
+          "Missing endpoint PUT /products/{id} (expected in app/routes/product_routes.py)"
+        ],
+        "diagnostics": [
+          {
+            "validator_name": "validate_endpoints",
+            "category": "api",
+            "severity": "medium",
+            "file_path": "app/routes/product_routes.py",
+            "message": "Missing endpoint PUT /products/{id} (expected in app/routes/product_routes.py)"
+          }
+        ]
+      },
+      {
+        "elapsed_ms": 2006.9,
+        "errors": [
+          "Missing endpoint DELETE /products/{id} (expected in app/routes/product_routes.py)"
+        ],
+        "diagnostics": [
+          {
+            "validator_name": "validate_endpoints",
+            "category": "api",
+            "severity": "medium",
+            "file_path": "app/routes/product_routes.py",
+            "message": "Missing endpoint DELETE /products/{id} (expected in app/routes/product_routes.py)"
+          }
+        ]
+      },
+      {
+        "elapsed_ms": 2051.6,
+        "errors": [
+          "Missing endpoint PUT /products/{id} (expected in app/routes/product_routes.py)"
+        ],
+        "diagnostics": [
+          {
+            "validator_name": "validate_endpoints",
+            "category": "api",
+            "severity": "medium",
+            "file_path": "app/routes/product_routes.py",
+            "message": "Missing endpoint PUT /products/{id} (expected in app/routes/product_routes.py)"
+          }
+        ]
+      }
+    ],
+    "static_validator_stage_calls": [
+      {
+        "status": "failed",
+        "diagnostics": [
+          {
+            "validator_name": "validate_endpoints",
+            "legacy_adapter_used": false,
+            "category": "api",
+            "severity": "medium",
+            "file_path": "app/routes/product_routes.py",
+            "message": "Missing endpoint DELETE /products/{id} (expected in app/routes/product_routes.py)"
+          },
+          {
+            "validator_name": "validate_endpoints",
+            "legacy_adapter_used": false,
+            "category": "api",
+            "severity": "medium",
+            "file_path": "app/routes/product_routes.py",
+            "message": "Missing endpoint GET /products (expected in app/routes/product_routes.py)"
+          },
+          {
+            "validator_name": "validate_endpoints",
+            "legacy_adapter_used": false,
+            "category": "api",
+            "severity": "medium",
+            "file_path": "app/routes/product_routes.py",
+            "message": "Missing endpoint GET /products/{id} (expected in app/routes/product_routes.py)"
+          },
+          {
+            "validator_name": "validate_endpoints",
+            "legacy_adapter_used": false,
+            "category": "api",
+            "severity": "medium",
+            "file_path": "app/routes/product_routes.py",
+            "message": "Missing endpoint POST /products (expected in app/routes/product_routes.py)"
+          },
+          {
+            "validator_name": "validate_endpoints",
+            "legacy_adapter_used": false,
+            "category": "api",
+            "severity": "medium",
+            "file_path": "app/routes/product_routes.py",
+            "message": "Missing endpoint PUT /products/{id} (expected in app/routes/product_routes.py)"
+          },
+          {
+            "validator_name": "validate_schema_model_consistency",
+            "legacy_adapter_used": false,
+            "category": "contract",
+            "severity": "medium",
+            "file_path": "app/schemas/product.py",
+            "message": "Schema mismatch: app/schemas/product.py: ProductCreate.sku required but model allows NULL"
+          },
+          {
+            "validator_name": "validate_schema_model_consistency",
+            "legacy_adapter_used": false,
+            "category": "contract",
+            "severity": "medium",
+            "file_path": "app/schemas/product.py",
+            "message": "Schema mismatch: app/schemas/product.py: ProductCreate.name required but model allows NULL"
+          },
+          {
+            "validator_name": "validate_schema_model_consistency",
+            "legacy_adapter_used": false,
+            "category": "contract",
+            "severity": "medium",
+            "file_path": "app/schemas/transaction.py",
+            "message": "Schema mismatch: app/schemas/transaction.py: TransactionCreate.type required but model allows NULL"
+          },
+          {
+            "validator_name": null,
+            "legacy_adapter_used": true,
+            "category": "syntax",
+            "severity": "critical",
+            "file_path": "app/routes/product_routes.py",
+            "message": "Syntax error in app\\routes\\product_routes.py:   File \"C:\\Users\\jerry\\onedrive\\Desktop\\forgeai\\generated_projects\\inventory_manager\\app\\routes\\product_routes.py\", line 14\n    from app.schemas.product i"
+          }
+        ]
+      },
+      {
+        "status": "failed",
+        "diagnostics": [
+          {
+            "validator_name": "validate_endpoints",
+            "legacy_adapter_used": false,
+            "category": "api",
+            "severity": "medium",
+            "file_path": "app/routes/product_routes.py",
+            "message": "Missing endpoint DELETE /products/{id} (expected in app/routes/product_routes.py)"
+          },
+          {
+            "validator_name": "validate_endpoints",
+            "legacy_adapter_used": false,
+            "category": "api",
+            "severity": "medium",
+            "file_path": "app/routes/product_routes.py",
+            "message": "Missing endpoint GET /products (expected in app/routes/product_routes.py)"
+          },
+          {
+            "validator_name": "validate_endpoints",
+            "legacy_adapter_used": false,
+            "category": "api",
+            "severity": "medium",
+            "file_path": "app/routes/product_routes.py",
+            "message": "Missing endpoint GET /products/{id} (expected in app/routes/product_routes.py)"
+          },
+          {
+            "validator_name": "validate_endpoints",
+            "legacy_adapter_used": false,
+            "category": "api",
+            "severity": "medium",
+            "file_path": "app/routes/product_routes.py",
+            "message": "Missing endpoint POST /products (expected in app/routes/product_routes.py)"
+          },
+          {
+            "validator_name": "validate_endpoints",
+            "legacy_adapter_used": false,
+            "category": "api",
+            "severity": "medium",
+            "file_path": "app/routes/product_routes.py",
+            "message": "Missing endpoint PUT /products/{id} (expected in app/routes/product_routes.py)"
+          },
+          {
+            "validator_name": null,
+            "legacy_adapter_used": true,
+            "category": "syntax",
+            "severity": "critical",
+            "file_path": "app/routes/product_routes.py",
+            "message": "Syntax error in app\\routes\\product_routes.py:   File \"C:\\Users\\jerry\\onedrive\\Desktop\\forgeai\\generated_projects\\inventory_manager\\app\\routes\\product_routes.py\", line 14\n    from app.schemas.product i"
+          }
+        ]
+      },
+      {
+        "status": "failed",
+        "diagnostics": [
+          {
+            "validator_name": "validate_endpoints",
+            "legacy_adapter_used": false,
+            "category": "api",
+            "severity": "medium",
+            "file_path": "app/routes/product_routes.py",
+            "message": "Missing endpoint PUT /products/{id} (expected in app/routes/product_routes.py)"
+          }
+        ]
+      },
+      {
+        "status": "failed",
+        "diagnostics": [
+          {
+            "validator_name": "validate_endpoints",
+            "legacy_adapter_used": false,
+            "category": "api",
+            "severity": "medium",
+            "file_path": "app/routes/product_routes.py",
+            "message": "Missing endpoint DELETE /products/{id} (expected in app/routes/product_routes.py)"
+          }
+        ]
+      },
+      {
+        "status": "failed",
+        "diagnostics": [
+          {
+            "validator_name": "validate_endpoints",
+            "legacy_adapter_used": false,
+            "category": "api",
+            "severity": "medium",
+            "file_path": "app/routes/product_routes.py",
+            "message": "Missing endpoint PUT /products/{id} (expected in app/routes/product_routes.py)"
+          }
+        ]
+      },
+      {
+        "status": "failed",
+        "diagnostics": [
+          {
+            "validator_name": "validate_endpoints",
+            "legacy_adapter_used": false,
+            "category": "api",
+            "severity": "medium",
+            "file_path": "app/routes/product_routes.py",
+            "message": "Missing endpoint DELETE /products/{id} (expected in app/routes/product_routes.py)"
+          }
+        ]
+      },
+      {
+        "status": "failed",
+        "diagnostics": [
+          {
+            "validator_name": "validate_endpoints",
+            "legacy_adapter_used": false,
+            "category": "api",
+            "severity": "medium",
+            "file_path": "app/routes/product_routes.py",
+            "message": "Missing endpoint PUT /products/{id} (expected in app/routes/product_routes.py)"
+          }
+        ]
+      }
+    ],
+    "write_fix_calls": [
+      {
+        "path": "src\\App.jsx",
+        "has_content": true,
+        "write_succeeded": true
+      },
+      {
+        "path": "app\\routes\\product_routes.py",
+        "has_content": true,
+        "write_succeeded": true
+      },
+      {
+        "path": "app\\schemas\\product.py",
+        "has_content": true,
+        "write_succeeded": true
+      },
+      {
+        "path": "src\\App.jsx",
+        "has_content": true,
+        "write_succeeded": true
+      },
+      {
+        "path": "app\\routes\\product_routes.py",
+        "has_content": true,
+        "write_succeeded": true
+      },
+      {
+        "path": "app\\routes\\product_routes.py",
+        "has_content": true,
+        "write_succeeded": true
+      }
+    ]
+  }
+}

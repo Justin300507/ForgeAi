@@ -7,7 +7,9 @@ the dashboard. The North-Star number is first_try_success_rate: the
 fraction of recent generations that succeeded with ZERO fix iterations —
 "the user got a working app on the first attempt".
 """
+import json
 from collections import Counter
+from pathlib import Path
 
 # Deterministic Prevention Rate: rolls up every individual patcher/
 # validation-stage's raw count (keys of GenerationRecord.prevention_counts,
@@ -130,6 +132,93 @@ def render_prevention_dashboard(m: dict) -> str:
         return "\n".join(lines)
     for category, count in m["by_category"].items():
         lines.append(f"  {count:4d}x  {category}")
+    return "\n".join(lines)
+
+
+_AUTH_COMPLETENESS_LOG_PATH = (
+    Path(__file__).parent.parent.parent / "failure_memory" / "auth_completeness_log.jsonl"
+)
+
+
+def _load_auth_completeness_entries() -> list[dict]:
+    """Reads app/repair/auth_completeness.py's own JSONL telemetry log --
+    one record per ensure_auth_completeness() call, written at the two
+    v6_orchestrator.py call sites Experiment 071 found bypass the normal
+    auth-injection safety net. Missing file (pre-dates this metric, or
+    no architecture-repair has fired yet this session) is not an error."""
+    if not _AUTH_COMPLETENESS_LOG_PATH.exists():
+        return []
+    entries = []
+    try:
+        with open(_AUTH_COMPLETENESS_LOG_PATH, encoding="utf-8") as f:
+            for line in f:
+                line = line.strip()
+                if not line:
+                    continue
+                try:
+                    entries.append(json.loads(line))
+                except json.JSONDecodeError:
+                    continue
+    except OSError:
+        return []
+    return entries
+
+
+def compute_auth_completeness_metrics(window: int = 30) -> dict:
+    """
+    Experiment 071: Auth Completeness metric. Tracks how often
+    ensure_auth_completeness() found the generated auth surface already
+    complete vs. needed deterministic repair vs. couldn't be repaired
+    (missing user model, or a shape the template injection doesn't
+    cover) -- over the most recent `window` calls, not generations
+    (this check only fires when an architecture repair actually ran,
+    so its own call count is a subset of total generations).
+    """
+    entries = _load_auth_completeness_entries()
+    recent = entries[-window:]
+
+    counts = Counter(e.get("status", "unknown") for e in recent)
+    total = len(recent)
+
+    failed_examples = [
+        {"project": e.get("project_name"), "reason": e.get("reason_after")}
+        for e in recent if e.get("status") == "failed"
+    ][-5:]
+
+    return {
+        "window": total,
+        "complete": counts.get("complete", 0),
+        "repaired": counts.get("repaired", 0),
+        "failed": counts.get("failed", 0),
+        "repair_success_rate": (
+            round(100.0 * (counts.get("complete", 0) + counts.get("repaired", 0)) / total, 1)
+            if total else None
+        ),
+        "recent_failures": failed_examples,
+    }
+
+
+def render_auth_completeness_dashboard(m: dict) -> str:
+    """ASCII 'Auth Completeness' section. window=0 means no architecture
+    repair has fired since this metric started being recorded -- not the
+    same as "always complete," reported as (no data) rather than 100%."""
+    lines = [
+        "=" * 70,
+        f"  AUTH COMPLETENESS  (last {m['window']} architecture-repair checks)",
+        "=" * 70,
+    ]
+    if not m["window"]:
+        lines.append("  (no architecture-repair checks recorded yet)")
+        return "\n".join(lines)
+    lines.append(f"  complete:  {m['complete']}")
+    lines.append(f"  repaired:  {m['repaired']}")
+    lines.append(f"  failed:    {m['failed']}")
+    lines.append(f"  repair success rate: {m['repair_success_rate']}%")
+    if m["recent_failures"]:
+        lines.append("")
+        lines.append("  Recent failures:")
+        for f in m["recent_failures"]:
+            lines.append(f"    {f['project']}: {f['reason']}")
     return "\n".join(lines)
 
 
@@ -273,6 +362,7 @@ def compute_observatory(gen_entries: list[dict], canary_runs: list[dict], window
     top_failure_now = current["top_failure_classes"][0][0] if current["top_failure_classes"] else None
 
     prevention = compute_prevention_rate(recent, window=window)
+    auth_completeness = compute_auth_completeness_metrics(window=window)
 
     regression_alerts = sum((e.get("regression_count") or 0) for e in recent[-window:])
 
@@ -306,6 +396,7 @@ def compute_observatory(gen_entries: list[dict], canary_runs: list[dict], window
         "canary_label": canary_label,
         "generation_success_rate": current["generation_success_rate"],
         "deploy_rate": current["deploy_rate"],
+        "auth_completeness": auth_completeness,
     }
 
 

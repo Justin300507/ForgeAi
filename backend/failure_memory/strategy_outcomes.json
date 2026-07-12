@@ -1,4 +1,18 @@
 {
+  "AttributeError": {
+    "patch_file": {
+      "successes": 0,
+      "tries": 2
+    },
+    "regenerate_module": {
+      "successes": 0,
+      "tries": 3
+    },
+    "switch_model": {
+      "successes": 0,
+      "tries": 1
+    }
+  },
   "ConfigAttributeError": {
     "patch_file": {
       "successes": 0,
@@ -39,8 +53,8 @@
       "tries": 3
     },
     "switch_model": {
-      "successes": 2,
-      "tries": 2
+      "successes": 4,
+      "tries": 8
     }
   },
   "browser": {
@@ -51,12 +65,12 @@
   },
   "contract": {
     "patch_file": {
-      "successes": 27,
-      "tries": 97
+      "successes": 48,
+      "tries": 124
     },
     "regenerate_arch": {
-      "successes": 5,
-      "tries": 21
+      "successes": 9,
+      "tries": 40
     },
     "regenerate_module": {
       "successes": 0,

@@ -42,6 +42,7 @@ from app.services.metadata_service import save_metadata
 from app.services.git_service import initialize_git
 from app.services.architecture_fix_service import generate_architecture_fix
 from app.memory.failure_memory import record_run, build_prompt_injection
+from app.repair.auth_completeness import ensure_auth_completeness
 from app.utils.cost_tracker import reset_session, flush_to_log, print_session_cost
 from app.services.runtime_validator_service import validate_runtime
 from app.services.deterministic_patcher import run_deterministic_patches
@@ -666,6 +667,16 @@ def generate_project_v6(
                 run_deterministic_patches(project_path, skip_protected_injections=True)
                 from app.services.database_patcher import patch_database_py
                 patch_database_py(project_path)
+                # Exp071: skip_protected_injections above deliberately trusts
+                # arch_fix's own output for auth_routes.py/auth_utils.py --
+                # but generate_architecture_fix() has no instruction to
+                # preserve auth wiring, so if its output touched main.py or
+                # auth_routes.py, the one safety net that would normally
+                # catch a resulting gap was just disabled. ensure_auth_completeness()
+                # is an independent, unconditional check -- only overwrites
+                # if the end state is actually broken, so a correct arch_fix
+                # output is untouched; a broken one is deterministically healed.
+                ensure_auth_completeness(project_path, project_name=project_name)
                 validation = validate_project(project_path)
                 print(f"  Post-arch-repair: {'PASS' if validation['passed'] else 'FAIL'}")
 
@@ -1191,6 +1202,11 @@ def repair_project(
             run_deterministic_patches(project_path, skip_protected_injections=True)
             from app.services.database_patcher import patch_database_py as _pdb2
             _pdb2(project_path)
+            # Exp071: see the matching comment in generate_project_v6() --
+            # skip_protected_injections above trusts arch_fix's own output;
+            # this is the independent, unconditional safety net for when
+            # that trust turns out to be misplaced.
+            ensure_auth_completeness(project_path, project_name=project_name)
             validation = validate_project(project_path)
             print(f"  Post-arch-repair: {'PASS' if validation['passed'] else 'FAIL'}")
 

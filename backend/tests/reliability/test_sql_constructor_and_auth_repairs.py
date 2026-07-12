@@ -288,21 +288,21 @@ def test_attr_access_mismatch_idempotent(tmp_path):
     assert route.read_text(encoding="utf-8") == once
 
 
-def test_attr_access_mismatch_ambiguous_file_wide_not_class_qualified(tmp_path):
+def test_attr_access_mismatch_scoped_to_typed_object_not_file_wide(tmp_path):
     """
-    Documented in docs/REPAIR_DEBT.md (Exp051): this substitution is
-    whole-FILE regex, not class-qualified -- if a route file mentions the
-    class name ANYWHERE and also has a bare `.username` access belonging
-    to a DIFFERENT object in the same file, it still gets rewritten. This
-    test documents that real, currently-existing scoping behavior (not a
-    crash, not asserted as "correct") rather than silently relying on it.
+    Exp073: was documented in docs/REPAIR_DEBT.md (Exp051) and confirmed
+    live via Exp072 (the `req.display_name` -> `req.username` auth-template
+    corruption) as a whole-FILE regex, not class-qualified -- if a route
+    file mentioned the class name ANYWHERE and also had a bare `.username`
+    access belonging to a DIFFERENT, untyped object in the same file, it
+    got rewritten too. Now AST-scoped: only `current_user` (typed `User` by
+    its own parameter annotation) is rewritten; `other_obj` (no type
+    annotation, so provably NOT known to be a `User` instance) is left
+    completely alone.
     """
     p = _proj(tmp_path)
     (p / "app" / "models" / "user.py").write_text(MODEL_USER_EMAIL_ONLY, encoding="utf-8")
     route = p / "app" / "routes" / "user_routes.py"
-    # `other_obj.username` has nothing to do with the User class, but the
-    # file mentions "User" (via the import + type hint), so the file-wide
-    # substitution fires on it too.
     src = (
         "from app.models.user import User\n\n"
         "@router.get('/me')\n"
@@ -313,12 +313,9 @@ def test_attr_access_mismatch_ambiguous_file_wide_not_class_qualified(tmp_path):
     route.write_text(src, encoding="utf-8")
     _patch_attr_access_mismatches(p)
     out = route.read_text(encoding="utf-8")
-    # AMBIGUOUS/DOCUMENTED BEHAVIOR: both occurrences get rewritten, not
-    # just current_user's. This is the file-wide-not-class-qualified gap
-    # REPAIR_DEBT.md already flagged for _patch_attr_access_mismatches
-    # (contrasted with _patch_ownership_fk_attribute_drift's deliberately
-    # class-qualified version). Not fixed here per this experiment's rules.
-    assert out.count(".email") == 2
+    assert out.count(".email") == 1
+    assert "current_user.email" in out
+    assert "other_obj.username" in out
 
 
 # ── _patch_auth_utils ────────────────────────────────────────────────────────

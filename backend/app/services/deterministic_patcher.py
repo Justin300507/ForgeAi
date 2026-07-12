@@ -2243,21 +2243,49 @@ def _patch_auth_routes(project_path: Path) -> None:
 
         include_line = "app.include_router(auth_router)"
         if include_line not in main_content:
-            # Insert before Base.metadata.create_all or at end of include_router block
+            # Exp071: escalating fallback chain -- the original version
+            # only tried the first two anchors below and, if NEITHER
+            # existed in main.py (a minimal main.py with no other
+            # routers wired yet and no Base.metadata.create_all line),
+            # silently left include_line un-inserted while still
+            # printing "Wired auth_router into main.py" as if it had
+            # succeeded. Found via Experiment 071's own regression
+            # tests, not a live incident -- real generated apps almost
+            # always have at least one of the first two anchors, but
+            # "almost always" isn't "always", and the false-success
+            # print was itself worth closing regardless of how often
+            # the gap is actually hit.
+            before_len = len(main_content)
+
+            # 1. After the last existing include_router(...) call.
             last_include = None
             for m in re.finditer(r"app\.include_router\(\w+_router\)\n", main_content):
                 last_include = m
             if last_include:
                 pos = last_include.end()
                 main_content = main_content[:pos] + include_line + "\n" + main_content[pos:]
-            else:
+            elif re.search(r"Base\.metadata\.create_all", main_content):
+                # 2. Before Base.metadata.create_all.
                 main_content = re.sub(
                     r"(Base\.metadata\.create_all)",
                     include_line + "\n" + r"\1",
                     main_content,
                     count=1,
                 )
-            changed = True
+            elif re.search(r"^app\s*=\s*FastAPI\([^\n]*\)\s*$", main_content, re.MULTILINE):
+                # 3. Right after the FastAPI app instantiation.
+                main_content = re.sub(
+                    r"(^app\s*=\s*FastAPI\([^\n]*\)\s*$)",
+                    r"\1\n" + include_line,
+                    main_content,
+                    count=1,
+                    flags=re.MULTILINE,
+                )
+            else:
+                # 4. Guaranteed fallback: append at the end of the file.
+                main_content = main_content.rstrip("\n") + "\n" + include_line + "\n"
+
+            changed = changed or (len(main_content) != before_len)
 
         if changed:
             main_py.write_text(main_content, encoding="utf-8")
@@ -3215,8 +3243,6 @@ def _patch_unsafe_model_hasattr_filter(project_path: Path) -> int:
     return patched
 
 
-_ATTR_ACCESS_RE = re.compile(r'\b(\w+)\.(\w+)\b')
-
 _FIELD_SYNONYMS_PATCHER = {
     "username": ["email", "name", "full_name", "display_name"],
     "user_handle": ["username", "email", "name"],
@@ -3236,12 +3262,97 @@ _FIELD_SYNONYMS_PATCHER = {
 }
 
 
+def _query_target_class(call: ast.Call, model_cols: dict) -> Optional[str]:
+    """Walk a (possibly chained) call expression like
+    `db.query(User).filter(...).first()` back through its `.attr(...)`
+    chain looking for a `.query(ClassName)` leg, returning ClassName if
+    it's a known model. Used to type ORM-query results as model instances."""
+    node = call
+    while isinstance(node, ast.Call):
+        f = node.func
+        if isinstance(f, ast.Attribute) and f.attr == "query" and node.args:
+            arg0 = node.args[0]
+            if isinstance(arg0, ast.Name) and arg0.id in model_cols:
+                return arg0.id
+        if isinstance(f, ast.Attribute):
+            node = f.value
+        else:
+            break
+    return None
+
+
+def _infer_model_typed_names(fn: ast.AST, model_cols: dict) -> dict:
+    """Best-effort, conservative {variable_name: model_class_name} map for
+    names PROVABLY bound to an instance of a known SQLAlchemy model class
+    within this function's own source -- constructor calls (`u = User(...)`),
+    ORM query results (`u = db.query(User).first()`, `for u in db.query(User)`),
+    and directly-typed parameters. A name absent from the result is never
+    treated as typed, so callers can never rewrite an attribute access whose
+    object type isn't actually known.
+    """
+    typed: dict = {}
+
+    if isinstance(fn, (ast.FunctionDef, ast.AsyncFunctionDef)):
+        for arg in fn.args.args:
+            ann = arg.annotation
+            name = ann.id if isinstance(ann, ast.Name) else None
+            if name and name in model_cols:
+                typed[arg.arg] = name
+
+    for node in ast.walk(fn):
+        if isinstance(node, ast.AnnAssign) and isinstance(node.target, ast.Name) \
+                and isinstance(node.annotation, ast.Name) and node.annotation.id in model_cols:
+            # `var: ClassName = ...` -- the annotation itself is authoritative,
+            # regardless of what (if anything) the RHS looks like.
+            typed[node.target.id] = node.annotation.id
+        elif isinstance(node, ast.Assign) and isinstance(node.value, ast.Call) \
+                and len(node.targets) == 1 and isinstance(node.targets[0], ast.Name):
+            f = node.value.func
+            if isinstance(f, ast.Name) and f.id in model_cols:
+                typed[node.targets[0].id] = f.id
+                continue
+            cls = _query_target_class(node.value, model_cols)
+            if cls:
+                typed[node.targets[0].id] = cls
+        elif isinstance(node, ast.For) and isinstance(node.target, ast.Name) \
+                and isinstance(node.iter, ast.Call):
+            cls = _query_target_class(node.iter, model_cols)
+            if cls:
+                typed[node.target.id] = cls
+
+    return typed
+
+
+def _iter_top_level_functions(tree: ast.Module):
+    """Module-level functions and one level of class methods -- deliberately
+    NOT a full ast.walk, so a nested closure's attribute accesses are swept
+    into its enclosing top-level function's scope exactly once instead of
+    being independently (and possibly conflictingly) re-typed."""
+    for node in ast.iter_child_nodes(tree):
+        if isinstance(node, (ast.FunctionDef, ast.AsyncFunctionDef)):
+            yield node
+        elif isinstance(node, ast.ClassDef):
+            for sub in ast.iter_child_nodes(node):
+                if isinstance(sub, (ast.FunctionDef, ast.AsyncFunctionDef)):
+                    yield sub
+
+
 def _patch_attr_access_mismatches(project_path: Path) -> int:
     """Fix route files that access obj.invalid_attr where invalid_attr doesn't exist
     on the SQLAlchemy model (e.g. user.username when model only has email).
 
-    Specifically fixes dict literals and return statements that hard-code
-    attribute names not present on the model, using synonym mapping.
+    Exp073: CONFIRMED BUG, now fixed -- this used to apply the fix via a
+    file-wide `re.sub()` on every `.bad_attr` occurrence in the file,
+    regardless of which object it was accessed on. Since bad_attr is a
+    common English word (display_name, status, title, ...), a genuinely
+    unrelated object in the SAME route file that legitimately has that
+    attribute (e.g. `req: SignupRequest` with its own `.display_name`
+    field, sitting in the same auth_routes.py as a `User` model missing
+    that column) got silently corrupted alongside the real fix (Exp072).
+    Now scoped via AST: only rewritten when the object is PROVABLY an
+    instance of the mismatched model class (constructor call, ORM query
+    result, typed parameter, or bare `ClassName.attr` access) within its
+    own function scope -- never a blanket file-wide substitution.
     """
     routes_dir = project_path / "app" / "routes"
     models_dir = project_path / "app" / "models"
@@ -3271,39 +3382,60 @@ def _patch_attr_access_mismatches(project_path: Path) -> int:
     for rf in routes_dir.glob("*.py"):
         try:
             content = rf.read_text(encoding="utf-8", errors="replace")
-            original = content
+            tree = ast.parse(content)
+        except Exception:
+            continue
 
-            for cls_name, valid_cols in model_cols.items():
-                # Only process route files that reference this class
-                if cls_name not in content:
+        # {lineno: [(start_col, end_col, good_attr), ...]} -- collected across
+        # every top-level function, applied back-to-front per line so earlier
+        # edits on the same line don't shift later columns' offsets.
+        by_line: dict = {}
+
+        for fn in _iter_top_level_functions(tree):
+            typed_names = _infer_model_typed_names(fn, model_cols)
+            for node in ast.walk(fn):
+                if not (isinstance(node, ast.Attribute) and isinstance(node.value, ast.Name)):
                     continue
-                for bad_attr, candidates in _FIELD_SYNONYMS_PATCHER.items():
-                    if bad_attr in valid_cols:
-                        continue  # attribute exists, no fix needed
-                    good_attr = next((c for c in candidates if c in valid_cols), None)
-                    if not good_attr:
-                        continue
-                    # Replace .bad_attr with .good_attr only in attribute access context.
-                    # Exp052: CONFIRMED BUG, now fixed -- this used to require
-                    # a NON-word character immediately before the dot
-                    # ((?<!\w)\.), but real attribute access (obj.attr)
-                    # always has a word character right there (the object
-                    # name), so the old pattern could never match the
-                    # function's own primary use case. The trailing \b
-                    # already prevents matching "username_field" etc., so
-                    # the leading lookbehind was both wrong and redundant.
-                    content = re.sub(
-                        r'\.' + re.escape(bad_attr) + r'\b',
-                        '.' + good_attr,
-                        content,
-                    )
+                obj_name = node.value.id
+                cls_name = typed_names.get(obj_name) or (obj_name if obj_name in model_cols else None)
+                if not cls_name:
+                    continue
+                # Attribute access must be single-line for a safe column-offset
+                # edit; multi-line chains (rare, e.g. inside parens) are skipped.
+                if node.value.end_lineno != node.lineno or node.end_lineno != node.lineno:
+                    continue
+                valid_cols = model_cols[cls_name]
+                bad_attr = node.attr
+                if bad_attr in valid_cols:
+                    continue
+                candidates = _FIELD_SYNONYMS_PATCHER.get(bad_attr)
+                if not candidates:
+                    continue
+                good_attr = next((c for c in candidates if c in valid_cols), None)
+                if not good_attr:
+                    continue
+                by_line.setdefault(node.lineno, []).append(
+                    (node.value.end_col_offset, node.end_col_offset, good_attr)
+                )
 
-            if content != original:
-                rf.write_text(content, encoding="utf-8")
+        if not by_line:
+            continue
+
+        lines = content.splitlines(keepends=True)
+        for lineno, repls in by_line.items():
+            line = lines[lineno - 1]
+            for start_col, end_col, good_attr in sorted(set(repls), key=lambda r: -r[0]):
+                line = line[:start_col] + "." + good_attr + line[end_col:]
+            lines[lineno - 1] = line
+
+        new_content = "".join(lines)
+        if new_content != content:
+            try:
+                rf.write_text(new_content, encoding="utf-8")
                 patched += 1
                 print(f"  [patcher] Fixed attribute accesses in {rf.name}")
-        except Exception:
-            pass
+            except Exception:
+                pass
     return patched
 
 
@@ -3466,6 +3598,48 @@ def _model_classes_and_columns(models_dir: Path) -> dict[str, set[str]]:
             next_m = _CLASS_DECL_RE.search(content, m.end())
             body = content[m.end(): next_m.start() if next_m else len(content)]
             cols = set(_MODEL_COLUMN_RE.findall(body))
+            if cols:
+                out[cls_name] = cols
+    return out
+
+
+_NOTNULL_COLUMN_RE = re.compile(r'^(\s+)(\w+)\s*=\s*Column\(([^\n]*)\)\s*$', re.MULTILINE)
+
+
+def _model_notnull_no_default_columns(models_dir: Path) -> dict[str, set[str]]:
+    """{model_class_name: {column names that are NOT NULL, have no default/
+    server_default, and are neither the primary key nor a ForeignKey}}
+    across every app/models/*.py file.
+
+    Exp075: the exact same nullable=False/no-default/non-PK/non-FK
+    classification `preflight.py::_fix_model_schema_notnull_gap` (Exp012/13)
+    already uses to decide whether a column can be safely relaxed on the
+    CREATE path -- reused here (not reimplemented) to identify which
+    columns an UPDATE-path route must never overwrite with None when a
+    field is simply omitted from the request.
+    """
+    out: dict[str, set[str]] = {}
+    if not models_dir.exists():
+        return out
+    for mf in models_dir.glob("*.py"):
+        try:
+            content = mf.read_text(encoding="utf-8", errors="replace")
+        except Exception:
+            continue
+        for m in _CLASS_DECL_RE.finditer(content):
+            cls_name = m.group(1)
+            next_m = _CLASS_DECL_RE.search(content, m.end())
+            body = content[m.end(): next_m.start() if next_m else len(content)]
+            cols = set()
+            for cm in _NOTNULL_COLUMN_RE.finditer(body):
+                attr_name, args = cm.group(2), cm.group(3)
+                if 'primary_key' in args or 'ForeignKey' in args:
+                    continue
+                if 'nullable=False' not in args:
+                    continue
+                if 'default=' in args or 'server_default=' in args:
+                    continue
+                cols.add(attr_name)
             if cols:
                 out[cls_name] = cols
     return out

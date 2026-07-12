@@ -1,8 +1,10 @@
 import ast
 import os
 
+from app.core.context import Diagnostic, ErrorCategory, ErrorSeverity
 
-def validate_stub_handlers(project_path, errors):
+
+def validate_stub_handlers(project_path, errors, diagnostics=None):
     """Detect route handlers that are just `pass` (no real
     implementation) but declare a response_model — this WILL crash
     at request time with a ResponseValidationError, since FastAPI
@@ -71,10 +73,25 @@ def validate_stub_handlers(project_path, errors):
 
             if has_response_model:
 
-                errors.append(
+                rel_path = os.path.relpath(file_path, project_path).replace(os.sep, "/")
+                msg = (
                     f"Stub handler risk in "
                     f"{os.path.relpath(file_path, project_path)}: "
                     f"function '{node.name}' has an empty body (pass) "
                     f"but declares response_model — this will crash "
                     f"with a ResponseValidationError when called"
                 )
+                errors.append(msg)
+                if diagnostics is not None:
+                    # category=CONTRACT (via "stub" match), severity=MEDIUM
+                    # (via "stub handler" match): exact parity with
+                    # engine.py's existing heuristics.
+                    diagnostics.append(Diagnostic(
+                        error_id=Diagnostic.make_id("static", ErrorCategory.CONTRACT, msg, rel_path),
+                        category=ErrorCategory.CONTRACT,
+                        severity=ErrorSeverity.MEDIUM,
+                        source="static",
+                        message=msg,
+                        file_path=rel_path,
+                        validator_name="validate_stub_handlers",
+                    ))

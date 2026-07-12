@@ -1,0 +1,11 @@
+{
+  "todo_crud::cerebras": {
+    "category": "todo_crud",
+    "provider": "cerebras",
+    "seen": 1,
+    "successes": 0,
+    "total_score": 70.0,
+    "avg_score": 70.0,
+    "success_rate": 0.0
+  }
+}

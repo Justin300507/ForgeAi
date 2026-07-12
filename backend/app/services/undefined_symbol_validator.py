@@ -2,6 +2,8 @@ import ast
 import builtins
 import os
 
+from app.core.context import Diagnostic, ErrorCategory, ErrorSeverity
+
 
 def _collect_target_names(target, defined):
     """Recursively pull every Name out of an assignment/for/comprehension
@@ -21,7 +23,7 @@ def _collect_target_names(target, defined):
         _collect_target_names(target.value, defined)
 
 
-def validate_undefined_symbols(project_path, errors):
+def validate_undefined_symbols(project_path, errors, diagnostics=None):
 
     builtin_names = set(dir(builtins))
 
@@ -166,9 +168,21 @@ def validate_undefined_symbols(project_path, errors):
             ignored = {"self", "cls"} | _module_dunders
             undefined -= ignored
 
+            rel_path = os.path.relpath(file_path, project_path)
+
             for symbol in sorted(undefined):
 
-                errors.append(
-                    f"Undefined symbol '{symbol}' "
-                    f"in {os.path.relpath(file_path, project_path)}"
-                )
+                msg = f"Undefined symbol '{symbol}' in {rel_path}"
+                errors.append(msg)
+                if diagnostics is not None:
+                    # category=IMPORT, severity=HIGH: exact parity with
+                    # engine.py's existing "undefined"/"symbol" heuristic match.
+                    diagnostics.append(Diagnostic(
+                        error_id=Diagnostic.make_id("static", ErrorCategory.IMPORT, msg, rel_path),
+                        category=ErrorCategory.IMPORT,
+                        severity=ErrorSeverity.HIGH,
+                        source="static",
+                        message=msg,
+                        file_path=rel_path.replace(os.sep, "/"),
+                        validator_name="validate_undefined_symbols",
+                    ))

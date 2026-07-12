@@ -1,0 +1,45 @@
+{
+  "bundle_version": 1,
+  "failure_id": "FR-000007",
+  "timestamp": "2026-07-11T21:42:58.413849Z",
+  "forgeai_version": "19.0",
+  "pipeline_version": "v15",
+  "commit_sha": "def583f",
+  "project": "todo_list_app",
+  "provider": "auto",
+  "model": null,
+  "seed": null,
+  "failure": {
+    "stage": "runtime",
+    "class": "JourneyCRUDFailure",
+    "step": "Register"
+  },
+  "request": {
+    "method": "POST",
+    "url": "http://127.0.0.1:8001/auth/register",
+    "json": {
+      "email": "journey@test.com",
+      "password": "JourneyPass1!"
+    },
+    "has_auth": false
+  },
+  "response": {
+    "status_code": 404,
+    "body": {
+      "detail": "Not Found"
+    }
+  },
+  "stderr": null,
+  "generation": {
+    "category": null,
+    "style": null,
+    "layout": null,
+    "design_fingerprint_id": null
+  },
+  "artifacts": {
+    "screenshot": null,
+    "console_log": null,
+    "network_log": null,
+    "playwright_trace": null
+  }
+}

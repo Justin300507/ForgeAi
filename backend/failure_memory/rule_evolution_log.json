@@ -128,5 +128,35 @@
     "improvement": 0.0,
     "promoted": false,
     "timestamp": "2026-06-30T05:57:35"
+  },
+  {
+    "pattern_key": "MissingEndpoint",
+    "rule": "Every resource MUST define the full CRUD set of routes (GET /items, GET /items/{id}, POST /items, PUT /items/{id}, DELETE /items/{id}) and include them in a router exported with the name <resource>_router. WRONG: only GET /items is defined; router = APIRouter(). RIGHT: define all five endpoints and export user_router = APIRouter() with those routes attached.",
+    "quality_score": 6.5,
+    "old_pass_rate": 0.0,
+    "new_pass_rate": 0.0,
+    "improvement": 0.0,
+    "promoted": false,
+    "timestamp": "2026-07-12T19:56:10"
+  },
+  {
+    "pattern_key": "AttributeError",
+    "rule": "Never access model or dict attributes directly without existence checks; use getattr(obj, \"field\", None) or obj.get(\"field\") and raise 404 if None. WRONG: name = user.name  # may raise AttributeError. RIGHT: name = getattr(user, \"name\", None); if name is None: raise HTTPException(status_code=404).",
+    "quality_score": 7.0,
+    "old_pass_rate": 0.0,
+    "new_pass_rate": 0.0,
+    "improvement": 0.0,
+    "promoted": false,
+    "timestamp": "2026-07-12T19:56:10"
+  },
+  {
+    "pattern_key": "ImportError/ModuleNotFoundError",
+    "rule": "All imports must be absolute and reference the full package path; relative imports (e.g., from .models import User) are prohibited. WRONG: from .models import User. RIGHT: from app.models import User. This guarantees modules are found regardless of execution context.",
+    "quality_score": 7.8,
+    "old_pass_rate": 0.0,
+    "new_pass_rate": 0.0,
+    "improvement": 0.0,
+    "promoted": false,
+    "timestamp": "2026-07-12T19:56:10"
   }
 ]

@@ -1,6 +1,8 @@
 import json
 import os
 
+from app.core.context import Diagnostic, ErrorCategory, ErrorSeverity
+
 
 def load_metadata(project_path):
 
@@ -26,10 +28,27 @@ def load_metadata(project_path):
         return {}
 
 
+def _add(errors, diagnostics, msg):
+    errors.append(msg)
+    if diagnostics is not None:
+        # category=CONTRACT, severity=MEDIUM: exact parity with engine.py's
+        # existing default classification (no substring in these messages
+        # matches any of its specific category/severity heuristics).
+        diagnostics.append(Diagnostic(
+            error_id=Diagnostic.make_id("static", ErrorCategory.CONTRACT, msg, None),
+            category=ErrorCategory.CONTRACT,
+            severity=ErrorSeverity.MEDIUM,
+            source="static",
+            message=msg,
+            validator_name="validate_architecture",
+        ))
+
+
 def validate_architecture(
     project_path,
     metadata,
-    errors
+    errors,
+    diagnostics=None
 ):
 
     plan = metadata.get("plan", {})
@@ -78,7 +97,7 @@ def validate_architecture(
 
     if "node.js" in tech_stack and "fastapi" in detected:
 
-        errors.append(
+        _add(errors, diagnostics,
             "Architecture violation: "
             "Planner requested Node.js "
             "but FastAPI detected"
@@ -86,7 +105,7 @@ def validate_architecture(
 
     if "mongodb" in tech_stack and "sqlite" in detected:
 
-        errors.append(
+        _add(errors, diagnostics,
             "Architecture violation: "
             "Planner requested MongoDB "
             "but SQLite detected"
@@ -94,14 +113,14 @@ def validate_architecture(
 
     if "react" in tech_stack and "react" not in detected:
 
-        errors.append(
+        _add(errors, diagnostics,
             "Architecture violation: "
             "React frontend not detected"
         )
 
     if "fastapi" in tech_stack and "fastapi" not in detected:
 
-        errors.append(
+        _add(errors, diagnostics,
             "Architecture violation: "
             "FastAPI requested but not detected — "
             "backend generation may have failed"
@@ -109,14 +128,14 @@ def validate_architecture(
 
     if "sqlite" in tech_stack and "sqlite" not in detected:
 
-        errors.append(
+        _add(errors, diagnostics,
             "Architecture violation: "
             "SQLite requested but not detected"
         )
 
     if "mongodb" in tech_stack and "mongodb" not in detected:
 
-        errors.append(
+        _add(errors, diagnostics,
             "Architecture violation: "
             "MongoDB requested but not detected"
         )

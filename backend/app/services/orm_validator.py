@@ -4,6 +4,8 @@ import ast
 import os
 import re
 
+from app.core.context import Diagnostic, ErrorCategory, ErrorSeverity
+
 
 _FLASK_SQLALCHEMY_IMPORT = re.compile(
     r"^\s*(?:from\s+flask_sqlalchemy\s+import|import\s+flask_sqlalchemy)\b",
@@ -17,7 +19,21 @@ _FLASK_MODEL_BASE = re.compile(
 )
 
 
-def validate_no_flask_sqlalchemy(project_path, errors):
+def _add_orm(errors, diagnostics, msg, rel_path, validator_name, severity):
+    errors.append(msg)
+    if diagnostics is not None:
+        diagnostics.append(Diagnostic(
+            error_id=Diagnostic.make_id("static", ErrorCategory.CONTRACT, msg, rel_path),
+            category=ErrorCategory.CONTRACT,
+            severity=severity,
+            source="static",
+            message=msg,
+            file_path=rel_path,
+            validator_name=validator_name,
+        ))
+
+
+def validate_no_flask_sqlalchemy(project_path, errors, diagnostics=None):
     """The project contract requires plain SQLAlchemy (Base = declarative_base()),
     never Flask-SQLAlchemy (`db = SQLAlchemy()`, `class X(db.Model)`). An LLM
     occasionally hallucinates the Flask-SQLAlchemy API into a FastAPI project —
@@ -41,25 +57,29 @@ def validate_no_flask_sqlalchemy(project_path, errors):
 
             rel = os.path.relpath(file_path, project_path).replace(os.sep, "/")
 
+            # category=CONTRACT (matches "flask" substring), severity=MEDIUM
+            # (default -- "flask-sqlalchemy usage" doesn't match the "orm
+            # violation" severity pattern): exact parity with engine.py's
+            # existing heuristics.
             if _FLASK_SQLALCHEMY_IMPORT.search(content):
-                errors.append(
+                _add_orm(errors, diagnostics,
                     f"Flask-SQLAlchemy usage: {rel} imports flask_sqlalchemy — "
-                    f"this project must use plain SQLAlchemy (Base = declarative_base())"
-                )
+                    f"this project must use plain SQLAlchemy (Base = declarative_base())",
+                    rel, "validate_no_flask_sqlalchemy", ErrorSeverity.MEDIUM)
                 continue
 
             if _FLASK_SQLALCHEMY_INIT.search(content):
-                errors.append(
+                _add_orm(errors, diagnostics,
                     f"Flask-SQLAlchemy usage: {rel} calls SQLAlchemy(...) — "
-                    f"this project must use plain SQLAlchemy, not Flask-SQLAlchemy"
-                )
+                    f"this project must use plain SQLAlchemy, not Flask-SQLAlchemy",
+                    rel, "validate_no_flask_sqlalchemy", ErrorSeverity.MEDIUM)
                 continue
 
             if _FLASK_MODEL_BASE.search(content):
-                errors.append(
+                _add_orm(errors, diagnostics,
                     f"Flask-SQLAlchemy usage: {rel} defines a class inheriting from "
-                    f"db.Model — models must inherit from Base (app.database.Base)"
-                )
+                    f"db.Model — models must inherit from Base (app.database.Base)",
+                    rel, "validate_no_flask_sqlalchemy", ErrorSeverity.MEDIUM)
 
 
 def _get_class_bases(file_path):
@@ -114,7 +134,7 @@ def _resolves_to_pydantic(project_path, module, class_name, cache, visiting=None
     return False
 
 
-def validate_orm_usage(project_path, errors):
+def validate_orm_usage(project_path, errors, diagnostics=None):
 
     cache = {}
 
@@ -155,10 +175,13 @@ def validate_orm_usage(project_path, errors):
 
                 for pattern in patterns:
                     if pattern in content:
-                        errors.append(
+                        rel_path = os.path.relpath(file_path, project_path).replace(os.sep, "/")
+                        # category=CONTRACT, severity=HIGH: exact parity with
+                        # engine.py's existing "orm violation" heuristic match.
+                        _add_orm(errors, diagnostics,
                             f"ORM violation: "
                             f"Pydantic model '{name}' "
                             f"used in SQLAlchemy query "
-                            f"in {os.path.relpath(file_path, project_path)}"
-                        )
+                            f"in {os.path.relpath(file_path, project_path)}",
+                            rel_path, "validate_orm_usage", ErrorSeverity.HIGH)
                         break

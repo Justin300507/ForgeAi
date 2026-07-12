@@ -2,6 +2,7 @@ import os
 import re
 import py_compile
 import ast
+from app.core.context import Diagnostic, ErrorCategory, ErrorSeverity
 from app.utils.brace_matching import find_matching_brace
 from app.services.undefined_symbol_validator import (
     validate_undefined_symbols
@@ -735,7 +736,7 @@ def _top_level_object_keys(literal):
     return keys
 
 
-def validate_frontend_auth_fields(project_path, errors):
+def validate_frontend_auth_fields(project_path, errors, diagnostics=None):
     """
     Flag a Login/Register/Signup form that POSTs a payload missing the
     'email' field the backend requires.
@@ -801,9 +802,10 @@ def validate_frontend_auth_fields(project_path, errors):
                 if not keys or "email" in keys:
                     continue
                 is_login = bool(re.search(r"login|signin|sign-in", m.group(0), re.IGNORECASE))
+                rel_path = rel(project_path, file_path)
                 if is_login:
-                    errors.append(
-                        f"Frontend auth field mismatch: {rel(project_path, file_path)} "
+                    msg = (
+                        f"Frontend auth field mismatch: {rel_path} "
                         f"POSTs to a login endpoint with fields {sorted(keys)} but no "
                         f"'email' — the backend's login schema requires email (per "
                         f"project contract), so every login attempt will fail with a "
@@ -813,8 +815,8 @@ def validate_frontend_auth_fields(project_path, errors):
                         f"the POST body."
                     )
                 else:
-                    errors.append(
-                        f"Frontend auth field mismatch: {rel(project_path, file_path)} "
+                    msg = (
+                        f"Frontend auth field mismatch: {rel_path} "
                         f"POSTs to a register/signup endpoint with fields "
                         f"{sorted(keys)} but no 'email' — the backend's signup "
                         f"schema requires email (per project contract), so every "
@@ -822,6 +824,22 @@ def validate_frontend_auth_fields(project_path, errors):
                         f"on its loading state. Add an email input and send "
                         f"{{ email, password, display_name }} in the POST body."
                     )
+                errors.append(msg)
+                if diagnostics is not None:
+                    # Exp060: category=CONTRACT, severity=HIGH match exactly what
+                    # verification/engine.py's pre-existing _categorise_static/
+                    # _severity_static regex heuristics already assign to a
+                    # "auth field mismatch" message -- chosen for zero-behavior-change
+                    # parity with the legacy string path, not re-derived independently.
+                    diagnostics.append(Diagnostic(
+                        error_id=Diagnostic.make_id("static", ErrorCategory.CONTRACT, msg, rel_path),
+                        category=ErrorCategory.CONTRACT,
+                        severity=ErrorSeverity.HIGH,
+                        source="static",
+                        message=msg,
+                        file_path=rel_path,
+                        validator_name="validate_frontend_auth_fields",
+                    ))
 
 
 def validate_route_quality(
@@ -996,6 +1014,16 @@ def validate_common_antipatterns(project_path, errors):
 def validate_project(project_path):
 
     errors = []
+    # Exp060: additive, canonical-Diagnostic parallel list. `errors` stays
+    # exactly str-only -- confirmed via direct read that ~15 call sites
+    # across v6_orchestrator.py/project_service.py/batch_runner.py/
+    # architecture_tournament_service.py do frozenset()/string-formatting/
+    # substring-filtering directly on this list, so mutating its element
+    # type would be a real behavior-risk, not just a contract change. Only
+    # validators explicitly migrated this cycle populate `diagnostics`;
+    # everything else leaves it empty for that check, same as before this
+    # experiment. See docs/VALIDATOR_CONTRACT.md / docs/VALIDATOR_MIGRATION.md.
+    diagnostics = []
 
     main_file = os.path.join(
         project_path,
@@ -1005,13 +1033,22 @@ def validate_project(project_path):
 
     if not os.path.exists(main_file):
 
-        errors.append(
-            "Missing app/main.py"
-        )
+        _msg = "Missing app/main.py"
+        errors.append(_msg)
+        diagnostics.append(Diagnostic(
+            error_id=Diagnostic.make_id("static", ErrorCategory.CONTRACT, _msg, "app/main.py"),
+            category=ErrorCategory.CONTRACT,
+            severity=ErrorSeverity.CRITICAL,
+            source="static",
+            message=_msg,
+            file_path="app/main.py",
+            validator_name="validate_project",
+        ))
 
         return {
             "passed": False,
-            "errors": errors
+            "errors": errors,
+            "diagnostics": diagnostics,
         }
 
     with open(
@@ -1038,9 +1075,18 @@ def validate_project(project_path):
 
         if not os.path.exists(route_file):
 
-            errors.append(
-                f"Missing route file: app/routes/{route_name}.py"
-            )
+            _rel = f"app/routes/{route_name}.py"
+            _msg = f"Missing route file: {_rel}"
+            errors.append(_msg)
+            diagnostics.append(Diagnostic(
+                error_id=Diagnostic.make_id("static", ErrorCategory.CONTRACT, _msg, _rel),
+                category=ErrorCategory.CONTRACT,
+                severity=ErrorSeverity.HIGH,
+                source="static",
+                message=_msg,
+                file_path=_rel,
+                validator_name="validate_project",
+            ))
 
     validate_backend_imports(
         project_path,
@@ -1052,11 +1098,13 @@ def validate_project(project_path):
     )
     validate_router_exports(
         project_path,
-        errors
+        errors,
+        diagnostics
     )
     validate_database(
         project_path,
-        errors
+        errors,
+        diagnostics
     )
     metadata = load_metadata(
         project_path
@@ -1064,45 +1112,55 @@ def validate_project(project_path):
     validate_architecture(
         project_path,
         metadata,
-        errors
+        errors,
+        diagnostics
     )
     validate_endpoints(
         project_path,
         metadata,
-        errors
+        errors,
+        diagnostics
     )
     validate_frontend_api_calls(
         project_path,
-        errors
+        errors,
+        diagnostics
     )
     validate_orphan_routes(
         project_path,
         metadata,
-        errors
+        errors,
+        diagnostics
     )
     validate_undefined_symbols(
         project_path,
-        errors
+        errors,
+        diagnostics
     )
     validate_self_shadowing_functions(
     project_path,
-    errors
+    errors,
+    diagnostics
 )
     validate_orm_usage(
         project_path,
-        errors
+        errors,
+        diagnostics
     )
     validate_no_flask_sqlalchemy(
         project_path,
-        errors
+        errors,
+        diagnostics
     )
     validate_session_management(
         project_path,
-        errors
+        errors,
+        diagnostics
     )
     validate_schema_model_consistency(
         project_path,
-        errors
+        errors,
+        diagnostics
     )
 
     validate_frontend_imports(
@@ -1119,19 +1177,23 @@ def validate_project(project_path):
     )
     validate_frontend_auth_fields(
         project_path,
-        errors
+        errors,
+        diagnostics
     )
     validate_stub_handlers(
     project_path,
-    errors
+    errors,
+    diagnostics
 )
     validate_module_level_global(
     project_path,
-    errors
+    errors,
+    diagnostics
 )
     validate_duplicate_class_definitions(
     project_path,
-    errors
+    errors,
+    diagnostics
 )
     validate_route_quality(
         project_path,
@@ -1181,5 +1243,13 @@ def validate_project(project_path):
 
     return {
         "passed": len(errors) == 0,
-        "errors": list(dict.fromkeys(errors))
+        "errors": list(dict.fromkeys(errors)),
+        # Exp060: additive -- only errors.append(...) participates in the
+        # existing dedup; diagnostics is a strict superset attempt (one
+        # Diagnostic per migrated validator's error) and is intentionally
+        # NOT deduped the same way, since Diagnostic isn't hashable by
+        # default (no frozen=True) and de-duping by content risks silently
+        # dropping two genuinely distinct diagnostics that happen to share
+        # message text across different validators.
+        "diagnostics": diagnostics,
     }

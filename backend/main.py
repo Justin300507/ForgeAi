@@ -24,6 +24,8 @@ from app.services.planner_service import generate_plan
 from app.models.generation_job import GenerationJob
 from app.models.user_credentials import UserCredentials
 from app.queue.api import router as queue_router
+from app.utils.safe_path import resolve_safe_path, PathTraversalError
+from app.middleware.rate_limit import rate_limit
 
 Base.metadata.create_all(bind=engine)
 
@@ -71,14 +73,61 @@ sys.stdout = _TeeStdout()
 JOB_STORE: dict[str, dict] = {}
 CHECK_STORE: dict[str, dict] = {}  # {job_id: {"status": str, "result": dict|None}}
 
+# ── Exp070: project-path safety ────────────────────────────────────────────────
+# job.project_name is LLM-derived (set from the generation report at the end of
+# a run) and stored in the DB, then reused across many later requests -- job
+# retry, post-deploy check-and-fix, and JOB DELETION (shutil.rmtree). None of
+# the six os.path.join("generated_projects", project_name) call sites below
+# validated that value before this fix, meaning a project_name shaped like
+# "../../something" could point delete_job()/delete_all_jobs()'s shutil.rmtree
+# at a directory outside generated_projects/ entirely. Reuses the same
+# resolve_safe_path() validator Experiments 066/067 built and hardened for the
+# write pipeline -- this closes the equivalent gap at the directory level.
+def _safe_generated_project_dir(project_name: str | None) -> str | None:
+    """Resolve project_name to its on-disk directory under
+    generated_projects/, or None if project_name is falsy or would
+    escape that directory."""
+    if not project_name:
+        return None
+    try:
+        return str(resolve_safe_path("generated_projects", project_name))
+    except PathTraversalError as e:
+        print(f"  [main] blocked unsafe project_name path: {project_name!r} ({e})")
+        return None
+
+
+# ── Exp070: rate limiting ────────────────────────────────────────────────────
+# Simple in-memory limiter (app/middleware/rate_limit.py) -- no external
+# dependency, single-process only (documented limitation in that module).
+# Limits are deliberately generous for legitimate use (generation/deploy are
+# slow, multi-minute operations a real user rarely repeats rapidly) while
+# still bounding the worst case (auth brute-forcing, endpoint spam).
+AUTH_RATE_LIMIT = Depends(rate_limit(5, 60, "auth"))          # 5 / 60s -- /login, /register
+GENERATION_RATE_LIMIT = Depends(rate_limit(10, 60, "generation"))  # 10 / 60s -- generation endpoints
+DEPLOY_RATE_LIMIT = Depends(rate_limit(10, 60, "deploy"))      # 10 / 60s -- /deploy/*
+
+
 app = FastAPI(title="ForgeAI", version="19.0")
 
 app.include_router(queue_router)
 
 
+# ── Exp070: CORS ─────────────────────────────────────────────────────────────
+# Was allow_origins=["*"] + allow_credentials=True -- a well-known anti-pattern
+# that widens cross-origin attack surface for a credentialed (bearer-token)
+# API. Reads a comma-separated allowlist from CORS_ORIGINS (same env-var name
+# this project's own deployment_config_service.py already uses for GENERATED
+# apps' own CORS setup, reused here for consistency), defaulting to the local
+# dev frontend origins only -- never a wildcard when credentials are allowed.
+_cors_origins_env = os.environ.get("CORS_ORIGINS", "").strip()
+if _cors_origins_env:
+    _allowed_origins = [o.strip() for o in _cors_origins_env.split(",") if o.strip()]
+else:
+    _allowed_origins = ["http://localhost:5173", "http://127.0.0.1:5173"]
+
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],
+    allow_origins=_allowed_origins,
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
@@ -90,7 +139,7 @@ class RegisterRequest(BaseModel):
     password: str
 
 
-@app.post("/register", tags=["auth"])
+@app.post("/register", tags=["auth"], dependencies=[AUTH_RATE_LIMIT])
 def register(request: RegisterRequest, db: Session = Depends(get_db)):
     if get_user_by_email(db, request.email):
         raise HTTPException(status_code=400, detail="Email already registered")
@@ -98,7 +147,7 @@ def register(request: RegisterRequest, db: Session = Depends(get_db)):
     return {"id": user.id, "email": user.email}
 
 
-@app.post("/login", tags=["auth"])
+@app.post("/login", tags=["auth"], dependencies=[AUTH_RATE_LIMIT])
 def login(form_data: OAuth2PasswordRequestForm = Depends(), db: Session = Depends(get_db)):
     user = authenticate_user(db, form_data.username, form_data.password)
     if not user:
@@ -278,7 +327,7 @@ def _run_job_retry(job_id: str, parent: "GenerationJob"):
     _thread_local.cancel_event = store["cancel_event"]
     store["status"] = "running"
 
-    project_path = os.path.join("generated_projects", parent.project_name) if parent.project_name else None
+    project_path = _safe_generated_project_dir(parent.project_name)
 
     try:
         result = retry_project_v14(
@@ -399,10 +448,8 @@ def retry_job(
     db.commit()
 
     # Check if project files exist on disk
-    project_files_exist = (
-        parent.project_name
-        and os.path.isdir(os.path.join("generated_projects", parent.project_name))
-    )
+    _existing_safe_dir = _safe_generated_project_dir(parent.project_name)
+    project_files_exist = bool(_existing_safe_dir and os.path.isdir(_existing_safe_dir))
 
     if project_files_exist:
         thread = threading.Thread(target=_run_job_retry, args=(new_job_id, parent), daemon=True)
@@ -492,18 +539,21 @@ def _run_check_and_fix(job_id: str, backend_url: str, project_name: str | None,
         check_result = check_deployed_app(backend_url)
         fixes: list[str] = []
         if check_result.get("errors"):
-            project_path = os.path.join("generated_projects", project_name) if project_name else None
+            project_path = _safe_generated_project_dir(project_name)
             fix_result = fix_deployed_app(check_result, project_path, github_url, creds)
             fixes = fix_result.get("fixes", [])
 
         frontend_result = None
         if project_name:
-            project_path = os.path.join("generated_projects", project_name)
-            try:
-                frontend_result = _resync_frontend(project_path, project_name, backend_url, creds)
-                fixes.extend(frontend_result.get("fixes", []))
-            except Exception as e:
-                frontend_result = {"redeployed": False, "reason": f"resync failed: {e}"}
+            project_path = _safe_generated_project_dir(project_name)
+            if project_path is None:
+                frontend_result = {"redeployed": False, "reason": "invalid project_name"}
+            else:
+                try:
+                    frontend_result = _resync_frontend(project_path, project_name, backend_url, creds)
+                    fixes.extend(frontend_result.get("fixes", []))
+                except Exception as e:
+                    frontend_result = {"redeployed": False, "reason": f"resync failed: {e}"}
 
         CHECK_STORE[job_id] = {"status": "done", "result": {**check_result, "fixes": fixes, "frontend": frontend_result}}
     except Exception as e:
@@ -568,7 +618,7 @@ def get_check_status(
     return CHECK_STORE.get(job_id, {"status": "not_started", "result": None})
 
 
-@app.post("/jobs", tags=["jobs"])
+@app.post("/jobs", tags=["jobs"], dependencies=[GENERATION_RATE_LIMIT])
 def create_job(
     req: JobRequest,
     db: Session = Depends(get_db),
@@ -626,12 +676,13 @@ def delete_job(
         raise HTTPException(status_code=400, detail="Cancel the job before deleting it")
 
     if job.project_name:
-        proj_dir = os.path.join("generated_projects", job.project_name)
-        if os.path.isdir(proj_dir):
-            shutil.rmtree(proj_dir, ignore_errors=True)
-        zip_path = proj_dir + ".zip"
-        if os.path.isfile(zip_path):
-            os.remove(zip_path)
+        proj_dir = _safe_generated_project_dir(job.project_name)
+        if proj_dir is not None:
+            if os.path.isdir(proj_dir):
+                shutil.rmtree(proj_dir, ignore_errors=True)
+            zip_path = proj_dir + ".zip"
+            if os.path.isfile(zip_path):
+                os.remove(zip_path)
 
     db.delete(job)
     db.commit()
@@ -662,12 +713,13 @@ def delete_all_jobs(
             continue
 
         if job.project_name:
-            proj_dir = os.path.join("generated_projects", job.project_name)
-            if os.path.isdir(proj_dir):
-                shutil.rmtree(proj_dir, ignore_errors=True)
-            zip_path = proj_dir + ".zip"
-            if os.path.isfile(zip_path):
-                os.remove(zip_path)
+            proj_dir = _safe_generated_project_dir(job.project_name)
+            if proj_dir is not None:
+                if os.path.isdir(proj_dir):
+                    shutil.rmtree(proj_dir, ignore_errors=True)
+                zip_path = proj_dir + ".zip"
+                if os.path.isfile(zip_path):
+                    os.remove(zip_path)
 
         db.delete(job)
         JOB_STORE.pop(job.id, None)
@@ -768,7 +820,7 @@ class FrontendRequest(BaseModel):
     architecture: dict
 
 
-@app.post("/generate")
+@app.post("/generate", dependencies=[GENERATION_RATE_LIMIT])
 def generate(project: ProjectIdea):
     return generate_plan(
         project.idea,
@@ -776,22 +828,22 @@ def generate(project: ProjectIdea):
     )
 
 
-@app.post("/architect")
+@app.post("/architect", dependencies=[GENERATION_RATE_LIMIT])
 def architect(request: ArchitectureRequest):
     return generate_architecture(request.project_plan)
 
 
-@app.post("/backend")
+@app.post("/backend", dependencies=[GENERATION_RATE_LIMIT])
 def backend(request: BackendRequest):
     return generate_backend(request.architecture)
 
 
-@app.post("/frontend")
+@app.post("/frontend", dependencies=[GENERATION_RATE_LIMIT])
 def frontend(request: FrontendRequest):
     return generate_frontend(request.architecture)
 
 
-@app.post("/project")
+@app.post("/project", dependencies=[GENERATION_RATE_LIMIT])
 def project(project: ProjectIdea):
     return generate_project(
         project.idea,
@@ -806,7 +858,7 @@ class V6Request(BaseModel):
     frontend_target: str = "web"   # "web" | "pwa"
 
 
-@app.post("/project/v6")
+@app.post("/project/v6", dependencies=[GENERATION_RATE_LIMIT])
 def project_v6(request: V6Request):
     """
     V6 Multi-Agent Engineering Team.
@@ -824,7 +876,7 @@ def project_v6(request: V6Request):
     )
 
 
-@app.post("/project/tournament")
+@app.post("/project/tournament", dependencies=[GENERATION_RATE_LIMIT])
 def project_tournament(project: ProjectIdea):
     """V5.4 Architecture Tournament — 3 competing architectures, picks the best."""
     return generate_project(project.idea, project.provider, use_tournament=True)
@@ -897,7 +949,7 @@ class V7Request(BaseModel):
     frontend_target: str = "web"   # "web" | "pwa"
 
 
-@app.post("/project/v7")
+@app.post("/project/v7", dependencies=[GENERATION_RATE_LIMIT])
 def project_v7(request: V7Request):
     """
     V7 Self-Improving AI Software Engineer.
@@ -987,7 +1039,7 @@ class V8Request(BaseModel):
     skip_reviews: bool = True
 
 
-@app.post("/project/v8")
+@app.post("/project/v8", dependencies=[GENERATION_RATE_LIMIT])
 def project_v8(request: V8Request):
     """
     V8 — Google Gemini Pipeline.
@@ -1009,7 +1061,7 @@ class V9Request(BaseModel):
     skip_reviews: bool = True
 
 
-@app.post("/project/v9")
+@app.post("/project/v9", dependencies=[GENERATION_RATE_LIMIT])
 def project_v9(request: V9Request):
     """
     V9 — OpenAI ChatGPT Pipeline.
@@ -1030,7 +1082,7 @@ class V10Request(BaseModel):
     skip_reviews: bool = False
 
 
-@app.post("/project/v10")
+@app.post("/project/v10", dependencies=[GENERATION_RATE_LIMIT])
 def project_v10(request: V10Request):
     """
     V10 — Smart Multi-Provider Pipeline.
@@ -1056,7 +1108,7 @@ class V11Request(BaseModel):
     frontend_target: str = "web"   # "web" | "pwa"
 
 
-@app.post("/project/v11")
+@app.post("/project/v11", dependencies=[GENERATION_RATE_LIMIT])
 def project_v11(request: V11Request):
     """
     V11 — Autonomous Deployment Platform.
@@ -1140,7 +1192,7 @@ class V12Request(BaseModel):
     skip_evolution: bool = False
 
 
-@app.post("/project/v12")
+@app.post("/project/v12", dependencies=[GENERATION_RATE_LIMIT])
 def project_v12(request: V12Request):
     """
     V12 — Continuous Product Evolution.
@@ -1179,7 +1231,7 @@ class V15Request(BaseModel):
     deploy_to: str = "both"          # "railway" | "cloudflare" | "both" | "none"
 
 
-@app.post("/project/v14")
+@app.post("/project/v14", dependencies=[GENERATION_RATE_LIMIT])
 def project_v14(request: V14Request):
     """
     V14 — One-Click Deployment Platform.
@@ -1206,7 +1258,7 @@ def project_v14(request: V14Request):
     )
 
 
-@app.post("/project/v15")
+@app.post("/project/v15", dependencies=[GENERATION_RATE_LIMIT])
 def project_v15(request: V15Request):
     """
     V15 — Autonomous Self-Healing Generation Platform.
@@ -1233,25 +1285,53 @@ def project_v15(request: V15Request):
     )
 
 
-@app.post("/deploy/github")
+def _require_contained_project_path(project_path: str) -> None:
+    """
+    Exp070: unlike job.project_name (a bare name, validated via
+    _safe_generated_project_dir above), these three /deploy/* endpoints
+    accept project_path directly as a caller-supplied full path
+    (matching how the frontend actually calls them -- with the path
+    returned from a prior generation response, which may legitimately
+    be absolute). resolve_safe_path() rejects all absolute paths
+    unconditionally, so it doesn't fit this shape; this is a narrower,
+    containment-only check: does the resolved path land inside
+    generated_projects/, regardless of whether it was given as
+    absolute or relative. Raises 400 if not.
+    """
+    from pathlib import Path
+    if not project_path:
+        raise HTTPException(status_code=400, detail="project_path is required")
+    try:
+        root = Path("generated_projects").resolve()
+        resolved = Path(project_path).resolve()
+        resolved.relative_to(root)
+    except (ValueError, OSError):
+        print(f"  [main] blocked deploy request with out-of-sandbox project_path: {project_path!r}")
+        raise HTTPException(status_code=400, detail="project_path must be inside generated_projects/")
+
+
+@app.post("/deploy/github", dependencies=[DEPLOY_RATE_LIMIT])
 def deploy_github(project_name: str, project_path: str):
     """Push a generated project to GitHub (creates repo automatically). Requires GITHUB_TOKEN."""
+    _require_contained_project_path(project_path)
     from app.services.github_service import push_to_github
     return push_to_github(project_path, project_name)
 
 
-@app.post("/deploy/railway")
+@app.post("/deploy/railway", dependencies=[DEPLOY_RATE_LIMIT])
 def deploy_railway(project_name: str, project_path: str):
     """Deploy a generated project's backend to Railway. Requires RAILWAY_TOKEN."""
+    _require_contained_project_path(project_path)
     from app.deployments.railway_provider import RailwayProvider
     provider = RailwayProvider()
     res = provider.deploy(project_path, project_name)
     return {"success": res.success, "url": res.url, "error": res.error, "metadata": res.metadata}
 
 
-@app.post("/deploy/cloudflare")
+@app.post("/deploy/cloudflare", dependencies=[DEPLOY_RATE_LIMIT])
 def deploy_cloudflare(project_name: str, project_path: str, backend_url: str = ""):
     """Deploy a generated project's frontend to Cloudflare Pages. Requires CLOUDFLARE_API_TOKEN."""
+    _require_contained_project_path(project_path)
     from app.deployments.cloudflare_provider import CloudflareProvider
     provider = CloudflareProvider()
     env_vars = {"VITE_API_URL": backend_url} if backend_url else None

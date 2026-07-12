@@ -158,5 +158,53 @@
     "new_pass_rate": 0.72,
     "test_n": 3,
     "combined_impact": 1.5
+  },
+  {
+    "entry_id": "test_high_impact",
+    "timestamp": "2026-07-12T19:56:17",
+    "improvement_type": "prompt_rule",
+    "description": "Add explicit router naming rule",
+    "source": "test",
+    "pattern_key": "RouterExportMismatch",
+    "success_rate_change": 0.2,
+    "runtime_change_ms": null,
+    "cost_change_usd": -0.01,
+    "benchmark_score_delta": 8.0,
+    "old_pass_rate": 0.6,
+    "new_pass_rate": 0.8,
+    "test_n": 5,
+    "combined_impact": 14.45
+  },
+  {
+    "entry_id": "test_low_impact",
+    "timestamp": "2026-07-12T19:56:17",
+    "improvement_type": "evolved_rule",
+    "description": "Minor comment cleanup",
+    "source": "test",
+    "pattern_key": "StubHandler",
+    "success_rate_change": 0.02,
+    "runtime_change_ms": null,
+    "cost_change_usd": null,
+    "benchmark_score_delta": 1.0,
+    "old_pass_rate": 0.7,
+    "new_pass_rate": 0.72,
+    "test_n": 3,
+    "combined_impact": 1.5
+  },
+  {
+    "entry_id": "re_ModuleNotFoundError_2026-06-30",
+    "timestamp": "2026-06-30T05:57:35",
+    "improvement_type": "evolved_rule",
+    "description": "All imports must be absolute within the project package and any third‑party library used must be lis",
+    "source": "rule_evolution",
+    "pattern_key": "ModuleNotFoundError",
+    "success_rate_change": 0.33333333333333337,
+    "runtime_change_ms": null,
+    "cost_change_usd": null,
+    "benchmark_score_delta": 33.333333333333336,
+    "old_pass_rate": 0.6666666666666666,
+    "new_pass_rate": 1.0,
+    "test_n": 3,
+    "combined_impact": 30.0
   }
 ]

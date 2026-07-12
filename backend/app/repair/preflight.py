@@ -25,6 +25,7 @@ Current fixes (no LLM needed):
 """
 from __future__ import annotations
 
+import ast
 import re
 from pathlib import Path
 from typing import Callable, Optional
@@ -649,6 +650,181 @@ def _fix_model_schema_notnull_gap(project_path: Path, diagnostics: list) -> bool
 
         if text != original:
             model_file.write_text(text, encoding="utf-8")
+
+    return changed
+
+
+def _build_parent_map(tree: ast.AST) -> dict:
+    parent: dict = {}
+    for node in ast.walk(tree):
+        for child in ast.iter_child_nodes(node):
+            parent[child] = node
+    return parent
+
+
+def _guarded_by_ancestor_if(node: ast.AST, parent_map: dict, source_name: str, attr: str) -> bool:
+    """True if any enclosing `if` (up to the function boundary) tests the
+    same `source_name.attr` expression anywhere in its condition -- treated
+    as "the LLM already handled this field's omission case", however it
+    phrased the guard (`is not None`, truthy check, `is None: continue`,
+    etc.). Conservative on purpose: a false "already guarded" only means a
+    genuinely risky line goes unfixed this pass, never a false rewrite."""
+    cur = node
+    while cur in parent_map:
+        cur = parent_map[cur]
+        if isinstance(cur, ast.If):
+            for n in ast.walk(cur.test):
+                if (isinstance(n, ast.Attribute) and isinstance(n.value, ast.Name)
+                        and n.value.id == source_name and n.attr == attr):
+                    return True
+        if isinstance(cur, (ast.FunctionDef, ast.AsyncFunctionDef)):
+            break
+    return False
+
+
+def _put_patch_handlers(tree: ast.Module):
+    for node in ast.walk(tree):
+        if not isinstance(node, (ast.FunctionDef, ast.AsyncFunctionDef)):
+            continue
+        for dec in node.decorator_list:
+            call = dec if isinstance(dec, ast.Call) else None
+            if call and isinstance(call.func, ast.Attribute) and call.func.attr in ("put", "patch"):
+                yield node
+                break
+
+
+@preflight.register("fix_update_notnull_field_loss", priority=27)
+def _fix_update_notnull_field_loss(project_path: Path, diagnostics: list) -> bool:
+    """
+    Exp075: the UPDATE-path sibling of Exp012/13's `fix_model_schema_notnull_gap`
+    above -- same underlying hazard (a `nullable=False`, no-default model
+    column receiving a NULL write), different code path and a genuinely
+    different root cause, so a genuinely different fix, per this
+    experiment's own explicit "do not touch CREATE" instruction.
+
+    Root cause (confirmed live, 2026-07-12, Exp074's `inventory` canary,
+    traced to the exact generation wave): the backend route-generation LLM
+    call that writes `PUT`/`PATCH` handlers sometimes emits an unconditional
+    field copy -- `product.sku = product_in.sku` -- directly from an
+    Optional-typed `{Model}Update` schema field. Pydantic gives an omitted
+    Optional field the value `None`, so a client PATCHing only `name` (never
+    touching `sku`) silently overwrites the DB's real `sku` with `NULL`,
+    crashing `nullable=False` columns immediately (`IntegrityError`) and
+    SILENTLY DATA-CORRUPTING nullable ones (no crash, no signal -- worse).
+    Traced SQL from the live incident: `UPDATE products SET sku=?, name=?,
+    category_id=?, unit_cost=?, reorder_threshold=? ...` with every
+    unmentioned field bound to `None` -- five columns overwritten
+    unconditionally from one Pydantic instance, not just the one that
+    happened to violate a NOT NULL constraint and crash loudly.
+
+    This is NOT the Exp012/13 gap: that fix targets `{Model}Create`, whose
+    fields the client MUST supply in full on every request (relaxing the
+    model to `nullable=True` there is correct -- there's no "existing value"
+    for a fresh row to preserve, so accepting NULL and letting a still-
+    required-in-schema field be the real guard is the right call). On
+    `PUT`/`PATCH`, an omitted field means "leave it alone", not "clear it" --
+    so relaxing the model would silently HIDE the data-loss bug (write
+    NULL successfully) instead of fixing it. The correct fix is a route
+    change: guard the copy with `if product_in.sku is not None:` so an
+    omitted field preserves the existing row's value, exactly the pattern
+    already used everywhere else in this same generated file once repaired.
+
+    Fix (deterministic, reuses existing mechanisms, no parallel repair):
+    scope-detection reused verbatim from `deterministic_patcher.py`'s
+    Exp073 AST-scoped attribute-rewrite work (`_infer_model_typed_names`,
+    `_query_target_class`) to identify which route-local variable is
+    genuinely an instance of which model class -- then
+    `_model_notnull_no_default_columns` (new, but structurally identical to
+    `_fix_model_schema_notnull_gap`'s own Column-classification regex
+    above) to find that model's NOT NULL/no-default columns. Inside every
+    `@router.put(...)`/`@router.patch(...)` handler, an unconditional
+    `target.field = source.field` assignment where `field` is one of those
+    columns, `target` is the typed model instance, and `source` is a
+    DIFFERENT object (never already wrapped in a guard that references the
+    same `source.field` anywhere in an enclosing `if`) gets rewritten to
+    `if source.field is not None: target.field = source.field` -- the
+    smallest possible change, and the exact fix pattern this project's own
+    LLM repair loop already converges to by hand once the crash forces it.
+
+    Deliberately does NOT touch CREATE handlers (no `@router.post(...)`
+    scanned), does NOT relax any model column, and does NOT attempt a
+    generic "diff the two dict representations" CRUD rewrite -- only this
+    one confirmed, narrowly-scoped statement shape.
+    """
+    routes_dir = project_path / "app" / "routes"
+    models_dir = project_path / "app" / "models"
+    if not routes_dir.exists() or not models_dir.exists():
+        return False
+
+    try:
+        from app.services.deterministic_patcher import (
+            _infer_model_typed_names, _model_notnull_no_default_columns,
+        )
+    except Exception:
+        return False
+
+    notnull_cols_by_class = _model_notnull_no_default_columns(models_dir)
+    if not notnull_cols_by_class:
+        return False
+
+    changed = False
+    for rf in routes_dir.glob("*.py"):
+        try:
+            content = rf.read_text(encoding="utf-8", errors="replace")
+            tree = ast.parse(content)
+        except Exception:
+            continue
+
+        parent_map = _build_parent_map(tree)
+        risky: list[tuple[int, str, str, str]] = []  # (lineno, target, source, attr)
+
+        for fn in _put_patch_handlers(tree):
+            typed_names = _infer_model_typed_names(fn, notnull_cols_by_class)
+            if not typed_names:
+                continue
+            for node in ast.walk(fn):
+                if not (isinstance(node, ast.Assign) and len(node.targets) == 1
+                        and node.lineno == node.end_lineno):
+                    continue
+                tgt, val = node.targets[0], node.value
+                if not (isinstance(tgt, ast.Attribute) and isinstance(tgt.value, ast.Name)
+                        and isinstance(val, ast.Attribute) and isinstance(val.value, ast.Name)):
+                    continue
+                if tgt.attr != val.attr:
+                    continue
+                target_obj, source_obj, attr = tgt.value.id, val.value.id, tgt.attr
+                if target_obj == source_obj:
+                    continue
+                cls_name = typed_names.get(target_obj)
+                if not cls_name or attr not in notnull_cols_by_class.get(cls_name, ()):
+                    continue
+                if _guarded_by_ancestor_if(node, parent_map, source_obj, attr):
+                    continue
+                risky.append((node.lineno, target_obj, source_obj, attr))
+
+        if not risky:
+            continue
+
+        lines = content.splitlines(keepends=True)
+        for lineno, target_obj, source_obj, attr in sorted(risky, key=lambda r: -r[0]):
+            line = lines[lineno - 1]
+            indent = line[:len(line) - len(line.lstrip(" \t"))]
+            newline = "\n" if line.endswith("\n") else ""
+            guarded = (
+                f"{indent}if {source_obj}.{attr} is not None:{newline}"
+                f"{indent}    {target_obj}.{attr} = {source_obj}.{attr}{newline}"
+            )
+            lines[lineno - 1] = guarded
+
+        new_content = "".join(lines)
+        if new_content != content:
+            try:
+                ast.parse(new_content)
+            except SyntaxError:
+                continue
+            rf.write_text(new_content, encoding="utf-8")
+            changed = True
+            print(f"  [preflight] Guarded {len(risky)} NOT-NULL field(s) on UPDATE in {rf.name}")
 
     return changed
 

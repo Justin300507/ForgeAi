@@ -1,0 +1,2320 @@
+
+######################################################################
+# FORGEAI V15 — Autonomous Self-Healing Platform
+# Idea:   A blog CMS with author and reader roles. Authors write posts with
+# Job ID: 0393a60be6374f56a7fc55d3bd9262a9
+# Deploy: False → both
+######################################################################
+
+[V15] >> generation ...
+[V15] Model router: complexity=7 (high) triggered=[image, filter, auth, tag, medium_description] stage=planning → gemini
+
+######################################################################
+# V6 AUTONOMOUS ENGINEERING TEAM
+# Idea: A blog CMS with author and reader roles. Authors write posts with
+######################################################################
+
+=== PRODUCT MANAGER (V6) ===
+  [cache hit] A blog CMS with author and reader roles. Authors write posts
+  Project: Forge Blog CMS
+  7 user stories | 7 features | 4 entities
+
+=== ARCHITECT (V6) ===
+
+=== ARCHITECT CACHE HIT — skipping LLM call ===
+
+=== TECH LEAD REVIEW (V6) ===
+  [cache hit]
+  Summary: The proposed architecture provides a solid foundation for the Forge Blog CMS, largely adhering to th
+  Issues: 2 critical, 3 warnings
+  [CRITICAL] The product spec explicitly states 'User registration (authors will be pre-provisioned or invited)' and 'User Authentication & Authorization: Secure login for authors'. However, the proposed architecture includes `/auth/signup` in the `MANDATORY AUTH ENDPOINTS` section of the contract, which contradicts the product spec's 'out_of_scope' for user registration. Additionally, the proposed API endpoints do not list `/auth/signup` but the contract requires it for 'every app with a users table'. This is a direct conflict.
+    Fix: Given the product spec's 'out_of_scope' for user registration, the `/auth/signup` endpoint should NOT be generated. The `MANDATORY AUTH ENDPOINTS` section of the contract should be interpreted as 'if user registration is in scope, then include signup'. For this project, it is out of scope. The `users` table will still exist for authors, but they will be pre-provisioned. The `auth_routes.py` file should only contain `/auth/login` and `/auth/me`.
+  [CRITICAL] The contract states `GET /auth/me` but the proposed architecture lists `GET /users/me`.
+    Fix: Rename `GET /users/me` to `GET /auth/me` and place it in `app/routes/auth_routes.py` as per the contract's mandatory auth endpoints.
+
+=== BACKEND + FRONTEND — PARALLEL ===
+
+=== FRONTEND TEAM (V6) ===
+
+=== START FRONTEND ===
+
+=== BACKEND TEAM — PARALLEL GENERATION (V6) ===
+
+  [V6] Wave 1 — Foundation
+  [V6] Wave 2 — Models (4 tables, parallel)
+Using Gemini
+Using Gemini
+Using Gemini
+Using Gemini
+Frontend: [cache hit] — skipping LLM call
+=== END FRONTEND ===
+Gemini failed (429 RESOURCE_EXHAUSTED. {'error': {'code': 429, 'message': 'Your prepayment credits are depleted. Please go to AI Studio at https://ai.studio/projects to manage your project and billing. Learn more at https://ai.google.dev/gemini-api/docs/billing#prepay. ', 'status': 'RESOURCE_EXHAUSTED'}}) — falling back to auto chain
+Using Cerebras (main)
+Gemini failed (429 RESOURCE_EXHAUSTED. {'error': {'code': 429, 'message': 'Your prepayment credits are depleted. Please go to AI Studio at https://ai.studio/projects to manage your project and billing. Learn more at https://ai.google.dev/gemini-api/docs/billing#prepay. ', 'status': 'RESOURCE_EXHAUSTED'}}) — falling back to auto chain
+Using Cerebras (main)
+Gemini failed (429 RESOURCE_EXHAUSTED. {'error': {'code': 429, 'message': 'Your prepayment credits are depleted. Please go to AI Studio at https://ai.studio/projects to manage your project and billing. Learn more at https://ai.google.dev/gemini-api/docs/billing#prepay. ', 'status': 'RESOURCE_EXHAUSTED'}}) — falling back to auto chain
+Using Cerebras (main)
+Gemini failed (429 RESOURCE_EXHAUSTED. {'error': {'code': 429, 'message': 'Your prepayment credits are depleted. Please go to AI Studio at https://ai.studio/projects to manage your project and billing. Learn more at https://ai.google.dev/gemini-api/docs/billing#prepay. ', 'status': 'RESOURCE_EXHAUSTED'}}) — falling back to auto chain
+Using Cerebras (main)
+[CEREBRAS] Prompt=3275 Completion=747 Reasoning=609 Total=4022
+    [model] post_tags: OK (9.3s)
+[CEREBRAS] Prompt=3293 Completion=636 Reasoning=526 Total=3929
+    [model] users: OK (9.5s)
+[CEREBRAS] Prompt=3272 Completion=402 Reasoning=318 Total=3674
+    [model] tags: OK (9.5s)
+[CEREBRAS] Prompt=3338 Completion=672 Reasoning=447 Total=4010
+    [model] posts: OK (10.8s)
+  [V6] Wave 2 done in 10.8s
+  [V6] Wave 2.5 — stripped back_populates/backref from app/models/post_tags.py
+  [V6] Wave 2.5 — stripped back_populates/backref from app/models/posts.py
+  [V6] Wave 2.5 — renaming plural class names: {'PostTags': 'PostTag', 'Users': 'User', 'Tags': 'Tag', 'Posts': 'Post'}
+  [V6] Wave 2.5 — created shim app/models/post_tag.py → PostTag
+  [V6] Wave 2.5 — created shim app/models/user.py → User
+  [V6] Wave 2.5 — created shim app/models/tag.py → Tag
+  [V6] Wave 2.5 — created shim app/models/post.py → Post
+  [V6] Wave 3 — Schemas (6 resources, parallel)
+Using Gemini
+Using Gemini
+Using Gemini
+Using Gemini
+Using Gemini
+Gemini failed (429 RESOURCE_EXHAUSTED. {'error': {'code': 429, 'message': 'Your prepayment credits are depleted. Please go to AI Studio at https://ai.studio/projects to manage your project and billing. Learn more at https://ai.google.dev/gemini-api/docs/billing#prepay. ', 'status': 'RESOURCE_EXHAUSTED'}}) — falling back to auto chain
+Using Cerebras (main)
+Gemini failed (429 RESOURCE_EXHAUSTED. {'error': {'code': 429, 'message': 'Your prepayment credits are depleted. Please go to AI Studio at https://ai.studio/projects to manage your project and billing. Learn more at https://ai.google.dev/gemini-api/docs/billing#prepay. ', 'status': 'RESOURCE_EXHAUSTED'}}) — falling back to auto chain
+Using Cerebras (main)
+Gemini failed (429 RESOURCE_EXHAUSTED. {'error': {'code': 429, 'message': 'Your prepayment credits are depleted. Please go to AI Studio at https://ai.studio/projects to manage your project and billing. Learn more at https://ai.google.dev/gemini-api/docs/billing#prepay. ', 'status': 'RESOURCE_EXHAUSTED'}}) — falling back to auto chain
+Using Cerebras (main)
+Gemini failed (429 RESOURCE_EXHAUSTED. {'error': {'code': 429, 'message': 'Your prepayment credits are depleted. Please go to AI Studio at https://ai.studio/projects to manage your project and billing. Learn more at https://ai.google.dev/gemini-api/docs/billing#prepay. ', 'status': 'RESOURCE_EXHAUSTED'}}) — falling back to auto chain
+Using Cerebras (main)
+Gemini failed (429 RESOURCE_EXHAUSTED. {'error': {'code': 429, 'message': 'Your prepayment credits are depleted. Please go to AI Studio at https://ai.studio/projects to manage your project and billing. Learn more at https://ai.google.dev/gemini-api/docs/billing#prepay. ', 'status': 'RESOURCE_EXHAUSTED'}}) — falling back to auto chain
+Using Cerebras (main)
+[CEREBRAS] Prompt=3561 Completion=1685 Reasoning=1333 Total=5246
+[CEREBRAS] Prompt=3272 Completion=1081 Reasoning=736 Total=4353
+    [schema] user: OK (4.1s)
+    [schema] stats: OK (4.1s)
+Using Gemini
+[CEREBRAS] Prompt=3268 Completion=1066 Reasoning=727 Total=4334
+[CEREBRAS] Prompt=3270 Completion=1447 Reasoning=1070 Total=4717
+    [schema] seed: OK (4.2s)
+    [schema] auth: OK (4.2s)
+[CEREBRAS] Prompt=3930 Completion=1535 Reasoning=1071 Total=5465
+    [schema] post: OK (4.2s)
+Gemini failed (429 RESOURCE_EXHAUSTED. {'error': {'code': 429, 'message': 'Your prepayment credits are depleted. Please go to AI Studio at https://ai.studio/projects to manage your project and billing. Learn more at https://ai.google.dev/gemini-api/docs/billing#prepay. ', 'status': 'RESOURCE_EXHAUSTED'}}) — falling back to auto chain
+Using Cerebras (main)
+[CEREBRAS] Prompt=3525 Completion=844 Reasoning=705 Total=4369
+    [schema] tag: OK (3.3s)
+  [V6] Wave 3 done in 7.4s
+  [V6] Wave 4 — Routes (6 files, parallel)
+Using Gemini
+Using Gemini
+Using Gemini
+Using Gemini
+Using Gemini
+Gemini failed (429 RESOURCE_EXHAUSTED. {'error': {'code': 429, 'message': 'Your prepayment credits are depleted. Please go to AI Studio at https://ai.studio/projects to manage your project and billing. Learn more at https://ai.google.dev/gemini-api/docs/billing#prepay. ', 'status': 'RESOURCE_EXHAUSTED'}}) — falling back to auto chain
+Using Cerebras (main)
+Gemini failed (429 RESOURCE_EXHAUSTED. {'error': {'code': 429, 'message': 'Your prepayment credits are depleted. Please go to AI Studio at https://ai.studio/projects to manage your project and billing. Learn more at https://ai.google.dev/gemini-api/docs/billing#prepay. ', 'status': 'RESOURCE_EXHAUSTED'}}) — falling back to auto chain
+Using Cerebras (main)
+Gemini failed (429 RESOURCE_EXHAUSTED. {'error': {'code': 429, 'message': 'Your prepayment credits are depleted. Please go to AI Studio at https://ai.studio/projects to manage your project and billing. Learn more at https://ai.google.dev/gemini-api/docs/billing#prepay. ', 'status': 'RESOURCE_EXHAUSTED'}}) — falling back to auto chain
+Using Cerebras (main)
+Gemini failed (429 RESOURCE_EXHAUSTED. {'error': {'code': 429, 'message': 'Your prepayment credits are depleted. Please go to AI Studio at https://ai.studio/projects to manage your project and billing. Learn more at https://ai.google.dev/gemini-api/docs/billing#prepay. ', 'status': 'RESOURCE_EXHAUSTED'}}) — falling back to auto chain
+Using Cerebras (main)
+Gemini failed (429 RESOURCE_EXHAUSTED. {'error': {'code': 429, 'message': 'Your prepayment credits are depleted. Please go to AI Studio at https://ai.studio/projects to manage your project and billing. Learn more at https://ai.google.dev/gemini-api/docs/billing#prepay. ', 'status': 'RESOURCE_EXHAUSTED'}}) — falling back to auto chain
+Using Cerebras (main)
+[CEREBRAS] Prompt=4597 Completion=1752 Reasoning=763 Total=6349
+    [route] app/routes/seed_routes.py: OK (4.3s)
+Using Gemini
+[CEREBRAS] Prompt=4601 Completion=768 Reasoning=571 Total=5369
+    [route] app/routes/stats_routes.py: OK (4.4s)
+Gemini failed (429 RESOURCE_EXHAUSTED. {'error': {'code': 429, 'message': 'Your prepayment credits are depleted. Please go to AI Studio at https://ai.studio/projects to manage your project and billing. Learn more at https://ai.google.dev/gemini-api/docs/billing#prepay. ', 'status': 'RESOURCE_EXHAUSTED'}}) — falling back to auto chain
+Using Cerebras (main)
+[CEREBRAS] Prompt=4597 Completion=1530 Reasoning=1315 Total=6127
+[CEREBRAS] Prompt=4749 Completion=2792 Reasoning=844 Total=7541
+    [route] app/routes/user_routes.py: OK (5.1s)
+    [route] app/routes/post_routes.py: OK (5.1s)
+[CEREBRAS] Prompt=4599 Completion=1580 Reasoning=925 Total=6179
+    [route] app/routes/auth_routes.py: OK (6.1s)
+[CEREBRAS] Prompt=4628 Completion=1462 Reasoning=694 Total=6090
+    [route] app/routes/tag_routes.py: OK (3.3s)
+  [V6] Wave 4 done in 7.6s
+  [V6] Wave 5 — main.py (from 6 route files, 4 models)
+Using Gemini
+Gemini failed (429 RESOURCE_EXHAUSTED. {'error': {'code': 429, 'message': 'Your prepayment credits are depleted. Please go to AI Studio at https://ai.studio/projects to manage your project and billing. Learn more at https://ai.google.dev/gemini-api/docs/billing#prepay. ', 'status': 'RESOURCE_EXHAUSTED'}}) — falling back to auto chain
+Using Cerebras (main)
+[CEREBRAS] Prompt=2994 Completion=1411 Reasoning=1077 Total=4405
+    [main] app/main.py: OK (1.9s)
+
+  [V6] Parallel backend done: 30/30 files OK in 27.7s (parallel phase: 7.6s)
+  Generated 30 files in 27.7s (parallel phase: 7.6s)
+  Backend+Frontend done in 27.7s
+
+[V14] Deployment configs written: ['render.yaml', 'Procfile', '.env.example', '.github/workflows/deploy.yml', 'wrangler.toml']
+
+=== FILES WRITTEN: C:\Users\jerry\onedrive\Desktop\forgeai\generated_projects\forge_blog_cms (40 files) ===
+
+=== DETERMINISTIC PATCHER ===
+  [patcher] Stripped 1 relationship() declaration(s) from posts.py
+  [patcher] Stripped 2 relationship() declaration(s) from post_tags.py
+  [patcher] Injected known-good app/utils/auth.py
+  [patcher] Injected known-good app/routes/auth_routes.py (dynamic password field + fast bcrypt)
+  [patcher] Made Response schema fields Optional in auth.py
+  [patcher] Made Response schema fields Optional in post.py
+  [patcher] Made Response schema fields Optional in seed.py
+  [patcher] Made Response schema fields Optional in stats.py
+  [patcher] Made Response schema fields Optional in tag.py
+  [patcher] Made Response schema fields Optional in user.py
+  [schema_patcher] Added from_attributes=True to 5 schema file(s)
+  [patcher] Fixed attribute accesses in auth_routes.py
+  [patcher] Fixed attribute accesses in post_routes.py
+  [patcher] Fixed attribute accesses in seed_routes.py
+  [patcher] Fixed ownership-FK attribute drift in post_routes.py
+  [patcher] Patched 4 file(s) — passlib→bcrypt, async→sync, smart quotes
+  [db_patcher] Injected known-good app/database.py
+  [field_patcher] Aligned model fields in seed_routes.py
+  [field_patcher] Added missing column(s) ['user_id'] to Post in posts.py
+  [field_patcher] Added missing schema field(s) ['name'] to PostCreate in post.py
+  [field_patcher] Added missing schema field(s) ['name'] to PostUpdate in post.py
+  [field_patcher] Filtered dict-unpack constructor kwargs in seed_routes.py
+  [field_patcher] Fixed model-field mismatches in 1 route file(s)
+
+=== VALIDATION LOOP (V6) ===
+  Validation: FAIL — 10 errors
+
+  Validation errors:
+    • Missing frontend import target: ./pages/PostListPage
+    • Missing frontend import target: ./pages/PostDetailPage
+    • Missing frontend import target: ./pages/AuthorDashboardPage
+    • Missing frontend import target: ./pages/CreatePostPage
+    • Missing frontend import target: ./pages/EditPostPage
+    • Frontend auth field mismatch: src/pages/LoginPage.jsx POSTs to a login endpoint with fields ['password', 'username'] but no 'email' — the backend's login schema requires email (per project contract), so every login attempt will fail with a 422 even though the form is filled in correctly (the UI will show a confusing generic 'Field required' error). Rename the field/state var to email and send { email, password } in the POST body.
+    • Duplicate class definition: 'PostCreate' is defined in multiple files (app/routes/post_routes.py, app/schemas/post.py) — this creates incompatible duplicate types
+    • Duplicate class definition: 'PostUpdate' is defined in multiple files (app/routes/post_routes.py, app/schemas/post.py) — this creates incompatible duplicate types
+
+  Fix attempt 1/4 ...
+[LLM cache] HIT (missing_file) — 0 tokens billed
+[LLM cache] HIT (missing_file) — 0 tokens billed
+[LLM cache] HIT (missing_file) — 0 tokens billed
+[LLM cache] HIT (missing_file) — 0 tokens billed
+[LLM cache] HIT (missing_file) — 0 tokens billed
+      [fix cache hit] src/pages/LoginPage.jsx
+Using Gemini
+Gemini failed (429 RESOURCE_EXHAUSTED. {'error': {'code': 429, 'message': 'Your prepayment credits are depleted. Please go to AI Studio at https://ai.studio/projects to manage your project and billing. Learn more at https://ai.google.dev/gemini-api/docs/billing#prepay. ', 'status': 'RESOURCE_EXHAUSTED'}}) — falling back to auto chain
+Using Cerebras (main)
+[CEREBRAS] Prompt=3196 Completion=2420 Reasoning=792 Total=5616
+Using Gemini
+Gemini failed (429 RESOURCE_EXHAUSTED. {'error': {'code': 429, 'message': 'Your prepayment credits are depleted. Please go to AI Studio at https://ai.studio/projects to manage your project and billing. Learn more at https://ai.google.dev/gemini-api/docs/billing#prepay. ', 'status': 'RESOURCE_EXHAUSTED'}}) — falling back to auto chain
+Using Cerebras (main)
+[CEREBRAS] Prompt=2101 Completion=1204 Reasoning=504 Total=3305
+  [patcher] Fixed attribute accesses in post_routes.py
+  [patcher] Fixed attribute accesses in seed_routes.py
+  Post-fix 1: FAIL — 5 errors
+    • Missing symbol 'PostRead' in app/schemas/post.py (imported from app/routes/post_routes.py)
+    • Missing symbol 'TagRead' in app/schemas/tag.py (imported from app/routes/post_routes.py)
+    • Missing symbol 'TagRead' in app/schemas/tag.py (imported from app/routes/tag_routes.py)
+    • Missing endpoint GET /posts/${id}/comments (expected in app/routes/post_routes.py) -- called from src/pages/PostDetailPage.jsx but never implemented on the backend
+    • Missing endpoint POST /posts/${id}/comments (expected in app/routes/post_routes.py) -- called from src/pages/PostDetailPage.jsx but never implemented on the backend
+
+  Fix attempt 2/4 ...
+Using Gemini
+Gemini failed (429 RESOURCE_EXHAUSTED. {'error': {'code': 429, 'message': 'Your prepayment credits are depleted. Please go to AI Studio at https://ai.studio/projects to manage your project and billing. Learn more at https://ai.google.dev/gemini-api/docs/billing#prepay. ', 'status': 'RESOURCE_EXHAUSTED'}}) — falling back to auto chain
+Using Cerebras (main)
+[CEREBRAS] Prompt=1740 Completion=676 Reasoning=229 Total=2416
+Using Gemini
+Gemini failed (429 RESOURCE_EXHAUSTED. {'error': {'code': 429, 'message': 'Your prepayment credits are depleted. Please go to AI Studio at https://ai.studio/projects to manage your project and billing. Learn more at https://ai.google.dev/gemini-api/docs/billing#prepay. ', 'status': 'RESOURCE_EXHAUSTED'}}) — falling back to auto chain
+Using Cerebras (main)
+[CEREBRAS] Prompt=1570 Completion=527 Reasoning=354 Total=2097
+Using Gemini
+Gemini failed (429 RESOURCE_EXHAUSTED. {'error': {'code': 429, 'message': 'Your prepayment credits are depleted. Please go to AI Studio at https://ai.studio/projects to manage your project and billing. Learn more at https://ai.google.dev/gemini-api/docs/billing#prepay. ', 'status': 'RESOURCE_EXHAUSTED'}}) — falling back to auto chain
+Using Cerebras (main)
+[CEREBRAS] Prompt=2891 Completion=2860 Reasoning=705 Total=5751
+  [patcher] Made Response schema fields Optional in tag.py
+  Post-fix 2: FAIL — 2 errors
+    • Missing backend import target: app/models/comments.py
+    • Missing backend import target: app/schemas/comment.py
+
+  Fix attempt 3/4 ...
+Using Gemini
+Gemini failed (429 RESOURCE_EXHAUSTED. {'error': {'code': 429, 'message': 'Your prepayment credits are depleted. Please go to AI Studio at https://ai.studio/projects to manage your project and billing. Learn more at https://ai.google.dev/gemini-api/docs/billing#prepay. ', 'status': 'RESOURCE_EXHAUSTED'}}) — falling back to auto chain
+Using Cerebras (main)
+[CEREBRAS] Prompt=3827 Completion=1512 Reasoning=1087 Total=5339
+Using Gemini
+Gemini failed (429 RESOURCE_EXHAUSTED. {'error': {'code': 429, 'message': 'Your prepayment credits are depleted. Please go to AI Studio at https://ai.studio/projects to manage your project and billing. Learn more at https://ai.google.dev/gemini-api/docs/billing#prepay. ', 'status': 'RESOURCE_EXHAUSTED'}}) — falling back to auto chain
+Using Cerebras (main)
+[CEREBRAS] Prompt=3967 Completion=875 Reasoning=547 Total=4842
+  [patcher] Fixed attribute accesses in post_routes.py
+  Post-fix 3: PASS — 0 errors
+
+=== REVIEWS (QA / Security / Code / Performance) ===
+
+=== QA REVIEW (V6) ===
+Using Gemini
+Gemini failed (429 RESOURCE_EXHAUSTED. {'error': {'code': 429, 'message': 'Your prepayment credits are depleted. Please go to AI Studio at https://ai.studio/projects to manage your project and billing. Learn more at https://ai.google.dev/gemini-api/docs/billing#prepay. ', 'status': 'RESOURCE_EXHAUSTED'}}) — falling back to auto chain
+Using Cerebras (main)
+[CEREBRAS] Prompt=3503 Completion=1527 Reasoning=842 Total=5030
+  QA score: 80/100 | Stories: 7/7 covered
+  Blockers: Protected endpoints lack authentication, GET /posts/{post_id} implementation typo causing server error
+  [MISSING] Protected endpoints (POST /posts, PUT /posts/{post_id}, PATCH /posts/{post_id}/publish, DELETE /posts/{post_id}) do not require authentication.
+  [MISSING] GET /posts/{post_id} contains a typo (return PostRead.mode) leading to a runtime error.
+
+=== SECURITY REVIEW (V6) ===
+Using Gemini
+Gemini failed (429 RESOURCE_EXHAUSTED. {'error': {'code': 429, 'message': 'Your prepayment credits are depleted. Please go to AI Studio at https://ai.studio/projects to manage your project and billing. Learn more at https://ai.google.dev/gemini-api/docs/billing#prepay. ', 'status': 'RESOURCE_EXHAUSTED'}}) — falling back to auto chain
+Using Cerebras (main)
+[CEREBRAS] Prompt=6837 Completion=1947 Reasoning=1079 Total=8784
+  Security score: 78/100 | Risk: medium
+  Findings: 1 critical, 5 high, 6 total
+  [CRITICAL] app/routes/seed_routes.py: The `/seed` endpoint is publicly accessible and allows creation of users, tags, and posts without any authentication or authorization checks.
+  Passed: No raw SQL queries with user‑controlled input detected, Passwords are hashed using a secure algorithm (bcrypt) before storage
+
+============================================================
+  SECURITY REPORT — Score: 78/100 [MEDIUM]
+  The codebase contains several high‑severity issues, notably an unauthenticated seed endpoint and missing input validation, which could be exploited for data injection and denial‑of‑service attacks. Hard‑coded credentials and permissive CORS settings further reduce the security posture. Implementing authentication on critical routes, adding proper validation, securing secrets, and enabling rate limiting will markedly improve safety.
+
+  Findings (6):
+  [CRITICAL] AuthenticationGap in app/routes/seed_routes.py
+             The `/seed` endpoint is publicly accessible and allows creation of users, tags, and posts without any authentication or authorization checks.
+             Fix: Protect the endpoint with authentication (e.g., `Depends(get_current_user)`) and restrict it to admin roles only, or remove it entirely from production.
+  [HIGH    ] HardcodedSecret in app/routes/seed_routes.py
+             User seed data contains a hard‑coded password hash (`"hashed_pw"`). This reveals a credential that could be reused if the same hash is deployed elsewhere.
+             Fix: Replace hard‑coded hashes with securely generated hashes at runtime or load them from environment variables. Do not commit any credential values to source control.
+  [HIGH    ] MissingValidation in app/schemas/auth.py
+             String fields (email, password, display_name) only enforce `min_length` and lack `max_length` constraints, allowing excessively long inputs that can cause DoS or buffer‑overflow style issues.
+             Fix: Add `max_length` (e.g., `Field(min_length=1, max_length=254)`) to all user‑controlled string fields across schemas.
+  [HIGH    ] MissingValidation in app/schemas/post.py
+             Post fields such as `title`, `content_markdown`, `cover_image_url`, and `status` have no upper length limits, exposing the API to resource‑exhaustion attacks.
+             Fix: Define appropriate `max_length` values (e.g., title ≤ 255, status ≤ 20, URLs ≤ 2048) using `Field` constraints.
+  [HIGH    ] RateLimitingAbsent in app/routes/auth_routes.py
+             Authentication endpoints (`/signup`, `/login`) have no rate‑limiting or brute‑force protection, making them vulnerable to credential‑stuffing attacks.
+             Fix: Integrate a rate‑limiting solution (e.g., `slowapi` or a reverse‑proxy limit) and consider adding exponential back‑off on repeated failures.
+  [MEDIUM  ] CORSIssue in app/main.py
+             CORS is configured to allow any origin, which can expose the API to CSRF attacks from malicious sites in production.
+             Fix: Restrict `allow_origins` to the known frontend domains or configure it via environment variables.
+
+  Passed: No raw SQL queries with user‑controlled input detected, Passwords are hashed using a secure algorithm (bcrypt) before storage
+============================================================
+
+=== CODE REVIEW (V6) ===
+Using Gemini
+Gemini failed (429 RESOURCE_EXHAUSTED. {'error': {'code': 429, 'message': 'Your prepayment credits are depleted. Please go to AI Studio at https://ai.studio/projects to manage your project and billing. Learn more at https://ai.google.dev/gemini-api/docs/billing#prepay. ', 'status': 'RESOURCE_EXHAUSTED'}}) — falling back to auto chain
+Using Cerebras (main)
+[CEREBRAS] Prompt=5009 Completion=2480 Reasoning=1002 Total=7489
+  Code review: 38/100 overall | 2 critical, 3 high issues
+  Naming: 45 | Architecture: 40 | Maintainability: 35 | Tech Debt: 30
+  The project demonstrates a solid foundation with proper FastAPI setup, database configuration, and basic security consid
+
+=== PERFORMANCE REVIEW (V6) ===
+Using Gemini
+Gemini failed (429 RESOURCE_EXHAUSTED. {'error': {'code': 429, 'message': 'Your prepayment credits are depleted. Please go to AI Studio at https://ai.studio/projects to manage your project and billing. Learn more at https://ai.google.dev/gemini-api/docs/billing#prepay. ', 'status': 'RESOURCE_EXHAUSTED'}}) — falling back to auto chain
+Using Cerebras (main)
+[CEREBRAS] Prompt=5104 Completion=1729 Reasoning=987 Total=6833
+  Performance score: 68/100 | 6 issues total
+  N+1: 2 | Missing indexes: 4 | Large payloads: 0 | Slow APIs: 0
+  [N+1]  app/routes/post_routes.py: Each Post instance accessed in the response triggers the `author` property, whic
+  [N+1]  app/models/comments.py: Accessing `comment.author`, `comment.post` or `comment.parent` issues a separate
+  [IDX]  app/models/posts.py.status: The `status` column is frequently filtered (`Post.status == 
+  [IDX]  app/models/comments.py.post_id: `post_id` is used to retrieve comments for a given post but 
+
+=== FRONTEND CRITIC (V6) ===
+[LLM cache] HIT (frontend_critic) — 0 tokens billed
+  Frontend critic: 56/100 design score | 1 critical, 2 high issues
+  Hierarchy: 72 | Compliance: 45 | Polish: 50 | Consistency: 60
+  This cannot ship as-is. While individual components like the PostCard successfully capture the neubrutalist aesthetic, the app completely misses its a
+
+=== UI POLISH PASS (2 file(s)) ===
+      [fix cache hit] src/pages/HomePage.jsx
+  [polish] src/pages/HomePage.jsx patched
+      [fix cache hit] src/components/Header.jsx
+  [polish] src/components/Header.jsx patched
+  Post-polish validation: PASS
+  [db_patcher] Injected known-good app/database.py
+
+=== RUNTIME VALIDATION (V6) ===
+Running runtime validation in: C:\Users\jerry\onedrive\Desktop\forgeai\generated_projects\forge_blog_cms
+Using Python: C:\Users\jerry\onedrive\Desktop\forgeai\backend\venv\Scripts\python.exe
+Skipping pip install (packages pre-installed): C:\Users\jerry\onedrive\Desktop\forgeai\generated_projects\forge_blog_cms\app\requirements.txt
+  [runner] Pre-flight DB init: OK
+Health Check /health: 200
+
+=== USER JOURNEY (CRUD WORKFLOW) ===
+  Journey FAIL — 4 passed / 7 failed
+    ✗ Register: 404 (no register/signup endpoint found)
+    ✓ Login: 422 @ login (server alive, auth format mismatch)
+    ✓ Detect entity: http://127.0.0.1:8001/posts
+    ✗ Create entity: 401 (auth required, no valid token)
+    ✓ List entities: 200 count=?
+    ✗ Edit entity: no entity_id captured
+    ✗ Delete entity: no entity_id captured
+    ✗ Verify deletion: no entity_id
+    ✓ Logout: 401
+    ✗ Login again: re-login failed
+    ✗ Verify persistence: no entity_id
+
+=== ENDPOINT SMOKE TESTS ===
+  All endpoints responded without errors.
+
+  Endpoint pass rate: 100% (15/15 passed, 0 timeouts, 0 errors)
+
+  Runtime FAIL: CRUD workflow failed critical steps
+  Runtime: FAIL
+Runtime Fix Requested: {'success': False, 'healthy': True, 'exit_code': 0, 'stdout': 'INFO:     127.0.0.1:49672 - "GET /health HTTP/1.1" 200 OK\nINFO:     127.0.0.1:49675 - "GET /docs HTTP/1.1" 200 OK\nINFO:     127.0.0.1:49678 - "POST /auth/signup HTTP/1.1" 500 Internal Server Error\nINFO:     127.0.0.1:49679 - "POST /auth/register HTTP/1.1" 500 Internal Server Error\nINFO:     127.0.0.1:49680 - "GET /openapi.json HTTP/1.1" 200 OK\nINFO:     127.0.0.1:49681 - "POST /auth/login HTTP/1.1" 401 Unauthorized\nINFO:     127.0.0.1:49682 - "POST /auth/login HTTP/1.1" 401 Unauthorized\nINFO:     127.0.0.1:49683 - "POST /auth/login HTTP/1.1" 422 Unprocessable Content\nINFO:     127.0.0.1:49687 - "POST /seed HTTP/1.1" 500 Internal Server Error\nINFO:     127.0.0.1:49688 - "GET /openapi.json HTTP/1.1" 200 OK\nINFO:     127.0.0.1:49689 - "POST /posts HTTP/1.1" 401 Unauthorized\nINFO:     127.0.0.1:49690 - "GET /posts HTTP/1.1" 200 OK\nINFO:     127.0.0.1:49691 - "POST /auth/logout HTTP/1.1" 401 Unauthorized\nINFO:     127.0.0.1:49692 - "POST /auth/login HTTP/1.1" 401 Unauthorized\nINFO:     127.0.0.1:49693 - "POST /auth/login HTTP/1.1" 422 Unprocessable Content\nINFO:     127.0.0.1:49694 - "GET /stats/summary HTTP/1.1" 200 OK\nINFO:     127.0.0.1:49695 - "POST /auth/login HTTP/1.1" 422 Unprocessable Content\nINFO:     127.0.0.1:49696 - "GET /users/me HTTP/1.1" 401 Unauthorized\nINFO:     127.0.0.1:49697 - "GET /posts HTTP/1.1" 200 OK\nINFO:     127.0.0.1:49698 - "GET /posts/1 HTTP/1.1" 404 Not Found\nINFO:     127.0.0.1:49699 - "GET /authors/1/posts HTTP/1.1" 401 Unauthorized\nINFO:     127.0.0.1:49700 - "POST /posts HTTP/1.1" 401 Unauthorized\nINFO:     127.0.0.1:49701 - "PUT /posts/1 HTTP/1.1" 401 Unauthorized\nINFO:     127.0.0.1:49702 - "DELETE /posts/1 HTTP/1.1" 401 Unauthorized\nINFO:     127.0.0.1:49703 - "GET /tags HTTP/1.1" 200 OK\nINFO:     127.0.0.1:49704 - "POST /tags HTTP/1.1" 401 Unauthorized\nINFO:     127.0.0.1:49705 - "DELETE /tags/1 HTTP/1.1" 401 Unauthorized\n', 'stderr': 'INFO:     Started server process [30248]\nINFO:     Waiting for application startup.\nINFO:     Application startup complete.\nINFO:     Uvicorn running on http://127.0.0.1:8001 (Press CTRL+C to quit)\nERROR:    Exception in ASGI application\nTraceback (most recent call last):\n  File "C:\\Users\\jerry\\onedrive\\Desktop\\forgeai\\backend\\venv\\Lib\\site-packages\\uvicorn\\protocols\\http\\httptools_impl.py", line 421, in run_asgi\n    result = await app(  # type: ignore[func-returns-value]\n             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n        self.scope, self.receive, self.send\n        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n    )\n    ^\n  File "C:\\Users\\jerry\\onedrive\\Desktop\\forgeai\\backend\\venv\\Lib\\site-packages\\uvicorn\\middleware\\proxy_headers.py", line 62, in __call__\n    return await self.app(scope, receive, send)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File "C:\\Users\\jerry\\onedrive\\Desktop\\forgeai\\backend\\venv\\Lib\\site-packages\\fastapi\\applications.py", line 1159, in __call__\n    await super().__call__(scope, receive, send)\n  File "C:\\Users\\jerry\\onedrive\\Desktop\\forgeai\\backend\\venv\\Lib\\site-packages\\starlette\\applications.py", line 90, in __call__\n    await self.middleware_stack(scope, receive, send)\n  File "C:\\Users\\jerry\\onedrive\\Desktop\\forgeai\\backend\\venv\\Lib\\site-packages\\starlette\\middleware\\errors.py", line 186, in __call__\n    raise exc\n  File "C:\\Users\\jerry\\onedrive\\Desktop\\forgeai\\backend\\venv\\Lib\\site-packages\\starlette\\middleware\\errors.py", line 164, in __call__\n    await self.app(scope, receive, _send)\n  File "C:\\Users\\jerry\\onedrive\\Desktop\\forgeai\\backend\\venv\\Lib\\site-packages\\starlette\\middleware\\cors.py", line 88, in __call__\n    await self.app(scope, receive, send)\n  File "C:\\Users\\jerry\\onedrive\\Desktop\\forgeai\\backend\\venv\\Lib\\site-packages\\starlette\\middleware\\exceptions.py", line 63, in __call__\n    await wrap_app_handling_exceptions(self.app, conn)(scope, receive, send)\n  File "C:\\Users\\jerry\\onedrive\\Desktop\\forgeai\\backend\\venv\\Lib\\site-packages\\starlette\\_exception_handler.py", line 53, in wrapped_app\n    raise exc\n  File "C:\\Users\\jerry\\onedrive\\Desktop\\forgeai\\backend\\venv\\Lib\\site-packages\\starlette\\_exception_handler.py", line 42, in wrapped_app\n    await app(scope, receive, sender)\n  File "C:\\Users\\jerry\\onedrive\\Desktop\\forgeai\\backend\\venv\\Lib\\site-packages\\fastapi\\middleware\\asyncexitstack.py", line 18, in __call__\n    await self.app(scope, receive, send)\n  File "C:\\Users\\jerry\\onedrive\\Desktop\\forgeai\\backend\\venv\\Lib\\site-packages\\starlette\\routing.py", line 660, in __call__\n    await self.middleware_stack(scope, receive, send)\n  File "C:\\Users\\jerry\\onedrive\\Desktop\\forgeai\\backend\\venv\\Lib\\site-packages\\starlette\\routing.py", line 680, in app\n    await route.handle(scope, receive, send)\n  File "C:\\Users\\jerry\\onedrive\\Desktop\\forgeai\\backend\\venv\\Lib\\site-packages\\starlette\\routing.py", line 276, in handle\n    await self.app(scope, receive, send)\n  File "C:\\Users\\jerry\\onedrive\\Desktop\\forgeai\\backend\\venv\\Lib\\site-packages\\fastapi\\routing.py", line 134, in app\n    await wrap_app_handling_exceptions(app, request)(scope, receive, send)\n  File "C:\\Users\\jerry\\onedrive\\Desktop\\forgeai\\backend\\venv\\Lib\\site-packages\\starlette\\_exception_handler.py", line 53, in wrapped_app\n    raise exc\n  File "C:\\Users\\jerry\\onedrive\\Desktop\\forgeai\\backend\\venv\\Lib\\site-packages\\starlette\\_exception_handler.py", line 42, in wrapped_app\n    await app(scope, receive, sender)\n  File "C:\\Users\\jerry\\onedrive\\Desktop\\forgeai\\backend\\venv\\Lib\\site-packages\\fastapi\\routing.py", line 120, in app\n    response = await f(request)\n               ^^^^^^^^^^^^^^^^\n  File "C:\\Users\\jerry\\onedrive\\Desktop\\forgeai\\backend\\venv\\Lib\\site-packages\\fastapi\\routing.py", line 674, in app\n    raw_response = await run_endpoint_function(\n                   ^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n    ...<3 lines>...\n    )\n    ^\n  File "C:\\Users\\jerry\\onedrive\\Desktop\\forgeai\\backend\\venv\\Lib\\site-packages\\fastapi\\routing.py", line 330, in run_endpoint_function\n    return await run_in_threadpool(dependant.call, **values)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File "C:\\Users\\jerry\\onedrive\\Desktop\\forgeai\\backend\\venv\\Lib\\site-packages\\starlette\\concurrency.py", line 34, in run_in_threadpool\n    return await anyio.to_thread.run_sync(func)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File "C:\\Users\\jerry\\onedrive\\Desktop\\forgeai\\backend\\venv\\Lib\\site-packages\\anyio\\to_thread.py", line 63, in run_sync\n    return await get_async_backend().run_sync_in_worker_thread(\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n        func, args, abandon_on_cancel=abandon_on_cancel, limiter=limiter\n        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n    )\n    ^\n  File "C:\\Users\\jerry\\onedrive\\Desktop\\forgeai\\backend\\venv\\Lib\\site-packages\\anyio\\_backends\\_asyncio.py", line 2518, in run_sync_in_worker_thread\n    return await future\n           ^^^^^^^^^^^^\n  File "C:\\Users\\jerry\\onedrive\\Desktop\\forgeai\\backend\\venv\\Lib\\site-packages\\anyio\\_backends\\_asyncio.py", line 1002, in run\n    result = context.run(func, *args)\n  File "C:\\Users\\jerry\\onedrive\\Desktop\\forgeai\\generated_projects\\forge_blog_cms\\app\\routes\\auth_routes.py", line 96, in signup\n    user = _make_user(req.email, req.password, req.username)\n                                               ^^^^^^^^^^^^\n  File "C:\\Users\\jerry\\onedrive\\Desktop\\forgeai\\backend\\venv\\Lib\\site-packages\\pydantic\\main.py", line 1042, in __getattr__\n    raise AttributeError(f\'{type(self).__name__!r} object has no attribute {item!r}\')\nAttributeError: \'SignupRequest\' object has no attribute \'username\'\nERROR:    Exception in ASGI application\nTraceback (most recent call last):\n  File "C:\\Users\\jerry\\onedrive\\Desktop\\forgeai\\backend\\venv\\Lib\\site-packages\\uvicorn\\protocols\\http\\httptools_impl.py", line 421, in run_asgi\n    result = await app(  # type: ignore[func-returns-value]\n             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n        self.scope, self.receive, self.send\n        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n    )\n    ^\n  File "C:\\Users\\jerry\\onedrive\\Desktop\\forgeai\\backend\\venv\\Lib\\site-packages\\uvicorn\\middleware\\proxy_headers.py", line 62, in __call__\n    return await self.app(scope, receive, send)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File "C:\\Users\\jerry\\onedrive\\Desktop\\forgeai\\backend\\venv\\Lib\\site-packages\\fastapi\\applications.py", line 1159, in __call__\n    await super().__call__(scope, receive, send)\n  File "C:\\Users\\jerry\\onedrive\\Desktop\\forgeai\\backend\\venv\\Lib\\site-packages\\starlette\\applications.py", line 90, in __call__\n    await self.middleware_stack(scope, receive, send)\n  File "C:\\Users\\jerry\\onedrive\\Desktop\\forgeai\\backend\\venv\\Lib\\site-packages\\starlette\\middleware\\errors.py", line 186, in __call__\n    raise exc\n  File "C:\\Users\\jerry\\onedrive\\Desktop\\forgeai\\backend\\venv\\Lib\\site-packages\\starlette\\middleware\\errors.py", line 164, in __call__\n    await self.app(scope, receive, _send)\n  File "C:\\Users\\jerry\\onedrive\\Desktop\\forgeai\\backend\\venv\\Lib\\site-packages\\starlette\\middleware\\cors.py", line 88, in __call__\n    await self.app(scope, receive, send)\n  File "C:\\Users\\jerry\\onedrive\\Desktop\\forgeai\\backend\\venv\\Lib\\site-packages\\starlette\\middleware\\exceptions.py", line 63, in __call__\n    await wrap_app_handling_exceptions(self.app, conn)(scope, receive, send)\n  File "C:\\Users\\jerry\\onedrive\\Desktop\\forgeai\\backend\\venv\\Lib\\site-packages\\starlette\\_exception_handler.py", line 53, in wrapped_app\n    raise exc\n  File "C:\\Users\\jerry\\onedrive\\Desktop\\forgeai\\backend\\venv\\Lib\\site-packages\\starlette\\_exception_handler.py", line 42, in wrapped_app\n    await app(scope, receive, sender)\n  File "C:\\Users\\jerry\\onedrive\\Desktop\\forgeai\\backend\\venv\\Lib\\site-packages\\fastapi\\middleware\\asyncexitstack.py", line 18, in __call__\n    await self.app(scope, receive, send)\n  File "C:\\Users\\jerry\\onedrive\\Desktop\\forgeai\\backend\\venv\\Lib\\site-packages\\starlette\\routing.py", line 660, in __call__\n    await self.middleware_stack(scope, receive, send)\n  File "C:\\Users\\jerry\\onedrive\\Desktop\\forgeai\\backend\\venv\\Lib\\site-packages\\starlette\\routing.py", line 680, in app\n    await route.handle(scope, receive, send)\n  File "C:\\Users\\jerry\\onedrive\\Desktop\\forgeai\\backend\\venv\\Lib\\site-packages\\starlette\\routing.py", line 276, in handle\n    await self.app(scope, receive, send)\n  File "C:\\Users\\jerry\\onedrive\\Desktop\\forgeai\\backend\\venv\\Lib\\site-packages\\fastapi\\routing.py", line 134, in app\n    await wrap_app_handling_exceptions(app, request)(scope, receive, send)\n  File "C:\\Users\\jerry\\onedrive\\Desktop\\forgeai\\backend\\venv\\Lib\\site-packages\\starlette\\_exception_handler.py", line 53, in wrapped_app\n    raise exc\n  File "C:\\Users\\jerry\\onedrive\\Desktop\\forgeai\\backend\\venv\\Lib\\site-packages\\starlette\\_exception_handler.py", line 42, in wrapped_app\n    await app(scope, receive, sender)\n  File "C:\\Users\\jerry\\onedrive\\Desktop\\forgeai\\backend\\venv\\Lib\\site-packages\\fastapi\\routing.py", line 120, in app\n    response = await f(request)\n               ^^^^^^^^^^^^^^^^\n  File "C:\\Users\\jerry\\onedrive\\Desktop\\forgeai\\backend\\venv\\Lib\\site-packages\\fastapi\\routing.py", line 674, in app\n    raw_response = await run_endpoint_function(\n                   ^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n    ...<3 lines>...\n    )\n    ^\n  File "C:\\Users\\jerry\\onedrive\\Desktop\\forgeai\\backend\\venv\\Lib\\site-packages\\fastapi\\routing.py", line 330, in run_endpoint_function\n    return await run_in_threadpool(dependant.call, **values)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File "C:\\Users\\jerry\\onedrive\\Desktop\\forgeai\\backend\\venv\\Lib\\site-packages\\starlette\\concurrency.py", line 34, in run_in_threadpool\n    return await anyio.to_thread.run_sync(func)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File "C:\\Users\\jerry\\onedrive\\Desktop\\forgeai\\backend\\venv\\Lib\\site-packages\\anyio\\to_thread.py", line 63, in run_sync\n    return await get_async_backend().run_sync_in_worker_thread(\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n        func, args, abandon_on_cancel=abandon_on_cancel, limiter=limiter\n        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n    )\n    ^\n  File "C:\\Users\\jerry\\onedrive\\Desktop\\forgeai\\backend\\venv\\Lib\\site-packages\\anyio\\_backends\\_asyncio.py", line 2518, in run_sync_in_worker_thread\n    return await future\n           ^^^^^^^^^^^^\n  File "C:\\Users\\jerry\\onedrive\\Desktop\\forgeai\\backend\\venv\\Lib\\site-packages\\anyio\\_backends\\_asyncio.py", line 1002, in run\n    result = context.run(func, *args)\n  File "C:\\Users\\jerry\\onedrive\\Desktop\\forgeai\\generated_projects\\forge_blog_cms\\app\\routes\\auth_routes.py", line 96, in signup\n    user = _make_user(req.email, req.password, req.username)\n                                               ^^^^^^^^^^^^\n  File "C:\\Users\\jerry\\onedrive\\Desktop\\forgeai\\backend\\venv\\Lib\\site-packages\\pydantic\\main.py", line 1042, in __getattr__\n    raise AttributeError(f\'{type(self).__name__!r} object has no attribute {item!r}\')\nAttributeError: \'SignupRequest\' object has no attribute \'username\'\nERROR:    Exception in ASGI application\nTraceback (most recent call last):\n  File "C:\\Users\\jerry\\onedrive\\Desktop\\forgeai\\backend\\venv\\Lib\\site-packages\\uvicorn\\protocols\\http\\httptools_impl.py", line 421, in run_asgi\n    result = await app(  # type: ignore[func-returns-value]\n             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n        self.scope, self.receive, self.send\n        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n    )\n    ^\n  File "C:\\Users\\jerry\\onedrive\\Desktop\\forgeai\\backend\\venv\\Lib\\site-packages\\uvicorn\\middleware\\proxy_headers.py", line 62, in __call__\n    return await self.app(scope, receive, send)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File "C:\\Users\\jerry\\onedrive\\Desktop\\forgeai\\backend\\venv\\Lib\\site-packages\\fastapi\\applications.py", line 1159, in __call__\n    await super().__call__(scope, receive, send)\n  File "C:\\Users\\jerry\\onedrive\\Desktop\\forgeai\\backend\\venv\\Lib\\site-packages\\starlette\\applications.py", line 90, in __call__\n    await self.middleware_stack(scope, receive, send)\n  File "C:\\Users\\jerry\\onedrive\\Desktop\\forgeai\\backend\\venv\\Lib\\site-packages\\starlette\\middleware\\errors.py", line 186, in __call__\n    raise exc\n  File "C:\\Users\\jerry\\onedrive\\Desktop\\forgeai\\backend\\venv\\Lib\\site-packages\\starlette\\middleware\\errors.py", line 164, in __call__\n    await self.app(scope, receive, _send)\n  File "C:\\Users\\jerry\\onedrive\\Desktop\\forgeai\\backend\\venv\\Lib\\site-packages\\starlette\\middleware\\cors.py", line 88, in __call__\n    await self.app(scope, receive, send)\n  File "C:\\Users\\jerry\\onedrive\\Desktop\\forgeai\\backend\\venv\\Lib\\site-packages\\starlette\\middleware\\exceptions.py", line 63, in __call__\n    await wrap_app_handling_exceptions(self.app, conn)(scope, receive, send)\n  File "C:\\Users\\jerry\\onedrive\\Desktop\\forgeai\\backend\\venv\\Lib\\site-packages\\starlette\\_exception_handler.py", line 53, in wrapped_app\n    raise exc\n  File "C:\\Users\\jerry\\onedrive\\Desktop\\forgeai\\backend\\venv\\Lib\\site-packages\\starlette\\_exception_handler.py", line 42, in wrapped_app\n    await app(scope, receive, sender)\n  File "C:\\Users\\jerry\\onedrive\\Desktop\\forgeai\\backend\\venv\\Lib\\site-packages\\fastapi\\middleware\\asyncexitstack.py", line 18, in __call__\n    await self.app(scope, receive, send)\n  File "C:\\Users\\jerry\\onedrive\\Desktop\\forgeai\\backend\\venv\\Lib\\site-packages\\starlette\\routing.py", line 660, in __call__\n    await self.middleware_stack(scope, receive, send)\n  File "C:\\Users\\jerry\\onedrive\\Desktop\\forgeai\\backend\\venv\\Lib\\site-packages\\starlette\\routing.py", line 680, in app\n    await route.handle(scope, receive, send)\n  File "C:\\Users\\jerry\\onedrive\\Desktop\\forgeai\\backend\\venv\\Lib\\site-packages\\starlette\\routing.py", line 276, in handle\n    await self.app(scope, receive, send)\n  File "C:\\Users\\jerry\\onedrive\\Desktop\\forgeai\\backend\\venv\\Lib\\site-packages\\fastapi\\routing.py", line 134, in app\n    await wrap_app_handling_exceptions(app, request)(scope, receive, send)\n  File "C:\\Users\\jerry\\onedrive\\Desktop\\forgeai\\backend\\venv\\Lib\\site-packages\\starlette\\_exception_handler.py", line 53, in wrapped_app\n    raise exc\n  File "C:\\Users\\jerry\\onedrive\\Desktop\\forgeai\\backend\\venv\\Lib\\site-packages\\starlette\\_exception_handler.py", line 42, in wrapped_app\n    await app(scope, receive, sender)\n  File "C:\\Users\\jerry\\onedrive\\Desktop\\forgeai\\backend\\venv\\Lib\\site-packages\\fastapi\\routing.py", line 120, in app\n    response = await f(request)\n               ^^^^^^^^^^^^^^^^\n  File "C:\\Users\\jerry\\onedrive\\Desktop\\forgeai\\backend\\venv\\Lib\\site-packages\\fastapi\\routing.py", line 674, in app\n    raw_response = await run_endpoint_function(\n                   ^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n    ...<3 lines>...\n    )\n    ^\n  File "C:\\Users\\jerry\\onedrive\\Desktop\\forgeai\\backend\\venv\\Lib\\site-packages\\fastapi\\routing.py", line 330, in run_endpoint_function\n    return await run_in_threadpool(dependant.call, **values)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File "C:\\Users\\jerry\\onedrive\\Desktop\\forgeai\\backend\\venv\\Lib\\site-packages\\starlette\\concurrency.py", line 34, in run_in_threadpool\n    return await anyio.to_thread.run_sync(func)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File "C:\\Users\\jerry\\onedrive\\Desktop\\forgeai\\backend\\venv\\Lib\\site-packages\\anyio\\to_thread.py", line 63, in run_sync\n    return await get_async_backend().run_sync_in_worker_thread(\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n        func, args, abandon_on_cancel=abandon_on_cancel, limiter=limiter\n        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n    )\n    ^\n  File "C:\\Users\\jerry\\onedrive\\Desktop\\forgeai\\backend\\venv\\Lib\\site-packages\\anyio\\_backends\\_asyncio.py", line 2518, in run_sync_in_worker_thread\n    return await future\n           ^^^^^^^^^^^^\n  File "C:\\Users\\jerry\\onedrive\\Desktop\\forgeai\\backend\\venv\\Lib\\site-packages\\anyio\\_backends\\_asyncio.py", line 1002, in run\n    result = context.run(func, *args)\n  File "C:\\Users\\jerry\\onedrive\\Desktop\\forgeai\\generated_projects\\forge_blog_cms\\app\\routes\\seed_routes.py", line 24, in seed\n    if not db.query(User).filter(User.name == u["username"]).first():\n                                 ^^^^^^^^^\nAttributeError: type object \'User\' has no attribute \'name\'\n', 'startup_time': 5.076621770858765, 'behavioral_issues': [], 'total_endpoints': 15, 'timeout_count': 0, 'error_count': 0, 'endpoint_pass_rate': 1.0, 'crud_passed': False, 'journey': {'success': False, 'steps_passed': 4, 'steps_failed': 7, 'persistence_verified': False, 'skipped': False, 'skip_reason': '', 'entity': 'posts', 'seed_summary': {}, 'steps': [{'name': 'Register', 'passed': False, 'detail': '404 (no register/signup endpoint found)', 'request': {'method': 'POST', 'url': 'http://127.0.0.1:8001/auth/register', 'json': {'email': 'journey@test.com', 'password': 'JourneyPass1!'}, 'has_auth': False}, 'response': {'status_code': 500, 'body': 'Internal Server Error'}}, {'name': 'Login', 'passed': True, 'detail': '422 @ login (server alive, auth format mismatch)', 'request': None, 'response': None}, {'name': 'Detect entity', 'passed': True, 'detail': 'http://127.0.0.1:8001/posts', 'request': None, 'response': None}, {'name': 'Create entity', 'passed': False, 'detail': '401 (auth required, no valid token)', 'request': {'method': 'POST', 'url': 'http://127.0.0.1:8001/posts', 'json': {'title': 'Journey Test Item', 'name': 'Journey Test Item', 'description': 'created by V5.5 journey runner', 'published_at': '2026-01-01', 'status': 'active', 'cover_image_url': 'https://example.com', 'content_markdown': 'journey-test'}, 'has_auth': False}, 'response': {'status_code': 401, 'body': {'detail': 'Not authenticated'}}}, {'name': 'List entities', 'passed': True, 'detail': '200 count=?', 'request': None, 'response': None}, {'name': 'Edit entity', 'passed': False, 'detail': 'no entity_id captured', 'request': None, 'response': None}, {'name': 'Delete entity', 'passed': False, 'detail': 'no entity_id captured', 'request': None, 'response': None}, {'name': 'Verify deletion', 'passed': False, 'detail': 'no entity_id', 'request': None, 'response': None}, {'name': 'Logout', 'passed': True, 'detail': '401', 'request': None, 'response': None}, {'name': 'Login again', 'passed': False, 'detail': 're-login failed', 'request': {'method': 'POST', 'url': 'http://127.0.0.1:8001/auth/login', 'json': {'username': 'journey_test', 'password': 'JourneyPass1!'}, 'has_auth': False}, 'response': {'status_code': 422, 'body': {'detail': [{'type': 'missing', 'loc': ['body', 'email'], 'msg': 'Field required', 'input': {'username': 'journey_test', 'password': 'JourneyPass1!'}}]}}}, {'name': 'Verify persistence', 'passed': False, 'detail': 'no entity_id', 'request': None, 'response': None}], 'total_duration': 0.27}, 'parsed_error': {'type': 'AttributeError', 'error_file': 'C:\\Users\\jerry\\onedrive\\Desktop\\forgeai\\generated_projects\\forge_blog_cms\\app\\routes\\seed_routes.py'}}
+Using Gemini
+Gemini failed (429 RESOURCE_EXHAUSTED. {'error': {'code': 429, 'message': 'Your prepayment credits are depleted. Please go to AI Studio at https://ai.studio/projects to manage your project and billing. Learn more at https://ai.google.dev/gemini-api/docs/billing#prepay. ', 'status': 'RESOURCE_EXHAUSTED'}}) — falling back to auto chain
+Using Cerebras (main)
+[CEREBRAS] Prompt=7028 Completion=2312 Reasoning=1110 Total=9340
+  [patcher] Injected 1 missing FK model import(s) into main.py
+  [patcher] Fixed attribute accesses in seed_routes.py
+  [patcher] Fixed ownership-FK attribute drift in post_routes.py
+  [patcher] Fixed response .data assumed to be wrapped (actually a bare array) in AuthorDashboardPage.jsx
+  [patcher] Fixed response .data assumed to be wrapped (actually a bare array) in CreatePostPage.jsx
+  [patcher] Fixed response .data assumed to be wrapped (actually a bare array) in EditPostPage.jsx
+  [patcher] Fixed response .data assumed to be wrapped (actually a bare array) in PostDetailPage.jsx
+  [patcher] Fixed response .data assumed to be wrapped (actually a bare array) in PostListPage.jsx
+  [patcher] Patched 4 file(s) — passlib→bcrypt, async→sync, smart quotes
+  [field_patcher] Aligned model fields in seed_routes.py
+  [db_patcher] Injected known-good app/database.py
+Running runtime validation in: C:\Users\jerry\onedrive\Desktop\forgeai\generated_projects\forge_blog_cms
+Using Python: C:\Users\jerry\onedrive\Desktop\forgeai\backend\venv\Scripts\python.exe
+Skipping pip install (packages pre-installed): C:\Users\jerry\onedrive\Desktop\forgeai\generated_projects\forge_blog_cms\app\requirements.txt
+  [runner] Pre-flight DB init: OK
+Health Check /health: 200
+
+=== USER JOURNEY (CRUD WORKFLOW) ===
+  Journey FAIL — 4 passed / 7 failed
+    ✗ Register: 404 (no register/signup endpoint found)
+    ✓ Login: 422 @ login (server alive, auth format mismatch)
+    ✓ Detect entity: http://127.0.0.1:8001/posts
+    ✗ Create entity: 401 (auth required, no valid token)
+    ✓ List entities: 200 count=?
+    ✗ Edit entity: no entity_id captured
+    ✗ Delete entity: no entity_id captured
+    ✗ Verify deletion: no entity_id
+    ✓ Logout: 401
+    ✗ Login again: re-login failed
+    ✗ Verify persistence: no entity_id
+
+=== ENDPOINT SMOKE TESTS ===
+  All endpoints responded without errors.
+
+  Endpoint pass rate: 100% (15/15 passed, 0 timeouts, 0 errors)
+
+  Runtime FAIL: CRUD workflow failed critical steps
+  Runtime: FAIL
+  [runtime fix] Failure signature unchanged — stopping retries
+
+  ZIP: C:\Users\jerry\onedrive\Desktop\forgeai\generated_projects\forge_blog_cms.zip
+
+=== V6 SCORE: 44/100 (F) ===
+    Runtime:      30/100
+    Security:     63/100
+    Performance:  36/100
+    Maintainability: 38/100
+    Review:       59/100
+
+────────────────────────────────────────
+  LLM Calls
+  Planner            1
+  Architect          1
+  Tech Lead          1
+  Backend            30
+  Frontend           1
+  Reviews            5
+  Polish             2
+  Repairs            13
+  Runtime Fixes      1
+  ────────────────────
+  Total              55
+────────────────────────────────────────
+
+=== COST SUMMARY ===
+  LLM calls:    29
+  Total tokens: 133,884
+  Est. cost:    $0.0803
+  LLM time:     86.3s
+    backend_generation: 73,840 tokens  $0.0443
+    fix: 16,635 tokens  $0.0100
+    missing_file: 9,250 tokens  $0.0056
+    qa_review: 4,235 tokens  $0.0025
+    security_review: 8,080 tokens  $0.0048
+    code_review: 6,768 tokens  $0.0041
+    performance_review: 6,047 tokens  $0.0036
+    runtime_fix: 9,029 tokens  $0.0054
+  Cache hits:   6 calls served free (~$0.0304, ~50,711 tokens saved)
+[V15] OK generation [passed] (88804ms)
+  [patcher] Fixed attribute accesses in post_routes.py
+  [patcher] Fixed attribute accesses in seed_routes.py
+  [patcher] Fixed ownership-FK attribute drift in post_routes.py
+  [patcher] Patched 1 file(s) — passlib→bcrypt, async→sync, smart quotes
+  [db_patcher] Injected known-good app/database.py
+  [field_patcher] Aligned model fields in seed_routes.py
+  [preflight] fix_model_schema_notnull_gap: applied
+  [preflight] fix_missing_env: applied
+  [db_patcher] Injected known-good app/database.py
+  [preflight] fix_database_py: applied
+  [preflight] 3 deterministic fix(es) applied without LLM
+  [verify] 1/11 Static analysis...
+  [verify]       failed — 8 issues
+  [verify] 2/11 Compile check...
+  [verify]       passed — 0 syntax errors
+  [verify] 2a Import closure check...
+  [verify]       passed — 0 unresolved imports
+  [verify] 2a Symbol closure check...
+  [verify]       passed — 0 undefined symbols
+  [verify] 2a2 Contract conformance check (warn-only)...
+  [verify]       failed — 10 contract findings
+  [verify] 2b Frontend build...
+[Frontend] cwd:          C:\Users\jerry\OneDrive\Desktop\forgeAi\generated_projects\forge_blog_cms
+[Frontend] cwd exists:   True
+[Frontend] package.json: ✓ exists
+[Frontend] npm:          C:\Program Files\nodejs\npm.CMD
+[Frontend] Building in: C:\Users\jerry\OneDrive\Desktop\forgeAi\generated_projects\forge_blog_cms
+[Frontend] Installing dependencies (npm install)...
+[Frontend] npm install complete
+Running vite build...
+Frontend build PASSED in 41.33s
+  [verify]       passed — 0 build errors
+  [verify] 3/11 Runtime startup...
+Running runtime validation in: C:\Users\jerry\onedrive\Desktop\forgeai\generated_projects\forge_blog_cms
+Using Python: C:\Users\jerry\onedrive\Desktop\forgeai\backend\venv\Scripts\python.exe
+Skipping pip install (packages pre-installed): C:\Users\jerry\onedrive\Desktop\forgeai\generated_projects\forge_blog_cms\app\requirements.txt
+  [runner] Deleted stale DB: app.db
+  [runner] Deleted stale DB: app.db-wal
+  [runner] Deleted stale DB: app.db-shm
+  [runner] Pre-flight DB init: OK
+Health Check /docs: 200
+
+=== USER JOURNEY (CRUD WORKFLOW) ===
+  Journey FAIL — 4 passed / 7 failed
+    ✗ Register: 404 (no register/signup endpoint found)
+    ✓ Login: 422 @ login (server alive, auth format mismatch)
+    ✓ Detect entity: http://127.0.0.1:8001/posts
+    ✗ Create entity: 401 (auth required, no valid token)
+    ✓ List entities: 200 count=?
+    ✗ Edit entity: no entity_id captured
+    ✗ Delete entity: no entity_id captured
+    ✗ Verify deletion: no entity_id
+    ✓ Logout: 401
+    ✗ Login again: re-login failed
+    ✗ Verify persistence: no entity_id
+
+=== ENDPOINT SMOKE TESTS ===
+  All endpoints responded without errors.
+
+  Endpoint pass rate: 100% (15/15 passed, 0 timeouts, 0 errors)
+
+  Runtime FAIL: CRUD workflow failed critical steps
+  [verify]       failed
+  [verify] 4-9: Running HTTP / Schema-DB / Browser / Performance / Accessibility in parallel...
+  [verify]       http: failed — 1 issues
+  [verify]       schema_db_assertion: passed — 0 issues
+  [verify]       accessibility: passed — 0 issues
+  [verify]       browser: passed — 0 issues
+  [verify] 10/11 Workflow tests...
+  [verify]       passed
+  [verify] 11/11 LLM Judge...
+[LLM cache] HIT (llm_judge) — 0 tokens billed
+  [verify]       LLM Judge: When the app loads it immediately attempts a POST to /seed, which fails with a 5
+
+------------------------------------------------------------
+  FORGE SCORE: 65.0/100  (D) [NEEDS REPAIR]
+  Coverage: 11/11 dimensions
+------------------------------------------------------------
+  + Compilation            [###############...............]  50.0  (wt:15%)
+      critical=0 high=0 medium=8 low=10
+  x Runtime Startup        [######........................]  20.0  (wt:20%)
+      started=True health=True success=False
+  + API Functionality      [##############################] 100.0  (wt:15%)
+      15/15 endpoints passed
+  + Frontend Load          [##############################] 100.0  (wt:10%)
+      loaded OK
+  + Browser UX             [##########################....]  88.0  (wt:15%)
+      console_errors=0 network_failures=0 forms=0/0
+  x Integration            [#############.................]  46.2  (wt:10%)
+      6/13 workflow steps passed
+  x Code Quality           [#############.................]  46.0  (wt:5%)
+      stubs=0 globals=0 other_contract=18
+  + Security               [##############################] 100.0  (wt:5%)
+      security_issues=0 cors=True server_up=True
+  + Completeness           [##############################] 100.0  (wt:3%)
+      planned=15 missing=0
+  + Performance            [###########################...]  90.0  (wt:2%)
+      health_latency_ms=0
+  x Visual Judge           [##########....................]  35.6  (wt:5%)
+      llm_judge_severity=high confidence=0.92
+------------------------------------------------------------
+
+[V15] Score: 65.0 (D) -- [needs repair]
+
+[retry] Attempt 1/5: Patch affected files with current model
+
+[V15] Fix attempt 1/5 -- strategy: patch_file
+  [fix] 10 lower-priority group(s) (10 diagnostic(s)) dropped this round due to max_groups=6 cap
+  [fix] 20 diagnostics → 6 groups
+  [fix] Group [1] Runtime crash: [AttributeError] AttributeError: type object 'User' has no attrib
+    [fix] Seed-related group 73e669fd: writing known-good seed_routes.py stub instead of calling the LLM
+  [fix] Group [2] API endpoint failure: POST /seed returned 500
+    [fix] Seed-related group aa11e419: writing known-good seed_routes.py stub instead of calling the LLM
+  [fix] Group [3] Contract violation: Schema mismatch: app/schemas/post.py: PostCreate.title requi
+    [fix] Router: complexity=7 (high) triggered=[image, filter, auth, tag, medium_description] stage=fix_complex → gemini
+Using Gemini
+Gemini failed (429 RESOURCE_EXHAUSTED. {'error': {'code': 429, 'message': 'Your prepayment credits are depleted. Please go to AI Studio at https://ai.studio/projects to manage your project and billing. Learn more at https://ai.google.dev/gemini-api/docs/billing#prepay. ', 'status': 'RESOURCE_EXHAUSTED'}}) — falling back to auto chain
+Using Cerebras (main)
+[CEREBRAS] Prompt=1446 Completion=1135 Reasoning=899 Total=2581
+    [fix] Patched: app/models/post.py
+  [fix] Group [4] Contract violation: Schema mismatch: app/schemas/user.py: UserCreate.username re
+    [fix] Cache HIT for group 6bf70dbf (seen 1x before) — skipping LLM
+    [fix] (cache) Patched: app/schemas/user.py
+  [fix] Group [5] Contract violation: Schema mismatch: app/schemas/comment.py: CommentCreate.conte
+    [fix] Router: complexity=7 (high) triggered=[image, filter, auth, tag, medium_description] stage=fix_complex → gemini
+Using Gemini
+Gemini failed (429 RESOURCE_EXHAUSTED. {'error': {'code': 429, 'message': 'Your prepayment credits are depleted. Please go to AI Studio at https://ai.studio/projects to manage your project and billing. Learn more at https://ai.google.dev/gemini-api/docs/billing#prepay. ', 'status': 'RESOURCE_EXHAUSTED'}}) — falling back to auto chain
+Using Cerebras (main)
+[CEREBRAS] Prompt=1253 Completion=756 Reasoning=402 Total=2009
+    [fix] Patched: app/schemas/comment.py
+  [fix] Group [6] Contract violation: Schema mismatch: app/schemas/tag.py: TagCreate.name required
+    [fix] Cache HIT for group cef8269c (seen 3x before) — skipping LLM
+    [fix] (cache) Patched: app/schemas/tag.py
+  [patcher] Stripped 1 relationship() declaration(s) from post.py
+  [patcher] Removed duplicate model post.py (kept posts.py), shared classes: {'Post'}
+  [patcher] Added missing class(es) to existing tag.py: ['TagRead']
+  [patcher] Made nullable-column schema fields Optional in post.py: PostCreate.title, PostCreate.content_markdown, PostCreate.status
+  [patcher] Made nullable-column schema fields Optional in tag.py: TagCreate.name, TagResponse.name
+  [patcher] Made nullable-column schema fields Optional in user.py: UserCreate.username, UserCreate.password_hash, UserCreate.role
+  [patcher] Fixed attribute accesses in post_routes.py
+  [patcher] Fixed ownership-FK attribute drift in post_routes.py
+  [patcher] Patched 1 file(s) — passlib→bcrypt, async→sync, smart quotes
+  [db_patcher] Injected known-good app/database.py
+  [db_patcher] Injected known-good app/database.py
+  [preflight] fix_database_py: applied
+  [preflight] 1 deterministic fix(es) applied without LLM
+  [verify] 1/11 Static analysis...
+  [verify]       passed — 0 issues
+  [verify] 2/11 Compile check...
+  [verify]       passed — 0 syntax errors
+  [verify] 2a Import closure check...
+  [verify]       passed — 0 unresolved imports
+  [verify] 2a Symbol closure check...
+  [verify]       passed — 0 undefined symbols
+  [verify] 2a2 Contract conformance check (warn-only)...
+  [verify]       failed — 11 contract findings
+  [verify] 2b Frontend build...
+[Frontend] cwd:          C:\Users\jerry\OneDrive\Desktop\forgeAi\generated_projects\forge_blog_cms
+[Frontend] cwd exists:   True
+[Frontend] package.json: ✓ exists
+[Frontend] npm:          C:\Program Files\nodejs\npm.CMD
+[Frontend] Building in: C:\Users\jerry\OneDrive\Desktop\forgeAi\generated_projects\forge_blog_cms
+[Frontend] node_modules exists — skipping npm install
+Running vite build...
+Frontend build PASSED in 8.01s
+  [verify]       passed — 0 build errors
+  [verify] 3/11 Runtime startup...
+Running runtime validation in: C:\Users\jerry\onedrive\Desktop\forgeai\generated_projects\forge_blog_cms
+Using Python: C:\Users\jerry\onedrive\Desktop\forgeai\backend\venv\Scripts\python.exe
+Skipping pip install (packages pre-installed): C:\Users\jerry\onedrive\Desktop\forgeai\generated_projects\forge_blog_cms\app\requirements.txt
+  [runner] Deleted stale DB: app.db
+  [runner] Deleted stale DB: app.db-wal
+  [runner] Deleted stale DB: app.db-shm
+  [runner] Pre-flight DB init: OK
+Health Check /health: 200
+
+=== USER JOURNEY (CRUD WORKFLOW) ===
+  Journey FAIL — 4 passed / 7 failed
+    ✗ Register: 404 (no register/signup endpoint found)
+    ✓ Login: 422 @ login (server alive, auth format mismatch)
+    ✓ Detect entity: http://127.0.0.1:8001/posts
+    ✗ Create entity: 401 (auth required, no valid token)
+    ✓ List entities: 200 count=?
+    ✗ Edit entity: no entity_id captured
+    ✗ Delete entity: no entity_id captured
+    ✗ Verify deletion: no entity_id
+    ✓ Logout: 401
+    ✗ Login again: re-login failed
+    ✗ Verify persistence: no entity_id
+
+=== ENDPOINT SMOKE TESTS ===
+  All endpoints responded without errors.
+
+  Endpoint pass rate: 100% (15/15 passed, 0 timeouts, 0 errors)
+
+  Runtime FAIL: CRUD workflow failed critical steps
+  [verify]       failed
+  [verify] 4-9: Running HTTP / Schema-DB / Browser / Performance / Accessibility in parallel...
+  [verify]       http: passed — 0 issues
+  [verify]       schema_db_assertion: passed — 0 issues
+  [verify]       accessibility: passed — 0 issues
+  [verify]       browser: passed — 0 issues
+  [verify] 10/11 Workflow tests...
+  [verify]       passed
+  [verify] 11/11 LLM Judge...
+[LLM cache] HIT (llm_judge) — 0 tokens billed
+  [verify]       LLM Judge: When the app loads the navigation bar appears but the main content area is compl
+  [fix] 2 newly-visible diagnostic(s), but score improved 65.0 -> 71.5 — keeping fix
+
+------------------------------------------------------------
+  FORGE SCORE: 71.5/100  (C) [NEEDS REPAIR]
+  Coverage: 11/11 dimensions
+------------------------------------------------------------
+  + Compilation            [##########################....]  89.0  (wt:15%)
+      critical=0 high=0 medium=0 low=11
+  x Runtime Startup        [######........................]  20.0  (wt:20%)
+      started=True health=True success=False
+  + API Functionality      [##############################] 100.0  (wt:15%)
+      15/15 endpoints passed
+  + Frontend Load          [##############################] 100.0  (wt:10%)
+      loaded OK
+  + Browser UX             [##########################....]  88.0  (wt:15%)
+      console_errors=0 network_failures=0 forms=0/0
+  x Integration            [#############.................]  46.2  (wt:10%)
+      6/13 workflow steps passed
+  x Code Quality           [####################..........]  67.0  (wt:5%)
+      stubs=0 globals=0 other_contract=11
+  + Security               [##############################] 100.0  (wt:5%)
+      security_issues=0 cors=True server_up=True
+  + Completeness           [##############################] 100.0  (wt:3%)
+      planned=15 missing=0
+  + Performance            [###########################...]  90.0  (wt:2%)
+      health_latency_ms=0
+  x Visual Judge           [##########....................]  34.9  (wt:5%)
+      llm_judge_severity=high confidence=0.93
+------------------------------------------------------------
+
+[retry] Result: 65.0 ↑ 71.5 (Δ=+6.5)
+[V15] Score: 71.5 (C) -- [needs repair]
+
+[retry] Attempt 2/5: Patch with enriched prompt (full file context + examples)
+
+[V15] Fix attempt 2/5 -- strategy: patch_file
+  [fix] 6 lower-priority group(s) (6 diagnostic(s)) dropped this round due to max_groups=6 cap
+  [fix] 12 diagnostics → 6 groups
+  [fix] Group [1] Runtime crash: [AttributeError] AttributeError: 'SignupRequest' object has no at
+    [fix] Router: complexity=7 (high) triggered=[image, filter, auth, tag, medium_description] stage=fix_complex → gemini
+[LLM cache] HIT (fix) — 0 tokens billed
+    [fix] Patched: app/routes/auth_routes.py
+  [fix] Group [2] Contract violation: Contract lists 'app/api/' (util) but it was never written to
+    [fix] Router: complexity=7 (high) triggered=[image, filter, auth, tag, medium_description] stage=fix_complex → gemini
+[LLM cache] HIT (fix) — 0 tokens billed
+  [fix] Group [3] Contract violation: Contract lists 'app/core/' (util) but it was never written t
+    [fix] Cache HIT for group 1d96b04b (seen 2x before) — skipping LLM
+    [fix] (cache) Patched: app/core/__init__.py
+  [fix] Group [4] Contract violation: Contract lists 'app/core/config.py' (config) but it was neve
+    [fix] Router: complexity=7 (high) triggered=[image, filter, auth, tag, medium_description] stage=fix_complex → gemini
+[LLM cache] HIT (fix) — 0 tokens billed
+    [fix] Patched: app/core/config.py
+  [fix] Group [5] Contract violation: Contract lists 'app/core/security.py' (util) but it was neve
+    [fix] Router: complexity=7 (high) triggered=[image, filter, auth, tag, medium_description] stage=fix_complex → gemini
+[LLM cache] HIT (fix) — 0 tokens billed
+    [fix] Patched: app/core/security.py
+  [fix] Group [6] Contract violation: Contract lists 'app/db/' (util) but it was never written to 
+    [fix] Router: complexity=7 (high) triggered=[image, filter, auth, tag, medium_description] stage=fix_complex → gemini
+[LLM cache] HIT (fix) — 0 tokens billed
+    [fix] Patched: app/db/__init__.py
+  [patcher] Fixed attribute accesses in auth_routes.py
+  [patcher] Fixed attribute accesses in post_routes.py
+  [patcher] Fixed ownership-FK attribute drift in post_routes.py
+  [patcher] Patched 2 file(s) — passlib→bcrypt, async→sync, smart quotes
+  [db_patcher] Injected known-good app/database.py
+  [db_patcher] Injected known-good app/database.py
+  [preflight] fix_database_py: applied
+  [preflight] 1 deterministic fix(es) applied without LLM
+  [verify] 1/11 Static analysis...
+  [verify]       failed — 2 issues
+  [verify] 2/11 Compile check...
+  [verify]       passed — 0 syntax errors
+  [verify] 2a Import closure check...
+  [verify]       failed — 2 unresolved imports
+  [verify] 2a Symbol closure check...
+  [verify]       passed — 0 undefined symbols
+  [verify] 2a2 Contract conformance check (warn-only)...
+  [verify]       failed — 7 contract findings
+  [verify] 2b Frontend build...
+[Frontend] cwd:          C:\Users\jerry\OneDrive\Desktop\forgeAi\generated_projects\forge_blog_cms
+[Frontend] cwd exists:   True
+[Frontend] package.json: ✓ exists
+[Frontend] npm:          C:\Program Files\nodejs\npm.CMD
+[Frontend] Building in: C:\Users\jerry\OneDrive\Desktop\forgeAi\generated_projects\forge_blog_cms
+[Frontend] node_modules exists — skipping npm install
+Running vite build...
+Frontend build PASSED in 10.18s
+  [verify]       passed — 0 build errors
+  [verify] 3/11 Runtime: SKIPPED (2 critical static errors)
+  [verify] SKIPPED http: backend not running
+  [verify] SKIPPED schema_db_assertion: backend not running
+  [verify] SKIPPED browser: backend not running
+  [verify] SKIPPED performance: backend not running
+  [verify] SKIPPED accessibility: backend not running
+  [verify] SKIPPED workflow: backend not running
+  [verify] 11/11 LLM Judge...
+  [verify]       LLM Judge: passed
+  [fix] REGRESSION: 4 new error(s) with no score improvement (71.5 -> 24.5)
+       ↳ Missing endpoint POST /auth/login (expected in app/routes/auth_routes.py)
+       ↳ Missing endpoint POST /auth/login (expected in app/routes/auth_routes.py) -- cal
+       ↳ Unresolved import 'pydantic_settings' in app\core\config.py -- matches no file i
+    [fix] Reverted to pre-fix snapshot
+  [verify] 1/11 Static analysis...
+  [verify]       passed — 0 issues
+  [verify] 2/11 Compile check...
+  [verify]       passed — 0 syntax errors
+  [verify] 2a Import closure check...
+  [verify]       passed — 0 unresolved imports
+  [verify] 2a Symbol closure check...
+  [verify]       passed — 0 undefined symbols
+  [verify] 2a2 Contract conformance check (warn-only)...
+  [verify]       failed — 9 contract findings
+  [verify] 2b Frontend build...
+[Frontend] cwd:          C:\Users\jerry\OneDrive\Desktop\forgeAi\generated_projects\forge_blog_cms
+[Frontend] cwd exists:   True
+[Frontend] package.json: ✓ exists
+[Frontend] npm:          C:\Program Files\nodejs\npm.CMD
+[Frontend] Building in: C:\Users\jerry\OneDrive\Desktop\forgeAi\generated_projects\forge_blog_cms
+[Frontend] package.json changed since last install — re-running npm install...
+[Frontend] npm install complete
+Running vite build...
+Frontend build PASSED in 11.82s
+  [verify]       passed — 0 build errors
+  [verify] 3/11 Runtime startup...
+Running runtime validation in: C:\Users\jerry\onedrive\Desktop\forgeai\generated_projects\forge_blog_cms
+Using Python: C:\Users\jerry\onedrive\Desktop\forgeai\backend\venv\Scripts\python.exe
+Skipping pip install (packages pre-installed): C:\Users\jerry\onedrive\Desktop\forgeai\generated_projects\forge_blog_cms\app\requirements.txt
+  [runner] Deleted stale DB: app.db
+  [runner] Deleted stale DB: app.db-wal
+  [runner] Deleted stale DB: app.db-shm
+  [runner] Pre-flight DB init: OK
+Health Check /health: 200
+
+=== USER JOURNEY (CRUD WORKFLOW) ===
+  Journey FAIL — 4 passed / 7 failed
+    ✗ Register: 404 (no register/signup endpoint found)
+    ✓ Login: 422 @ login (server alive, auth format mismatch)
+    ✓ Detect entity: http://127.0.0.1:8001/posts
+    ✗ Create entity: 401 (auth required, no valid token)
+    ✓ List entities: 200 count=?
+    ✗ Edit entity: no entity_id captured
+    ✗ Delete entity: no entity_id captured
+    ✗ Verify deletion: no entity_id
+    ✓ Logout: 401
+    ✗ Login again: re-login failed
+    ✗ Verify persistence: no entity_id
+
+=== ENDPOINT SMOKE TESTS ===
+  All endpoints responded without errors.
+
+  Endpoint pass rate: 100% (15/15 passed, 0 timeouts, 0 errors)
+
+  Runtime FAIL: CRUD workflow failed critical steps
+  [verify]       failed
+  [verify] 4-9: Running HTTP / Schema-DB / Browser / Performance / Accessibility in parallel...
+  [verify]       http: passed — 0 issues
+  [verify]       schema_db_assertion: passed — 0 issues
+  [verify]       accessibility: passed — 0 issues
+  [verify]       browser: passed — 0 issues
+  [verify] 10/11 Workflow tests...
+  [verify]       passed
+  [verify] 11/11 LLM Judge...
+[LLM cache] HIT (llm_judge) — 0 tokens billed
+  [verify]       LLM Judge: When the app loads the navigation bar appears but the main content area is compl
+
+------------------------------------------------------------
+  FORGE SCORE: 72.1/100  (C) [NEEDS REPAIR]
+  Coverage: 11/11 dimensions
+------------------------------------------------------------
+  + Compilation            [###########################...]  91.0  (wt:15%)
+      critical=0 high=0 medium=0 low=9
+  x Runtime Startup        [######........................]  20.0  (wt:20%)
+      started=True health=True success=False
+  + API Functionality      [##############################] 100.0  (wt:15%)
+      15/15 endpoints passed
+  + Frontend Load          [##############################] 100.0  (wt:10%)
+      loaded OK
+  + Browser UX             [##########################....]  88.0  (wt:15%)
+      console_errors=0 network_failures=0 forms=0/0
+  x Integration            [#############.................]  46.2  (wt:10%)
+      6/13 workflow steps passed
+  x Code Quality           [#####################.........]  73.0  (wt:5%)
+      stubs=0 globals=0 other_contract=9
+  + Security               [##############################] 100.0  (wt:5%)
+      security_issues=0 cors=True server_up=True
+  + Completeness           [##############################] 100.0  (wt:3%)
+      planned=15 missing=0
+  + Performance            [###########################...]  90.0  (wt:2%)
+      health_latency_ms=0
+  x Visual Judge           [##########....................]  34.9  (wt:5%)
+      llm_judge_severity=high confidence=0.93
+------------------------------------------------------------
+
+[retry] Result: 71.5 ↑ 72.1 (Δ=+0.6)
+[V15] Score: 72.1 (C) -- [needs repair]
+[V15] WARNING: Regression detected -- reverting fix
+[retry] Skipping regenerate_module for pattern 'contract' -- proven ineffective in past runs, escalating
+[retry] Skipping switch_model for pattern 'contract' -- proven ineffective in past runs, escalating
+
+[retry] Attempt 3/5: Redesign architecture from scratch (nuclear option)
+
+[V15] Fix attempt 5/5 -- strategy: regenerate_arch
+  [fix] 4 lower-priority group(s) (4 diagnostic(s)) dropped this round due to max_groups=6 cap
+  [fix] 10 diagnostics → 6 groups
+  [fix] Group [1] Runtime crash: [AttributeError] AttributeError: 'SignupRequest' object has no at
+  [fix] REGENERATE ARCHITECTURE — redesigning from idea...
+
+######################################################################
+# V6 AUTONOMOUS ENGINEERING TEAM
+# Idea: A blog CMS with author and reader roles. Authors write posts with
+######################################################################
+
+=== PRODUCT MANAGER (V6) ===
+  [cache hit] A blog CMS with author and reader roles. Authors write posts
+  Project: Forge Blog CMS
+  7 user stories | 7 features | 4 entities
+
+=== ARCHITECT (V6) ===
+
+=== ARCHITECT CACHE HIT — skipping LLM call ===
+
+=== TECH LEAD REVIEW (V6) ===
+  [cache hit]
+  Summary: The proposed architecture provides a solid foundation for the Forge Blog CMS, largely adhering to th
+  Issues: 2 critical, 3 warnings
+  [CRITICAL] The product spec explicitly states 'User registration (authors will be pre-provisioned or invited)' and 'User Authentication & Authorization: Secure login for authors'. However, the proposed architecture includes `/auth/signup` in the `MANDATORY AUTH ENDPOINTS` section of the contract, which contradicts the product spec's 'out_of_scope' for user registration. Additionally, the proposed API endpoints do not list `/auth/signup` but the contract requires it for 'every app with a users table'. This is a direct conflict.
+    Fix: Given the product spec's 'out_of_scope' for user registration, the `/auth/signup` endpoint should NOT be generated. The `MANDATORY AUTH ENDPOINTS` section of the contract should be interpreted as 'if user registration is in scope, then include signup'. For this project, it is out of scope. The `users` table will still exist for authors, but they will be pre-provisioned. The `auth_routes.py` file should only contain `/auth/login` and `/auth/me`.
+  [CRITICAL] The contract states `GET /auth/me` but the proposed architecture lists `GET /users/me`.
+    Fix: Rename `GET /users/me` to `GET /auth/me` and place it in `app/routes/auth_routes.py` as per the contract's mandatory auth endpoints.
+
+=== BACKEND + FRONTEND — PARALLEL ===
+
+=== BACKEND TEAM — PARALLEL GENERATION (V6) ===
+
+  [V6] Wave 1 — Foundation
+  [V6] Wave 2 — Models (4 tables, parallel)
+
+=== FRONTEND TEAM (V6) ===
+
+=== START FRONTEND ===
+Using Cerebras (main)
+Using Cerebras (main)
+Frontend: [cache hit] — skipping LLM call
+=== END FRONTEND ===
+Using Cerebras (main)
+Using Cerebras (main)
+[CEREBRAS] Prompt=3272 Completion=518 Reasoning=397 Total=3790
+    [model] tags: OK (3.4s)
+[CEREBRAS] Prompt=3275 Completion=537 Reasoning=388 Total=3812
+    [model] post_tags: OK (4.1s)
+[CEREBRAS] Prompt=3293 Completion=628 Reasoning=517 Total=3921
+    [model] users: OK (5.5s)
+[CEREBRAS] Prompt=3338 Completion=661 Reasoning=408 Total=3999
+    [model] posts: OK (6.3s)
+  [V6] Wave 2 done in 6.3s
+  [V6] Wave 2.5 — stripped back_populates/backref from app/models/tags.py
+  [V6] Wave 2.5 — stripped back_populates/backref from app/models/post_tags.py
+  [V6] Wave 2.5 — stripped back_populates/backref from app/models/posts.py
+  [V6] Wave 2.5 — renaming plural class names: {'Tags': 'Tag', 'PostTags': 'PostTag', 'Users': 'User', 'Posts': 'Post'}
+  [V6] Wave 2.5 — created shim app/models/tag.py → Tag
+  [V6] Wave 2.5 — created shim app/models/post_tag.py → PostTag
+  [V6] Wave 2.5 — created shim app/models/user.py → User
+  [V6] Wave 2.5 — created shim app/models/post.py → Post
+  [V6] Wave 3 — Schemas (6 resources, parallel)
+Using Cerebras (main)
+Using Cerebras (main)
+Using Cerebras (main)
+Using Cerebras (main)
+Using Cerebras (main)
+[CEREBRAS] Prompt=3268 Completion=923 Reasoning=572 Total=4191
+[CEREBRAS] Prompt=3270 Completion=1204 Reasoning=837 Total=4474
+    [schema] seed: OK (2.0s)
+Using Cerebras (main)
+    [schema] auth: OK (2.0s)
+[CEREBRAS] Prompt=3272 Completion=1334 Reasoning=1050 Total=4606
+[CEREBRAS] Prompt=3971 Completion=1311 Reasoning=822 Total=5282
+[CEREBRAS] Prompt=3561 Completion=1246 Reasoning=925 Total=4807
+    [schema] post: OK (2.9s)
+    [schema] stats: OK (2.9s)
+    [schema] user: OK (2.9s)
+[CEREBRAS] Prompt=3601 Completion=1070 Reasoning=852 Total=4671
+    [schema] tag: OK (3.8s)
+  [V6] Wave 3 done in 5.9s
+  [V6] Wave 4 — Routes (6 files, parallel)
+Using Cerebras (main)
+Using Cerebras (main)
+Using Cerebras (main)
+Using Cerebras (main)
+Using Cerebras (main)
+[CEREBRAS] Prompt=4610 Completion=972 Reasoning=715 Total=5582
+    [route] app/routes/stats_routes.py: OK (4.5s)
+Using Cerebras (main)
+[CEREBRAS] Prompt=4606 Completion=1854 Reasoning=1446 Total=6460
+    [route] app/routes/user_routes.py: OK (4.7s)
+[CEREBRAS] Prompt=4608 Completion=1877 Reasoning=1389 Total=6485
+    [route] app/routes/auth_routes.py: OK (4.7s)
+[CEREBRAS] Prompt=4758 Completion=3276 Reasoning=1102 Total=8034
+    [route] app/routes/post_routes.py: OK (5.6s)
+[CEREBRAS] Prompt=4606 Completion=2706 Reasoning=1488 Total=7312
+    [route] app/routes/seed_routes.py: OK (6.3s)
+[CEREBRAS] Prompt=4637 Completion=1191 Reasoning=514 Total=5828
+    [route] app/routes/tag_routes.py: OK (3.7s)
+  [V6] Wave 4 done in 8.2s
+  [V6] Wave 5 — main.py (from 6 route files, 4 models)
+Using Cerebras (main)
+[CEREBRAS] Prompt=2994 Completion=1805 Reasoning=1465 Total=4799
+    [main] app/main.py: OK (1.6s)
+
+  [V6] Parallel backend done: 30/30 files OK in 21.95s (parallel phase: 8.22s)
+  Generated 30 files in 21.9s (parallel phase: 8.2s)
+  Backend+Frontend done in 22.0s
+
+[V14] Deployment configs written: ['render.yaml', 'Procfile', '.env.example', '.github/workflows/deploy.yml', 'wrangler.toml']
+
+=== FILES WRITTEN: C:\Users\jerry\onedrive\Desktop\forgeai\generated_projects\forge_blog_cms (40 files) ===
+
+=== DETERMINISTIC PATCHER ===
+  [patcher] Stripped 2 relationship() declaration(s) from posts.py
+  [patcher] Stripped 2 relationship() declaration(s) from post_tags.py
+  [patcher] Stripped 1 relationship() declaration(s) from tags.py
+  [patcher] Injected known-good app/utils/auth.py
+  [patcher] Injected known-good app/routes/auth_routes.py (dynamic password field + fast bcrypt)
+  [patcher] Added null guard for 'posts' in seed_routes.py
+  [patcher] Made Response schema fields Optional in auth.py
+  [patcher] Made Response schema fields Optional in post.py
+  [patcher] Made Response schema fields Optional in seed.py
+  [patcher] Made Response schema fields Optional in stats.py
+  [patcher] Made Response schema fields Optional in tag.py
+  [patcher] Made Response schema fields Optional in user.py
+  [schema_patcher] Added from_attributes=True to 4 schema file(s)
+  [patcher] Fixed attribute accesses in auth_routes.py
+  [patcher] Fixed attribute accesses in post_routes.py
+  [patcher] Fixed attribute accesses in seed_routes.py
+  [patcher] Patched 4 file(s) — passlib→bcrypt, async→sync, smart quotes
+  [db_patcher] Injected known-good app/database.py
+  [field_patcher] Aligned model fields in seed_routes.py
+  [field_patcher] Made orphan required Create/Update field(s) Optional in tag.py
+  [field_patcher] Added missing schema field(s) ['name'] to PostCreate in post.py
+  [field_patcher] Fixed model-field mismatches in 1 route file(s)
+
+=== VALIDATION LOOP (V6) ===
+  Validation: FAIL — 10 errors
+
+  Validation errors:
+    • Undefined symbol 'author_router' in app\routes\post_routes.py
+    • Missing frontend import target: ./pages/PostListPage
+    • Missing frontend import target: ./pages/PostDetailPage
+    • Missing frontend import target: ./pages/AuthorDashboardPage
+    • Missing frontend import target: ./pages/CreatePostPage
+    • Missing frontend import target: ./pages/EditPostPage
+    • Frontend auth field mismatch: src/pages/LoginPage.jsx POSTs to a login endpoint with fields ['password', 'username'] but no 'email' — the backend's login schema requires email (per project contract), so every login attempt will fail with a 422 even though the form is filled in correctly (the UI will show a confusing generic 'Field required' error). Rename the field/state var to email and send { email, password } in the POST body.
+    • Duplicate class definition: 'TagCreate' is defined in multiple files (app/routes/tag_routes.py, app/schemas/tag.py) — this creates incompatible duplicate types
+
+  Fix attempt 1/4 ...
+Using Cerebras (main)
+[CEREBRAS] Prompt=3252 Completion=2681 Reasoning=523 Total=5933
+Using Cerebras (main)
+[CEREBRAS] Prompt=4889 Completion=1786 Reasoning=668 Total=6675
+Using Cerebras (main)
+[CEREBRAS] Prompt=4699 Completion=2119 Reasoning=1145 Total=6818
+Using Cerebras (main)
+[CEREBRAS] Prompt=4894 Completion=2715 Reasoning=996 Total=7609
+Using Cerebras (main)
+[CEREBRAS] Prompt=4832 Completion=1942 Reasoning=517 Total=6774
+Using Cerebras (main)
+[CEREBRAS] Prompt=4699 Completion=2152 Reasoning=556 Total=6851
+      [fix cache hit] src/pages/LoginPage.jsx
+Using Cerebras (main)
+[CEREBRAS] Prompt=2033 Completion=1660 Reasoning=1072 Total=3693
+Using Cerebras (main)
+[CEREBRAS] Prompt=1848 Completion=804 Reasoning=526 Total=2652
+  [patcher] Fixed attribute accesses in seed_routes.py
+  [router_patcher] Wired 1 orphan router(s) into main.py: author_router
+  Post-fix 1: FAIL — 3 errors
+    • Missing symbol 'TagRead' in app/schemas/tag.py (imported from app/routes/tag_routes.py)
+    • Missing endpoint GET /author/posts (expected in app/routes/author_routes.py) -- called from src/pages/AuthorDashboardPage.jsx but never implemented on the backend
+    • Missing endpoint PATCH /posts/${post.id}\ (expected in app/routes/post_routes.py) -- called from src/pages/AuthorDashboardPage.jsx but never implemented on the backend
+
+  Fix attempt 2/4 ...
+Using Cerebras (main)
+[CEREBRAS] Prompt=1591 Completion=445 Reasoning=180 Total=2036
+Using Cerebras (main)
+[CEREBRAS] Prompt=4453 Completion=1339 Reasoning=913 Total=5792
+Using Cerebras (main)
+[CEREBRAS] Prompt=3278 Completion=3027 Reasoning=649 Total=6305
+  [router_patcher] Wired 1 orphan router(s) into main.py: author_router
+  Post-fix 2: FAIL — 2 errors
+    • Missing endpoint PATCH /posts/${post.id}\ (expected in app/routes/post_routes.py) -- called from src/pages/AuthorDashboardPage.jsx but never implemented on the backend
+    • Schema mismatch: app/schemas/tag.py: TagRead.post_ids is required in the response schema but 'post_ids' does not exist as a column on the Tag model
+
+  Fix attempt 3/4 ...
+Using Cerebras (main)
+[CEREBRAS] Prompt=3468 Completion=3751 Reasoning=1141 Total=7219
+Using Cerebras (main)
+[CEREBRAS] Prompt=1661 Completion=798 Reasoning=575 Total=2459
+  Post-fix 3: FAIL — 1 errors
+    • Missing endpoint PATCH /posts/${post.id}\ (expected in app/routes/post_routes.py) -- called from src/pages/AuthorDashboardPage.jsx but never implemented on the backend
+
+  Fix attempt 4/4 ...
+Using Cerebras (main)
+[CEREBRAS] Prompt=3666 Completion=5501 Reasoning=2892 Total=9167
+  Post-fix 4: FAIL — 1 errors
+    • Missing endpoint PATCH /posts/${post.id}\ (expected in app/routes/post_routes.py) -- called from src/pages/AuthorDashboardPage.jsx but never implemented on the backend
+
+=== ARCHITECTURE REPAIR (V6) ===
+Using Cerebras (main)
+[CEREBRAS] Prompt=4623 Completion=2302 Reasoning=926 Total=6925
+
+=== ARCHITECTURE FIX RAW RESPONSE ===
+{
+    "files": [
+        {
+            "path": "app/routes/post_routes.py",
+            "content": "from fastapi import APIRouter, Depends, HTTPException, Path, Query\nfrom sqlalchemy.orm import Session\nfrom typing import List\n\nfrom app.database import get_db\nfrom app.utils.auth import get_current_user\nfrom app.models.post import Post\nfrom app.models.user import User  # noqa: F401\nfrom app.schemas.post import PostCreate, PostUpdate, PostRead\n\npost_router = APIRouter()\n\n# List posts with pagination and optional tag filter\n@post_router.get(\"/posts\", response_model=List[PostRead])\ndef list_posts(\n    limit: int = Query(50, ge=1, le=500),\n    offset: int = Query(0, ge=0),\n    tag: str | None = Query(None),\n    db: Session = Depends(get_db)\n):\n    query = db.query(Post)\n    if tag:\n        query = query.join(Post.tags).filter(Post.tags.any(name=tag))\n    posts = query.offset(offset).limit(limit).all()\n    return posts\n\n# Retrieve a single post by ID\n@post_router.get(\"/posts/{post_id}\", response_model=PostRead)\ndef get_post(\n    post_id: int = Path(...),\n    db: Session = Depends(get_db)\n):\n    post = db.query(Post).filter(Post.id == post_id).first()\n    if not post:\n        raise HTTPException(status_code=404, detail=\"Post not found\")\n    return post\n\n# Create a new post (draft)\n@post_router.post(\"/posts\", response_model=PostRead)\ndef create_post(\n    post_in: PostCreate,\n    db: Session = Depends(get_db),\n    current_user: \"User\" = Depends(get_current_user)\n):\n    new_post = Post(**post_in.model_dump())\n    new_post.author_id = current_user.id\n    new_post.status = \"draft\"\n    db.add(new_post)\n    db.commit()\n    db.refresh(new_post)\n    return new_post\n\n# Full update of a post (PUT)\n@post_router.put(\"/posts/{post_id}\", response_model=PostRead)\ndef update_post(\n    post_in: PostUpdate,\n    post_id: int = Path(...),\n    db: Session = Depends(get_db),\n    current_user: \"User\" = Depends(get_current_user)\n):\n    post = db.query(Post).filter(Post.id == post_id).first()\n    if not post:\n        raise HTTPException(status_code=404, detail=\"Post not found\")\n    if post.author_id != current_user.id:\n        raise HTTPException(status_code=403, detail=\"Not authorized to modify this post\")\n    for field, value in post_in.model_dump().items():\n        setattr(post, field, value)\n    db.commit()\n    db.refresh(post)\n    return post\n\n# Partial update of a post (PATCH) – implements missing endpoint\n@post_router.patch(\"/posts/{post_id}\", response_model=PostRead)\ndef patch_post(\n    post_in: PostUpdate,\n    post_id: int = Path(...),\n    db: Session = Depends(get_db),\n    current_user: \"User\" = Depends(get_current_user)\n):\n    post = db.query(Post).filter(Post.id == post_id).first()\n    if not post:\n        raise HTTPException(status_code=404, detail=\"Post not found\")\n    if post.author_id != current_user.id:\n        raise HTTPException(status_code=403, detail=\
+  [patcher] Added missing class(es) to existing post.py: ['PostRead']
+  [patcher] Filtered **schema.dict() kwargs in post_routes.py
+  [patcher] Fixed response .data assumed to be wrapped (actually a bare array) in PostListPage.jsx
+  [patcher] Patched 4 file(s) — passlib→bcrypt, async→sync, smart quotes
+  [db_patcher] Injected known-good app/database.py
+  Post-arch-repair: FAIL
+
+  [skip_reviews] Validation failed — skipping reviews to save credits
+
+  ZIP: C:\Users\jerry\onedrive\Desktop\forgeai\generated_projects\forge_blog_cms.zip
+
+=== V6 SCORE: 59/100 (D) ===
+    Runtime:      35/100
+    Security:     70/100
+    Performance:  70/100
+    Maintainability: 70/100
+    Review:       70/100
+
+────────────────────────────────────────
+  LLM Calls
+  Planner            1
+  Architect          1
+  Tech Lead          1
+  Backend            30
+  Frontend           1
+  Reviews            0
+  Polish             0
+  Repairs            16
+  Runtime Fixes      0
+  ────────────────────
+  Total              50
+────────────────────────────────────────
+
+=== COST SUMMARY ===
+  LLM calls:    32
+  Total tokens: 152,167
+  Est. cost:    $0.0913
+  LLM time:     125.2s
+    backend_generation: 75,081 tokens  $0.0450
+    fix: 34,562 tokens  $0.0207
+    missing_file: 36,533 tokens  $0.0219
+    architecture_fix: 5,991 tokens  $0.0036
+  [patcher] Patched 1 file(s) — passlib→bcrypt, async→sync, smart quotes
+  [db_patcher] Injected known-good app/database.py
+  [preflight] fix_model_schema_notnull_gap: applied
+  [preflight] fix_missing_env: applied
+  [db_patcher] Injected known-good app/database.py
+  [preflight] fix_database_py: applied
+  [preflight] 3 deterministic fix(es) applied without LLM
+  [verify] 1/11 Static analysis...
+  [verify]       failed — 10 issues
+  [verify] 2/11 Compile check...
+  [verify]       passed — 0 syntax errors
+  [verify] 2a Import closure check...
+  [verify]       passed — 0 unresolved imports
+  [verify] 2a Symbol closure check...
+  [verify]       failed — 1 undefined symbols
+  [verify] 2a2 Contract conformance check (warn-only)...
+  [verify]       failed — 10 contract findings
+  [verify] 2b Frontend build...
+[Frontend] cwd:          C:\Users\jerry\OneDrive\Desktop\forgeAi\generated_projects\forge_blog_cms
+[Frontend] cwd exists:   True
+[Frontend] package.json: ✓ exists
+[Frontend] npm:          C:\Program Files\nodejs\npm.CMD
+[Frontend] Building in: C:\Users\jerry\OneDrive\Desktop\forgeAi\generated_projects\forge_blog_cms
+[Frontend] Installing dependencies (npm install)...
+[Frontend] npm install complete
+Running vite build...
+Frontend build FAILED in 15.94s — 1 errors
+  [verify]       failed — 1 build errors
+  [verify]         ↳ error during build: [vite:esbuild] Transform failed with 1 error: | C:/Users/jerry/OneDrive/Desktop/forgeAi/generated_projects/forge_blog_cms/src/pages/AuthorDashboardPage.jsx:117:41: ERROR: Expected 
+  [verify] 3/11 Runtime: SKIPPED (1 critical static errors)
+  [verify] SKIPPED http: backend not running
+  [verify] SKIPPED schema_db_assertion: backend not running
+  [verify] SKIPPED browser: backend not running
+  [verify] SKIPPED performance: backend not running
+  [verify] SKIPPED accessibility: backend not running
+  [verify] SKIPPED workflow: backend not running
+  [verify] 11/11 LLM Judge...
+  [verify]       LLM Judge: passed
+  [fix] REGRESSION: 14 new error(s) with no score improvement (72.1 -> 17.4)
+       ↳ Missing symbol 'author_router' in app/routes/post_routes.py (imported from app/m
+       ↳ Missing endpoint GET /authors/{author_id}/posts (expected in app/routes/post_rou
+       ↳ Missing endpoint PATCH /posts/${post.id}\ (expected in app/routes/post_routes.py
+    [fix] Reverted to pre-fix snapshot
+  [verify] 1/11 Static analysis...
+  [verify]       passed — 0 issues
+  [verify] 2/11 Compile check...
+  [verify]       passed — 0 syntax errors
+  [verify] 2a Import closure check...
+  [verify]       passed — 0 unresolved imports
+  [verify] 2a Symbol closure check...
+  [verify]       passed — 0 undefined symbols
+  [verify] 2a2 Contract conformance check (warn-only)...
+  [verify]       failed — 11 contract findings
+  [verify] 2b Frontend build...
+[Frontend] cwd:          C:\Users\jerry\OneDrive\Desktop\forgeAi\generated_projects\forge_blog_cms
+[Frontend] cwd exists:   True
+[Frontend] package.json: ✓ exists
+[Frontend] npm:          C:\Program Files\nodejs\npm.CMD
+[Frontend] Building in: C:\Users\jerry\OneDrive\Desktop\forgeAi\generated_projects\forge_blog_cms
+[Frontend] package.json changed since last install — re-running npm install...
+[Frontend] npm install complete
+Running vite build...
+Frontend build PASSED in 12.13s
+  [verify]       passed — 0 build errors
+  [verify] 3/11 Runtime startup...
+Running runtime validation in: C:\Users\jerry\onedrive\Desktop\forgeai\generated_projects\forge_blog_cms
+Using Python: C:\Users\jerry\onedrive\Desktop\forgeai\backend\venv\Scripts\python.exe
+Skipping pip install (packages pre-installed): C:\Users\jerry\onedrive\Desktop\forgeai\generated_projects\forge_blog_cms\app\requirements.txt
+  [runner] Pre-flight DB init: OK
+Health Check /docs: 200
+
+=== USER JOURNEY (CRUD WORKFLOW) ===
+  Journey FAIL — 4 passed / 7 failed
+    ✗ Register: 404 (no register/signup endpoint found)
+    ✓ Login: 422 @ login (server alive, auth format mismatch)
+    ✓ Detect entity: http://127.0.0.1:8001/posts
+    ✗ Create entity: 401 (auth required, no valid token)
+    ✓ List entities: 200 count=?
+    ✗ Edit entity: no entity_id captured
+    ✗ Delete entity: no entity_id captured
+    ✗ Verify deletion: no entity_id
+    ✓ Logout: 401
+    ✗ Login again: re-login failed
+    ✗ Verify persistence: no entity_id
+
+=== ENDPOINT SMOKE TESTS ===
+  All endpoints responded without errors.
+
+  Endpoint pass rate: 100% (15/15 passed, 0 timeouts, 0 errors)
+
+  Runtime FAIL: CRUD workflow failed critical steps
+  [verify]       failed
+  [verify] 4-9: Running HTTP / Schema-DB / Browser / Performance / Accessibility in parallel...
+  [verify]       http: passed — 0 issues
+  [verify]       schema_db_assertion: passed — 0 issues
+  [verify]       accessibility: passed — 0 issues
+  [verify]       browser: failed — 1 issues
+  [verify] 10/11 Workflow tests...
+  [verify]       passed
+  [verify] 11/11 LLM Judge...
+Using Cerebras (main)
+[CEREBRAS] Prompt=306 Completion=516 Reasoning=256 Total=822
+  [verify]       LLM Judge: When the user lands on the login screen, the form appears but clicking the "Logi
+  [verify] Failure Graph: 14 root cause(s), 1 downstream suppressed
+  [verify] FailureGraph: 14 root(s), 1 suppressed downstream effect(s)
+  ROOT [LOW] Contract lists 'app/api/' (util) but it was never written to the project.
+  ROOT [LOW] Contract lists 'app/core/' (util) but it was never written to the project.
+  ROOT [LOW] Contract lists 'app/core/config.py' (config) but it 
+
+------------------------------------------------------------
+  FORGE SCORE: 66.7/100  (D) [NEEDS REPAIR]
+  Coverage: 11/11 dimensions
+------------------------------------------------------------
+  + Compilation            [##########################....]  89.0  (wt:15%)
+      critical=0 high=0 medium=0 low=11
+  x Runtime Startup        [######........................]  20.0  (wt:20%)
+      started=True health=True success=False
+  + API Functionality      [##############################] 100.0  (wt:15%)
+      15/15 endpoints passed
+  + Frontend Load          [##############################] 100.0  (wt:10%)
+      loaded OK
+  x Browser UX             [###############...............]  53.0  (wt:15%)
+      console_errors=1 network_failures=0 forms=0/0
+  x Integration            [#############.................]  46.2  (wt:10%)
+      6/13 workflow steps passed
+  x Code Quality           [####################..........]  67.0  (wt:5%)
+      stubs=0 globals=0 other_contract=11
+  + Security               [##############################] 100.0  (wt:5%)
+      security_issues=0 cors=True server_up=True
+  + Completeness           [##############################] 100.0  (wt:3%)
+      planned=15 missing=0
+  + Performance            [###########################...]  90.0  (wt:2%)
+      health_latency_ms=0
+  x Visual Judge           [###########...................]  38.4  (wt:5%)
+      llm_judge_severity=high confidence=0.88
+------------------------------------------------------------
+
+[retry] Result: 72.1 ↓ 66.7 (Δ=-5.4)
+[V15] Score: 66.7 (D) -- [needs repair]
+[V15] WARNING: Regression detected -- reverting fix
+[retry] Skipping switch_model for pattern 'contract' -- proven ineffective in past runs, escalating
+
+[retry] Attempt 4/5: Redesign architecture from scratch (nuclear option)
+
+[V15] Fix attempt 5/5 -- strategy: regenerate_arch
+  [fix] Failure graph: fixing 12 root(s), skipping 1 downstream symptom(s)
+  [fix] 6 lower-priority group(s) (6 diagnostic(s)) dropped this round due to max_groups=6 cap
+  [fix] 12 diagnostics → 6 groups
+  [fix] Group [1] Runtime crash: [AttributeError] AttributeError: 'SignupRequest' object has no at
+  [fix] REGENERATE ARCHITECTURE — redesigning from idea...
+
+######################################################################
+# V6 AUTONOMOUS ENGINEERING TEAM
+# Idea: A blog CMS with author and reader roles. Authors write posts with
+######################################################################
+
+=== PRODUCT MANAGER (V6) ===
+  [cache hit] A blog CMS with author and reader roles. Authors write posts
+  Project: Forge Blog CMS
+  7 user stories | 7 features | 4 entities
+
+=== ARCHITECT (V6) ===
+
+=== ARCHITECT CACHE HIT — skipping LLM call ===
+
+=== TECH LEAD REVIEW (V6) ===
+  [cache hit]
+  Summary: The proposed architecture provides a solid foundation for the Forge Blog CMS, largely adhering to th
+  Issues: 2 critical, 3 warnings
+  [CRITICAL] The product spec explicitly states 'User registration (authors will be pre-provisioned or invited)' and 'User Authentication & Authorization: Secure login for authors'. However, the proposed architecture includes `/auth/signup` in the `MANDATORY AUTH ENDPOINTS` section of the contract, which contradicts the product spec's 'out_of_scope' for user registration. Additionally, the proposed API endpoints do not list `/auth/signup` but the contract requires it for 'every app with a users table'. This is a direct conflict.
+    Fix: Given the product spec's 'out_of_scope' for user registration, the `/auth/signup` endpoint should NOT be generated. The `MANDATORY AUTH ENDPOINTS` section of the contract should be interpreted as 'if user registration is in scope, then include signup'. For this project, it is out of scope. The `users` table will still exist for authors, but they will be pre-provisioned. The `auth_routes.py` file should only contain `/auth/login` and `/auth/me`.
+  [CRITICAL] The contract states `GET /auth/me` but the proposed architecture lists `GET /users/me`.
+    Fix: Rename `GET /users/me` to `GET /auth/me` and place it in `app/routes/auth_routes.py` as per the contract's mandatory auth endpoints.
+
+=== BACKEND + FRONTEND — PARALLEL ===
+
+=== BACKEND TEAM — PARALLEL GENERATION (V6) ===
+
+=== FRONTEND TEAM (V6) ===
+
+=== START FRONTEND ===
+
+  [V6] Wave 1 — Foundation
+  [V6] Wave 2 — Models (4 tables, parallel)
+Using Cerebras (main)
+Using Cerebras (main)
+Using Cerebras (main)
+Using Cerebras (main)
+Frontend: [cache hit] — skipping LLM call
+=== END FRONTEND ===
+[CEREBRAS] Prompt=3293 Completion=737 Reasoning=536 Total=4030
+    [model] users: OK (1.8s)
+[CEREBRAS] Prompt=3338 Completion=1120 Reasoning=878 Total=4458
+    [model] posts: OK (1.8s)
+[CEREBRAS] Prompt=3275 Completion=1113 Reasoning=944 Total=4388
+    [model] post_tags: OK (2.6s)
+[CEREBRAS] Prompt=3272 Completion=577 Reasoning=495 Total=3849
+    [model] tags: OK (3.3s)
+  [V6] Wave 2 done in 3.3s
+  [V6] Wave 2.5 — stripped back_populates/backref from app/models/users.py
+  [V6] Wave 2.5 — stripped back_populates/backref from app/models/posts.py
+  [V6] Wave 2.5 — renaming plural class names: {'Users': 'User', 'Posts': 'Post', 'Tags': 'Tag'}
+  [V6] Wave 2.5 — created shim app/models/user.py → User
+  [V6] Wave 2.5 — created shim app/models/post.py → Post
+  [V6] Wave 2.5 — created shim app/models/post_tag.py → Post_tags
+  [V6] Wave 2.5 — created shim app/models/tag.py → Tag
+  [V6] Wave 2.5 — stripped no-FK relationship users → tags
+  [V6] Wave 2.5 — stripped no-FK relationship users → posttags
+  [V6] Wave 3 — Schemas (6 resources, parallel)
+Using Cerebras (main)
+Using Cerebras (main)
+Using Cerebras (main)
+Using Cerebras (main)
+Using Cerebras (main)
+[CEREBRAS] Prompt=3272 Completion=1154 Reasoning=888 Total=4426
+    [schema] stats: OK (1.7s)
+Using Cerebras (main)
+[CEREBRAS] Prompt=3268 Completion=1176 Reasoning=882 Total=4444
+    [schema] seed: OK (1.8s)
+[CEREBRAS] Prompt=3643 Completion=1519 Reasoning=1152 Total=5162
+    [schema] user: OK (2.1s)
+[CEREBRAS] Prompt=3270 Completion=885 Reasoning=537 Total=4155
+    [schema] auth: OK (2.8s)
+[CEREBRAS] Prompt=3975 Completion=1426 Reasoning=931 Total=5401
+    [schema] post: OK (2.9s)
+[CEREBRAS] Prompt=3523 Completion=739 Reasoning=605 Total=4262
+    [schema] tag: OK (1.8s)
+  [V6] Wave 3 done in 3.5s
+  [V6] Wave 4 — Routes (6 files, parallel)
+Using Cerebras (main)
+Using Cerebras (main)
+Using Cerebras (main)
+Using Cerebras (main)
+Using Cerebras (main)
+[CEREBRAS] Prompt=4598 Completion=821 Reasoning=617 Total=5419
+    [route] app/routes/stats_routes.py: OK (2.1s)
+Using Cerebras (main)
+[CEREBRAS] Prompt=4594 Completion=1033 Reasoning=869 Total=5627
+    [route] app/routes/user_routes.py: OK (2.1s)
+[CEREBRAS] Prompt=4594 Completion=2076 Reasoning=959 Total=6670
+[CEREBRAS] Prompt=4596 Completion=1969 Reasoning=1508 Total=6565
+    [route] app/routes/seed_routes.py: OK (2.4s)
+    [route] app/routes/auth_routes.py: OK (2.4s)
+[CEREBRAS] Prompt=4746 Completion=2993 Reasoning=851 Total=7739
+    [route] app/routes/post_routes.py: OK (3.0s)
+[CEREBRAS] Prompt=4625 Completion=1375 Reasoning=692 Total=6000
+    [route] app/routes/tag_routes.py: OK (1.9s)
+  [V6] Wave 4 done in 4.0s
+  [V6] Wave 5 — main.py (from 6 route files, 4 models)
+Using Cerebras (main)
+[CEREBRAS] Prompt=2994 Completion=1199 Reasoning=871 Total=4193
+    [main] app/main.py: OK (1.1s)
+
+  [V6] Parallel backend done: 30/30 files OK in 11.92s (parallel phase: 4.0s)
+  Generated 30 files in 11.9s (parallel phase: 4.0s)
+  Backend+Frontend done in 11.9s
+
+[V14] Deployment configs written: ['render.yaml', 'Procfile', '.env.example', '.github/workflows/deploy.yml', 'wrangler.toml']
+
+=== FILES WRITTEN: C:\Users\jerry\onedrive\Desktop\forgeai\generated_projects\forge_blog_cms (40 files) ===
+
+=== DETERMINISTIC PATCHER ===
+  [patcher] Stripped 2 relationship() declaration(s) from posts.py
+  [patcher] Stripped 2 relationship() declaration(s) from post_tags.py
+  [patcher] Stripped 1 relationship() declaration(s) from users.py
+  [patcher] Injected known-good app/utils/auth.py
+  [patcher] Injected known-good app/routes/auth_routes.py (dynamic password field + fast bcrypt)
+  [patcher] Made Response schema fields Optional in post.py
+  [patcher] Made Response schema fields Optional in seed.py
+  [patcher] Made Response schema fields Optional in stats.py
+  [patcher] Made Response schema fields Optional in tag.py
+  [patcher] Made Response schema fields Optional in user.py
+  [schema_patcher] Added from_attributes=True to 6 schema file(s)
+  [patcher] Fixed attribute accesses in auth_routes.py
+  [patcher] Fixed attribute accesses in post_routes.py
+  [patcher] Fixed attribute accesses in seed_routes.py
+  [patcher] Patched 4 file(s) — passlib→bcrypt, async→sync, smart quotes
+  [db_patcher] Injected known-good app/database.py
+  [field_patcher] Aligned model fields in seed_routes.py
+  [field_patcher] Added missing schema field(s) ['name'] to PostCreate in post.py
+  [field_patcher] Added missing schema field(s) ['name'] to PostUpdate in post.py
+  [field_patcher] Filtered dict-unpack constructor kwargs in seed_routes.py
+  [field_patcher] Fixed model-field mismatches in 1 route file(s)
+
+=== VALIDATION LOOP (V6) ===
+  Validation: FAIL — 14 errors
+
+  Validation errors:
+    • Missing symbol 'Post_tags' in app/models/post_tags.py (imported from app/models/post_tag.py)
+    • Undefined symbol 'APIRerson' in app\routes\user_routes.py
+    • Missing frontend import target: ./pages/PostListPage
+    • Missing frontend import target: ./pages/PostDetailPage
+    • Missing frontend import target: ./pages/AuthorDashboardPage
+    • Missing frontend import target: ./pages/CreatePostPage
+    • Missing frontend import target: ./pages/EditPostPage
+    • Frontend auth field mismatch: src/pages/LoginPage.jsx POSTs to a login endpoint with fields ['password', 'username'] but no 'email' — the backend's login schema requires email (per project contract), so every login attempt will fail with a 422 even though the form is filled in correctly (the UI will show a confusing generic 'Field required' error). Rename the field/state var to email and send { email, password } in the POST body.
+
+  Fix attempt 1/4 ...
+Using Cerebras (main)
+[CEREBRAS] Prompt=1660 Completion=533 Reasoning=247 Total=2193
+Using Cerebras (main)
+[CEREBRAS] Prompt=1608 Completion=759 Reasoning=615 Total=2367
+Using Cerebras (main)
+[CEREBRAS] Prompt=4889 Completion=1525 Reasoning=473 Total=6414
+Using Cerebras (main)
+[CEREBRAS] Prompt=4699 Completion=1917 Reasoning=1082 Total=6616
+Using Cerebras (main)
+[CEREBRAS] Prompt=4894 Completion=3642 Reasoning=1969 Total=8536
+Using Cerebras (main)
+[CEREBRAS] Prompt=4832 Completion=2685 Reasoning=917 Total=7517
+Using Cerebras (main)
+[CEREBRAS] Prompt=4699 Completion=2946 Reasoning=1661 Total=7645
+      [fix cache hit] src/pages/LoginPage.jsx
+Using Cerebras (main)
+[CEREBRAS] Prompt=3365 Completion=2539 Reasoning=672 Total=5904
+Using Cerebras (main)
+[CEREBRAS] Prompt=2029 Completion=982 Reasoning=405 Total=3011
+  [patcher] Fixed attribute accesses in post_routes.py
+  [patcher] Fixed attribute accesses in seed_routes.py
+  Post-fix 1: FAIL — 5 errors
+    • Missing symbol 'TagRead' in app/schemas/tag.py (imported from app/routes/tag_routes.py)
+    • Missing symbol 'TagListResponse' in app/schemas/tag.py (imported from app/routes/tag_routes.py)
+    • Missing endpoint DELETE /author/posts/${id} (expected in app/routes/author_routes.py) -- called from src/pages/AuthorDashboardPage.jsx but never implemented on the backend
+    • Missing endpoint GET /author/posts (expected in app/routes/author_routes.py) -- called from src/pages/AuthorDashboardPage.jsx but never implemented on the backend
+    • Missing endpoint POST /author/posts (expected in app/routes/author_routes.py) -- called from src/pages/AuthorDashboardPage.jsx but never implemented on the backend
+
+  Fix attempt 2/4 ...
+Using Cerebras (main)
+[CEREBRAS] Prompt=1571 Completion=568 Reasoning=338 Total=2139
+Using Cerebras (main)
+[CEREBRAS] Prompt=4654 Completion=1731 Reasoning=936 Total=6385
+  [patcher] Made Response schema fields Optional in tag.py
+  [router_patcher] Wired 1 orphan router(s) into main.py: author_router
+  Post-fix 2: FAIL — 2 errors
+    • Schema mismatch: app/schemas/tag.py: TagListResponse.items is required in the response schema but 'items' does not exist as a column on the Tag model
+    • Schema mismatch: app/schemas/tag.py: TagListResponse.total is required in the response schema but 'total' does not exist as a column on the Tag model
+
+  Fix attempt 3/4 ...
+Using Cerebras (main)
+[CEREBRAS] Prompt=1663 Completion=1141 Reasoning=886 Total=2804
+  Post-fix 3: FAIL — 2 errors
+    • Schema mismatch: app/schemas/tag.py: TagListResponse.items is required in the response schema but 'items' does not exist as a column on the Tag model
+    • Schema mismatch: app/schemas/tag.py: TagListResponse.total is required in the response schema but 'total' does not exist as a column on the Tag model
+  [fix loop] Error set unchanged after revert — skipping to Architecture Repair
+
+  [skip_reviews] Validation failed — skipping reviews to save credits
+
+  ZIP: C:\Users\jerry\onedrive\Desktop\forgeai\generated_projects\forge_blog_cms.zip
+
+=== V6 SCORE: 59/100 (D) ===
+    Runtime:      34/100
+    Security:     70/100
+    Performance:  70/100
+    Maintainability: 70/100
+    Review:       70/100
+
+────────────────────────────────────────
+  LLM Calls
+  Planner            1
+  Architect          1
+  Tech Lead          1
+  Backend            30
+  Frontend           1
+  Reviews            0
+  Polish             0
+  Repairs            13
+  Runtime Fixes      0
+  ────────────────────
+  Total              47
+────────────────────────────────────────
+
+=== COST SUMMARY ===
+  LLM calls:    29
+  Total tokens: 126,534
+  Est. cost:    $0.0759
+  LLM time:     63.1s
+    backend_generation: 74,073 tokens  $0.0444
+    fix: 15,565 tokens  $0.0093
+    missing_file: 36,896 tokens  $0.0221
+  [patcher] Response schema id/datetime fixes in tag.py: TagListResponse.id
+  [patcher] Fixed response .data assumed to be wrapped (actually a bare array) in AuthorDashboardPage.jsx
+  [patcher] Fixed response .data assumed to be wrapped (actually a bare array) in CreatePostPage.jsx
+  [patcher] Fixed response .data assumed to be wrapped (actually a bare array) in PostListPage.jsx
+  [patcher] Patched 3 file(s) — passlib→bcrypt, async→sync, smart quotes
+  [db_patcher] Injected known-good app/database.py
+  [preflight] fix_model_schema_notnull_gap: applied
+  [preflight] fix_missing_env: applied
+  [db_patcher] Injected known-good app/database.py
+  [preflight] fix_database_py: applied
+  [preflight] 3 deterministic fix(es) applied without LLM
+  [verify] 1/11 Static analysis...
+  [verify]       failed — 9 issues
+  [verify] 2/11 Compile check...
+  [verify]       passed — 0 syntax errors
+  [verify] 2a Import closure check...
+  [verify]       passed — 0 unresolved imports
+  [verify] 2a Symbol closure check...
+  [verify]       passed — 0 undefined symbols
+  [verify] 2a2 Contract conformance check (warn-only)...
+  [verify]       failed — 10 contract findings
+  [verify] 2b Frontend build...
+[Frontend] cwd:          C:\Users\jerry\OneDrive\Desktop\forgeAi\generated_projects\forge_blog_cms
+[Frontend] cwd exists:   True
+[Frontend] package.json: ✓ exists
+[Frontend] npm:          C:\Program Files\nodejs\npm.CMD
+[Frontend] Building in: C:\Users\jerry\OneDrive\Desktop\forgeAi\generated_projects\forge_blog_cms
+[Frontend] Installing dependencies (npm install)...
+[Frontend] npm install complete
+Running vite build...
+Frontend build PASSED in 16.46s
+  [verify]       passed — 0 build errors
+  [verify] 3/11 Runtime startup...
+Running runtime validation in: C:\Users\jerry\onedrive\Desktop\forgeai\generated_projects\forge_blog_cms
+Using Python: C:\Users\jerry\onedrive\Desktop\forgeai\backend\venv\Scripts\python.exe
+Skipping pip install (packages pre-installed): C:\Users\jerry\onedrive\Desktop\forgeai\generated_projects\forge_blog_cms\app\requirements.txt
+  [runner] Pre-flight DB init: OK
+Health Check /health: 200
+
+=== USER JOURNEY (CRUD WORKFLOW) ===
+  Journey FAIL — 4 passed / 7 failed
+    ✗ Register: 404 (no register/signup endpoint found)
+    ✓ Login: 422 @ login (server alive, auth format mismatch)
+    ✓ Detect entity: http://127.0.0.1:8001/posts
+    ✗ Create entity: 401 (auth required, no valid token)
+    ✓ List entities: 200 count=?
+    ✗ Edit entity: no entity_id captured
+    ✗ Delete entity: no entity_id captured
+    ✗ Verify deletion: no entity_id
+    ✓ Logout: 401
+    ✗ Login again: re-login failed
+    ✗ Verify persistence: no entity_id
+
+=== ENDPOINT SMOKE TESTS ===
+  All endpoints responded without errors.
+
+  Endpoint pass rate: 100% (15/15 passed, 0 timeouts, 0 errors)
+
+  Runtime FAIL: CRUD workflow failed critical steps
+  [verify]       failed
+  [verify] 4-9: Running HTTP / Schema-DB / Browser / Performance / Accessibility in parallel...
+  [verify]       http: failed — 1 issues
+  [verify]       schema_db_assertion: passed — 0 issues
+  [verify]       performance: passed — 0 issues
+  [verify]       accessibility: failed — 1 issues
+  [verify]       browser: passed — 0 issues
+  [verify] 10/11 Workflow tests...
+  [verify]       passed
+  [verify] 11/11 LLM Judge...
+[LLM cache] HIT (llm_judge) — 0 tokens billed
+  [verify]       LLM Judge: When the app loads it immediately attempts a POST to /seed, which fails with a 5
+  [fix] REGRESSION: 12 new error(s) with no score improvement (66.7 -> 64.1)
+       ↳ Schema mismatch: app/schemas/post.py: PostCreate.title required but model allows
+       ↳ Schema mismatch: app/schemas/post.py: PostCreate.content_markdown required but m
+       ↳ Schema mismatch: app/schemas/post.py: PostCreate.status required but model allow
+    [fix] Reverted to pre-fix snapshot
+  [verify] 1/11 Static analysis...
+  [verify]       passed — 0 issues
+  [verify] 2/11 Compile check...
+  [verify]       passed — 0 syntax errors
+  [verify] 2a Import closure check...
+  [verify]       passed — 0 unresolved imports
+  [verify] 2a Symbol closure check...
+  [verify]       passed — 0 undefined symbols
+  [verify] 2a2 Contract conformance check (warn-only)...
+  [verify]       failed — 11 contract findings
+  [verify] 2b Frontend build...
+[Frontend] cwd:          C:\Users\jerry\OneDrive\Desktop\forgeAi\generated_projects\forge_blog_cms
+[Frontend] cwd exists:   True
+[Frontend] package.json: ✓ exists
+[Frontend] npm:          C:\Program Files\nodejs\npm.CMD
+[Frontend] Building in: C:\Users\jerry\OneDrive\Desktop\forgeAi\generated_projects\forge_blog_cms
+[Frontend] package.json changed since last install — re-running npm install...
+[Frontend] npm install complete
+Running vite build...
+Frontend build PASSED in 4.93s
+  [verify]       passed — 0 build errors
+  [verify] 3/11 Runtime startup...
+Running runtime validation in: C:\Users\jerry\onedrive\Desktop\forgeai\generated_projects\forge_blog_cms
+Using Python: C:\Users\jerry\onedrive\Desktop\forgeai\backend\venv\Scripts\python.exe
+Skipping pip install (packages pre-installed): C:\Users\jerry\onedrive\Desktop\forgeai\generated_projects\forge_blog_cms\app\requirements.txt
+  [runner] Deleted stale DB: app.db
+  [runner] Deleted stale DB: app.db-wal
+  [runner] Deleted stale DB: app.db-shm
+  [runner] Pre-flight DB init: OK
+Health Check /health: 200
+
+=== USER JOURNEY (CRUD WORKFLOW) ===
+  Journey FAIL — 4 passed / 7 failed
+    ✗ Register: 404 (no register/signup endpoint found)
+    ✓ Login: 422 @ login (server alive, auth format mismatch)
+    ✓ Detect entity: http://127.0.0.1:8001/posts
+    ✗ Create entity: 401 (auth required, no valid token)
+    ✓ List entities: 200 count=?
+    ✗ Edit entity: no entity_id captured
+    ✗ Delete entity: no entity_id captured
+    ✗ Verify deletion: no entity_id
+    ✓ Logout: 401
+    ✗ Login again: re-login failed
+    ✗ Verify persistence: no entity_id
+
+=== ENDPOINT SMOKE TESTS ===
+  All endpoints responded without errors.
+
+  Endpoint pass rate: 100% (15/15 passed, 0 timeouts, 0 errors)
+
+  Runtime FAIL: CRUD workflow failed critical steps
+  [verify]       failed
+  [verify] 4-9: Running HTTP / Schema-DB / Browser / Performance / Accessibility in parallel...
+  [verify]       http: passed — 0 issues
+  [verify]       schema_db_assertion: passed — 0 issues
+  [verify]       performance: passed — 0 issues
+  [verify]       accessibility: passed — 0 issues
+  [verify]       browser: passed — 0 issues
+  [verify] 10/11 Workflow tests...
+  [verify]       passed
+  [verify] 11/11 LLM Judge...
+[LLM cache] HIT (llm_judge) — 0 tokens billed
+  [verify]       LLM Judge: When the app loads the navigation bar appears but the main content area is compl
+
+------------------------------------------------------------
+  FORGE SCORE: 71.5/100  (C) [NEEDS REPAIR]
+  Coverage: 11/11 dimensions
+------------------------------------------------------------
+  + Compilation            [##########################....]  89.0  (wt:15%)
+      critical=0 high=0 medium=0 low=11
+  x Runtime Startup        [######........................]  20.0  (wt:20%)
+      started=True health=True success=False
+  + API Functionality      [##############################] 100.0  (wt:15%)
+      15/15 endpoints passed
+  + Frontend Load          [##############################] 100.0  (wt:10%)
+      loaded OK
+  + Browser UX             [##########################....]  88.0  (wt:15%)
+      console_errors=0 network_failures=0 forms=0/0
+  x Integration            [#############.................]  46.2  (wt:10%)
+      6/13 workflow steps passed
+  x Code Quality           [####################..........]  67.0  (wt:5%)
+      stubs=0 globals=0 other_contract=11
+  + Security               [##############################] 100.0  (wt:5%)
+      security_issues=0 cors=True server_up=True
+  + Completeness           [##############################] 100.0  (wt:3%)
+      planned=15 missing=0
+  + Performance            [###########################...]  90.0  (wt:2%)
+      health_latency_ms=0
+  x Visual Judge           [##########....................]  34.9  (wt:5%)
+      llm_judge_severity=high confidence=0.93
+------------------------------------------------------------
+
+[retry] Result: 66.7 ↑ 71.5 (Δ=+4.8)
+[V15] Score: 71.5 (C) -- [needs repair]
+[V15] WARNING: Regression detected -- reverting fix
+
+[retry] Attempt 5/5: Redesign architecture from scratch (nuclear option)
+
+[V15] Fix attempt 5/5 -- strategy: regenerate_arch
+  [fix] Failure graph: fixing 12 root(s), skipping 1 downstream symptom(s)
+  [fix] 6 lower-priority group(s) (6 diagnostic(s)) dropped this round due to max_groups=6 cap
+  [fix] 12 diagnostics → 6 groups
+  [fix] Group [1] Runtime crash: [AttributeError] AttributeError: 'SignupRequest' object has no at
+  [fix] REGENERATE ARCHITECTURE — redesigning from idea...
+
+######################################################################
+# V6 AUTONOMOUS ENGINEERING TEAM
+# Idea: A blog CMS with author and reader roles. Authors write posts with
+######################################################################
+
+=== PRODUCT MANAGER (V6) ===
+  [cache hit] A blog CMS with author and reader roles. Authors write posts
+  Project: Forge Blog CMS
+  7 user stories | 7 features | 4 entities
+
+=== ARCHITECT (V6) ===
+
+=== ARCHITECT CACHE HIT — skipping LLM call ===
+
+=== TECH LEAD REVIEW (V6) ===
+  [cache hit]
+  Summary: The proposed architecture provides a solid foundation for the Forge Blog CMS, largely adhering to th
+  Issues: 2 critical, 3 warnings
+  [CRITICAL] The product spec explicitly states 'User registration (authors will be pre-provisioned or invited)' and 'User Authentication & Authorization: Secure login for authors'. However, the proposed architecture includes `/auth/signup` in the `MANDATORY AUTH ENDPOINTS` section of the contract, which contradicts the product spec's 'out_of_scope' for user registration. Additionally, the proposed API endpoints do not list `/auth/signup` but the contract requires it for 'every app with a users table'. This is a direct conflict.
+    Fix: Given the product spec's 'out_of_scope' for user registration, the `/auth/signup` endpoint should NOT be generated. The `MANDATORY AUTH ENDPOINTS` section of the contract should be interpreted as 'if user registration is in scope, then include signup'. For this project, it is out of scope. The `users` table will still exist for authors, but they will be pre-provisioned. The `auth_routes.py` file should only contain `/auth/login` and `/auth/me`.
+  [CRITICAL] The contract states `GET /auth/me` but the proposed architecture lists `GET /users/me`.
+    Fix: Rename `GET /users/me` to `GET /auth/me` and place it in `app/routes/auth_routes.py` as per the contract's mandatory auth endpoints.
+
+=== BACKEND + FRONTEND — PARALLEL ===
+
+=== BACKEND TEAM — PARALLEL GENERATION (V6) ===
+
+=== FRONTEND TEAM (V6) ===
+
+=== START FRONTEND ===
+
+  [V6] Wave 1 — Foundation
+  [V6] Wave 2 — Models (4 tables, parallel)
+      [cache hit]
+    [model] users: OK (0.0s)
+Frontend: [cache hit] — skipping LLM call
+=== END FRONTEND ===
+      [cache hit]
+    [model] posts: OK (0.0s)
+      [cache hit]
+      [cache hit]
+    [model] tags: OK (0.0s)
+    [model] post_tags: OK (0.0s)
+  [V6] Wave 2 done in 0.0s
+  [V6] Wave 2.5 — stripped back_populates/backref from app/models/users.py
+  [V6] Wave 2.5 — stripped back_populates/backref from app/models/posts.py
+  [V6] Wave 2.5 — renaming plural class names: {'Users': 'User', 'Posts': 'Post', 'Tags': 'Tag'}
+  [V6] Wave 2.5 — created shim app/models/user.py → User
+  [V6] Wave 2.5 — created shim app/models/post.py → Post
+  [V6] Wave 2.5 — created shim app/models/tag.py → Tag
+  [V6] Wave 2.5 — created shim app/models/post_tag.py → Post_tags
+  [V6] Wave 2.5 — stripped no-FK relationship users → tags
+  [V6] Wave 2.5 — stripped no-FK relationship users → posttags
+  [V6] Wave 3 — Schemas (6 resources, parallel)
+      [cache hit]
+    [schema] seed: OK (0.0s)
+      [cache hit]
+    [schema] stats: OK (0.0s)
+      [cache hit]
+    [schema] auth: OK (0.0s)
+      [cache hit]
+      [cache hit]
+    [schema] user: OK (0.0s)
+    [schema] post: OK (0.0s)
+      [cache hit]
+    [schema] tag: OK (0.0s)
+  [V6] Wave 3 done in 0.0s
+  [V6] Wave 4 — Routes (6 files, parallel)
+Using Cerebras (main)
+Using Cerebras (main)
+Using Cerebras (main)
+Using Cerebras (main)
+Using Cerebras (main)
+[CEREBRAS] Prompt=4598 Completion=942 Reasoning=689 Total=5540
+    [route] app/routes/stats_routes.py: OK (2.6s)
+Using Cerebras (main)
+[CEREBRAS] Prompt=4594 Completion=1858 Reasoning=1280 Total=6452
+    [route] app/routes/user_routes.py: OK (3.5s)
+[CEREBRAS] Prompt=4596 Completion=1724 Reasoning=1329 Total=6320
+    [route] app/routes/auth_routes.py: OK (3.6s)
+[CEREBRAS] Prompt=4746 Completion=3344 Reasoning=1319 Total=8090
+    [route] app/routes/post_routes.py: OK (3.7s)
+[CEREBRAS] Prompt=4625 Completion=1646 Reasoning=672 Total=6271
+    [route] app/routes/tag_routes.py: OK (2.1s)
+[CEREBRAS] Prompt=4594 Completion=2778 Reasoning=1647 Total=7372
+    [route] app/routes/seed_routes.py: OK (5.6s)
+  [V6] Wave 4 done in 5.6s
+  [V6] Wave 5 — main.py (from 6 route files, 4 models)
+Using Cerebras (main)
+[CEREBRAS] Prompt=2994 Completion=1182 Reasoning=866 Total=4176
+    [main] app/main.py: OK (0.8s)
+
+  [V6] Parallel backend done: 30/30 files OK in 6.4s (parallel phase: 5.55s)
+  Generated 30 files in 6.4s (parallel phase: 5.5s)
+  Backend+Frontend done in 6.4s
+
+[V14] Deployment configs written: ['render.yaml', 'Procfile', '.env.example', '.github/workflows/deploy.yml', 'wrangler.toml']
+
+=== FILES WRITTEN: C:\Users\jerry\onedrive\Desktop\forgeai\generated_projects\forge_blog_cms (40 files) ===
+
+=== DETERMINISTIC PATCHER ===
+  [patcher] Stripped 2 relationship() declaration(s) from posts.py
+  [patcher] Stripped 2 relationship() declaration(s) from post_tags.py
+  [patcher] Stripped 1 relationship() declaration(s) from users.py
+  [patcher] Injected known-good app/utils/auth.py
+  [patcher] Injected known-good app/routes/auth_routes.py (dynamic password field + fast bcrypt)
+  [patcher] Made Response schema fields Optional in post.py
+  [patcher] Made Response schema fields Optional in seed.py
+  [patcher] Made Response schema fields Optional in stats.py
+  [patcher] Made Response schema fields Optional in tag.py
+  [patcher] Made Response schema fields Optional in user.py
+  [schema_patcher] Added from_attributes=True to 6 schema file(s)
+  [patcher] Fixed attribute accesses in auth_routes.py
+  [patcher] Fixed attribute accesses in post_routes.py
+  [patcher] Fixed attribute accesses in seed_routes.py
+  [patcher] Fixed ownership-FK attribute drift in post_routes.py
+  [patcher] Fixed ORM types in route schema in post_routes.py
+  [patcher] Fixed ORM types in route schema in tag_routes.py
+  [refresh_patcher] Injected db.refresh() in seed_routes.py
+  [patcher] Patched 4 file(s) — passlib→bcrypt, async→sync, smart quotes
+  [db_patcher] Injected known-good app/database.py
+  [field_patcher] Aligned model fields in seed_routes.py
+  [field_patcher] Added missing column(s) ['user_id'] to Post in posts.py
+  [field_patcher] Added missing schema field(s) ['name'] to PostCreate in post.py
+  [field_patcher] Fixed model-field mismatches in 1 route file(s)
+
+=== VALIDATION LOOP (V6) ===
+  Validation: FAIL — 13 errors
+
+  Validation errors:
+    • Missing symbol 'Post_tags' in app/models/post_tags.py (imported from app/models/post_tag.py)
+    • Missing frontend import target: ./pages/PostListPage
+    • Missing frontend import target: ./pages/PostDetailPage
+    • Missing frontend import target: ./pages/AuthorDashboardPage
+    • Missing frontend import target: ./pages/CreatePostPage
+    • Missing frontend import target: ./pages/EditPostPage
+    • Frontend auth field mismatch: src/pages/LoginPage.jsx POSTs to a login endpoint with fields ['password', 'username'] but no 'email' — the backend's login schema requires email (per project contract), so every login attempt will fail with a 422 even though the form is filled in correctly (the UI will show a confusing generic 'Field required' error). Rename the field/state var to email and send { email, password } in the POST body.
+    • Duplicate class definition: 'PostCreate' is defined in multiple files (app/routes/post_routes.py, app/schemas/post.py) — this creates incompatible duplicate types
+
+  Fix attempt 1/4 ...
+      [fix cache hit] app/models/post_tags.py
+Using Cerebras (main)
+[CEREBRAS] Prompt=4889 Completion=1840 Reasoning=651 Total=6729
+Using Cerebras (main)
+[CEREBRAS] Prompt=4699 Completion=1993 Reasoning=1063 Total=6692
+Using Cerebras (main)
+[CEREBRAS] Prompt=4894 Completion=2054 Reasoning=693 Total=6948
+Using Cerebras (main)
+[CEREBRAS] Prompt=4832 Completion=1730 Reasoning=545 Total=6562
+Using Cerebras (main)
+[CEREBRAS] Prompt=4699 Completion=2437 Reasoning=957 Total=7136
+      [fix cache hit] src/pages/LoginPage.jsx
+Using Cerebras (main)
+[CEREBRAS] Prompt=3207 Completion=2471 Reasoning=687 Total=5678
+Using Cerebras (main)
+[CEREBRAS] Prompt=2409 Completion=1891 Reasoning=1154 Total=4300
+  [patcher] Fixed attribute accesses in post_routes.py
+  [patcher] Fixed attribute accesses in seed_routes.py
+  Post-fix 1: FAIL — 3 errors
+    • Missing endpoint GET /author/posts (expected in app/routes/author_routes.py) -- called from src/pages/AuthorDashboardPage.jsx but never implemented on the backend
+    • Duplicate class definition: 'RegisterRequest' is defined in multiple files (app/routes/user_routes.py, app/schemas/auth.py) — this creates incompatible duplicate types
+    • Duplicate class definition: 'Token' is defined in multiple files (app/routes/user_routes.py, app/schemas/auth.py) — this creates incompatible duplicate types
+
+  Fix attempt 2/4 ...
+Using Cerebras (main)
+[CEREBRAS] Prompt=4580 Completion=1432 Reasoning=1115 Total=6012
+Using Cerebras (main)
+[CEREBRAS] Prompt=1962 Completion=878 Reasoning=381 Total=2840
+  [router_patcher] Wired 1 orphan router(s) into main.py: author_router
+  Post-fix 2: PASS — 0 errors
+
+=== REVIEWS (QA / Security / Code / Performance) ===
+
+=== QA REVIEW (V6) ===
+Using Cerebras (main)
+[CEREBRAS] Prompt=3275 Completion=2091 Reasoning=1363 Total=5366
+  QA score: 65/100 | Stories: 5/7 covered
+  Blockers: POST /posts missing authentication protection, GET /posts/{post_id} missing proper 404 error handling
+  [MISSING] GET /posts response does not include author name and publication date.
+  [MISSING] GET /posts/{post_id} does not raise 404 when the post is not found.
+  [MISSING] POST /posts is not protected by authentication.
+
+=== SECURITY REVIEW (V6) ===
+Using Cerebras (main)
+[CEREBRAS] Prompt=7082 Completion=2237 Reasoning=1521 Total=9319
+  Security score: 78/100 | Risk: medium
+  Findings: 0 critical, 1 high, 5 total
+  Passed: No SQL injection found, Passwords properly hashed with bcrypt
+
+============================================================
+  SECURITY REPORT — Score: 78/100 [MEDIUM]
+  The codebase has a few notable security concerns: a publicly exposed seed endpoint, hard‑coded passwords, overly permissive CORS, missing maximum length validation on user‑supplied strings, and no rate limiting on auth routes. Addressing these issues will significantly improve the overall security posture.
+
+  Findings (5):
+  [HIGH    ] AuthenticationGap in app/routes/seed_routes.py
+             The seed endpoint is publicly accessible without any authentication, allowing anyone to create users, posts, and tags.
+             Fix: Protect the route with an authentication dependency (e.g., Depends(get_current_user) or a dedicated admin check) and restrict it to authorized personnel only.
+  [MEDIUM  ] HardcodedSecret in app/routes/seed_routes.py
+             Plain‑text passwords are hard‑coded in the source for seed users, exposing credentials if the repository is leaked.
+             Fix: Remove hard‑coded passwords. Store seed credentials in environment variables or generate them at runtime, and only store the hashed version in the database.
+  [MEDIUM  ] CORSIssue in app/main.py
+             CORS is configured to allow any origin, which is unsafe for a production deployment and can expose the API to malicious front‑ends.
+             Fix: Replace the wildcard with a whitelist of trusted origins, e.g., allow_origins=["https://myfrontend.com"] and set allow_credentials accordingly.
+  [MEDIUM  ] MissingValidation in app/schemas/post.py
+             String fields are only constrained by a minimum length; there is no maximum length, allowing excessively large payloads that could lead to DoS or other issues.
+             Fix: Add appropriate max_length constraints, e.g., Field(min_length=1, max_length=255) for titles, emails, display names, etc.
+  [LOW     ] AuthenticationGap in app/routes/auth_routes.py
+             Authentication endpoints lack any rate‑limiting, making them vulnerable to credential‑stuffing and brute‑force attacks.
+             Fix: Integrate a rate‑limiting middleware such as SlowAPI or implement custom throttling to limit requests per IP address.
+
+  Passed: No SQL injection found, Passwords properly hashed with bcrypt
+============================================================
+
+=== CODE REVIEW (V6) ===
+Using Cerebras (main)
+[CEREBRAS] Prompt=5184 Completion=2395 Reasoning=1050 Total=7579
+  Code review: 34/100 overall | 1 critical, 5 high issues
+  Naming: 45 | Architecture: 30 | Maintainability: 35 | Tech Debt: 25
+  The project demonstrates a functional FastAPI skeleton with good security and deployment considerations, but suffers fro
+
+=== PERFORMANCE REVIEW (V6) ===
+Using Cerebras (main)
+[CEREBRAS] Prompt=5279 Completion=2371 Reasoning=1419 Total=7650
+  Performance score: 68/100 | 9 issues total
+  N+1: 3 | Missing indexes: 4 | Large payloads: 1 | Slow APIs: 1
+  [N+1]  app/models/posts.py: The `author` property performs a separate query each time it is accessed, causin
+  [N+1]  app/models/users.py: `posts` property issues a new query for every user, leading to N+1 when accessin
+  [IDX]  app/models/posts.py.user_id: Queries filter on `Post.user_id` (author routes) but the col
+  [IDX]  app/models/posts.py.author_id: `Post.author_id` is used in joins and filters but lacks an i
+  [PAYLOAD] GET /posts: Allows up to 500 posts per request; returning large result s
+
+=== FRONTEND CRITIC (V6) ===
+Using Cerebras (main)
+[CEREBRAS] Prompt=9881 Completion=2665 Reasoning=1240 Total=12546
+  Frontend critic: 62/100 design score | 1 critical, 2 high issues
+  Hierarchy: 70 | Compliance: 55 | Polish: 65 | Consistency: 60
+  The codebase demonstrates a solid grasp of the Neubrutalist aesthetic and includes many high‑quality UI primitives, but it falls short of the product‑
+
+=== UI POLISH PASS (2 file(s)) ===
+Using Cerebras (main)
+[CEREBRAS] Prompt=3244 Completion=2323 Reasoning=601 Total=5567
+  [polish] src/components/Header.jsx patched
+Using Cerebras (main)
+[CEREBRAS] Prompt=4931 Completion=5212 Reasoning=1197 Total=10143
+  [polish] src/pages/HomePage.jsx patched
+  Post-polish validation: FAIL
+  [polish] Regressed a passing app — reverting polish edits
+  [polish] Reverted: PASS
+  [db_patcher] Injected known-good app/database.py
+
+=== RUNTIME VALIDATION (V6) ===
+Running runtime validation in: C:\Users\jerry\onedrive\Desktop\forgeai\generated_projects\forge_blog_cms
+Using Python: C:\Users\jerry\onedrive\Desktop\forgeai\backend\venv\Scripts\python.exe
+Skipping pip install (packages pre-installed): C:\Users\jerry\onedrive\Desktop\forgeai\generated_projects\forge_blog_cms\app\requirements.txt
+  [runner] Pre-flight DB init: OK
+Health Check /health: 200
+
+=== USER JOURNEY (CRUD WORKFLOW) ===
+  Journey FAIL — 4 passed / 7 failed
+    ✗ Register: 404 (no register/signup endpoint found)
+    ✓ Login: 422 @ login (server alive, auth format mismatch)
+    ✓ Detect entity: http://127.0.0.1:8001/posts
+    ✗ Create entity: 401 (auth required, no valid token)
+    ✓ List entities: 200 count=?
+    ✗ Edit entity: no entity_id captured
+    ✗ Delete entity: no entity_id captured
+    ✗ Verify deletion: no entity_id
+    ✓ Logout: 401
+    ✗ Login again: re-login failed
+    ✗ Verify persistence: no entity_id
+
+=== ENDPOINT SMOKE TESTS ===
+  All endpoints responded without errors.
+
+  Endpoint pass rate: 100% (15/15 passed, 0 timeouts, 0 errors)
+
+  Runtime FAIL: CRUD workflow failed critical steps
+  Runtime: FAIL
+Runtime Fix Requested: {'success': False, 'healthy': True, 'exit_code': 0, 'stdout': 'INFO:     127.0.0.1:64124 - "GET /health HTTP/1.1" 200 OK\nINFO:     127.0.0.1:64127 - "GET /docs HTTP/1.1" 200 OK\nINFO:     127.0.0.1:64128 - "POST /auth/signup HTTP/1.1" 500 Internal Server Error\nINFO:     127.0.0.1:64129 - "POST /auth/register HTTP/1.1" 500 Internal Server Error\nINFO:     127.0.0.1:64130 - "GET /openapi.json HTTP/1.1" 200 OK\nINFO:     127.0.0.1:64131 - "POST /auth/login HTTP/1.1" 401 Unauthorized\nINFO:     127.0.0.1:64132 - "POST /auth/login HTTP/1.1" 401 Unauthorized\nINFO:     127.0.0.1:64133 - "POST /auth/login HTTP/1.1" 422 Unprocessable Content\nINFO:     127.0.0.1:64135 - "POST /seed HTTP/1.1" 500 Internal Server Error\nINFO:     127.0.0.1:64136 - "GET /openapi.json HTTP/1.1" 200 OK\nINFO:     127.0.0.1:64137 - "POST /posts HTTP/1.1" 401 Unauthorized\nINFO:     127.0.0.1:64138 - "GET /posts HTTP/1.1" 200 OK\nINFO:     127.0.0.1:64139 - "POST /auth/logout HTTP/1.1" 401 Unauthorized\nINFO:     127.0.0.1:64140 - "POST /auth/login HTTP/1.1" 401 Unauthorized\nINFO:     127.0.0.1:64141 - "POST /auth/login HTTP/1.1" 422 Unprocessable Content\nINFO:     127.0.0.1:64142 - "GET /stats/summary HTTP/1.1" 200 OK\nINFO:     127.0.0.1:64143 - "POST /auth/login HTTP/1.1" 422 Unprocessable Content\nINFO:     127.0.0.1:64144 - "GET /users/me HTTP/1.1" 401 Unauthorized\nINFO:     127.0.0.1:64145 - "GET /posts HTTP/1.1" 200 OK\nINFO:     127.0.0.1:64146 - "GET /posts/1 HTTP/1.1" 404 Not Found\nINFO:     127.0.0.1:64147 - "GET /authors/1/posts HTTP/1.1" 401 Unauthorized\nINFO:     127.0.0.1:64148 - "POST /posts HTTP/1.1" 401 Unauthorized\nINFO:     127.0.0.1:64149 - "PUT /posts/1 HTTP/1.1" 401 Unauthorized\nINFO:     127.0.0.1:64150 - "DELETE /posts/1 HTTP/1.1" 401 Unauthorized\nINFO:     127.0.0.1:64151 - "GET /tags HTTP/1.1" 200 OK\nINFO:     127.0.0.1:64152 - "POST /tags HTTP/1.1" 401 Unauthorized\nINFO:     127.0.0.1:64153 - "DELETE /tags/1 HTTP/1.1" 401 Unauthorized\n', 'stderr': 'INFO:     Started server process [20728]\nINFO:     Waiting for application startup.\nINFO:     Application startup complete.\nINFO:     Uvicorn running on http://127.0.0.1:8001 (Press CTRL+C to quit)\nERROR:    Exception in ASGI application\nTraceback (most recent call last):\n  File "C:\\Users\\jerry\\onedrive\\Desktop\\forgeai\\backend\\venv\\Lib\\site-packages\\uvicorn\\protocols\\http\\httptools_impl.py", line 421, in run_asgi\n    result = await app(  # type: ignore[func-returns-value]\n             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n        self.scope, self.receive, self.send\n        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n    )\n    ^\n  File "C:\\Users\\jerry\\onedrive\\Desktop\\forgeai\\backend\\venv\\Lib\\site-packages\\uvicorn\\middleware\\proxy_headers.py", line 62, in __call__\n    return await self.app(scope, receive, send)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File "C:\\Users\\jerry\\onedrive\\Desktop\\forgeai\\backend\\venv\\Lib\\site-packages\\fastapi\\applications.py", line 1159, in __call__\n    await super().__call__(scope, receive, send)\n  File "C:\\Users\\jerry\\onedrive\\Desktop\\forgeai\\backend\\venv\\Lib\\site-packages\\starlette\\applications.py", line 90, in __call__\n    await self.middleware_stack(scope, receive, send)\n  File "C:\\Users\\jerry\\onedrive\\Desktop\\forgeai\\backend\\venv\\Lib\\site-packages\\starlette\\middleware\\errors.py", line 186, in __call__\n    raise exc\n  File "C:\\Users\\jerry\\onedrive\\Desktop\\forgeai\\backend\\venv\\Lib\\site-packages\\starlette\\middleware\\errors.py", line 164, in __call__\n    await self.app(scope, receive, _send)\n  File "C:\\Users\\jerry\\onedrive\\Desktop\\forgeai\\backend\\venv\\Lib\\site-packages\\starlette\\middleware\\cors.py", line 88, in __call__\n    await self.app(scope, receive, send)\n  File "C:\\Users\\jerry\\onedrive\\Desktop\\forgeai\\backend\\venv\\Lib\\site-packages\\starlette\\middleware\\exceptions.py", line 63, in __call__\n    await wrap_app_handling_exceptions(self.app, conn)(scope, receive, send)\n  File "C:\\Users\\jerry\\onedrive\\Desktop\\forgeai\\backend\\venv\\Lib\\site-packages\\starlette\\_exception_handler.py", line 53, in wrapped_app\n    raise exc\n  File "C:\\Users\\jerry\\onedrive\\Desktop\\forgeai\\backend\\venv\\Lib\\site-packages\\starlette\\_exception_handler.py", line 42, in wrapped_app\n    await app(scope, receive, sender)\n  File "C:\\Users\\jerry\\onedrive\\Desktop\\forgeai\\backend\\venv\\Lib\\site-packages\\fastapi\\middleware\\asyncexitstack.py", line 18, in __call__\n    await self.app(scope, receive, send)\n  File "C:\\Users\\jerry\\onedrive\\Desktop\\forgeai\\backend\\venv\\Lib\\site-packages\\starlette\\routing.py", line 660, in __call__\n    await self.middleware_stack(scope, receive, send)\n  File "C:\\Users\\jerry\\onedrive\\Desktop\\forgeai\\backend\\venv\\Lib\\site-packages\\starlette\\routing.py", line 680, in app\n    await route.handle(scope, receive, send)\n  File "C:\\Users\\jerry\\onedrive\\Desktop\\forgeai\\backend\\venv\\Lib\\site-packages\\starlette\\routing.py", line 276, in handle\n    await self.app(scope, receive, send)\n  File "C:\\Users\\jerry\\onedrive\\Desktop\\forgeai\\backend\\venv\\Lib\\site-packages\\fastapi\\routing.py", line 134, in app\n    await wrap_app_handling_exceptions(app, request)(scope, receive, send)\n  File "C:\\Users\\jerry\\onedrive\\Desktop\\forgeai\\backend\\venv\\Lib\\site-packages\\starlette\\_exception_handler.py", line 53, in wrapped_app\n    raise exc\n  File "C:\\Users\\jerry\\onedrive\\Desktop\\forgeai\\backend\\venv\\Lib\\site-packages\\starlette\\_exception_handler.py", line 42, in wrapped_app\n    await app(scope, receive, sender)\n  File "C:\\Users\\jerry\\onedrive\\Desktop\\forgeai\\backend\\venv\\Lib\\site-packages\\fastapi\\routing.py", line 120, in app\n    response = await f(request)\n               ^^^^^^^^^^^^^^^^\n  File "C:\\Users\\jerry\\onedrive\\Desktop\\forgeai\\backend\\venv\\Lib\\site-packages\\fastapi\\routing.py", line 674, in app\n    raw_response = await run_endpoint_function(\n                   ^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n    ...<3 lines>...\n    )\n    ^\n  File "C:\\Users\\jerry\\onedrive\\Desktop\\forgeai\\backend\\venv\\Lib\\site-packages\\fastapi\\routing.py", line 330, in run_endpoint_function\n    return await run_in_threadpool(dependant.call, **values)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File "C:\\Users\\jerry\\onedrive\\Desktop\\forgeai\\backend\\venv\\Lib\\site-packages\\starlette\\concurrency.py", line 34, in run_in_threadpool\n    return await anyio.to_thread.run_sync(func)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File "C:\\Users\\jerry\\onedrive\\Desktop\\forgeai\\backend\\venv\\Lib\\site-packages\\anyio\\to_thread.py", line 63, in run_sync\n    return await get_async_backend().run_sync_in_worker_thread(\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n        func, args, abandon_on_cancel=abandon_on_cancel, limiter=limiter\n        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n    )\n    ^\n  File "C:\\Users\\jerry\\onedrive\\Desktop\\forgeai\\backend\\venv\\Lib\\site-packages\\anyio\\_backends\\_asyncio.py", line 2518, in run_sync_in_worker_thread\n    return await future\n           ^^^^^^^^^^^^\n  File "C:\\Users\\jerry\\onedrive\\Desktop\\forgeai\\backend\\venv\\Lib\\site-packages\\anyio\\_backends\\_asyncio.py", line 1002, in run\n    result = context.run(func, *args)\n  File "C:\\Users\\jerry\\onedrive\\Desktop\\forgeai\\generated_projects\\forge_blog_cms\\app\\routes\\auth_routes.py", line 96, in signup\n    user = _make_user(req.email, req.password, req.username)\n                                               ^^^^^^^^^^^^\n  File "C:\\Users\\jerry\\onedrive\\Desktop\\forgeai\\backend\\venv\\Lib\\site-packages\\pydantic\\main.py", line 1042, in __getattr__\n    raise AttributeError(f\'{type(self).__name__!r} object has no attribute {item!r}\')\nAttributeError: \'SignupRequest\' object has no attribute \'username\'\nERROR:    Exception in ASGI application\nTraceback (most recent call last):\n  File "C:\\Users\\jerry\\onedrive\\Desktop\\forgeai\\backend\\venv\\Lib\\site-packages\\uvicorn\\protocols\\http\\httptools_impl.py", line 421, in run_asgi\n    result = await app(  # type: ignore[func-returns-value]\n             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n        self.scope, self.receive, self.send\n        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n    )\n    ^\n  File "C:\\Users\\jerry\\onedrive\\Desktop\\forgeai\\backend\\venv\\Lib\\site-packages\\uvicorn\\middleware\\proxy_headers.py", line 62, in __call__\n    return await self.app(scope, receive, send)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File "C:\\Users\\jerry\\onedrive\\Desktop\\forgeai\\backend\\venv\\Lib\\site-packages\\fastapi\\applications.py", line 1159, in __call__\n    await super().__call__(scope, receive, send)\n  File "C:\\Users\\jerry\\onedrive\\Desktop\\forgeai\\backend\\venv\\Lib\\site-packages\\starlette\\applications.py", line 90, in __call__\n    await self.middleware_stack(scope, receive, send)\n  File "C:\\Users\\jerry\\onedrive\\Desktop\\forgeai\\backend\\venv\\Lib\\site-packages\\starlette\\middleware\\errors.py", line 186, in __call__\n    raise exc\n  File "C:\\Users\\jerry\\onedrive\\Desktop\\forgeai\\backend\\venv\\Lib\\site-packages\\starlette\\middleware\\errors.py", line 164, in __call__\n    await self.app(scope, receive, _send)\n  File "C:\\Users\\jerry\\onedrive\\Desktop\\forgeai\\backend\\venv\\Lib\\site-packages\\starlette\\middleware\\cors.py", line 88, in __call__\n    await self.app(scope, receive, send)\n  File "C:\\Users\\jerry\\onedrive\\Desktop\\forgeai\\backend\\venv\\Lib\\site-packages\\starlette\\middleware\\exceptions.py", line 63, in __call__\n    await wrap_app_handling_exceptions(self.app, conn)(scope, receive, send)\n  File "C:\\Users\\jerry\\onedrive\\Desktop\\forgeai\\backend\\venv\\Lib\\site-packages\\starlette\\_exception_handler.py", line 53, in wrapped_app\n    raise exc\n  File "C:\\Users\\jerry\\onedrive\\Desktop\\forgeai\\backend\\venv\\Lib\\site-packages\\starlette\\_exception_handler.py", line 42, in wrapped_app\n    await app(scope, receive, sender)\n  File "C:\\Users\\jerry\\onedrive\\Desktop\\forgeai\\backend\\venv\\Lib\\site-packages\\fastapi\\middleware\\asyncexitstack.py", line 18, in __call__\n    await self.app(scope, receive, send)\n  File "C:\\Users\\jerry\\onedrive\\Desktop\\forgeai\\backend\\venv\\Lib\\site-packages\\starlette\\routing.py", line 660, in __call__\n    await self.middleware_stack(scope, receive, send)\n  File "C:\\Users\\jerry\\onedrive\\Desktop\\forgeai\\backend\\venv\\Lib\\site-packages\\starlette\\routing.py", line 680, in app\n    await route.handle(scope, receive, send)\n  File "C:\\Users\\jerry\\onedrive\\Desktop\\forgeai\\backend\\venv\\Lib\\site-packages\\starlette\\routing.py", line 276, in handle\n    await self.app(scope, receive, send)\n  File "C:\\Users\\jerry\\onedrive\\Desktop\\forgeai\\backend\\venv\\Lib\\site-packages\\fastapi\\routing.py", line 134, in app\n    await wrap_app_handling_exceptions(app, request)(scope, receive, send)\n  File "C:\\Users\\jerry\\onedrive\\Desktop\\forgeai\\backend\\venv\\Lib\\site-packages\\starlette\\_exception_handler.py", line 53, in wrapped_app\n    raise exc\n  File "C:\\Users\\jerry\\onedrive\\Desktop\\forgeai\\backend\\venv\\Lib\\site-packages\\starlette\\_exception_handler.py", line 42, in wrapped_app\n    await app(scope, receive, sender)\n  File "C:\\Users\\jerry\\onedrive\\Desktop\\forgeai\\backend\\venv\\Lib\\site-packages\\fastapi\\routing.py", line 120, in app\n    response = await f(request)\n               ^^^^^^^^^^^^^^^^\n  File "C:\\Users\\jerry\\onedrive\\Desktop\\forgeai\\backend\\venv\\Lib\\site-packages\\fastapi\\routing.py", line 674, in app\n    raw_response = await run_endpoint_function(\n                   ^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n    ...<3 lines>...\n    )\n    ^\n  File "C:\\Users\\jerry\\onedrive\\Desktop\\forgeai\\backend\\venv\\Lib\\site-packages\\fastapi\\routing.py", line 330, in run_endpoint_function\n    return await run_in_threadpool(dependant.call, **values)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File "C:\\Users\\jerry\\onedrive\\Desktop\\forgeai\\backend\\venv\\Lib\\site-packages\\starlette\\concurrency.py", line 34, in run_in_threadpool\n    return await anyio.to_thread.run_sync(func)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File "C:\\Users\\jerry\\onedrive\\Desktop\\forgeai\\backend\\venv\\Lib\\site-packages\\anyio\\to_thread.py", line 63, in run_sync\n    return await get_async_backend().run_sync_in_worker_thread(\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n        func, args, abandon_on_cancel=abandon_on_cancel, limiter=limiter\n        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n    )\n    ^\n  File "C:\\Users\\jerry\\onedrive\\Desktop\\forgeai\\backend\\venv\\Lib\\site-packages\\anyio\\_backends\\_asyncio.py", line 2518, in run_sync_in_worker_thread\n    return await future\n           ^^^^^^^^^^^^\n  File "C:\\Users\\jerry\\onedrive\\Desktop\\forgeai\\backend\\venv\\Lib\\site-packages\\anyio\\_backends\\_asyncio.py", line 1002, in run\n    result = context.run(func, *args)\n  File "C:\\Users\\jerry\\onedrive\\Desktop\\forgeai\\generated_projects\\forge_blog_cms\\app\\routes\\auth_routes.py", line 96, in signup\n    user = _make_user(req.email, req.password, req.username)\n                                               ^^^^^^^^^^^^\n  File "C:\\Users\\jerry\\onedrive\\Desktop\\forgeai\\backend\\venv\\Lib\\site-packages\\pydantic\\main.py", line 1042, in __getattr__\n    raise AttributeError(f\'{type(self).__name__!r} object has no attribute {item!r}\')\nAttributeError: \'SignupRequest\' object has no attribute \'username\'\nERROR:    Exception in ASGI application\nTraceback (most recent call last):\n  File "C:\\Users\\jerry\\onedrive\\Desktop\\forgeai\\backend\\venv\\Lib\\site-packages\\uvicorn\\protocols\\http\\httptools_impl.py", line 421, in run_asgi\n    result = await app(  # type: ignore[func-returns-value]\n             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n        self.scope, self.receive, self.send\n        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n    )\n    ^\n  File "C:\\Users\\jerry\\onedrive\\Desktop\\forgeai\\backend\\venv\\Lib\\site-packages\\uvicorn\\middleware\\proxy_headers.py", line 62, in __call__\n    return await self.app(scope, receive, send)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File "C:\\Users\\jerry\\onedrive\\Desktop\\forgeai\\backend\\venv\\Lib\\site-packages\\fastapi\\applications.py", line 1159, in __call__\n    await super().__call__(scope, receive, send)\n  File "C:\\Users\\jerry\\onedrive\\Desktop\\forgeai\\backend\\venv\\Lib\\site-packages\\starlette\\applications.py", line 90, in __call__\n    await self.middleware_stack(scope, receive, send)\n  File "C:\\Users\\jerry\\onedrive\\Desktop\\forgeai\\backend\\venv\\Lib\\site-packages\\starlette\\middleware\\errors.py", line 186, in __call__\n    raise exc\n  File "C:\\Users\\jerry\\onedrive\\Desktop\\forgeai\\backend\\venv\\Lib\\site-packages\\starlette\\middleware\\errors.py", line 164, in __call__\n    await self.app(scope, receive, _send)\n  File "C:\\Users\\jerry\\onedrive\\Desktop\\forgeai\\backend\\venv\\Lib\\site-packages\\starlette\\middleware\\cors.py", line 88, in __call__\n    await self.app(scope, receive, send)\n  File "C:\\Users\\jerry\\onedrive\\Desktop\\forgeai\\backend\\venv\\Lib\\site-packages\\starlette\\middleware\\exceptions.py", line 63, in __call__\n    await wrap_app_handling_exceptions(self.app, conn)(scope, receive, send)\n  File "C:\\Users\\jerry\\onedrive\\Desktop\\forgeai\\backend\\venv\\Lib\\site-packages\\starlette\\_exception_handler.py", line 53, in wrapped_app\n    raise exc\n  File "C:\\Users\\jerry\\onedrive\\Desktop\\forgeai\\backend\\venv\\Lib\\site-packages\\starlette\\_exception_handler.py", line 42, in wrapped_app\n    await app(scope, receive, sender)\n  File "C:\\Users\\jerry\\onedrive\\Desktop\\forgeai\\backend\\venv\\Lib\\site-packages\\fastapi\\middleware\\asyncexitstack.py", line 18, in __call__\n    await self.app(scope, receive, send)\n  File "C:\\Users\\jerry\\onedrive\\Desktop\\forgeai\\backend\\venv\\Lib\\site-packages\\starlette\\routing.py", line 660, in __call__\n    await self.middleware_stack(scope, receive, send)\n  File "C:\\Users\\jerry\\onedrive\\Desktop\\forgeai\\backend\\venv\\Lib\\site-packages\\starlette\\routing.py", line 680, in app\n    await route.handle(scope, receive, send)\n  File "C:\\Users\\jerry\\onedrive\\Desktop\\forgeai\\backend\\venv\\Lib\\site-packages\\starlette\\routing.py", line 276, in handle\n    await self.app(scope, receive, send)\n  File "C:\\Users\\jerry\\onedrive\\Desktop\\forgeai\\backend\\venv\\Lib\\site-packages\\fastapi\\routing.py", line 134, in app\n    await wrap_app_handling_exceptions(app, request)(scope, receive, send)\n  File "C:\\Users\\jerry\\onedrive\\Desktop\\forgeai\\backend\\venv\\Lib\\site-packages\\starlette\\_exception_handler.py", line 53, in wrapped_app\n    raise exc\n  File "C:\\Users\\jerry\\onedrive\\Desktop\\forgeai\\backend\\venv\\Lib\\site-packages\\starlette\\_exception_handler.py", line 42, in wrapped_app\n    await app(scope, receive, sender)\n  File "C:\\Users\\jerry\\onedrive\\Desktop\\forgeai\\backend\\venv\\Lib\\site-packages\\fastapi\\routing.py", line 120, in app\n    response = await f(request)\n               ^^^^^^^^^^^^^^^^\n  File "C:\\Users\\jerry\\onedrive\\Desktop\\forgeai\\backend\\venv\\Lib\\site-packages\\fastapi\\routing.py", line 674, in app\n    raw_response = await run_endpoint_function(\n                   ^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n    ...<3 lines>...\n    )\n    ^\n  File "C:\\Users\\jerry\\onedrive\\Desktop\\forgeai\\backend\\venv\\Lib\\site-packages\\fastapi\\routing.py", line 330, in run_endpoint_function\n    return await run_in_threadpool(dependant.call, **values)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File "C:\\Users\\jerry\\onedrive\\Desktop\\forgeai\\backend\\venv\\Lib\\site-packages\\starlette\\concurrency.py", line 34, in run_in_threadpool\n    return await anyio.to_thread.run_sync(func)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File "C:\\Users\\jerry\\onedrive\\Desktop\\forgeai\\backend\\venv\\Lib\\site-packages\\anyio\\to_thread.py", line 63, in run_sync\n    return await get_async_backend().run_sync_in_worker_thread(\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n        func, args, abandon_on_cancel=abandon_on_cancel, limiter=limiter\n        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n    )\n    ^\n  File "C:\\Users\\jerry\\onedrive\\Desktop\\forgeai\\backend\\venv\\Lib\\site-packages\\anyio\\_backends\\_asyncio.py", line 2518, in run_sync_in_worker_thread\n    return await future\n           ^^^^^^^^^^^^\n  File "C:\\Users\\jerry\\onedrive\\Desktop\\forgeai\\backend\\venv\\Lib\\site-packages\\anyio\\_backends\\_asyncio.py", line 1002, in run\n    result = context.run(func, *args)\n  File "C:\\Users\\jerry\\onedrive\\Desktop\\forgeai\\generated_projects\\forge_blog_cms\\app\\routes\\seed_routes.py", line 24, in seed\n    existing = db.query(User).filter(User.name == u["username"]).first()\n                                     ^^^^^^^^^\nAttributeError: type object \'User\' has no attribute \'name\'\n', 'startup_time': 4.17109227180481, 'behavioral_issues': [], 'total_endpoints': 15, 'timeout_count': 0, 'error_count': 0, 'endpoint_pass_rate': 1.0, 'crud_passed': False, 'journey': {'success': False, 'steps_passed': 4, 'steps_failed': 7, 'persistence_verified': False, 'skipped': False, 'skip_reason': '', 'entity': 'posts', 'seed_summary': {}, 'steps': [{'name': 'Register', 'passed': False, 'detail': '404 (no register/signup endpoint found)', 'request': {'method': 'POST', 'url': 'http://127.0.0.1:8001/auth/register', 'json': {'email': 'journey@test.com', 'password': 'JourneyPass1!'}, 'has_auth': False}, 'response': {'status_code': 500, 'body': 'Internal Server Error'}}, {'name': 'Login', 'passed': True, 'detail': '422 @ login (server alive, auth format mismatch)', 'request': None, 'response': None}, {'name': 'Detect entity', 'passed': True, 'detail': 'http://127.0.0.1:8001/posts', 'request': None, 'response': None}, {'name': 'Create entity', 'passed': False, 'detail': '401 (auth required, no valid token)', 'request': {'method': 'POST', 'url': 'http://127.0.0.1:8001/posts', 'json': {'title': 'Journey Test Item', 'name': 'Journey Test Item', 'description': 'created by V5.5 journey runner', 'tag_ids': [], 'status': 'active', 'cover_image_url': 'https://example.com', 'content_markdown': 'journey-test'}, 'has_auth': False}, 'response': {'status_code': 401, 'body': {'detail': 'Not authenticated'}}}, {'name': 'List entities', 'passed': True, 'detail': '200 count=?', 'request': None, 'response': None}, {'name': 'Edit entity', 'passed': False, 'detail': 'no entity_id captured', 'request': None, 'response': None}, {'name': 'Delete entity', 'passed': False, 'detail': 'no entity_id captured', 'request': None, 'response': None}, {'name': 'Verify deletion', 'passed': False, 'detail': 'no entity_id', 'request': None, 'response': None}, {'name': 'Logout', 'passed': True, 'detail': '401', 'request': None, 'response': None}, {'name': 'Login again', 'passed': False, 'detail': 're-login failed', 'request': {'method': 'POST', 'url': 'http://127.0.0.1:8001/auth/login', 'json': {'username': 'journey_test', 'password': 'JourneyPass1!'}, 'has_auth': False}, 'response': {'status_code': 422, 'body': {'detail': [{'type': 'missing', 'loc': ['body', 'email'], 'msg': 'Field required', 'input': {'username': 'journey_test', 'password': 'JourneyPass1!'}}]}}}, {'name': 'Verify persistence', 'passed': False, 'detail': 'no entity_id', 'request': None, 'response': None}], 'total_duration': 0.24}, 'parsed_error': {'type': 'AttributeError', 'error_file': 'C:\\Users\\jerry\\onedrive\\Desktop\\forgeai\\generated_projects\\forge_blog_cms\\app\\routes\\seed_routes.py'}}
+Using Cerebras (main)
+[CEREBRAS] Prompt=7032 Completion=1994 Reasoning=845 Total=9026
+
+=== REFUSING TRUNCATED/INVALID WRITE: app\routes\seed_routes.py ===
+SyntaxError: unmatched '}' (<unknown>, line 100)
+  [patcher] Fixed ownership-FK attribute drift in author_routes.py
+  [patcher] Fixed ownership-FK attribute drift in post_routes.py
+  [patcher] Fixed response .data assumed to be wrapped (actually a bare array) in AuthorDashboardPage.jsx
+  [patcher] Fixed response .data assumed to be wrapped (actually a bare array) in PostListPage.jsx
+  [patcher] Patched 3 file(s) — passlib→bcrypt, async→sync, smart quotes
+  [field_patcher] Aligned model fields in seed_routes.py
+  [db_patcher] Injected known-good app/database.py
+Running runtime validation in: C:\Users\jerry\onedrive\Desktop\forgeai\generated_projects\forge_blog_cms
+Using Python: C:\Users\jerry\onedrive\Desktop\forgeai\backend\venv\Scripts\python.exe
+Skipping pip install (packages pre-installed): C:\Users\jerry\onedrive\Desktop\forgeai\generated_projects\forge_blog_cms\app\requirements.txt
+  [runner] Pre-flight DB init: OK
+Health Check /health: 200
+
+=== USER JOURNEY (CRUD WORKFLOW) ===
+  Journey FAIL — 4 passed / 7 failed
+    ✗ Register: 404 (no register/signup endpoint found)
+    ✓ Login: 422 @ login (server alive, auth format mismatch)
+    ✓ Detect entity: http://127.0.0.1:8001/posts
+    ✗ Create entity: 401 (auth required, no valid token)
+    ✓ List entities: 200 count=?
+    ✗ Edit entity: no entity_id captured
+    ✗ Delete entity: no entity_id captured
+    ✗ Verify deletion: no entity_id
+    ✓ Logout: 401
+    ✗ Login again: re-login failed
+    ✗ Verify persistence: no entity_id
+
+=== ENDPOINT SMOKE TESTS ===
+  All endpoints responded without errors.
+
+  Endpoint pass rate: 100% (15/15 passed, 0 timeouts, 0 errors)
+
+  Runtime FAIL: CRUD workflow failed critical steps
+  Runtime: FAIL
+  [runtime fix] Failure signature unchanged — stopping retries
+
+  ZIP: C:\Users\jerry\onedrive\Desktop\forgeai\generated_projects\forge_blog_cms.zip
+
+=== V6 SCORE: 44/100 (F) ===
+    Runtime:      30/100
+    Security:     78/100
+    Performance:  21/100
+    Maintainability: 34/100
+    Review:       49/100
+
+────────────────────────────────────────
+  LLM Calls
+  Planner            1
+  Architect          1
+  Tech Lead          1
+  Backend            30
+  Frontend           1
+  Reviews            5
+  Polish             2
+  Repairs            11
+  Runtime Fixes      1
+  ────────────────────
+  Total              53
+────────────────────────────────────────
+
+=== COST SUMMARY ===
+  LLM calls:    24
+  Total tokens: 142,259
+  Est. cost:    $0.0854
+  LLM time:     61.6s
+    backend_generation: 36,949 tokens  $0.0222
+    missing_file: 35,806 tokens  $0.0215
+    fix: 23,625 tokens  $0.0142
+    qa_review: 4,050 tokens  $0.0024
+    security_review: 8,359 tokens  $0.0050
+    code_review: 6,969 tokens  $0.0042
+    performance_review: 6,584 tokens  $0.0040
+    frontend_critic: 10,943 tokens  $0.0066
+    runtime_fix: 8,974 tokens  $0.0054
+  [patcher] Fixed attribute accesses in seed_routes.py
+  [patcher] Patched 1 file(s) — passlib→bcrypt, async→sync, smart quotes
+  [db_patcher] Injected known-good app/database.py
+  [preflight] fix_model_schema_notnull_gap: applied
+  [preflight] fix_missing_env: applied
+  [db_patcher] Injected known-good app/database.py
+  [preflight] fix_database_py: applied
+  [preflight] 3 deterministic fix(es) applied without LLM
+  [verify] 1/11 Static analysis...
+  [verify]       failed — 7 issues
+  [verify] 2/11 Compile check...
+  [verify]       passed — 0 syntax errors
+  [verify] 2a Import closure check...
+  [verify]       passed — 0 unresolved imports
+  [verify] 2a Symbol closure check...
+  [verify]       passed — 0 undefined symbols
+  [verify] 2a2 Contract conformance check (warn-only)...
+  [verify]       failed — 10 contract findings
+  [verify] 2b Frontend build...
+[Frontend] cwd:          C:\Users\jerry\OneDrive\Desktop\forgeAi\generated_projects\forge_blog_cms
+[Frontend] cwd exists:   True
+[Frontend] package.json: ✓ exists
+[Frontend] npm:          C:\Program Files\nodejs\npm.CMD
+[Frontend] Building in: C:\Users\jerry\OneDrive\Desktop\forgeAi\generated_projects\forge_blog_cms
+[Frontend] Installing dependencies (npm install)...
+[Frontend] npm install complete
+Running vite build...
+Frontend build PASSED in 11.54s
+  [verify]       passed — 0 build errors
+  [verify] 3/11 Runtime startup...
+Running runtime validation in: C:\Users\jerry\onedrive\Desktop\forgeai\generated_projects\forge_blog_cms
+Using Python: C:\Users\jerry\onedrive\Desktop\forgeai\backend\venv\Scripts\python.exe
+Skipping pip install (packages pre-installed): C:\Users\jerry\onedrive\Desktop\forgeai\generated_projects\forge_blog_cms\app\requirements.txt
+  [runner] Deleted stale DB: app.db
+  [runner] Deleted stale DB: app.db-wal
+  [runner] Deleted stale DB: app.db-shm
+  [runner] Pre-flight DB init: OK
+Health Check /health: 200
+
+=== USER JOURNEY (CRUD WORKFLOW) ===
+  Journey FAIL — 4 passed / 7 failed
+    ✗ Register: 404 (no register/signup endpoint found)
+    ✓ Login: 422 @ login (server alive, auth format mismatch)
+    ✓ Detect entity: http://127.0.0.1:8001/posts
+    ✗ Create entity: 401 (auth required, no valid token)
+    ✓ List entities: 200 count=?
+    ✗ Edit entity: no entity_id captured
+    ✗ Delete entity: no entity_id captured
+    ✗ Verify deletion: no entity_id
+    ✓ Logout: 401
+    ✗ Login again: re-login failed
+    ✗ Verify persistence: no entity_id
+
+=== ENDPOINT SMOKE TESTS ===
+  All endpoints responded without errors.
+
+  Endpoint pass rate: 100% (15/15 passed, 0 timeouts, 0 errors)
+
+  Runtime FAIL: CRUD workflow failed critical steps
+  [verify]       failed
+  [verify] 4-9: Running HTTP / Schema-DB / Browser / Performance / Accessibility in parallel...
+  [verify]       http: failed — 1 issues
+  [verify]       schema_db_assertion: passed — 0 issues
+  [verify]       performance: passed — 0 issues
+  [verify]       accessibility: passed — 0 issues
+  [verify]       browser: passed — 0 issues
+  [verify] 10/11 Workflow tests...
+  [verify]       passed
+  [verify] 11/11 LLM Judge...
+[LLM cache] HIT (llm_judge) — 0 tokens billed
+  [verify]       LLM Judge: When the app loads it immediately attempts a POST to /seed, which fails with a 5
+  [fix] REGRESSION: 9 new error(s) with no score improvement (71.5 -> 65.8)
+       ↳ Schema mismatch: app/schemas/post.py: PostCreate.title required but model allows
+       ↳ Schema mismatch: app/schemas/post.py: PostCreate.content_markdown required but m
+       ↳ Schema mismatch: app/schemas/post.py: PostCreate.status required but model allow
+    [fix] Reverted to pre-fix snapshot
+  [verify] 1/11 Static analysis...
+  [verify]       passed — 0 issues
+  [verify] 2/11 Compile check...
+  [verify]       passed — 0 syntax errors
+  [verify] 2a Import closure check...
+  [verify]       passed — 0 unresolved imports
+  [verify] 2a Symbol closure check...
+  [verify]       passed — 0 undefined symbols
+  [verify] 2a2 Contract conformance check (warn-only)...
+  [verify]       failed — 11 contract findings
+  [verify] 2b Frontend build...
+[Frontend] cwd:          C:\Users\jerry\OneDrive\Desktop\forgeAi\generated_projects\forge_blog_cms
+[Frontend] cwd exists:   True
+[Frontend] package.json: ✓ exists
+[Frontend] npm:          C:\Program Files\nodejs\npm.CMD
+[Frontend] Building in: C:\Users\jerry\OneDrive\Desktop\forgeAi\generated_projects\forge_blog_cms
+[Frontend] package.json changed since last install — re-running npm install...
+[Frontend] npm install complete
+Running vite build...
+Frontend build PASSED in 5.19s
+  [verify]       passed — 0 build errors
+  [verify] 3/11 Runtime startup...
+Running runtime validation in: C:\Users\jerry\onedrive\Desktop\forgeai\generated_projects\forge_blog_cms
+Using Python: C:\Users\jerry\onedrive\Desktop\forgeai\backend\venv\Scripts\python.exe
+Skipping pip install (packages pre-installed): C:\Users\jerry\onedrive\Desktop\forgeai\generated_projects\forge_blog_cms\app\requirements.txt
+  [runner] Deleted stale DB: app.db
+  [runner] Deleted stale DB: app.db-wal
+  [runner] Deleted stale DB: app.db-shm
+  [runner] Pre-flight DB init: OK
+Health Check /health: 200
+
+=== USER JOURNEY (CRUD WORKFLOW) ===
+  Journey FAIL — 4 passed / 7 failed
+    ✗ Register: 404 (no register/signup endpoint found)
+    ✓ Login: 422 @ login (server alive, auth format mismatch)
+    ✓ Detect entity: http://127.0.0.1:8001/posts
+    ✗ Create entity: 401 (auth required, no valid token)
+    ✓ List entities: 200 count=?
+    ✗ Edit entity: no entity_id captured
+    ✗ Delete entity: no entity_id captured
+    ✗ Verify deletion: no entity_id
+    ✓ Logout: 401
+    ✗ Login again: re-login failed
+    ✗ Verify persistence: no entity_id
+
+=== ENDPOINT SMOKE TESTS ===
+  All endpoints responded without errors.
+
+  Endpoint pass rate: 100% (15/15 passed, 0 timeouts, 0 errors)
+
+  Runtime FAIL: CRUD workflow failed critical steps
+  [verify]       failed
+  [verify] 4-9: Running HTTP / Schema-DB / Browser / Performance / Accessibility in parallel...
+  [verify]       http: passed — 0 issues
+  [verify]       schema_db_assertion: passed — 0 issues
+  [verify]       performance: passed — 0 issues
+  [verify]       accessibility: passed — 0 issues
+  [verify]       browser: passed — 0 issues
+  [verify] 10/11 Workflow tests...
+  [verify]       passed
+  [verify] 11/11 LLM Judge...
+[LLM cache] HIT (llm_judge) — 0 tokens billed
+  [verify]       LLM Judge: When the app loads the navigation bar appears but the main content area is compl
+
+------------------------------------------------------------
+  FORGE SCORE: 71.5/100  (C) [NEEDS REPAIR]
+  Coverage: 11/11 dimensions
+------------------------------------------------------------
+  + Compilation            [##########################....]  89.0  (wt:15%)
+      critical=0 high=0 medium=0 low=11
+  x Runtime Startup        [######........................]  20.0  (wt:20%)
+      started=True health=True success=False
+  + API Functionality      [##############################] 100.0  (wt:15%)
+      15/15 endpoints passed
+  + Frontend Load          [##############################] 100.0  (wt:10%)
+      loaded OK
+  + Browser UX             [##########################....]  88.0  (wt:15%)
+      console_errors=0 network_failures=0 forms=0/0
+  x Integration            [#############.................]  46.2  (wt:10%)
+      6/13 workflow steps passed
+  x Code Quality           [####################..........]  67.0  (wt:5%)
+      stubs=0 globals=0 other_contract=11
+  + Security               [##############################] 100.0  (wt:5%)
+      security_issues=0 cors=True server_up=True
+  + Completeness           [##############################] 100.0  (wt:3%)
+      planned=15 missing=0
+  + Performance            [###########################...]  90.0  (wt:2%)
+      health_latency_ms=0
+  x Visual Judge           [##########....................]  34.9  (wt:5%)
+      llm_judge_severity=high confidence=0.93
+------------------------------------------------------------
+
+[retry] Result: 71.5 → 71.5 (Δ=+0.0)
+[V15] Score: 71.5 (C) -- [needs repair]
+[V15] WARNING: Regression detected -- reverting fix
+[V15] Final state (71.5) is worse than best attempt (72.1) — restoring best state
+    [fix] Reverted to pre-fix snapshot
+  [verify] 1/11 Static analysis...
+  [verify]       passed — 0 issues
+  [verify] 2/11 Compile check...
+  [verify]       passed — 0 syntax errors
+  [verify] 2a Import closure check...
+  [verify]       passed — 0 unresolved imports
+  [verify] 2a Symbol closure check...
+  [verify]       passed — 0 undefined symbols
+  [verify] 2a2 Contract conformance check (warn-only)...
+  [verify]       failed — 11 contract findings
+  [verify] 2b Frontend build...
+[Frontend] cwd:          C:\Users\jerry\OneDrive\Desktop\forgeAi\generated_projects\forge_blog_cms
+[Frontend] cwd exists:   True
+[Frontend] package.json: ✓ exists
+[Frontend] npm:          C:\Program Files\nodejs\npm.CMD
+[Frontend] Building in: C:\Users\jerry\OneDrive\Desktop\forgeAi\generated_projects\forge_blog_cms
+[Frontend] package.json changed since last install — re-running npm install...
+[Frontend] npm install complete
+Running vite build...
+Frontend build PASSED in 5.07s
+  [verify]       passed — 0 build errors
+  [verify] 3/11 Runtime startup...
+Running runtime validation in: C:\Users\jerry\onedrive\Desktop\forgeai\generated_projects\forge_blog_cms
+Using Python: C:\Users\jerry\onedrive\Desktop\forgeai\backend\venv\Scripts\python.exe
+Skipping pip install (packages pre-installed): C:\Users\jerry\onedrive\Desktop\forgeai\generated_projects\forge_blog_cms\app\requirements.txt
+  [runner] Deleted stale DB: app.db
+  [runner] Deleted stale DB: app.db-wal
+  [runner] Deleted stale DB: app.db-shm
+  [runner] Pre-flight DB init: OK
+Health Check /health: 200
+
+=== USER JOURNEY (CRUD WORKFLOW) ===
+  Journey FAIL — 4 passed / 7 failed
+    ✗ Register: 404 (no register/signup endpoint found)
+    ✓ Login: 422 @ login (server alive, auth format mismatch)
+    ✓ Detect entity: http://127.0.0.1:8001/posts
+    ✗ Create entity: 401 (auth required, no valid token)
+    ✓ List entities: 200 count=?
+    ✗ Edit entity: no entity_id captured
+    ✗ Delete entity: no entity_id captured
+    ✗ Verify deletion: no entity_id
+    ✓ Logout: 401
+    ✗ Login again: re-login failed
+    ✗ Verify persistence: no entity_id
+
+=== ENDPOINT SMOKE TESTS ===
+  All endpoints responded without errors.
+
+  Endpoint pass rate: 100% (15/15 passed, 0 timeouts, 0 errors)
+
+  Runtime FAIL: CRUD workflow failed critical steps
+  [verify]       failed
+  [verify] 4-9: Running HTTP / Schema-DB / Browser / Performance / Accessibility in parallel...
+  [verify]       http: passed — 0 issues
+  [verify]       schema_db_assertion: passed — 0 issues
+  [verify]       performance: passed — 0 issues
+  [verify]       accessibility: passed — 0 issues
+  [verify]       browser: passed — 0 issues
+  [verify] 10/11 Workflow tests...
+  [verify]       passed
+  [verify] 11/11 LLM Judge...
+[LLM cache] HIT (llm_judge) — 0 tokens billed
+  [verify]       LLM Judge: When the app loads the navigation bar appears but the main content area is compl
+
+------------------------------------------------------------
+  FORGE SCORE: 71.5/100  (C) [NEEDS REPAIR]
+  Coverage: 11/11 dimensions
+------------------------------------------------------------
+  + Compilation            [##########################....]  89.0  (wt:15%)
+      critical=0 high=0 medium=0 low=11
+  x Runtime Startup        [######........................]  20.0  (wt:20%)
+      started=True health=True success=False
+  + API Functionality      [##############################] 100.0  (wt:15%)
+      15/15 endpoints passed
+  + Frontend Load          [##############################] 100.0  (wt:10%)
+      loaded OK
+  + Browser UX             [##########################....]  88.0  (wt:15%)
+      console_errors=0 network_failures=0 forms=0/0
+  x Integration            [#############.................]  46.2  (wt:10%)
+      6/13 workflow steps passed
+  x Code Quality           [####################..........]  67.0  (wt:5%)
+      stubs=0 globals=0 other_contract=11
+  + Security               [##############################] 100.0  (wt:5%)
+      security_issues=0 cors=True server_up=True
+  + Completeness           [##############################] 100.0  (wt:3%)
+      planned=15 missing=0
+  + Performance            [###########################...]  90.0  (wt:2%)
+      health_latency_ms=0
+  x Visual Judge           [##########....................]  34.9  (wt:5%)
+      llm_judge_severity=high confidence=0.93
+------------------------------------------------------------
+
+[V15] Score: 71.5 (C) -- [needs repair]
+
+[V15] Deployment skipped — score 71.5 below deployment threshold (80) (score 71.5)
+[V15] Best score across attempts: 72.1
+
+[V15] === Pipeline complete: generated ===
+
+  Deployment confidence: 13.9%  [####..........................]  F
+  Not deployment-ready — critical issues likely remain.
+  Factors:
+    base                         -0.500
+    overall_score                ++1.278
+    runtime_health               ++0.100
+    browser_ux                   ++0.264
+    compilation                  ++0.178
+    fix_penalty                  -2.000
+    critical_errors              -1.000
+    historical_base_rate         -0.146
+  Historical base rate: 33.3%  (n=84)
+
+======================================================================
+  V15 FINAL REPORT
+======================================================================
+  Project:       forge_blog_cms
+  Forge Score:   71.5/100  (C)
+  Deployed:      NO
+  Fix Attempts:  5/5
+  Total Tokens:  142,259
+  Est. Cost:     $0.0854
+  Total Time:    1069.91s
+  Score Track:   65 → 71 → 24 → 72 → 17 → 67 → 64 → 71 → 66 → 71 → 71
+======================================================================
+

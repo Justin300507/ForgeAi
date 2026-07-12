@@ -6,6 +6,8 @@ import time
 
 from app.templates.database_template import DATABASE_PY_TEMPLATE
 from app.templates.frontend_templates import FRONTEND_TEMPLATE_FILES, PWA_EXTRA_FILES
+from app.utils.safe_path import resolve_safe_path, PathTraversalError
+from app.utils.atomic_write import atomic_write_text
 
 _CREATE_ALL_SNIPPET = "\nfrom app.database import Base, engine\nBase.metadata.create_all(bind=engine)\n"
 
@@ -518,7 +520,17 @@ def write_files(project_name, files, frontend_target: str = "web", idea: str = "
         "GENERATED_PROJECTS_DIR",
         os.path.abspath(os.path.join("..", "generated_projects"))
     )
-    base_dir = os.path.join(_projects_root, project_name)
+
+    # Exp070 (found by Exp069's security review, Finding #2): project_name
+    # is LLM-derived and previously only had spaces stripped/lowercased --
+    # never validated against "../"-style traversal before being joined
+    # into base_dir, which this function then shutil.rmtree()s below on
+    # every regeneration. Reuses the same validator Experiments 066/067
+    # built for individual file paths, applied here one level up.
+    try:
+        base_dir = str(resolve_safe_path(_projects_root, project_name))
+    except PathTraversalError as e:
+        raise ValueError(f"Unsafe project_name rejected: {project_name!r} ({e})")
 
     if os.path.exists(base_dir):
         import stat
@@ -549,10 +561,30 @@ def write_files(project_name, files, frontend_target: str = "web", idea: str = "
 
     database_file_seen = False
 
+    # Exp066: counts kept for the one-line summary at the end of this
+    # function -- the "logging/timing/metrics" gap docs/WRITE_PIPELINE.md
+    # documents write_files as previously having, matching write_fix's
+    # own print-per-rejection convention (not a new subsystem, just
+    # counting what already gets printed per-file).
+    _t0 = time.time()
+    _counts = {"written": 0, "skipped_path": 0, "skipped_syntax": 0, "skipped_semantic": 0}
+
     for file in files:
 
         path = file["path"]
         content = file["content"]
+
+        # Exp066: path-traversal guard -- the confirmed HIGH-severity gap
+        # from docs/SECURITY_REVIEW.md Finding #1 (write_files had ZERO
+        # path validation, unlike write_fix). Checked FIRST, before any
+        # content processing, so a malicious/hallucinated path never
+        # reaches the filesystem in any form.
+        try:
+            full_path = resolve_safe_path(base_dir, path)
+        except PathTraversalError as e:
+            print(f"  [file_writer] blocked suspicious path: {path!r} ({e})")
+            _counts["skipped_path"] += 1
+            continue
 
         if path.replace("\\", "/") == "app/database.py":
             content = DATABASE_PY_TEMPLATE
@@ -563,30 +595,53 @@ def write_files(project_name, files, frontend_target: str = "web", idea: str = "
 
         safe = _is_safe_to_write(path, content)
         if safe is False:
+            _counts["skipped_syntax"] += 1
             continue
         if isinstance(safe, str):  # auto-repaired content returned
             content = safe
 
-        full_path = os.path.join(
-            base_dir,
-            path
-        )
+        # Exp066: semantic-consistency guard -- the same check Exp064
+        # added to write_fix, reused here (not duplicated) via the exact
+        # lazy cross-import pattern this pair of files already uses in
+        # the other direction (fix_writer_service.py's _normalize_newlines
+        # locally imports FROM file_writer_service.py). A file failing
+        # this check is skipped exactly like a syntax failure already
+        # was above -- the existing validate_project()/repair loop
+        # (Exp057-confirmed working) fills the gap afterward, the same
+        # established behavior this file already relies on for
+        # syntax-rejected files, not a new risk category.
+        from app.services.fix_writer_service import _check_request_field_consistency
+        _consistent, _reason = _check_request_field_consistency(path, content)
+        if not _consistent:
+            print(f"  [file_writer] semantically inconsistent, skipping: {path!r} -- {_reason}")
+            _counts["skipped_semantic"] += 1
+            continue
 
         os.makedirs(
-            os.path.dirname(full_path),
+            full_path.parent,
             exist_ok=True
         )
 
-        with open(
-            full_path,
-            "w",
-            encoding="utf-8"
-        ) as f:
+        # Exp066: atomic write (temp file + os.replace) instead of a
+        # direct open(..., "w") -- behavior-preserving on the success
+        # path (identical final bytes at the identical final path),
+        # strictly safer on a process-kill-mid-write (no partial file
+        # ever becomes visible at the final path). See
+        # docs/RELIABILITY_REVIEW.md Part 4's partial-write finding.
+        atomic_write_text(full_path, content)
+        _counts["written"] += 1
 
-            f.write(content)
+    _elapsed_ms = round((time.time() - _t0) * 1000, 1)
+    print(f"  [file_writer] wrote {_counts['written']} files in {_elapsed_ms}ms "
+          f"(skipped: {_counts['skipped_path']} unsafe path, "
+          f"{_counts['skipped_syntax']} syntax, {_counts['skipped_semantic']} semantic)")
 
     if not database_file_seen:
 
+        # Exp066: "app/database.py" is a literal constant, not
+        # LLM-controlled input -- no path-safety check is needed here
+        # (there is nothing to validate). Atomic write applied for the
+        # same crash-safety reason as the main loop above.
         full_path = os.path.join(
             base_dir,
             "app/database.py"
@@ -597,13 +652,7 @@ def write_files(project_name, files, frontend_target: str = "web", idea: str = "
             exist_ok=True
         )
 
-        with open(
-            full_path,
-            "w",
-            encoding="utf-8"
-        ) as f:
-
-            f.write(DATABASE_PY_TEMPLATE)
+        atomic_write_text(full_path, DATABASE_PY_TEMPLATE)
 
     # Write static Vite/React scaffolding so `npm run build` works
     template_files = dict(FRONTEND_TEMPLATE_FILES)
@@ -632,11 +681,14 @@ def write_files(project_name, files, frontend_target: str = "web", idea: str = "
         except Exception:
             pass  # telemetry only — never let this affect a generation run
 
+    # Exp066: rel_path here comes from static template dicts
+    # (FRONTEND_TEMPLATE_FILES / PWA_EXTRA_FILES / build_themed_templates),
+    # not LLM output, so no path-traversal check applies -- atomic write
+    # only, for the same crash-safety reason as the loop above.
     for rel_path, content in template_files.items():
         full_path = os.path.join(base_dir, rel_path)
         os.makedirs(os.path.dirname(full_path), exist_ok=True)
-        with open(full_path, "w", encoding="utf-8") as f:
-            f.write(content)
+        atomic_write_text(full_path, content)
 
     # Write deterministic deployment configs (render.yaml, .env.example, GitHub Actions, etc.)
     # These override any LLM-generated versions which are often wrong.

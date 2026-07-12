@@ -1,8 +1,27 @@
 import ast
 import os
 
+from app.core.context import Diagnostic, ErrorCategory, ErrorSeverity
 
-def validate_database(project_path, errors):
+
+def _add_db(errors, diagnostics, msg, rel_path):
+    errors.append(msg)
+    if diagnostics is not None:
+        # category=CONTRACT, severity=MEDIUM: exact parity with engine.py's
+        # existing "database" substring match (category) and default
+        # (severity -- neither message matches a severity-specific pattern).
+        diagnostics.append(Diagnostic(
+            error_id=Diagnostic.make_id("static", ErrorCategory.CONTRACT, msg, rel_path),
+            category=ErrorCategory.CONTRACT,
+            severity=ErrorSeverity.MEDIUM,
+            source="static",
+            message=msg,
+            file_path=rel_path,
+            validator_name="validate_database",
+        ))
+
+
+def validate_database(project_path, errors, diagnostics=None):
 
     database_file = os.path.join(
         project_path,
@@ -12,9 +31,7 @@ def validate_database(project_path, errors):
 
     if not os.path.exists(database_file):
 
-        errors.append(
-            "Missing app/database.py"
-        )
+        _add_db(errors, diagnostics, "Missing app/database.py", "app/database.py")
 
         return
 
@@ -113,9 +130,10 @@ def validate_database(project_path, errors):
 
                     if alias.name not in exported:
 
-                        errors.append(
+                        rel_path = os.path.relpath(file_path, project_path).replace(os.sep, "/")
+                        _add_db(errors, diagnostics,
                             f"Database symbol '{alias.name}' "
                             f"missing from app/database.py "
                             f"(imported from "
-                            f"{os.path.relpath(file_path, project_path)})"
-                        )
+                            f"{os.path.relpath(file_path, project_path)})",
+                            rel_path)

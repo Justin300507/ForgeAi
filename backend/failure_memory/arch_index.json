@@ -3007,5 +3007,435 @@
     "success_count": 1,
     "generation_id": "9eb5aaff56204dd68e2a6765f8ec6dd2",
     "timestamp": "2026-07-06T13:48:49Z"
+  },
+  "inventory": {
+    "category": "inventory",
+    "idea": "An inventory management system with user login. Users manage products (SKU, name, category, unit cost, selling price, current stock, reorder threshold). Add stock via purchase orders (supplier name, q",
+    "architecture": {
+      "api_endpoints": [
+        {
+          "method": "POST",
+          "path": "/auth/register",
+          "description": "Register a new user with email and password",
+          "file": "app\\routes\\auth_routes.py"
+        },
+        {
+          "method": "POST",
+          "path": "/auth/login",
+          "description": "Authenticate user and return JWT token",
+          "file": "app\\routes\\auth_routes.py"
+        },
+        {
+          "method": "GET",
+          "path": "/auth/me",
+          "description": "Get current authenticated user profile",
+          "file": "app\\routes\\auth_routes.py"
+        },
+        {
+          "method": "GET",
+          "path": "/products",
+          "description": "Retrieve paginated list of products with optional search by name or SKU and filter by category",
+          "file": "app\\routes\\product_routes.py"
+        },
+        {
+          "method": "GET",
+          "path": "/products/{id}",
+          "description": "Get details of a single product by its ID",
+          "file": "app\\routes\\product_routes.py"
+        },
+        {
+          "method": "POST",
+          "path": "/products",
+          "description": "Create a new product; current_stock is initialized to 0",
+          "file": "app\\routes\\product_routes.py"
+        },
+        {
+          "method": "PUT",
+          "path": "/products/{id}",
+          "description": "Replace an existing product with new data; validates unique SKU",
+          "file": "app\\routes\\product_routes.py"
+        },
+        {
+          "method": "DELETE",
+          "path": "/products/{id}",
+          "description": "Delete a product by its ID",
+          "file": "app\\routes\\product_routes.py"
+        },
+        {
+          "method": "GET",
+          "path": "/transactions",
+          "description": "Retrieve paginated list of transactions with optional filter by type and date range",
+          "file": "app\\routes\\transaction_routes.py"
+        },
+        {
+          "method": "GET",
+          "path": "/transactions/{id}",
+          "description": "Get details of a single transaction by its ID",
+          "file": "app\\routes\\transaction_routes.py"
+        },
+        {
+          "method": "POST",
+          "path": "/transactions",
+          "description": "Create a purchase or sale transaction; updates product stock accordingly",
+          "file": "app\\routes\\transaction_routes.py"
+        },
+        {
+          "method": "PUT",
+          "path": "/transactions/{id}",
+          "description": "Update an existing transaction; stock adjustments are re‑applied",
+          "file": "app\\routes\\transaction_routes.py"
+        },
+        {
+          "method": "DELETE",
+          "path": "/transactions/{id}",
+          "description": "Delete a transaction and revert its stock effect",
+          "file": "app\\routes\\transaction_routes.py"
+        },
+        {
+          "method": "POST",
+          "path": "/seed",
+          "description": "Populate the database with demo data for users, categories, products, and transactions",
+          "file": "app\\routes\\seed_routes.py"
+        },
+        {
+          "method": "GET",
+          "path": "/dashboard/summary",
+          "description": "Return low‑stock alerts, total inventory value, and recent transactions for dashboard display",
+          "file": "app\\routes\\stats_routes.py"
+        }
+      ],
+      "database_schema": [
+        {
+          "table_name": "users",
+          "columns": [
+            {
+              "name": "id",
+              "type": "INTEGER",
+              "is_primary_key": true,
+              "is_nullable": false
+            },
+            {
+              "name": "email",
+              "type": "VARCHAR(255)",
+              "is_primary_key": false,
+              "is_nullable": false
+            },
+            {
+              "name": "hashed_password",
+              "type": "VARCHAR(255)",
+              "is_primary_key": false,
+              "is_nullable": false
+            },
+            {
+              "name": "created_at",
+              "type": "DATETIME",
+              "is_primary_key": false,
+              "is_nullable": false
+            }
+          ]
+        },
+        {
+          "table_name": "categories",
+          "columns": [
+            {
+              "name": "id",
+              "type": "INTEGER",
+              "is_primary_key": true,
+              "is_nullable": false
+            },
+            {
+              "name": "name",
+              "type": "VARCHAR(100)",
+              "is_primary_key": false,
+              "is_nullable": false
+            }
+          ]
+        },
+        {
+          "table_name": "products",
+          "columns": [
+            {
+              "name": "id",
+              "type": "INTEGER",
+              "is_primary_key": true,
+              "is_nullable": false
+            },
+            {
+              "name": "sku",
+              "type": "VARCHAR(50)",
+              "is_primary_key": false,
+              "is_nullable": false
+            },
+            {
+              "name": "name",
+              "type": "VARCHAR(200)",
+              "is_primary_key": false,
+              "is_nullable": false
+            },
+            {
+              "name": "category_id",
+              "type": "INTEGER",
+              "is_primary_key": false,
+              "is_nullable": false
+            },
+            {
+              "name": "unit_cost",
+              "type": "FLOAT",
+              "is_primary_key": false,
+              "is_nullable": false
+            },
+            {
+              "name": "current_stock",
+              "type": "INTEGER",
+              "is_primary_key": false,
+              "is_nullable": false
+            },
+            {
+              "name": "reorder_threshold",
+              "type": "INTEGER",
+              "is_primary_key": false,
+              "is_nullable": false
+            },
+            {
+              "name": "created_at",
+              "type": "DATETIME",
+              "is_primary_key": false,
+              "is_nullable": false
+            }
+          ]
+        },
+        {
+          "table_name": "transactions",
+          "columns": [
+            {
+              "name": "id",
+              "type": "INTEGER",
+              "is_primary_key": true,
+              "is_nullable": false
+            },
+            {
+              "name": "product_id",
+              "type": "INTEGER",
+              "is_primary_key": false,
+              "is_nullable": false
+            },
+            {
+              "name": "type",
+              "type": "VARCHAR(20)",
+              "is_primary_key": false,
+              "is_nullable": false
+            },
+            {
+              "name": "quantity",
+              "type": "INTEGER",
+              "is_primary_key": false,
+              "is_nullable": false
+            },
+            {
+              "name": "unit_price",
+              "type": "FLOAT",
+              "is_primary_key": false,
+              "is_nullable": false
+            },
+            {
+              "name": "partner_name",
+              "type": "VARCHAR(200)",
+              "is_primary_key": false,
+              "is_nullable": true
+            },
+            {
+              "name": "transaction_date",
+              "type": "DATETIME",
+              "is_primary_key": false,
+              "is_nullable": false
+            },
+            {
+              "name": "created_at",
+              "type": "DATETIME",
+              "is_primary_key": false,
+              "is_nullable": false
+            }
+          ]
+        }
+      ],
+      "folder_structure": {
+        "backend": [
+          "app/models",
+          "app/schemas",
+          "app/routes",
+          "app/services",
+          "app/utils",
+          "app/config",
+          "app/dependencies",
+          "app/auth"
+        ]
+      },
+      "frontend_structure": {
+        "pages": [
+          "LoginPage",
+          "DashboardPage",
+          "ProductsPage",
+          "ProductFormPage",
+          "TransactionsPage",
+          "TransactionFormPage",
+          "SettingsPage"
+        ],
+        "components": [
+          "Navbar",
+          "ProductCard",
+          "TransactionItem",
+          "SearchBar",
+          "Pagination",
+          "ProductForm",
+          "TransactionForm",
+          "DashboardStats",
+          "LowStockAlert",
+          "CategoryFilter"
+        ]
+      }
+    },
+    "plan": {
+      "project_name": "inventory_manager",
+      "display_name": "Inventory Management System",
+      "features": [
+        "Secure login using email/password and JWT tokens for API protection",
+        "CRUD endpoints for products with fields like SKU, name, category, costs, stock, and reorder threshold",
+        "Create purchase and sale transactions that automatically adjust product stock levels",
+        "Shows low‑stock alerts, total inventory value, and recent stock movements"
+      ],
+      "tech_stack": {
+        "backend": "FastAPI",
+        "database": "SQLite",
+        "auth": "JWT",
+        "frontend": "React + Vite"
+      },
+      "db_entities": [
+        "User",
+        "Product",
+        "Transaction"
+      ],
+      "api_modules": [
+        "auth",
+        "products",
+        "transactions"
+      ],
+      "user_stories": [
+        {
+          "role": "Business owner",
+          "want": "to log in to the system",
+          "acceptance_criteria": [
+            "Valid email and password return a JWT token with 200 status",
+            "The token must be required for all subsequent API calls (401 if missing/invalid)",
+            "Invalid credentials return a 401 error with an appropriate error message"
+          ]
+        },
+        {
+          "role": "Business owner",
+          "want": "to add a new product",
+          "acceptance_criteria": [
+            "POST /products with all required fields creates a product and returns 201",
+            "The newly created product appears in the GET /products list",
+            "current_stock is initialized to 0 and cannot be negative"
+          ]
+        },
+        {
+          "role": "Business owner",
+          "want": "to record a purchase order",
+          "acceptance_criteria": [
+            "POST /transactions with type='purchase' updates product.current_stock = previous + quantity",
+            "The transaction is persisted with correct product_id, quantity, unit_cost, date, and partner_name",
+            "Response includes the updated product stock value"
+          ]
+        },
+        {
+          "role": "Business owner",
+          "want": "to record a sale",
+          "acceptance_criteria": [
+            "POST /transactions with type='sale' reduces product.current_stock by quantity",
+            "If quantity exceeds current_stock, the API returns 400 with an error message",
+            "The sale transaction is stored with all supplied fields"
+          ]
+        },
+        {
+          "role": "Business owner",
+          "want": "to view a dashboard",
+          "acceptance_criteria": [
+            "GET /dashboard returns a list of products where current_stock < reorder_threshold",
+            "Response includes total_inventory_value = sum(product.current_stock * product.unit_cost)",
+            "Response includes the 5 most recent transactions sorted by date descending"
+          ]
+        },
+        {
+          "role": "Business owner",
+          "want": "to search products by category",
+          "acceptance_criteria": [
+            "GET /products?category=Electronics returns only products in the Electronics category",
+            "Search is case‑insensitive and trims whitespace",
+            "Pagination parameters (page, limit) work and default to page=1, limit=20"
+          ]
+        },
+        {
+          "role": "Business owner",
+          "want": "to edit product details",
+          "acceptance_criteria": [
+            "PATCH /products/{id} updates allowed fields and returns 200 with the updated product",
+            "Changing SKU to a value that already exists on another product returns 400",
+            "Updated fields are reflected in subsequent GET /products calls"
+          ]
+        }
+      ],
+      "non_functional_requirements": {
+        "authentication": "required — protects all data endpoints",
+        "authorization": "any authenticated user can perform CRUD; no role hierarchy needed",
+        "pagination": "required on GET /products and GET /transactions endpoints",
+        "search": "products endpoint supports category filter and name/SKU search",
+        "file_uploads": "no",
+        "real_time": "no"
+      },
+      "data_entities_detail": [
+        {
+          "name": "User",
+          "description": "Stores login credentials and basic profile information",
+          "key_fields": [
+            "id",
+            "email"
+          ],
+          "relationships": []
+        },
+        {
+          "name": "Product",
+          "description": "Represents an inventory item with pricing and stock thresholds",
+          "key_fields": [
+            "id",
+            "sku"
+          ],
+          "relationships": [
+            "has many Transaction"
+          ]
+        },
+        {
+          "name": "Transaction",
+          "description": "Records a purchase or sale that modifies product stock",
+          "key_fields": [
+            "id",
+            "product_id",
+            "type"
+          ],
+          "relationships": [
+            "belongs to Product"
+          ]
+        }
+      ],
+      "out_of_scope": [
+        "Role‑based permissions beyond simple authentication",
+        "Supplier or customer management beyond name fields in transactions",
+        "Advanced reporting, export/import, or email notifications",
+        "Multi‑tenant or organization support"
+      ]
+    },
+    "score": 94.62,
+    "success_count": 1,
+    "generation_id": "c632c61bd7bc448a8a4a4e584956c135",
+    "timestamp": "2026-07-12T10:27:53Z"
   }
 }

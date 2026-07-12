@@ -3,8 +3,10 @@
 import ast
 import os
 
+from app.core.context import Diagnostic, ErrorCategory, ErrorSeverity
 
-def validate_duplicate_class_definitions(project_path, errors):
+
+def validate_duplicate_class_definitions(project_path, errors, diagnostics=None):
     """A class (e.g. a SQLAlchemy model) should be defined in exactly
     one file. The same class name appearing in multiple files (e.g.
     Task in both models/task.py and services/task_service.py) creates
@@ -68,8 +70,23 @@ def validate_duplicate_class_definitions(project_path, errors):
                 if class_name in AUTH_DEFINED_CLASSES:
                     continue
 
-            errors.append(
+            msg = (
                 f"Duplicate class definition: '{class_name}' is defined "
                 f"in multiple files ({', '.join(locations)}) — this "
                 f"creates incompatible duplicate types"
             )
+            errors.append(msg)
+            if diagnostics is not None:
+                # category=CONTRACT, severity=MEDIUM: exact parity with
+                # engine.py's default classification. No single file_path --
+                # the class spans multiple files by definition, so the full
+                # location list goes in metadata instead of guessing one.
+                diagnostics.append(Diagnostic(
+                    error_id=Diagnostic.make_id("static", ErrorCategory.CONTRACT, msg, None),
+                    category=ErrorCategory.CONTRACT,
+                    severity=ErrorSeverity.MEDIUM,
+                    source="static",
+                    message=msg,
+                    validator_name="validate_duplicate_class_definitions",
+                    metadata={"locations": list(locations), "class_name": class_name},
+                ))

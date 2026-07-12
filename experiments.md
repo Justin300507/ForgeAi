@@ -4072,3 +4072,1544 @@ Observatory + canary_history.json updated (labels `exp058-validation-r1`,
 `docs/EXP058_VALIDATION.md`. Cost: 2 generations, ~12.8 min wall-clock,
 heavy cache reuse kept fresh spend low. Stopped at 2/5 rounds -- did not
 begin Exp059 in this experiment, per its own explicit instruction.
+
+---
+
+## Experiment 059 — Principal Engineer Reliability & Architecture Review
+
+**Goal:** offline-only, ~zero-API-cost deep engineering review across 10
+parts (codebase survey, repair pipeline, validators, Observatory,
+performance, testing, error handling, documentation, tech-debt
+scorecard, backlog). No generation, no canaries, no prompt changes.
+
+**Method:** parallelized the heavy read-only inspection across 5
+background forks (codebase-wide AST-based complexity/duplication survey;
+repair pipeline + error handling; validator subsystem; performance +
+testing; documentation), each instructed to cite exact file:line
+evidence and write "Unknown" rather than guess, report back only (no
+files written, no commits). Synthesized Observatory review (Part 4) and
+all cross-cutting synthesis (scorecard, backlog) directly.
+
+**Headline findings, all cited with exact file:line evidence:**
+- `generate_project_v6` (911 lines, cyclomatic complexity 135, 41
+  commits) is the single highest-risk function in the repo by a
+  complexity-x-churn composite -- and it's the exact function that
+  already produced one confirmed regression (Exp053->056->057) from an
+  edit that passed its own test suite.
+- Validator subsystem uses 4 incompatible result shapes (Diagnostic
+  dataclass, plain-string lists, JourneyStep, raw dicts) with no shared
+  protocol -- confirmed to have ALREADY caused a real bug (an LLM fixed
+  the wrong file because a string-based diagnostic had no `file_path`,
+  per `verification/engine.py`'s own docstring on the regex-based
+  workaround this forced).
+- `validate_project()` triggers ~20 independent full-project
+  `os.walk`/`rglob` calls per invocation (11+ delegated validators, none
+  sharing a pre-computed file list) -- on the hottest path in the
+  pipeline (runs once per fix-loop retry attempt).
+- A live rule-table duplication (`_COLUMN_TYPE_RULES` vs.
+  `_SCHEMA_FIELD_TYPE_RULES` in database_patcher.py) has ALREADY drifted
+  apart (one includes a `"value"` field-name suffix, the other doesn't).
+- `docs/REPAIR_DEBT.md` directly contradicts `docs/REPAIR_ARCHITECTURE.md`
+  -- recommends a param-order-fixer merge that Exp053 already
+  investigated and found unsafe -- with no errata; a reader following it
+  literally would attempt a merge already proven to break a real case.
+- Observatory (`/observatory`) re-parses the entire experiments.md
+  (4074 lines) on every request just for the last 8 entries, and
+  computes `compute_prevention_rate` twice per request (one result
+  silently discarded, confirmed unused by the frontend).
+- Two HIGH-severity uncaught-exception paths found beyond what
+  Exp053/055 already fixed (`deployed_fixer.py:210`,
+  `deployment_fix_service.py:270`).
+
+**Deliverables:** `docs/ENGINEERING_REVIEW.md` (full Parts 1-8),
+`docs/VALIDATOR_REVIEW.md` (Part 3 standalone), `docs/PERFORMANCE_FINDINGS.md`
+(Part 5 standalone), `docs/TECH_DEBT_SCORECARD.md` (Part 9 -- no category
+scored above B or below C: Reliability B, Maintainability C, Testability
+B, Performance C, Observability B, Scalability C, Architecture B,
+Documentation C), `docs/EXPERIMENT_BACKLOG.md` (Part 10 -- 20 ranked
+experiments, ROI/engineering-hour sorted, effort/cost/risk/prerequisites/
+success-criteria for each).
+
+**Cost: $0.** No generation, no canaries, no prompt changes. Per the
+task's own instruction, results were NOT committed automatically.
+
+---
+
+## Experiment 060 — Validator Contract Unification (offline only)
+
+**Goal:** unify the validator subsystem's 4 incompatible result shapes
+(identified by Exp059) into one canonical Diagnostic, without changing
+any validator's behavior. The validator equivalent of the Exp051-055
+repair hardening work.
+
+**Design decision, evidence-backed, not assumed:** the obvious first
+approach -- convert `validate_project()`'s shared `errors: list[str]` to
+`list[Diagnostic]` -- was investigated and REJECTED after confirming
+~15 existing call sites across v6_orchestrator.py/project_service.py/
+batch_runner.py/architecture_tournament_service.py do
+frozenset()/string-formatting/substring-filtering directly on that list.
+`Diagnostic` is unhashable by Python's own dataclass rules (no
+frozen=True), so `v6_orchestrator.py:337`'s `frozenset(validation["errors"])`
+alone would have crashed outright. Built instead: an ADDITIVE, parallel
+`diagnostics: list[Diagnostic]` key, populated only by explicitly
+migrated validators via a new optional trailing parameter
+(`diagnostics: list | None = None`) on each -- confirmed via grep that
+none of these functions have any OTHER caller, so this is 100%
+backward-compatible. `errors` stays byte-identical, confirmed via
+git-stash before/after against a real generated project.
+
+**Migrated: 15 validator functions across 13 files**, including
+`validate_frontend_auth_fields` -- the exact function that produced the
+message causing Exp059's cited confirmed production bug (wrong file
+fixed due to a missing file_path). Every category/severity assignment
+matches the PRE-EXISTING engine.py regex heuristics exactly (deliberate
+parity, not independently re-derived, since these feed repair-strategy
+selection). file_path is now validator-supplied (accurate) instead of
+regex-extracted from the message after the fact -- the actual fix for
+the cited bug.
+
+**Investigated and found already correct, not touched:** the other 2 of
+Exp059's "4 shapes" (JourneyStep, runtime validate_runtime()'s raw dict)
+turn out to already be adapted into proper Diagnostic objects by
+verification/engine.py's existing `_run_runtime_validation` (confirmed
+by reading it directly) -- no new adapter needed, and `run_user_journey`
+(the single highest-complexity function in the repo per Exp059) was
+correctly left untouched.
+
+**Consumption boundary updated (the only one needing it):**
+verification/engine.py's `_run_static_validators` now prefers a native
+Diagnostic (matched by exact message string) over the old regex-guess
+path, falling back to the unchanged regex construction for anything not
+migrated -- true mixed-mode, no flag day. Confirmed Observatory/API/CLI
+need zero changes (Observatory never touches live Diagnostic objects;
+no API route exposes raw validator output).
+
+**Verification:** 23 new regression tests
+(tests/reliability/test_validator_contract_unification.py) covering
+every migrated validator type, missing file_path cases, backward
+compatibility, multi-validator aggregation, JSON serialization
+(including the str-Enum category/severity fields), and the engine.py
+adapter's native-vs-fallback behavior. Full 49-file suite +
+orchestrator-wiring test green before and after every individual file
+change. Real end-to-end test against generated_projects/todo_list_app
+(the same project Exp056/058 used) confirms the whole pipeline works
+and file_path now matches validator ground truth.
+
+**Scope, stated honestly:** 24 validator-ish call sites exist in
+validate_project() total (more than Exp059's fork estimated -- 9 live
+directly in validator_service.py, not just the 13 separate files).
+Migrated the 13-file set plus the one bug-causing function; the
+remaining 8 validator_service.py-internal functions are flagged for
+Exp061, unaffected and fully functional on the legacy path meanwhile.
+
+**Cost: $0.** No generation, no LLM calls, no prompt changes. Not
+committed, per this experiment's explicit instruction. Deliverables:
+docs/VALIDATOR_CONTRACT.md, docs/VALIDATOR_MIGRATION.md.
+
+---
+
+## Experiment 061 — Live Validator Contract Validation (minimal Cerebras spend)
+
+**Goal:** validate Exp060's Diagnostic contract migration live -- do
+migrated validators emit correct Diagnostics, does the repair layer
+target the right files, does the regex fallback stay isolated to
+unmigrated validators, does Observatory stay correct. Validation only,
+no fixes, no additional validators migrated. Used the full 2-canary
+budget (todo-only, matching Exp058's precedent).
+
+**Method:** new script exp061_validate.py monkeypatches
+validator_service.validate_project, engine._run_static_validators, and
+v6_orchestrator.write_fix PURELY to observe their calls (each wrapper
+calls straight through to the real implementation) -- captures
+validator_name/category/severity/file_path per diagnostic and repair
+target per write_fix call, without changing any behavior. Verified
+against the real todo_list_app fixture at $0 before spending anything live.
+
+**Result: strongly confirms Exp060's design, with one honestly-reported
+evidence gap.** Both rounds: 100% of live errors (41 diagnostics total)
+came from already-migrated validators, every one with correct
+validator_name/category/severity and file_path matching a real file.
+write_fix targeting was cross-checked directly: 3/3 frontend-page
+diagnostics matched their write_fix target exactly both rounds; round
+2's longer run (5 attempts vs round 1's 3) additionally showed
+auth_routes.py and task.py getting hit directly, matching diagnostics
+round 1 didn't get far enough to act on. One apparent gap (round 1's
+auth_routes.py diagnostics with no matching write_fix call) was traced
+by reading code, not guessed: attempt 3 used regenerate_module, which
+routes through app/repair/orchestrator.py's own separate file-writing
+mechanism this experiment's observer didn't instrument -- an
+observer-script boundary, not a contract or repair bug.
+
+**Genuine gap, reported honestly rather than papered over**: the regex
+fallback path (for the 8 still-unmigrated validators) was NOT exercised
+live in either round -- this specific todo idea/cache combination simply
+never triggers any of them, across 6 live rounds total now (Exp056/058/061).
+That question remains answered only by Exp060's own offline regression
+test, not by live evidence. Flagged explicitly, not glossed over.
+
+**No regressions found.** Validator detections identical to Exp058's
+baseline (same messages, same files). Score staying in the 70-74 range
+(not recovering to 99.71) is the same already-diagnosed Exp056 SS4 issue,
+unrelated to the contract.
+
+Observatory + canary_history.json updated (exp061-validation-r1/-r2) and
+verified against the real compute functions. Full report:
+docs/EXP061_VALIDATION.md. Confidence Diagnostic contract is
+production-ready: high for the 15 migrated validators and native
+consumption path (directly confirmed live twice); medium-high overall,
+held back only by Q4's live-evidence gap, not by any observed defect.
+
+**Cost:** 2 generations (todo only), full experiment budget used. Not
+committed, per this experiment's explicit instruction. Did not begin
+migrating remaining validators, per its own explicit instruction.
+
+---
+
+## Experiment 062 — Cross-App Reliability Investigation (minimal Cerebras)
+
+**Goal:** determine whether ForgeAI's remaining reliability issues are
+todo-specific, architecture-specific, or systemic -- todo alone (6 live
+rounds across Exp056/058/061) was hitting diminishing returns. Ran the
+full 3-canary budget: blog_cms, crm, inventory (benchmarks/golden/18_inventory.txt,
+a real existing idea, not a placeholder).
+
+**Method:** new script exp062_cross_app.py, same pure-observation
+monkeypatch pattern as exp061_validate.py, extended to run any
+CANARY_APPS/benchmarks idea instead of just todo.
+
+**Headline result: closed Exp061's exact evidence gap AND answered the
+experiment's own success-criteria question with strong evidence.**
+
+**Q1 (do legacy validators trigger) -- yes, twice, both fully traced
+end-to-end:** blog_cms hit validate_imported_symbols ("Missing symbol
+'author_router'..."), inventory hit the never-migrated inline py_compile
+syntax check. Both: correct regex-based categorization (matching Exp060's
+documented parity mapping), correct regex-extracted file_path, write_fix
+targeted the exact diagnosed file, error resolved and never recurred.
+This is the live confirmation Exp061 explicitly reported as missing.
+
+**Q2/systemic finding -- the highest-value result this cycle:** the
+Exp056 SS4 "recurring AttributeError schema-mismatch" pattern
+(SignupRequest.username in todo, User.name in blog_cms) reappeared in
+inventory too (ProductCreate.price) -- **3 of 4 apps tested live this
+session** hit the identical bug SHAPE (LLM-generated route/seed code
+accesses a Pydantic Create/Signup schema field that class doesn't
+define), each a different specific field. Only crm avoids it, across
+every experiment this session has run it in. This is now confirmed
+systemic, not todo-specific -- directly answering the experiment's own
+success-criteria question.
+
+**New failure shape found, not previously seen:** inventory's Runtime
+Startup fails (20/100) while Integration/CRUD passes (92.3/100) --
+different from todo/blog_cms where both fail together. Flagged, not
+investigated further (root cause "Unknown," per the experiment's own
+"document only" rule).
+
+**Q4 -- todo's representativeness:** partial. Correctly surfaced the #1
+systemic issue, but 6 combined todo/blog_cms-repeat live rounds never
+once triggered a legacy-validator fallback, while 2 of 3 fresh apps this
+cycle did -- todo alone significantly under-represented the fallback
+path's real-world activation rate. Recommend rotating which app gets
+repeat-validated rather than defaulting to todo every cycle.
+
+**Success criteria answered directly:** "highest ROI engineering problem
+across ForgeAI, independent of app type" = the recurring Pydantic
+Create/Signup-schema AttributeError pattern -- a model-output/
+generation-quality issue, not an infrastructure one, confirmed via 3
+different apps hitting the identical bug shape with different specific
+fields, each one the direct cause of that app's Runtime Startup failure
+and score ceiling.
+
+Observatory + canary_history.json updated (label exp062-cross-app,
+3 app results) and verified against the real compute functions. Full
+report: docs/EXP062_CROSS_APP.md.
+
+**Cost:** 3 generations, full budget used (no dominant single FAILURE
+justified an early stop; the dominant PATTERN only became visible after
+comparing all 3). Not committed, per this experiment's explicit
+instruction. No validator migrated despite 2 legitimately triggering,
+per its own explicit instruction.
+
+---
+
+## Experiment 063 — Pydantic AttributeError Root Cause Investigation
+
+**Goal:** determine WHY the model repeatedly generates the
+Exp056/058/062-confirmed AttributeError pattern (SignupRequest.username,
+User.name, ProductCreate.price) -- investigation only, no fixes, no
+prompt changes. Pure offline work using real artifacts already on disk
+from Exp056/058/061/062's live runs (todo_list_app, forge_blog_cms,
+inventory_manager, simple_crm -- confirmed via file-mtime the exact
+project snapshots those experiments produced).
+
+**Headline finding: two distinct root causes share one symptom shape.**
+
+1. **todo + blog_cms's SignupRequest.username crash is a
+   REPAIR-INTRODUCED regression, proven with certainty.** Read
+   deterministic_patcher.py's _build_auth_routes_template directly (both
+   branches) -- byte-provably always generates `req.display_name`, never
+   `req.username`. Yet both apps' final auth_routes.py contains the
+   IDENTICAL corrupted line `_make_user(req.email, req.password,
+   req.username)`. Not coincidence -- same exact string in two
+   independent app generations. crm's auth_routes.py, by contrast, is
+   byte-identical to the pristine template -- because crm had
+   fix_attempts=0 (confirmed, Exp062), so the repair pathway that
+   corrupts the other two apps' auth_routes.py never got the chance to
+   run against it. This reframes "why does CRM avoid it" from an
+   architecture question to a reliability one: any app whose first pass
+   is clean enough to skip repair is safe from this specific mechanism.
+
+2. **inventory's ProductCreate.price crash is a first-pass
+   generation-quality issue, likely (not proven) to originate at initial
+   backend generation** -- Product has no deterministic template to
+   compare against (unlike User/auth), and unlike the auth case, repair
+   actually RESOLVED this one (no .price reference survives in the final
+   product_routes.py; confirmed via Exp062's own observer data that the
+   error disappeared partway through the run).
+
+**Shared validation gap, confirmed by exhaustive grep, not inferred:
+zero validators in ForgeAI -- none of the 15 migrated, none of the 8
+legacy -- check whether a route handler's attribute access on a Pydantic
+request object matches a field that object's class actually declares.**
+Distinct from validate_schema_model_consistency (checks a different
+artifact pair: SQLAlchemy model vs Pydantic schema nullable flags, never
+looks at route code) and undefined_symbol_validator (checks name
+existence via AST, not type-aware field existence).
+
+**Mechanism identified for why repair fails to self-correct the auth
+case:** write_fix (per Exp060's own reading of fix_writer_service.py)
+validates SYNTAX only (ast.parse guard) -- no check for semantic
+self-consistency (does every attribute access in the LLM's own returned
+file match a field declared in that same file). The runtime-fix prompt
+asks the LLM to "return the ENTIRE corrected file" with no automated
+cross-check of internal consistency before writing.
+
+**Confidence:** High for the auth-case root cause and the shared
+validation gap (both directly evidenced, not inferred). Medium for the
+inventory case (well-reasoned, but no surviving pre-fix snapshot to
+prove initial-generation origin with the same certainty). 3 ranked,
+undistinguished hypotheses for WHY the LLM produces this pattern
+specifically -- flagged as the open question for Exp064, not resolved
+this cycle (would need cache-bypassed generation or direct LLM-response
+inspection, both avoided to stay $0/investigation-only).
+
+**Recommendation for a future cycle (not implemented):** a write-time
+self-consistency check in write_fix -- before accepting an LLM's "entire
+corrected file," verify every attribute access on a locally-defined
+Pydantic/dataclass type resolves to a field that class actually
+declares. Same pattern Exp054 already established for syntax, extended
+to one well-scoped semantic check.
+
+**Cost: $0.** No generation, no LLM calls, no fixes, no prompt changes,
+no new validators. Full report: docs/EXP063_PYDANTIC_ROOT_CAUSE.md. Not
+committed, per this experiment's explicit instruction.
+
+---
+
+## Experiment 064 — Semantic Write Validation
+
+**Goal:** extend write_fix() with ONE narrowly-scoped semantic check
+closing the exact gap Exp063 identified -- a route handler's attribute
+access on a Pydantic request parameter that the class itself doesn't
+declare. Not a generalized semantic analyzer; targets only the
+confirmed production gap.
+
+**Implementation:** app/services/fix_writer_service.py gained
+_collect_basemodel_classes (AST-based, finds every locally-defined
+Pydantic class + fixed-point local-inheritance field resolution),
+_annotation_class_name (bare Name, Optional[Name], Name | None),
+_collect_param_attribute_accesses (walks handler body, correctly stops
+descending into nested functions/lambdas that SHADOW the parameter name,
+so closures are checked but re-bound nested params aren't), and
+_check_request_field_consistency, the actual gate. Wired into write_fix()
+immediately after the existing syntax guard (_is_safe_to_write) --
+same reject-and-print-not-raise shape, so the repair loop continues
+exactly as it already does on any write_fix() False return.
+
+**Replay results (exact, not synthetic):** ran the check directly
+against the real on-disk files from Exp062's live runs.
+todo_list_app/app/routes/auth_routes.py (confirmed corrupted) ->
+REJECTED, exact line/function/class/declared-fields cited.
+forge_blog_cms's byte-identical corruption -> REJECTED, same reason,
+confirming the check generalizes across independent app generations,
+not overfit to one file. simple_crm's pristine template -> PASSED.
+inventory_manager's all 31 real .py files -> PASSED, zero flags.
+Broader sweep across all 115 real .py files in the 4 affected projects:
+exactly and only the 2 already-confirmed corrupted files flagged --
+zero false positives, zero false negatives relative to Exp063's own
+findings.
+
+**Tests:** 24 in tests/reliability/test_semantic_write_validation.py --
+correct/incorrect request, multiple request models, nested handlers
+(both closure-refers-to-outer and shadows-with-own-param shapes),
+existing syntax failures (correctly deferred to the pre-existing guard,
+not duplicated), 4 false-positive-protection cases (@property, Pydantic
+reserved attrs, non-Pydantic class, Optional annotations), local
+inheritance, and write_fix() end-to-end composition with the syntax
+guard. Full 50-file suite (up from 49) + adr002 orchestrator-wiring test
+green. One transient flake (test_role_aware_journey.py, a pycache
+staleness issue unrelated to this change) investigated directly,
+reproduced once, confirmed passing on every clean re-run after --
+reported honestly, not swept under the rug.
+
+**False-positive analysis:** zero found, across 115 real files from 4
+independently-generated apps plus 24 targeted synthetic probes. Key
+design choices enabling this: methods/properties count as declared,
+Pydantic's own reserved attributes are allow-listed, parameter shadowing
+in nested scopes is correctly detected and respected, anything outside
+the narrow shape (non-Pydantic types, unsupported annotations,
+cross-file inheritance) resolves to "not applicable" rather than being
+force-fit.
+
+**Recommendation: belongs in write_fix permanently.** Caught the exact,
+already-confirmed, twice-independently-occurring failure class with zero
+tuning; zero false positives across every available real file plus
+targeted synthetic tests; negligible performance cost (one more AST
+walk); composes cleanly with the existing syntax guard; zero caller-facing
+signature/contract changes. Kept deliberately narrow, per its own rule
+against becoming a generalized analyzer -- widening it further would
+need the same confirmed-failure-class rigor Exp063 established here, not
+speculation.
+
+**Cost: $0.** No generation, no LLM calls, no prompt changes, no new
+repair heuristics. Full report: docs/EXP064_SEMANTIC_VALIDATION.md. Not
+committed, per this experiment's explicit instruction.
+
+---
+
+## Experiment 065 — Principal Engineer Deep Architecture Audit
+
+**Goal:** find the next year of engineering work for ForgeAI ahead of a
+commercial release -- offline-first, minimal API budget, no generation,
+no live APIs, no prompt changes, no canaries. 10 parts: dependency
+graph, complexity, reliability, state management, performance,
+documentation coverage, test quality, dead code, security (new this
+cycle), and a 50-experiment backlog.
+
+**Method:** parallelized 5 background forks across the genuinely-new
+investigation areas (dependency graph + dead code; reliability edge
+cases -- leaks/threading/async/cancellation; state management; doc
+coverage + test quality; security), each citing real file:line evidence
+and reporting "Unknown" rather than guessing. Handled complexity and
+performance directly by reverifying and delta-checking Exp059's
+still-valid findings from the same cycle rather than re-deriving them
+from scratch.
+
+**Headline findings, all cited with exact file:line evidence:**
+- **[Security, HIGH]** `file_writer_service.py::write_files` (the
+  initial-generation writer) has ZERO path-traversal validation --
+  confirmed asymmetric with `write_fix` (the repair-time writer,
+  hardened across Exp060/064), which has this exact guard. The LLM's
+  first, least-scrutinized output is the unprotected path.
+- **[Reliability, HIGH]** `engine.py::VerificationEngine.run()`'s
+  backend-subprocess cleanup isn't wrapped in `finally` -- any exception
+  in verification stages 4-11 orphans a running uvicorn process.
+- **[Architecture]** `app/repair/orchestrator.py`'s `regenerate_arch`
+  strategy calls back into `generate_project_v6` via a reverse-layer
+  dependency, writing files through a DIFFERENT mechanism than
+  `write_fix` -- meaning **Exp064's new semantic-consistency guard does
+  NOT cover repairs made through regenerate_arch/regenerate_module**, a
+  real gap found one cycle after shipping it.
+- **[State Management]** `main.py`'s synchronous `/project/v15` route
+  shares `cost_tracker.py`'s module-global state across concurrent
+  requests via Starlette's threadpool -- a real (if deployment-config-dependent)
+  cross-request contamination risk, distinct from the already-safe,
+  process-isolated queue path.
+- **[Testing, self-critical]** `write_fix()`'s PRE-EXISTING guard
+  clauses (path traversal, missing input) have ZERO test coverage --
+  only Exp064's new semantic check got tested when that experiment
+  shipped.
+- **[Methodology]** naive fan-in/dead-code grep systematically
+  false-positives on `app/prompts/*.py`'s embedded example-import
+  strings and on `@preflight.register(...)`-decorated functions --
+  documented explicitly so future audits don't repeat the mistake.
+- Confirmed dead code (`backend_runner.py:421-431`, unreachable),
+  4 dead pre-v15 orchestrator endpoints (333 lines), a Windows-broken
+  `/tmp/` glob in the Cloudflare deploy cleanup path, and a still-live
+  rule-table drift bug from Exp059 (`_COLUMN_TYPE_RULES` vs.
+  `_SCHEMA_FIELD_TYPE_RULES`).
+- Security review otherwise clean: zero `shell=True`, zero `eval`/`exec`,
+  zero unsafe YAML/pickle/archive-extraction, zero hardcoded secrets,
+  zero `verify=False` -- confirmed via exhaustive grep, not sampling.
+
+**Deliverables:** `docs/ARCHITECTURE_REVIEW.md` (deps, complexity delta,
+state, doc coverage), `docs/RELIABILITY_REVIEW.md`,
+`docs/PERFORMANCE_REVIEW.md` (reverified Exp059 + startup/memory),
+`docs/SECURITY_REVIEW.md` (new), `docs/DEAD_CODE_REVIEW.md`,
+`docs/TEST_QUALITY_REVIEW.md`, `docs/ENGINEERING_BACKLOG_50.md` (50
+experiments, every one citing a specific finding from this cycle or a
+still-open prior one).
+
+**Cost: $0.** No generation, no canaries, no prompt changes. Per the
+task's own instruction, results were NOT committed automatically.
+
+## Experiment 066: Write Pipeline Hardening
+
+2026-07-12. Direct follow-through on Exp065's Finding #1: `write_files()`
+(the initial-generation writer) had ZERO path-traversal validation,
+confirmed asymmetric with `write_fix()` (the repair-time writer, which
+had a narrower pre-existing inline check). Rules: no LLM generation, no
+canaries, no prompt changes, **no repair-logic changes**, no broad
+refactors -- only harden the write pipeline, every change justified by
+Exp065 evidence.
+
+**What shipped:**
+- **`app/utils/safe_path.py`** (new) -- centralized, pathlib-only
+  path-traversal validator (`resolve_safe_path`/`is_safe_path`/
+  `PathTraversalError`). Rejects `../` (including multi-segment forms
+  like `a/../../b` that a naive `startswith("..")` string check
+  misses), absolute paths, Windows drive-letter/UNC paths (via
+  `PureWindowsPath.drive`, host-OS-independent), and symlink escapes
+  (via `Path.resolve()`'s built-in symlink-following before the
+  containment check).
+- **`app/utils/atomic_write.py`** (new) -- `atomic_write_text()`: temp
+  file in the same directory, fsync, `os.replace()`. Behavior-preserving
+  on the success path (identical final bytes/path); strictly safer on a
+  crash-mid-write (no partial file ever visible at the final path,
+  temp file always cleaned up).
+- **`write_files()`** (`file_writer_service.py`) now runs
+  `resolve_safe_path()` FIRST (before any content processing) on every
+  file, reuses Exp064's `_check_request_field_consistency()` via a
+  function-local import from `fix_writer_service.py` (mirroring that
+  file pair's existing lazy cross-import convention -- no circular
+  import, no code duplication), and writes via `atomic_write_text()`
+  everywhere it previously used `open(path, "w")` (main loop, the
+  `app/database.py` fallback, and the frontend/PWA template-scaffold
+  loop). Added a one-line per-run summary metric (`wrote N files in
+  Xms (skipped: A unsafe path, B syntax, C semantic)`), closing a gap
+  Exp065's Architecture/Test-Quality reviews both flagged.
+- **`write_fix()`** (`fix_writer_service.py`) now uses the same
+  `resolve_safe_path()` instead of its old `norm.startswith("..")`/
+  `os.path.isabs(norm)` check (regression-verified identical
+  accept/reject behavior on every case the old check covered, PLUS new
+  coverage for symlink/UNC/Windows-drive shapes it didn't have before),
+  and writes via `atomic_write_text()` for both the fixed file and the
+  `__init__.py`-creation step.
+- **A third write path found, deliberately left untouched**:
+  `app/repair/orchestrator.py::_regenerate_module()` writes via
+  `target.write_text()` directly, guarded by its own pre-existing
+  `_safe_patch_target()` (narrower -- no Windows-drive/UNC check, no
+  atomic write). This is repair logic; per this experiment's explicit
+  rule it was audited and documented, not modified. Also reviewed and
+  left alone as out-of-scope: `deployment_config_service.py`'s
+  non-atomic `Path.write_text()` calls -- static/internal paths only,
+  no LLM-controlled input, no traversal surface.
+
+**Verification (all against the real implementation, no mocks):**
+- Functional smoke test of `write_files()`: 4 malicious paths
+  (`../escape.py`, `../../escape2.py`, `/etc/passwd`,
+  `C:\Windows\System32\evil.dll`) all blocked with zero files landing
+  outside the sandbox; 3 legitimate nested/flat paths written
+  correctly.
+- Functional smoke test of `write_fix()`: 9 cases (2 legit writes, 7
+  attack/invalid-input rejections including a UNC path caught by
+  defense-in-depth) all matched expected behavior.
+- Full pre-existing regression suite (47 test files across
+  `tests/reliability/` and `tests/adr002/`, including all 24 of
+  Exp064's semantic-validation tests) re-run before and after every
+  change: **zero regressions**.
+- New `tests/reliability/test_exp066_write_pipeline_hardening.py` (32
+  tests): `safe_path` unit coverage (valid/nested/Windows/POSIX
+  separators, `../`, `../../`, disguised multi-segment traversal,
+  absolute POSIX, Windows drive absolute + drive-relative, UNC, empty
+  path, symlink escape [gracefully skipped -- this Windows dev
+  environment lacks the privilege to create test symlinks, confirmed
+  `WinError 1314`, not a code gap]); `atomic_write` unit coverage
+  (content-exact write, parent-dir creation, overwrite, no leftover
+  temp files, rollback-on-replace-failure, rollback-on-write-failure);
+  `write_files()`/`write_fix()` integration coverage (traversal
+  rejection doesn't crash the batch, duplicate-path last-write-wins
+  preserved, syntax-guard interaction, semantic-guard interaction now
+  present in `write_files()` too, mixed Windows/POSIX separators,
+  write-failure-doesn't-corrupt-existing-file). **32/32 pass.**
+
+**Deliverables:** `docs/WRITE_PIPELINE.md` (full audit + ASCII
+diagram, entrypoint/caller mapping, per-file lifecycle, failure
+handling), `docs/WRITE_SECURITY.md` (11-row threat table, "where
+validation occurs and why" rationale, third-write-path comparison),
+`docs/WRITE_VALIDATION_MATRIX.md` (row-by-row `write_files()` vs.
+`write_fix()` symmetry, explicit "what was NOT merged and why" per
+Part 4's own instruction), `app/utils/safe_path.py`,
+`app/utils/atomic_write.py`, `tests/reliability/test_exp066_write_pipeline_hardening.py`.
+
+**Cost: $0.** No generation, no canaries, no prompt changes, no
+repair-logic changes. Per the task's own instruction, results were NOT
+committed automatically.
+
+## Experiment 067: Complete Write Pipeline Symmetry
+
+2026-07-12. Follow-through on Exp066's flagged residual: bring
+`app/repair/orchestrator.py::_regenerate_module()` — the third write
+path Exp066 identified and deliberately left untouched — to the same
+write standard. Rules: no API usage, no generation, no prompt changes,
+no repair-logic changes, no refactoring outside this write path,
+preserve behavior exactly.
+
+**Part 1 correction to the premise:** the mission framed
+`_regenerate_module()` as "the only remaining write path." The actual
+audit found this undercounted the problem: the identical
+`_safe_patch_target()` + direct `target.write_text()` pattern is used
+at **5 call sites** in `orchestrator.py`, not 1 — 4 more live inside
+`_apply_fix_group()` (missing-import synthesis, the seed-stub write,
+the fix-cache replay, and one more). Only `_regenerate_module()`'s own
+call site was named by this experiment's mission, so only it was
+hardened; the other 4 are flagged as a larger residual asymmetry for a
+future, explicitly-scoped experiment — not silently expanded into or
+silently left out of this one.
+
+**Part 2 finding, correcting Exp066's own prior assumption:**
+Exp066 asserted (by analogy, not by testing) that `_safe_patch_target()`
+had "the same Windows-drive/UNC gap `write_fix()`'s old check had."
+Empirical testing this cycle found that claim was **not accurate** —
+`_safe_patch_target()` already correctly blocks Windows-drive-absolute
+(`C:\evil.py`) and UNC (`\\server\share\evil.py`) paths on this host,
+via its existing `os.path.isabs()` + resolved-path-containment check.
+The one real (if non-escaping) gap is a narrower, previously
+undistinguished shape: a Windows drive-**relative** path (`C:evil.py`,
+no backslash) — `os.path.isabs()` returns `False` for this shape, so
+it silently lands inside the project root under a prefix-stripped
+name. Never a sandbox escape, just an unintended-interpretation gap no
+legitimate fix would trigger. Recorded as a correction, not silently
+fixed in the historical record — the lesson: verify a prior
+experiment's threat-model claim empirically before treating it as the
+premise for a new one.
+
+**Part 2 conclusion:** full replacement of `_safe_patch_target()` with
+`resolve_safe_path()` is unsafe for two independent reasons —
+(1) behavioral: `_safe_patch_target()` deliberately allows an absolute
+path if it resolves inside the project root (documented, load-bearing:
+fix prompts echo back absolute diagnostic paths the LLM repeats
+verbatim), which `resolve_safe_path()` would unconditionally reject;
+(2) blast radius: `_safe_patch_target()` is shared by the 4 other call
+sites named above, none in scope for this experiment. Not replaced.
+
+**What shipped:**
+- `app/utils/safe_path.py::_has_windows_drive_or_unc()` made public
+  (`has_windows_drive_or_unc()`) so it can be reused as a standalone
+  check outside `resolve_safe_path()`.
+- `_regenerate_module()`'s write loop (`orchestrator.py`) gained a
+  `has_windows_drive_or_unc(rel)` guard ahead of `_safe_patch_target()`
+  — scoped to this function's own loop only, not inside the shared
+  `_safe_patch_target()`.
+- `_regenerate_module()`'s write call
+  (`target.write_text(content, encoding="utf-8")`) replaced with
+  `atomic_write_text(target, content)` — same crash-safety argument as
+  Exp066.
+- `_safe_patch_target()` itself: **unmodified** (see Part 2 conclusion).
+
+**Verification (all against the real implementation, no mocks for the
+write path itself):**
+- Real end-to-end run of `_regenerate_module()` (LLM call
+  monkeypatched per the "no API usage" rule, everything downstream real)
+  against 9 files including `../escape.py`, `../../escape2.py`,
+  `/etc/passwd`, `C:\Windows\evil.dll`, `C:evil.py`,
+  `\\server\share\evil.py`, and a syntactically-broken `.py` file — all
+  7 malicious/invalid entries rejected, only the 2 legitimate nested
+  files landed on disk, zero files escaped the sandbox.
+- **Self-caught rule violation, fixed before delivery**: the first
+  draft of the write-failure and generation-exception regression tests
+  triggered `_regenerate_module()`'s pre-existing broad
+  `except Exception` fallback to `_apply_fix_group()`, which is
+  unmocked and made a **real Cerebras API call** (confirmed via
+  `[CEREBRAS] Prompt=... Completion=...` in the test output) — a direct
+  violation of this experiment's own "no API usage" rule. Root cause:
+  `_apply_fix_group()` is a different write path this experiment never
+  intended to exercise, reached only as a side effect of the exception
+  fallback. Fixed by mocking `_apply_fix_group()` itself in both
+  affected tests; re-ran and confirmed zero API calls across the full
+  48-file suite before treating this experiment as done.
+- Full pre-existing regression suite (48 test files, including
+  Exp066's 32 and Exp064's 24) re-run before and after every change:
+  **zero regressions, zero real API calls**.
+- New `tests/reliability/test_exp067_regenerate_module_hardening.py`
+  (21 tests): `_safe_patch_target()` characterization (relative,
+  traversal, absolute-inside-root allowance, Windows-drive-absolute,
+  UNC, symlink [gracefully skipped, same environment limitation as
+  Exp066]) plus `_regenerate_module()` integration tests (normal
+  regen, nested files, traversal, drive-absolute, **drive-relative —
+  the one real gap this experiment closed**, UNC, syntax-error
+  interaction, duplicate-path behavior, mixed valid/malicious batch,
+  write-failure rollback, generation-exception fallback routing).
+  **21/21 pass.**
+
+**Deliverables:** `docs/WRITE_PIPELINE.md` (corrected 5-call-site
+count, new `_regenerate_module()` lifecycle section, updated diagram),
+`docs/WRITE_SECURITY.md` (corrected Exp066 assumption, new
+threat-by-threat empirical table, residual-paths section),
+`docs/WRITE_VALIDATION_MATRIX.md` (extended symmetry matrix,
+`_apply_fix_group()`'s 4 sites flagged as the largest remaining
+concentration of unhardened write call sites), `app/utils/safe_path.py`
+(one function made public), `app/repair/orchestrator.py`,
+`tests/reliability/test_exp067_regenerate_module_hardening.py`.
+
+**Cost: $0.** No generation. One accidental real Cerebras call was
+made and then eliminated during test development (see above) — no
+generation or repair logic was exercised as a result, and it was not
+part of any measurement this experiment relies on. No prompt changes,
+no repair-logic changes, no refactoring outside `_regenerate_module()`'s
+own write call. Per the task's own instruction, results were NOT
+committed automatically.
+
+## Experiment 068: Runtime Failure Intelligence
+
+2026-07-12. A deliberate pivot after 20 straight infrastructure/write-
+pipeline-hardening experiments (048-067): study every runtime failure
+collected so far and build the first Runtime Failure Knowledge Base.
+No fixes, no API calls, no generation, no canaries, no speculation —
+evidence only.
+
+**Method**: three parallel background forks, each mining a different
+data source (generation_log.jsonl + forensic bundles; canary_history.json
+cross-referenced against this file's own 67 numbered entries; detection/
+repair mechanism tracing across every validator and patcher file),
+plus direct runs of this project's own existing `failure_report.py`
+and `app/memory/reliability_metrics.py` (reused, not rebuilt, per this
+project's standing "measure before build" convention).
+
+**Headline findings:**
+- **The commissioning premise is confirmed by the data itself, not just asserted**: `first_try_success_rate` (this project's own designated North-Star metric) is 30.0% over the last 30 generations, trending -6.7 points versus the window before it. The two largest failure clusters (`MissingEndpoint`, 48 instances; `JourneyCRUDFailure`, 30 instances) both still show their most recent occurrence on 2026-07-11 — during, not before, the infrastructure-hardening arc this experiment was commissioned to evaluate.
+- **`JourneyCRUDFailure` is not one problem — the 14 available forensic bundles decompose it into (at least) 4 distinct root causes.** The dominant one, 9/14 bundles (64%), is `POST /auth/register` returning 404 — a **generation-bug wearing a runtime-detected symptom**, not an inherently-runtime problem at all. `todo`'s `crud_ok` has never once been `True` across all 16 canary runs measured since Experiment 020.
+- **The single cleanest quantitative signal in the whole dataset**: of 87 real `generation_log.jsonl` runs, fix_count=0 and fix_count=1 both succeed 100% of the time; fix_count=2 succeeds 3% of the time (1/33); fix_count=3 and fix_count=5 succeed 0% of the time. Once a generation needs a second repair attempt, it overwhelmingly does not recover — the highest-ROI class of fix is anything that prevents a failure from ever reaching the repair loop at all, not further investment in the loop's later attempts.
+- **Most top-volume clusters already have substantial, confirmed-firing repair infrastructure** — the assumption that "runtime failures generally lack repair mechanisms" is not broadly true. The real gap is concentrated in exactly two places: `JourneyCRUDFailure` (zero dedicated repair, confirmed by grep across the entire repair orchestrator and preflight modules) and `MissingEndpoint` (solid detection, zero deterministic repair — 100% LLM-cost every time).
+- **A data-completeness gap found in this project's own telemetry**: only 1 of 87 `generation_log.jsonl` entries references any of the 14 forensic failure bundles — the bundle system and the generation log are not fully wired together yet.
+- Several clusters (`NoReferencedTableError`, `RelationshipModelNotImported`, likely `ConfigAttributeError`) show strong evidence of being durably fixed (15+ days stale with zero recurrence) — a genuine success story worth recognizing, not just a list of remaining gaps.
+
+**Deliverables**: `docs/RUNTIME_FAILURE_CLUSTERS.md` (Parts 1-4: sources,
+21-cluster taxonomy, per-cluster frequency/first-last/affected-apps/
+repair-attempt stats, category determination), `docs/RUNTIME_HISTORY.md`
+(Part 5: full 32-run canary timeline cross-referenced against every
+matchable experiment number, stage-level trend analysis, an honest
+regression table noting which regressions experiments.md already
+explains and which remain unexplained), `docs/RUNTIME_KNOWLEDGE_BASE.md`
+(Part 7: Symptoms/Root Cause/Detection/Repair/Validation/History/
+Experiments/Confidence for the 15 clusters covering 91% of classified
+instances), `docs/RUNTIME_ROADMAP.md` (Part 6 ranking + Part 8's top 20
+runtime fixes ordered by ROI, anchored on the fix_count-vs-success
+finding above).
+
+**Cost: $0.** No generation, no canaries, no API calls, no fixes
+implemented. Per the task's own instruction, results were NOT
+committed automatically.
+
+## Experiment 069: ForgeAI V2 Master Architecture Review
+
+2026-07-12. A 15-part, ~4-6-hour Chief-Architect-level review preparing
+ForgeAI for commercial maturity and a V2 redesign. Explicit mission:
+not to improve ForgeAI, but to completely understand it — 90%+ of the
+time budget spent reading code, every conclusion cited, "Unknown means
+Unknown." No features built, no apps generated, no canaries run, no
+prompts modified.
+
+**Method**: four parallel background research forks (system diagrams +
+codebase atlas; the full 68-entry engineering timeline read in its
+entirety; repair + validator intelligence; security + performance
+deltas beyond three prior audits), each explicitly instructed to build
+on — not re-derive — this project's existing documentation
+(`docs/ARCHITECTURE_REVIEW.md`, `docs/WRITE_PIPELINE.md`,
+`docs/RUNTIME_KNOWLEDGE_BASE.md`, etc. from Experiments 065-068), plus
+direct synthesis of the reasoning-heavy parts (competitive analysis,
+V2 vision, 100-experiment roadmap, CTO review).
+
+**Process note, in keeping with this project's own "measure honestly"
+discipline**: while running the closing regression check for
+Experiment 067 (carried into this cycle's context), a concurrent
+process was found to have emptied `app/services/v6_orchestrator.py` to
+0 bytes mid-session — flagged to the user immediately rather than
+worked around silently, and restored from git before any further work
+proceeded.
+
+**Headline findings, each citing a specific new deliverable:**
+- **The single most consequential cross-cutting finding**: 42
+  individually-verified, well-tested fixes across the 68-experiment
+  history have NOT been sufficient to move the aggregate North-Star
+  reliability metric, which sits at 30% and trending down
+  (`docs/RELIABILITY_EVOLUTION.md`'s closing synthesis). Seven separate
+  experiments (010, 015, 016, 019, 039, 043, 044) fixed real symptoms
+  of `JourneyCRUDFailure` without ever targeting its dominant root
+  cause (a missing `/auth/register` route, found only by Experiment
+  068) — the clearest evidence in the whole history that narrow-fix
+  verification and aggregate-reliability improvement are not the same
+  thing.
+- **[Security, CRITICAL]** A hardcoded, insecure JWT `SECRET_KEY`
+  fallback (`app/dependencies/auth.py:13`) — independently found by
+  two separate research forks this cycle, cross-corroborating each
+  other (`docs/SECURITY_REVIEW_V2.md`).
+- **[Security, HIGH]** `project_name` (LLM-derived) is never
+  path-validated at the directory level (`file_writer_service.py:513-523`)
+  — structurally the exact same vulnerability class Experiments 066-067
+  spent two full cycles closing at the individual-file level, never
+  applied one layer up.
+- **[Architecture]** The validator layer independently re-derives its
+  own view of the project 12 separate times per verification pass (its
+  own `os.walk()`, per Exp059/065; its own `ast.parse()`, up to N×12
+  redundant parses, new this cycle) — one architectural decision
+  (validator independence) with a consistent, compounding performance
+  cost (`docs/PERFORMANCE_REVIEW_V2.md`).
+- **[Code quality]** 2 confirmed dead validator files (147 lines,
+  zero live callers); `endpoint_validator.py` — the detector for this
+  project's single largest failure cluster (48 instances) — has zero
+  dedicated test coverage (`docs/VALIDATOR_INTELLIGENCE.md`).
+- **[Repair]** 90 deterministic patcher functions confirmed across 3
+  files; a bare `except Exception` swallows patcher crashes to a print
+  statement; two independent repair-outcome taxonomies
+  (`strategy_outcomes.json`'s 7 buckets vs. `patterns.json`'s 21
+  patterns) have never been reconciled (`docs/REPAIR_INTELLIGENCE.md`).
+- **[Reliability engineering culture, a genuine strength]** The
+  Exp053→056→057→058 chain — a regression that passed its own green
+  test suite and was only caught by a later, dedicated measurement-only
+  cycle — is this project's clearest evidence of a sound engineering
+  culture, not just sound code (`docs/RELIABILITY_EVOLUTION.md`).
+- **[Observability]** Confirmed the strongest category in the
+  commercial-readiness assessment (8/10) — and, per an offline
+  competitive analysis against 8 named products, likely this project's
+  most genuinely distinctive asset (`docs/COMMERCIAL_READINESS.md`,
+  `docs/FORGEAI_V2.md` Part 12).
+
+**Deliverables**: `docs/ARCHITECTURE_ATLAS.md`, `docs/SYSTEM_DESIGN.md`,
+`docs/ENGINEERING_HISTORY.md` (all 68 experiments tabulated),
+`docs/RELIABILITY_EVOLUTION.md`, `docs/REPAIR_INTELLIGENCE.md`,
+`docs/VALIDATOR_INTELLIGENCE.md`, `docs/SECURITY_REVIEW_V2.md`,
+`docs/PERFORMANCE_REVIEW_V2.md`, `docs/TECH_DEBT_MASTER.md` (20 ranked
+items), `docs/COMMERCIAL_READINESS.md` (11 scored categories),
+`docs/FORGEAI_V2.md` (offline competitive analysis + V2 architecture
+vision), `docs/ROADMAP_100_EXPERIMENTS.md` (100 dependency-ordered
+experiments across 13 phases), `docs/CTO_REVIEW.md`. Also expanded
+`docs/RUNTIME_KNOWLEDGE_BASE.md` (Experiment 068) with Status/Owner-
+subsystem fields per this experiment's own Part 5 instruction.
+
+**Cost: minimal API usage** (per the task's own "MINIMAL" budget — no
+generation, no canaries; four research forks did real code-reading
+work but made no LLM-generation or canary calls). Per the task's own
+instruction, results were NOT committed automatically.
+
+## Experiment 070: Security Phase 0
+
+2026-07-12. Implementation cycle closing all 5 Critical/High launch
+blockers Experiment 069's security review identified. First
+implementation-heavy security experiment in this arc (Experiments
+065/069 were docs-only architecture reviews) — actual code changes,
+actual regression tests, actual before/after verification.
+
+**What shipped:**
+- **SECRET_KEY**: `app/dependencies/auth.py` now fails fast at process
+  startup (module-import time) with a clear, actionable error message
+  if `SECRET_KEY` is unset, a known placeholder/weak value (including
+  the exact prior hardcoded default), or under 32 characters. Never
+  auto-generates a secret. Also fixed a related bug found while
+  implementing this: nothing upstream of `auth.py` called
+  `load_dotenv()`, so a `SECRET_KEY` set only in `.env` was silently
+  invisible — `auth.py` now loads it itself.
+- **Rate limiting**: new `app/middleware/rate_limit.py`, a simple,
+  dependency-free in-memory limiter (documented single-process
+  limitation). Applied to auth (5/60s), generation (10/60s, ~15
+  endpoints), and deploy (10/60s) routes.
+- **Project-path traversal — found broader than Experiment 069's
+  original finding.** Auditing every project-path construction site
+  (per Task 3's explicit instruction) found **7 unguarded sites, not
+  1**: the 1 Experiment 069 originally found
+  (`file_writer_service.py:523`) plus 6 more live directly in
+  `main.py`. **Two of those six — `delete_job`/`delete_all_jobs`'s
+  `shutil.rmtree()` calls on an unguarded `job.project_name`-derived
+  path — are the single most severe finding of this entire cycle**,
+  more severe than Experiment 069's original finding: a malicious
+  stored `project_name` could have caused a recursive delete of an
+  arbitrary directory outside the sandbox. All 7 sites now go through
+  `resolve_safe_path()` (reused, not reimplemented, from Experiments
+  066-067) via a new `_safe_generated_project_dir()` helper. A related,
+  distinct 8th case was also found and fixed: the 3 `/deploy/*`
+  endpoints accept `project_path` directly as caller input (not looked
+  up from the DB) and may legitimately be absolute, so a narrower
+  containment-only check (`_require_contained_project_path()`) was
+  added for those specifically.
+- **CORS**: `allow_origins=["*"]` + `allow_credentials=True` replaced
+  with a `CORS_ORIGINS`-env-driven allowlist, defaulting to
+  localhost-only when unset — never a wildcard with credentials
+  enabled, in either case.
+
+**Verification**: 20 new regression tests
+(`tests/reliability/test_exp070_security_phase0.py`) covering all 4
+fixes, including a dedicated test naming the delete-endpoint severity
+finding directly. Full existing suite (49 files) re-run before and
+after every change. One pre-existing test needed a real (if minor) fix
+as a side effect of the path-traversal hardening: `resolve_safe_path()`'s
+`Path.resolve()` call normalizes Windows path casing differently than
+the old raw `os.path.join()` did, breaking a strict string-equality
+assertion in `test_exp066_write_pipeline_hardening.py` — fixed to
+compare case-insensitively (a casing difference only, not a behavior
+regression). One confirmed pre-existing, unrelated flakiness
+(`test_role_aware_journey.py`, already documented in Experiment 067's
+history) recurred and was re-confirmed as such, not caused by this
+cycle's changes.
+
+**Deliverables**: `docs/SECURITY_PHASE0.md`, `docs/LAUNCH_SECURITY_CHECKLIST.md`,
+`docs/COMMERCIAL_READINESS.md` updated (Security score 5/10 → 8/10;
+the "ready for public beta" verdict updated to reflect one of the two
+original blockers now being closed, one still fully open).
+
+**Cost: $0.** No LLM generation, no canaries, no prompt changes, no
+unrelated refactors — every fix implements a confirmed Experiment 069
+finding or a direct, in-scope extension of Task 3's own "audit every
+project path" instruction. Per the task's own instruction, results
+were NOT committed automatically.
+
+## Experiment 071: Deterministic Auth Route Completeness
+
+2026-07-12. Implements the single highest-ROI reliability fix
+identified across Experiments 068 and 069: guarantee every generated
+backend either has complete auth infrastructure or gets it
+deterministically repaired before runtime — no LLM call involved.
+
+**Part 1 audit, the core finding**: the mechanism to prevent this
+already existed (`deterministic_patcher.py::_patch_auth_routes()`, a
+role-aware known-good template injector, wired into
+`run_deterministic_patches()`, which runs during Stage 2 of every
+generation) and works correctly in the common case — confirmed
+empirically, both `generated_projects/todo_list_app` and
+`.../inventory_manager` currently carry correctly-wired auth routes.
+**The concrete gap**: `v6_orchestrator.py` calls
+`run_deterministic_patches(project_path, skip_protected_injections=True)`
+at two points (lines ~666, ~1191), both immediately after an
+LLM-driven architecture repair — deliberately disabling the auth
+safety net at exactly the moment an unrelated LLM fix could silently
+clobber it. This is the most concrete explanation found for why 9 of
+14 of Experiment 068's forensic bundles recorded `POST /auth/register → 404`.
+
+**A second bug, found while building this experiment's own tests, not
+speculated**: `_patch_auth_routes()`'s main.py-wiring logic had only 2
+anchor patterns for inserting `include_router(...)`; with neither
+present (a minimal main.py), the insertion silently no-op'd while
+still printing a false "Wired auth_router into main.py" success
+message. Fixed in scope (it's a bug in the auth-wiring mechanism
+itself) — added 2 more escalating fallback anchors, made the
+"changed" report compare actual content rather than trust an
+unconditional flag.
+
+**What shipped**: new `app/repair/auth_completeness.py` —
+`check_auth_completeness()` (pure, AST-based, read-only) and
+`ensure_auth_completeness()` (check → deterministic repair via the
+existing template injector, reused not reimplemented → re-verify →
+report complete/repaired/failed, never escalates to an LLM). Wired
+into both `v6_orchestrator.py` gap points found in Part 1. New
+Observatory metric: `failure_memory/auth_completeness_log.jsonl`
+telemetry + `compute_auth_completeness_metrics()` in
+`reliability_metrics.py` (mirrors the existing `compute_prevention_rate()`
+pattern) + wired into `compute_observatory()`'s output (auto-exposed
+via `/observatory`) and `failure_report.py`'s CLI dashboard.
+
+**Verification**: 16 new regression tests, including a bundle-replay
+section against the actual 14 Exp068 forensic bundle files (read
+directly this cycle) — 9/14 confirmed exactly `POST /auth/register → 404`,
+replayed as a synthetic fixture and confirmed prevented; the other 5
+non-auth-related bundle shapes confirmed to NOT false-positive this
+check. Full existing suite (50 files) re-run before and after every
+change: zero regressions (one pre-existing, already-documented flaky
+test recurred and was re-confirmed unrelated).
+
+**Deliverables**: `docs/AUTH_COMPLETENESS.md`,
+`app/repair/auth_completeness.py`,
+`tests/reliability/test_exp071_auth_completeness.py`, Observatory
+metric wiring, 2 `v6_orchestrator.py` integration points, 1 bug fix in
+`deterministic_patcher.py`'s existing auth-wiring fallback chain.
+
+**Cost: $0.** No API usage, no LLM generation, no canaries, no prompt
+changes. Every change implements deterministic auth completeness or a
+directly-evidenced bug in that same mechanism — no speculative
+improvements. Per the task's own instruction, results were NOT
+committed automatically.
+
+## Experiment 072: End-to-End Reliability Validation
+
+2026-07-12. Measurement-only live validation of Experiments 064-071's
+real impact. **Budget: 1 of 5 permitted Cerebras canaries used** —
+stopped early per this experiment's own "stop immediately if
+confidence becomes high" instruction; one comprehensive 4-app run
+produced rich, cross-app-consistent, fully root-caused evidence.
+
+**Method**: `scripts/exp072_canary.py` (new, does not modify
+`run_canary.py`'s own fixed 3-app list — reuses its internals via
+import, same precedent Exp062's own `exp062_cross_app.py` established).
+One labeled run (`exp072-validation-r1`), `--provider cerebras`,
+`--no-deploy`, covering todo/blog_cms/crm/inventory in one invocation,
+written to the same `canary_history.json` every other canary uses.
+
+**Headline result — Exp071's fix confirmed working live**: zero
+`POST /auth/register` 404s across all 4 apps, versus 9/14 of
+Experiment 068's forensic bundles before. `ensure_auth_completeness()`
+fired once (during `todo`'s architecture-repair path) and correctly
+reported `"complete"` — the mechanism is live and load-bearing, not
+just unit-tested.
+
+**But aggregate CRUD pass rate did not move** (3 of 4 apps still
+failed) — for two newly-exposed, previously-secondary reasons, both
+root-caused and **not fixed**, per this experiment's own explicit
+rule:
+1. **The exact Exp063 bug shape recurred, independently, in `todo`
+   AND `blog_cms`** — a correctly-injected `auth_routes.py` referencing
+   `req.username` where `SignupRequest` only declares `email`/`password`/
+   `display_name`. Traced to the precise line responsible:
+   `deterministic_patcher.py::_patch_attr_access_mismatches()` detects
+   a field mismatch per-class but applies its fix via a **file-wide
+   blanket `re.sub()`** with no verification that the specific
+   attribute access belongs to an instance of the mismatched class —
+   it can (and did, twice, independently) rewrite a correctly-injected
+   template's own field reference. Confirmed this bypasses Exp064's
+   semantic-consistency guard entirely: that guard wraps `write_fix()`
+   (the single-file LLM-repair writer); this patcher writes directly
+   via `.write_text()` inside `run_deterministic_patches()`, a second,
+   independent write path never brought under the same protection.
+2. **`inventory`'s regression (crud_ok True→False vs. Exp062) confirmed
+   unrelated to auth** — `/auth/register` and `/auth/login` both
+   returned 200 OK. Three distinct, unrelated causes instead: a seed
+   `NOT NULL` constraint failure (`products.unit_cost`), a seed-data FK
+   ordering issue (`404 Category not found`), and a new, previously
+   untracked pattern (`Column.name` called as if it were a method,
+   `TypeError: 'str' object is not callable`) — found independently in
+   BOTH `inventory`'s and `todo`'s `stats_routes.py`.
+
+**Answering the mission's explicit questions** (full detail in
+`docs/EXP072_VALIDATION.md`): MissingEndpoint's auth sub-case —
+decreased (confirmed fixed). JourneyCRUDFailure overall — unchanged in
+outcome, but its composition changed (0 of 3 failing apps failed on
+route-existence grounds anymore). Auth completeness — improved,
+confirmed live. Todo CRUD — still did not pass, blocked by a different
+mechanism than Exp071 targeted. Repair loop — executed (3-4 attempts
+per struggling app) but did not recover, consistent with Exp068's own
+finding that repair attempts beyond 1-2 rarely succeed. Semantic
+validation — did NOT reject this specific bad repair, because it came
+through an unprotected second write path, not because the guard itself
+is broken. New dominant failure — yes, two, both root-caused, neither
+fixed this cycle.
+
+**Reliability baseline synthesis**: auth-route existence/reachability
+is now reliably solved (a clean, unambiguous, live-confirmed win). The
+aggregate CRUD success rate has not moved, because the same
+"narrow-fix-vs-aggregate-improvement" pattern `docs/RELIABILITY_EVOLUTION.md`
+identified from the historical record reproduced live, one cycle
+later: fixing the outermost blocking layer revealed rather than
+resolved the next one underneath it.
+
+**Deliverables**: `docs/EXP072_VALIDATION.md`,
+`scripts/exp072_canary.py`, updates to `docs/RUNTIME_KNOWLEDGE_BASE.md`
+(JourneyCRUDFailure entry), `docs/RUNTIME_FAILURE_CLUSTERS.md` (new
+unnamed cluster row), `docs/RELIABILITY_EVOLUTION.md` (closing
+synthesis update). Observatory required no code changes — its existing
+`compute_observatory()`/`compute_auth_completeness_metrics()` wiring
+(Experiment 071) picked up this run's data automatically, confirmed
+live (`canary_health: Healthy`, `auth_completeness: {complete: 1,
+repaired: 0, failed: 0}`).
+
+**Cost: 1 Cerebras canary run** (4 apps, ~1075s total generation time
+across all 4). No implementation — every finding is root-caused, not
+fixed, per this experiment's own explicit rule. Per the task's own
+instruction, results were NOT committed automatically.
+
+## Experiment 073: Deterministic Attribute Rewrite Scope Fix
+
+2026-07-12. Offline, $0. Fixes the dominant bottleneck Exp072 identified:
+`deterministic_patcher.py::_patch_attr_access_mismatches()` detected a
+field mismatch correctly (per model class) but applied its fix via a
+**file-wide `re.sub()`** with no check that the specific attribute access
+actually belonged to an instance of the mismatched class. Since the
+synonym-map keys are common English words (`display_name`, `status`,
+`title`, `description`, ...), any *other*, genuinely correct object in
+the same route file sharing that attribute name got silently corrupted
+alongside the real fix — reproducing the Exp063 corruption through a
+second, independent write path Exp064's semantic-consistency guard never
+covered (that guard only wraps `write_fix()`, the single-file LLM-repair
+writer; this patcher writes directly via `.write_text()` inside
+`run_deterministic_patches()`).
+
+**Root cause, confirmed exactly**: the injected `auth_routes.py` template
+(`_build_auth_routes_template`) does `user = _make_user(req.email,
+req.password, req.display_name)` — `req: SignupRequest`, and
+`SignupRequest` genuinely declares `display_name`, so this is correct
+code. Separately, in the same file, a generated `User` model has
+`username` but no `display_name` column. The detector correctly flags
+`User`'s mismatch and picks `username` as the synonym; the old file-wide
+`re.sub()` then rewrote *every* `.display_name` in the file — including
+`req.display_name`, which has nothing to do with `User` — to
+`.username`, producing `req.username` (doesn't exist on `SignupRequest`)
+→ `AttributeError` on every signup. Byte-for-byte the shape Exp072
+reported live.
+
+**Fix**: rewrote the function's fix-application step to be AST-scoped
+instead of pattern-wide. Detection is unchanged. A new
+`_infer_model_typed_names()` builds a conservative, per-function
+`{variable: model_class}` map from only provable evidence — typed
+parameter annotations, `AnnAssign`, constructor calls
+(`u = User(...)`), or ORM query results (`db.query(User)...first()` /
+`for u in db.query(User)...`) — and only a `.bad_attr` access on a name
+in that map (or a bare `ClassName.attr` reference) is rewritten, via an
+exact source-span replacement (never a regex substitution across the
+file). A name absent from the map is never touched, matching this file's
+existing conservative-by-construction precedent
+(`_patch_missing_create_update_fields`,
+`_patch_ownership_fk_attribute_drift`).
+
+**Tests**: new `tests/reliability/test_exp073_attr_scope_fix.py`, 12/12
+passing — correct-mismatch (3 variants: typed param / ORM query / ctor
+call), unrelated untyped object, unrelated differently-typed object (the
+exact Exp072 shape), multiple classes in one file, repeated attribute
+name on two instances of the same class, nested functions, and a
+regression replay that instantiates the REAL
+`_build_auth_routes_template()` alongside a `User` model missing
+`display_name` — confirming `req.display_name` now survives untouched.
+Updated one existing test
+(`test_sql_constructor_and_auth_repairs.py`) that had explicitly
+*documented* the bug as known, unfixed behavior — now asserts the fixed
+behavior instead. Full `tests/reliability/` suite (44 files) re-run
+individually: identical pass rates to baseline everywhere except the
+two deliberately-updated files; two pre-existing, unrelated failures
+(`test_database_patcher_and_relationships.py`,
+`test_inline_chain_repairs.py`) confirmed via `git stash` to exist
+identically on the unmodified baseline.
+
+**Replay**: hand-built CRM (Contact/Deal) and inventory (Product/
+ReportRequest) scenarios reproducing the exact "two objects, same file,
+same risky attribute word, only one is the mismatched model" shape —
+in both, the genuinely-correct object's attribute is now left untouched
+where the old blanket regex would have corrupted it (verified directly
+against the pre-fix code via `git stash`).
+
+**False-positive analysis**: `generated_projects/` is empty in this
+environment (git-ignored). Swept `backend/llm_cache/`'s 1,085 cached
+`app/routes/*.py` entries instead: 374 files (34.5%) contain the
+collision-prone shape (≥2 distinct object names sharing a
+`_FIELD_SYNONYMS_PATCHER` attribute word in the same file) — an
+upper-bound exposure measure (proves the risky shape is structurally
+common, not the true corruption rate, since it doesn't confirm one
+object is a real model actually missing that column). Consistent with
+Exp072's finding that this bug fired twice, independently, in a single
+4-app canary run.
+
+**Recommendation**: extend Exp064-style semantic validation to
+deterministic patchers as a *second layer*, not instead of this fix —
+this experiment closes the specific bug at its source (structurally
+incapable of touching an unrelated object, not merely detected-and-
+rejected after the fact), but `run_deterministic_patches()`'s other
+`.write_text()` calls (`_patch_ownership_fk_attribute_drift`,
+`_patch_missing_create_update_fields`, etc.) share the same
+unprotected-write-path gap Exp072 identified. Scoping that is left to a
+future experiment, per this one's "fix only this confirmed bug" rule.
+
+**Deliverables**: `docs/EXP073_SCOPE_FIX.md`,
+`backend/tests/reliability/test_exp073_attr_scope_fix.py` (new),
+`backend/tests/reliability/test_sql_constructor_and_auth_repairs.py`
+(one test updated), this entry. **Cost: $0** (no LLM calls — offline
+AST/regex work and local test execution only). Per the task's own
+instruction, NOT committed.
+
+## Experiment 074: Live Validation of AST-Scoped Attribute Repair
+
+2026-07-12. Measurement only, per this experiment's own explicit rule —
+**no code changes**. 1 of 3 permitted Cerebras canaries used (label
+`exp074-validation-r1`, `--no-deploy`), covering Todo/Blog CMS/Inventory
+via a new one-off script, `scripts/exp074_canary.py`, that reuses
+`run_canary.py`'s internals without modifying that file (same precedent
+Exp072's `exp072_canary.py` established) and monkeypatches
+`_patch_attr_access_mismatches()` for the run's duration only (source
+file never touched) to capture every real invocation's before/after
+diff. Stopped after 1 canary: it produced a direct, unambiguous data
+point, so a 2nd/3rd run wouldn't have raised confidence further.
+
+**Headline: Exp073's fix confirmed working live.**
+`_patch_attr_access_mismatches()` fired 3 times (all in `blog_cms`'s
+`post_routes.py`, `Posts` model missing `description`, `title` used as
+synonym) and every rewrite was correctly scoped. The strongest evidence:
+one line contains the ambiguous attribute name on TWO different objects
+— `post_in.description if post_in.description is not None else
+post.description` — and only the trailing `post.description` (the real
+`Posts` instance) was rewritten; `post_in` (a `PostUpdate` schema
+instance, confirmed to genuinely have a `description` field) was left
+untouched, twice, on the same line. This is the exact ambiguous shape
+that caused Exp072's `req.display_name` → `req.username` corruption,
+reproduced live and handled correctly. Zero corruptions this run.
+Auth completeness also held: 0 `/auth/register`/`/auth/signup`/`/auth/login`
+404s across all 18 auth calls in the run (every first attempt 200,
+non-200s were only the journey runner's own intentional negative
+re-registration tests).
+
+**Before/after vs. Exp072**: todo 73.44→92.6 (crud False→True, but never
+exercised the patched function this run — LLM's raw output this time
+didn't produce the mismatch shape); blog_cms 71.49→70.0 (crud False→True
+on final state, but capped by an unrelated new-to-this-run issue, below);
+inventory 75.72→90.9 (crud False→True, after repair absorbed an unrelated
+NOT-NULL-on-PUT bug, below). CRM not re-tested this cycle — outside this
+experiment's own app set.
+
+**Two new, unrelated failures surfaced and documented, not fixed, per
+this experiment's own rule**: (1) `blog_cms` never generated
+`PUT`/`DELETE /posts/{id}` routes at all (confirmed by reading the final
+route file) — `MissingEndpoint`'s general/non-auth sub-case, still open,
+no deterministic repair path exists; this, not any attribute-mismatch
+issue, capped blog_cms at 70.0/C. (2) `inventory`'s `PUT /products/{id}`
+(full-replace) wrote `sku=NULL` on a payload omitting it —
+`NotNullViolationError`'s update-path variant, distinct from Exp012/13's
+create-path-only fix; self-resolved via the generic LLM loop this run (3
+fix attempts, 2 caught-and-reverted regressions dipping to score 32.1)
+but not by any deterministic patcher.
+
+**Recommendation for Exp075**: target the NOT-NULL-on-PUT gap first
+(smaller scope, has a directly analogous existing fix to extend —
+`preflight.py::_fix_model_schema_notnull_gap` — and this run supplies a
+concrete before-state to replay); `MissingEndpoint`'s general CRUD
+sub-case remains the higher-value long-term target but needs a repair
+mechanism built from scratch.
+
+**Is Exp064-style semantic validation still justified?** Weaker case,
+not eliminated. This run is direct evidence the *structural* fix (provably
+scope the rewrite, not detect-and-reject after the fact) is sufficient on
+its own for this specific function. `run_deterministic_patches()`'s other
+unprotected `.write_text()` calls are unchanged risk — this run produced
+no new evidence either way for them (none fired this cycle). Recommendation
+unchanged from Exp073: worth scoping later as defense-in-depth, not urgent.
+
+**Deliverables**: `docs/EXP074_VALIDATION.md`,
+`backend/scripts/exp074_canary.py` (new),
+`backend/benchmark_results/exp074_patcher_invocations.json` (new, raw
+capture), `backend/benchmark_results/canary_history.json` (run
+appended), addenda to `docs/RUNTIME_KNOWLEDGE_BASE.md` (MissingEndpoint
++ NotNullViolationError entries), `docs/RUNTIME_FAILURE_CLUSTERS.md`
+(scope-confusion row marked RESOLVED + new NOT-NULL-on-PUT row),
+`docs/RELIABILITY_EVOLUTION.md` (closing update), this entry.
+Observatory required no code changes — `scripts/observatory.py` picked
+up the new run automatically (confirmed live: Timeline points 33→34,
+Canary: Healthy). **Cost: 1 Cerebras canary, 3 apps, $0.219, 365,073
+tokens.** Per the task's own instruction, NOT committed.
+
+## Experiment 075: NOT NULL on PUT Extension
+
+2026-07-12. Offline, $0. Fixes the update-path NOT NULL gap Exp074 found
+live in `inventory`'s `PUT /products/{id}` — explicitly **not** the same
+bug Exp012/13 fixed (CREATE only), per this experiment's own instruction.
+
+**Root cause**: route-generation-stage LLM output, not schema/model
+generation, not repair, not runtime. Traced the exact live SQL
+(`UPDATE products SET sku=?, name=?, category_id=?, unit_cost=?,
+reorder_threshold=? ...`, params `(None, 'Journey Test Item EDITED',
+None, None, None, 1)`) back to `product_routes.py`'s originally-generated
+`replace_product()`: an unconditional `product.sku = product_in.sku`
+field copy from an Optional `{Model}Update` schema field, with no `is
+not None` guard. Both the model (`sku` correctly `nullable=False`) and
+the schema (`ProductUpdate.sku: Optional[str] = None`, correctly
+optional) are right — only the route's *body logic* loses
+partial-update semantics. **Earliest divergence**: Wave 4 (route
+generation), the single LLM completion that writes the `PUT`/`PATCH`
+handler body.
+
+**Why this is NOT the Exp012/13 fix reused as-is**: that fix correctly
+*relaxes the model* on CREATE (a fresh row has no existing value to
+preserve, so accepting a client-omitted field as NULL, guarded by
+Create-schema requiredness, is the right call). On UPDATE, relaxing the
+model would be actively wrong — it would silently let the NULL write
+succeed (data corruption, no crash, no signal) instead of preventing it.
+The correct fix is route-side: guard the copy so an omitted field
+preserves the existing row.
+
+**Implementation** (extends, doesn't parallel, Exp012/13 — reuses
+Exp073's own AST type-inference verbatim): new
+`_model_notnull_no_default_columns()` in `deterministic_patcher.py`
+(same Column-classification logic `_fix_model_schema_notnull_gap`
+already uses, extracted to a shared helper); new
+`_fix_update_notnull_field_loss()` in `preflight.py` (priority 27, wired
+automatically via the existing `preflight.run()` call sites in
+`pipeline.py`/`orchestrator.py` — zero pipeline changes). Detects
+`target.field = source.field` inside `@router.put/patch(...)` handlers
+where `field` is a NOT NULL/no-default model column, `target` is the
+AST-typed model instance, `source` is a different object, and the line
+isn't already inside an `is not None`-style guard; rewrites to
+`if source.field is not None: target.field = source.field`. Never
+scans `@router.post(...)` (CREATE) and never touches any model
+`Column(...)` declaration.
+
+**Replay**: real-artifact replay (byte-for-byte reconstruction of the
+Exp074 `inventory` pre-repair shape from its own traceback SQL) —
+`sku`/`name` (the NOT NULL columns) correctly guarded, nullable columns
+and CREATE left untouched, `ast.parse()`-valid output. **Runtime replay
+against a real in-memory SQLite DB** (the actual success criterion, not
+just static inspection): partial update with `sku` omitted → existing
+`sku` preserved, no crash; complete update with `sku` provided → still
+updates correctly; the OLD unguarded shape, same scenario, confirmed to
+raise `IntegrityError` live. `test_model_column_definitions_never_touched`
+confirms the model file is byte-for-byte unchanged.
+
+**Tests**: new `tests/reliability/test_exp075_update_notnull_fix.py`,
+11/11 passing — every category the mission listed (single/multiple
+omitted fields, explicit-null-vs-omitted with the Pydantic-layer
+limitation explicitly documented rather than assumed away, partial
+update, complete update, mixed nullable/non-nullable, already-guarded/
+idempotent, real inventory replay, CREATE untouched, model untouched).
+Full `test_preflight_fixes.py` (70/70) and `test_exp073_attr_scope_fix.py`
+(12/12) re-run clean — zero regressions.
+
+**False-positive analysis**: ran the actual new detection logic
+(detect-only, no writes) against all 54 real generated projects
+currently on disk with matching `models/`+`routes/` — **9/54 (16.7%)**
+have a genuine, confirmed instance of this exact risky shape on a real
+NOT NULL column (14 total instances), including `simple_todo` (a
+different app from a different session — `Todo.title` NOT NULL,
+unguarded `todo.title = todo_in.title` in its PUT handler), confirming
+this is a recurring LLM-output pattern, not a one-off. Supplementary
+`llm_cache/` sweep (1,106 route files, nullability unknown/unjoinable —
+upper bound only): 47.3% of PUT/PATCH-bearing cached files contain the
+unguarded-copy shape at all. `patterns.json`'s taxonomy doesn't yet
+distinguish CREATE-path from UPDATE-path `NotNullViolationError`
+(4 total historical instances, unsplit) — not re-classified this cycle,
+out of scope.
+
+**Recommendation for Exp076**: live-canary-validate this fix specifically
+(same pattern Exp074 used for Exp073) before moving on;
+`MissingEndpoint`'s general CRUD sub-case (Exp074's #1-ranked finding,
+larger scope, no existing mechanism to extend) remains the higher-value
+long-term target once this is confirmed live.
+
+**Deliverables**: `docs/EXP075_UPDATE_NOT_NULL.md`,
+`backend/tests/reliability/test_exp075_update_notnull_fix.py` (new),
+this entry. **Cost: $0** (no LLM calls — offline AST/regex work and
+local test execution only). Per the task's own instruction, NOT
+committed.
+
+## Experiment 076: Live Validation of NOT NULL UPDATE Repair
+
+2026-07-12. Measurement only, no implementation changes (no new root
+cause surfaced that would justify one). One app (`inventory`), 2 real
+Cerebras generations total — expanded from 1 to 2 only because attempt 1
+legitimately produced already-guarded code natively (nothing for the
+repair to catch), giving zero live-activation evidence for the one thing
+this experiment most needed to confirm.
+
+**r1** (`exp076-validation-r1`): LLM wrote every `PUT` field assignment
+correctly guarded natively this time. `_fix_update_notnull_field_loss`
+correctly found 0 risky assignments, touched nothing. Journey PASS
+11/11, score 90.9/A. Directly demonstrates zero false positives on
+already-correct code.
+
+**r2** (`exp076-validation-r2`): reproduced the bug — gave the live
+activation. Production log (unmodified shipped code, not
+instrumentation): `[preflight] Guarded 2 NOT-NULL field(s) on UPDATE in
+product_routes.py` / `...in transaction_routes.py`. Cross-checked
+against ground truth: `Product.unit_cost`/`reorder_threshold` and
+`Transaction.quantity`/`unit_price` are genuinely `nullable=False` with
+no default; `category_id`/`product_id` (also NOT NULL but FKs) correctly
+excluded; nullable columns (`sku`, `name`, `type`, `partner_name`)
+correctly left untouched. `transaction_routes.py`'s `PUT` handler
+survived to the final artifact unmodified, giving a direct before/after
+route diff: `transaction.quantity = transaction_in.quantity` and
+`transaction.unit_price = transaction_in.unit_price` both now wrapped in
+`if ... is not None:`, with all surrounding stock-adjustment business
+logic byte-for-byte untouched — zero unintended AST rewrites found.
+`product_routes.py`'s guards were later superseded by an unrelated LLM
+repair pass rewriting the whole handler to a different (also-correct,
+`exclude_unset=True`) pattern while fixing an unrelated bug — expected,
+harmless pipeline behavior, not a defect in either fix. Final journey
+PASS 11/11, score 94.6/A, deploy-ready. Zero NOT NULL `IntegrityError`s,
+zero model-file changes, zero CREATE-path regressions across both runs.
+
+**Instrumentation limitation disclosed**: the temporary diff-capture
+wrapper's simple line-alignment heuristic only matched 1 of each file's
+2 edits — a limitation of this experiment's own measurement script, not
+the shipped fix (whose own log line and the surviving
+`transaction_routes.py` file both independently confirm the true count
+of 2 per file).
+
+**Two new, unrelated, LOW-severity findings** (documented only, not
+fixed): (1) `seed_routes.py`'s `Users(**u)` passes an invalid
+`display_name` constructor kwarg — one intermediate `POST /seed` 500 in
+r2, self-resolved. (2) `transaction_routes.py`'s `PUT` handler was bound
+to `TransactionCreate` instead of `TransactionUpdate` — a route-wiring
+bug making Exp075's own guard on that file currently unreachable via a
+Pydantic-level 422 (harmless: the guard is correct regardless, and
+becomes load-bearing the moment this separate bug is fixed); a
+near-identical shape briefly hit `product_routes.py` too before an
+unrelated repair rewrote it.
+
+**Observatory**: zero code changes, confirmed live (`scripts/observatory.py`
+auto-picked up both new runs, Timeline points 34→36, Canary: Healthy).
+Repair-specific activation reported directly (no dedicated dashboard
+metric exists yet): 2/2 generations exercised correctly (0 to activate
+on, 2 activated on), 0% false-positive rate.
+
+**Comparison vs. Exp075's replay**: live behavior matches exactly — same
+guard shape, nullable/CREATE/model untouched, on genuinely different
+(live-sampled) NOT NULL columns than the original reconstructed
+incident (expected: Exp075 replayed the exact historical `sku` case;
+live generation naturally varies which column the bug lands on).
+
+**Recommendation for Exp077**: `MissingEndpoint` — as expected, still
+the taxonomy's single largest unaddressed cluster (48 instances/24.7%),
+confirmed still the score-capping cause in Exp074's `blog_cms` run, and
+unlike the NOT-NULL-on-UPDATE gap this pair just closed, has no existing
+deterministic mechanism to extend (LLM-only repair path, no verified
+success rate). Scope: root-cause *why* Wave-4 route generation sometimes
+omits an entire CRUD verb for an otherwise fully-scaffolded resource,
+before attempting any fix — never had a dedicated root-cause
+investigation in this project's history.
+
+**Deliverables**: `docs/EXP076_LIVE_VALIDATION.md`,
+`backend/scripts/exp076_canary.py` (new), 2 new
+`benchmark_results/canary_history.json` entries, addendum to
+`docs/RUNTIME_FAILURE_CLUSTERS.md` (NOT-NULL-on-PUT row marked RESOLVED
++ new wrong-schema-class row), this entry. **Cost: 2 Cerebras
+generations, `inventory` only.** Per the task's own instruction, NOT
+committed.
+
+## Experiment 077: Root Cause Investigation of MissingEndpoint Failures
+
+2026-07-12. Investigation only, $0, zero Cerebras calls — every finding
+reconstructed from 54 real generated projects already on disk (each
+retains `metadata.json`'s `architecture.api_endpoints`, letting
+planned-vs-delivered be diffed directly) plus direct code reading, per
+this experiment's own "reconstruct from existing generated projects"
+constraint.
+
+**Method**: reused `endpoint_validator.py::extract_actual_backend_routes()`/
+`_normalize_path()` unmodified to diff each project's Architect-planned
+endpoints against its final delivered backend. Result: 782 planned
+endpoints across 46 projects, 12 missing in final state (1.5%). Critical
+methodological step: timestamped all 6 flagged projects — **10 of 12
+misses are 5-25 days stale**, predating Experiment 071's auth-completeness
+template additions (`/auth/logout`, `/auth/register` alias weren't in
+the template yet when those projects generated); re-running them today
+would not reproduce those gaps. 1 more is a false positive (`dine_reserve`'s
+"missing" `/api/auth/me` — the real `/auth/me` works fine, just an
+inconsistent `/api/` prefix in the architect's own plan). **Only 1
+project — `forge_blog_cms`, generated today via Exp074's own canary run
+— represents a confirmed-current failure**: exactly the "general CRUD,
+non-auth" shape this experiment named as the target (`PUT`/`DELETE
+/posts/{id}` + `PATCH .../publish`/`unpublish`).
+
+**Root cause, precisely located**: traced `forge_blog_cms` end-to-end
+through its own generation log. Wave 4 initially under-delivered
+`post_routes.py` (0/8 planned endpoints present at first static check,
+despite using the MOST completion tokens of any route file that wave —
+not a truncation case). The static-validation repair loop **correctly
+recovered all 8 endpoints** within 3 attempts (`Post-fix 3: PASS`) — this
+part of the pipeline works. The endpoints were then **lost again** during
+the RUNTIME-stage outer fix loop: multiple full-file rewrites of
+`post_routes.py` (via `_apply_fix_group`, targeting unrelated diagnostics
+— a frontend-invented `/posts/{id}/comments` feature, a syntax error)
+silently dropped `PUT`/`DELETE`/`PATCH .../publish`/`unpublish` — directly
+confirmed by the regression detector's own log lines re-flagging them as
+"new" missing endpoints twice.
+
+**Exact bug found**: `orchestrator.py::_required_endpoints_for_files()`
+— the function specifically designed to tell the LLM "these endpoints
+must survive your rewrite" — has **never fired once, for any project,
+ever**: `ep.get("file") in files` compares the architecture's raw
+backslash-separated `file` field (`'app\\routes\\post_routes.py'`,
+confirmed identical across 6 independently-sampled projects spanning a
+month) against forward-slash diagnostic paths, with zero normalization.
+`validate_endpoints()` one function away in the same codebase already
+does the exact `.replace("\\", "/")` this comparison needs. A **second,
+independent, more severe gap**: `_regenerate_module()`'s backend path
+calls `generate_architecture_fix()` — which is explicitly designed to
+accept and use `required_endpoints=`/`required_exports=`/`existing_symbols=`
+— without ever constructing or passing them; that strategy path has
+*zero* endpoint-preservation context, not merely broken normalization.
+
+**Taxonomy** (5 classes, full detail + evidence chain in
+`docs/EXP077_MISSING_ENDPOINT_INVESTIGATION.md`): A) Wave-4 initial
+under-delivery (self-heals reliably, confirmed) / B) emitted-but-lost-later
+(the dominant currently-active cause, now root-caused) / C) stale
+auth-specific gaps (not currently active, pre-Exp071) / D) never planned,
+frontend invents it anyway (self-resolves, caught by the codebase's
+second, correctly-normalized detector) / E) architect plan-internal
+path-prefix inconsistency (cosmetic, endpoint genuinely reachable).
+
+**Smallest deterministic repair candidate**: a **1-line** fix
+(`.replace("\\", "/")` in `_required_endpoints_for_files()`) plus an
+optional **~10-15 line** wiring fix (pass the missing kwargs to
+`generate_architecture_fix()`) — both precision fixes to code that
+already exists for exactly this purpose, zero new mechanisms invented.
+
+**Estimated reliability impact**: in the one confirmed-live instance,
+Class B was the single largest score deduction in that run (capped
+`forge_blog_cms` at 70.0/C). Structural exposure is universal across
+this deployment (confirmed 6/6 sampled projects share the backslash-path
+property) — every route file with >1 endpoint that ever needs a
+runtime-stage full-file rewrite is exposed. Not yet independently
+quantified as a standalone rate; `patterns.json`'s 48-instance count
+likely undercounts Class B specifically (it fires and gets silently
+re-masked within the same run, unlike Class A which persists as a
+separately-counted validation error).
+
+**Recommendation for Exp078**: implement the fix, don't continue
+investigating — as clean and low-risk a candidate as this project has
+found, a one-line normalization matching a pattern already proven
+correct one function away in the same file. Ship both fixes, then
+live-validate with the same Exp074/076 methodology.
+
+**Deliverables**: `docs/EXP077_MISSING_ENDPOINT_INVESTIGATION.md`, this
+entry. **Cost: $0, zero Cerebras calls.** Per the task's own
+instruction, NOT committed.
+
+## Experiment 078: Restore Runtime Endpoint Preservation
+
+2026-07-12. Offline, $0, zero Cerebras calls. Implements the two fixes
+Exp077 named as the smallest deterministic repair candidate — both to
+`app/repair/orchestrator.py`, both restoring functionality that already
+existed in the codebase for exactly this purpose.
+
+**Fix 1 (path normalization)**: `_required_endpoints_for_files()` compared
+`ep.get("file")` (backslash-separated, e.g. `'app\\routes\\post_routes.py'`)
+directly against forward-slash runtime paths via `in files` — always empty,
+confirmed never firing for any project ever. Refactored into a shared
+`_relevant_endpoints_for_files()` helper that normalizes with
+`.replace("\\", "/")`, matching `endpoint_validator.py`'s own
+`validate_endpoints()` normalization one function away in the same
+codebase.
+
+**Fix 2 (wiring)**: `_regenerate_module()`'s backend path called
+`generate_architecture_fix(architecture, messages, provider)` — three
+positional args, never `required_endpoints=`, despite that function's
+signature already accepting and using it. Added a new
+`_required_endpoints_map_for_files()` (dict-shaped: `{file: ["METHOD /path", ...]}`)
+and wired it through as `required_endpoints=` at the call site.
+
+**Offline validation**: reconstruction fixture is `forge_blog_cms`'s own
+`architecture.api_endpoints` for `post_routes.py`, read directly from
+`generated_projects/forge_blog_cms/metadata.json` — the exact real,
+confirmed-live failure Exp077 traced end-to-end. New test file
+`backend/tests/reliability/test_exp078_endpoint_preservation.py` (7/7
+pass): confirms all 8 real endpoints now match despite the backslash
+architecture path, confirms the map arrives non-empty at
+`generate_architecture_fix()`'s actual call site with only the LLM call
+mocked, and confirms an unrelated runtime repair (no matching architecture
+context) is unaffected — `required_endpoints={}`, regen proceeds exactly
+as before this experiment.
+
+**Regression**: full `backend/tests/reliability/` suite (47 files).
+`test_exp067_regenerate_module_hardening.py` (21/21 pass) needed its mocked
+`generate_architecture_fix` fakes updated to accept the new
+`required_endpoints=None` kwarg — the only change required outside
+`orchestrator.py` itself. 5 pre-existing failures (`test_database_patcher_and_relationships.py`,
+`test_exp066_write_pipeline_hardening.py`, `test_exp070_security_phase0.py`
+— `ModuleNotFoundError: No module named 'jose'`, an environment gap —
+`test_inline_chain_repairs.py`, `test_semantic_write_validation.py`) —
+confirmed via grep none reference the changed functions, unrelated to and
+unaffected by this change. 42/47 files passed, matching the pre-fix
+baseline for those unrelated files.
+
+**Observatory**: added a `print()` at the actual activation point in
+`_regenerate_module()` (endpoint + file count, only when the map is
+non-empty) so any live run's console/generation log makes activation
+directly observable. Did NOT add a `prevention_counts` dashboard entry —
+that slot is semantically pre-runtime deterministic prevention, while
+endpoint preservation is a runtime-repair-loop mechanism; forcing it in
+would mislabel it, exactly the speculative scope-creep this experiment's
+constraints exclude. Live activation count / preserved-endpoint totals
+don't exist yet — no live run has exercised this path since the fix.
+
+**Recommendation for Exp079**: yes, perform live validation next, same
+Exp074/076 methodology — rerun a `blog_cms`-shaped canary, grep the
+generation log for `Endpoint preservation ACTIVE`, and confirm via
+`endpoint_validator.py`'s before/after diff that the previously-lost
+`PUT`/`DELETE`/`PATCH .../publish`/`unpublish` endpoints survive a
+runtime-stage rewrite this time. That live run is also the right point to
+decide whether a permanent Observatory counter is worth adding.
+
+**Deliverables**: `docs/EXP078_ENDPOINT_PRESERVATION_FIX.md`, this entry,
+code diff in `backend/app/repair/orchestrator.py`, new test file
+`backend/tests/reliability/test_exp078_endpoint_preservation.py`, minor
+signature update in `backend/tests/reliability/test_exp067_regenerate_module_hardening.py`.
+**Cost: $0, zero Cerebras calls.**

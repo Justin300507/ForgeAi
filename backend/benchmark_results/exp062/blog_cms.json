@@ -1,0 +1,2182 @@
+{
+  "app": "blog_cms",
+  "timestamp": "2026-07-11T23:24:06.077498+00:00",
+  "crashed": false,
+  "error": null,
+  "elapsed_s": 1069.9,
+  "result": {
+    "job_id": "0393a60be6374f56a7fc55d3bd9262a9",
+    "idea": "A blog CMS with author and reader roles. Authors write posts with title, content (markdown), tags, and cover image URL. Posts can be saved as draft or published. Readers see all published posts, can filter by tag, and read individual posts. Authors manage their own posts (create, edit, delete, publish). Post list shows title, author, date, and tag list.",
+    "project_name": "forge_blog_cms",
+    "forge_score": 71.49,
+    "grade": "C",
+    "deployed": false,
+    "frontend_deployed": false,
+    "backend_url": null,
+    "frontend_url": null,
+    "fix_attempts": 5,
+    "total_tokens": 142259,
+    "estimated_cost": 0.08535539999999997,
+    "elapsed_s": 1069.91,
+    "providers_used": [],
+    "timeline": [
+      {
+        "stage": "generation",
+        "status": "passed",
+        "duration_ms": 0.0
+      },
+      {
+        "stage": "deterministic-patch",
+        "status": "passed",
+        "duration_ms": 532.1
+      },
+      {
+        "stage": "verification",
+        "status": "passed",
+        "duration_ms": 69447.4
+      },
+      {
+        "stage": "static-validation",
+        "status": "failed",
+        "duration_ms": 763.8
+      },
+      {
+        "stage": "runtime-validation",
+        "status": "failed",
+        "duration_ms": 5059.2
+      },
+      {
+        "stage": "parallel-checks",
+        "status": "passed",
+        "duration_ms": 12439.2
+      },
+      {
+        "stage": "static-validation",
+        "status": "passed",
+        "duration_ms": 5140.6
+      },
+      {
+        "stage": "runtime-validation",
+        "status": "failed",
+        "duration_ms": 4305.7
+      },
+      {
+        "stage": "parallel-checks",
+        "status": "passed",
+        "duration_ms": 12261.1
+      },
+      {
+        "stage": "static-validation",
+        "status": "failed",
+        "duration_ms": 5073.6
+      },
+      {
+        "stage": "static-validation",
+        "status": "passed",
+        "duration_ms": 5303.5
+      },
+      {
+        "stage": "runtime-validation",
+        "status": "failed",
+        "duration_ms": 4147.2
+      },
+      {
+        "stage": "parallel-checks",
+        "status": "passed",
+        "duration_ms": 12249.5
+      },
+      {
+        "stage": "static-validation",
+        "status": "failed",
+        "duration_ms": 688.3
+      },
+      {
+        "stage": "static-validation",
+        "status": "passed",
+        "duration_ms": 5031.9
+      },
+      {
+        "stage": "runtime-validation",
+        "status": "failed",
+        "duration_ms": 5310.4
+      },
+      {
+        "stage": "parallel-checks",
+        "status": "passed",
+        "duration_ms": 463311.4
+      },
+      {
+        "stage": "static-validation",
+        "status": "failed",
+        "duration_ms": 203.1
+      },
+      {
+        "stage": "runtime-validation",
+        "status": "failed",
+        "duration_ms": 2286.6
+      },
+      {
+        "stage": "parallel-checks",
+        "status": "passed",
+        "duration_ms": 3616.8
+      },
+      {
+        "stage": "static-validation",
+        "status": "passed",
+        "duration_ms": 1408.1
+      },
+      {
+        "stage": "runtime-validation",
+        "status": "failed",
+        "duration_ms": 2590.1
+      },
+      {
+        "stage": "parallel-checks",
+        "status": "passed",
+        "duration_ms": 4720.2
+      },
+      {
+        "stage": "static-validation",
+        "status": "failed",
+        "duration_ms": 290.5
+      },
+      {
+        "stage": "runtime-validation",
+        "status": "failed",
+        "duration_ms": 2579.0
+      },
+      {
+        "stage": "parallel-checks",
+        "status": "passed",
+        "duration_ms": 4915.3
+      },
+      {
+        "stage": "static-validation",
+        "status": "passed",
+        "duration_ms": 2092.6
+      },
+      {
+        "stage": "runtime-validation",
+        "status": "failed",
+        "duration_ms": 2625.3
+      },
+      {
+        "stage": "parallel-checks",
+        "status": "passed",
+        "duration_ms": 4716.1
+      },
+      {
+        "stage": "verification",
+        "status": "passed",
+        "duration_ms": 19178.5
+      },
+      {
+        "stage": "static-validation",
+        "status": "passed",
+        "duration_ms": 2046.4
+      },
+      {
+        "stage": "runtime-validation",
+        "status": "failed",
+        "duration_ms": 2571.4
+      },
+      {
+        "stage": "parallel-checks",
+        "status": "passed",
+        "duration_ms": 4745.1
+      }
+    ],
+    "score_history": [
+      {
+        "attempt": 0,
+        "score": 64.95,
+        "grade": "D"
+      },
+      {
+        "attempt": 1,
+        "score": 71.49,
+        "grade": "C"
+      },
+      {
+        "attempt": 2,
+        "score": 24.49,
+        "grade": "F"
+      },
+      {
+        "attempt": 2,
+        "score": 72.06,
+        "grade": "C"
+      },
+      {
+        "attempt": 5,
+        "score": 17.42,
+        "grade": "F"
+      },
+      {
+        "attempt": 5,
+        "score": 66.65,
+        "grade": "D"
+      },
+      {
+        "attempt": 5,
+        "score": 64.09,
+        "grade": "D"
+      },
+      {
+        "attempt": 5,
+        "score": 71.49,
+        "grade": "C"
+      },
+      {
+        "attempt": 5,
+        "score": 65.81,
+        "grade": "D"
+      },
+      {
+        "attempt": 5,
+        "score": 71.49,
+        "grade": "C"
+      },
+      {
+        "attempt": 5,
+        "score": 71.49,
+        "grade": "C"
+      }
+    ],
+    "dimensions": [
+      {
+        "name": "Compilation",
+        "score": 89.0,
+        "passed": true,
+        "na": false
+      },
+      {
+        "name": "Runtime Startup",
+        "score": 20.0,
+        "passed": false,
+        "na": false
+      },
+      {
+        "name": "API Functionality",
+        "score": 100.0,
+        "passed": true,
+        "na": false
+      },
+      {
+        "name": "Frontend Load",
+        "score": 100.0,
+        "passed": true,
+        "na": false
+      },
+      {
+        "name": "Browser UX",
+        "score": 88.0,
+        "passed": true,
+        "na": false
+      },
+      {
+        "name": "Integration",
+        "score": 46.15384615384615,
+        "passed": false,
+        "na": false
+      },
+      {
+        "name": "Code Quality",
+        "score": 67.0,
+        "passed": false,
+        "na": false
+      },
+      {
+        "name": "Security",
+        "score": 100.0,
+        "passed": true,
+        "na": false
+      },
+      {
+        "name": "Completeness",
+        "score": 100.0,
+        "passed": true,
+        "na": false
+      },
+      {
+        "name": "Performance",
+        "score": 90,
+        "passed": true,
+        "na": false
+      },
+      {
+        "name": "Visual Judge",
+        "score": 34.9,
+        "passed": false,
+        "na": false
+      }
+    ],
+    "v6_result": {
+      "pipeline": "v6",
+      "project_name": "forge_blog_cms",
+      "project_path": "C:\\Users\\jerry\\onedrive\\Desktop\\forgeai\\generated_projects\\forge_blog_cms",
+      "zip_path": "C:\\Users\\jerry\\onedrive\\Desktop\\forgeai\\generated_projects\\forge_blog_cms.zip",
+      "metadata_path": "C:\\Users\\jerry\\onedrive\\Desktop\\forgeai\\generated_projects\\forge_blog_cms\\metadata.json",
+      "plan": {
+        "project_name": "forge_blog_cms",
+        "display_name": "Forge Blog CMS",
+        "features": [
+          "Secure login for authors and role-based access control to ensure authors can only manage their own posts and readers can only view published content.",
+          "Authors can create new posts with title, markdown content, tags, and a cover image URL, and edit existing posts.",
+          "Authors can save posts as drafts for later editing and explicitly publish them when ready, making them visible to readers.",
+          "Authors can delete their own posts, removing them from the system.",
+          "Readers can view a list of all published posts, displaying title, author, date, and tags.",
+          "Readers can filter the list of published posts by selecting one or more tags.",
+          "Readers can click on a post to view its full content, including rendered markdown, title, author, date, tags, and cover image."
+        ],
+        "tech_stack": {
+          "backend": "FastAPI",
+          "database": "SQLite",
+          "auth": "JWT",
+          "frontend": "React + Vite"
+        },
+        "db_entities": [
+          "User",
+          "Post",
+          "Tag",
+          "PostTag"
+        ],
+        "api_modules": [
+          "auth",
+          "users",
+          "posts",
+          "tags"
+        ],
+        "user_stories": [
+          {
+            "role": "Author",
+            "want": "to create a new blog post",
+            "acceptance_criteria": [
+              "I can input a title, markdown content, tags, and a cover image URL.",
+              "The post is saved as a 'draft' by default upon creation.",
+              "I receive confirmation that my post has been successfully created."
+            ]
+          },
+          {
+            "role": "Author",
+            "want": "to save a post as a draft",
+            "acceptance_criteria": [
+              "When I save a post, its status is set to 'draft'.",
+              "Draft posts are not visible to readers.",
+              "I can access and edit my draft posts from my author dashboard."
+            ]
+          },
+          {
+            "role": "Author",
+            "want": "to publish a draft post",
+            "acceptance_criteria": [
+              "I can change the status of a draft post to 'published'.",
+              "The published post immediately appears in the list of posts visible to readers.",
+              "The published post displays its title, my name, the publication date, and its tags."
+            ]
+          },
+          {
+            "role": "Author",
+            "want": "to edit an existing post (draft or published)",
+            "acceptance_criteria": [
+              "I can modify the title, content, tags, and cover image URL of any of my posts.",
+              "If the post is published, the changes are reflected immediately for readers.",
+              "I receive confirmation that my post has been successfully updated."
+            ]
+          },
+          {
+            "role": "Reader",
+            "want": "to view a list of all published blog posts",
+            "acceptance_criteria": [
+              "I see a list of posts, each displaying its title, author, publication date, and tags.",
+              "Only 'published' posts are visible in this list.",
+              "The list is ordered by publication date, newest first."
+            ]
+          },
+          {
+            "role": "Reader",
+            "want": "to filter posts by a specific tag",
+            "acceptance_criteria": [
+              "I can select a tag to filter the post list.",
+              "Only posts containing the selected tag are displayed.",
+              "The filter can be cleared to show all published posts again."
+            ]
+          },
+          {
+            "role": "Reader",
+            "want": "to read a full blog post",
+            "acceptance_criteria": [
+              "When I click on a post title, I am taken to a dedicated page for that post.",
+              "The full content (markdown rendered), title, author, publication date, and cover image are displayed.",
+              "The post's tags are also visible on the individual post page."
+            ]
+          }
+        ],
+        "non_functional_requirements": {
+          "authentication": "required — Authors need to log in to manage posts; Readers do not need to log in to view posts.",
+          "authorization": "Authors can only create, edit, delete, and publish their own posts. Readers can only view published posts.",
+          "pagination": "required on: /posts (for readers), /authors/{author_id}/posts (for authors)",
+          "search": "none",
+          "file_uploads": "no",
+          "real_time": "no"
+        },
+        "data_entities_detail": [
+          {
+            "name": "User",
+            "description": "Stores user authentication and profile information.",
+            "key_fields": [
+              "id",
+              "username",
+              "password_hash",
+              "role"
+            ],
+            "relationships": [
+              "has many Post"
+            ]
+          },
+          {
+            "name": "Post",
+            "description": "Stores blog post content and metadata.",
+            "key_fields": [
+              "id",
+              "title",
+              "content_markdown",
+              "cover_image_url",
+              "status",
+              "published_at",
+              "created_at",
+              "updated_at",
+              "author_id"
+            ],
+            "relationships": [
+              "belongs to User",
+              "has many Tag"
+            ]
+          },
+          {
+            "name": "Tag",
+            "description": "Stores categories for blog posts.",
+            "key_fields": [
+              "id",
+              "name"
+            ],
+            "relationships": [
+              "has many Post"
+            ]
+          },
+          {
+            "name": "PostTag",
+            "description": "Junction table for many-to-many relationship between Posts and Tags.",
+            "key_fields": [
+              "post_id",
+              "tag_id"
+            ],
+            "relationships": [
+              "belongs to Post",
+              "belongs to Tag"
+            ]
+          }
+        ],
+        "out_of_scope": [
+          "User registration (authors will be pre-provisioned or invited)",
+          "Comments section for posts",
+          "Rich text editor (only markdown input)",
+          "Advanced search functionality (only tag filtering)",
+          "Analytics or readership metrics",
+          "User profile pages beyond basic author identification"
+        ]
+      },
+      "architecture": {
+        "api_endpoints": [
+          {
+            "method": "POST",
+            "path": "/seed",
+            "description": "Populates database with realistic demo data.",
+            "file": "app\\routes\\seed_routes.py"
+          },
+          {
+            "method": "GET",
+            "path": "/stats/summary",
+            "description": "Returns aggregate counts and key metrics for the dashboard.",
+            "file": "app\\routes\\stats_routes.py"
+          },
+          {
+            "method": "POST",
+            "path": "/auth/login",
+            "description": "Authenticates a user and returns a JWT token.",
+            "file": "app\\routes\\auth_routes.py"
+          },
+          {
+            "method": "GET",
+            "path": "/users/me",
+            "description": "Retrieves the profile of the currently authenticated user.",
+            "file": "app\\routes\\user_routes.py"
+          },
+          {
+            "method": "GET",
+            "path": "/posts",
+            "description": "Retrieves a paginated list of all published blog posts, with optional tag filtering.",
+            "file": "app\\routes\\post_routes.py"
+          },
+          {
+            "method": "GET",
+            "path": "/posts/{post_id}",
+            "description": "Retrieves a single published blog post by its ID.",
+            "file": "app\\routes\\post_routes.py"
+          },
+          {
+            "method": "GET",
+            "path": "/authors/{author_id}/posts",
+            "description": "Retrieves a paginated list of posts by a specific author, including drafts for the author themselves.",
+            "file": "app\\routes\\post_routes.py"
+          },
+          {
+            "method": "POST",
+            "path": "/posts",
+            "description": "Creates a new blog post (initially as a draft).",
+            "file": "app\\routes\\post_routes.py"
+          },
+          {
+            "method": "PUT",
+            "path": "/posts/{post_id}",
+            "description": "Updates an existing blog post by its ID.",
+            "file": "app\\routes\\post_routes.py"
+          },
+          {
+            "method": "PATCH",
+            "path": "/posts/{post_id}/publish",
+            "description": "Publishes a draft post, making it visible to readers.",
+            "file": "app\\routes\\post_routes.py"
+          },
+          {
+            "method": "PATCH",
+            "path": "/posts/{post_id}/unpublish",
+            "description": "Unpublishes a published post, making it a draft again.",
+            "file": "app\\routes\\post_routes.py"
+          },
+          {
+            "method": "DELETE",
+            "path": "/posts/{post_id}",
+            "description": "Deletes a blog post by its ID.",
+            "file": "app\\routes\\post_routes.py"
+          },
+          {
+            "method": "GET",
+            "path": "/tags",
+            "description": "Retrieves a list of all available tags.",
+            "file": "app\\routes\\tag_routes.py"
+          },
+          {
+            "method": "POST",
+            "path": "/tags",
+            "description": "Creates a new tag (admin/author only).",
+            "file": "app\\routes\\tag_routes.py"
+          },
+          {
+            "method": "DELETE",
+            "path": "/tags/{tag_id}",
+            "description": "Deletes a tag (admin/author only).",
+            "file": "app\\routes\\tag_routes.py"
+          }
+        ],
+        "database_schema": [
+          {
+            "table_name": "users",
+            "columns": [
+              {
+                "name": "id",
+                "type": "INTEGER",
+                "is_primary_key": true,
+                "is_nullable": false
+              },
+              {
+                "name": "username",
+                "type": "VARCHAR(50)",
+                "is_primary_key": false,
+                "is_nullable": false
+              },
+              {
+                "name": "password_hash",
+                "type": "VARCHAR(255)",
+                "is_primary_key": false,
+                "is_nullable": false
+              },
+              {
+                "name": "role",
+                "type": "VARCHAR(20)",
+                "is_primary_key": false,
+                "is_nullable": false
+              }
+            ]
+          },
+          {
+            "table_name": "posts",
+            "columns": [
+              {
+                "name": "id",
+                "type": "INTEGER",
+                "is_primary_key": true,
+                "is_nullable": false
+              },
+              {
+                "name": "title",
+                "type": "VARCHAR(255)",
+                "is_primary_key": false,
+                "is_nullable": false
+              },
+              {
+                "name": "content_markdown",
+                "type": "TEXT",
+                "is_primary_key": false,
+                "is_nullable": false
+              },
+              {
+                "name": "cover_image_url",
+                "type": "VARCHAR(255)",
+                "is_primary_key": false,
+                "is_nullable": true
+              },
+              {
+                "name": "status",
+                "type": "VARCHAR(20)",
+                "is_primary_key": false,
+                "is_nullable": false
+              },
+              {
+                "name": "published_at",
+                "type": "DATETIME",
+                "is_primary_key": false,
+                "is_nullable": true
+              },
+              {
+                "name": "created_at",
+                "type": "DATETIME",
+                "is_primary_key": false,
+                "is_nullable": false
+              },
+              {
+                "name": "updated_at",
+                "type": "DATETIME",
+                "is_primary_key": false,
+                "is_nullable": false
+              },
+              {
+                "name": "author_id",
+                "type": "INTEGER",
+                "is_primary_key": false,
+                "is_nullable": false
+              }
+            ]
+          },
+          {
+            "table_name": "tags",
+            "columns": [
+              {
+                "name": "id",
+                "type": "INTEGER",
+                "is_primary_key": true,
+                "is_nullable": false
+              },
+              {
+                "name": "name",
+                "type": "VARCHAR(50)",
+                "is_primary_key": false,
+                "is_nullable": false
+              }
+            ]
+          },
+          {
+            "table_name": "post_tags",
+            "columns": [
+              {
+                "name": "post_id",
+                "type": "INTEGER",
+                "is_primary_key": true,
+                "is_nullable": false
+              },
+              {
+                "name": "tag_id",
+                "type": "INTEGER",
+                "is_primary_key": true,
+                "is_nullable": false
+              }
+            ]
+          }
+        ],
+        "folder_structure": {
+          "backend": [
+            "app/",
+            "app/api/",
+            "app/core/",
+            "app/core/config.py",
+            "app/core/security.py",
+            "app/db/",
+            "app/db/base.py",
+            "app/db/session.py",
+            "app/models/",
+            "app/models/user.py",
+            "app/models/post.py",
+            "app/models/tag.py",
+            "app/models/post_tag.py",
+            "app/schemas/",
+            "app/schemas/user.py",
+            "app/schemas/post.py",
+            "app/schemas/tag.py",
+            "app/schemas/auth.py",
+            "app/services/",
+            "app/services/user_service.py",
+            "app/services/post_service.py",
+            "app/services/tag_service.py",
+            "app/routes/",
+            "app/routes/auth_routes.py",
+            "app/routes/user_routes.py",
+            "app/routes/post_routes.py",
+            "app/routes/tag_routes.py",
+            "app/routes/seed_routes.py",
+            "app/routes/stats_routes.py",
+            "app/main.py"
+          ]
+        },
+        "frontend_structure": {
+          "pages": [
+            "HomePage.jsx",
+            "LoginPage.jsx",
+            "PostListPage.jsx",
+            "PostDetailPage.jsx",
+            "AuthorDashboardPage.jsx",
+            "CreatePostPage.jsx",
+            "EditPostPage.jsx"
+          ],
+          "components": [
+            "Header.jsx",
+            "Footer.jsx",
+            "LoginForm.jsx",
+            "PostCard.jsx",
+            "TagFilter.jsx",
+            "Pagination.jsx",
+            "MarkdownRenderer.jsx",
+            "AuthorPostList.jsx",
+            "PostForm.jsx",
+            "AuthGuard.jsx",
+            "LoadingSpinner.jsx",
+            "ErrorMessage.jsx"
+          ]
+        }
+      },
+      "product_spec": {
+        "display_name": "Forge Blog CMS",
+        "tagline": "A simple, role-based content management system for authors to publish and readers to discover blog posts.",
+        "user_stories": 7,
+        "must_have_features": [
+          "User Authentication & Authorization",
+          "Post Creation & Editing",
+          "Draft & Publish Workflow",
+          "Post Deletion",
+          "Public Post Listing",
+          "Tag-Based Filtering",
+          "Individual Post View"
+        ]
+      },
+      "tech_lead": {
+        "summary": "The proposed architecture provides a solid foundation for the Forge Blog CMS, largely adhering to the project contract and product spec. Key areas for improvement include refining authentication endpoint paths, ensuring consistent authorization enforcement, and optimizing database relationships for performance.",
+        "critical_issues": 2,
+        "warnings": 3
+      },
+      "backend_generation": {
+        "parallel": true,
+        "files": 30
+      },
+      "qa": {
+        "score": 80,
+        "stories_covered": 7,
+        "blockers": [
+          "Protected endpoints lack authentication",
+          "GET /posts/{post_id} implementation typo causing server error"
+        ],
+        "skipped": false
+      },
+      "security": {
+        "score": 78,
+        "risk_level": "medium",
+        "critical_count": 1,
+        "high_count": 5,
+        "skipped": false
+      },
+      "code_review": {
+        "naming_score": 45,
+        "architecture_score": 40,
+        "maintainability_score": 35,
+        "tech_debt_score": 30,
+        "overall_score": 38,
+        "skipped": false
+      },
+      "performance": {
+        "score": 68,
+        "n_plus_one_count": 2,
+        "missing_indexes": 4,
+        "large_payload_risks": 0,
+        "slow_api_warnings": 0,
+        "skipped": false
+      },
+      "frontend_critic": {
+        "design_score": 56,
+        "hierarchy_score": 72,
+        "compliance_score": 45,
+        "polish_score": 50,
+        "consistency_score": 60,
+        "files_polished": 2,
+        "skipped": false
+      },
+      "validation": {
+        "passed": true,
+        "errors": [],
+        "diagnostics": []
+      },
+      "runtime": {
+        "success": false,
+        "healthy": true,
+        "exit_code": 0,
+        "stdout": "INFO:     127.0.0.1:60136 - \"GET /health HTTP/1.1\" 200 OK\nINFO:     127.0.0.1:60139 - \"GET /docs HTTP/1.1\" 200 OK\nINFO:     127.0.0.1:60140 - \"POST /auth/signup HTTP/1.1\" 500 Internal Server Error\nINFO:     127.0.0.1:60141 - \"POST /auth/register HTTP/1.1\" 500 Internal Server Error\nINFO:     127.0.0.1:60142 - \"GET /openapi.json HTTP/1.1\" 200 OK\nINFO:     127.0.0.1:60143 - \"POST /auth/login HTTP/1.1\" 401 Unauthorized\nINFO:     127.0.0.1:60144 - \"POST /auth/login HTTP/1.1\" 401 Unauthorized\nINFO:     127.0.0.1:60145 - \"POST /auth/login HTTP/1.1\" 422 Unprocessable Content\nINFO:     127.0.0.1:60146 - \"POST /seed HTTP/1.1\" 500 Internal Server Error\nINFO:     127.0.0.1:60147 - \"GET /openapi.json HTTP/1.1\" 200 OK\nINFO:     127.0.0.1:60148 - \"POST /posts HTTP/1.1\" 401 Unauthorized\nINFO:     127.0.0.1:60149 - \"GET /posts HTTP/1.1\" 200 OK\nINFO:     127.0.0.1:60150 - \"POST /auth/logout HTTP/1.1\" 401 Unauthorized\nINFO:     127.0.0.1:60151 - \"POST /auth/login HTTP/1.1\" 401 Unauthorized\nINFO:     127.0.0.1:60152 - \"POST /auth/login HTTP/1.1\" 422 Unprocessable Content\nINFO:     127.0.0.1:60153 - \"GET /stats/summary HTTP/1.1\" 200 OK\nINFO:     127.0.0.1:60154 - \"POST /auth/login HTTP/1.1\" 422 Unprocessable Content\nINFO:     127.0.0.1:60155 - \"GET /users/me HTTP/1.1\" 401 Unauthorized\nINFO:     127.0.0.1:60156 - \"GET /posts HTTP/1.1\" 200 OK\nINFO:     127.0.0.1:60157 - \"GET /posts/1 HTTP/1.1\" 404 Not Found\nINFO:     127.0.0.1:60158 - \"GET /authors/1/posts HTTP/1.1\" 401 Unauthorized\nINFO:     127.0.0.1:60159 - \"POST /posts HTTP/1.1\" 401 Unauthorized\nINFO:     127.0.0.1:60160 - \"PUT /posts/1 HTTP/1.1\" 401 Unauthorized\nINFO:     127.0.0.1:60161 - \"DELETE /posts/1 HTTP/1.1\" 401 Unauthorized\nINFO:     127.0.0.1:60162 - \"GET /tags HTTP/1.1\" 200 OK\nINFO:     127.0.0.1:60163 - \"POST /tags HTTP/1.1\" 401 Unauthorized\nINFO:     127.0.0.1:60164 - \"DELETE /tags/1 HTTP/1.1\" 401 Unauthorized\n",
+        "stderr": "INFO:     Started server process [26880]\nINFO:     Waiting for application startup.\nINFO:     Application startup complete.\nINFO:     Uvicorn running on http://127.0.0.1:8001 (Press CTRL+C to quit)\nERROR:    Exception in ASGI application\nTraceback (most recent call last):\n  File \"C:\\Users\\jerry\\onedrive\\Desktop\\forgeai\\backend\\venv\\Lib\\site-packages\\uvicorn\\protocols\\http\\httptools_impl.py\", line 421, in run_asgi\n    result = await app(  # type: ignore[func-returns-value]\n             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n        self.scope, self.receive, self.send\n        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n    )\n    ^\n  File \"C:\\Users\\jerry\\onedrive\\Desktop\\forgeai\\backend\\venv\\Lib\\site-packages\\uvicorn\\middleware\\proxy_headers.py\", line 62, in __call__\n    return await self.app(scope, receive, send)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"C:\\Users\\jerry\\onedrive\\Desktop\\forgeai\\backend\\venv\\Lib\\site-packages\\fastapi\\applications.py\", line 1159, in __call__\n    await super().__call__(scope, receive, send)\n  File \"C:\\Users\\jerry\\onedrive\\Desktop\\forgeai\\backend\\venv\\Lib\\site-packages\\starlette\\applications.py\", line 90, in __call__\n    await self.middleware_stack(scope, receive, send)\n  File \"C:\\Users\\jerry\\onedrive\\Desktop\\forgeai\\backend\\venv\\Lib\\site-packages\\starlette\\middleware\\errors.py\", line 186, in __call__\n    raise exc\n  File \"C:\\Users\\jerry\\onedrive\\Desktop\\forgeai\\backend\\venv\\Lib\\site-packages\\starlette\\middleware\\errors.py\", line 164, in __call__\n    await self.app(scope, receive, _send)\n  File \"C:\\Users\\jerry\\onedrive\\Desktop\\forgeai\\backend\\venv\\Lib\\site-packages\\starlette\\middleware\\cors.py\", line 88, in __call__\n    await self.app(scope, receive, send)\n  File \"C:\\Users\\jerry\\onedrive\\Desktop\\forgeai\\backend\\venv\\Lib\\site-packages\\starlette\\middleware\\exceptions.py\", line 63, in __call__\n    await wrap_app_handling_exceptions(self.app, conn)(scope, receive, send)\n  File \"C:\\Users\\jerry\\onedrive\\Desktop\\forgeai\\backend\\venv\\Lib\\site-packages\\starlette\\_exception_handler.py\", line 53, in wrapped_app\n    raise exc\n  File \"C:\\Users\\jerry\\onedrive\\Desktop\\forgeai\\backend\\venv\\Lib\\site-packages\\starlette\\_exception_handler.py\", line 42, in wrapped_app\n    await app(scope, receive, sender)\n  File \"C:\\Users\\jerry\\onedrive\\Desktop\\forgeai\\backend\\venv\\Lib\\site-packages\\fastapi\\middleware\\asyncexitstack.py\", line 18, in __call__\n    await self.app(scope, receive, send)\n  File \"C:\\Users\\jerry\\onedrive\\Desktop\\forgeai\\backend\\venv\\Lib\\site-packages\\starlette\\routing.py\", line 660, in __call__\n    await self.middleware_stack(scope, receive, send)\n  File \"C:\\Users\\jerry\\onedrive\\Desktop\\forgeai\\backend\\venv\\Lib\\site-packages\\starlette\\routing.py\", line 680, in app\n    await route.handle(scope, receive, send)\n  File \"C:\\Users\\jerry\\onedrive\\Desktop\\forgeai\\backend\\venv\\Lib\\site-packages\\starlette\\routing.py\", line 276, in handle\n    await self.app(scope, receive, send)\n  File \"C:\\Users\\jerry\\onedrive\\Desktop\\forgeai\\backend\\venv\\Lib\\site-packages\\fastapi\\routing.py\", line 134, in app\n    await wrap_app_handling_exceptions(app, request)(scope, receive, send)\n  File \"C:\\Users\\jerry\\onedrive\\Desktop\\forgeai\\backend\\venv\\Lib\\site-packages\\starlette\\_exception_handler.py\", line 53, in wrapped_app\n    raise exc\n  File \"C:\\Users\\jerry\\onedrive\\Desktop\\forgeai\\backend\\venv\\Lib\\site-packages\\starlette\\_exception_handler.py\", line 42, in wrapped_app\n    await app(scope, receive, sender)\n  File \"C:\\Users\\jerry\\onedrive\\Desktop\\forgeai\\backend\\venv\\Lib\\site-packages\\fastapi\\routing.py\", line 120, in app\n    response = await f(request)\n               ^^^^^^^^^^^^^^^^\n  File \"C:\\Users\\jerry\\onedrive\\Desktop\\forgeai\\backend\\venv\\Lib\\site-packages\\fastapi\\routing.py\", line 674, in app\n    raw_response = await run_endpoint_function(\n                   ^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n    ...<3 lines>...\n    )\n    ^\n  File \"C:\\Users\\jerry\\onedrive\\Desktop\\forgeai\\backend\\venv\\Lib\\site-packages\\fastapi\\routing.py\", line 330, in run_endpoint_function\n    return await run_in_threadpool(dependant.call, **values)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"C:\\Users\\jerry\\onedrive\\Desktop\\forgeai\\backend\\venv\\Lib\\site-packages\\starlette\\concurrency.py\", line 34, in run_in_threadpool\n    return await anyio.to_thread.run_sync(func)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"C:\\Users\\jerry\\onedrive\\Desktop\\forgeai\\backend\\venv\\Lib\\site-packages\\anyio\\to_thread.py\", line 63, in run_sync\n    return await get_async_backend().run_sync_in_worker_thread(\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n        func, args, abandon_on_cancel=abandon_on_cancel, limiter=limiter\n        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n    )\n    ^\n  File \"C:\\Users\\jerry\\onedrive\\Desktop\\forgeai\\backend\\venv\\Lib\\site-packages\\anyio\\_backends\\_asyncio.py\", line 2518, in run_sync_in_worker_thread\n    return await future\n           ^^^^^^^^^^^^\n  File \"C:\\Users\\jerry\\onedrive\\Desktop\\forgeai\\backend\\venv\\Lib\\site-packages\\anyio\\_backends\\_asyncio.py\", line 1002, in run\n    result = context.run(func, *args)\n  File \"C:\\Users\\jerry\\onedrive\\Desktop\\forgeai\\generated_projects\\forge_blog_cms\\app\\routes\\auth_routes.py\", line 96, in signup\n    user = _make_user(req.email, req.password, req.username)\n                                               ^^^^^^^^^^^^\n  File \"C:\\Users\\jerry\\onedrive\\Desktop\\forgeai\\backend\\venv\\Lib\\site-packages\\pydantic\\main.py\", line 1042, in __getattr__\n    raise AttributeError(f'{type(self).__name__!r} object has no attribute {item!r}')\nAttributeError: 'SignupRequest' object has no attribute 'username'\nERROR:    Exception in ASGI application\nTraceback (most recent call last):\n  File \"C:\\Users\\jerry\\onedrive\\Desktop\\forgeai\\backend\\venv\\Lib\\site-packages\\uvicorn\\protocols\\http\\httptools_impl.py\", line 421, in run_asgi\n    result = await app(  # type: ignore[func-returns-value]\n             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n        self.scope, self.receive, self.send\n        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n    )\n    ^\n  File \"C:\\Users\\jerry\\onedrive\\Desktop\\forgeai\\backend\\venv\\Lib\\site-packages\\uvicorn\\middleware\\proxy_headers.py\", line 62, in __call__\n    return await self.app(scope, receive, send)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"C:\\Users\\jerry\\onedrive\\Desktop\\forgeai\\backend\\venv\\Lib\\site-packages\\fastapi\\applications.py\", line 1159, in __call__\n    await super().__call__(scope, receive, send)\n  File \"C:\\Users\\jerry\\onedrive\\Desktop\\forgeai\\backend\\venv\\Lib\\site-packages\\starlette\\applications.py\", line 90, in __call__\n    await self.middleware_stack(scope, receive, send)\n  File \"C:\\Users\\jerry\\onedrive\\Desktop\\forgeai\\backend\\venv\\Lib\\site-packages\\starlette\\middleware\\errors.py\", line 186, in __call__\n    raise exc\n  File \"C:\\Users\\jerry\\onedrive\\Desktop\\forgeai\\backend\\venv\\Lib\\site-packages\\starlette\\middleware\\errors.py\", line 164, in __call__\n    await self.app(scope, receive, _send)\n  File \"C:\\Users\\jerry\\onedrive\\Desktop\\forgeai\\backend\\venv\\Lib\\site-packages\\starlette\\middleware\\cors.py\", line 88, in __call__\n    await self.app(scope, receive, send)\n  File \"C:\\Users\\jerry\\onedrive\\Desktop\\forgeai\\backend\\venv\\Lib\\site-packages\\starlette\\middleware\\exceptions.py\", line 63, in __call__\n    await wrap_app_handling_exceptions(self.app, conn)(scope, receive, send)\n  File \"C:\\Users\\jerry\\onedrive\\Desktop\\forgeai\\backend\\venv\\Lib\\site-packages\\starlette\\_exception_handler.py\", line 53, in wrapped_app\n    raise exc\n  File \"C:\\Users\\jerry\\onedrive\\Desktop\\forgeai\\backend\\venv\\Lib\\site-packages\\starlette\\_exception_handler.py\", line 42, in wrapped_app\n    await app(scope, receive, sender)\n  File \"C:\\Users\\jerry\\onedrive\\Desktop\\forgeai\\backend\\venv\\Lib\\site-packages\\fastapi\\middleware\\asyncexitstack.py\", line 18, in __call__\n    await self.app(scope, receive, send)\n  File \"C:\\Users\\jerry\\onedrive\\Desktop\\forgeai\\backend\\venv\\Lib\\site-packages\\starlette\\routing.py\", line 660, in __call__\n    await self.middleware_stack(scope, receive, send)\n  File \"C:\\Users\\jerry\\onedrive\\Desktop\\forgeai\\backend\\venv\\Lib\\site-packages\\starlette\\routing.py\", line 680, in app\n    await route.handle(scope, receive, send)\n  File \"C:\\Users\\jerry\\onedrive\\Desktop\\forgeai\\backend\\venv\\Lib\\site-packages\\starlette\\routing.py\", line 276, in handle\n    await self.app(scope, receive, send)\n  File \"C:\\Users\\jerry\\onedrive\\Desktop\\forgeai\\backend\\venv\\Lib\\site-packages\\fastapi\\routing.py\", line 134, in app\n    await wrap_app_handling_exceptions(app, request)(scope, receive, send)\n  File \"C:\\Users\\jerry\\onedrive\\Desktop\\forgeai\\backend\\venv\\Lib\\site-packages\\starlette\\_exception_handler.py\", line 53, in wrapped_app\n    raise exc\n  File \"C:\\Users\\jerry\\onedrive\\Desktop\\forgeai\\backend\\venv\\Lib\\site-packages\\starlette\\_exception_handler.py\", line 42, in wrapped_app\n    await app(scope, receive, sender)\n  File \"C:\\Users\\jerry\\onedrive\\Desktop\\forgeai\\backend\\venv\\Lib\\site-packages\\fastapi\\routing.py\", line 120, in app\n    response = await f(request)\n               ^^^^^^^^^^^^^^^^\n  File \"C:\\Users\\jerry\\onedrive\\Desktop\\forgeai\\backend\\venv\\Lib\\site-packages\\fastapi\\routing.py\", line 674, in app\n    raw_response = await run_endpoint_function(\n                   ^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n    ...<3 lines>...\n    )\n    ^\n  File \"C:\\Users\\jerry\\onedrive\\Desktop\\forgeai\\backend\\venv\\Lib\\site-packages\\fastapi\\routing.py\", line 330, in run_endpoint_function\n    return await run_in_threadpool(dependant.call, **values)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"C:\\Users\\jerry\\onedrive\\Desktop\\forgeai\\backend\\venv\\Lib\\site-packages\\starlette\\concurrency.py\", line 34, in run_in_threadpool\n    return await anyio.to_thread.run_sync(func)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"C:\\Users\\jerry\\onedrive\\Desktop\\forgeai\\backend\\venv\\Lib\\site-packages\\anyio\\to_thread.py\", line 63, in run_sync\n    return await get_async_backend().run_sync_in_worker_thread(\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n        func, args, abandon_on_cancel=abandon_on_cancel, limiter=limiter\n        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n    )\n    ^\n  File \"C:\\Users\\jerry\\onedrive\\Desktop\\forgeai\\backend\\venv\\Lib\\site-packages\\anyio\\_backends\\_asyncio.py\", line 2518, in run_sync_in_worker_thread\n    return await future\n           ^^^^^^^^^^^^\n  File \"C:\\Users\\jerry\\onedrive\\Desktop\\forgeai\\backend\\venv\\Lib\\site-packages\\anyio\\_backends\\_asyncio.py\", line 1002, in run\n    result = context.run(func, *args)\n  File \"C:\\Users\\jerry\\onedrive\\Desktop\\forgeai\\generated_projects\\forge_blog_cms\\app\\routes\\auth_routes.py\", line 96, in signup\n    user = _make_user(req.email, req.password, req.username)\n                                               ^^^^^^^^^^^^\n  File \"C:\\Users\\jerry\\onedrive\\Desktop\\forgeai\\backend\\venv\\Lib\\site-packages\\pydantic\\main.py\", line 1042, in __getattr__\n    raise AttributeError(f'{type(self).__name__!r} object has no attribute {item!r}')\nAttributeError: 'SignupRequest' object has no attribute 'username'\nERROR:    Exception in ASGI application\nTraceback (most recent call last):\n  File \"C:\\Users\\jerry\\onedrive\\Desktop\\forgeai\\backend\\venv\\Lib\\site-packages\\uvicorn\\protocols\\http\\httptools_impl.py\", line 421, in run_asgi\n    result = await app(  # type: ignore[func-returns-value]\n             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n        self.scope, self.receive, self.send\n        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n    )\n    ^\n  File \"C:\\Users\\jerry\\onedrive\\Desktop\\forgeai\\backend\\venv\\Lib\\site-packages\\uvicorn\\middleware\\proxy_headers.py\", line 62, in __call__\n    return await self.app(scope, receive, send)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"C:\\Users\\jerry\\onedrive\\Desktop\\forgeai\\backend\\venv\\Lib\\site-packages\\fastapi\\applications.py\", line 1159, in __call__\n    await super().__call__(scope, receive, send)\n  File \"C:\\Users\\jerry\\onedrive\\Desktop\\forgeai\\backend\\venv\\Lib\\site-packages\\starlette\\applications.py\", line 90, in __call__\n    await self.middleware_stack(scope, receive, send)\n  File \"C:\\Users\\jerry\\onedrive\\Desktop\\forgeai\\backend\\venv\\Lib\\site-packages\\starlette\\middleware\\errors.py\", line 186, in __call__\n    raise exc\n  File \"C:\\Users\\jerry\\onedrive\\Desktop\\forgeai\\backend\\venv\\Lib\\site-packages\\starlette\\middleware\\errors.py\", line 164, in __call__\n    await self.app(scope, receive, _send)\n  File \"C:\\Users\\jerry\\onedrive\\Desktop\\forgeai\\backend\\venv\\Lib\\site-packages\\starlette\\middleware\\cors.py\", line 88, in __call__\n    await self.app(scope, receive, send)\n  File \"C:\\Users\\jerry\\onedrive\\Desktop\\forgeai\\backend\\venv\\Lib\\site-packages\\starlette\\middleware\\exceptions.py\", line 63, in __call__\n    await wrap_app_handling_exceptions(self.app, conn)(scope, receive, send)\n  File \"C:\\Users\\jerry\\onedrive\\Desktop\\forgeai\\backend\\venv\\Lib\\site-packages\\starlette\\_exception_handler.py\", line 53, in wrapped_app\n    raise exc\n  File \"C:\\Users\\jerry\\onedrive\\Desktop\\forgeai\\backend\\venv\\Lib\\site-packages\\starlette\\_exception_handler.py\", line 42, in wrapped_app\n    await app(scope, receive, sender)\n  File \"C:\\Users\\jerry\\onedrive\\Desktop\\forgeai\\backend\\venv\\Lib\\site-packages\\fastapi\\middleware\\asyncexitstack.py\", line 18, in __call__\n    await self.app(scope, receive, send)\n  File \"C:\\Users\\jerry\\onedrive\\Desktop\\forgeai\\backend\\venv\\Lib\\site-packages\\starlette\\routing.py\", line 660, in __call__\n    await self.middleware_stack(scope, receive, send)\n  File \"C:\\Users\\jerry\\onedrive\\Desktop\\forgeai\\backend\\venv\\Lib\\site-packages\\starlette\\routing.py\", line 680, in app\n    await route.handle(scope, receive, send)\n  File \"C:\\Users\\jerry\\onedrive\\Desktop\\forgeai\\backend\\venv\\Lib\\site-packages\\starlette\\routing.py\", line 276, in handle\n    await self.app(scope, receive, send)\n  File \"C:\\Users\\jerry\\onedrive\\Desktop\\forgeai\\backend\\venv\\Lib\\site-packages\\fastapi\\routing.py\", line 134, in app\n    await wrap_app_handling_exceptions(app, request)(scope, receive, send)\n  File \"C:\\Users\\jerry\\onedrive\\Desktop\\forgeai\\backend\\venv\\Lib\\site-packages\\starlette\\_exception_handler.py\", line 53, in wrapped_app\n    raise exc\n  File \"C:\\Users\\jerry\\onedrive\\Desktop\\forgeai\\backend\\venv\\Lib\\site-packages\\starlette\\_exception_handler.py\", line 42, in wrapped_app\n    await app(scope, receive, sender)\n  File \"C:\\Users\\jerry\\onedrive\\Desktop\\forgeai\\backend\\venv\\Lib\\site-packages\\fastapi\\routing.py\", line 120, in app\n    response = await f(request)\n               ^^^^^^^^^^^^^^^^\n  File \"C:\\Users\\jerry\\onedrive\\Desktop\\forgeai\\backend\\venv\\Lib\\site-packages\\fastapi\\routing.py\", line 674, in app\n    raw_response = await run_endpoint_function(\n                   ^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n    ...<3 lines>...\n    )\n    ^\n  File \"C:\\Users\\jerry\\onedrive\\Desktop\\forgeai\\backend\\venv\\Lib\\site-packages\\fastapi\\routing.py\", line 330, in run_endpoint_function\n    return await run_in_threadpool(dependant.call, **values)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"C:\\Users\\jerry\\onedrive\\Desktop\\forgeai\\backend\\venv\\Lib\\site-packages\\starlette\\concurrency.py\", line 34, in run_in_threadpool\n    return await anyio.to_thread.run_sync(func)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"C:\\Users\\jerry\\onedrive\\Desktop\\forgeai\\backend\\venv\\Lib\\site-packages\\anyio\\to_thread.py\", line 63, in run_sync\n    return await get_async_backend().run_sync_in_worker_thread(\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n        func, args, abandon_on_cancel=abandon_on_cancel, limiter=limiter\n        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n    )\n    ^\n  File \"C:\\Users\\jerry\\onedrive\\Desktop\\forgeai\\backend\\venv\\Lib\\site-packages\\anyio\\_backends\\_asyncio.py\", line 2518, in run_sync_in_worker_thread\n    return await future\n           ^^^^^^^^^^^^\n  File \"C:\\Users\\jerry\\onedrive\\Desktop\\forgeai\\backend\\venv\\Lib\\site-packages\\anyio\\_backends\\_asyncio.py\", line 1002, in run\n    result = context.run(func, *args)\n  File \"C:\\Users\\jerry\\onedrive\\Desktop\\forgeai\\generated_projects\\forge_blog_cms\\app\\routes\\seed_routes.py\", line 24, in seed\n    if not db.query(User).filter(User.name == u[\"username\"]).first():\n                                 ^^^^^^^^^\nAttributeError: type object 'User' has no attribute 'name'\n",
+        "startup_time": 4.729125499725342,
+        "behavioral_issues": [],
+        "total_endpoints": 15,
+        "timeout_count": 0,
+        "error_count": 0,
+        "endpoint_pass_rate": 1.0,
+        "crud_passed": false,
+        "journey": {
+          "success": false,
+          "steps_passed": 4,
+          "steps_failed": 7,
+          "persistence_verified": false,
+          "skipped": false,
+          "skip_reason": "",
+          "entity": "posts",
+          "seed_summary": {},
+          "steps": [
+            {
+              "name": "Register",
+              "passed": false,
+              "detail": "404 (no register/signup endpoint found)",
+              "request": {
+                "method": "POST",
+                "url": "http://127.0.0.1:8001/auth/register",
+                "json": {
+                  "email": "journey@test.com",
+                  "password": "JourneyPass1!"
+                },
+                "has_auth": false
+              },
+              "response": {
+                "status_code": 500,
+                "body": "Internal Server Error"
+              }
+            },
+            {
+              "name": "Login",
+              "passed": true,
+              "detail": "422 @ login (server alive, auth format mismatch)",
+              "request": null,
+              "response": null
+            },
+            {
+              "name": "Detect entity",
+              "passed": true,
+              "detail": "http://127.0.0.1:8001/posts",
+              "request": null,
+              "response": null
+            },
+            {
+              "name": "Create entity",
+              "passed": false,
+              "detail": "401 (auth required, no valid token)",
+              "request": {
+                "method": "POST",
+                "url": "http://127.0.0.1:8001/posts",
+                "json": {
+                  "title": "Journey Test Item",
+                  "name": "Journey Test Item",
+                  "description": "created by V5.5 journey runner",
+                  "published_at": "2026-01-01",
+                  "status": "active",
+                  "cover_image_url": "https://example.com",
+                  "content_markdown": "journey-test"
+                },
+                "has_auth": false
+              },
+              "response": {
+                "status_code": 401,
+                "body": {
+                  "detail": "Not authenticated"
+                }
+              }
+            },
+            {
+              "name": "List entities",
+              "passed": true,
+              "detail": "200 count=?",
+              "request": null,
+              "response": null
+            },
+            {
+              "name": "Edit entity",
+              "passed": false,
+              "detail": "no entity_id captured",
+              "request": null,
+              "response": null
+            },
+            {
+              "name": "Delete entity",
+              "passed": false,
+              "detail": "no entity_id captured",
+              "request": null,
+              "response": null
+            },
+            {
+              "name": "Verify deletion",
+              "passed": false,
+              "detail": "no entity_id",
+              "request": null,
+              "response": null
+            },
+            {
+              "name": "Logout",
+              "passed": true,
+              "detail": "401",
+              "request": null,
+              "response": null
+            },
+            {
+              "name": "Login again",
+              "passed": false,
+              "detail": "re-login failed",
+              "request": {
+                "method": "POST",
+                "url": "http://127.0.0.1:8001/auth/login",
+                "json": {
+                  "username": "journey_test",
+                  "password": "JourneyPass1!"
+                },
+                "has_auth": false
+              },
+              "response": {
+                "status_code": 422,
+                "body": {
+                  "detail": [
+                    {
+                      "type": "missing",
+                      "loc": [
+                        "body",
+                        "email"
+                      ],
+                      "msg": "Field required",
+                      "input": {
+                        "username": "journey_test",
+                        "password": "JourneyPass1!"
+                      }
+                    }
+                  ]
+                }
+              }
+            },
+            {
+              "name": "Verify persistence",
+              "passed": false,
+              "detail": "no entity_id",
+              "request": null,
+              "response": null
+            }
+          ],
+          "total_duration": 0.18
+        },
+        "parsed_error": {
+          "type": "AttributeError",
+          "error_file": "C:\\Users\\jerry\\onedrive\\Desktop\\forgeai\\generated_projects\\forge_blog_cms\\app\\routes\\seed_routes.py"
+        }
+      },
+      "forge_score": {
+        "score": 50,
+        "grade": "F"
+      },
+      "v6_score": {
+        "total": 44,
+        "grade": "F",
+        "dimensions": {
+          "runtime": 30,
+          "security": 63,
+          "performance": 36,
+          "maintainability": 38,
+          "review": 59
+        },
+        "breakdown": {
+          "forge_score": 50,
+          "runtime_passed": false,
+          "static_passed": false,
+          "security_score": 78,
+          "security_critical": 1,
+          "performance_score": 68,
+          "n_plus_one_count": 2,
+          "naming_score": 45,
+          "architecture_score": 40,
+          "maintainability_score": 35,
+          "tech_debt_score": 30,
+          "qa_score": 80,
+          "qa_blockers": 2
+        },
+        "weights": {
+          "runtime": 0.3,
+          "security": 0.25,
+          "performance": 0.15,
+          "maintainability": 0.15,
+          "review": 0.15
+        }
+      },
+      "collaboration_log": [
+        {
+          "agent": "product_manager",
+          "decision": "product_spec_created",
+          "rationale": "A simple, role-based content management system for authors to publish and readers to discover blog posts.",
+          "data": {
+            "features": 7,
+            "user_stories": 7,
+            "must_have": [
+              "User Authentication & Authorization",
+              "Post Creation & Editing",
+              "Draft & Publish Workflow",
+              "Post Deletion",
+              "Public Post Listing",
+              "Tag-Based Filtering",
+              "Individual Post View"
+            ]
+          }
+        },
+        {
+          "agent": "architect",
+          "decision": "architecture_created",
+          "rationale": "15 endpoints across 6 files",
+          "data": {
+            "endpoints": 15
+          }
+        },
+        {
+          "agent": "tech_lead",
+          "decision": "constraints_set",
+          "rationale": "The proposed architecture provides a solid foundation for the Forge Blog CMS, largely adhering to the project contract and product spec. Key areas for",
+          "data": {
+            "critical_issues": 2,
+            "auth_endpoints": 9,
+            "pagination_required": 3
+          }
+        },
+        {
+          "agent": "qa",
+          "decision": "qa_review_complete",
+          "rationale": "QA score: 80/100",
+          "data": {
+            "score": 80,
+            "blockers": [
+              "Protected endpoints lack authentication",
+              "GET /posts/{post_id} implementation typo causing server error"
+            ]
+          }
+        },
+        {
+          "agent": "security",
+          "decision": "security_review_complete",
+          "rationale": "Security score: 78/100",
+          "data": {
+            "score": 78
+          }
+        },
+        {
+          "agent": "code_review",
+          "decision": "code_review_complete",
+          "rationale": "Maintainability: 35/100",
+          "data": {
+            "maintainability_score": 35
+          }
+        },
+        {
+          "agent": "performance",
+          "decision": "performance_review_complete",
+          "rationale": "Performance score: 68/100",
+          "data": {
+            "score": 68
+          }
+        },
+        {
+          "agent": "frontend_critic",
+          "decision": "frontend_critic_complete",
+          "rationale": "Design score: 56/100",
+          "data": {
+            "score": 56
+          }
+        },
+        {
+          "agent": "orchestrator",
+          "decision": "pipeline_complete",
+          "rationale": "V6 score: 44/100",
+          "data": {
+            "total_time": 88.77,
+            "can_export": false
+          }
+        }
+      ],
+      "generation_time_seconds": 88.77,
+      "fix_attempts": 3
+    },
+    "retry_history": [
+      {
+        "attempt": 1,
+        "strategy": "patch_file",
+        "provider": "auto",
+        "score_before": 64.95,
+        "score_after": 71.49,
+        "delta": 6.54
+      },
+      {
+        "attempt": 2,
+        "strategy": "patch_file",
+        "provider": "auto",
+        "score_before": 71.49,
+        "score_after": 72.06,
+        "delta": 0.57
+      },
+      {
+        "attempt": 3,
+        "strategy": "regenerate_arch",
+        "provider": "auto",
+        "score_before": 72.06,
+        "score_after": 66.65,
+        "delta": -5.41
+      },
+      {
+        "attempt": 4,
+        "strategy": "regenerate_arch",
+        "provider": "auto",
+        "score_before": 66.65,
+        "score_after": 71.49,
+        "delta": 4.84
+      },
+      {
+        "attempt": 5,
+        "strategy": "regenerate_arch",
+        "provider": "auto",
+        "score_before": 71.49,
+        "score_after": 71.49,
+        "delta": 0.0
+      }
+    ],
+    "deployment": {
+      "skipped": true,
+      "reason": "Deployment skipped: score 71.5 below deployment threshold (80)"
+    },
+    "project_path": "C:\\Users\\jerry\\onedrive\\Desktop\\forgeai\\generated_projects\\forge_blog_cms",
+    "status": "done",
+    "confidence": {
+      "probability": 0.1387,
+      "pct": 13.87,
+      "grade": "F",
+      "factors": {
+        "base": -0.5,
+        "overall_score": 1.278,
+        "runtime_health": 0.1,
+        "browser_ux": 0.264,
+        "compilation": 0.178,
+        "fix_penalty": -2.0,
+        "critical_errors": -1.0,
+        "historical_base_rate": -0.146
+      },
+      "historical_rate": 0.3333,
+      "historical_n": 84,
+      "verdict": "Not deployment-ready — critical issues likely remain."
+    }
+  },
+  "observed": {
+    "validate_project_calls": [
+      {
+        "elapsed_ms": 763.7,
+        "errors": [
+          "Schema mismatch: app/schemas/comment.py: CommentCreate.content required but model allows NULL",
+          "Schema mismatch: app/schemas/post.py: PostCreate.title required but model allows NULL",
+          "Schema mismatch: app/schemas/post.py: PostCreate.content_markdown required but model allows NULL",
+          "Schema mismatch: app/schemas/post.py: PostCreate.status required but model allows NULL",
+          "Schema mismatch: app/schemas/tag.py: TagCreate.name required but model allows NULL",
+          "Schema mismatch: app/schemas/user.py: UserCreate.username required but model allows NULL",
+          "Schema mismatch: app/schemas/user.py: UserCreate.password_hash required but model allows NULL",
+          "Schema mismatch: app/schemas/user.py: UserCreate.role required but model allows NULL"
+        ],
+        "diagnostics": [
+          {
+            "validator_name": "validate_schema_model_consistency",
+            "category": "contract",
+            "severity": "medium",
+            "file_path": "app/schemas/comment.py",
+            "message": "Schema mismatch: app/schemas/comment.py: CommentCreate.content required but model allows NULL"
+          },
+          {
+            "validator_name": "validate_schema_model_consistency",
+            "category": "contract",
+            "severity": "medium",
+            "file_path": "app/schemas/post.py",
+            "message": "Schema mismatch: app/schemas/post.py: PostCreate.title required but model allows NULL"
+          },
+          {
+            "validator_name": "validate_schema_model_consistency",
+            "category": "contract",
+            "severity": "medium",
+            "file_path": "app/schemas/post.py",
+            "message": "Schema mismatch: app/schemas/post.py: PostCreate.content_markdown required but model allows NULL"
+          },
+          {
+            "validator_name": "validate_schema_model_consistency",
+            "category": "contract",
+            "severity": "medium",
+            "file_path": "app/schemas/post.py",
+            "message": "Schema mismatch: app/schemas/post.py: PostCreate.status required but model allows NULL"
+          },
+          {
+            "validator_name": "validate_schema_model_consistency",
+            "category": "contract",
+            "severity": "medium",
+            "file_path": "app/schemas/tag.py",
+            "message": "Schema mismatch: app/schemas/tag.py: TagCreate.name required but model allows NULL"
+          },
+          {
+            "validator_name": "validate_schema_model_consistency",
+            "category": "contract",
+            "severity": "medium",
+            "file_path": "app/schemas/user.py",
+            "message": "Schema mismatch: app/schemas/user.py: UserCreate.username required but model allows NULL"
+          },
+          {
+            "validator_name": "validate_schema_model_consistency",
+            "category": "contract",
+            "severity": "medium",
+            "file_path": "app/schemas/user.py",
+            "message": "Schema mismatch: app/schemas/user.py: UserCreate.password_hash required but model allows NULL"
+          },
+          {
+            "validator_name": "validate_schema_model_consistency",
+            "category": "contract",
+            "severity": "medium",
+            "file_path": "app/schemas/user.py",
+            "message": "Schema mismatch: app/schemas/user.py: UserCreate.role required but model allows NULL"
+          }
+        ]
+      },
+      {
+        "elapsed_ms": 5140.5,
+        "errors": [],
+        "diagnostics": []
+      },
+      {
+        "elapsed_ms": 5073.5,
+        "errors": [
+          "Missing endpoint POST /auth/login (expected in app/routes/auth_routes.py)",
+          "Missing endpoint POST /auth/login (expected in app/routes/auth_routes.py) -- called from src/pages/LoginPage.jsx but never implemented on the backend"
+        ],
+        "diagnostics": [
+          {
+            "validator_name": "validate_endpoints",
+            "category": "api",
+            "severity": "medium",
+            "file_path": "app/routes/auth_routes.py",
+            "message": "Missing endpoint POST /auth/login (expected in app/routes/auth_routes.py)"
+          },
+          {
+            "validator_name": "validate_frontend_api_calls",
+            "category": "api",
+            "severity": "medium",
+            "file_path": "src/pages/LoginPage.jsx",
+            "message": "Missing endpoint POST /auth/login (expected in app/routes/auth_routes.py) -- called from src/pages/LoginPage.jsx but never implemented on the backend"
+          }
+        ]
+      },
+      {
+        "elapsed_ms": 5303.4,
+        "errors": [],
+        "diagnostics": []
+      },
+      {
+        "elapsed_ms": 688.0,
+        "errors": [
+          "Missing symbol 'author_router' in app/routes/post_routes.py (imported from app/main.py)",
+          "Missing endpoint GET /authors/{author_id}/posts (expected in app/routes/post_routes.py)",
+          "Missing endpoint PATCH /posts/${post.id}\\ (expected in app/routes/post_routes.py) -- called from src/pages/AuthorDashboardPage.jsx but never implemented on the backend",
+          "Schema mismatch: app/schemas/post.py: PostCreate.title required but model allows NULL",
+          "Schema mismatch: app/schemas/post.py: PostCreate.content_markdown required but model allows NULL",
+          "Schema mismatch: app/schemas/post.py: PostCreate.status required but model allows NULL",
+          "Schema mismatch: app/schemas/tag.py: TagCreate.name required but model allows NULL",
+          "Schema mismatch: app/schemas/user.py: UserCreate.username required but model allows NULL",
+          "Schema mismatch: app/schemas/user.py: UserCreate.password_hash required but model allows NULL",
+          "Schema mismatch: app/schemas/user.py: UserCreate.role required but model allows NULL"
+        ],
+        "diagnostics": [
+          {
+            "validator_name": "validate_endpoints",
+            "category": "api",
+            "severity": "medium",
+            "file_path": "app/routes/post_routes.py",
+            "message": "Missing endpoint GET /authors/{author_id}/posts (expected in app/routes/post_routes.py)"
+          },
+          {
+            "validator_name": "validate_frontend_api_calls",
+            "category": "api",
+            "severity": "medium",
+            "file_path": "src/pages/AuthorDashboardPage.jsx",
+            "message": "Missing endpoint PATCH /posts/${post.id}\\ (expected in app/routes/post_routes.py) -- called from src/pages/AuthorDashboardPage.jsx but never implemented on the backend"
+          },
+          {
+            "validator_name": "validate_schema_model_consistency",
+            "category": "contract",
+            "severity": "medium",
+            "file_path": "app/schemas/post.py",
+            "message": "Schema mismatch: app/schemas/post.py: PostCreate.title required but model allows NULL"
+          },
+          {
+            "validator_name": "validate_schema_model_consistency",
+            "category": "contract",
+            "severity": "medium",
+            "file_path": "app/schemas/post.py",
+            "message": "Schema mismatch: app/schemas/post.py: PostCreate.content_markdown required but model allows NULL"
+          },
+          {
+            "validator_name": "validate_schema_model_consistency",
+            "category": "contract",
+            "severity": "medium",
+            "file_path": "app/schemas/post.py",
+            "message": "Schema mismatch: app/schemas/post.py: PostCreate.status required but model allows NULL"
+          },
+          {
+            "validator_name": "validate_schema_model_consistency",
+            "category": "contract",
+            "severity": "medium",
+            "file_path": "app/schemas/tag.py",
+            "message": "Schema mismatch: app/schemas/tag.py: TagCreate.name required but model allows NULL"
+          },
+          {
+            "validator_name": "validate_schema_model_consistency",
+            "category": "contract",
+            "severity": "medium",
+            "file_path": "app/schemas/user.py",
+            "message": "Schema mismatch: app/schemas/user.py: UserCreate.username required but model allows NULL"
+          },
+          {
+            "validator_name": "validate_schema_model_consistency",
+            "category": "contract",
+            "severity": "medium",
+            "file_path": "app/schemas/user.py",
+            "message": "Schema mismatch: app/schemas/user.py: UserCreate.password_hash required but model allows NULL"
+          },
+          {
+            "validator_name": "validate_schema_model_consistency",
+            "category": "contract",
+            "severity": "medium",
+            "file_path": "app/schemas/user.py",
+            "message": "Schema mismatch: app/schemas/user.py: UserCreate.role required but model allows NULL"
+          }
+        ]
+      },
+      {
+        "elapsed_ms": 5031.8,
+        "errors": [],
+        "diagnostics": []
+      },
+      {
+        "elapsed_ms": 203.0,
+        "errors": [
+          "Schema mismatch: app/schemas/post.py: PostCreate.title required but model allows NULL",
+          "Schema mismatch: app/schemas/post.py: PostCreate.content_markdown required but model allows NULL",
+          "Schema mismatch: app/schemas/post.py: PostCreate.status required but model allows NULL",
+          "Schema mismatch: app/schemas/tag.py: TagCreate.name required but model allows NULL",
+          "Schema mismatch: app/schemas/tag.py: TagListResponse.items is required in the response schema but 'items' does not exist as a column on the Tag model",
+          "Schema mismatch: app/schemas/tag.py: TagListResponse.total is required in the response schema but 'total' does not exist as a column on the Tag model",
+          "Schema mismatch: app/schemas/user.py: UserCreate.username required but model allows NULL",
+          "Schema mismatch: app/schemas/user.py: UserCreate.password_hash required but model allows NULL",
+          "Schema mismatch: app/schemas/user.py: UserCreate.role required but model allows NULL"
+        ],
+        "diagnostics": [
+          {
+            "validator_name": "validate_schema_model_consistency",
+            "category": "contract",
+            "severity": "medium",
+            "file_path": "app/schemas/post.py",
+            "message": "Schema mismatch: app/schemas/post.py: PostCreate.title required but model allows NULL"
+          },
+          {
+            "validator_name": "validate_schema_model_consistency",
+            "category": "contract",
+            "severity": "medium",
+            "file_path": "app/schemas/post.py",
+            "message": "Schema mismatch: app/schemas/post.py: PostCreate.content_markdown required but model allows NULL"
+          },
+          {
+            "validator_name": "validate_schema_model_consistency",
+            "category": "contract",
+            "severity": "medium",
+            "file_path": "app/schemas/post.py",
+            "message": "Schema mismatch: app/schemas/post.py: PostCreate.status required but model allows NULL"
+          },
+          {
+            "validator_name": "validate_schema_model_consistency",
+            "category": "contract",
+            "severity": "medium",
+            "file_path": "app/schemas/tag.py",
+            "message": "Schema mismatch: app/schemas/tag.py: TagCreate.name required but model allows NULL"
+          },
+          {
+            "validator_name": "validate_schema_model_consistency",
+            "category": "contract",
+            "severity": "medium",
+            "file_path": "app/schemas/tag.py",
+            "message": "Schema mismatch: app/schemas/tag.py: TagListResponse.items is required in the response schema but 'items' does not exist as a column on the Tag model"
+          },
+          {
+            "validator_name": "validate_schema_model_consistency",
+            "category": "contract",
+            "severity": "medium",
+            "file_path": "app/schemas/tag.py",
+            "message": "Schema mismatch: app/schemas/tag.py: TagListResponse.total is required in the response schema but 'total' does not exist as a column on the Tag model"
+          },
+          {
+            "validator_name": "validate_schema_model_consistency",
+            "category": "contract",
+            "severity": "medium",
+            "file_path": "app/schemas/user.py",
+            "message": "Schema mismatch: app/schemas/user.py: UserCreate.username required but model allows NULL"
+          },
+          {
+            "validator_name": "validate_schema_model_consistency",
+            "category": "contract",
+            "severity": "medium",
+            "file_path": "app/schemas/user.py",
+            "message": "Schema mismatch: app/schemas/user.py: UserCreate.password_hash required but model allows NULL"
+          },
+          {
+            "validator_name": "validate_schema_model_consistency",
+            "category": "contract",
+            "severity": "medium",
+            "file_path": "app/schemas/user.py",
+            "message": "Schema mismatch: app/schemas/user.py: UserCreate.role required but model allows NULL"
+          }
+        ]
+      },
+      {
+        "elapsed_ms": 1408.1,
+        "errors": [],
+        "diagnostics": []
+      },
+      {
+        "elapsed_ms": 290.4,
+        "errors": [
+          "Schema mismatch: app/schemas/post.py: PostCreate.title required but model allows NULL",
+          "Schema mismatch: app/schemas/post.py: PostCreate.content_markdown required but model allows NULL",
+          "Schema mismatch: app/schemas/post.py: PostCreate.status required but model allows NULL",
+          "Schema mismatch: app/schemas/tag.py: TagCreate.name required but model allows NULL",
+          "Schema mismatch: app/schemas/user.py: UserCreate.username required but model allows NULL",
+          "Schema mismatch: app/schemas/user.py: UserCreate.password_hash required but model allows NULL",
+          "Schema mismatch: app/schemas/user.py: UserCreate.role required but model allows NULL"
+        ],
+        "diagnostics": [
+          {
+            "validator_name": "validate_schema_model_consistency",
+            "category": "contract",
+            "severity": "medium",
+            "file_path": "app/schemas/post.py",
+            "message": "Schema mismatch: app/schemas/post.py: PostCreate.title required but model allows NULL"
+          },
+          {
+            "validator_name": "validate_schema_model_consistency",
+            "category": "contract",
+            "severity": "medium",
+            "file_path": "app/schemas/post.py",
+            "message": "Schema mismatch: app/schemas/post.py: PostCreate.content_markdown required but model allows NULL"
+          },
+          {
+            "validator_name": "validate_schema_model_consistency",
+            "category": "contract",
+            "severity": "medium",
+            "file_path": "app/schemas/post.py",
+            "message": "Schema mismatch: app/schemas/post.py: PostCreate.status required but model allows NULL"
+          },
+          {
+            "validator_name": "validate_schema_model_consistency",
+            "category": "contract",
+            "severity": "medium",
+            "file_path": "app/schemas/tag.py",
+            "message": "Schema mismatch: app/schemas/tag.py: TagCreate.name required but model allows NULL"
+          },
+          {
+            "validator_name": "validate_schema_model_consistency",
+            "category": "contract",
+            "severity": "medium",
+            "file_path": "app/schemas/user.py",
+            "message": "Schema mismatch: app/schemas/user.py: UserCreate.username required but model allows NULL"
+          },
+          {
+            "validator_name": "validate_schema_model_consistency",
+            "category": "contract",
+            "severity": "medium",
+            "file_path": "app/schemas/user.py",
+            "message": "Schema mismatch: app/schemas/user.py: UserCreate.password_hash required but model allows NULL"
+          },
+          {
+            "validator_name": "validate_schema_model_consistency",
+            "category": "contract",
+            "severity": "medium",
+            "file_path": "app/schemas/user.py",
+            "message": "Schema mismatch: app/schemas/user.py: UserCreate.role required but model allows NULL"
+          }
+        ]
+      },
+      {
+        "elapsed_ms": 2092.6,
+        "errors": [],
+        "diagnostics": []
+      },
+      {
+        "elapsed_ms": 2046.4,
+        "errors": [],
+        "diagnostics": []
+      }
+    ],
+    "static_validator_stage_calls": [
+      {
+        "status": "failed",
+        "diagnostics": [
+          {
+            "validator_name": "validate_schema_model_consistency",
+            "legacy_adapter_used": false,
+            "category": "contract",
+            "severity": "medium",
+            "file_path": "app/schemas/comment.py",
+            "message": "Schema mismatch: app/schemas/comment.py: CommentCreate.content required but model allows NULL"
+          },
+          {
+            "validator_name": "validate_schema_model_consistency",
+            "legacy_adapter_used": false,
+            "category": "contract",
+            "severity": "medium",
+            "file_path": "app/schemas/post.py",
+            "message": "Schema mismatch: app/schemas/post.py: PostCreate.title required but model allows NULL"
+          },
+          {
+            "validator_name": "validate_schema_model_consistency",
+            "legacy_adapter_used": false,
+            "category": "contract",
+            "severity": "medium",
+            "file_path": "app/schemas/post.py",
+            "message": "Schema mismatch: app/schemas/post.py: PostCreate.content_markdown required but model allows NULL"
+          },
+          {
+            "validator_name": "validate_schema_model_consistency",
+            "legacy_adapter_used": false,
+            "category": "contract",
+            "severity": "medium",
+            "file_path": "app/schemas/post.py",
+            "message": "Schema mismatch: app/schemas/post.py: PostCreate.status required but model allows NULL"
+          },
+          {
+            "validator_name": "validate_schema_model_consistency",
+            "legacy_adapter_used": false,
+            "category": "contract",
+            "severity": "medium",
+            "file_path": "app/schemas/tag.py",
+            "message": "Schema mismatch: app/schemas/tag.py: TagCreate.name required but model allows NULL"
+          },
+          {
+            "validator_name": "validate_schema_model_consistency",
+            "legacy_adapter_used": false,
+            "category": "contract",
+            "severity": "medium",
+            "file_path": "app/schemas/user.py",
+            "message": "Schema mismatch: app/schemas/user.py: UserCreate.username required but model allows NULL"
+          },
+          {
+            "validator_name": "validate_schema_model_consistency",
+            "legacy_adapter_used": false,
+            "category": "contract",
+            "severity": "medium",
+            "file_path": "app/schemas/user.py",
+            "message": "Schema mismatch: app/schemas/user.py: UserCreate.password_hash required but model allows NULL"
+          },
+          {
+            "validator_name": "validate_schema_model_consistency",
+            "legacy_adapter_used": false,
+            "category": "contract",
+            "severity": "medium",
+            "file_path": "app/schemas/user.py",
+            "message": "Schema mismatch: app/schemas/user.py: UserCreate.role required but model allows NULL"
+          }
+        ]
+      },
+      {
+        "status": "passed",
+        "diagnostics": []
+      },
+      {
+        "status": "failed",
+        "diagnostics": [
+          {
+            "validator_name": "validate_endpoints",
+            "legacy_adapter_used": false,
+            "category": "api",
+            "severity": "medium",
+            "file_path": "app/routes/auth_routes.py",
+            "message": "Missing endpoint POST /auth/login (expected in app/routes/auth_routes.py)"
+          },
+          {
+            "validator_name": "validate_frontend_api_calls",
+            "legacy_adapter_used": false,
+            "category": "api",
+            "severity": "medium",
+            "file_path": "src/pages/LoginPage.jsx",
+            "message": "Missing endpoint POST /auth/login (expected in app/routes/auth_routes.py) -- called from src/pages/LoginPage.jsx but never implemented on the backend"
+          }
+        ]
+      },
+      {
+        "status": "passed",
+        "diagnostics": []
+      },
+      {
+        "status": "failed",
+        "diagnostics": [
+          {
+            "validator_name": null,
+            "legacy_adapter_used": true,
+            "category": "import",
+            "severity": "medium",
+            "file_path": "app/routes/post_routes.py",
+            "message": "Missing symbol 'author_router' in app/routes/post_routes.py (imported from app/main.py)"
+          },
+          {
+            "validator_name": "validate_endpoints",
+            "legacy_adapter_used": false,
+            "category": "api",
+            "severity": "medium",
+            "file_path": "app/routes/post_routes.py",
+            "message": "Missing endpoint GET /authors/{author_id}/posts (expected in app/routes/post_routes.py)"
+          },
+          {
+            "validator_name": "validate_frontend_api_calls",
+            "legacy_adapter_used": false,
+            "category": "api",
+            "severity": "medium",
+            "file_path": "src/pages/AuthorDashboardPage.jsx",
+            "message": "Missing endpoint PATCH /posts/${post.id}\\ (expected in app/routes/post_routes.py) -- called from src/pages/AuthorDashboardPage.jsx but never implemented on the backend"
+          },
+          {
+            "validator_name": "validate_schema_model_consistency",
+            "legacy_adapter_used": false,
+            "category": "contract",
+            "severity": "medium",
+            "file_path": "app/schemas/post.py",
+            "message": "Schema mismatch: app/schemas/post.py: PostCreate.title required but model allows NULL"
+          },
+          {
+            "validator_name": "validate_schema_model_consistency",
+            "legacy_adapter_used": false,
+            "category": "contract",
+            "severity": "medium",
+            "file_path": "app/schemas/post.py",
+            "message": "Schema mismatch: app/schemas/post.py: PostCreate.content_markdown required but model allows NULL"
+          },
+          {
+            "validator_name": "validate_schema_model_consistency",
+            "legacy_adapter_used": false,
+            "category": "contract",
+            "severity": "medium",
+            "file_path": "app/schemas/post.py",
+            "message": "Schema mismatch: app/schemas/post.py: PostCreate.status required but model allows NULL"
+          },
+          {
+            "validator_name": "validate_schema_model_consistency",
+            "legacy_adapter_used": false,
+            "category": "contract",
+            "severity": "medium",
+            "file_path": "app/schemas/tag.py",
+            "message": "Schema mismatch: app/schemas/tag.py: TagCreate.name required but model allows NULL"
+          },
+          {
+            "validator_name": "validate_schema_model_consistency",
+            "legacy_adapter_used": false,
+            "category": "contract",
+            "severity": "medium",
+            "file_path": "app/schemas/user.py",
+            "message": "Schema mismatch: app/schemas/user.py: UserCreate.username required but model allows NULL"
+          },
+          {
+            "validator_name": "validate_schema_model_consistency",
+            "legacy_adapter_used": false,
+            "category": "contract",
+            "severity": "medium",
+            "file_path": "app/schemas/user.py",
+            "message": "Schema mismatch: app/schemas/user.py: UserCreate.password_hash required but model allows NULL"
+          },
+          {
+            "validator_name": "validate_schema_model_consistency",
+            "legacy_adapter_used": false,
+            "category": "contract",
+            "severity": "medium",
+            "file_path": "app/schemas/user.py",
+            "message": "Schema mismatch: app/schemas/user.py: UserCreate.role required but model allows NULL"
+          }
+        ]
+      },
+      {
+        "status": "passed",
+        "diagnostics": []
+      },
+      {
+        "status": "failed",
+        "diagnostics": [
+          {
+            "validator_name": "validate_schema_model_consistency",
+            "legacy_adapter_used": false,
+            "category": "contract",
+            "severity": "medium",
+            "file_path": "app/schemas/post.py",
+            "message": "Schema mismatch: app/schemas/post.py: PostCreate.title required but model allows NULL"
+          },
+          {
+            "validator_name": "validate_schema_model_consistency",
+            "legacy_adapter_used": false,
+            "category": "contract",
+            "severity": "medium",
+            "file_path": "app/schemas/post.py",
+            "message": "Schema mismatch: app/schemas/post.py: PostCreate.content_markdown required but model allows NULL"
+          },
+          {
+            "validator_name": "validate_schema_model_consistency",
+            "legacy_adapter_used": false,
+            "category": "contract",
+            "severity": "medium",
+            "file_path": "app/schemas/post.py",
+            "message": "Schema mismatch: app/schemas/post.py: PostCreate.status required but model allows NULL"
+          },
+          {
+            "validator_name": "validate_schema_model_consistency",
+            "legacy_adapter_used": false,
+            "category": "contract",
+            "severity": "medium",
+            "file_path": "app/schemas/tag.py",
+            "message": "Schema mismatch: app/schemas/tag.py: TagCreate.name required but model allows NULL"
+          },
+          {
+            "validator_name": "validate_schema_model_consistency",
+            "legacy_adapter_used": false,
+            "category": "contract",
+            "severity": "medium",
+            "file_path": "app/schemas/tag.py",
+            "message": "Schema mismatch: app/schemas/tag.py: TagListResponse.items is required in the response schema but 'items' does not exist as a column on the Tag model"
+          },
+          {
+            "validator_name": "validate_schema_model_consistency",
+            "legacy_adapter_used": false,
+            "category": "contract",
+            "severity": "medium",
+            "file_path": "app/schemas/tag.py",
+            "message": "Schema mismatch: app/schemas/tag.py: TagListResponse.total is required in the response schema but 'total' does not exist as a column on the Tag model"
+          },
+          {
+            "validator_name": "validate_schema_model_consistency",
+            "legacy_adapter_used": false,
+            "category": "contract",
+            "severity": "medium",
+            "file_path": "app/schemas/user.py",
+            "message": "Schema mismatch: app/schemas/user.py: UserCreate.username required but model allows NULL"
+          },
+          {
+            "validator_name": "validate_schema_model_consistency",
+            "legacy_adapter_used": false,
+            "category": "contract",
+            "severity": "medium",
+            "file_path": "app/schemas/user.py",
+            "message": "Schema mismatch: app/schemas/user.py: UserCreate.password_hash required but model allows NULL"
+          },
+          {
+            "validator_name": "validate_schema_model_consistency",
+            "legacy_adapter_used": false,
+            "category": "contract",
+            "severity": "medium",
+            "file_path": "app/schemas/user.py",
+            "message": "Schema mismatch: app/schemas/user.py: UserCreate.role required but model allows NULL"
+          }
+        ]
+      },
+      {
+        "status": "passed",
+        "diagnostics": []
+      },
+      {
+        "status": "failed",
+        "diagnostics": [
+          {
+            "validator_name": "validate_schema_model_consistency",
+            "legacy_adapter_used": false,
+            "category": "contract",
+            "severity": "medium",
+            "file_path": "app/schemas/post.py",
+            "message": "Schema mismatch: app/schemas/post.py: PostCreate.title required but model allows NULL"
+          },
+          {
+            "validator_name": "validate_schema_model_consistency",
+            "legacy_adapter_used": false,
+            "category": "contract",
+            "severity": "medium",
+            "file_path": "app/schemas/post.py",
+            "message": "Schema mismatch: app/schemas/post.py: PostCreate.content_markdown required but model allows NULL"
+          },
+          {
+            "validator_name": "validate_schema_model_consistency",
+            "legacy_adapter_used": false,
+            "category": "contract",
+            "severity": "medium",
+            "file_path": "app/schemas/post.py",
+            "message": "Schema mismatch: app/schemas/post.py: PostCreate.status required but model allows NULL"
+          },
+          {
+            "validator_name": "validate_schema_model_consistency",
+            "legacy_adapter_used": false,
+            "category": "contract",
+            "severity": "medium",
+            "file_path": "app/schemas/tag.py",
+            "message": "Schema mismatch: app/schemas/tag.py: TagCreate.name required but model allows NULL"
+          },
+          {
+            "validator_name": "validate_schema_model_consistency",
+            "legacy_adapter_used": false,
+            "category": "contract",
+            "severity": "medium",
+            "file_path": "app/schemas/user.py",
+            "message": "Schema mismatch: app/schemas/user.py: UserCreate.username required but model allows NULL"
+          },
+          {
+            "validator_name": "validate_schema_model_consistency",
+            "legacy_adapter_used": false,
+            "category": "contract",
+            "severity": "medium",
+            "file_path": "app/schemas/user.py",
+            "message": "Schema mismatch: app/schemas/user.py: UserCreate.password_hash required but model allows NULL"
+          },
+          {
+            "validator_name": "validate_schema_model_consistency",
+            "legacy_adapter_used": false,
+            "category": "contract",
+            "severity": "medium",
+            "file_path": "app/schemas/user.py",
+            "message": "Schema mismatch: app/schemas/user.py: UserCreate.role required but model allows NULL"
+          }
+        ]
+      },
+      {
+        "status": "passed",
+        "diagnostics": []
+      },
+      {
+        "status": "passed",
+        "diagnostics": []
+      }
+    ],
+    "write_fix_calls": [
+      {
+        "path": "src\\pages\\PostListPage.jsx",
+        "has_content": true,
+        "write_succeeded": true
+      },
+      {
+        "path": "src\\pages\\PostDetailPage.jsx",
+        "has_content": true,
+        "write_succeeded": true
+      },
+      {
+        "path": "src\\pages\\AuthorDashboardPage.jsx",
+        "has_content": true,
+        "write_succeeded": true
+      },
+      {
+        "path": "src\\pages\\CreatePostPage.jsx",
+        "has_content": true,
+        "write_succeeded": true
+      },
+      {
+        "path": "src\\pages\\EditPostPage.jsx",
+        "has_content": true,
+        "write_succeeded": true
+      },
+      {
+        "path": "src\\pages\\LoginPage.jsx",
+        "has_content": true,
+        "write_succeeded": true
+      },
+      {
+        "path": "app\\routes\\post_routes.py",
+        "has_content": true,
+        "write_succeeded": true
+      },
+      {
+        "path": "app\\routes\\tag_routes.py",
+        "has_content": true,
+        "write_succeeded": true
+      },
+      {
+        "path": "app\\schemas\\post.py",
+        "has_content": true,
+        "write_succeeded": true
+      },
+      {
+        "path": "app\\schemas\\tag.py",
+        "has_content": true,
+        "write_succeeded": true
+      },
+      {
+        "path": "app\\routes\\post_routes.py",
+        "has_content": true,
+        "write_succeeded": true
+      },
+      {
+        "path": "app\\models\\comments.py",
+        "has_content": true,
+        "write_succeeded": true
+      },
+      {
+        "path": "app\\schemas\\comment.py",
+        "has_content": true,
+        "write_succeeded": true
+      },
+      {
+        "path": "src\\pages\\HomePage.jsx",
+        "has_content": true,
+        "write_succeeded": true
+      },
+      {
+        "path": "src\\components\\Header.jsx",
+        "has_content": true,
+        "write_succeeded": true
+      },
+      {
+        "path": "app\\routes\\seed_routes.py",
+        "has_content": true,
+        "write_succeeded": true
+      },
+      {
+        "path": "app\\routes\\post_routes.py",
+        "has_content": true,
+        "write_succeeded": true
+      },
+      {
+        "path": "src\\pages\\PostListPage.jsx",
+        "has_content": true,
+        "write_succeeded": true
+      },
+      {
+        "path": "src\\pages\\PostDetailPage.jsx",
+        "has_content": true,
+        "write_succeeded": true
+      },
+      {
+        "path": "src\\pages\\AuthorDashboardPage.jsx",
+        "has_content": true,
+        "write_succeeded": true
+      },
+      {
+        "path": "src\\pages\\CreatePostPage.jsx",
+        "has_content": true,
+        "write_succeeded": true
+      },
+      {
+        "path": "src\\pages\\EditPostPage.jsx",
+        "has_content": true,
+        "write_succeeded": true
+      },
+      {
+        "path": "src\\pages\\LoginPage.jsx",
+        "has_content": true,
+        "write_succeeded": true
+      },
+      {
+        "path": "app\\routes\\tag_routes.py",
+        "has_content": true,
+        "write_succeeded": true
+      },
+      {
+        "path": "app\\routes\\user_routes.py",
+        "has_content": true,
+        "write_succeeded": true
+      },
+      {
+        "path": "app\\schemas\\tag.py",
+        "has_content": true,
+        "write_succeeded": true
+      },
+      {
+        "path": "app\\routes\\author_routes.py",
+        "has_content": true,
+        "write_succeeded": true
+      },
+      {
+        "path": "app\\routes\\post_routes.py",
+        "has_content": true,
+        "write_succeeded": true
+      },
+      {
+        "path": "app\\routes\\post_routes.py",
+        "has_content": true,
+        "write_succeeded": true
+      },
+      {
+        "path": "app\\schemas\\tag.py",
+        "has_content": true,
+        "write_succeeded": true
+      },
+      {
+        "path": "app\\routes\\post_routes.py",
+        "has_content": true,
+        "write_succeeded": true
+      },
+      {
+        "path": "app\\routes\\post_routes.py",
+        "has_content": true,
+        "write_succeeded": true
+      },
+      {
+        "path": "app\\models\\post_tags.py",
+        "has_content": true,
+        "write_succeeded": true
+      },
+      {
+        "path": "app\\routes\\user_routes.py",
+        "has_content": true,
+        "write_succeeded": true
+      },
+      {
+        "path": "src\\pages\\PostListPage.jsx",
+        "has_content": true,
+        "write_succeeded": true
+      },
+      {
+        "path": "src\\pages\\PostDetailPage.jsx",
+        "has_content": true,
+        "write_succeeded": true
+      },
+      {
+        "path": "src\\pages\\AuthorDashboardPage.jsx",
+        "has_content": true,
+        "write_succeeded": true
+      },
+      {
+        "path": "src\\pages\\CreatePostPage.jsx",
+        "has_content": true,
+        "write_succeeded": true
+      },
+      {
+        "path": "src\\pages\\EditPostPage.jsx",
+        "has_content": true,
+        "write_succeeded": true
+      },
+      {
+        "path": "src\\pages\\LoginPage.jsx",
+        "has_content": true,
+        "write_succeeded": true
+      },
+      {
+        "path": "app\\routes\\post_routes.py",
+        "has_content": true,
+        "write_succeeded": true
+      },
+      {
+        "path": "app\\routes\\tag_routes.py",
+        "has_content": true,
+        "write_succeeded": true
+      },
+      {
+        "path": "app\\schemas\\tag.py",
+        "has_content": true,
+        "write_succeeded": true
+      },
+      {
+        "path": "app\\routes\\author_routes.py",
+        "has_content": true,
+        "write_succeeded": true
+      },
+      {
+        "path": "app\\schemas\\tag.py",
+        "has_content": true,
+        "write_succeeded": true
+      },
+      {
+        "path": "app\\models\\post_tags.py",
+        "has_content": true,
+        "write_succeeded": true
+      },
+      {
+        "path": "src\\pages\\PostListPage.jsx",
+        "has_content": true,
+        "write_succeeded": true
+      },
+      {
+        "path": "src\\pages\\PostDetailPage.jsx",
+        "has_content": true,
+        "write_succeeded": true
+      },
+      {
+        "path": "src\\pages\\AuthorDashboardPage.jsx",
+        "has_content": true,
+        "write_succeeded": true
+      },
+      {
+        "path": "src\\pages\\CreatePostPage.jsx",
+        "has_content": true,
+        "write_succeeded": true
+      },
+      {
+        "path": "src\\pages\\EditPostPage.jsx",
+        "has_content": true,
+        "write_succeeded": true
+      },
+      {
+        "path": "src\\pages\\LoginPage.jsx",
+        "has_content": true,
+        "write_succeeded": true
+      },
+      {
+        "path": "app\\routes\\post_routes.py",
+        "has_content": true,
+        "write_succeeded": true
+      },
+      {
+        "path": "app\\routes\\tag_routes.py",
+        "has_content": true,
+        "write_succeeded": true
+      },
+      {
+        "path": "app\\routes\\author_routes.py",
+        "has_content": true,
+        "write_succeeded": true
+      },
+      {
+        "path": "app\\routes\\user_routes.py",
+        "has_content": true,
+        "write_succeeded": true
+      },
+      {
+        "path": "src\\components\\Header.jsx",
+        "has_content": true,
+        "write_succeeded": true
+      },
+      {
+        "path": "src\\pages\\HomePage.jsx",
+        "has_content": true,
+        "write_succeeded": true
+      },
+      {
+        "path": "app\\routes\\seed_routes.py",
+        "has_content": true,
+        "write_succeeded": false
+      }
+    ]
+  }
+}

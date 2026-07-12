@@ -3,8 +3,26 @@
 import ast
 import os
 
+from app.core.context import Diagnostic, ErrorCategory, ErrorSeverity
 
-def validate_session_management(project_path, errors):
+
+def _add_session(errors, diagnostics, msg, rel_path):
+    errors.append(msg)
+    if diagnostics is not None:
+        # category=CONTRACT (via "session" match), severity=MEDIUM (via
+        # "session leak" match): exact parity with engine.py's heuristics.
+        diagnostics.append(Diagnostic(
+            error_id=Diagnostic.make_id("static", ErrorCategory.CONTRACT, msg, rel_path),
+            category=ErrorCategory.CONTRACT,
+            severity=ErrorSeverity.MEDIUM,
+            source="static",
+            message=msg,
+            file_path=rel_path,
+            validator_name="validate_session_management",
+        ))
+
+
+def validate_session_management(project_path, errors, diagnostics=None):
 
     for root, _, files in os.walk(project_path):
 
@@ -43,12 +61,13 @@ def validate_session_management(project_path, errors):
                         or "with SessionLocal()" in func_source
                     )
                     if not has_close:
-                        errors.append(
+                        rel_path = os.path.relpath(path, project_path).replace(os.sep, "/")
+                        _add_session(errors, diagnostics,
                             f"Session leak risk in "
                             f"{os.path.relpath(path, project_path)}: "
                             f"function '{node.name}' creates a session "
-                            f"directly via SessionLocal() but never closes it"
-                        )
+                            f"directly via SessionLocal() but never closes it",
+                            rel_path)
 
                 # New check: bare Depends() with no managed lifecycle
                 for arg, default in zip(
@@ -68,11 +87,12 @@ def validate_session_management(project_path, errors):
                         getattr(arg.annotation, "id", "") == "Session"
                     ):
                         if ".close()" not in func_source:
-                            errors.append(
+                            rel_path = os.path.relpath(path, project_path).replace(os.sep, "/")
+                            _add_session(errors, diagnostics,
                                 f"Session leak risk in "
                                 f"{os.path.relpath(path, project_path)}: "
                                 f"function '{node.name}' uses bare Depends() "
                                 f"for a Session parameter with no lifecycle "
                                 f"management (no get_db generator, no close) — "
-                                f"connections will accumulate per request"
-                            )
+                                f"connections will accumulate per request",
+                                rel_path)

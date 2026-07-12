@@ -74,6 +74,16 @@ class Diagnostic:
     fix_hint:      Optional[str] = None
     related_ids:   list[str]     = field(default_factory=list)
     metadata:      dict[str,Any] = field(default_factory=dict)
+    # Exp060: added for the validator-contract unification. All optional
+    # with safe defaults -- purely additive, every existing keyword-arg
+    # Diagnostic(...) call site in the codebase (confirmed via grep: all
+    # construction is keyword-based, never positional) is unaffected.
+    validator_name: Optional[str]   = None  # e.g. "validate_orm_usage" -- which check produced this
+    column:         Optional[int]   = None  # unused by any current validator; reserved for one that becomes column-precise
+    code:           Optional[str]   = None  # stable machine-readable slug, distinct from error_id's content hash; unused by any current validator, reserved
+    repairable:     Optional[bool]  = None  # None = not yet classified; not derived from fix_hint automatically, to avoid guessing
+    confidence:     Optional[float] = None  # for probabilistic/LLM-judge-style validators; unused by current deterministic checks
+    duration_ms:    Optional[float] = None  # how long the producing validator took, when timed
 
     @staticmethod
     def make_id(source: str, category: "ErrorCategory", message: str, file_path: Optional[str] = None) -> str:

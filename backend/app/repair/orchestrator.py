@@ -25,6 +25,8 @@ from app.core.context import (
 )
 from app.repair.grouper import group_diagnostics
 from app.retry.manager import RetryManager, StrategyConfig
+from app.utils.atomic_write import atomic_write_text
+from app.utils.safe_path import has_windows_drive_or_unc
 
 
 def _safe_patch_target(project_path: Path, rel_path: str) -> Optional[Path]:
@@ -413,19 +415,32 @@ def _synthesize_missing_backend_files(
 
 # ── Group → LLM fix dispatch ──────────────────────────────────────────────────
 
-def _required_endpoints_for_files(ctx: GenerationContext, files: list[str]) -> str:
+def _relevant_endpoints_for_files(ctx: GenerationContext, files: list[str]) -> list[dict]:
     """
-    List endpoints (from the architecture plan) that live in the given files,
-    so a full-file regeneration has an explicit checklist instead of silently
-    dropping endpoints it wasn't focused on fixing.
+    Architecture-plan endpoints that live in the given files. Architecture
+    `file` values can come back with backslashes on Windows generation runs
+    while runtime diagnostics/affected_files always use forward slashes
+    (same normalization endpoint_validator.py's validate_endpoints() already
+    applies to arch_file at line 128) -- without it this comparison silently
+    matched nothing on Windows and the preservation mechanism never fired.
     """
     arch = ctx.architecture
     if not arch:
-        return ""
+        return []
     endpoints = arch.get("api_endpoints", []) if isinstance(arch, dict) else getattr(arch, "api_endpoints", [])
     if not endpoints:
-        return ""
-    relevant = [ep for ep in endpoints if ep.get("file") in files]
+        return []
+    file_set = set(files)
+    return [ep for ep in endpoints if (ep.get("file") or "").replace("\\", "/") in file_set]
+
+
+def _required_endpoints_for_files(ctx: GenerationContext, files: list[str]) -> str:
+    """
+    Format relevant endpoints as a checklist block for a targeted fix prompt,
+    so a full-file regeneration doesn't silently drop endpoints it wasn't
+    focused on fixing.
+    """
+    relevant = _relevant_endpoints_for_files(ctx, files)
     if not relevant:
         return ""
     lines = "\n".join(f"  {ep.get('method')} {ep.get('path')}" for ep in relevant)
@@ -434,6 +449,20 @@ def _required_endpoints_for_files(ctx: GenerationContext, files: list[str]) -> s
         "fix -- do not drop any of them while fixing the errors above):\n"
         f"{lines}\n"
     )
+
+
+def _required_endpoints_map_for_files(ctx: GenerationContext, files: list[str]) -> dict[str, list[str]]:
+    """
+    Same relevant-endpoints lookup as _required_endpoints_for_files(), shaped
+    as {file: [method + path, ...]} -- the dict format generate_architecture_fix()
+    already accepts via its required_endpoints param.
+    """
+    relevant = _relevant_endpoints_for_files(ctx, files)
+    by_file: dict[str, list[str]] = {}
+    for ep in relevant:
+        file_key = (ep.get("file") or "").replace("\\", "/")
+        by_file.setdefault(file_key, []).append(f"{ep.get('method')} {ep.get('path')}")
+    return by_file
 
 
 def _build_fix_prompt(
@@ -808,15 +837,47 @@ def _regenerate_module(
             # object. Together those meant this strategy either crashed
             # straight into the except-fallback below or silently wrote
             # nothing, on every call.
+            required_endpoints_map = _required_endpoints_map_for_files(ctx, affected)
+            if required_endpoints_map:
+                # Exp078: this is the endpoint-preservation mechanism actually
+                # firing -- the whole point of this experiment, since it was
+                # previously wired up but never activated (Exp077). Logged
+                # plainly so a live run's console/generation log makes
+                # activation and preserved-endpoint-count directly observable.
+                total_eps = sum(len(v) for v in required_endpoints_map.values())
+                print(f"    [fix] Endpoint preservation ACTIVE: {total_eps} endpoint(s) "
+                      f"across {len(required_endpoints_map)} file(s) passed to module regen")
             fix_data = generate_architecture_fix(
                 ctx.architecture,
                 [d.message for d in group.diagnostics],
                 cfg.provider,
+                required_endpoints=required_endpoints_map,
             )
             for f in (fix_data or {}).get("files", []):
                 rel = f.get("path", "")
                 content = f.get("content", "")
                 if not rel or not content:
+                    continue
+                # Exp067: defense-in-depth, scoped to this write path only.
+                # _safe_patch_target()'s existing os.path.isabs()+containment
+                # check was empirically verified (not assumed) to already
+                # correctly block "../", multi-segment traversal, absolute
+                # POSIX paths, Windows drive-ABSOLUTE paths ("C:\x"), and
+                # UNC paths on this host -- the one shape it does NOT catch
+                # is a drive-RELATIVE path ("C:evil.py": os.path.isabs()
+                # returns False for this shape on Windows, so it falls into
+                # the relative branch). That shape never escapes the
+                # sandbox either way (it lands inside project_path under a
+                # prefix-stripped name), so this isn't a traversal fix, just
+                # closing an unintended-interpretation gap for a path shape
+                # a legitimate fix would never emit. Checked here, not
+                # inside _safe_patch_target() itself, since that function is
+                # shared by 4 other write call sites in this file this
+                # experiment's "no refactoring outside this write path" rule
+                # puts out of scope (see docs/WRITE_VALIDATION_MATRIX.md).
+                if has_windows_drive_or_unc(rel):
+                    print(f"    [fix] REJECTED module-regen patch for {rel}: "
+                          f"Windows drive/UNC-shaped path")
                     continue
                 target = _safe_patch_target(ctx.project_path, rel)
                 if target is None:
@@ -828,7 +889,12 @@ def _regenerate_module(
                               f"invalid Python syntax -- {syntax_error}")
                         continue
                 target.parent.mkdir(parents=True, exist_ok=True)
-                target.write_text(content, encoding="utf-8")
+                # Exp067: atomic write (temp file + os.replace) instead of a
+                # direct target.write_text() -- same crash-safety argument
+                # as Exp066's write_files()/write_fix() hardening. Identical
+                # final bytes/path on success; no partial file ever visible
+                # on a crash mid-write.
+                atomic_write_text(target, content)
                 modified.append(rel)
                 fix_content_map[rel] = content
         except Exception as exc:

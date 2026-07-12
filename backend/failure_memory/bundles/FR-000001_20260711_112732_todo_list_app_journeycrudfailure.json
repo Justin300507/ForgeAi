@@ -1,0 +1,49 @@
+{
+  "bundle_version": 1,
+  "failure_id": "FR-000001",
+  "timestamp": "2026-07-11T11:27:32.394135Z",
+  "forgeai_version": "19.0",
+  "pipeline_version": "v15",
+  "commit_sha": "d94c485",
+  "project": "todo_list_app",
+  "provider": "openrouter",
+  "model": null,
+  "seed": null,
+  "failure": {
+    "stage": "runtime",
+    "class": "JourneyCRUDFailure",
+    "step": "Create entity"
+  },
+  "request": {
+    "method": "POST",
+    "url": "http://127.0.0.1:8001/tasks",
+    "json": {
+      "title": "Journey Test Item",
+      "name": "Journey Test Item",
+      "description": "created by V5.5 journey runner",
+      "due_date": "2026-01-01",
+      "priority_id": 1,
+      "completed": true
+    },
+    "has_auth": true
+  },
+  "response": {
+    "status_code": 400,
+    "body": {
+      "detail": "Priority ID does not exist"
+    }
+  },
+  "stderr": null,
+  "generation": {
+    "category": null,
+    "style": null,
+    "layout": null,
+    "design_fingerprint_id": null
+  },
+  "artifacts": {
+    "screenshot": null,
+    "console_log": null,
+    "network_log": null,
+    "playwright_trace": null
+  }
+}
