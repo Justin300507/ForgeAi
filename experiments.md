@@ -6253,3 +6253,53 @@ entry, code diff in `backend/app/services/deterministic_patcher.py`, new
 test file
 `backend/tests/reliability/test_exp088_orm_dict_response_conversion.py`.
 **Cost: $0, zero Cerebras calls.**
+
+## Experiment 089: Live-Validate Exp088 (Inconclusive — Pattern Not Generated)
+
+2026-07-13. One Cerebras canary, `todo` app (`benchmarks/golden/01_todo.txt`),
+`backend/scripts/exp089_canary.py`. Same non-invasive instrumentation
+approach as Exp079/082/086: wraps the real
+`app.services.deterministic_patcher._patch_orm_response_model` in-process
+to log every invocation and whether it injected an Exp088
+`model_validate()` conversion, without touching production code.
+
+**Result: no regression, but not a positive confirmation.** The run
+scored 90.1/100 (A), deploy-ready, full CRUD journey pass (11/11),
+14/14 endpoints, no runtime errors — healthy, and consistent with (not
+contradicted by) Exp088 shipping cleanly. But `_patch_orm_response_model`
+fired once (`app/routes/seed_routes.py`) and did **not** inject a
+conversion — this generation's `seed_routes.py` never produced the
+bare-`dict`-response-wrapping-a-raw-ORM-list shape Exp088 targets, so the
+new code path was never exercised live. This run cannot distinguish "the
+fix works" from "the fix wasn't asked to do anything."
+
+Score comparison vs. the last `todo` canary entries is not meaningful
+here — the immediately-prior `todo` run (`exp086-validation-r1`, 76.86,
+`runtime_ok=False`) failed for an unrelated reason (auth field mismatch,
+since fixed in Exp086), so the 76.86 → 90.07 delta is generation
+variance across two different bugs' fix cycles, not an Exp088 signal.
+
+**Why the pattern didn't fire**: `seed_routes.py` is exactly the file
+type Exp088's offline replay (four real on-disk projects) *did* confirm
+triggers the conversion in other generations — the LLM's route-writing
+is non-deterministic per call, so a single live canary isn't guaranteed
+to reproduce the same shape twice. Exp088's $0 offline replay against
+real captured projects (`todo_list_app`, `recipe_share`,
+`simple_notes_app`, `forge_blog_cms`) remains the strongest evidence the
+fix is correct; this canary only adds "and it didn't break anything
+when the pattern wasn't present," which is a weaker but still useful
+data point.
+
+**Disposition**: closing this validation thread as inconclusive rather
+than spending further Cerebras budget chasing a second live repro —
+per the standing credit-discipline rule, one canary per cycle unless
+evidence demands more, and this one didn't surface a new deterministic
+root cause to justify expansion. If a future canary or
+`generation_log.jsonl` entry shows a live `PydanticSerializationError`
+recurrence, that's real signal Exp088 needs a second look; absent that,
+treat Exp087/088 as shipped and confirmed by their offline evidence.
+
+**Deliverables**: `backend/scripts/exp089_canary.py` (already existed
+from the prior session), this entry,
+`backend/benchmark_results/exp089_orm_dict_response_invocations.json`
+(raw instrumentation output). **Cost: ~$0.04, one Cerebras canary.**

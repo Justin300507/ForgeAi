@@ -10394,6 +10394,111 @@
           ]
         }
       ]
+    },
+    {
+      "label": "exp089-validation-r1",
+      "timestamp": "2026-07-12T18:53:18.296771+00:00",
+      "deploy": false,
+      "results": [
+        {
+          "app": "todo",
+          "crashed": false,
+          "forge_score": 90.07,
+          "grade": "A",
+          "build_ok": true,
+          "runtime_ok": true,
+          "crud_ok": true,
+          "browser_ok": false,
+          "deployed": false,
+          "fix_attempts": 0,
+          "elapsed_s": 184.1,
+          "dimensions": [
+            {
+              "name": "Compilation",
+              "score": 94.0,
+              "passed": true,
+              "na": false
+            },
+            {
+              "name": "Runtime Startup",
+              "score": 100.0,
+              "passed": true,
+              "na": false
+            },
+            {
+              "name": "API Functionality",
+              "score": 100.0,
+              "passed": true,
+              "na": false
+            },
+            {
+              "name": "Frontend Load",
+              "score": 100.0,
+              "passed": true,
+              "na": false
+            },
+            {
+              "name": "Browser UX",
+              "score": 58.0,
+              "passed": false,
+              "na": false
+            },
+            {
+              "name": "Integration",
+              "score": 100.0,
+              "passed": true,
+              "na": false
+            },
+            {
+              "name": "Code Quality",
+              "score": 94.0,
+              "passed": false,
+              "na": false
+            },
+            {
+              "name": "Security",
+              "score": 100.0,
+              "passed": true,
+              "na": false
+            },
+            {
+              "name": "Completeness",
+              "score": 100.0,
+              "passed": true,
+              "na": false
+            },
+            {
+              "name": "Performance",
+              "score": 90,
+              "passed": true,
+              "na": false
+            },
+            {
+              "name": "Visual Judge",
+              "score": 45.4,
+              "passed": false,
+              "na": false
+            }
+          ],
+          "confidence": {
+            "probability": 0.9039,
+            "pct": 90.39,
+            "grade": "B+",
+            "factors": {
+              "base": -0.5,
+              "overall_score": 2.028,
+              "runtime_health": 0.5,
+              "browser_ux": 0.174,
+              "compilation": 0.188,
+              "historical_base_rate": -0.149
+            },
+            "historical_rate": 0.3535,
+            "historical_n": 99,
+            "verdict": "Likely to succeed — minor risks remain."
+          },
+          "retry_history": []
+        }
+      ]
     }
   ]
 }
