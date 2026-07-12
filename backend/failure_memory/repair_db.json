@@ -89,9 +89,9 @@
     "fix_content": {
       "app/routes/seed_routes.py": "from fastapi import APIRouter, Depends\nfrom sqlalchemy.orm import Session\nfrom app.database import get_db\n\nseed_router = APIRouter()\n\n@seed_router.post('/seed')\ndef seed_data(db: Session = Depends(get_db)):\n    return {'seeded': True, 'message': 'Demo data ready'}\n"
     },
-    "success_count": 11,
+    "success_count": 12,
     "first_seen": "2026-07-05T10:01:42Z",
-    "last_seen": "2026-07-12T10:27:33Z",
+    "last_seen": "2026-07-12T15:07:39Z",
     "source_idea": "a recipe sharing platform"
   },
   "6967fc8aca1ae308": {
@@ -342,9 +342,9 @@
     "fix_content": {
       "app/schemas/tag.py": "from typing import Optional\nfrom pydantic import BaseModel, Field, ConfigDict\n\n\nclass TagCreate(BaseModel):\n    name: str = Field(min_length=1)\n\n    model_config = ConfigDict(from_attributes=True)\n\n\nclass TagUpdate(BaseModel):\n    name: Optional[str] = Field(None, min_length=1)\n\n    model_config = ConfigDict(from_attributes=True)\n\n\nclass TagResponse(BaseModel):\n    id: int\n    name: str # Changed from Optional[str] to str to match TagCreate and enforce non-nullability\n\n    model_config = ConfigDict(from_attributes=True)\n"
     },
-    "success_count": 6,
+    "success_count": 7,
     "first_seen": "2026-07-06T10:51:17Z",
-    "last_seen": "2026-07-12T09:52:01Z",
+    "last_seen": "2026-07-12T15:07:39Z",
     "source_idea": "A blog CMS with author and reader roles. Authors write posts with title, content (markdown), tags, a"
   },
   "569948f96b13c786": {
@@ -432,9 +432,9 @@
     "fix_content": {
       "app/schemas/user.py": "from pydantic import BaseModel, Field\n\n\nclass UserCreate(BaseModel):\n    class Config:\n        from_attributes = True\n    username: str = Field(min_length=1)\n    password_hash: str = Field(min_length=1)\n    role: str = Field(min_length=1)\n\n\nclass UserUpdate(BaseModel):\n    class Config:\n        from_attributes = True\n    username: str | None = None\n    password_hash: str | None = None\n    role: str | None = None\n\n\nclass UserResponse(BaseModel):\n    class Config:\n        from_attributes = True\n    id: int\n    username: str | None = None\n    role: str | None = None\n"
     },
-    "success_count": 4,
+    "success_count": 5,
     "first_seen": "2026-07-07T12:08:51Z",
-    "last_seen": "2026-07-12T09:52:01Z",
+    "last_seen": "2026-07-12T15:07:39Z",
     "source_idea": "A blog CMS with author and reader roles. Authors write posts with title, content (markdown), tags, a"
   },
   "6bcc97abda72d309": {
@@ -733,9 +733,9 @@
     "fix_content": {
       "app/models/post.py": "from sqlalchemy import Column, Integer, String, Text, DateTime, ForeignKey, func\nfrom sqlalchemy.orm import relationship\nfrom app.database import Base\n\nclass Post(Base):\n    __tablename__ = \"posts\"\n\n    id = Column(Integer, primary_key=True, index=True)\n    title = Column(String, nullable=False)\n    content_markdown = Column(Text, nullable=False)\n    cover_image_url = Column(String, nullable=True)\n    status = Column(String, nullable=False)\n    published_at = Column(DateTime, nullable=True)\n    name = Column(String, nullable=True)\n    created_at = Column(DateTime, server_default=func.now(), nullable=False)\n    updated_at = Column(DateTime, server_default=func.now(), onupdate=func.now(), nullable=False)\n    author_id = Column(Integer, ForeignKey(\"users.id\"), nullable=False)\n\n    author = relationship(\"User\", back_populates=\"posts\")\n"
     },
-    "success_count": 2,
+    "success_count": 3,
     "first_seen": "2026-07-11T23:09:39Z",
-    "last_seen": "2026-07-12T09:04:15Z",
+    "last_seen": "2026-07-12T15:07:39Z",
     "source_idea": "A blog CMS with author and reader roles. Authors write posts with title, content (markdown), tags, a"
   },
   "f700e2d3bb960a16": {
@@ -743,9 +743,9 @@
     "fix_content": {
       "app/schemas/comment.py": "from __future__ import annotations\n\nfrom datetime import datetime\nfrom typing import Optional\n\nfrom pydantic import BaseModel, Field, ConfigDict\n\nclass CommentCreate(BaseModel):\n    model_config = ConfigDict(from_attributes=True)\n    content: Optional[str] = Field(\n        default=None,\n        description=\"The comment text. Optional because the underlying model allows NULL.\"\n    )\n    post_id: int\n    parent_comment_id: Optional[int] = None\n\nclass CommentUpdate(BaseModel):\n    model_config = ConfigDict(from_attributes=True)\n    content: Optional[str] = None\n    parent_comment_id: Optional[int] = None\n\nclass CommentResponse(BaseModel):\n    id: int\n    content: Optional[str] = None\n    post_id: Optional[int] = None\n    parent_comment_id: Optional[int] = None\n    author_id: Optional[int] = None\n    created_at: Optional[datetime] = None\n    updated_at: Optional[datetime] = None\n\n    model_config = ConfigDict(from_attributes=True)\n\nclass CommentRead(BaseModel):\n    id: int\n    content: Optional[str] = None\n    post_id: Optional[int] = None\n    parent_comment_id: Optional[int] = None\n    author_id: Optional[int] = None\n    created_at: Optional[datetime] = None\n    updated_at: Optional[datetime] = None\n\n    model_config = ConfigDict(from_attributes=True)\n"
     },
-    "success_count": 1,
+    "success_count": 2,
     "first_seen": "2026-07-11T23:09:39Z",
-    "last_seen": "2026-07-11T23:09:39Z",
+    "last_seen": "2026-07-12T15:07:39Z",
     "source_idea": "A blog CMS with author and reader roles. Authors write posts with title, content (markdown), tags, a"
   },
   "7dbf20e5b1206238": {

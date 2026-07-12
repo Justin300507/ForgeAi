@@ -1,0 +1,90 @@
+{
+  "label": "exp079-validation-r1",
+  "activation_log": [],
+  "regen_log": [],
+  "final_inventories": {
+    "blog_cms": {
+      "planned_count": 15,
+      "actual_count": 21,
+      "missing_count": 0,
+      "missing": [],
+      "planned_detail": [
+        {
+          "method": "POST",
+          "path": "/seed",
+          "file": "app\\routes\\seed_routes.py"
+        },
+        {
+          "method": "GET",
+          "path": "/stats/summary",
+          "file": "app\\routes\\stats_routes.py"
+        },
+        {
+          "method": "POST",
+          "path": "/auth/login",
+          "file": "app\\routes\\auth_routes.py"
+        },
+        {
+          "method": "GET",
+          "path": "/users/me",
+          "file": "app\\routes\\user_routes.py"
+        },
+        {
+          "method": "GET",
+          "path": "/posts",
+          "file": "app\\routes\\post_routes.py"
+        },
+        {
+          "method": "GET",
+          "path": "/posts/{post_id}",
+          "file": "app\\routes\\post_routes.py"
+        },
+        {
+          "method": "GET",
+          "path": "/authors/{author_id}/posts",
+          "file": "app\\routes\\post_routes.py"
+        },
+        {
+          "method": "POST",
+          "path": "/posts",
+          "file": "app\\routes\\post_routes.py"
+        },
+        {
+          "method": "PUT",
+          "path": "/posts/{post_id}",
+          "file": "app\\routes\\post_routes.py"
+        },
+        {
+          "method": "PATCH",
+          "path": "/posts/{post_id}/publish",
+          "file": "app\\routes\\post_routes.py"
+        },
+        {
+          "method": "PATCH",
+          "path": "/posts/{post_id}/unpublish",
+          "file": "app\\routes\\post_routes.py"
+        },
+        {
+          "method": "DELETE",
+          "path": "/posts/{post_id}",
+          "file": "app\\routes\\post_routes.py"
+        },
+        {
+          "method": "GET",
+          "path": "/tags",
+          "file": "app\\routes\\tag_routes.py"
+        },
+        {
+          "method": "POST",
+          "path": "/tags",
+          "file": "app\\routes\\tag_routes.py"
+        },
+        {
+          "method": "DELETE",
+          "path": "/tags/{tag_id}",
+          "file": "app\\routes\\tag_routes.py"
+        }
+      ]
+    }
+  }
+}

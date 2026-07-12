@@ -5613,3 +5613,62 @@ code diff in `backend/app/repair/orchestrator.py`, new test file
 `backend/tests/reliability/test_exp078_endpoint_preservation.py`, minor
 signature update in `backend/tests/reliability/test_exp067_regenerate_module_hardening.py`.
 **Cost: $0, zero Cerebras calls.**
+
+## Experiment 079: Live Validation of Runtime Endpoint Preservation
+
+2026-07-12. Live, one `blog_cms` canary (label `exp079-validation-r1`,
+provider `cerebras`, `--no-deploy`), $0.0515 / 85,823 tokens. New script
+`backend/scripts/exp079_canary.py`, same reused-internals methodology as
+Exp074/076: wraps `_regenerate_module` in place (real, unmodified
+`_required_endpoints_map_for_files` called once per invocation for
+logging + before/after route-file snapshots, AST-diffed for endpoint
+presence) and wraps `run_canary.generate_project_v15`'s bound name to
+capture the raw result (for `project_path`, which `_check_result` doesn't
+surface). Post-run: real `endpoint_validator.extract_actual_backend_routes()`
+against the final delivered project, diffed against `metadata.json`'s
+planned `api_endpoints` — same ground truth Exp077 used.
+
+**Result: mechanism never got a chance to activate this run — 0 calls to
+`_regenerate_module`, not just 0 with an empty map.** Root cause traced
+directly from the retry log: `RetryManager.next_strategy()` consults
+`strategy_memory.should_skip(pattern, strategy)`, which treats a
+(pattern, strategy) pair with ≥3 tries and 0 successes across *all past
+runs* as "proven ineffective" and skips it. `strategy_outcomes.json`
+confirms `regenerate_module` is permanently blacklisted for 4 patterns:
+`contract` (0/3, the exact pattern this run hit), `AttributeError` (0/3),
+`api` (0/3), `SyntaxError` (0/2) — records almost certainly predating
+Exp078, from when the strategy's endpoint-preservation wiring was dead
+code and could never improve a score. Separately, this run's own
+static-validation loop (inside V6 generation, before the V15 repair loop
+even starts) already recovered all 8 planned `post_routes.py` endpoints
+on its own, so there was no "recovered-then-threatened" scenario for the
+runtime-stage mechanism to intervene in either way.
+
+**What the run does confirm**: no regression (score 88.2/B, deploy-ready,
+build/runtime both pass, CRUD journey 11/11 on the final attempt, endpoint
+smoke 100%), no endpoint loss (planned=15, actual=21, missing=0), and
+Exp078's fix is inert-safe when not invoked — consistent with its own
+offline test. Did NOT expand to a second canary run: the blocker is
+structural (persisted across all runs in `strategy_outcomes.json`), so a
+same-idea rerun would almost certainly reproduce the identical skip for no
+new evidence — not a good use of the "minimal Cerebras usage" budget.
+
+**Observatory**: activation count 0, preserved-endpoint count 0, runtime
+outcome PASS (88.2/B, 0/15 missing), new failure-taxonomy item logged
+(strategy-memory blacklist of `regenerate_module` for 4 patterns). No
+dashboard counter added — same reasoning as Exp078, there's no real
+activation data yet to show.
+
+**Recommendation for Exp080**: resolve the strategy-memory blacklist
+poisoning `regenerate_module` before attempting another live-validation
+cycle for endpoint preservation specifically — right now even a perfect
+mechanism can't matter in production while its host strategy is
+structurally skipped for 4 of its most common failure patterns. Confirm
+via timestamps/correlation whether the 0/3 records actually predate
+Exp078 before changing `should_skip()`'s logic (don't assume).
+
+**Deliverables**: `docs/EXP079_LIVE_VALIDATION.md`, this entry,
+`backend/scripts/exp079_canary.py`,
+`backend/benchmark_results/exp079_endpoint_preservation_invocations.json`,
+canary history entry (BASELINE, 88.2). **Cost: $0.0515, one live
+generation.**

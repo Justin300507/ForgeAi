@@ -481,7 +481,7 @@
       "stage": "runtime"
     },
     "SyntaxError": {
-      "count": 7,
+      "count": 8,
       "examples": [
         {
           "project": "forge_blog_cms",
@@ -505,10 +505,10 @@
         }
       ],
       "first_seen": "2026-07-06T01:13:44.604581",
-      "last_seen": "2026-07-12T09:12:02.349391",
+      "last_seen": "2026-07-12T15:10:44.172930",
       "stage": "build"
     }
   },
-  "total_runs": 456,
-  "last_updated": "2026-07-12T14:26:04.306926"
+  "total_runs": 459,
+  "last_updated": "2026-07-12T15:14:23.047953"
 }
