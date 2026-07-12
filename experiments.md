@@ -5749,3 +5749,58 @@ endpoint preservation worth the Cerebras spend.
 
 **Deliverables**: `docs/EXP080_STRATEGY_MEMORY_STALENESS.md`, this entry.
 No code changes, no Cerebras calls. **Cost: $0.**
+
+## Experiment 081: Version Retry Strategy Memory
+
+2026-07-12. Offline, $0, zero Cerebras calls. Implements Exp080's
+recommended correction, scoped entirely to
+`backend/app/retry/strategy_memory.py`: a per-strategy generation table
+(`_STRATEGY_GENERATIONS = {"regenerate_module": 2}`, default 1 for
+everything else) plus a `"generation"` field on every stored entry.
+`_migrate()` resets any `(pattern, strategy)` entry whose generation is
+older than its strategy's current one (missing field == generation 1) to
+`{tries: 0, successes: 0, generation: current}` — the whole entry,
+successes included, since a success recorded under a since-changed
+implementation is equally confounded. Entries already current are left
+byte-for-byte untouched. `_load()` runs the migration and persists it
+only if something actually changed, so the reset fires exactly once;
+`record_outcome()` stamps the current generation on every write.
+`should_skip()`/`RetryManager` are unchanged — they just read
+already-migrated data, so no retry-selection heuristics changed.
+
+**Regression**: new test file
+`backend/tests/reliability/test_exp081_strategy_memory_versioning.py`
+(11/11 pass) covers migration from legacy entries (including a replay of
+today's exact real `strategy_outcomes.json` snapshot verbatim), explicit
+generation mismatch/match, a newer-than-current generation being left
+alone (rollback safety), persistence-across-reloads with an instrumented
+`_save()` proving zero further writes after the first migration, and
+`should_skip()` flipping `True`→`False` immediately post-reset while
+staying `True` for a never-bumped strategy (`switch_model`). Full
+reliability suite: 43/48 pass, same 5 pre-existing unrelated failures as
+Exp078's cycle, none touching `strategy_memory.py`.
+
+**Offline replay** against a copy of the real, current
+`strategy_outcomes.json` (non-destructive — the live file is untouched;
+the real migration fires automatically on the next real `_load()`):
+exactly 5 entries changed, all `regenerate_module`, across every pattern
+that had one (`AttributeError`, `ImportError` — including its 1/1
+*success* — `SyntaxError`, `api`, `contract`), all reset to `{0, 0,
+generation: 2}`. Every other entry (`patch_file`, `switch_model`,
+`regenerate_arch`, all patterns) verified byte-identical, including
+`contract/patch_file`'s 50/126 and `contract/regenerate_arch`'s 9/42.
+Direct consequence: `should_skip("contract", "regenerate_module")` now
+evaluates `False` — the exact permanent-skip condition Exp079 hit live is
+resolved.
+
+**Recommendation for Exp082**: live-validate now, using the same
+`exp079_canary.py` instrumentation (unmodified, still valid) with a new
+label. Expect `_regenerate_module()` calls > 0 with a non-empty
+`required_endpoints` map on the next `contract`-pattern escalation past
+`patch_file`, and the retry log no longer showing "Skipping
+regenerate_module... proven ineffective."
+
+**Deliverables**: `docs/EXP081_STRATEGY_MEMORY_VERSIONING.md`, this entry,
+code diff in `backend/app/retry/strategy_memory.py`, new test file
+`backend/tests/reliability/test_exp081_strategy_memory_versioning.py`.
+**Cost: $0, zero Cerebras calls.**
