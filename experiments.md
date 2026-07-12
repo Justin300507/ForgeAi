@@ -6509,3 +6509,59 @@ this entry, code diff in `backend/app/services/deterministic_patcher.py`,
 new test file
 `backend/tests/reliability/test_exp092_missing_ownership_assignment.py`.
 **Cost: $0, zero Cerebras calls.**
+
+---
+
+## Experiment 093: Live Validation of Ownership Assignment Repair
+
+2026-07-13. Live, two Cerebras canaries (todo, CRM — both allowed by
+this experiment's own "one or two" constraint), $0.1022 total /
+170,480 tokens. New script `backend/scripts/exp093_canary.py` wraps
+`_patch_missing_ownership_assignment` (Exp092) to log every invocation
+where route-file content actually changed, reusing `run_canary.py`'s
+internals unmodified — same non-invasive methodology as
+Exp079/082/086/089.
+
+**Results:** both runs clean — no regression, full CRUD journey PASS,
+deploy-ready. todo: 92.0/100 (A). CRM (`simple_crm`): 89.9/100 (B).
+
+**Activation: 0/2, for two different, both-informative reasons.**
+todo: the initial generation already had `user_id=current_user.id`
+correct, so nothing for the patch to find on its first pass — but the
+exact target bug **did occur live, mid-run**: an unrelated LLM fix
+attempt rewrote `task_routes.py` and dropped the ownership assignment,
+producing `[UserIdNotInjectedError] ... IntegrityError` and a score
+regression (92.0 → 68.9), **twice** in the same run (`92 → 92 → 69 →
+92 → 69 → 92`). Both times it was caught and reverted by the
+pre-existing regression-detection-and-revert safety net before
+`_patch_missing_ownership_assignment` needed to fire — confirming the
+underlying failure mode is still a real, currently-generatable risk,
+just currently caught by a different, complementary mechanism.
+CRM: no regression cycle at all — `simple_crm/app/routes/contact_routes.py`
+shows `Contact(**{...}, user_id=current_user.id)` correct from the
+LLM's first pass, confirmed by direct file read. Both final states
+match Exp091's confirmed-fixed shape exactly.
+
+**Conclusion:** two clean canaries, zero regressions, correct ownership
+assignment in both final states, plus Exp092's own offline full-corpus
+replay (2 genuine hits, 12/12 tests) is a reasonable evidence bar to
+close this thread on, consistent with how Exp082/086/089 were each
+closed after 1-2 live runs backed by strong offline evidence. The one
+new finding — a live LLM rewrite reproducing the exact target defect,
+caught by the regression-revert net rather than this patch — is flagged
+as a candidate (not confirmed gap) for a future look at that net's own
+coverage.
+
+**Recommendation for Exp094:** return to the taxonomy and re-scan
+`generation_log.jsonl`/`patterns.json` for the current highest-impact
+remaining active class (candidate: the Edit-path "405/no entity_id"
+JourneyCRUDFailure sub-shape Exp091 explicitly scoped out) rather than
+spending further Cerebras budget chasing direct live-fire confirmation
+of an already offline-verified, twice-cleanly-canaried fix.
+
+**Deliverables**: `docs/EXP093_LIVE_VALIDATION_OWNERSHIP_REPAIR.md`,
+this entry, `backend/scripts/exp093_canary.py`,
+`backend/benchmark_results/exp093_ownership_assignment_invocations.json`,
+two canary history entries (`exp093-validation-r1` OK 92.0,
+`exp093-validation-r2` BASELINE 89.9).
+**Cost: $0.1022, two live generations.**

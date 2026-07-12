@@ -82,8 +82,8 @@
   "contract": {
     "patch_file": {
       "generation": 1,
-      "successes": 52,
-      "tries": 128
+      "successes": 53,
+      "tries": 130
     },
     "regenerate_arch": {
       "successes": 9,
@@ -92,7 +92,7 @@
     "regenerate_module": {
       "generation": 2,
       "successes": 0,
-      "tries": 0
+      "tries": 1
     },
     "switch_model": {
       "successes": 0,

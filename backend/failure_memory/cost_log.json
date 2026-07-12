@@ -16468,5 +16468,107 @@
     "forge_score": 74,
     "wall_time_s": 122.69,
     "timestamp": "2026-07-13T00:26:41"
+  },
+  {
+    "total_calls": 12,
+    "total_tokens": 63144,
+    "total_cost_usd": 0.037886,
+    "total_llm_time_s": 58.12,
+    "by_stage": {
+      "backend_generation": {
+        "calls": 6,
+        "tokens": 30963,
+        "cost_usd": 0.018577,
+        "time_s": 45.21
+      },
+      "fix": {
+        "calls": 2,
+        "tokens": 7536,
+        "cost_usd": 0.004522,
+        "time_s": 5.74
+      },
+      "qa_review": {
+        "calls": 1,
+        "tokens": 4110,
+        "cost_usd": 0.002466,
+        "time_s": 1.52
+      },
+      "security_review": {
+        "calls": 1,
+        "tokens": 7963,
+        "cost_usd": 0.004778,
+        "time_s": 1.81
+      },
+      "code_review": {
+        "calls": 1,
+        "tokens": 6634,
+        "cost_usd": 0.00398,
+        "time_s": 2.3
+      },
+      "performance_review": {
+        "calls": 1,
+        "tokens": 5938,
+        "cost_usd": 0.003563,
+        "time_s": 1.54
+      }
+    },
+    "project_name": "todo_list_app",
+    "forge_score": 67,
+    "wall_time_s": 33.77,
+    "timestamp": "2026-07-13T01:30:33"
+  },
+  {
+    "total_calls": 20,
+    "total_tokens": 105415,
+    "total_cost_usd": 0.06325,
+    "total_llm_time_s": 72.16,
+    "by_stage": {
+      "backend_generation": {
+        "calls": 14,
+        "tokens": 63058,
+        "cost_usd": 0.037835,
+        "time_s": 38.800000000000004
+      },
+      "fix": {
+        "calls": 1,
+        "tokens": 6736,
+        "cost_usd": 0.004042,
+        "time_s": 2.57
+      },
+      "qa_review": {
+        "calls": 1,
+        "tokens": 4633,
+        "cost_usd": 0.00278,
+        "time_s": 1.37
+      },
+      "security_review": {
+        "calls": 1,
+        "tokens": 7368,
+        "cost_usd": 0.004421,
+        "time_s": 1.62
+      },
+      "code_review": {
+        "calls": 1,
+        "tokens": 6844,
+        "cost_usd": 0.004106,
+        "time_s": 2.3
+      },
+      "performance_review": {
+        "calls": 1,
+        "tokens": 5730,
+        "cost_usd": 0.003438,
+        "time_s": 22.29
+      },
+      "runtime_fix": {
+        "calls": 1,
+        "tokens": 11046,
+        "cost_usd": 0.006628,
+        "time_s": 3.21
+      }
+    },
+    "project_name": "simple_crm",
+    "forge_score": 72,
+    "wall_time_s": 61.24,
+    "timestamp": "2026-07-13T01:50:31"
   }
 ]

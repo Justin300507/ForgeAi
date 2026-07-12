@@ -89,9 +89,9 @@
     "fix_content": {
       "app/routes/seed_routes.py": "from fastapi import APIRouter, Depends\nfrom sqlalchemy.orm import Session\nfrom app.database import get_db\n\nseed_router = APIRouter()\n\n@seed_router.post('/seed')\ndef seed_data(db: Session = Depends(get_db)):\n    return {'seeded': True, 'message': 'Demo data ready'}\n"
     },
-    "success_count": 12,
+    "success_count": 13,
     "first_seen": "2026-07-05T10:01:42Z",
-    "last_seen": "2026-07-12T15:07:39Z",
+    "last_seen": "2026-07-12T20:02:06Z",
     "source_idea": "a recipe sharing platform"
   },
   "6967fc8aca1ae308": {
@@ -603,9 +603,9 @@
       "app/config/settings.py": "import os\n\nclass Settings:\n    PROJECT_NAME: str = \"Task Manager API\"\n    DATABASE_URL: str = os.getenv(\"DATABASE_URL\", \"sqlite:///./sql_app.db\")\n    SECRET_KEY: str = os.getenv(\"SECRET_KEY\", \"super-secret-key-change-me-in-production\")\n    ALGORITHM: str = \"HS256\"\n    ACCESS_TOKEN_EXPIRE_MINUTES: int = 60\n\nsettings = Settings()\n",
       "app/config/__init__.py": "from app.config.settings import settings\n"
     },
-    "success_count": 10,
+    "success_count": 11,
     "first_seen": "2026-07-11T11:27:08Z",
-    "last_seen": "2026-07-12T17:58:14Z",
+    "last_seen": "2026-07-12T20:02:06Z",
     "source_idea": "A todo list app with user accounts. Users can register and log in. Each user sees only their own tod"
   },
   "c3c63f97354b61ab": {
@@ -643,9 +643,9 @@
     "fix_content": {
       "src/pages/TaskListPage.jsx": "import React, { useState, useEffect } from 'react';\nimport API from '../api';\n\nexport default function TaskListPage() {\n  const [tasks, setTasks] = useState([]);\n  const [newTaskTitle, setNewTaskTitle] = useState('');\n  const [searchQuery, setSearchQuery] = useState('');\n  const [loading, setLoading] = useState(false);\n  const [error, setError] = useState('');\n\n  const fetchTasks = async () => {\n    setLoading(true);\n    try {\n      const response = await API.get('/tasks');\n      if (response.data && Array.isArray(response.data.items)) {\n        setTasks(response.data.items);\n      } else if (Array.isArray(response.data)) {\n        setTasks(response.data);\n      }\n    } catch (err) {\n      setError('Failed to fetch tasks');\n    } finally {\n      setLoading(false);\n    }\n  };\n\n  useEffect(() => {\n    fetchTasks();\n  }, []);\n\n  const handleAddTask = async (e) => {\n    e.preventDefault();\n    if (!newTaskTitle.trim()) return;\n    try {\n      const response = await API.post('/tasks', { title: newTaskTitle, done: false });\n      setTasks((prev) => [...prev, response.data]);\n      setNewTaskTitle('');\n    } catch (err) {\n      setError('Failed to add task');\n    }\n  };\n\n  const handleToggleTask = async (task) => {\n    try {\n      const updatedDone = !task.done;\n      const response = await API.put(`/tasks/${task.id}`, { ...task, done: updatedDone });\n      setTasks((prev) => prev.map((t) => (t.id === task.id ? response.data : t)));\n    } catch (err) {\n      setError('Failed to update task');\n    }\n  };\n\n  const handleDeleteTask = async (id) => {\n    try {\n      await API.delete(`/tasks/${id}`);\n      setTasks((prev) => prev.filter((t) => t.id !== id));\n    } catch (err) {\n      setError('Failed to delete task');\n    }\n  };\n\n  const filteredTasks = tasks.filter((task) =>\n    task.title ? task.title.toLowerCase().includes(searchQuery.toLowerCase()) : false\n  );\n\n  return (\n    <div className=\"task-list-container\">\n      <h1>Task List</h1>\n      {error && <p className=\"error-message\">{error}</p>}\n\n      <div className=\"search-bar\">\n        <label htmlFor=\"search-input\">Search Tasks:</label>\n        <input\n          id=\"search-input\"\n          type=\"text\"\n          placeholder=\"Search tasks...\"\n          value={searchQuery}\n          onChange={(e) => setSearchQuery(e.target.value)}\n          aria-label=\"Search tasks\"\n        />\n      </div>\n\n      <form onSubmit={handleAddTask} className=\"add-task-form\">\n        <label htmlFor=\"new-task-input\">New Task:</label>\n        <input\n          id=\"new-task-input\"\n          type=\"text\"\n          placeholder=\"Add a new task...\"\n          value={newTaskTitle}\n          onChange={(e) => setNewTaskTitle(e.target.value)}\n          aria-label=\"New task title\"\n        />\n        <button type=\"submit\">Add Task</button>\n      </form>\n\n      {loading ? (\n        <p>Loading tasks...</p>\n      ) : (\n        <ul className=\"task-list\">\n          {filteredTasks.map((task) => (\n            <li key={task.id} className={`task-item ${task.done ? 'completed' : ''}`}>\n              <label htmlFor={`task-checkbox-${task.id}`} className=\"sr-only\">\n                Toggle task completion\n              </label>\n              <input\n                id={`task-checkbox-${task.id}`}\n                type=\"checkbox\"\n                checked={task.done || false}\n                onChange={() => handleToggleTask(task)}\n                aria-label={`Mark ${task.title} as ${task.done ? 'incomplete' : 'complete'}`}\n              />\n              <span className=\"task-title\">{task.title}</span>\n              <button onClick={() => handleDeleteTask(task.id)} aria-label={`Delete task ${task.title}`}>\n                Delete\n              </button>\n            </li>\n          ))}\n        </ul>\n      )}\n    </div>\n  );\n}"
     },
-    "success_count": 5,
+    "success_count": 6,
     "first_seen": "2026-07-11T12:43:22Z",
-    "last_seen": "2026-07-12T17:58:14Z",
+    "last_seen": "2026-07-12T20:02:06Z",
     "source_idea": "A todo list app with user accounts. Users can register and log in. Each user sees only their own tod"
   },
   "e042e54f1e523e54": {
@@ -723,9 +723,9 @@
     "fix_content": {
       "app/schemas/task.py": "from datetime import datetime\nfrom typing import Optional\n\nfrom pydantic import BaseModel, Field, ConfigDict\n\nclass TaskCreate(BaseModel):\n    title: Optional[str] = Field(default=None, min_length=1)\n    description: Optional[str] = None\n    due_date: Optional[datetime] = None\n    completed: Optional[bool] = None\n\n    model_config = ConfigDict(from_attributes=True)\n\nclass TaskUpdate(BaseModel):\n    title: Optional[str] = Field(default=None, min_length=1)\n    description: Optional[str] = None\n    due_date: Optional[datetime] = None\n    completed: Optional[bool] = None\n\n    model_config = ConfigDict(from_attributes=True)\n\nclass TaskResponse(BaseModel):\n    id: int\n    title: Optional[str] = None\n    description: Optional[str] = None\n    due_date: Optional[datetime] = None\n    completed: Optional[bool] = None\n    created_at: Optional[datetime] = None\n    updated_at: Optional[datetime] = None\n    priority: Optional[dict] = None\n\n    model_config = ConfigDict(from_attributes=True)\n\nclass TaskRead(BaseModel):\n    id: Optional[int] = None\n    model_config = ConfigDict(from_attributes=True)\n"
     },
-    "success_count": 2,
+    "success_count": 3,
     "first_seen": "2026-07-11T22:39:05Z",
-    "last_seen": "2026-07-12T09:00:10Z",
+    "last_seen": "2026-07-12T20:02:06Z",
     "source_idea": "A todo list app with user accounts. Users can register and log in. Each user sees only their own tod"
   },
   "020205ee2bbadae0": {
