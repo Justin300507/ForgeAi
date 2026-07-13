@@ -13,7 +13,7 @@ import { useSceneryBoost } from "./SceneryBoost";
 export default function Scenery() {
   const boost = useSceneryBoost();
   return (
-    <div className={`scenery-layer${boost?.boosted ? " boosted" : ""}`} aria-hidden="true">
+    <div className={`scenery-layer${boost?.boosted ? " boosted" : ""}${boost?.sustained ? " sustained" : ""}`} aria-hidden="true">
       <div className="scenery-image" style={{ backgroundImage: `url(${sceneryStill})` }} />
       <div className="scenery-scrim" />
       <div className="scenery-frame" style={{ backgroundImage: `url(${OVERLAY_PNG})` }} />
