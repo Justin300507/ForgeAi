@@ -1,0 +1,47 @@
+{
+  "bundle_version": 1,
+  "failure_id": "FR-000025",
+  "timestamp": "2026-07-13T05:21:43.295129Z",
+  "forgeai_version": "19.0",
+  "pipeline_version": "v15",
+  "commit_sha": "e747a77",
+  "project": "forge_blog_cms",
+  "provider": "cerebras",
+  "model": null,
+  "seed": null,
+  "failure": {
+    "stage": "runtime",
+    "class": "JourneyCRUDFailure",
+    "step": "Edit entity"
+  },
+  "request": {
+    "method": "PUT",
+    "url": "http://127.0.0.1:8001/posts/6",
+    "json": {
+      "title": "Journey Test Item EDITED",
+      "name": "Journey Test Item EDITED",
+      "description": "edited by V5.5 journey runner",
+      "status": "active"
+    },
+    "has_auth": true
+  },
+  "response": {
+    "status_code": 405,
+    "body": {
+      "detail": "Method Not Allowed"
+    }
+  },
+  "stderr": null,
+  "generation": {
+    "category": null,
+    "style": null,
+    "layout": null,
+    "design_fingerprint_id": null
+  },
+  "artifacts": {
+    "screenshot": null,
+    "console_log": null,
+    "network_log": null,
+    "playwright_trace": null
+  }
+}

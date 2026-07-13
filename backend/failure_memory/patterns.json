@@ -113,7 +113,7 @@
       "stage": "runtime"
     },
     "SQLAlchemyError": {
-      "count": 11,
+      "count": 13,
       "examples": [
         {
           "project": "HR Onboarding System",
@@ -137,7 +137,7 @@
         }
       ],
       "first_seen": "2026-06-21T21:30:53.208370",
-      "last_seen": "2026-07-06T12:23:57.957873",
+      "last_seen": "2026-07-13T14:56:58.518636",
       "stage": "runtime"
     },
     "ValidationError": {
@@ -217,7 +217,7 @@
       "stage": "generation"
     },
     "MissingEndpoint": {
-      "count": 48,
+      "count": 66,
       "examples": [
         {
           "project": "bug_tracker",
@@ -241,7 +241,7 @@
         }
       ],
       "first_seen": "2026-06-22T07:49:29.613937",
-      "last_seen": "2026-07-11T23:12:06.641076",
+      "last_seen": "2026-07-13T14:50:14.403610",
       "stage": "generation"
     },
     "FastAPIError": {
@@ -289,19 +289,31 @@
       "stage": "runtime"
     },
     "UserIdNotInjectedError": {
-      "count": 1,
+      "count": 4,
       "examples": [
         {
           "project": "TaskFlow Pro",
           "error": "UserIdNotInjectedError"
+        },
+        {
+          "project": "recipe_manager",
+          "error": "UserIdNotInjectedError"
+        },
+        {
+          "project": "helpdesk_ticketing",
+          "error": "UserIdNotInjectedError"
+        },
+        {
+          "project": "university_course_management",
+          "error": "UserIdNotInjectedError"
         }
       ],
       "first_seen": "2026-06-28T21:05:09.324006",
-      "last_seen": "2026-06-28T21:05:09.324044",
+      "last_seen": "2026-07-13T13:53:43.055805",
       "stage": "runtime"
     },
     "PydanticSerializationError": {
-      "count": 7,
+      "count": 8,
       "examples": [
         {
           "project": "blog_platform",
@@ -325,11 +337,11 @@
         }
       ],
       "first_seen": "2026-06-29T23:39:46.755253",
-      "last_seen": "2026-07-13T04:36:06.090462",
+      "last_seen": "2026-07-13T05:46:13.669357",
       "stage": "runtime"
     },
     "JourneyCRUDFailure": {
-      "count": 32,
+      "count": 37,
       "examples": [
         {
           "project": "BlogSphere",
@@ -353,7 +365,7 @@
         }
       ],
       "first_seen": "2026-06-29T23:47:06.584012",
-      "last_seen": "2026-07-12T09:54:56.178011",
+      "last_seen": "2026-07-13T14:06:07.391484",
       "stage": "integration"
     },
     "InvalidDependsType": {
@@ -409,7 +421,7 @@
       "stage": "runtime"
     },
     "AttributeError": {
-      "count": 22,
+      "count": 25,
       "examples": [
         {
           "project": "gym_tracker",
@@ -433,7 +445,7 @@
         }
       ],
       "first_seen": "2026-07-01T22:56:38.596264",
-      "last_seen": "2026-07-12T09:08:55.024642",
+      "last_seen": "2026-07-13T11:05:35.125201",
       "stage": "runtime"
     },
     "ConfigAttributeError": {
@@ -481,7 +493,7 @@
       "stage": "runtime"
     },
     "SyntaxError": {
-      "count": 8,
+      "count": 23,
       "examples": [
         {
           "project": "forge_blog_cms",
@@ -505,10 +517,10 @@
         }
       ],
       "first_seen": "2026-07-06T01:13:44.604581",
-      "last_seen": "2026-07-12T15:10:44.172930",
+      "last_seen": "2026-07-13T14:50:14.403683",
       "stage": "build"
     }
   },
-  "total_runs": 468,
-  "last_updated": "2026-07-13T04:36:06.090411"
+  "total_runs": 507,
+  "last_updated": "2026-07-13T14:56:58.518594"
 }

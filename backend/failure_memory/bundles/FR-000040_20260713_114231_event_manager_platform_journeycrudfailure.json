@@ -1,0 +1,51 @@
+{
+  "bundle_version": 1,
+  "failure_id": "FR-000040",
+  "timestamp": "2026-07-13T11:42:31.757366Z",
+  "forgeai_version": "19.0",
+  "pipeline_version": "v15",
+  "commit_sha": "e747a77",
+  "project": "event_manager_platform",
+  "provider": "openrouter",
+  "model": null,
+  "seed": null,
+  "failure": {
+    "stage": "runtime",
+    "class": "JourneyCRUDFailure",
+    "step": "Create entity"
+  },
+  "request": {
+    "method": "POST",
+    "url": "http://127.0.0.1:8001/events",
+    "json": {
+      "title": "Journey Test Item",
+      "name": "Journey Test Item",
+      "description": "created by V5.5 journey runner",
+      "capacity": 1,
+      "location": "journey-test",
+      "end_time": "2024-01-01T10:00:00",
+      "start_time": "2024-01-01T09:00:00",
+      "registration_deadline": "2026-01-01"
+    },
+    "has_auth": true
+  },
+  "response": {
+    "status_code": 403,
+    "body": {
+      "detail": "Organizer role required"
+    }
+  },
+  "stderr": null,
+  "generation": {
+    "category": null,
+    "style": null,
+    "layout": null,
+    "design_fingerprint_id": null
+  },
+  "artifacts": {
+    "screenshot": null,
+    "console_log": null,
+    "network_log": null,
+    "playwright_trace": null
+  }
+}

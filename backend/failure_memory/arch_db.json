@@ -394,804 +394,6 @@
           "file uploads"
         ]
       },
-      "score": 99.71,
-      "success_count": 1,
-      "generation_id": "0e3645aa70b34b54b570a237129b46fe",
-      "timestamp": "2026-07-11T12:43:22Z"
-    },
-    {
-      "category": "todo_crud",
-      "idea": "A todo list app with user accounts. Users can register and log in. Each user sees only their own todos. Todos have a title, optional description, due date, priority (low/medium/high), and done/undone ",
-      "architecture": {
-        "api_endpoints": [
-          {
-            "method": "GET",
-            "path": "/users",
-            "description": "Retrieve a paginated list of users, optionally filtered by username search query.",
-            "file": "app\\routes\\user_routes.py"
-          },
-          {
-            "method": "GET",
-            "path": "/users/{id}",
-            "description": "Retrieve details of a specific user by ID.",
-            "file": "app\\routes\\user_routes.py"
-          },
-          {
-            "method": "POST",
-            "path": "/users",
-            "description": "Create a new user account with username and password.",
-            "file": "app\\routes\\user_routes.py"
-          },
-          {
-            "method": "PUT",
-            "path": "/users/{id}",
-            "description": "Update an existing user's information (e.g., username or password).",
-            "file": "app\\routes\\user_routes.py"
-          },
-          {
-            "method": "DELETE",
-            "path": "/users/{id}",
-            "description": "Delete a user account.",
-            "file": "app\\routes\\user_routes.py"
-          },
-          {
-            "method": "GET",
-            "path": "/tasks",
-            "description": "Retrieve a list of tasks for the authenticated user, supporting search by title/description and filters for status and priority.",
-            "file": "app\\routes\\task_routes.py"
-          },
-          {
-            "method": "GET",
-            "path": "/tasks/{id}",
-            "description": "Retrieve details of a specific task by ID.",
-            "file": "app\\routes\\task_routes.py"
-          },
-          {
-            "method": "POST",
-            "path": "/tasks",
-            "description": "Create a new task for the authenticated user.",
-            "file": "app\\routes\\task_routes.py"
-          },
-          {
-            "method": "PUT",
-            "path": "/tasks/{id}",
-            "description": "Update an existing task (title, description, due date, priority, completed flag).",
-            "file": "app\\routes\\task_routes.py"
-          },
-          {
-            "method": "DELETE",
-            "path": "/tasks/{id}",
-            "description": "Delete a task.",
-            "file": "app\\routes\\task_routes.py"
-          },
-          {
-            "method": "POST",
-            "path": "/auth/register",
-            "description": "Register a new user account (alias of POST /users).",
-            "file": "app\\routes\\auth_routes.py"
-          },
-          {
-            "method": "POST",
-            "path": "/auth/login",
-            "description": "Authenticate a user and return a JWT access token.",
-            "file": "app\\routes\\auth_routes.py"
-          },
-          {
-            "method": "POST",
-            "path": "/seed",
-            "description": "Populate the database with demo users, tasks, and priority levels.",
-            "file": "app\\routes\\seed_routes.py"
-          },
-          {
-            "method": "GET",
-            "path": "/stats/summary",
-            "description": "Return aggregate statistics such as total users, total tasks, and tasks per priority.",
-            "file": "app\\routes\\stats_routes.py"
-          }
-        ],
-        "database_schema": [
-          {
-            "table_name": "users",
-            "columns": [
-              {
-                "name": "id",
-                "type": "INTEGER",
-                "is_primary_key": true,
-                "is_nullable": false
-              },
-              {
-                "name": "username",
-                "type": "VARCHAR(150)",
-                "is_primary_key": false,
-                "is_nullable": false
-              },
-              {
-                "name": "hashed_password",
-                "type": "VARCHAR(255)",
-                "is_primary_key": false,
-                "is_nullable": false
-              },
-              {
-                "name": "created_at",
-                "type": "DATETIME",
-                "is_primary_key": false,
-                "is_nullable": false
-              }
-            ]
-          },
-          {
-            "table_name": "priorities",
-            "columns": [
-              {
-                "name": "id",
-                "type": "INTEGER",
-                "is_primary_key": true,
-                "is_nullable": false
-              },
-              {
-                "name": "name",
-                "type": "VARCHAR(50)",
-                "is_primary_key": false,
-                "is_nullable": false
-              },
-              {
-                "name": "level",
-                "type": "INTEGER",
-                "is_primary_key": false,
-                "is_nullable": false
-              }
-            ]
-          },
-          {
-            "table_name": "tasks",
-            "columns": [
-              {
-                "name": "id",
-                "type": "INTEGER",
-                "is_primary_key": true,
-                "is_nullable": false
-              },
-              {
-                "name": "user_id",
-                "type": "INTEGER",
-                "is_primary_key": false,
-                "is_nullable": false
-              },
-              {
-                "name": "title",
-                "type": "VARCHAR(200)",
-                "is_primary_key": false,
-                "is_nullable": false
-              },
-              {
-                "name": "description",
-                "type": "TEXT",
-                "is_primary_key": false,
-                "is_nullable": true
-              },
-              {
-                "name": "due_date",
-                "type": "DATETIME",
-                "is_primary_key": false,
-                "is_nullable": true
-              },
-              {
-                "name": "priority_id",
-                "type": "INTEGER",
-                "is_primary_key": false,
-                "is_nullable": true
-              },
-              {
-                "name": "completed",
-                "type": "BOOLEAN",
-                "is_primary_key": false,
-                "is_nullable": false
-              },
-              {
-                "name": "created_at",
-                "type": "DATETIME",
-                "is_primary_key": false,
-                "is_nullable": false
-              },
-              {
-                "name": "updated_at",
-                "type": "DATETIME",
-                "is_primary_key": false,
-                "is_nullable": true
-              }
-            ]
-          },
-          {
-            "table_name": "task_logs",
-            "columns": [
-              {
-                "name": "id",
-                "type": "INTEGER",
-                "is_primary_key": true,
-                "is_nullable": false
-              },
-              {
-                "name": "task_id",
-                "type": "INTEGER",
-                "is_primary_key": false,
-                "is_nullable": false
-              },
-              {
-                "name": "action",
-                "type": "VARCHAR(100)",
-                "is_primary_key": false,
-                "is_nullable": false
-              },
-              {
-                "name": "timestamp",
-                "type": "DATETIME",
-                "is_primary_key": false,
-                "is_nullable": false
-              }
-            ]
-          }
-        ],
-        "folder_structure": {
-          "backend": [
-            "app/models",
-            "app/schemas",
-            "app/routes",
-            "app/services",
-            "app/utils",
-            "app/config"
-          ]
-        },
-        "frontend_structure": {
-          "pages": [
-            "LoginPage",
-            "RegisterPage",
-            "DashboardPage",
-            "TaskListPage",
-            "TaskFormPage"
-          ],
-          "components": [
-            "Header",
-            "Footer",
-            "TaskCard",
-            "TaskForm",
-            "TaskFilterBar",
-            "AuthForm",
-            "Button",
-            "Input",
-            "Modal",
-            "Sidebar"
-          ]
-        }
-      },
-      "plan": {
-        "project_name": "todo_list_app",
-        "display_name": "Personal Todo List",
-        "features": [
-          "Allow users to create an account",
-          "Allow users to create new tasks",
-          "Allow users to log in to their account"
-        ],
-        "tech_stack": {
-          "backend": "FastAPI",
-          "database": "SQLite",
-          "auth": "JWT",
-          "frontend": "React + Vite"
-        },
-        "db_entities": [
-          "User",
-          "Task"
-        ],
-        "api_modules": [
-          "auth",
-          "tasks"
-        ],
-        "user_stories": [
-          {
-            "role": "User",
-            "want": "To register for an account",
-            "acceptance_criteria": [
-              "The user can enter a valid username and password to create an account",
-              "The user receives a confirmation message after successfully registering",
-              "The user is redirected to the login page after registration"
-            ]
-          },
-          {
-            "role": "User",
-            "want": "To log in to my account",
-            "acceptance_criteria": [
-              "The user can enter a valid username and password to log in",
-              "The user is redirected to the task list page after successful login",
-              "The user sees an error message if the login credentials are invalid"
-            ]
-          },
-          {
-            "role": "User",
-            "want": "To create a new task",
-            "acceptance_criteria": [
-              "The user can enter a task title and description",
-              "The user can select a due date and priority level for the task",
-              "The task is added to the user's task list after creation"
-            ]
-          },
-          {
-            "role": "User",
-            "want": "To edit an existing task",
-            "acceptance_criteria": [
-              "The user can select a task to edit",
-              "The user can update the task title, description, due date, and priority level",
-              "The task is updated in the user's task list after editing"
-            ]
-          },
-          {
-            "role": "User",
-            "want": "To delete a task",
-            "acceptance_criteria": [
-              "The user can select a task to delete",
-              "The task is removed from the user's task list after deletion",
-              "The user is prompted to confirm deletion before it is executed"
-            ]
-          },
-          {
-            "role": "User",
-            "want": "To mark a task as complete",
-            "acceptance_criteria": [
-              "The user can select a task to mark as complete",
-              "The task is updated to show as completed in the user's task list",
-              "The user can filter tasks by completion status"
-            ]
-          },
-          {
-            "role": "User",
-            "want": "To filter tasks by status and priority",
-            "acceptance_criteria": [
-              "The user can select a filter option (e.g. 'completed', 'high priority')",
-              "The task list is updated to show only tasks that match the selected filter",
-              "The user can clear the filter to show all tasks"
-            ]
-          }
-        ],
-        "non_functional_requirements": {
-          "authentication": "required — to ensure only authorized users can access their task list",
-          "authorization": "simple authentication, no role-based access",
-          "pagination": "not required — task lists are expected to be small",
-          "search": "not required — tasks can be filtered by status and priority",
-          "file_uploads": "no — no file uploads are needed",
-          "real_time": "no — real-time updates are not necessary"
-        },
-        "data_entities_detail": [
-          {
-            "name": "User",
-            "description": "Stores user account information",
-            "key_fields": [
-              "id",
-              "username",
-              "password"
-            ],
-            "relationships": [
-              "has many Tasks"
-            ]
-          },
-          {
-            "name": "Task",
-            "description": "Stores task information",
-            "key_fields": [
-              "id",
-              "title",
-              "description",
-              "due_date",
-              "priority",
-              "completed"
-            ],
-            "relationships": [
-              "belongs to User"
-            ]
-          }
-        ],
-        "out_of_scope": [
-          "team collaboration",
-          "task assignments",
-          "file uploads"
-        ]
-      },
-      "score": 92.64,
-      "success_count": 1,
-      "generation_id": "6569c366c1034fb8847bf9b69a2fe4ae",
-      "timestamp": "2026-07-12T09:50:02Z"
-    },
-    {
-      "category": "todo_crud",
-      "idea": "A todo list app with user accounts. Users can register and log in. Each user sees only their own todos. Todos have a title, optional description, due date, priority (low/medium/high), and done/undone ",
-      "architecture": {
-        "api_endpoints": [
-          {
-            "method": "GET",
-            "path": "/users",
-            "description": "Retrieve a paginated list of users, optionally filtered by username search query.",
-            "file": "app\\routes\\user_routes.py"
-          },
-          {
-            "method": "GET",
-            "path": "/users/{id}",
-            "description": "Retrieve details of a specific user by ID.",
-            "file": "app\\routes\\user_routes.py"
-          },
-          {
-            "method": "POST",
-            "path": "/users",
-            "description": "Create a new user account with username and password.",
-            "file": "app\\routes\\user_routes.py"
-          },
-          {
-            "method": "PUT",
-            "path": "/users/{id}",
-            "description": "Update an existing user's information (e.g., username or password).",
-            "file": "app\\routes\\user_routes.py"
-          },
-          {
-            "method": "DELETE",
-            "path": "/users/{id}",
-            "description": "Delete a user account.",
-            "file": "app\\routes\\user_routes.py"
-          },
-          {
-            "method": "GET",
-            "path": "/tasks",
-            "description": "Retrieve a list of tasks for the authenticated user, supporting search by title/description and filters for status and priority.",
-            "file": "app\\routes\\task_routes.py"
-          },
-          {
-            "method": "GET",
-            "path": "/tasks/{id}",
-            "description": "Retrieve details of a specific task by ID.",
-            "file": "app\\routes\\task_routes.py"
-          },
-          {
-            "method": "POST",
-            "path": "/tasks",
-            "description": "Create a new task for the authenticated user.",
-            "file": "app\\routes\\task_routes.py"
-          },
-          {
-            "method": "PUT",
-            "path": "/tasks/{id}",
-            "description": "Update an existing task (title, description, due date, priority, completed flag).",
-            "file": "app\\routes\\task_routes.py"
-          },
-          {
-            "method": "DELETE",
-            "path": "/tasks/{id}",
-            "description": "Delete a task.",
-            "file": "app\\routes\\task_routes.py"
-          },
-          {
-            "method": "POST",
-            "path": "/auth/register",
-            "description": "Register a new user account (alias of POST /users).",
-            "file": "app\\routes\\auth_routes.py"
-          },
-          {
-            "method": "POST",
-            "path": "/auth/login",
-            "description": "Authenticate a user and return a JWT access token.",
-            "file": "app\\routes\\auth_routes.py"
-          },
-          {
-            "method": "POST",
-            "path": "/seed",
-            "description": "Populate the database with demo users, tasks, and priority levels.",
-            "file": "app\\routes\\seed_routes.py"
-          },
-          {
-            "method": "GET",
-            "path": "/stats/summary",
-            "description": "Return aggregate statistics such as total users, total tasks, and tasks per priority.",
-            "file": "app\\routes\\stats_routes.py"
-          }
-        ],
-        "database_schema": [
-          {
-            "table_name": "users",
-            "columns": [
-              {
-                "name": "id",
-                "type": "INTEGER",
-                "is_primary_key": true,
-                "is_nullable": false
-              },
-              {
-                "name": "username",
-                "type": "VARCHAR(150)",
-                "is_primary_key": false,
-                "is_nullable": false
-              },
-              {
-                "name": "hashed_password",
-                "type": "VARCHAR(255)",
-                "is_primary_key": false,
-                "is_nullable": false
-              },
-              {
-                "name": "created_at",
-                "type": "DATETIME",
-                "is_primary_key": false,
-                "is_nullable": false
-              }
-            ]
-          },
-          {
-            "table_name": "priorities",
-            "columns": [
-              {
-                "name": "id",
-                "type": "INTEGER",
-                "is_primary_key": true,
-                "is_nullable": false
-              },
-              {
-                "name": "name",
-                "type": "VARCHAR(50)",
-                "is_primary_key": false,
-                "is_nullable": false
-              },
-              {
-                "name": "level",
-                "type": "INTEGER",
-                "is_primary_key": false,
-                "is_nullable": false
-              }
-            ]
-          },
-          {
-            "table_name": "tasks",
-            "columns": [
-              {
-                "name": "id",
-                "type": "INTEGER",
-                "is_primary_key": true,
-                "is_nullable": false
-              },
-              {
-                "name": "user_id",
-                "type": "INTEGER",
-                "is_primary_key": false,
-                "is_nullable": false
-              },
-              {
-                "name": "title",
-                "type": "VARCHAR(200)",
-                "is_primary_key": false,
-                "is_nullable": false
-              },
-              {
-                "name": "description",
-                "type": "TEXT",
-                "is_primary_key": false,
-                "is_nullable": true
-              },
-              {
-                "name": "due_date",
-                "type": "DATETIME",
-                "is_primary_key": false,
-                "is_nullable": true
-              },
-              {
-                "name": "priority_id",
-                "type": "INTEGER",
-                "is_primary_key": false,
-                "is_nullable": true
-              },
-              {
-                "name": "completed",
-                "type": "BOOLEAN",
-                "is_primary_key": false,
-                "is_nullable": false
-              },
-              {
-                "name": "created_at",
-                "type": "DATETIME",
-                "is_primary_key": false,
-                "is_nullable": false
-              },
-              {
-                "name": "updated_at",
-                "type": "DATETIME",
-                "is_primary_key": false,
-                "is_nullable": true
-              }
-            ]
-          },
-          {
-            "table_name": "task_logs",
-            "columns": [
-              {
-                "name": "id",
-                "type": "INTEGER",
-                "is_primary_key": true,
-                "is_nullable": false
-              },
-              {
-                "name": "task_id",
-                "type": "INTEGER",
-                "is_primary_key": false,
-                "is_nullable": false
-              },
-              {
-                "name": "action",
-                "type": "VARCHAR(100)",
-                "is_primary_key": false,
-                "is_nullable": false
-              },
-              {
-                "name": "timestamp",
-                "type": "DATETIME",
-                "is_primary_key": false,
-                "is_nullable": false
-              }
-            ]
-          }
-        ],
-        "folder_structure": {
-          "backend": [
-            "app/models",
-            "app/schemas",
-            "app/routes",
-            "app/services",
-            "app/utils",
-            "app/config"
-          ]
-        },
-        "frontend_structure": {
-          "pages": [
-            "LoginPage",
-            "RegisterPage",
-            "DashboardPage",
-            "TaskListPage",
-            "TaskFormPage"
-          ],
-          "components": [
-            "Header",
-            "Footer",
-            "TaskCard",
-            "TaskForm",
-            "TaskFilterBar",
-            "AuthForm",
-            "Button",
-            "Input",
-            "Modal",
-            "Sidebar"
-          ]
-        }
-      },
-      "plan": {
-        "project_name": "todo_list_app",
-        "display_name": "Personal Todo List",
-        "features": [
-          "Allow users to create an account",
-          "Allow users to create new tasks",
-          "Allow users to log in to their account"
-        ],
-        "tech_stack": {
-          "backend": "FastAPI",
-          "database": "SQLite",
-          "auth": "JWT",
-          "frontend": "React + Vite"
-        },
-        "db_entities": [
-          "User",
-          "Task"
-        ],
-        "api_modules": [
-          "auth",
-          "tasks"
-        ],
-        "user_stories": [
-          {
-            "role": "User",
-            "want": "To register for an account",
-            "acceptance_criteria": [
-              "The user can enter a valid username and password to create an account",
-              "The user receives a confirmation message after successfully registering",
-              "The user is redirected to the login page after registration"
-            ]
-          },
-          {
-            "role": "User",
-            "want": "To log in to my account",
-            "acceptance_criteria": [
-              "The user can enter a valid username and password to log in",
-              "The user is redirected to the task list page after successful login",
-              "The user sees an error message if the login credentials are invalid"
-            ]
-          },
-          {
-            "role": "User",
-            "want": "To create a new task",
-            "acceptance_criteria": [
-              "The user can enter a task title and description",
-              "The user can select a due date and priority level for the task",
-              "The task is added to the user's task list after creation"
-            ]
-          },
-          {
-            "role": "User",
-            "want": "To edit an existing task",
-            "acceptance_criteria": [
-              "The user can select a task to edit",
-              "The user can update the task title, description, due date, and priority level",
-              "The task is updated in the user's task list after editing"
-            ]
-          },
-          {
-            "role": "User",
-            "want": "To delete a task",
-            "acceptance_criteria": [
-              "The user can select a task to delete",
-              "The task is removed from the user's task list after deletion",
-              "The user is prompted to confirm deletion before it is executed"
-            ]
-          },
-          {
-            "role": "User",
-            "want": "To mark a task as complete",
-            "acceptance_criteria": [
-              "The user can select a task to mark as complete",
-              "The task is updated to show as completed in the user's task list",
-              "The user can filter tasks by completion status"
-            ]
-          },
-          {
-            "role": "User",
-            "want": "To filter tasks by status and priority",
-            "acceptance_criteria": [
-              "The user can select a filter option (e.g. 'completed', 'high priority')",
-              "The task list is updated to show only tasks that match the selected filter",
-              "The user can clear the filter to show all tasks"
-            ]
-          }
-        ],
-        "non_functional_requirements": {
-          "authentication": "required — to ensure only authorized users can access their task list",
-          "authorization": "simple authentication, no role-based access",
-          "pagination": "not required — task lists are expected to be small",
-          "search": "not required — tasks can be filtered by status and priority",
-          "file_uploads": "no — no file uploads are needed",
-          "real_time": "no — real-time updates are not necessary"
-        },
-        "data_entities_detail": [
-          {
-            "name": "User",
-            "description": "Stores user account information",
-            "key_fields": [
-              "id",
-              "username",
-              "password"
-            ],
-            "relationships": [
-              "has many Tasks"
-            ]
-          },
-          {
-            "name": "Task",
-            "description": "Stores task information",
-            "key_fields": [
-              "id",
-              "title",
-              "description",
-              "due_date",
-              "priority",
-              "completed"
-            ],
-            "relationships": [
-              "belongs to User"
-            ]
-          }
-        ],
-        "out_of_scope": [
-          "team collaboration",
-          "task assignments",
-          "file uploads"
-        ]
-      },
       "score": 90.07,
       "success_count": 1,
       "generation_id": "48e06a7d0a904ad6b4806b24226b566d",
@@ -2212,6 +1414,1022 @@
       "success_count": 1,
       "generation_id": "ce0ff3039fc544e29495a4bd0f556564",
       "timestamp": "2026-07-13T03:58:02Z"
+    },
+    {
+      "category": "todo_crud",
+      "idea": "A todo list app with user accounts. Users can register and log in. Each user sees only their own todos. Todos have a title, optional description, due date, priority (low/medium/high), and done/undone ",
+      "architecture": {
+        "api_endpoints": [
+          {
+            "method": "GET",
+            "path": "/users",
+            "description": "Retrieve a paginated list of users, optionally filtered by username search query.",
+            "file": "app\\routes\\user_routes.py"
+          },
+          {
+            "method": "GET",
+            "path": "/users/{id}",
+            "description": "Retrieve details of a specific user by ID.",
+            "file": "app\\routes\\user_routes.py"
+          },
+          {
+            "method": "POST",
+            "path": "/users",
+            "description": "Create a new user account with username and password.",
+            "file": "app\\routes\\user_routes.py"
+          },
+          {
+            "method": "PUT",
+            "path": "/users/{id}",
+            "description": "Update an existing user's information (e.g., username or password).",
+            "file": "app\\routes\\user_routes.py"
+          },
+          {
+            "method": "DELETE",
+            "path": "/users/{id}",
+            "description": "Delete a user account.",
+            "file": "app\\routes\\user_routes.py"
+          },
+          {
+            "method": "GET",
+            "path": "/tasks",
+            "description": "Retrieve a list of tasks for the authenticated user, supporting search by title/description and filters for status and priority.",
+            "file": "app\\routes\\task_routes.py"
+          },
+          {
+            "method": "GET",
+            "path": "/tasks/{id}",
+            "description": "Retrieve details of a specific task by ID.",
+            "file": "app\\routes\\task_routes.py"
+          },
+          {
+            "method": "POST",
+            "path": "/tasks",
+            "description": "Create a new task for the authenticated user.",
+            "file": "app\\routes\\task_routes.py"
+          },
+          {
+            "method": "PUT",
+            "path": "/tasks/{id}",
+            "description": "Update an existing task (title, description, due date, priority, completed flag).",
+            "file": "app\\routes\\task_routes.py"
+          },
+          {
+            "method": "DELETE",
+            "path": "/tasks/{id}",
+            "description": "Delete a task.",
+            "file": "app\\routes\\task_routes.py"
+          },
+          {
+            "method": "POST",
+            "path": "/auth/register",
+            "description": "Register a new user account (alias of POST /users).",
+            "file": "app\\routes\\auth_routes.py"
+          },
+          {
+            "method": "POST",
+            "path": "/auth/login",
+            "description": "Authenticate a user and return a JWT access token.",
+            "file": "app\\routes\\auth_routes.py"
+          },
+          {
+            "method": "POST",
+            "path": "/seed",
+            "description": "Populate the database with demo users, tasks, and priority levels.",
+            "file": "app\\routes\\seed_routes.py"
+          },
+          {
+            "method": "GET",
+            "path": "/stats/summary",
+            "description": "Return aggregate statistics such as total users, total tasks, and tasks per priority.",
+            "file": "app\\routes\\stats_routes.py"
+          }
+        ],
+        "database_schema": [
+          {
+            "table_name": "users",
+            "columns": [
+              {
+                "name": "id",
+                "type": "INTEGER",
+                "is_primary_key": true,
+                "is_nullable": false
+              },
+              {
+                "name": "username",
+                "type": "VARCHAR(150)",
+                "is_primary_key": false,
+                "is_nullable": false
+              },
+              {
+                "name": "hashed_password",
+                "type": "VARCHAR(255)",
+                "is_primary_key": false,
+                "is_nullable": false
+              },
+              {
+                "name": "created_at",
+                "type": "DATETIME",
+                "is_primary_key": false,
+                "is_nullable": false
+              }
+            ]
+          },
+          {
+            "table_name": "priorities",
+            "columns": [
+              {
+                "name": "id",
+                "type": "INTEGER",
+                "is_primary_key": true,
+                "is_nullable": false
+              },
+              {
+                "name": "name",
+                "type": "VARCHAR(50)",
+                "is_primary_key": false,
+                "is_nullable": false
+              },
+              {
+                "name": "level",
+                "type": "INTEGER",
+                "is_primary_key": false,
+                "is_nullable": false
+              }
+            ]
+          },
+          {
+            "table_name": "tasks",
+            "columns": [
+              {
+                "name": "id",
+                "type": "INTEGER",
+                "is_primary_key": true,
+                "is_nullable": false
+              },
+              {
+                "name": "user_id",
+                "type": "INTEGER",
+                "is_primary_key": false,
+                "is_nullable": false
+              },
+              {
+                "name": "title",
+                "type": "VARCHAR(200)",
+                "is_primary_key": false,
+                "is_nullable": false
+              },
+              {
+                "name": "description",
+                "type": "TEXT",
+                "is_primary_key": false,
+                "is_nullable": true
+              },
+              {
+                "name": "due_date",
+                "type": "DATETIME",
+                "is_primary_key": false,
+                "is_nullable": true
+              },
+              {
+                "name": "priority_id",
+                "type": "INTEGER",
+                "is_primary_key": false,
+                "is_nullable": true
+              },
+              {
+                "name": "completed",
+                "type": "BOOLEAN",
+                "is_primary_key": false,
+                "is_nullable": false
+              },
+              {
+                "name": "created_at",
+                "type": "DATETIME",
+                "is_primary_key": false,
+                "is_nullable": false
+              },
+              {
+                "name": "updated_at",
+                "type": "DATETIME",
+                "is_primary_key": false,
+                "is_nullable": true
+              }
+            ]
+          },
+          {
+            "table_name": "task_logs",
+            "columns": [
+              {
+                "name": "id",
+                "type": "INTEGER",
+                "is_primary_key": true,
+                "is_nullable": false
+              },
+              {
+                "name": "task_id",
+                "type": "INTEGER",
+                "is_primary_key": false,
+                "is_nullable": false
+              },
+              {
+                "name": "action",
+                "type": "VARCHAR(100)",
+                "is_primary_key": false,
+                "is_nullable": false
+              },
+              {
+                "name": "timestamp",
+                "type": "DATETIME",
+                "is_primary_key": false,
+                "is_nullable": false
+              }
+            ]
+          }
+        ],
+        "folder_structure": {
+          "backend": [
+            "app/models",
+            "app/schemas",
+            "app/routes",
+            "app/services",
+            "app/utils",
+            "app/config"
+          ]
+        },
+        "frontend_structure": {
+          "pages": [
+            "LoginPage",
+            "RegisterPage",
+            "DashboardPage",
+            "TaskListPage",
+            "TaskFormPage"
+          ],
+          "components": [
+            "Header",
+            "Footer",
+            "TaskCard",
+            "TaskForm",
+            "TaskFilterBar",
+            "AuthForm",
+            "Button",
+            "Input",
+            "Modal",
+            "Sidebar"
+          ]
+        }
+      },
+      "plan": {
+        "project_name": "todo_list_app",
+        "display_name": "Personal Todo List",
+        "features": [
+          "Allow users to create an account",
+          "Allow users to create new tasks",
+          "Allow users to log in to their account"
+        ],
+        "tech_stack": {
+          "backend": "FastAPI",
+          "database": "SQLite",
+          "auth": "JWT",
+          "frontend": "React + Vite"
+        },
+        "db_entities": [
+          "User",
+          "Task"
+        ],
+        "api_modules": [
+          "auth",
+          "tasks"
+        ],
+        "user_stories": [
+          {
+            "role": "User",
+            "want": "To register for an account",
+            "acceptance_criteria": [
+              "The user can enter a valid username and password to create an account",
+              "The user receives a confirmation message after successfully registering",
+              "The user is redirected to the login page after registration"
+            ]
+          },
+          {
+            "role": "User",
+            "want": "To log in to my account",
+            "acceptance_criteria": [
+              "The user can enter a valid username and password to log in",
+              "The user is redirected to the task list page after successful login",
+              "The user sees an error message if the login credentials are invalid"
+            ]
+          },
+          {
+            "role": "User",
+            "want": "To create a new task",
+            "acceptance_criteria": [
+              "The user can enter a task title and description",
+              "The user can select a due date and priority level for the task",
+              "The task is added to the user's task list after creation"
+            ]
+          },
+          {
+            "role": "User",
+            "want": "To edit an existing task",
+            "acceptance_criteria": [
+              "The user can select a task to edit",
+              "The user can update the task title, description, due date, and priority level",
+              "The task is updated in the user's task list after editing"
+            ]
+          },
+          {
+            "role": "User",
+            "want": "To delete a task",
+            "acceptance_criteria": [
+              "The user can select a task to delete",
+              "The task is removed from the user's task list after deletion",
+              "The user is prompted to confirm deletion before it is executed"
+            ]
+          },
+          {
+            "role": "User",
+            "want": "To mark a task as complete",
+            "acceptance_criteria": [
+              "The user can select a task to mark as complete",
+              "The task is updated to show as completed in the user's task list",
+              "The user can filter tasks by completion status"
+            ]
+          },
+          {
+            "role": "User",
+            "want": "To filter tasks by status and priority",
+            "acceptance_criteria": [
+              "The user can select a filter option (e.g. 'completed', 'high priority')",
+              "The task list is updated to show only tasks that match the selected filter",
+              "The user can clear the filter to show all tasks"
+            ]
+          }
+        ],
+        "non_functional_requirements": {
+          "authentication": "required — to ensure only authorized users can access their task list",
+          "authorization": "simple authentication, no role-based access",
+          "pagination": "not required — task lists are expected to be small",
+          "search": "not required — tasks can be filtered by status and priority",
+          "file_uploads": "no — no file uploads are needed",
+          "real_time": "no — real-time updates are not necessary"
+        },
+        "data_entities_detail": [
+          {
+            "name": "User",
+            "description": "Stores user account information",
+            "key_fields": [
+              "id",
+              "username",
+              "password"
+            ],
+            "relationships": [
+              "has many Tasks"
+            ]
+          },
+          {
+            "name": "Task",
+            "description": "Stores task information",
+            "key_fields": [
+              "id",
+              "title",
+              "description",
+              "due_date",
+              "priority",
+              "completed"
+            ],
+            "relationships": [
+              "belongs to User"
+            ]
+          }
+        ],
+        "out_of_scope": [
+          "team collaboration",
+          "task assignments",
+          "file uploads"
+        ]
+      },
+      "score": 98.0,
+      "success_count": 1,
+      "generation_id": "8da62bfe04fd44829f385655ebe36119",
+      "timestamp": "2026-07-13T05:12:41Z"
+    },
+    {
+      "category": "todo_crud",
+      "idea": "A project management tool with secure user login. Users create, edit, and delete projects with a name and description. Within each project, create tasks with a title, description, due date, and status",
+      "architecture": {
+        "api_endpoints": [
+          {
+            "method": "POST",
+            "path": "/auth/register",
+            "description": "Register a new user and return JWT",
+            "file": "app\\routes\\auth_routes.py"
+          },
+          {
+            "method": "POST",
+            "path": "/auth/login",
+            "description": "Authenticate user and return JWT",
+            "file": "app\\routes\\auth_routes.py"
+          },
+          {
+            "method": "GET",
+            "path": "/auth/me",
+            "description": "Get current authenticated user information",
+            "file": "app\\routes\\auth_routes.py"
+          },
+          {
+            "method": "GET",
+            "path": "/users",
+            "description": "List users with optional search, pagination (limit, offset)",
+            "file": "app\\routes\\user_routes.py"
+          },
+          {
+            "method": "GET",
+            "path": "/users/{id}",
+            "description": "Retrieve a user by ID",
+            "file": "app\\routes\\user_routes.py"
+          },
+          {
+            "method": "POST",
+            "path": "/users",
+            "description": "Create a new user (admin only)",
+            "file": "app\\routes\\user_routes.py"
+          },
+          {
+            "method": "PUT",
+            "path": "/users/{id}",
+            "description": "Update user details",
+            "file": "app\\routes\\user_routes.py"
+          },
+          {
+            "method": "DELETE",
+            "path": "/users/{id}",
+            "description": "Delete a user",
+            "file": "app\\routes\\user_routes.py"
+          },
+          {
+            "method": "GET",
+            "path": "/projects",
+            "description": "List projects with optional search and pagination",
+            "file": "app\\routes\\project_routes.py"
+          },
+          {
+            "method": "GET",
+            "path": "/projects/{id}",
+            "description": "Get project details by ID",
+            "file": "app\\routes\\project_routes.py"
+          },
+          {
+            "method": "POST",
+            "path": "/projects",
+            "description": "Create a new project",
+            "file": "app\\routes\\project_routes.py"
+          },
+          {
+            "method": "PUT",
+            "path": "/projects/{id}",
+            "description": "Update project information",
+            "file": "app\\routes\\project_routes.py"
+          },
+          {
+            "method": "DELETE",
+            "path": "/projects/{id}",
+            "description": "Delete a project and its tasks",
+            "file": "app\\routes\\project_routes.py"
+          },
+          {
+            "method": "GET",
+            "path": "/projects/{project_id}/tasks",
+            "description": "List tasks for a project with optional status filter and pagination",
+            "file": "app\\routes\\task_routes.py"
+          },
+          {
+            "method": "GET",
+            "path": "/projects/{project_id}/tasks/{id}",
+            "description": "Retrieve a task by ID within a project",
+            "file": "app\\routes\\task_routes.py"
+          },
+          {
+            "method": "POST",
+            "path": "/projects/{project_id}/tasks",
+            "description": "Create a new task in a project",
+            "file": "app\\routes\\task_routes.py"
+          },
+          {
+            "method": "PUT",
+            "path": "/projects/{project_id}/tasks/{id}",
+            "description": "Update task details",
+            "file": "app\\routes\\task_routes.py"
+          },
+          {
+            "method": "DELETE",
+            "path": "/projects/{project_id}/tasks/{id}",
+            "description": "Delete a task from a project",
+            "file": "app\\routes\\task_routes.py"
+          },
+          {
+            "method": "GET",
+            "path": "/projects/{project_id}/members",
+            "description": "List project members with optional search and pagination",
+            "file": "app\\routes\\projectmember_routes.py"
+          },
+          {
+            "method": "GET",
+            "path": "/projects/{project_id}/members/{id}",
+            "description": "Get details of a project member",
+            "file": "app\\routes\\projectmember_routes.py"
+          },
+          {
+            "method": "POST",
+            "path": "/projects/{project_id}/members",
+            "description": "Add a user to a project with a role",
+            "file": "app\\routes\\projectmember_routes.py"
+          },
+          {
+            "method": "PUT",
+            "path": "/projects/{project_id}/members/{id}",
+            "description": "Update a project member's role",
+            "file": "app\\routes\\projectmember_routes.py"
+          },
+          {
+            "method": "DELETE",
+            "path": "/projects/{project_id}/members/{id}",
+            "description": "Remove a member from a project",
+            "file": "app\\routes\\projectmember_routes.py"
+          },
+          {
+            "method": "GET",
+            "path": "/invitations",
+            "description": "List invitations with optional search and pagination",
+            "file": "app\\routes\\invitation_routes.py"
+          },
+          {
+            "method": "GET",
+            "path": "/invitations/{id}",
+            "description": "Retrieve invitation details by ID",
+            "file": "app\\routes\\invitation_routes.py"
+          },
+          {
+            "method": "POST",
+            "path": "/invitations",
+            "description": "Create a new project invitation",
+            "file": "app\\routes\\invitation_routes.py"
+          },
+          {
+            "method": "PUT",
+            "path": "/invitations/{id}",
+            "description": "Update invitation status or role",
+            "file": "app\\routes\\invitation_routes.py"
+          },
+          {
+            "method": "DELETE",
+            "path": "/invitations/{id}",
+            "description": "Delete an invitation",
+            "file": "app\\routes\\invitation_routes.py"
+          },
+          {
+            "method": "POST",
+            "path": "/seed",
+            "description": "Populate database with demo data",
+            "file": "app\\routes\\seed_routes.py"
+          },
+          {
+            "method": "GET",
+            "path": "/stats/summary",
+            "description": "Return aggregate counts and key metrics for dashboard",
+            "file": "app\\routes\\stats_routes.py"
+          }
+        ],
+        "database_schema": [
+          {
+            "table_name": "users",
+            "columns": [
+              {
+                "name": "id",
+                "type": "integer",
+                "is_primary_key": true,
+                "is_nullable": false
+              },
+              {
+                "name": "email",
+                "type": "string",
+                "is_primary_key": false,
+                "is_nullable": false
+              },
+              {
+                "name": "password_hash",
+                "type": "string",
+                "is_primary_key": false,
+                "is_nullable": false
+              },
+              {
+                "name": "name",
+                "type": "string",
+                "is_primary_key": false,
+                "is_nullable": true
+              },
+              {
+                "name": "created_at",
+                "type": "datetime",
+                "is_primary_key": false,
+                "is_nullable": false
+              }
+            ]
+          },
+          {
+            "table_name": "projects",
+            "columns": [
+              {
+                "name": "id",
+                "type": "integer",
+                "is_primary_key": true,
+                "is_nullable": false
+              },
+              {
+                "name": "name",
+                "type": "string",
+                "is_primary_key": false,
+                "is_nullable": false
+              },
+              {
+                "name": "description",
+                "type": "text",
+                "is_primary_key": false,
+                "is_nullable": true
+              },
+              {
+                "name": "owner_id",
+                "type": "integer",
+                "is_primary_key": false,
+                "is_nullable": false
+              },
+              {
+                "name": "created_at",
+                "type": "datetime",
+                "is_primary_key": false,
+                "is_nullable": false
+              }
+            ]
+          },
+          {
+            "table_name": "tasks",
+            "columns": [
+              {
+                "name": "id",
+                "type": "integer",
+                "is_primary_key": true,
+                "is_nullable": false
+              },
+              {
+                "name": "project_id",
+                "type": "integer",
+                "is_primary_key": false,
+                "is_nullable": false
+              },
+              {
+                "name": "title",
+                "type": "string",
+                "is_primary_key": false,
+                "is_nullable": false
+              },
+              {
+                "name": "description",
+                "type": "text",
+                "is_primary_key": false,
+                "is_nullable": true
+              },
+              {
+                "name": "due_date",
+                "type": "date",
+                "is_primary_key": false,
+                "is_nullable": true
+              },
+              {
+                "name": "status",
+                "type": "string",
+                "is_primary_key": false,
+                "is_nullable": false
+              },
+              {
+                "name": "created_at",
+                "type": "datetime",
+                "is_primary_key": false,
+                "is_nullable": false
+              },
+              {
+                "name": "updated_at",
+                "type": "datetime",
+                "is_primary_key": false,
+                "is_nullable": false
+              }
+            ]
+          },
+          {
+            "table_name": "project_members",
+            "columns": [
+              {
+                "name": "id",
+                "type": "integer",
+                "is_primary_key": true,
+                "is_nullable": false
+              },
+              {
+                "name": "project_id",
+                "type": "integer",
+                "is_primary_key": false,
+                "is_nullable": false
+              },
+              {
+                "name": "user_id",
+                "type": "integer",
+                "is_primary_key": false,
+                "is_nullable": false
+              },
+              {
+                "name": "role",
+                "type": "string",
+                "is_primary_key": false,
+                "is_nullable": false
+              },
+              {
+                "name": "added_at",
+                "type": "datetime",
+                "is_primary_key": false,
+                "is_nullable": false
+              }
+            ]
+          },
+          {
+            "table_name": "invitations",
+            "columns": [
+              {
+                "name": "id",
+                "type": "integer",
+                "is_primary_key": true,
+                "is_nullable": false
+              },
+              {
+                "name": "project_id",
+                "type": "integer",
+                "is_primary_key": false,
+                "is_nullable": false
+              },
+              {
+                "name": "email",
+                "type": "string",
+                "is_primary_key": false,
+                "is_nullable": false
+              },
+              {
+                "name": "role",
+                "type": "string",
+                "is_primary_key": false,
+                "is_nullable": false
+              },
+              {
+                "name": "status",
+                "type": "string",
+                "is_primary_key": false,
+                "is_nullable": false
+              },
+              {
+                "name": "created_at",
+                "type": "datetime",
+                "is_primary_key": false,
+                "is_nullable": false
+              }
+            ]
+          }
+        ],
+        "folder_structure": {
+          "backend": [
+            "app/models",
+            "app/schemas",
+            "app/routes",
+            "app/services",
+            "app/utils",
+            "app/config",
+            "app/dependencies",
+            "app/main.py"
+          ]
+        },
+        "frontend_structure": {
+          "pages": [
+            "LoginPage",
+            "DashboardPage",
+            "ProjectListPage",
+            "ProjectDetailPage",
+            "TaskDetailPage",
+            "UserManagementPage",
+            "InvitationPage",
+            "NotFoundPage"
+          ],
+          "components": [
+            "Navbar",
+            "ProjectCard",
+            "TaskCard",
+            "TaskStatusDropdown",
+            "ProjectMemberList",
+            "UserSearchBar",
+            "PaginationControls",
+            "ProtectedRoute",
+            "Footer",
+            "InviteMemberModal"
+          ]
+        }
+      },
+      "plan": {
+        "project_name": "secure_project_manager",
+        "display_name": "Secure Project Manager",
+        "features": [
+          "Login with email/password returning JWT for session authentication",
+          "Enforce manager vs. member permissions for project and task actions",
+          "Create, read, update, and delete projects with name and description",
+          "Create, read, update, and delete tasks that belong to a project",
+          "Allow members to change task status (todo, in_progress, done)"
+        ],
+        "tech_stack": {
+          "backend": "FastAPI",
+          "database": "SQLite",
+          "auth": "JWT",
+          "frontend": "React + Vite"
+        },
+        "db_entities": [
+          "User",
+          "Project",
+          "Task",
+          "ProjectMember"
+        ],
+        "api_modules": [
+          "auth",
+          "users",
+          "projects",
+          "tasks",
+          "project_members"
+        ],
+        "user_stories": [
+          {
+            "role": "Manager",
+            "want": "to create a new project",
+            "acceptance_criteria": [
+              "A logged‑in manager sees a \"Create Project\" button on the dashboard",
+              "Submitting a name and description creates a project record and returns its ID",
+              "The new project appears in the manager's project list immediately"
+            ]
+          },
+          {
+            "role": "Manager",
+            "want": "to delete a project",
+            "acceptance_criteria": [
+              "The Delete button is visible only to users with the manager role on that project",
+              "Confirming deletion removes the project and all its tasks from the database",
+              "The deleted project no longer appears in any user's project list"
+            ]
+          },
+          {
+            "role": "Manager",
+            "want": "to add a member to a project with a specific role",
+            "acceptance_criteria": [
+              "Manager can search for existing users by email and assign them as \"manager\" or \"member\"",
+              "The invited user appears in the project's member list with the selected role",
+              "An email invitation (or in‑app notification) is sent after the assignment"
+            ]
+          },
+          {
+            "role": "Member",
+            "want": "to view all tasks within a project",
+            "acceptance_criteria": [
+              "Member can navigate to a project and see a list of its tasks showing title, due date, and status",
+              "Tasks displayed belong only to the selected project",
+              "Edit and Delete controls are not visible to members"
+            ]
+          },
+          {
+            "role": "Member",
+            "want": "to update a task's status",
+            "acceptance_criteria": [
+              "Member can change the status dropdown from \"todo\" to \"in_progress\" or \"done\"",
+              "The new status is persisted and reflected after a page refresh",
+              "A timestamp of the status change is stored (verified via API response)"
+            ]
+          },
+          {
+            "role": "Manager",
+            "want": "to edit task details (title, description, due date)",
+            "acceptance_criteria": [
+              "Manager can open an edit form, modify fields, and save",
+              "All changed fields are saved and returned correctly by the API",
+              "The system rejects a due date that is in the past with a validation error"
+            ]
+          },
+          {
+            "role": "Manager",
+            "want": "to delete a task",
+            "acceptance_criteria": [
+              "Delete button appears only for managers on a task detail view",
+              "After confirmation, the task record is removed from the database",
+              "The task no longer appears in the project's task list"
+            ]
+          },
+          {
+            "role": "Any Authenticated User",
+            "want": "to log in securely",
+            "acceptance_criteria": [
+              "Providing valid email and password returns a JWT token",
+              "All subsequent API calls require a valid JWT or return 401 Unauthorized",
+              "Invalid credentials result in a 401 response with an error message"
+            ]
+          },
+          {
+            "role": "Manager",
+            "want": "to view the project's member list with roles",
+            "acceptance_criteria": [
+              "Project page displays a table of members showing name, email, and role",
+              "Roles are correctly labeled as \"manager\" or \"member\"",
+              "The list updates instantly after adding or removing a member"
+            ]
+          }
+        ],
+        "non_functional_requirements": {
+          "authentication": "required — all endpoints must verify JWT",
+          "authorization": "role‑based: managers can delete projects/members, members have read‑only access to project data",
+          "pagination": "required on /projects and /projects/{id}/tasks endpoints",
+          "search": "required on /users endpoint for member lookup",
+          "file_uploads": "no",
+          "real_time": "no"
+        },
+        "data_entities_detail": [
+          {
+            "name": "User",
+            "description": "Stores account credentials and profile information",
+            "key_fields": [
+              "id",
+              "email",
+              "password_hash",
+              "name"
+            ],
+            "relationships": [
+              "has many ProjectMember"
+            ]
+          },
+          {
+            "name": "Project",
+            "description": "Represents a container for tasks and members",
+            "key_fields": [
+              "id",
+              "name",
+              "description",
+              "owner_id",
+              "created_at"
+            ],
+            "relationships": [
+              "has many Task",
+              "has many ProjectMember"
+            ]
+          },
+          {
+            "name": "Task",
+            "description": "Individual work item belonging to a project",
+            "key_fields": [
+              "id",
+              "project_id",
+              "title",
+              "description",
+              "due_date",
+              "status",
+              "created_at",
+              "updated_at"
+            ],
+            "relationships": [
+              "belongs to Project"
+            ]
+          },
+          {
+            "name": "ProjectMember",
+            "description": "Links users to projects with a role (manager or member)",
+            "key_fields": [
+              "id",
+              "project_id",
+              "user_id",
+              "role"
+            ],
+            "relationships": [
+              "belongs to Project",
+              "belongs to User"
+            ]
+          }
+        ],
+        "out_of_scope": [
+          "File attachments to tasks",
+          "Real‑time collaborative editing",
+          "Integration with external calendar services",
+          "Advanced reporting dashboards"
+        ]
+      },
+      "score": 88.43,
+      "success_count": 1,
+      "generation_id": "8f69160d6df746579d7efdf96fd28f77",
+      "timestamp": "2026-07-13T05:38:26Z"
     }
   ],
   "blog_cms": [
@@ -9271,6 +9489,525 @@
       "success_count": 1,
       "generation_id": "37cd1171c5704154a96144dabea14a68",
       "timestamp": "2026-07-05T08:58:37Z"
+    },
+    {
+      "category": "generic",
+      "idea": "A vehicle fleet management system with fleet-manager and driver roles. Fleet managers register vehicles (license plate, make, model, year, status: available/in_use/maintenance). Drivers request a vehi",
+      "architecture": {
+        "api_endpoints": [
+          {
+            "method": "POST",
+            "path": "/seed",
+            "description": "Populate the database with demo data for all tables.",
+            "file": "app\\routes\\seed_routes.py"
+          },
+          {
+            "method": "GET",
+            "path": "/stats/summary",
+            "description": "Return aggregate counts and key metrics for dashboard overview.",
+            "file": "app\\routes\\stats_routes.py"
+          },
+          {
+            "method": "POST",
+            "path": "/auth/register",
+            "description": "Create a new user account (driver or fleet_manager).",
+            "file": "app\\routes\\auth_routes.py"
+          },
+          {
+            "method": "POST",
+            "path": "/auth/login",
+            "description": "Authenticate a user and return a JWT token.",
+            "file": "app\\routes\\auth_routes.py"
+          },
+          {
+            "method": "GET",
+            "path": "/vehicles",
+            "description": "List vehicles with pagination, searchable by license_plate, make, and model. Supports filter by status.",
+            "file": "app\\routes\\vehicle_routes.py"
+          },
+          {
+            "method": "GET",
+            "path": "/vehicles/{id}",
+            "description": "Retrieve details of a specific vehicle by its ID.",
+            "file": "app\\routes\\vehicle_routes.py"
+          },
+          {
+            "method": "POST",
+            "path": "/vehicles",
+            "description": "Create a new vehicle record. Requires license_plate, make, model, year, and status.",
+            "file": "app\\routes\\vehicle_routes.py"
+          },
+          {
+            "method": "PUT",
+            "path": "/vehicles/{id}",
+            "description": "Update an existing vehicle's information.",
+            "file": "app\\routes\\vehicle_routes.py"
+          },
+          {
+            "method": "DELETE",
+            "path": "/vehicles/{id}",
+            "description": "Delete a vehicle record.",
+            "file": "app\\routes\\vehicle_routes.py"
+          },
+          {
+            "method": "GET",
+            "path": "/users",
+            "description": "List all users with pagination. Accessible only by fleet_manager role.",
+            "file": "app\\routes\\user_routes.py"
+          },
+          {
+            "method": "GET",
+            "path": "/users/{id}",
+            "description": "Get a specific user's profile.",
+            "file": "app\\routes\\user_routes.py"
+          },
+          {
+            "method": "POST",
+            "path": "/users",
+            "description": "Create a new user (used by registration endpoint).",
+            "file": "app\\routes\\user_routes.py"
+          },
+          {
+            "method": "PUT",
+            "path": "/users/{id}",
+            "description": "Update user details such as role or activation status.",
+            "file": "app\\routes\\user_routes.py"
+          },
+          {
+            "method": "DELETE",
+            "path": "/users/{id}",
+            "description": "Remove a user from the system.",
+            "file": "app\\routes\\user_routes.py"
+          },
+          {
+            "method": "GET",
+            "path": "/trips",
+            "description": "List trip requests with pagination. Supports filter by status and date range.",
+            "file": "app\\routes\\trip_routes.py"
+          },
+          {
+            "method": "GET",
+            "path": "/trips/{id}",
+            "description": "Retrieve a specific trip request by ID.",
+            "file": "app\\routes\\trip_routes.py"
+          },
+          {
+            "method": "POST",
+            "path": "/trips",
+            "description": "Driver creates a new vehicle request. Validates start_date < end_date.",
+            "file": "app\\routes\\trip_routes.py"
+          },
+          {
+            "method": "PUT",
+            "path": "/trips/{id}",
+            "description": "Fleet manager approves or rejects a trip request and updates its status.",
+            "file": "app\\routes\\trip_routes.py"
+          },
+          {
+            "method": "DELETE",
+            "path": "/trips/{id}",
+            "description": "Cancel a trip request.",
+            "file": "app\\routes\\trip_routes.py"
+          },
+          {
+            "method": "GET",
+            "path": "/maintenance",
+            "description": "List maintenance records with pagination. Supports filter by vehicle_id and date range.",
+            "file": "app\\routes\\maintenance_routes.py"
+          },
+          {
+            "method": "GET",
+            "path": "/maintenance/{id}",
+            "description": "Get details of a specific maintenance record.",
+            "file": "app\\routes\\maintenance_routes.py"
+          },
+          {
+            "method": "POST",
+            "path": "/maintenance",
+            "description": "Log a new maintenance event for a vehicle.",
+            "file": "app\\routes\\maintenance_routes.py"
+          },
+          {
+            "method": "PUT",
+            "path": "/maintenance/{id}",
+            "description": "Update an existing maintenance record.",
+            "file": "app\\routes\\maintenance_routes.py"
+          },
+          {
+            "method": "DELETE",
+            "path": "/maintenance/{id}",
+            "description": "Delete a maintenance record.",
+            "file": "app\\routes\\maintenance_routes.py"
+          }
+        ],
+        "database_schema": [
+          {
+            "table_name": "vehicle",
+            "columns": [
+              {
+                "name": "id",
+                "type": "INTEGER",
+                "is_primary_key": true,
+                "is_nullable": false
+              },
+              {
+                "name": "license_plate",
+                "type": "VARCHAR(20)",
+                "is_primary_key": false,
+                "is_nullable": false
+              },
+              {
+                "name": "make",
+                "type": "VARCHAR(50)",
+                "is_primary_key": false,
+                "is_nullable": false
+              },
+              {
+                "name": "model",
+                "type": "VARCHAR(50)",
+                "is_primary_key": false,
+                "is_nullable": false
+              },
+              {
+                "name": "year",
+                "type": "INTEGER",
+                "is_primary_key": false,
+                "is_nullable": false
+              },
+              {
+                "name": "status",
+                "type": "VARCHAR(20)",
+                "is_primary_key": false,
+                "is_nullable": false
+              }
+            ]
+          },
+          {
+            "table_name": "user",
+            "columns": [
+              {
+                "name": "id",
+                "type": "INTEGER",
+                "is_primary_key": true,
+                "is_nullable": false
+              },
+              {
+                "name": "email",
+                "type": "VARCHAR(120)",
+                "is_primary_key": false,
+                "is_nullable": false
+              },
+              {
+                "name": "hashed_password",
+                "type": "VARCHAR(255)",
+                "is_primary_key": false,
+                "is_nullable": false
+              },
+              {
+                "name": "role",
+                "type": "VARCHAR(20)",
+                "is_primary_key": false,
+                "is_nullable": false
+              },
+              {
+                "name": "is_active",
+                "type": "BOOLEAN",
+                "is_primary_key": false,
+                "is_nullable": false
+              }
+            ]
+          },
+          {
+            "table_name": "triprequest",
+            "columns": [
+              {
+                "name": "id",
+                "type": "INTEGER",
+                "is_primary_key": true,
+                "is_nullable": false
+              },
+              {
+                "name": "vehicle_id",
+                "type": "INTEGER",
+                "is_primary_key": false,
+                "is_nullable": false
+              },
+              {
+                "name": "user_id",
+                "type": "INTEGER",
+                "is_primary_key": false,
+                "is_nullable": false
+              },
+              {
+                "name": "start_date",
+                "type": "DATETIME",
+                "is_primary_key": false,
+                "is_nullable": false
+              },
+              {
+                "name": "end_date",
+                "type": "DATETIME",
+                "is_primary_key": false,
+                "is_nullable": false
+              },
+              {
+                "name": "purpose",
+                "type": "VARCHAR(255)",
+                "is_primary_key": false,
+                "is_nullable": false
+              },
+              {
+                "name": "status",
+                "type": "VARCHAR(20)",
+                "is_primary_key": false,
+                "is_nullable": false
+              }
+            ]
+          },
+          {
+            "table_name": "maintenancerecord",
+            "columns": [
+              {
+                "name": "id",
+                "type": "INTEGER",
+                "is_primary_key": true,
+                "is_nullable": false
+              },
+              {
+                "name": "vehicle_id",
+                "type": "INTEGER",
+                "is_primary_key": false,
+                "is_nullable": false
+              },
+              {
+                "name": "date",
+                "type": "DATE",
+                "is_primary_key": false,
+                "is_nullable": false
+              },
+              {
+                "name": "description",
+                "type": "VARCHAR(255)",
+                "is_primary_key": false,
+                "is_nullable": false
+              },
+              {
+                "name": "cost",
+                "type": "FLOAT",
+                "is_primary_key": false,
+                "is_nullable": false
+              }
+            ]
+          }
+        ],
+        "folder_structure": {
+          "backend": [
+            "app/models",
+            "app/schemas",
+            "app/routes",
+            "app/services",
+            "app/utils",
+            "app/dependencies",
+            "app/config",
+            "app/main.py"
+          ]
+        },
+        "frontend_structure": {
+          "pages": [
+            "Dashboard",
+            "VehicleList",
+            "VehicleDetail",
+            "VehicleForm",
+            "TripRequestForm",
+            "TripHistory",
+            "MaintenanceList",
+            "MaintenanceSummary",
+            "Login",
+            "Register"
+          ],
+          "components": [
+            "Navbar",
+            "Footer",
+            "VehicleCard",
+            "VehicleTable",
+            "SearchBar",
+            "Pagination",
+            "TripRequestCard",
+            "TripTable",
+            "MaintenanceRecordForm",
+            "ProtectedRoute"
+          ]
+        }
+      },
+      "plan": {
+        "project_name": "fleet_manager",
+        "display_name": "Fleet Manager",
+        "features": [
+          "Create, read, update, and list vehicles with status tracking.",
+          "Drivers submit requests; managers approve or reject; vehicle status updates accordingly.",
+          "Log maintenance events, calculate total cost per vehicle, and set vehicle status to maintenance."
+        ],
+        "tech_stack": {
+          "backend": "FastAPI",
+          "database": "SQLite",
+          "auth": "JWT",
+          "frontend": "React + Vite"
+        },
+        "db_entities": [
+          "Vehicle",
+          "User",
+          "TripRequest",
+          "MaintenanceRecord"
+        ],
+        "api_modules": [
+          "auth",
+          "users",
+          "vehicles",
+          "trips",
+          "maintenance"
+        ],
+        "user_stories": [
+          {
+            "role": "fleet_manager",
+            "want": "to register a new vehicle with its details",
+            "acceptance_criteria": [
+              "A vehicle record is created when all required fields (license_plate, make, model, year, status) are supplied.",
+              "The system returns a 201 response with the vehicle ID and stored data.",
+              "The new vehicle appears in the vehicle list with status \"available\"."
+            ]
+          },
+          {
+            "role": "driver",
+            "want": "to request a vehicle for a specific trip",
+            "acceptance_criteria": [
+              "The request endpoint validates start_date < end_date and required fields (vehicle_id, purpose).",
+              "A pending trip request is created with status \"pending\" and linked to the driver.",
+              "The driver receives a confirmation email (simulated) with request details."
+            ]
+          },
+          {
+            "role": "fleet_manager",
+            "want": "to approve a driver’s vehicle request",
+            "acceptance_criteria": [
+              "Approving a request changes its status to \"approved\" and updates the vehicle status to \"in_use\" for the requested dates.",
+              "The system prevents approving overlapping requests for the same vehicle.",
+              "An approval notification is sent to the driver."
+            ]
+          },
+          {
+            "role": "fleet_manager",
+            "want": "to reject a driver’s vehicle request",
+            "acceptance_criteria": [
+              "Rejecting a request changes its status to \"rejected\" and leaves the vehicle status unchanged.",
+              "The driver receives a rejection notification with an optional reason.",
+              "The rejected request is still visible in the driver’s trip history with status \"rejected\"."
+            ]
+          },
+          {
+            "role": "fleet_manager",
+            "want": "to log a maintenance record for a vehicle",
+            "acceptance_criteria": [
+              "A maintenance record is created when date, description, and cost are provided.",
+              "The vehicle status automatically switches to \"maintenance\" for the maintenance date range.",
+              "The total maintenance cost for a vehicle can be retrieved via a summary endpoint."
+            ]
+          },
+          {
+            "role": "driver",
+            "want": "to view my trip history",
+            "acceptance_criteria": [
+              "The trip history endpoint returns only trips belonging to the authenticated driver.",
+              "Each trip entry includes vehicle details, dates, purpose, and final status.",
+              "Results are paginated with a default page size of 20."
+            ]
+          },
+          {
+            "role": "fleet_manager",
+            "want": "to view total maintenance cost per vehicle",
+            "acceptance_criteria": [
+              "A summary endpoint returns vehicle_id, license_plate, and sum(cost) of all maintenance records.",
+              "The endpoint filters out vehicles with no maintenance records.",
+              "The response is sorted descending by total cost."
+            ]
+          },
+          {
+            "role": "driver",
+            "want": "to see which vehicles are currently available",
+            "acceptance_criteria": [
+              "The vehicle list endpoint returns only vehicles with status \"available\" for the requested date range.",
+              "Search parameters (license_plate, make) filter the list correctly.",
+              "Pagination is applied with a maximum of 50 items per page."
+            ]
+          }
+        ],
+        "non_functional_requirements": {
+          "authentication": "required - all endpoints must be accessed by an authenticated user to protect fleet data.",
+          "authorization": "role-based: fleet_manager can create vehicles, approve/reject requests, and log maintenance; driver can only request vehicles and view own trips.",
+          "pagination": "required on vehicle list, trip list, and maintenance list endpoints.",
+          "search": "vehicles can be searched by license_plate, make, and model.",
+          "file_uploads": "no - maintenance records are textual only.",
+          "real_time": "no - updates are reflected on next API call; real‑time push not needed."
+        },
+        "data_entities_detail": [
+          {
+            "name": "Vehicle",
+            "description": "Stores basic vehicle information and current status.",
+            "key_fields": [
+              "id",
+              "license_plate"
+            ],
+            "relationships": [
+              "has many TripRequest",
+              "has many MaintenanceRecord"
+            ]
+          },
+          {
+            "name": "User",
+            "description": "Represents both fleet managers and drivers; role determines permissions.",
+            "key_fields": [
+              "id",
+              "email"
+            ],
+            "relationships": [
+              "has many TripRequest"
+            ]
+          },
+          {
+            "name": "TripRequest",
+            "description": "Records a driver’s request for a vehicle, its approval status, and trip dates.",
+            "key_fields": [
+              "id",
+              "vehicle_id",
+              "user_id"
+            ],
+            "relationships": [
+              "belongs to Vehicle",
+              "belongs to User"
+            ]
+          },
+          {
+            "name": "MaintenanceRecord",
+            "description": "Logs maintenance events for a vehicle with cost and description.",
+            "key_fields": [
+              "id",
+              "vehicle_id",
+              "date"
+            ],
+            "relationships": [
+              "belongs to Vehicle"
+            ]
+          }
+        ],
+        "out_of_scope": [
+          "GPS real‑time tracking of vehicle location",
+          "Integration with external telematics or accounting systems",
+          "Driver onboarding workflow and credential verification"
+        ]
+      },
+      "score": 85.46,
+      "success_count": 1,
+      "generation_id": "915418e1c6e3425291d0dd338a3f8928",
+      "timestamp": "2026-07-13T14:03:35Z"
     }
   ],
   "crm": [
@@ -13441,6 +14178,520 @@
       "success_count": 1,
       "generation_id": "d3cc627878ee440e98add9d54220fe7b",
       "timestamp": "2026-07-13T03:53:20Z"
+    }
+  ],
+  "health_fitness": [
+    {
+      "category": "health_fitness",
+      "idea": "A gym workout tracker with user login. Users create workout plans containing exercises (name, sets, reps, weight in kg). They log completed workout sessions per plan. Each session records actual sets/",
+      "architecture": {
+        "api_endpoints": [
+          {
+            "method": "POST",
+            "path": "/seed",
+            "description": "Populates database with realistic demo data (5–10 records per table)",
+            "file": "app\\routes\\seed_routes.py"
+          },
+          {
+            "method": "GET",
+            "path": "/stats/summary",
+            "description": "Returns aggregate counts and key metrics for the dashboard",
+            "file": "app\\routes\\stats_routes.py"
+          },
+          {
+            "method": "POST",
+            "path": "/auth/register",
+            "description": "Registers a new user account",
+            "file": "app\\routes\\auth_routes.py"
+          },
+          {
+            "method": "POST",
+            "path": "/auth/login",
+            "description": "Logs in a user and returns an authentication token",
+            "file": "app\\routes\\auth_routes.py"
+          },
+          {
+            "method": "POST",
+            "path": "/auth/forgot-password",
+            "description": "Initiates a password reset process",
+            "file": "app\\routes\\auth_routes.py"
+          },
+          {
+            "method": "POST",
+            "path": "/auth/reset-password",
+            "description": "Resets user password with a new one",
+            "file": "app\\routes\\auth_routes.py"
+          },
+          {
+            "method": "GET",
+            "path": "/workout_plans",
+            "description": "Retrieves a paginated list of workout plans for the authenticated user, with optional search and filtering by name or date created",
+            "file": "app\\routes\\workout_plan_routes.py"
+          },
+          {
+            "method": "GET",
+            "path": "/workout_plans/{plan_id}",
+            "description": "Retrieves a specific workout plan by ID",
+            "file": "app\\routes\\workout_plan_routes.py"
+          },
+          {
+            "method": "POST",
+            "path": "/workout_plans",
+            "description": "Creates a new workout plan for the authenticated user",
+            "file": "app\\routes\\workout_plan_routes.py"
+          },
+          {
+            "method": "PUT",
+            "path": "/workout_plans/{plan_id}",
+            "description": "Updates an existing workout plan by ID",
+            "file": "app\\routes\\workout_plan_routes.py"
+          },
+          {
+            "method": "DELETE",
+            "path": "/workout_plans/{plan_id}",
+            "description": "Deletes a workout plan by ID and all associated exercises and sessions",
+            "file": "app\\routes\\workout_plan_routes.py"
+          },
+          {
+            "method": "POST",
+            "path": "/workout_plans/{plan_id}/exercises",
+            "description": "Adds a new exercise to a specific workout plan",
+            "file": "app\\routes\\exercise_routes.py"
+          },
+          {
+            "method": "PUT",
+            "path": "/exercises/{exercise_id}",
+            "description": "Updates an existing exercise by ID",
+            "file": "app\\routes\\exercise_routes.py"
+          },
+          {
+            "method": "DELETE",
+            "path": "/exercises/{exercise_id}",
+            "description": "Deletes an exercise by ID",
+            "file": "app\\routes\\exercise_routes.py"
+          },
+          {
+            "method": "POST",
+            "path": "/workout_plans/{plan_id}/sessions",
+            "description": "Logs a new workout session for a specific workout plan",
+            "file": "app\\routes\\workout_session_routes.py"
+          },
+          {
+            "method": "GET",
+            "path": "/workout_plans/{plan_id}/sessions",
+            "description": "Retrieves all workout sessions for a specific workout plan",
+            "file": "app\\routes\\workout_session_routes.py"
+          },
+          {
+            "method": "GET",
+            "path": "/progress",
+            "description": "Retrieves a paginated progress view with total weight lifted for each exercise over time, with optional filtering by date range",
+            "file": "app\\routes\\progress_routes.py"
+          }
+        ],
+        "database_schema": [
+          {
+            "table_name": "users",
+            "columns": [
+              {
+                "name": "id",
+                "type": "INTEGER",
+                "is_primary_key": true,
+                "is_nullable": false
+              },
+              {
+                "name": "username",
+                "type": "VARCHAR(50)",
+                "is_primary_key": false,
+                "is_nullable": false
+              },
+              {
+                "name": "email",
+                "type": "VARCHAR(100)",
+                "is_primary_key": false,
+                "is_nullable": false
+              },
+              {
+                "name": "hashed_password",
+                "type": "VARCHAR(255)",
+                "is_primary_key": false,
+                "is_nullable": false
+              }
+            ]
+          },
+          {
+            "table_name": "workout_plans",
+            "columns": [
+              {
+                "name": "id",
+                "type": "INTEGER",
+                "is_primary_key": true,
+                "is_nullable": false
+              },
+              {
+                "name": "user_id",
+                "type": "INTEGER",
+                "is_primary_key": false,
+                "is_nullable": false
+              },
+              {
+                "name": "name",
+                "type": "VARCHAR(100)",
+                "is_primary_key": false,
+                "is_nullable": false
+              },
+              {
+                "name": "description",
+                "type": "TEXT",
+                "is_primary_key": false,
+                "is_nullable": true
+              }
+            ]
+          },
+          {
+            "table_name": "exercises",
+            "columns": [
+              {
+                "name": "id",
+                "type": "INTEGER",
+                "is_primary_key": true,
+                "is_nullable": false
+              },
+              {
+                "name": "workout_plan_id",
+                "type": "INTEGER",
+                "is_primary_key": false,
+                "is_nullable": false
+              },
+              {
+                "name": "name",
+                "type": "VARCHAR(100)",
+                "is_primary_key": false,
+                "is_nullable": false
+              },
+              {
+                "name": "sets",
+                "type": "INTEGER",
+                "is_primary_key": false,
+                "is_nullable": false
+              },
+              {
+                "name": "reps",
+                "type": "INTEGER",
+                "is_primary_key": false,
+                "is_nullable": false
+              },
+              {
+                "name": "weight",
+                "type": "REAL",
+                "is_primary_key": false,
+                "is_nullable": false
+              }
+            ]
+          },
+          {
+            "table_name": "workout_sessions",
+            "columns": [
+              {
+                "name": "id",
+                "type": "INTEGER",
+                "is_primary_key": true,
+                "is_nullable": false
+              },
+              {
+                "name": "workout_plan_id",
+                "type": "INTEGER",
+                "is_primary_key": false,
+                "is_nullable": false
+              },
+              {
+                "name": "date",
+                "type": "DATETIME",
+                "is_primary_key": false,
+                "is_nullable": false
+              },
+              {
+                "name": "exercise_id",
+                "type": "INTEGER",
+                "is_primary_key": false,
+                "is_nullable": false
+              },
+              {
+                "name": "actual_sets",
+                "type": "INTEGER",
+                "is_primary_key": false,
+                "is_nullable": false
+              },
+              {
+                "name": "actual_reps",
+                "type": "INTEGER",
+                "is_primary_key": false,
+                "is_nullable": false
+              },
+              {
+                "name": "actual_weight",
+                "type": "REAL",
+                "is_primary_key": false,
+                "is_nullable": false
+              }
+            ]
+          }
+        ],
+        "folder_structure": {
+          "backend": [
+            "app/",
+            "app/main.py",
+            "app/config.py",
+            "app/database.py",
+            "app/models/",
+            "app/models/user.py",
+            "app/models/workout_plan.py",
+            "app/models/exercise.py",
+            "app/models/workout_session.py",
+            "app/schemas/",
+            "app/schemas/user.py",
+            "app/schemas/workout_plan.py",
+            "app/schemas/exercise.py",
+            "app/schemas/workout_session.py",
+            "app/schemas/auth.py",
+            "app/routes/",
+            "app/routes/auth_routes.py",
+            "app/routes/workout_plan_routes.py",
+            "app/routes/exercise_routes.py",
+            "app/routes/workout_session_routes.py",
+            "app/routes/progress_routes.py",
+            "app/routes/seed_routes.py",
+            "app/routes/stats_routes.py",
+            "app/services/",
+            "app/services/auth_service.py",
+            "app/services/workout_plan_service.py",
+            "app/services/exercise_service.py",
+            "app/services/workout_session_service.py",
+            "app/services/progress_service.py",
+            "app/utils/",
+            "app/utils/security.py",
+            "app/utils/jwt_handler.py",
+            "app/dependencies.py"
+          ]
+        },
+        "frontend_structure": {
+          "pages": [
+            "LoginPage.jsx",
+            "RegisterPage.jsx",
+            "ForgotPasswordPage.jsx",
+            "ResetPasswordPage.jsx",
+            "DashboardPage.jsx",
+            "WorkoutPlansPage.jsx",
+            "WorkoutPlanDetailPage.jsx",
+            "LogWorkoutSessionPage.jsx",
+            "ProgressViewPage.jsx",
+            "NotFoundPage.jsx"
+          ],
+          "components": [
+            "Header.jsx",
+            "Footer.jsx",
+            "Navigation.jsx",
+            "WorkoutPlanCard.jsx",
+            "ExerciseForm.jsx",
+            "WorkoutSessionForm.jsx",
+            "ProgressChart.jsx",
+            "Pagination.jsx",
+            "SearchBar.jsx",
+            "FilterDropdown.jsx",
+            "AuthForm.jsx",
+            "LoadingSpinner.jsx",
+            "ErrorMessage.jsx",
+            "Modal.jsx"
+          ]
+        }
+      },
+      "plan": {
+        "project_name": "gym_workout_tracker",
+        "display_name": "Gym Workout Tracker",
+        "features": [
+          "Allows users to create new workout plans with exercises",
+          "Allows users to add, edit, and delete exercises from workout plans",
+          "Allows users to log completed workout sessions with actual sets, reps, and weight",
+          "Displays a progress view with the total weight lifted for each exercise over time",
+          "Allows users to login and register for an account"
+        ],
+        "tech_stack": {
+          "backend": "FastAPI",
+          "database": "SQLite",
+          "auth": "JWT",
+          "frontend": "React + Vite"
+        },
+        "db_entities": [
+          "User",
+          "WorkoutPlan",
+          "Exercise",
+          "WorkoutSession"
+        ],
+        "api_modules": [
+          "auth",
+          "workout_plans"
+        ],
+        "user_stories": [
+          {
+            "role": "Gym user",
+            "want": "Create a new workout plan",
+            "acceptance_criteria": [
+              "The system allows users to create a new workout plan with a name and description",
+              "The system stores the workout plan and allows users to view it later",
+              "The system validates user input to ensure that the workout plan name is not empty"
+            ]
+          },
+          {
+            "role": "Gym user",
+            "want": "Add exercises to a workout plan",
+            "acceptance_criteria": [
+              "The system allows users to add exercises to a workout plan with sets, reps, and weight",
+              "The system stores the exercises and allows users to view them later",
+              "The system validates user input to ensure that sets, reps, and weight are positive numbers"
+            ]
+          },
+          {
+            "role": "Gym user",
+            "want": "Log a completed workout session",
+            "acceptance_criteria": [
+              "The system allows users to log a completed workout session with actual sets, reps, and weight for each exercise",
+              "The system stores the workout session and allows users to view it later",
+              "The system calculates the total weight lifted for each exercise and displays it in the progress view"
+            ]
+          },
+          {
+            "role": "Gym user",
+            "want": "View my progress over time",
+            "acceptance_criteria": [
+              "The system displays a progress view with the total weight lifted for each exercise over time",
+              "The system allows users to filter the progress view by date range",
+              "The system updates the progress view in real-time as users log new workout sessions"
+            ]
+          },
+          {
+            "role": "Gym user",
+            "want": "Edit a workout plan",
+            "acceptance_criteria": [
+              "The system allows users to edit a workout plan and update the name, description, and exercises",
+              "The system validates user input to ensure that the workout plan name is not empty",
+              "The system updates the workout plan and reflects the changes in the progress view"
+            ]
+          },
+          {
+            "role": "Gym user",
+            "want": "Delete a workout plan",
+            "acceptance_criteria": [
+              "The system allows users to delete a workout plan",
+              "The system removes the workout plan and all associated exercises and workout sessions",
+              "The system updates the progress view to reflect the deleted workout plan"
+            ]
+          },
+          {
+            "role": "Gym user",
+            "want": "Login to the system",
+            "acceptance_criteria": [
+              "The system allows users to login with a username and password",
+              "The system authenticates users and redirects them to the dashboard",
+              "The system remembers user login credentials for future sessions"
+            ]
+          },
+          {
+            "role": "Gym user",
+            "want": "Register for an account",
+            "acceptance_criteria": [
+              "The system allows users to register for an account with a username, email, and password",
+              "The system validates user input to ensure that the username and email are unique",
+              "The system sends a confirmation email to the user to verify their account"
+            ]
+          },
+          {
+            "role": "Gym user",
+            "want": "Reset my password",
+            "acceptance_criteria": [
+              "The system allows users to reset their password with a new password",
+              "The system validates user input to ensure that the new password meets security requirements",
+              "The system updates the user's password and redirects them to the login page"
+            ]
+          },
+          {
+            "role": "Gym user",
+            "want": "View my workout plans",
+            "acceptance_criteria": [
+              "The system displays a list of all workout plans for the user",
+              "The system allows users to filter the list by name or date created",
+              "The system updates the list in real-time as users create or delete workout plans"
+            ]
+          }
+        ],
+        "non_functional_requirements": {
+          "authentication": "required — users need to login to access their workout plans and progress",
+          "authorization": "none — all users have the same permissions and access to all features",
+          "pagination": "required on the workout plan list and progress view",
+          "search": "none — users can filter the workout plan list and progress view by name or date created",
+          "file_uploads": "no — users do not need to upload files",
+          "real_time": "yes — the progress view updates in real-time as users log new workout sessions"
+        },
+        "data_entities_detail": [
+          {
+            "name": "User",
+            "description": "Stores user information and authentication credentials",
+            "key_fields": [
+              "username",
+              "email",
+              "password"
+            ],
+            "relationships": [
+              "has many WorkoutPlans"
+            ]
+          },
+          {
+            "name": "WorkoutPlan",
+            "description": "Stores workout plan information and exercises",
+            "key_fields": [
+              "name",
+              "description"
+            ],
+            "relationships": [
+              "belongs to User",
+              "has many Exercises",
+              "has many WorkoutSessions"
+            ]
+          },
+          {
+            "name": "Exercise",
+            "description": "Stores exercise information and sets, reps, and weight",
+            "key_fields": [
+              "name",
+              "sets",
+              "reps",
+              "weight"
+            ],
+            "relationships": [
+              "belongs to WorkoutPlan"
+            ]
+          },
+          {
+            "name": "WorkoutSession",
+            "description": "Stores workout session information and actual sets, reps, and weight",
+            "key_fields": [
+              "date",
+              "workoutPlanId"
+            ],
+            "relationships": [
+              "belongs to WorkoutPlan"
+            ]
+          }
+        ],
+        "out_of_scope": [
+          "Collaboration features — such as teams, organizations, and roles",
+          "File uploads — such as uploading workout plans or exercise videos",
+          "Advanced analytics — such as machine learning-based progress tracking"
+        ]
+      },
+      "score": 86.39,
+      "success_count": 1,
+      "generation_id": "6225462b727b4639ba537ece9e8fc696",
+      "timestamp": "2026-07-13T11:37:07Z"
     }
   ]
 }

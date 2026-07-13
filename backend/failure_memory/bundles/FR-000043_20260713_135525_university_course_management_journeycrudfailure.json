@@ -1,0 +1,42 @@
+{
+  "bundle_version": 1,
+  "failure_id": "FR-000043",
+  "timestamp": "2026-07-13T13:55:25.031276Z",
+  "forgeai_version": "19.0",
+  "pipeline_version": "v15",
+  "commit_sha": "e747a77",
+  "project": "university_course_management",
+  "provider": "cerebras",
+  "model": null,
+  "seed": null,
+  "failure": {
+    "stage": "runtime",
+    "class": "JourneyCRUDFailure",
+    "step": "Delete entity"
+  },
+  "request": {
+    "method": "DELETE",
+    "url": "http://127.0.0.1:8001/courses/1",
+    "json": null,
+    "has_auth": true
+  },
+  "response": {
+    "status_code": 405,
+    "body": {
+      "detail": "Method Not Allowed"
+    }
+  },
+  "stderr": null,
+  "generation": {
+    "category": null,
+    "style": null,
+    "layout": null,
+    "design_fingerprint_id": null
+  },
+  "artifacts": {
+    "screenshot": null,
+    "console_log": null,
+    "network_log": null,
+    "playwright_trace": null
+  }
+}

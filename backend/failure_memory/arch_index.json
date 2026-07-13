@@ -4021,5 +4021,517 @@
     "success_count": 1,
     "generation_id": "d3cc627878ee440e98add9d54220fe7b",
     "timestamp": "2026-07-13T03:53:20Z"
+  },
+  "health_fitness": {
+    "category": "health_fitness",
+    "idea": "A gym workout tracker with user login. Users create workout plans containing exercises (name, sets, reps, weight in kg). They log completed workout sessions per plan. Each session records actual sets/",
+    "architecture": {
+      "api_endpoints": [
+        {
+          "method": "POST",
+          "path": "/seed",
+          "description": "Populates database with realistic demo data (5–10 records per table)",
+          "file": "app\\routes\\seed_routes.py"
+        },
+        {
+          "method": "GET",
+          "path": "/stats/summary",
+          "description": "Returns aggregate counts and key metrics for the dashboard",
+          "file": "app\\routes\\stats_routes.py"
+        },
+        {
+          "method": "POST",
+          "path": "/auth/register",
+          "description": "Registers a new user account",
+          "file": "app\\routes\\auth_routes.py"
+        },
+        {
+          "method": "POST",
+          "path": "/auth/login",
+          "description": "Logs in a user and returns an authentication token",
+          "file": "app\\routes\\auth_routes.py"
+        },
+        {
+          "method": "POST",
+          "path": "/auth/forgot-password",
+          "description": "Initiates a password reset process",
+          "file": "app\\routes\\auth_routes.py"
+        },
+        {
+          "method": "POST",
+          "path": "/auth/reset-password",
+          "description": "Resets user password with a new one",
+          "file": "app\\routes\\auth_routes.py"
+        },
+        {
+          "method": "GET",
+          "path": "/workout_plans",
+          "description": "Retrieves a paginated list of workout plans for the authenticated user, with optional search and filtering by name or date created",
+          "file": "app\\routes\\workout_plan_routes.py"
+        },
+        {
+          "method": "GET",
+          "path": "/workout_plans/{plan_id}",
+          "description": "Retrieves a specific workout plan by ID",
+          "file": "app\\routes\\workout_plan_routes.py"
+        },
+        {
+          "method": "POST",
+          "path": "/workout_plans",
+          "description": "Creates a new workout plan for the authenticated user",
+          "file": "app\\routes\\workout_plan_routes.py"
+        },
+        {
+          "method": "PUT",
+          "path": "/workout_plans/{plan_id}",
+          "description": "Updates an existing workout plan by ID",
+          "file": "app\\routes\\workout_plan_routes.py"
+        },
+        {
+          "method": "DELETE",
+          "path": "/workout_plans/{plan_id}",
+          "description": "Deletes a workout plan by ID and all associated exercises and sessions",
+          "file": "app\\routes\\workout_plan_routes.py"
+        },
+        {
+          "method": "POST",
+          "path": "/workout_plans/{plan_id}/exercises",
+          "description": "Adds a new exercise to a specific workout plan",
+          "file": "app\\routes\\exercise_routes.py"
+        },
+        {
+          "method": "PUT",
+          "path": "/exercises/{exercise_id}",
+          "description": "Updates an existing exercise by ID",
+          "file": "app\\routes\\exercise_routes.py"
+        },
+        {
+          "method": "DELETE",
+          "path": "/exercises/{exercise_id}",
+          "description": "Deletes an exercise by ID",
+          "file": "app\\routes\\exercise_routes.py"
+        },
+        {
+          "method": "POST",
+          "path": "/workout_plans/{plan_id}/sessions",
+          "description": "Logs a new workout session for a specific workout plan",
+          "file": "app\\routes\\workout_session_routes.py"
+        },
+        {
+          "method": "GET",
+          "path": "/workout_plans/{plan_id}/sessions",
+          "description": "Retrieves all workout sessions for a specific workout plan",
+          "file": "app\\routes\\workout_session_routes.py"
+        },
+        {
+          "method": "GET",
+          "path": "/progress",
+          "description": "Retrieves a paginated progress view with total weight lifted for each exercise over time, with optional filtering by date range",
+          "file": "app\\routes\\progress_routes.py"
+        }
+      ],
+      "database_schema": [
+        {
+          "table_name": "users",
+          "columns": [
+            {
+              "name": "id",
+              "type": "INTEGER",
+              "is_primary_key": true,
+              "is_nullable": false
+            },
+            {
+              "name": "username",
+              "type": "VARCHAR(50)",
+              "is_primary_key": false,
+              "is_nullable": false
+            },
+            {
+              "name": "email",
+              "type": "VARCHAR(100)",
+              "is_primary_key": false,
+              "is_nullable": false
+            },
+            {
+              "name": "hashed_password",
+              "type": "VARCHAR(255)",
+              "is_primary_key": false,
+              "is_nullable": false
+            }
+          ]
+        },
+        {
+          "table_name": "workout_plans",
+          "columns": [
+            {
+              "name": "id",
+              "type": "INTEGER",
+              "is_primary_key": true,
+              "is_nullable": false
+            },
+            {
+              "name": "user_id",
+              "type": "INTEGER",
+              "is_primary_key": false,
+              "is_nullable": false
+            },
+            {
+              "name": "name",
+              "type": "VARCHAR(100)",
+              "is_primary_key": false,
+              "is_nullable": false
+            },
+            {
+              "name": "description",
+              "type": "TEXT",
+              "is_primary_key": false,
+              "is_nullable": true
+            }
+          ]
+        },
+        {
+          "table_name": "exercises",
+          "columns": [
+            {
+              "name": "id",
+              "type": "INTEGER",
+              "is_primary_key": true,
+              "is_nullable": false
+            },
+            {
+              "name": "workout_plan_id",
+              "type": "INTEGER",
+              "is_primary_key": false,
+              "is_nullable": false
+            },
+            {
+              "name": "name",
+              "type": "VARCHAR(100)",
+              "is_primary_key": false,
+              "is_nullable": false
+            },
+            {
+              "name": "sets",
+              "type": "INTEGER",
+              "is_primary_key": false,
+              "is_nullable": false
+            },
+            {
+              "name": "reps",
+              "type": "INTEGER",
+              "is_primary_key": false,
+              "is_nullable": false
+            },
+            {
+              "name": "weight",
+              "type": "REAL",
+              "is_primary_key": false,
+              "is_nullable": false
+            }
+          ]
+        },
+        {
+          "table_name": "workout_sessions",
+          "columns": [
+            {
+              "name": "id",
+              "type": "INTEGER",
+              "is_primary_key": true,
+              "is_nullable": false
+            },
+            {
+              "name": "workout_plan_id",
+              "type": "INTEGER",
+              "is_primary_key": false,
+              "is_nullable": false
+            },
+            {
+              "name": "date",
+              "type": "DATETIME",
+              "is_primary_key": false,
+              "is_nullable": false
+            },
+            {
+              "name": "exercise_id",
+              "type": "INTEGER",
+              "is_primary_key": false,
+              "is_nullable": false
+            },
+            {
+              "name": "actual_sets",
+              "type": "INTEGER",
+              "is_primary_key": false,
+              "is_nullable": false
+            },
+            {
+              "name": "actual_reps",
+              "type": "INTEGER",
+              "is_primary_key": false,
+              "is_nullable": false
+            },
+            {
+              "name": "actual_weight",
+              "type": "REAL",
+              "is_primary_key": false,
+              "is_nullable": false
+            }
+          ]
+        }
+      ],
+      "folder_structure": {
+        "backend": [
+          "app/",
+          "app/main.py",
+          "app/config.py",
+          "app/database.py",
+          "app/models/",
+          "app/models/user.py",
+          "app/models/workout_plan.py",
+          "app/models/exercise.py",
+          "app/models/workout_session.py",
+          "app/schemas/",
+          "app/schemas/user.py",
+          "app/schemas/workout_plan.py",
+          "app/schemas/exercise.py",
+          "app/schemas/workout_session.py",
+          "app/schemas/auth.py",
+          "app/routes/",
+          "app/routes/auth_routes.py",
+          "app/routes/workout_plan_routes.py",
+          "app/routes/exercise_routes.py",
+          "app/routes/workout_session_routes.py",
+          "app/routes/progress_routes.py",
+          "app/routes/seed_routes.py",
+          "app/routes/stats_routes.py",
+          "app/services/",
+          "app/services/auth_service.py",
+          "app/services/workout_plan_service.py",
+          "app/services/exercise_service.py",
+          "app/services/workout_session_service.py",
+          "app/services/progress_service.py",
+          "app/utils/",
+          "app/utils/security.py",
+          "app/utils/jwt_handler.py",
+          "app/dependencies.py"
+        ]
+      },
+      "frontend_structure": {
+        "pages": [
+          "LoginPage.jsx",
+          "RegisterPage.jsx",
+          "ForgotPasswordPage.jsx",
+          "ResetPasswordPage.jsx",
+          "DashboardPage.jsx",
+          "WorkoutPlansPage.jsx",
+          "WorkoutPlanDetailPage.jsx",
+          "LogWorkoutSessionPage.jsx",
+          "ProgressViewPage.jsx",
+          "NotFoundPage.jsx"
+        ],
+        "components": [
+          "Header.jsx",
+          "Footer.jsx",
+          "Navigation.jsx",
+          "WorkoutPlanCard.jsx",
+          "ExerciseForm.jsx",
+          "WorkoutSessionForm.jsx",
+          "ProgressChart.jsx",
+          "Pagination.jsx",
+          "SearchBar.jsx",
+          "FilterDropdown.jsx",
+          "AuthForm.jsx",
+          "LoadingSpinner.jsx",
+          "ErrorMessage.jsx",
+          "Modal.jsx"
+        ]
+      }
+    },
+    "plan": {
+      "project_name": "gym_workout_tracker",
+      "display_name": "Gym Workout Tracker",
+      "features": [
+        "Allows users to create new workout plans with exercises",
+        "Allows users to add, edit, and delete exercises from workout plans",
+        "Allows users to log completed workout sessions with actual sets, reps, and weight",
+        "Displays a progress view with the total weight lifted for each exercise over time",
+        "Allows users to login and register for an account"
+      ],
+      "tech_stack": {
+        "backend": "FastAPI",
+        "database": "SQLite",
+        "auth": "JWT",
+        "frontend": "React + Vite"
+      },
+      "db_entities": [
+        "User",
+        "WorkoutPlan",
+        "Exercise",
+        "WorkoutSession"
+      ],
+      "api_modules": [
+        "auth",
+        "workout_plans"
+      ],
+      "user_stories": [
+        {
+          "role": "Gym user",
+          "want": "Create a new workout plan",
+          "acceptance_criteria": [
+            "The system allows users to create a new workout plan with a name and description",
+            "The system stores the workout plan and allows users to view it later",
+            "The system validates user input to ensure that the workout plan name is not empty"
+          ]
+        },
+        {
+          "role": "Gym user",
+          "want": "Add exercises to a workout plan",
+          "acceptance_criteria": [
+            "The system allows users to add exercises to a workout plan with sets, reps, and weight",
+            "The system stores the exercises and allows users to view them later",
+            "The system validates user input to ensure that sets, reps, and weight are positive numbers"
+          ]
+        },
+        {
+          "role": "Gym user",
+          "want": "Log a completed workout session",
+          "acceptance_criteria": [
+            "The system allows users to log a completed workout session with actual sets, reps, and weight for each exercise",
+            "The system stores the workout session and allows users to view it later",
+            "The system calculates the total weight lifted for each exercise and displays it in the progress view"
+          ]
+        },
+        {
+          "role": "Gym user",
+          "want": "View my progress over time",
+          "acceptance_criteria": [
+            "The system displays a progress view with the total weight lifted for each exercise over time",
+            "The system allows users to filter the progress view by date range",
+            "The system updates the progress view in real-time as users log new workout sessions"
+          ]
+        },
+        {
+          "role": "Gym user",
+          "want": "Edit a workout plan",
+          "acceptance_criteria": [
+            "The system allows users to edit a workout plan and update the name, description, and exercises",
+            "The system validates user input to ensure that the workout plan name is not empty",
+            "The system updates the workout plan and reflects the changes in the progress view"
+          ]
+        },
+        {
+          "role": "Gym user",
+          "want": "Delete a workout plan",
+          "acceptance_criteria": [
+            "The system allows users to delete a workout plan",
+            "The system removes the workout plan and all associated exercises and workout sessions",
+            "The system updates the progress view to reflect the deleted workout plan"
+          ]
+        },
+        {
+          "role": "Gym user",
+          "want": "Login to the system",
+          "acceptance_criteria": [
+            "The system allows users to login with a username and password",
+            "The system authenticates users and redirects them to the dashboard",
+            "The system remembers user login credentials for future sessions"
+          ]
+        },
+        {
+          "role": "Gym user",
+          "want": "Register for an account",
+          "acceptance_criteria": [
+            "The system allows users to register for an account with a username, email, and password",
+            "The system validates user input to ensure that the username and email are unique",
+            "The system sends a confirmation email to the user to verify their account"
+          ]
+        },
+        {
+          "role": "Gym user",
+          "want": "Reset my password",
+          "acceptance_criteria": [
+            "The system allows users to reset their password with a new password",
+            "The system validates user input to ensure that the new password meets security requirements",
+            "The system updates the user's password and redirects them to the login page"
+          ]
+        },
+        {
+          "role": "Gym user",
+          "want": "View my workout plans",
+          "acceptance_criteria": [
+            "The system displays a list of all workout plans for the user",
+            "The system allows users to filter the list by name or date created",
+            "The system updates the list in real-time as users create or delete workout plans"
+          ]
+        }
+      ],
+      "non_functional_requirements": {
+        "authentication": "required — users need to login to access their workout plans and progress",
+        "authorization": "none — all users have the same permissions and access to all features",
+        "pagination": "required on the workout plan list and progress view",
+        "search": "none — users can filter the workout plan list and progress view by name or date created",
+        "file_uploads": "no — users do not need to upload files",
+        "real_time": "yes — the progress view updates in real-time as users log new workout sessions"
+      },
+      "data_entities_detail": [
+        {
+          "name": "User",
+          "description": "Stores user information and authentication credentials",
+          "key_fields": [
+            "username",
+            "email",
+            "password"
+          ],
+          "relationships": [
+            "has many WorkoutPlans"
+          ]
+        },
+        {
+          "name": "WorkoutPlan",
+          "description": "Stores workout plan information and exercises",
+          "key_fields": [
+            "name",
+            "description"
+          ],
+          "relationships": [
+            "belongs to User",
+            "has many Exercises",
+            "has many WorkoutSessions"
+          ]
+        },
+        {
+          "name": "Exercise",
+          "description": "Stores exercise information and sets, reps, and weight",
+          "key_fields": [
+            "name",
+            "sets",
+            "reps",
+            "weight"
+          ],
+          "relationships": [
+            "belongs to WorkoutPlan"
+          ]
+        },
+        {
+          "name": "WorkoutSession",
+          "description": "Stores workout session information and actual sets, reps, and weight",
+          "key_fields": [
+            "date",
+            "workoutPlanId"
+          ],
+          "relationships": [
+            "belongs to WorkoutPlan"
+          ]
+        }
+      ],
+      "out_of_scope": [
+        "Collaboration features — such as teams, organizations, and roles",
+        "File uploads — such as uploading workout plans or exercise videos",
+        "Advanced analytics — such as machine learning-based progress tracking"
+      ]
+    },
+    "score": 86.39,
+    "success_count": 1,
+    "generation_id": "6225462b727b4639ba537ece9e8fc696",
+    "timestamp": "2026-07-13T11:37:07Z"
   }
 }

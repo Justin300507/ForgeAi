@@ -4,14 +4,20 @@
       "successes": 0,
       "tries": 2
     },
+    "regenerate_arch": {
+      "generation": 1,
+      "successes": 0,
+      "tries": 1
+    },
     "regenerate_module": {
       "generation": 2,
       "successes": 0,
       "tries": 0
     },
     "switch_model": {
+      "generation": 1,
       "successes": 0,
-      "tries": 1
+      "tries": 2
     }
   },
   "ConfigAttributeError": {
@@ -66,36 +72,65 @@
       "tries": 0
     }
   },
+  "UserIdNotInjectedError": {
+    "regenerate_module": {
+      "generation": 2,
+      "successes": 0,
+      "tries": 1
+    },
+    "switch_model": {
+      "generation": 1,
+      "successes": 0,
+      "tries": 1
+    }
+  },
   "api": {
     "patch_file": {
       "successes": 0,
       "tries": 3
     },
     "regenerate_arch": {
+      "generation": 1,
       "successes": 1,
-      "tries": 1
+      "tries": 2
     },
     "regenerate_module": {
       "generation": 2,
       "successes": 0,
-      "tries": 0
+      "tries": 3
     },
     "switch_model": {
-      "successes": 4,
-      "tries": 8
+      "generation": 1,
+      "successes": 6,
+      "tries": 20
     }
   },
   "browser": {
     "patch_file": {
       "successes": 1,
       "tries": 3
+    },
+    "regenerate_arch": {
+      "generation": 1,
+      "successes": 0,
+      "tries": 1
+    },
+    "regenerate_module": {
+      "generation": 2,
+      "successes": 0,
+      "tries": 1
+    },
+    "switch_model": {
+      "generation": 1,
+      "successes": 0,
+      "tries": 2
     }
   },
   "contract": {
     "patch_file": {
       "generation": 1,
-      "successes": 57,
-      "tries": 134
+      "successes": 76,
+      "tries": 159
     },
     "regenerate_arch": {
       "successes": 9,
@@ -103,8 +138,8 @@
     },
     "regenerate_module": {
       "generation": 2,
-      "successes": 0,
-      "tries": 1
+      "successes": 3,
+      "tries": 7
     },
     "switch_model": {
       "successes": 0,

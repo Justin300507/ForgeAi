@@ -7040,3 +7040,74 @@ none dominant.
 
 **Deliverables**: `docs/EXP100_RELIABILITY_MILESTONE_ASSESSMENT.md`,
 this entry. **Cost: $0, zero Cerebras calls, zero code changes.**
+
+---
+
+## ForgeBench v1.0: 25-Application Reliability Benchmark
+
+2026-07-13. Live, 25-app benchmark against the live V15 pipeline
+(Cerebras, `deploy=False`), per the user's explicit spec. First genuine
+full-scale system-level evaluation in this project's history (only
+test-harness simulation fixtures existed before). New
+`backend/scripts/forgebench_v1.py` + `_forgebench_worker.py` — new
+files, zero changes to any existing ForgeAI module. Deliberately not
+`run_forgebench.py --suite golden`: that runner calls the legacy
+`project_service.generate_project` path, confirmed broken for this
+purpose by a prior abandoned attempt (Exp019's housekeeping note,
+all-0.0 scores).
+
+**Overall**: 25/25 apps attempted, 19/25 (76%) completed generation
+without crashing, 4/25 (16%) fully succeeded. Avg Forge Score 75.0
+(19 completed) / 57.0 (all 25). Avg repair iterations 2.89. Total cost
+$1.8934, 3,155,630 tokens, ~3.04 hours wall-clock.
+
+**Most significant finding: execution-level, not a generated-app
+defect.** 6/25 attempts (24%) hung during generation — confirmed
+genuine hangs via tasklist memory-delta comparison (byte-identical
+memory across consecutive checks), not slow-but-progressing work.
+Affected 6 different apps (no idea-specific pattern), hang rate rising
+from 0/10 in the first half to 6/15 (40%) in the second half. Mitigated
+mid-run: added a 900s subprocess-isolation timeout with process-tree
+cleanup to `forgebench_v1.py`, then restructured to one-app-per-
+invocation with automatic retry/deferral after the outer wrapper
+process was *also* killed by the environment repeatedly (unrelated to
+genuine hangs) — no completed app's data was lost, but the run took
+over 3 hours end-to-end. Low available system memory (~3.5GB/16GB)
+was observed but not conclusively proven as the cause (killing an
+identified orphan process didn't meaningfully free memory).
+
+**Failure taxonomy (frequency × severity, excluding one-offs)**: (1)
+execution-level hang, 6/25 (24%) — see above; (2) `JourneyCRUDFailure`,
+5/25 (20%) — **the exact same class Exp091-096 spent six experiments
+fixing (Create-path ownership, Edit-path 405), recurring as the #1
+generated-app failure class in this fresh sample**, directly correcting
+Exp100's "no dominant class remains" conclusion; (3)
+`UserIdNotInjectedError`, 2/25 (8%) — **the exact error class name from
+the Exp091-093 ownership-assignment fix**, an independent second signal
+of a coverage gap in that "closed" thread; (4) frontend
+`vite:esbuild` build failures, 2/25 (8%) — a genuinely new opportunity
+area this reliability arc never touched (backend-only focus
+throughout Exp077-100).
+
+**Reliability metrics**: first-pass success 16%, post-repair success
+16% (**identical** — zero apps were rescued into full success by the
+repair loop this run, though several improved score substantially
+without crossing the success threshold). Build success 68.4% (19
+completed). Runtime success 42.1%. CRUD success not directly
+measurable — the Integration scoring dimension was excluded for all 25
+apps, a data-collection gap in this benchmark's own setup. Deploy-ready
+proxy (score≥80) 28%.
+
+**Recommendation: pause for targeted investigation before ForgeBench
+v1.1, do not proceed directly to 100 apps.** The 24% hang rate would
+make a 100-app run unreliable and far slower than its API cost alone
+suggests; `JourneyCRUDFailure`/`UserIdNotInjectedError` recurring
+directly contradicts Exp100's closure conclusion. Recommends Exp101
+root-cause (a) why these classes recurred despite the Exp091-096
+fixes, and (b) what's actually blocking during the execution-level
+hangs, before scaling further.
+
+**Deliverables**: `docs/FORGEBENCH_V1_REPORT.md`, this entry,
+`backend/scripts/forgebench_v1.py`, `backend/scripts/_forgebench_worker.py`,
+`backend/benchmark_results/forgebench_v1_results.json`.
+**Cost: $1.8934, 25 live generation attempts (19 completed, 6 timed out).**

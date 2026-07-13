@@ -16804,5 +16804,2387 @@
     "forge_score": 40,
     "wall_time_s": 56.81,
     "timestamp": "2026-07-13T10:06:06"
+  },
+  {
+    "total_calls": 11,
+    "total_tokens": 60628,
+    "total_cost_usd": 0.036376,
+    "total_llm_time_s": 39.34,
+    "by_stage": {
+      "backend_generation": {
+        "calls": 6,
+        "tokens": 31530,
+        "cost_usd": 0.018917999999999997,
+        "time_s": 29.150000000000002
+      },
+      "fix": {
+        "calls": 1,
+        "tokens": 3627,
+        "cost_usd": 0.002176,
+        "time_s": 2.96
+      },
+      "qa_review": {
+        "calls": 1,
+        "tokens": 4150,
+        "cost_usd": 0.00249,
+        "time_s": 1.67
+      },
+      "security_review": {
+        "calls": 1,
+        "tokens": 8129,
+        "cost_usd": 0.004877,
+        "time_s": 1.73
+      },
+      "code_review": {
+        "calls": 1,
+        "tokens": 6955,
+        "cost_usd": 0.004173,
+        "time_s": 2.03
+      },
+      "performance_review": {
+        "calls": 1,
+        "tokens": 6237,
+        "cost_usd": 0.003742,
+        "time_s": 1.8
+      }
+    },
+    "project_name": "todo_list_app",
+    "forge_score": 68,
+    "wall_time_s": 32.61,
+    "timestamp": "2026-07-13T10:41:54"
+  },
+  {
+    "total_calls": 29,
+    "total_tokens": 155547,
+    "total_cost_usd": 0.09333,
+    "total_llm_time_s": 80.65,
+    "by_stage": {
+      "product_manager": {
+        "calls": 1,
+        "tokens": 2498,
+        "cost_usd": 0.001499,
+        "time_s": 2.47
+      },
+      "architecture": {
+        "calls": 1,
+        "tokens": 5504,
+        "cost_usd": 0.003302,
+        "time_s": 1.83
+      },
+      "tech_lead": {
+        "calls": 1,
+        "tokens": 7520,
+        "cost_usd": 0.004512,
+        "time_s": 1.62
+      },
+      "backend_generation": {
+        "calls": 13,
+        "tokens": 55740,
+        "cost_usd": 0.033446,
+        "time_s": 34.9
+      },
+      "frontend_generation": {
+        "calls": 1,
+        "tokens": 25625,
+        "cost_usd": 0.015375,
+        "time_s": 8.09
+      },
+      "missing_file": {
+        "calls": 12,
+        "tokens": 58660,
+        "cost_usd": 0.035196,
+        "time_s": 31.740000000000002
+      }
+    },
+    "project_name": "personal_note_app",
+    "forge_score": 61,
+    "wall_time_s": 51.85,
+    "timestamp": "2026-07-13T10:43:32"
+  },
+  {
+    "total_calls": 27,
+    "total_tokens": 134687,
+    "total_cost_usd": 0.080811,
+    "total_llm_time_s": 73.29,
+    "by_stage": {
+      "backend_generation": {
+        "calls": 5,
+        "tokens": 26234,
+        "cost_usd": 0.01574,
+        "time_s": 14.8
+      },
+      "missing_file": {
+        "calls": 12,
+        "tokens": 57841,
+        "cost_usd": 0.034703,
+        "time_s": 34.72
+      },
+      "fix": {
+        "calls": 5,
+        "tokens": 16889,
+        "cost_usd": 0.010134,
+        "time_s": 13.93
+      },
+      "qa_review": {
+        "calls": 1,
+        "tokens": 4586,
+        "cost_usd": 0.002752,
+        "time_s": 1.59
+      },
+      "security_review": {
+        "calls": 1,
+        "tokens": 7707,
+        "cost_usd": 0.004624,
+        "time_s": 1.95
+      },
+      "code_review": {
+        "calls": 1,
+        "tokens": 6944,
+        "cost_usd": 0.004166,
+        "time_s": 2.44
+      },
+      "performance_review": {
+        "calls": 1,
+        "tokens": 5921,
+        "cost_usd": 0.003553,
+        "time_s": 1.51
+      },
+      "frontend_critic": {
+        "calls": 1,
+        "tokens": 8565,
+        "cost_usd": 0.005139,
+        "time_s": 2.35
+      }
+    },
+    "project_name": "personal_note_app",
+    "forge_score": 68,
+    "wall_time_s": 72.47,
+    "timestamp": "2026-07-13T10:47:30"
+  },
+  {
+    "total_calls": 14,
+    "total_tokens": 76006,
+    "total_cost_usd": 0.045603,
+    "total_llm_time_s": 41.41,
+    "by_stage": {
+      "backend_generation": {
+        "calls": 7,
+        "tokens": 37041,
+        "cost_usd": 0.022224,
+        "time_s": 22.77
+      },
+      "fix": {
+        "calls": 3,
+        "tokens": 14480,
+        "cost_usd": 0.008688,
+        "time_s": 8.96
+      },
+      "qa_review": {
+        "calls": 1,
+        "tokens": 4681,
+        "cost_usd": 0.002809,
+        "time_s": 1.61
+      },
+      "security_review": {
+        "calls": 1,
+        "tokens": 7682,
+        "cost_usd": 0.004609,
+        "time_s": 1.75
+      },
+      "code_review": {
+        "calls": 1,
+        "tokens": 6725,
+        "cost_usd": 0.004035,
+        "time_s": 4.79
+      },
+      "performance_review": {
+        "calls": 1,
+        "tokens": 5397,
+        "cost_usd": 0.003238,
+        "time_s": 1.53
+      }
+    },
+    "project_name": "forge_blog_cms",
+    "forge_score": 71,
+    "wall_time_s": 36.07,
+    "timestamp": "2026-07-13T10:49:12"
+  },
+  {
+    "total_calls": 21,
+    "total_tokens": 103740,
+    "total_cost_usd": 0.062242,
+    "total_llm_time_s": 55.01,
+    "by_stage": {
+      "backend_generation": {
+        "calls": 15,
+        "tokens": 65048,
+        "cost_usd": 0.039027,
+        "time_s": 39.79
+      },
+      "fix": {
+        "calls": 1,
+        "tokens": 4919,
+        "cost_usd": 0.002951,
+        "time_s": 4.3
+      },
+      "qa_review": {
+        "calls": 1,
+        "tokens": 4459,
+        "cost_usd": 0.002675,
+        "time_s": 2.18
+      },
+      "security_review": {
+        "calls": 1,
+        "tokens": 8190,
+        "cost_usd": 0.004914,
+        "time_s": 1.53
+      },
+      "code_review": {
+        "calls": 1,
+        "tokens": 6928,
+        "cost_usd": 0.004157,
+        "time_s": 2.89
+      },
+      "performance_review": {
+        "calls": 1,
+        "tokens": 6266,
+        "cost_usd": 0.00376,
+        "time_s": 1.93
+      },
+      "runtime_fix": {
+        "calls": 1,
+        "tokens": 7930,
+        "cost_usd": 0.004758,
+        "time_s": 2.39
+      }
+    },
+    "project_name": "inventory_manager",
+    "forge_score": 51,
+    "wall_time_s": 41.33,
+    "timestamp": "2026-07-13T10:53:16"
+  },
+  {
+    "total_calls": 27,
+    "total_tokens": 133303,
+    "total_cost_usd": 0.079984,
+    "total_llm_time_s": 80.38,
+    "by_stage": {
+      "backend_generation": {
+        "calls": 15,
+        "tokens": 67247,
+        "cost_usd": 0.040350000000000004,
+        "time_s": 48.32000000000001
+      },
+      "fix": {
+        "calls": 4,
+        "tokens": 14301,
+        "cost_usd": 0.008581,
+        "time_s": 11.48
+      },
+      "missing_file": {
+        "calls": 1,
+        "tokens": 4211,
+        "cost_usd": 0.002527,
+        "time_s": 2.72
+      },
+      "qa_review": {
+        "calls": 1,
+        "tokens": 4534,
+        "cost_usd": 0.00272,
+        "time_s": 1.99
+      },
+      "security_review": {
+        "calls": 1,
+        "tokens": 8292,
+        "cost_usd": 0.004975,
+        "time_s": 1.78
+      },
+      "code_review": {
+        "calls": 1,
+        "tokens": 6791,
+        "cost_usd": 0.004075,
+        "time_s": 2.26
+      },
+      "performance_review": {
+        "calls": 1,
+        "tokens": 6211,
+        "cost_usd": 0.003727,
+        "time_s": 1.73
+      },
+      "frontend_critic": {
+        "calls": 1,
+        "tokens": 2793,
+        "cost_usd": 0.001676,
+        "time_s": 2.44
+      },
+      "runtime_fix": {
+        "calls": 2,
+        "tokens": 18923,
+        "cost_usd": 0.011353,
+        "time_s": 7.66
+      }
+    },
+    "project_name": "inventory_manager",
+    "forge_score": 63,
+    "wall_time_s": 75.93,
+    "timestamp": "2026-07-13T10:57:37"
+  },
+  {
+    "total_calls": 19,
+    "total_tokens": 89027,
+    "total_cost_usd": 0.053414,
+    "total_llm_time_s": 48.29,
+    "by_stage": {
+      "backend_generation": {
+        "calls": 15,
+        "tokens": 65193,
+        "cost_usd": 0.039114,
+        "time_s": 39.1
+      },
+      "qa_review": {
+        "calls": 1,
+        "tokens": 4822,
+        "cost_usd": 0.002893,
+        "time_s": 2.58
+      },
+      "security_review": {
+        "calls": 1,
+        "tokens": 7181,
+        "cost_usd": 0.004309,
+        "time_s": 2.24
+      },
+      "code_review": {
+        "calls": 1,
+        "tokens": 6462,
+        "cost_usd": 0.003877,
+        "time_s": 2.93
+      },
+      "performance_review": {
+        "calls": 1,
+        "tokens": 5369,
+        "cost_usd": 0.003221,
+        "time_s": 1.44
+      }
+    },
+    "project_name": "simple_crm",
+    "forge_score": 75,
+    "wall_time_s": 33.82,
+    "timestamp": "2026-07-13T10:59:04"
+  },
+  {
+    "total_calls": 32,
+    "total_tokens": 160576,
+    "total_cost_usd": 0.096345,
+    "total_llm_time_s": 98.25,
+    "by_stage": {
+      "backend_generation": {
+        "calls": 17,
+        "tokens": 73836,
+        "cost_usd": 0.044302,
+        "time_s": 47.62
+      },
+      "frontend_generation": {
+        "calls": 1,
+        "tokens": 18420,
+        "cost_usd": 0.011052,
+        "time_s": 8.56
+      },
+      "missing_file": {
+        "calls": 10,
+        "tokens": 53458,
+        "cost_usd": 0.032074,
+        "time_s": 30.37
+      },
+      "fix": {
+        "calls": 3,
+        "tokens": 9269,
+        "cost_usd": 0.005561,
+        "time_s": 7.12
+      },
+      "architecture_fix": {
+        "calls": 1,
+        "tokens": 5593,
+        "cost_usd": 0.003356,
+        "time_s": 4.58
+      }
+    },
+    "project_name": "personal_expense_tracker",
+    "forge_score": 61,
+    "wall_time_s": 63.3,
+    "timestamp": "2026-07-13T11:03:52"
+  },
+  {
+    "total_calls": 30,
+    "total_tokens": 147486,
+    "total_cost_usd": 0.088493,
+    "total_llm_time_s": 86.84,
+    "by_stage": {
+      "backend_generation": {
+        "calls": 22,
+        "tokens": 99763,
+        "cost_usd": 0.059860000000000003,
+        "time_s": 65.93
+      },
+      "fix": {
+        "calls": 3,
+        "tokens": 11486,
+        "cost_usd": 0.0068909999999999996,
+        "time_s": 9.38
+      },
+      "qa_review": {
+        "calls": 1,
+        "tokens": 4542,
+        "cost_usd": 0.002725,
+        "time_s": 2.44
+      },
+      "security_review": {
+        "calls": 1,
+        "tokens": 9860,
+        "cost_usd": 0.005916,
+        "time_s": 1.82
+      },
+      "code_review": {
+        "calls": 1,
+        "tokens": 7391,
+        "cost_usd": 0.004435,
+        "time_s": 2.11
+      },
+      "performance_review": {
+        "calls": 1,
+        "tokens": 6012,
+        "cost_usd": 0.003607,
+        "time_s": 1.64
+      },
+      "runtime_fix": {
+        "calls": 1,
+        "tokens": 8432,
+        "cost_usd": 0.005059,
+        "time_s": 3.52
+      }
+    },
+    "project_name": "secure_project_manager",
+    "forge_score": 68,
+    "wall_time_s": 63.26,
+    "timestamp": "2026-07-13T11:07:24"
+  },
+  {
+    "total_calls": 35,
+    "total_tokens": 199809,
+    "total_cost_usd": 0.119887,
+    "total_llm_time_s": 105.31,
+    "by_stage": {
+      "product_manager": {
+        "calls": 1,
+        "tokens": 2392,
+        "cost_usd": 0.001435,
+        "time_s": 3.45
+      },
+      "architecture": {
+        "calls": 1,
+        "tokens": 5459,
+        "cost_usd": 0.003275,
+        "time_s": 2.03
+      },
+      "tech_lead": {
+        "calls": 1,
+        "tokens": 8122,
+        "cost_usd": 0.004873,
+        "time_s": 2.14
+      },
+      "backend_generation": {
+        "calls": 15,
+        "tokens": 64398,
+        "cost_usd": 0.038639,
+        "time_s": 40.72999999999999
+      },
+      "frontend_generation": {
+        "calls": 1,
+        "tokens": 24341,
+        "cost_usd": 0.014605,
+        "time_s": 8.48
+      },
+      "missing_file": {
+        "calls": 4,
+        "tokens": 21184,
+        "cost_usd": 0.01271,
+        "time_s": 12.37
+      },
+      "qa_review": {
+        "calls": 1,
+        "tokens": 4985,
+        "cost_usd": 0.002991,
+        "time_s": 1.9
+      },
+      "security_review": {
+        "calls": 1,
+        "tokens": 8551,
+        "cost_usd": 0.005131,
+        "time_s": 1.83
+      },
+      "code_review": {
+        "calls": 1,
+        "tokens": 6981,
+        "cost_usd": 0.004189,
+        "time_s": 2.45
+      },
+      "performance_review": {
+        "calls": 1,
+        "tokens": 6261,
+        "cost_usd": 0.003757,
+        "time_s": 2.12
+      },
+      "frontend_critic": {
+        "calls": 1,
+        "tokens": 7913,
+        "cost_usd": 0.004748,
+        "time_s": 2.85
+      },
+      "fix": {
+        "calls": 4,
+        "tokens": 13311,
+        "cost_usd": 0.007987,
+        "time_s": 12.08
+      },
+      "runtime_fix": {
+        "calls": 3,
+        "tokens": 25911,
+        "cost_usd": 0.015546999999999998,
+        "time_s": 12.879999999999999
+      }
+    },
+    "project_name": "team_task_manager",
+    "forge_score": 41,
+    "wall_time_s": 99.06,
+    "timestamp": "2026-07-13T11:10:06"
+  },
+  {
+    "total_calls": 38,
+    "total_tokens": 192419,
+    "total_cost_usd": 0.115451,
+    "total_llm_time_s": 108.16,
+    "by_stage": {
+      "backend_generation": {
+        "calls": 15,
+        "tokens": 65366,
+        "cost_usd": 0.039220000000000005,
+        "time_s": 43.589999999999996
+      },
+      "missing_file": {
+        "calls": 11,
+        "tokens": 53128,
+        "cost_usd": 0.031877,
+        "time_s": 31.93
+      },
+      "fix": {
+        "calls": 4,
+        "tokens": 16617,
+        "cost_usd": 0.00997,
+        "time_s": 12.31
+      },
+      "qa_review": {
+        "calls": 1,
+        "tokens": 4653,
+        "cost_usd": 0.002792,
+        "time_s": 1.93
+      },
+      "security_review": {
+        "calls": 1,
+        "tokens": 8429,
+        "cost_usd": 0.005057,
+        "time_s": 1.63
+      },
+      "code_review": {
+        "calls": 1,
+        "tokens": 6819,
+        "cost_usd": 0.004091,
+        "time_s": 2.14
+      },
+      "performance_review": {
+        "calls": 1,
+        "tokens": 6444,
+        "cost_usd": 0.003866,
+        "time_s": 2.13
+      },
+      "frontend_critic": {
+        "calls": 1,
+        "tokens": 7236,
+        "cost_usd": 0.004342,
+        "time_s": 2.16
+      },
+      "runtime_fix": {
+        "calls": 3,
+        "tokens": 23727,
+        "cost_usd": 0.014236,
+        "time_s": 10.34
+      }
+    },
+    "project_name": "team_task_manager",
+    "forge_score": 35,
+    "wall_time_s": 108.34,
+    "timestamp": "2026-07-13T11:16:13"
+  },
+  {
+    "total_calls": 31,
+    "total_tokens": 175954,
+    "total_cost_usd": 0.105572,
+    "total_llm_time_s": 94.15,
+    "by_stage": {
+      "product_manager": {
+        "calls": 1,
+        "tokens": 2489,
+        "cost_usd": 0.001493,
+        "time_s": 2.48
+      },
+      "architecture": {
+        "calls": 1,
+        "tokens": 5729,
+        "cost_usd": 0.003437,
+        "time_s": 1.95
+      },
+      "tech_lead": {
+        "calls": 1,
+        "tokens": 7922,
+        "cost_usd": 0.004753,
+        "time_s": 1.58
+      },
+      "backend_generation": {
+        "calls": 15,
+        "tokens": 65731,
+        "cost_usd": 0.039439,
+        "time_s": 43.62000000000001
+      },
+      "frontend_generation": {
+        "calls": 1,
+        "tokens": 24632,
+        "cost_usd": 0.014779,
+        "time_s": 9.88
+      },
+      "missing_file": {
+        "calls": 1,
+        "tokens": 5661,
+        "cost_usd": 0.003397,
+        "time_s": 3.75
+      },
+      "fix": {
+        "calls": 5,
+        "tokens": 17181,
+        "cost_usd": 0.010309,
+        "time_s": 13.59
+      },
+      "qa_review": {
+        "calls": 1,
+        "tokens": 4495,
+        "cost_usd": 0.002697,
+        "time_s": 3.56
+      },
+      "security_review": {
+        "calls": 1,
+        "tokens": 8273,
+        "cost_usd": 0.004964,
+        "time_s": 2.15
+      },
+      "code_review": {
+        "calls": 1,
+        "tokens": 6803,
+        "cost_usd": 0.004082,
+        "time_s": 3.68
+      },
+      "performance_review": {
+        "calls": 1,
+        "tokens": 6145,
+        "cost_usd": 0.003687,
+        "time_s": 1.72
+      },
+      "frontend_critic": {
+        "calls": 1,
+        "tokens": 10054,
+        "cost_usd": 0.006032,
+        "time_s": 2.34
+      },
+      "runtime_fix": {
+        "calls": 1,
+        "tokens": 10839,
+        "cost_usd": 0.006503,
+        "time_s": 3.85
+      }
+    },
+    "project_name": "recipe_manager",
+    "forge_score": 46,
+    "wall_time_s": 68.48,
+    "timestamp": "2026-07-13T11:19:06"
+  },
+  {
+    "total_calls": 32,
+    "total_tokens": 183843,
+    "total_cost_usd": 0.110308,
+    "total_llm_time_s": 98.68,
+    "by_stage": {
+      "product_manager": {
+        "calls": 1,
+        "tokens": 2453,
+        "cost_usd": 0.001472,
+        "time_s": 2.09
+      },
+      "architecture": {
+        "calls": 1,
+        "tokens": 6145,
+        "cost_usd": 0.003687,
+        "time_s": 2.75
+      },
+      "tech_lead": {
+        "calls": 1,
+        "tokens": 8491,
+        "cost_usd": 0.005095,
+        "time_s": 1.99
+      },
+      "backend_generation": {
+        "calls": 14,
+        "tokens": 64598,
+        "cost_usd": 0.038757999999999994,
+        "time_s": 41.99
+      },
+      "frontend_generation": {
+        "calls": 1,
+        "tokens": 24790,
+        "cost_usd": 0.014874,
+        "time_s": 7.83
+      },
+      "fix": {
+        "calls": 8,
+        "tokens": 33934,
+        "cost_usd": 0.020361,
+        "time_s": 24.17
+      },
+      "qa_review": {
+        "calls": 1,
+        "tokens": 4688,
+        "cost_usd": 0.002813,
+        "time_s": 2.73
+      },
+      "security_review": {
+        "calls": 1,
+        "tokens": 8508,
+        "cost_usd": 0.005105,
+        "time_s": 1.62
+      },
+      "code_review": {
+        "calls": 1,
+        "tokens": 7956,
+        "cost_usd": 0.004774,
+        "time_s": 3.25
+      },
+      "performance_review": {
+        "calls": 1,
+        "tokens": 6943,
+        "cost_usd": 0.004166,
+        "time_s": 1.93
+      },
+      "frontend_critic": {
+        "calls": 1,
+        "tokens": 8816,
+        "cost_usd": 0.00529,
+        "time_s": 2.48
+      },
+      "runtime_fix": {
+        "calls": 1,
+        "tokens": 6521,
+        "cost_usd": 0.003913,
+        "time_s": 5.85
+      }
+    },
+    "project_name": "library_management_system",
+    "forge_score": 52,
+    "wall_time_s": 82.02,
+    "timestamp": "2026-07-13T11:24:26"
+  },
+  {
+    "total_calls": 28,
+    "total_tokens": 147013,
+    "total_cost_usd": 0.088208,
+    "total_llm_time_s": 116.1,
+    "by_stage": {
+      "backend_generation": {
+        "calls": 8,
+        "tokens": 43151,
+        "cost_usd": 0.025890999999999997,
+        "time_s": 26.26
+      },
+      "missing_file": {
+        "calls": 5,
+        "tokens": 28172,
+        "cost_usd": 0.016903,
+        "time_s": 14.21
+      },
+      "fix": {
+        "calls": 9,
+        "tokens": 26791,
+        "cost_usd": 0.016075,
+        "time_s": 54.71
+      },
+      "qa_review": {
+        "calls": 1,
+        "tokens": 4912,
+        "cost_usd": 0.002947,
+        "time_s": 5.18
+      },
+      "security_review": {
+        "calls": 1,
+        "tokens": 10142,
+        "cost_usd": 0.006085,
+        "time_s": 3.5
+      },
+      "code_review": {
+        "calls": 1,
+        "tokens": 8151,
+        "cost_usd": 0.004891,
+        "time_s": 3.14
+      },
+      "performance_review": {
+        "calls": 1,
+        "tokens": 7642,
+        "cost_usd": 0.004585,
+        "time_s": 2.59
+      },
+      "frontend_critic": {
+        "calls": 1,
+        "tokens": 9554,
+        "cost_usd": 0.005732,
+        "time_s": 3.77
+      },
+      "runtime_fix": {
+        "calls": 1,
+        "tokens": 8498,
+        "cost_usd": 0.005099,
+        "time_s": 2.74
+      }
+    },
+    "project_name": "student_management_system",
+    "forge_score": 43,
+    "wall_time_s": 117.46,
+    "timestamp": "2026-07-13T14:09:48"
+  },
+  {
+    "total_calls": 14,
+    "total_tokens": 60406,
+    "total_cost_usd": 0.036242,
+    "total_llm_time_s": 42.97,
+    "by_stage": {
+      "backend_generation": {
+        "calls": 8,
+        "tokens": 43098,
+        "cost_usd": 0.025858,
+        "time_s": 29.09
+      },
+      "fix": {
+        "calls": 6,
+        "tokens": 17308,
+        "cost_usd": 0.010384000000000003,
+        "time_s": 13.879999999999999
+      }
+    },
+    "project_name": "student_management_system",
+    "forge_score": 59,
+    "wall_time_s": 27.2,
+    "timestamp": "2026-07-13T14:28:11"
+  },
+  {
+    "total_calls": 15,
+    "total_tokens": 81994,
+    "total_cost_usd": 0.049195,
+    "total_llm_time_s": 138.03,
+    "by_stage": {
+      "backend_generation": {
+        "calls": 8,
+        "tokens": 43475,
+        "cost_usd": 0.026083999999999996,
+        "time_s": 95.22999999999999
+      },
+      "fix": {
+        "calls": 3,
+        "tokens": 8599,
+        "cost_usd": 0.00516,
+        "time_s": 33.75
+      },
+      "qa_review": {
+        "calls": 1,
+        "tokens": 5042,
+        "cost_usd": 0.003025,
+        "time_s": 1.82
+      },
+      "security_review": {
+        "calls": 1,
+        "tokens": 9860,
+        "cost_usd": 0.005916,
+        "time_s": 2.79
+      },
+      "code_review": {
+        "calls": 1,
+        "tokens": 7889,
+        "cost_usd": 0.004733,
+        "time_s": 2.48
+      },
+      "performance_review": {
+        "calls": 1,
+        "tokens": 7129,
+        "cost_usd": 0.004277,
+        "time_s": 1.96
+      }
+    },
+    "project_name": "student_management_system",
+    "forge_score": 70,
+    "wall_time_s": 98.68,
+    "timestamp": "2026-07-13T14:57:04"
+  },
+  {
+    "total_calls": 31,
+    "total_tokens": 171230,
+    "total_cost_usd": 0.102737,
+    "total_llm_time_s": 163.37,
+    "by_stage": {
+      "product_manager": {
+        "calls": 1,
+        "tokens": 2111,
+        "cost_usd": 0.001267,
+        "time_s": 3.53
+      },
+      "architecture": {
+        "calls": 1,
+        "tokens": 5243,
+        "cost_usd": 0.003146,
+        "time_s": 1.84
+      },
+      "tech_lead": {
+        "calls": 1,
+        "tokens": 7640,
+        "cost_usd": 0.004584,
+        "time_s": 3.32
+      },
+      "backend_generation": {
+        "calls": 13,
+        "tokens": 55990,
+        "cost_usd": 0.033592,
+        "time_s": 78.48
+      },
+      "frontend_generation": {
+        "calls": 1,
+        "tokens": 23117,
+        "cost_usd": 0.01387,
+        "time_s": 17.22
+      },
+      "missing_file": {
+        "calls": 3,
+        "tokens": 16286,
+        "cost_usd": 0.009771,
+        "time_s": 22.909999999999997
+      },
+      "fix": {
+        "calls": 5,
+        "tokens": 17336,
+        "cost_usd": 0.010402,
+        "time_s": 18.96
+      },
+      "qa_review": {
+        "calls": 1,
+        "tokens": 4311,
+        "cost_usd": 0.002587,
+        "time_s": 2.22
+      },
+      "security_review": {
+        "calls": 1,
+        "tokens": 8255,
+        "cost_usd": 0.004953,
+        "time_s": 2.77
+      },
+      "code_review": {
+        "calls": 1,
+        "tokens": 7092,
+        "cost_usd": 0.004255,
+        "time_s": 3.13
+      },
+      "performance_review": {
+        "calls": 1,
+        "tokens": 5888,
+        "cost_usd": 0.003533,
+        "time_s": 2.8
+      },
+      "frontend_critic": {
+        "calls": 1,
+        "tokens": 9120,
+        "cost_usd": 0.005472,
+        "time_s": 2.23
+      },
+      "runtime_fix": {
+        "calls": 1,
+        "tokens": 8841,
+        "cost_usd": 0.005305,
+        "time_s": 3.96
+      }
+    },
+    "project_name": "employee_directory",
+    "forge_score": 54,
+    "wall_time_s": 106.01,
+    "timestamp": "2026-07-13T15:19:25"
+  },
+  {
+    "total_calls": 27,
+    "total_tokens": 122519,
+    "total_cost_usd": 0.073512,
+    "total_llm_time_s": 104.0,
+    "by_stage": {
+      "backend_generation": {
+        "calls": 13,
+        "tokens": 55826,
+        "cost_usd": 0.033496,
+        "time_s": 72.59
+      },
+      "fix": {
+        "calls": 6,
+        "tokens": 16767,
+        "cost_usd": 0.010060000000000001,
+        "time_s": 13.430000000000001
+      },
+      "missing_file": {
+        "calls": 3,
+        "tokens": 14607,
+        "cost_usd": 0.008765,
+        "time_s": 6.77
+      },
+      "qa_review": {
+        "calls": 1,
+        "tokens": 4183,
+        "cost_usd": 0.00251,
+        "time_s": 2.44
+      },
+      "security_review": {
+        "calls": 1,
+        "tokens": 8174,
+        "cost_usd": 0.004904,
+        "time_s": 2.04
+      },
+      "code_review": {
+        "calls": 1,
+        "tokens": 6619,
+        "cost_usd": 0.003971,
+        "time_s": 2.05
+      },
+      "performance_review": {
+        "calls": 1,
+        "tokens": 5855,
+        "cost_usd": 0.003513,
+        "time_s": 1.87
+      },
+      "runtime_fix": {
+        "calls": 1,
+        "tokens": 10488,
+        "cost_usd": 0.006293,
+        "time_s": 2.81
+      }
+    },
+    "project_name": "employee_directory",
+    "forge_score": 50,
+    "wall_time_s": 75.06,
+    "timestamp": "2026-07-13T16:05:27"
+  },
+  {
+    "total_calls": 40,
+    "total_tokens": 216214,
+    "total_cost_usd": 0.129727,
+    "total_llm_time_s": 120.18,
+    "by_stage": {
+      "product_manager": {
+        "calls": 1,
+        "tokens": 2499,
+        "cost_usd": 0.001499,
+        "time_s": 2.24
+      },
+      "architecture": {
+        "calls": 1,
+        "tokens": 6813,
+        "cost_usd": 0.004088,
+        "time_s": 1.99
+      },
+      "tech_lead": {
+        "calls": 1,
+        "tokens": 9437,
+        "cost_usd": 0.005662,
+        "time_s": 1.72
+      },
+      "backend_generation": {
+        "calls": 22,
+        "tokens": 99399,
+        "cost_usd": 0.05964,
+        "time_s": 68.4
+      },
+      "frontend_generation": {
+        "calls": 1,
+        "tokens": 16975,
+        "cost_usd": 0.010185,
+        "time_s": 11.47
+      },
+      "missing_file": {
+        "calls": 2,
+        "tokens": 8813,
+        "cost_usd": 0.005287,
+        "time_s": 4.57
+      },
+      "fix": {
+        "calls": 4,
+        "tokens": 13784,
+        "cost_usd": 0.00827,
+        "time_s": 10.57
+      },
+      "qa_review": {
+        "calls": 1,
+        "tokens": 4749,
+        "cost_usd": 0.002849,
+        "time_s": 1.68
+      },
+      "security_review": {
+        "calls": 1,
+        "tokens": 9780,
+        "cost_usd": 0.005868,
+        "time_s": 1.66
+      },
+      "code_review": {
+        "calls": 1,
+        "tokens": 7157,
+        "cost_usd": 0.004294,
+        "time_s": 2.14
+      },
+      "performance_review": {
+        "calls": 1,
+        "tokens": 6217,
+        "cost_usd": 0.00373,
+        "time_s": 1.84
+      },
+      "frontend_critic": {
+        "calls": 1,
+        "tokens": 3152,
+        "cost_usd": 0.001891,
+        "time_s": 3.07
+      },
+      "runtime_fix": {
+        "calls": 3,
+        "tokens": 27439,
+        "cost_usd": 0.016464,
+        "time_s": 8.829999999999998
+      }
+    },
+    "project_name": "helpdesk_ticketing",
+    "forge_score": 32,
+    "wall_time_s": 82.61,
+    "timestamp": "2026-07-13T16:20:35"
+  },
+  {
+    "total_calls": 32,
+    "total_tokens": 152600,
+    "total_cost_usd": 0.091561,
+    "total_llm_time_s": 78.93,
+    "by_stage": {
+      "backend_generation": {
+        "calls": 22,
+        "tokens": 97903,
+        "cost_usd": 0.058741999999999996,
+        "time_s": 57.160000000000004
+      },
+      "fix": {
+        "calls": 4,
+        "tokens": 11214,
+        "cost_usd": 0.006729,
+        "time_s": 9.17
+      },
+      "qa_review": {
+        "calls": 1,
+        "tokens": 4505,
+        "cost_usd": 0.002703,
+        "time_s": 1.62
+      },
+      "security_review": {
+        "calls": 1,
+        "tokens": 9896,
+        "cost_usd": 0.005938,
+        "time_s": 1.71
+      },
+      "code_review": {
+        "calls": 1,
+        "tokens": 6977,
+        "cost_usd": 0.004186,
+        "time_s": 1.72
+      },
+      "performance_review": {
+        "calls": 1,
+        "tokens": 6213,
+        "cost_usd": 0.003728,
+        "time_s": 1.45
+      },
+      "runtime_fix": {
+        "calls": 2,
+        "tokens": 15892,
+        "cost_usd": 0.009535,
+        "time_s": 6.1
+      }
+    },
+    "project_name": "helpdesk_ticketing",
+    "forge_score": 44,
+    "wall_time_s": 59.18,
+    "timestamp": "2026-07-13T16:27:05"
+  },
+  {
+    "total_calls": 32,
+    "total_tokens": 159052,
+    "total_cost_usd": 0.095429,
+    "total_llm_time_s": 103.54,
+    "by_stage": {
+      "backend_generation": {
+        "calls": 22,
+        "tokens": 99520,
+        "cost_usd": 0.059710000000000006,
+        "time_s": 75.24000000000001
+      },
+      "fix": {
+        "calls": 4,
+        "tokens": 13534,
+        "cost_usd": 0.008119999999999999,
+        "time_s": 11.22
+      },
+      "qa_review": {
+        "calls": 1,
+        "tokens": 4549,
+        "cost_usd": 0.002729,
+        "time_s": 3.34
+      },
+      "security_review": {
+        "calls": 1,
+        "tokens": 9944,
+        "cost_usd": 0.005966,
+        "time_s": 1.65
+      },
+      "code_review": {
+        "calls": 1,
+        "tokens": 7193,
+        "cost_usd": 0.004316,
+        "time_s": 2.15
+      },
+      "performance_review": {
+        "calls": 1,
+        "tokens": 6650,
+        "cost_usd": 0.00399,
+        "time_s": 2.44
+      },
+      "runtime_fix": {
+        "calls": 2,
+        "tokens": 17662,
+        "cost_usd": 0.010598,
+        "time_s": 7.5
+      }
+    },
+    "project_name": "helpdesk_ticketing",
+    "forge_score": 42,
+    "wall_time_s": 70.97,
+    "timestamp": "2026-07-13T16:33:07"
+  },
+  {
+    "total_calls": 37,
+    "total_tokens": 173693,
+    "total_cost_usd": 0.104217,
+    "total_llm_time_s": 217.1,
+    "by_stage": {
+      "backend_generation": {
+        "calls": 22,
+        "tokens": 98838,
+        "cost_usd": 0.059303,
+        "time_s": 181.70999999999995
+      },
+      "missing_file": {
+        "calls": 1,
+        "tokens": 4523,
+        "cost_usd": 0.002714,
+        "time_s": 2.06
+      },
+      "fix": {
+        "calls": 8,
+        "tokens": 24387,
+        "cost_usd": 0.014632,
+        "time_s": 19.61
+      },
+      "qa_review": {
+        "calls": 1,
+        "tokens": 4675,
+        "cost_usd": 0.002805,
+        "time_s": 1.52
+      },
+      "security_review": {
+        "calls": 1,
+        "tokens": 10541,
+        "cost_usd": 0.006325,
+        "time_s": 1.83
+      },
+      "code_review": {
+        "calls": 1,
+        "tokens": 7401,
+        "cost_usd": 0.004441,
+        "time_s": 2.36
+      },
+      "performance_review": {
+        "calls": 1,
+        "tokens": 6516,
+        "cost_usd": 0.00391,
+        "time_s": 1.81
+      },
+      "runtime_fix": {
+        "calls": 2,
+        "tokens": 16812,
+        "cost_usd": 0.010087,
+        "time_s": 6.199999999999999
+      }
+    },
+    "project_name": "helpdesk_ticketing",
+    "forge_score": 23,
+    "wall_time_s": 95.2,
+    "timestamp": "2026-07-13T16:35:35"
+  },
+  {
+    "total_calls": 29,
+    "total_tokens": 149131,
+    "total_cost_usd": 0.08948,
+    "total_llm_time_s": 101.91,
+    "by_stage": {
+      "backend_generation": {
+        "calls": 22,
+        "tokens": 99102,
+        "cost_usd": 0.059462,
+        "time_s": 79.29999999999998
+      },
+      "fix": {
+        "calls": 1,
+        "tokens": 3461,
+        "cost_usd": 0.002077,
+        "time_s": 3.49
+      },
+      "qa_review": {
+        "calls": 1,
+        "tokens": 4748,
+        "cost_usd": 0.002849,
+        "time_s": 1.51
+      },
+      "security_review": {
+        "calls": 1,
+        "tokens": 10215,
+        "cost_usd": 0.006129,
+        "time_s": 2.95
+      },
+      "code_review": {
+        "calls": 1,
+        "tokens": 7267,
+        "cost_usd": 0.00436,
+        "time_s": 2.37
+      },
+      "performance_review": {
+        "calls": 1,
+        "tokens": 6148,
+        "cost_usd": 0.003689,
+        "time_s": 2.28
+      },
+      "runtime_fix": {
+        "calls": 2,
+        "tokens": 18190,
+        "cost_usd": 0.010914,
+        "time_s": 10.01
+      }
+    },
+    "project_name": "helpdesk_ticketing",
+    "forge_score": 43,
+    "wall_time_s": 60.72,
+    "timestamp": "2026-07-13T16:49:55"
+  },
+  {
+    "total_calls": 28,
+    "total_tokens": 134339,
+    "total_cost_usd": 0.080602,
+    "total_llm_time_s": 105.56,
+    "by_stage": {
+      "backend_generation": {
+        "calls": 19,
+        "tokens": 85159,
+        "cost_usd": 0.051094,
+        "time_s": 74.17999999999999
+      },
+      "frontend_generation": {
+        "calls": 1,
+        "tokens": 26575,
+        "cost_usd": 0.015945,
+        "time_s": 11.64
+      },
+      "fix": {
+        "calls": 7,
+        "tokens": 18380,
+        "cost_usd": 0.011028,
+        "time_s": 16.86
+      },
+      "missing_file": {
+        "calls": 1,
+        "tokens": 4225,
+        "cost_usd": 0.002535,
+        "time_s": 2.88
+      }
+    },
+    "project_name": "gym_workout_tracker",
+    "forge_score": 61,
+    "wall_time_s": 81.08,
+    "timestamp": "2026-07-13T17:06:00"
+  },
+  {
+    "total_calls": 26,
+    "total_tokens": 140359,
+    "total_cost_usd": 0.084215,
+    "total_llm_time_s": 80.57,
+    "by_stage": {
+      "product_manager": {
+        "calls": 1,
+        "tokens": 2389,
+        "cost_usd": 0.001433,
+        "time_s": 3.42
+      },
+      "architecture": {
+        "calls": 1,
+        "tokens": 5995,
+        "cost_usd": 0.003597,
+        "time_s": 2.31
+      },
+      "tech_lead": {
+        "calls": 1,
+        "tokens": 8096,
+        "cost_usd": 0.004858,
+        "time_s": 1.82
+      },
+      "backend_generation": {
+        "calls": 16,
+        "tokens": 72176,
+        "cost_usd": 0.043305,
+        "time_s": 49.03
+      },
+      "frontend_generation": {
+        "calls": 1,
+        "tokens": 25684,
+        "cost_usd": 0.01541,
+        "time_s": 8.1
+      },
+      "missing_file": {
+        "calls": 1,
+        "tokens": 5955,
+        "cost_usd": 0.003573,
+        "time_s": 2.7
+      },
+      "fix": {
+        "calls": 4,
+        "tokens": 14354,
+        "cost_usd": 0.008612999999999999,
+        "time_s": 10.11
+      },
+      "architecture_fix": {
+        "calls": 1,
+        "tokens": 5710,
+        "cost_usd": 0.003426,
+        "time_s": 3.08
+      }
+    },
+    "project_name": "event_manager_platform",
+    "forge_score": 61,
+    "wall_time_s": 50.89,
+    "timestamp": "2026-07-13T17:08:23"
+  },
+  {
+    "total_calls": 46,
+    "total_tokens": 246447,
+    "total_cost_usd": 0.147865,
+    "total_llm_time_s": 232.13,
+    "by_stage": {
+      "product_manager": {
+        "calls": 1,
+        "tokens": 2472,
+        "cost_usd": 0.001483,
+        "time_s": 2.29
+      },
+      "architecture": {
+        "calls": 1,
+        "tokens": 6291,
+        "cost_usd": 0.003775,
+        "time_s": 2.69
+      },
+      "tech_lead": {
+        "calls": 1,
+        "tokens": 9049,
+        "cost_usd": 0.005429,
+        "time_s": 1.94
+      },
+      "backend_generation": {
+        "calls": 22,
+        "tokens": 97303,
+        "cost_usd": 0.05838,
+        "time_s": 134.13
+      },
+      "frontend_generation": {
+        "calls": 1,
+        "tokens": 21702,
+        "cost_usd": 0.013021,
+        "time_s": 33.9
+      },
+      "fix": {
+        "calls": 7,
+        "tokens": 22582,
+        "cost_usd": 0.013548000000000001,
+        "time_s": 19.840000000000003
+      },
+      "missing_file": {
+        "calls": 8,
+        "tokens": 47539,
+        "cost_usd": 0.028523,
+        "time_s": 24.84
+      },
+      "qa_review": {
+        "calls": 1,
+        "tokens": 5219,
+        "cost_usd": 0.003131,
+        "time_s": 2.26
+      },
+      "security_review": {
+        "calls": 1,
+        "tokens": 10545,
+        "cost_usd": 0.006327,
+        "time_s": 2.33
+      },
+      "code_review": {
+        "calls": 1,
+        "tokens": 7251,
+        "cost_usd": 0.004351,
+        "time_s": 2.39
+      },
+      "performance_review": {
+        "calls": 1,
+        "tokens": 6063,
+        "cost_usd": 0.003638,
+        "time_s": 2.6
+      },
+      "frontend_critic": {
+        "calls": 1,
+        "tokens": 10431,
+        "cost_usd": 0.006259,
+        "time_s": 2.92
+      }
+    },
+    "project_name": "restaurant_pos_system",
+    "forge_score": 66,
+    "wall_time_s": 115.33,
+    "timestamp": "2026-07-13T17:17:42"
+  },
+  {
+    "total_calls": 33,
+    "total_tokens": 164936,
+    "total_cost_usd": 0.098966,
+    "total_llm_time_s": 140.12,
+    "by_stage": {
+      "backend_generation": {
+        "calls": 19,
+        "tokens": 82351,
+        "cost_usd": 0.04941200000000001,
+        "time_s": 97.58
+      },
+      "frontend_generation": {
+        "calls": 1,
+        "tokens": 25531,
+        "cost_usd": 0.015319,
+        "time_s": 14.26
+      },
+      "missing_file": {
+        "calls": 1,
+        "tokens": 4271,
+        "cost_usd": 0.002563,
+        "time_s": 2.76
+      },
+      "fix": {
+        "calls": 7,
+        "tokens": 22358,
+        "cost_usd": 0.013415999999999999,
+        "time_s": 16.419999999999998
+      },
+      "qa_review": {
+        "calls": 1,
+        "tokens": 4153,
+        "cost_usd": 0.002492,
+        "time_s": 2.12
+      },
+      "security_review": {
+        "calls": 1,
+        "tokens": 9009,
+        "cost_usd": 0.005405,
+        "time_s": 1.71
+      },
+      "code_review": {
+        "calls": 1,
+        "tokens": 7661,
+        "cost_usd": 0.004597,
+        "time_s": 2.38
+      },
+      "performance_review": {
+        "calls": 1,
+        "tokens": 6781,
+        "cost_usd": 0.004069,
+        "time_s": 1.51
+      },
+      "frontend_critic": {
+        "calls": 1,
+        "tokens": 2821,
+        "cost_usd": 0.001693,
+        "time_s": 1.38
+      }
+    },
+    "project_name": "forgeai_booking_platform",
+    "forge_score": 76,
+    "wall_time_s": 66.33,
+    "timestamp": "2026-07-13T17:32:58"
+  },
+  {
+    "total_calls": 33,
+    "total_tokens": 178146,
+    "total_cost_usd": 0.106889,
+    "total_llm_time_s": 209.96,
+    "by_stage": {
+      "backend_generation": {
+        "calls": 20,
+        "tokens": 87857,
+        "cost_usd": 0.05271700000000001,
+        "time_s": 133.19
+      },
+      "frontend_generation": {
+        "calls": 1,
+        "tokens": 26427,
+        "cost_usd": 0.015856,
+        "time_s": 34.59
+      },
+      "fix": {
+        "calls": 6,
+        "tokens": 21599,
+        "cost_usd": 0.012959,
+        "time_s": 22.77
+      },
+      "qa_review": {
+        "calls": 1,
+        "tokens": 4823,
+        "cost_usd": 0.002894,
+        "time_s": 3.83
+      },
+      "security_review": {
+        "calls": 1,
+        "tokens": 8660,
+        "cost_usd": 0.005196,
+        "time_s": 2.69
+      },
+      "code_review": {
+        "calls": 1,
+        "tokens": 7024,
+        "cost_usd": 0.004214,
+        "time_s": 4.21
+      },
+      "performance_review": {
+        "calls": 1,
+        "tokens": 6047,
+        "cost_usd": 0.003628,
+        "time_s": 2.02
+      },
+      "frontend_critic": {
+        "calls": 1,
+        "tokens": 8225,
+        "cost_usd": 0.004935,
+        "time_s": 2.86
+      },
+      "runtime_fix": {
+        "calls": 1,
+        "tokens": 7484,
+        "cost_usd": 0.00449,
+        "time_s": 3.8
+      }
+    },
+    "project_name": "sports_league_manager",
+    "forge_score": 47,
+    "wall_time_s": 92.77,
+    "timestamp": "2026-07-13T17:49:19"
+  },
+  {
+    "total_calls": 27,
+    "total_tokens": 144979,
+    "total_cost_usd": 0.086985,
+    "total_llm_time_s": 939.73,
+    "by_stage": {
+      "product_manager": {
+        "calls": 1,
+        "tokens": 2452,
+        "cost_usd": 0.001471,
+        "time_s": 2.73
+      },
+      "architecture": {
+        "calls": 1,
+        "tokens": 6315,
+        "cost_usd": 0.003789,
+        "time_s": 5.63
+      },
+      "tech_lead": {
+        "calls": 1,
+        "tokens": 9109,
+        "cost_usd": 0.005465,
+        "time_s": 4.33
+      },
+      "backend_generation": {
+        "calls": 19,
+        "tokens": 84821,
+        "cost_usd": 0.050891000000000006,
+        "time_s": 737.2699999999999
+      },
+      "frontend_generation": {
+        "calls": 1,
+        "tokens": 25033,
+        "cost_usd": 0.01502,
+        "time_s": 142.79
+      },
+      "fix": {
+        "calls": 3,
+        "tokens": 11259,
+        "cost_usd": 0.006755000000000001,
+        "time_s": 17.98
+      },
+      "architecture_fix": {
+        "calls": 1,
+        "tokens": 5990,
+        "cost_usd": 0.003594,
+        "time_s": 29.0
+      }
+    },
+    "project_name": "volunteer_manager",
+    "forge_score": 59,
+    "wall_time_s": 247.63,
+    "timestamp": "2026-07-13T18:11:40"
+  },
+  {
+    "total_calls": 39,
+    "total_tokens": 215724,
+    "total_cost_usd": 0.129435,
+    "total_llm_time_s": 597.57,
+    "by_stage": {
+      "product_manager": {
+        "calls": 1,
+        "tokens": 2793,
+        "cost_usd": 0.001676,
+        "time_s": 9.43
+      },
+      "architecture": {
+        "calls": 1,
+        "tokens": 6548,
+        "cost_usd": 0.003929,
+        "time_s": 2.46
+      },
+      "tech_lead": {
+        "calls": 1,
+        "tokens": 9138,
+        "cost_usd": 0.005483,
+        "time_s": 3.03
+      },
+      "backend_generation": {
+        "calls": 19,
+        "tokens": 87874,
+        "cost_usd": 0.052724,
+        "time_s": 453.33
+      },
+      "frontend_generation": {
+        "calls": 1,
+        "tokens": 26217,
+        "cost_usd": 0.01573,
+        "time_s": 13.38
+      },
+      "missing_file": {
+        "calls": 13,
+        "tokens": 69200,
+        "cost_usd": 0.04152,
+        "time_s": 92.02000000000001
+      },
+      "fix": {
+        "calls": 2,
+        "tokens": 6666,
+        "cost_usd": 0.004,
+        "time_s": 17.560000000000002
+      },
+      "architecture_fix": {
+        "calls": 1,
+        "tokens": 7288,
+        "cost_usd": 0.004373,
+        "time_s": 6.36
+      }
+    },
+    "project_name": "real_estate_marketplace",
+    "forge_score": 54,
+    "wall_time_s": 326.83,
+    "timestamp": "2026-07-13T18:30:33"
+  },
+  {
+    "total_calls": 37,
+    "total_tokens": 157196,
+    "total_cost_usd": 0.094319,
+    "total_llm_time_s": 805.9,
+    "by_stage": {
+      "backend_generation": {
+        "calls": 19,
+        "tokens": 86083,
+        "cost_usd": 0.05165,
+        "time_s": 689.2599999999999
+      },
+      "fix": {
+        "calls": 14,
+        "tokens": 45611,
+        "cost_usd": 0.027368,
+        "time_s": 85.85999999999999
+      },
+      "missing_file": {
+        "calls": 3,
+        "tokens": 18040,
+        "cost_usd": 0.010824,
+        "time_s": 24.75
+      },
+      "architecture_fix": {
+        "calls": 1,
+        "tokens": 7462,
+        "cost_usd": 0.004477,
+        "time_s": 6.03
+      }
+    },
+    "project_name": "real_estate_marketplace",
+    "forge_score": 49,
+    "wall_time_s": 318.47,
+    "timestamp": "2026-07-13T18:41:25"
+  },
+  {
+    "total_calls": 27,
+    "total_tokens": 118968,
+    "total_cost_usd": 0.071381,
+    "total_llm_time_s": 393.43,
+    "by_stage": {
+      "backend_generation": {
+        "calls": 19,
+        "tokens": 85430,
+        "cost_usd": 0.051259000000000006,
+        "time_s": 352.58
+      },
+      "fix": {
+        "calls": 4,
+        "tokens": 12167,
+        "cost_usd": 0.007300000000000001,
+        "time_s": 16.490000000000002
+      },
+      "missing_file": {
+        "calls": 3,
+        "tokens": 15176,
+        "cost_usd": 0.009105,
+        "time_s": 19.560000000000002
+      },
+      "architecture_fix": {
+        "calls": 1,
+        "tokens": 6195,
+        "cost_usd": 0.003717,
+        "time_s": 4.8
+      }
+    },
+    "project_name": "real_estate_marketplace",
+    "forge_score": 49,
+    "wall_time_s": 131.25,
+    "timestamp": "2026-07-13T18:48:40"
+  },
+  {
+    "total_calls": 49,
+    "total_tokens": 259585,
+    "total_cost_usd": 0.155753,
+    "total_llm_time_s": 257.89,
+    "by_stage": {
+      "product_manager": {
+        "calls": 1,
+        "tokens": 2569,
+        "cost_usd": 0.001541,
+        "time_s": 8.17
+      },
+      "architecture": {
+        "calls": 1,
+        "tokens": 4597,
+        "cost_usd": 0.002758,
+        "time_s": 1.66
+      },
+      "tech_lead": {
+        "calls": 1,
+        "tokens": 7001,
+        "cost_usd": 0.004201,
+        "time_s": 2.14
+      },
+      "backend_generation": {
+        "calls": 16,
+        "tokens": 71836,
+        "cost_usd": 0.043102999999999995,
+        "time_s": 140.50000000000003
+      },
+      "frontend_generation": {
+        "calls": 1,
+        "tokens": 26022,
+        "cost_usd": 0.015613,
+        "time_s": 11.9
+      },
+      "missing_file": {
+        "calls": 10,
+        "tokens": 51799,
+        "cost_usd": 0.03108,
+        "time_s": 41.910000000000004
+      },
+      "fix": {
+        "calls": 14,
+        "tokens": 52015,
+        "cost_usd": 0.031209999999999995,
+        "time_s": 40.34
+      },
+      "security_review": {
+        "calls": 1,
+        "tokens": 10210,
+        "cost_usd": 0.006126,
+        "time_s": 2.11
+      },
+      "code_review": {
+        "calls": 1,
+        "tokens": 8115,
+        "cost_usd": 0.004869,
+        "time_s": 2.31
+      },
+      "performance_review": {
+        "calls": 1,
+        "tokens": 7139,
+        "cost_usd": 0.004283,
+        "time_s": 1.8
+      },
+      "frontend_critic": {
+        "calls": 1,
+        "tokens": 10598,
+        "cost_usd": 0.006359,
+        "time_s": 2.19
+      },
+      "runtime_fix": {
+        "calls": 1,
+        "tokens": 7684,
+        "cost_usd": 0.00461,
+        "time_s": 2.86
+      }
+    },
+    "project_name": "a_hotel_booking_system_with_ho",
+    "forge_score": 78,
+    "wall_time_s": 166.45,
+    "timestamp": "2026-07-13T19:17:35"
+  },
+  {
+    "total_calls": 35,
+    "total_tokens": 192119,
+    "total_cost_usd": 0.115274,
+    "total_llm_time_s": 221.17,
+    "by_stage": {
+      "product_manager": {
+        "calls": 1,
+        "tokens": 2313,
+        "cost_usd": 0.001388,
+        "time_s": 9.01
+      },
+      "architecture": {
+        "calls": 1,
+        "tokens": 6230,
+        "cost_usd": 0.003738,
+        "time_s": 2.93
+      },
+      "tech_lead": {
+        "calls": 1,
+        "tokens": 8918,
+        "cost_usd": 0.005351,
+        "time_s": 2.07
+      },
+      "backend_generation": {
+        "calls": 22,
+        "tokens": 98674,
+        "cost_usd": 0.059206999999999996,
+        "time_s": 155.33999999999997
+      },
+      "frontend_generation": {
+        "calls": 1,
+        "tokens": 26626,
+        "cost_usd": 0.015976,
+        "time_s": 23.27
+      },
+      "fix": {
+        "calls": 3,
+        "tokens": 8892,
+        "cost_usd": 0.0053349999999999995,
+        "time_s": 10.91
+      },
+      "qa_review": {
+        "calls": 1,
+        "tokens": 4857,
+        "cost_usd": 0.002914,
+        "time_s": 3.37
+      },
+      "security_review": {
+        "calls": 1,
+        "tokens": 9894,
+        "cost_usd": 0.005936,
+        "time_s": 2.71
+      },
+      "code_review": {
+        "calls": 1,
+        "tokens": 6977,
+        "cost_usd": 0.004186,
+        "time_s": 2.42
+      },
+      "performance_review": {
+        "calls": 1,
+        "tokens": 6491,
+        "cost_usd": 0.003895,
+        "time_s": 3.73
+      },
+      "frontend_critic": {
+        "calls": 1,
+        "tokens": 3192,
+        "cost_usd": 0.001915,
+        "time_s": 2.08
+      },
+      "runtime_fix": {
+        "calls": 1,
+        "tokens": 9055,
+        "cost_usd": 0.005433,
+        "time_s": 3.33
+      }
+    },
+    "project_name": "university_course_management",
+    "forge_score": 34,
+    "wall_time_s": 100.63,
+    "timestamp": "2026-07-13T19:23:42"
+  },
+  {
+    "total_calls": 32,
+    "total_tokens": 181725,
+    "total_cost_usd": 0.109038,
+    "total_llm_time_s": 223.15,
+    "by_stage": {
+      "product_manager": {
+        "calls": 1,
+        "tokens": 2634,
+        "cost_usd": 0.00158,
+        "time_s": 7.36
+      },
+      "architecture": {
+        "calls": 1,
+        "tokens": 6282,
+        "cost_usd": 0.003769,
+        "time_s": 3.6
+      },
+      "tech_lead": {
+        "calls": 1,
+        "tokens": 8859,
+        "cost_usd": 0.005315,
+        "time_s": 2.78
+      },
+      "backend_generation": {
+        "calls": 17,
+        "tokens": 77222,
+        "cost_usd": 0.046335,
+        "time_s": 141.04999999999993
+      },
+      "frontend_generation": {
+        "calls": 1,
+        "tokens": 25916,
+        "cost_usd": 0.01555,
+        "time_s": 31.15
+      },
+      "fix": {
+        "calls": 6,
+        "tokens": 22370,
+        "cost_usd": 0.013423,
+        "time_s": 25.459999999999997
+      },
+      "qa_review": {
+        "calls": 1,
+        "tokens": 4475,
+        "cost_usd": 0.002685,
+        "time_s": 2.37
+      },
+      "security_review": {
+        "calls": 1,
+        "tokens": 10080,
+        "cost_usd": 0.006048,
+        "time_s": 2.19
+      },
+      "code_review": {
+        "calls": 1,
+        "tokens": 7380,
+        "cost_usd": 0.004428,
+        "time_s": 3.1
+      },
+      "performance_review": {
+        "calls": 1,
+        "tokens": 6906,
+        "cost_usd": 0.004144,
+        "time_s": 1.74
+      },
+      "frontend_critic": {
+        "calls": 1,
+        "tokens": 9601,
+        "cost_usd": 0.005761,
+        "time_s": 2.35
+      }
+    },
+    "project_name": "fleet_manager",
+    "forge_score": 64,
+    "wall_time_s": 107.34,
+    "timestamp": "2026-07-13T19:31:29"
+  },
+  {
+    "total_calls": 32,
+    "total_tokens": 177797,
+    "total_cost_usd": 0.106676,
+    "total_llm_time_s": 191.69,
+    "by_stage": {
+      "product_manager": {
+        "calls": 1,
+        "tokens": 2527,
+        "cost_usd": 0.001516,
+        "time_s": 13.25
+      },
+      "architecture": {
+        "calls": 1,
+        "tokens": 6261,
+        "cost_usd": 0.003757,
+        "time_s": 2.34
+      },
+      "tech_lead": {
+        "calls": 1,
+        "tokens": 8640,
+        "cost_usd": 0.005184,
+        "time_s": 2.62
+      },
+      "backend_generation": {
+        "calls": 17,
+        "tokens": 75769,
+        "cost_usd": 0.04546,
+        "time_s": 138.32999999999998
+      },
+      "frontend_generation": {
+        "calls": 1,
+        "tokens": 24057,
+        "cost_usd": 0.014434,
+        "time_s": 9.43
+      },
+      "fix": {
+        "calls": 5,
+        "tokens": 20077,
+        "cost_usd": 0.012046000000000001,
+        "time_s": 13.530000000000001
+      },
+      "qa_review": {
+        "calls": 1,
+        "tokens": 4959,
+        "cost_usd": 0.002975,
+        "time_s": 1.99
+      },
+      "security_review": {
+        "calls": 1,
+        "tokens": 8665,
+        "cost_usd": 0.005199,
+        "time_s": 1.9
+      },
+      "code_review": {
+        "calls": 1,
+        "tokens": 7191,
+        "cost_usd": 0.004315,
+        "time_s": 2.36
+      },
+      "performance_review": {
+        "calls": 1,
+        "tokens": 6203,
+        "cost_usd": 0.003722,
+        "time_s": 1.57
+      },
+      "frontend_critic": {
+        "calls": 1,
+        "tokens": 2924,
+        "cost_usd": 0.001754,
+        "time_s": 1.57
+      },
+      "runtime_fix": {
+        "calls": 1,
+        "tokens": 10524,
+        "cost_usd": 0.006314,
+        "time_s": 2.8
+      }
+    },
+    "project_name": "donation_tracker",
+    "forge_score": 43,
+    "wall_time_s": 95.35,
+    "timestamp": "2026-07-13T19:36:07"
+  },
+  {
+    "total_calls": 38,
+    "total_tokens": 199213,
+    "total_cost_usd": 0.119526,
+    "total_llm_time_s": 189.67,
+    "by_stage": {
+      "product_manager": {
+        "calls": 1,
+        "tokens": 2534,
+        "cost_usd": 0.00152,
+        "time_s": 9.76
+      },
+      "architecture": {
+        "calls": 1,
+        "tokens": 6495,
+        "cost_usd": 0.003897,
+        "time_s": 2.36
+      },
+      "tech_lead": {
+        "calls": 1,
+        "tokens": 9280,
+        "cost_usd": 0.005568,
+        "time_s": 1.87
+      },
+      "backend_generation": {
+        "calls": 22,
+        "tokens": 98625,
+        "cost_usd": 0.059172999999999996,
+        "time_s": 129.04
+      },
+      "frontend_generation": {
+        "calls": 1,
+        "tokens": 26663,
+        "cost_usd": 0.015998,
+        "time_s": 10.95
+      },
+      "missing_file": {
+        "calls": 5,
+        "tokens": 30947,
+        "cost_usd": 0.018569000000000002,
+        "time_s": 17.22
+      },
+      "fix": {
+        "calls": 6,
+        "tokens": 16845,
+        "cost_usd": 0.010107,
+        "time_s": 14.370000000000001
+      },
+      "architecture_fix": {
+        "calls": 1,
+        "tokens": 7824,
+        "cost_usd": 0.004694,
+        "time_s": 4.1
+      }
+    },
+    "project_name": "hospital_management_system",
+    "forge_score": 49,
+    "wall_time_s": 94.95,
+    "timestamp": "2026-07-13T19:41:21"
+  },
+  {
+    "total_calls": 27,
+    "total_tokens": 116214,
+    "total_cost_usd": 0.069729,
+    "total_llm_time_s": 264.18,
+    "by_stage": {
+      "backend_generation": {
+        "calls": 19,
+        "tokens": 86258,
+        "cost_usd": 0.051754999999999995,
+        "time_s": 237.20000000000002
+      },
+      "fix": {
+        "calls": 6,
+        "tokens": 17525,
+        "cost_usd": 0.010515,
+        "time_s": 19.72
+      },
+      "missing_file": {
+        "calls": 2,
+        "tokens": 12431,
+        "cost_usd": 0.007459,
+        "time_s": 7.26
+      }
+    },
+    "project_name": "real_estate_marketplace",
+    "forge_score": 49,
+    "wall_time_s": 108.71,
+    "timestamp": "2026-07-13T20:20:14"
+  },
+  {
+    "total_calls": 37,
+    "total_tokens": 180693,
+    "total_cost_usd": 0.108416,
+    "total_llm_time_s": 320.62,
+    "by_stage": {
+      "backend_generation": {
+        "calls": 19,
+        "tokens": 86872,
+        "cost_usd": 0.052123,
+        "time_s": 252.20000000000002
+      },
+      "missing_file": {
+        "calls": 1,
+        "tokens": 5334,
+        "cost_usd": 0.0032,
+        "time_s": 5.55
+      },
+      "fix": {
+        "calls": 10,
+        "tokens": 34514,
+        "cost_usd": 0.020708999999999998,
+        "time_s": 39.86000000000001
+      },
+      "architecture_fix": {
+        "calls": 1,
+        "tokens": 7168,
+        "cost_usd": 0.004301,
+        "time_s": 5.66
+      },
+      "qa_review": {
+        "calls": 1,
+        "tokens": 4816,
+        "cost_usd": 0.00289,
+        "time_s": 2.45
+      },
+      "security_review": {
+        "calls": 1,
+        "tokens": 10325,
+        "cost_usd": 0.006195,
+        "time_s": 2.45
+      },
+      "code_review": {
+        "calls": 1,
+        "tokens": 7610,
+        "cost_usd": 0.004566,
+        "time_s": 2.34
+      },
+      "performance_review": {
+        "calls": 1,
+        "tokens": 6956,
+        "cost_usd": 0.004174,
+        "time_s": 1.91
+      },
+      "frontend_critic": {
+        "calls": 1,
+        "tokens": 9404,
+        "cost_usd": 0.005642,
+        "time_s": 2.51
+      },
+      "runtime_fix": {
+        "calls": 1,
+        "tokens": 7694,
+        "cost_usd": 0.004616,
+        "time_s": 5.69
+      }
+    },
+    "project_name": "student_management_system",
+    "forge_score": 48,
+    "wall_time_s": 161.35,
+    "timestamp": "2026-07-13T20:26:58"
   }
 ]

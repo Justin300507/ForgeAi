@@ -1,0 +1,49 @@
+{
+  "bundle_version": 1,
+  "failure_id": "FR-000027",
+  "timestamp": "2026-07-13T05:23:48.737875Z",
+  "forgeai_version": "19.0",
+  "pipeline_version": "v15",
+  "commit_sha": "e747a77",
+  "project": "inventory_manager",
+  "provider": "cerebras",
+  "model": null,
+  "seed": null,
+  "failure": {
+    "stage": "runtime",
+    "class": "JourneyCRUDFailure",
+    "step": "Create entity"
+  },
+  "request": {
+    "method": "POST",
+    "url": "http://127.0.0.1:8001/products",
+    "json": {
+      "title": "Journey Test Item",
+      "name": "Journey Test Item",
+      "description": "created by V5.5 journey runner",
+      "category": "general",
+      "price": 1.0,
+      "sku": "journey-test"
+    },
+    "has_auth": true
+  },
+  "response": {
+    "status_code": 404,
+    "body": {
+      "detail": "Category not found"
+    }
+  },
+  "stderr": null,
+  "generation": {
+    "category": null,
+    "style": null,
+    "layout": null,
+    "design_fingerprint_id": null
+  },
+  "artifacts": {
+    "screenshot": null,
+    "console_log": null,
+    "network_log": null,
+    "playwright_trace": null
+  }
+}
