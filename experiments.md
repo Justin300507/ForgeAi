@@ -7184,3 +7184,58 @@ smaller ForgeBench confirmation run before any 100-app v1.1.
 
 **Deliverables**: `docs/EXP101_FORGEBENCH_REGRESSION_INVESTIGATION.md`,
 this entry. **Cost: $0, zero Cerebras calls, zero code changes.**
+
+---
+
+## Experiment 102: Extend Role Vocabulary Discovery
+
+2026-07-13. Offline implementation, $0, zero Cerebras calls. Extends
+Exp101's identified fix point in
+`app/services/deterministic_patcher.py` rather than a new patcher.
+
+`_ROLE_FIELD_RE`'s leading quoted default is now optional — confirmed
+live shape (`event_manager_platform`): `Field(min_length=1,
+pattern="^(Organizer|Attendee)$")`, a required field with no default.
+When absent, falls back to `"user"` as the synthesized default (added
+to the allowed set too), reusing the exact safe-fallback convention
+`_discover_role_vocabulary_from_routes` already established for its
+own no-anchor case — deliberately not "guess the first pattern
+alternative," since corpus evidence shows inconsistent
+privilege-ordering conventions across apps. New shared
+`_ROLE_ACCESS_FRAGMENT` extends both `_ROLE_EQ_RE` and `_ROLE_IN_RE` to
+match `getattr(obj, "role", default)` calls alongside literal `.role`
+access.
+
+**Replay**: `event_manager_platform` now correctly resolves
+`('user', ['Organizer', 'Attendee', 'user'])` (was `None`). Full
+73-project corpus, git-stash A/B compared: pre-Exp102 finds 6 role
+vocabularies, post-Exp102 finds 9 — the same 6 byte-for-byte identical
+(zero regression) plus 3 new: `event_manager_platform` (required-field
+regex), `forge_blog_cms` and `forgeai_booking_platform` (both via the
+`getattr()` extension, confirmed against real `tag_routes.py`/
+`booking_routes.py` gate code).
+
+**Tests**: added 6 tests to the existing
+`test_role_aware_auth_template.py` (no new file) — required-field
+discovery, synthesized-default template validation, `getattr()`
+`==`/`!=` and `in`/`not in` discovery, a guard that plain `.role`
+access is unaffected, and a guard that the existing "≥2 distinct
+roles" safety threshold still applies via the new path. All 19 pass.
+Full reliability suite: 51/54, same 3 pre-existing unrelated failures.
+
+**Estimated improvement**: directly fixes the one confirmed Exp101
+Option A incident plus 2 additional real, previously-undiscoverable
+role-gated apps in the current corpus that would have hit an identical
+false failure if benchmarked — all via 100% reuse of the existing
+V20.1.5 role-aware-retry mechanism.
+
+**Recommendation**: run a smaller confirmation benchmark (re-generate
+`event_manager_platform`-shaped ideas) to live-validate the fix before
+attempting a 100-app ForgeBench v1.1 — this cycle's evidence is strong
+but confirmed only against static, already-generated code, not a live
+generation + journey run yet.
+
+**Deliverables**: `docs/EXP102_ROLE_DISCOVERY_EXTENSION.md`, this
+entry, code diff in `backend/app/services/deterministic_patcher.py`,
+extended test file `backend/tests/reliability/test_role_aware_auth_template.py`.
+**Cost: $0, zero Cerebras calls.**

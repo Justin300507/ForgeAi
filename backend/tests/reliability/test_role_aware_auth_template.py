@@ -196,6 +196,126 @@ def test_both_templates_are_syntactically_valid_python():
         ast.parse(_build_auth_routes_template(role_info))
 
 
+# ── Exp102: required Field() with no default, and getattr()-based role ──
+# ── access -- both confirmed live in event_manager_platform (Exp101),  ──
+# ── neither previously discoverable by either regex.                   ──
+
+def test_discovers_required_field_with_no_default():
+    """event_manager_platform's exact confirmed shape: `Field(min_length=1,
+    pattern=...)` has no leading quoted default at all. No natural
+    "what does a plain signup get" answer exists, so this falls back to
+    the same "user" safe-default convention _discover_role_vocabulary_from_routes
+    already uses for its own no-anchor case."""
+    root = Path(tempfile.mkdtemp(prefix="roletest_"))
+    schemas = root / "app" / "schemas"
+    schemas.mkdir(parents=True)
+    (schemas / "auth.py").write_text(
+        'from pydantic import BaseModel, Field\n\n'
+        'class RegisterRequest(BaseModel):\n'
+        '    email: str\n'
+        '    password: str\n'
+        '    role: str = Field(min_length=1, pattern="^(Organizer|Attendee)$")\n',
+        encoding="utf-8",
+    )
+    result = _discover_role_vocabulary(root)
+    shutil.rmtree(root, ignore_errors=True)
+    assert result == ("user", ["Organizer", "Attendee", "user"])
+
+
+def test_required_field_default_role_validates_in_template():
+    """The synthesized ("user", [...]) default must actually work when fed
+    into _build_auth_routes_template -- "user" needs to be in the allowed
+    set for the validation line to make sense."""
+    role_info = ("user", ["Organizer", "Attendee", "user"])
+    src = _build_auth_routes_template(role_info)
+    assert '"user"' in src
+    assert "Organizer" in src and "Attendee" in src
+    ast.parse(src)
+
+
+def test_discovers_getattr_based_role_equality_gate():
+    """event_manager_platform's exact confirmed route-gate shape:
+    `getattr(current_user, "role", None) != "Organizer"` -- previously
+    invisible to _ROLE_EQ_RE, which only matched literal `.role` access."""
+    root = _make_project({
+        "app/routes/event_routes.py": (
+            "def create_event(current_user):\n"
+            '    if getattr(current_user, "role", None) != "Organizer":\n'
+            '        raise Exception("Organizer role required")\n'
+            "def other(current_user):\n"
+            '    if getattr(current_user, "role", None) != "Attendee":\n'
+            "        pass\n"
+        ),
+    })
+    result = _discover_role_vocabulary(root)
+    shutil.rmtree(root, ignore_errors=True)
+    assert result is not None
+    default_role, allowed = result
+    assert default_role == "user"
+    assert set(allowed) == {"Organizer", "Attendee", "user"}
+
+
+def test_discovers_getattr_based_role_in_gate():
+    """The `in`/`not in` sibling shape: `getattr(user, "role", None) not in
+    {"admin", "author"}` -- confirmed live in forge_blog_cms's
+    tag_routes.py, previously invisible to _ROLE_IN_RE for the same reason."""
+    root = _make_project({
+        "app/routes/tag_routes.py": (
+            "def delete_tag(user):\n"
+            '    if getattr(user, "role", None) not in {"admin", "author"}:\n'
+            "        pass\n"
+        ),
+        "app/routes/user_routes.py": (
+            "def whoami(user):\n"
+            '    return {"role": getattr(user, "role", None)}\n'
+        ),
+    })
+    result = _discover_role_vocabulary(root)
+    shutil.rmtree(root, ignore_errors=True)
+    assert result is not None
+    default_role, allowed = result
+    assert default_role == "user"
+    assert "admin" in allowed and "author" in allowed
+
+
+def test_getattr_detection_does_not_break_plain_dot_role_access():
+    """Existing behavior (`.role ==`/`!=`, literal attribute access) must
+    remain byte-for-byte unaffected by the getattr alternation added
+    alongside it."""
+    root = _make_project({
+        "app/routes/course_routes.py": (
+            "def create(current_user):\n"
+            '    if current_user.role != "instructor":\n'
+            "        pass\n"
+            "def enroll(current_user):\n"
+            '    if current_user.role != "student":\n'
+            "        pass\n"
+        ),
+    })
+    result = _discover_role_vocabulary(root)
+    shutil.rmtree(root, ignore_errors=True)
+    assert result == ("user", ["instructor", "student", "user"])
+
+
+def test_single_getattr_role_string_still_requires_two_distinct_roles():
+    """Preserves the existing routes-fallback safety threshold: a single
+    repeated role string across the whole app is still not enough to
+    treat it as a real vocabulary, even via the new getattr() path."""
+    root = _make_project({
+        "app/routes/book_routes.py": (
+            "def create(current_user):\n"
+            '    if getattr(current_user, "role", None) != "librarian":\n'
+            "        pass\n"
+            "def delete(current_user):\n"
+            '    if getattr(current_user, "role", None) != "librarian":\n'
+            "        pass\n"
+        ),
+    })
+    result = _discover_role_vocabulary(root)
+    shutil.rmtree(root, ignore_errors=True)
+    assert result is None
+
+
 if __name__ == "__main__":
     import traceback
     tests = [obj for name, obj in list(globals().items()) if name.startswith("test_")]

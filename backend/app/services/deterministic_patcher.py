@@ -2018,15 +2018,32 @@ def _patch_auth_requirements(project_path: Path) -> None:
 # every CRUD endpoint that requires auth returns 401 and the journey fails entirely.
 
 _ROLE_FIELD_RE = re.compile(
-    r'\brole\s*:\s*(?:Optional\[)?str\]?\s*=\s*Field\(\s*"([\w-]+)"[^)\n]*'
+    r'\brole\s*:\s*(?:Optional\[)?str\]?\s*=\s*Field\('
+    # Exp102: the leading quoted default (`Field("diner", ...)`) is now
+    # OPTIONAL -- confirmed live in event_manager_platform, whose schema
+    # declares `role: str = Field(min_length=1, pattern="^(Organizer|
+    # Attendee)$")`, a REQUIRED field with no default at all. Previously
+    # this meant the whole regex simply never matched, and role discovery
+    # silently returned None for an app that in fact has a perfectly
+    # discoverable vocabulary. Group 1 is None when no default is
+    # present; callers must handle that (see _discover_role_vocabulary_from_schema).
+    r'(?:\s*"([\w-]+)"\s*,)?[^)\n]*'
     r'pattern\s*=\s*r?"[\^]?\(([\w|-]+)\)[\$]?"',
 )
 
 # Route-level role GATE comparisons -- the fallback discovery path for apps
 # that never declared a role vocabulary in any schema at all (see
 # _discover_role_vocabulary_from_routes' docstring for why this exists).
-_ROLE_EQ_RE = re.compile(r'\.role\s*(?:!=|==)\s*["\'](\w+)["\']')
-_ROLE_IN_RE = re.compile(r'\.role\s+(?:not\s+)?in\s*[\[({]\s*((?:["\']\w+["\']\s*,?\s*)+)[\])}]')
+#
+# Exp102: `.role` is only one way generated code actually reads a role --
+# `getattr(current_user, "role", None)` is an equally common, increasingly
+# likely defensive idiom (confirmed live in event_manager_platform's
+# `getattr(current_user, "role", None) != "Organizer"`), which the plain
+# `\.role` prefix never matched at all. Shared fragment so both gate
+# shapes (`==`/`!=` and `in`/`not in`) recognize either access form.
+_ROLE_ACCESS_FRAGMENT = r'(?:\.role|getattr\([^,]+,\s*["\']role["\']\s*,[^)]*\))'
+_ROLE_EQ_RE = re.compile(_ROLE_ACCESS_FRAGMENT + r'\s*(?:!=|==)\s*["\'](\w+)["\']')
+_ROLE_IN_RE = re.compile(_ROLE_ACCESS_FRAGMENT + r'\s+(?:not\s+)?in\s*[\[({]\s*((?:["\']\w+["\']\s*,?\s*)+)[\])}]')
 _ROLE_STR_RE = re.compile(r'["\'](\w+)["\']')
 
 
@@ -2047,7 +2064,20 @@ def _discover_role_vocabulary_from_schema(project_path: Path) -> Optional[tuple[
             continue
         default_role, alternatives = m.group(1), m.group(2)
         allowed = [a for a in alternatives.split("|") if a]
-        if default_role not in allowed:
+        if default_role is None:
+            # Exp102: a REQUIRED role field (no default in the app's own
+            # schema) still has a discoverable vocabulary worth using for
+            # elevation candidates -- but there's no natural "what does a
+            # plain signup get" answer to anchor on. Reuse exactly the
+            # same safe-fallback convention _discover_role_vocabulary_from_routes
+            # already established for its own no-anchor case: "user" as
+            # the default (added to the allowed set too, so it validates),
+            # never widening beyond what the discovered vocabulary itself
+            # allows.
+            default_role = "user"
+            if "user" not in allowed:
+                allowed.append("user")
+        elif default_role not in allowed:
             allowed.append(default_role)
         return default_role, allowed
     return None
