@@ -6973,3 +6973,70 @@ this entry, `backend/scripts/exp099_canary.py`,
 regenerated `backend/observatory_report.html`, two canary history
 entries (`exp099-validation-r1` BASELINE 76.9, `exp099-validation-r2`
 BASELINE 0.0). **Cost: $0.0546, one live generation.**
+
+---
+
+## Experiment 100: Reliability Milestone Assessment
+
+2026-07-13. Investigation only, $0, zero Cerebras calls, zero code
+changes.
+
+**Taxonomy refresh**: of `generation_log.jsonl`'s 106 all-time records,
+every dominant historical class is now closed and confirmed absent
+since its fix commit via direct timestamp cross-reference:
+`JourneyCRUDFailure` (both Create-path and Edit-path/405 sub-shapes),
+`AttributeError` (both `SignupRequest.username` and the seed-route
+field-guessing class), `ConfigAttributeError`,
+`PydanticSerializationError`. Last-30-window still shows these tags
+because the window includes pre-fix historical entries — zero NEW
+occurrences of any closed class post-fix.
+
+**Remaining, ranked**: (1) seed-route reliability — constructor-kwarg
+dict-unpack `TypeError` (e.g. `Users(**udata)`) and cascading
+Create-entity 400s from unseeded FK lookups; moderate frequency (4-6
+instances, 3+ projects), medium severity, low self-heal, deterministic
+root cause known but not yet implemented for this AST shape. (2)
+assignment-target rewriting risk in the identity-field synonym cluster
+(Exp099's finding); low confirmed frequency (1 instance), potentially
+high severity if it recurs, deterministic but needs more corpus
+evidence. (3) a freshly-surfaced, not-yet-root-caused `SQLAlchemyError`
+(Exp099, today); single data point. **None clears this project's own
+"measure before build" bar** the way every prior cycle's target class
+did (JourneyCRUDFailure at 74% Create-path share; AttributeError's 2
+directly-traced active incidents).
+
+**Cumulative improvement since Exp048** (partitioned at its fix-commit
+time): post-repair success rate 31.8%→47.5% (+15.7pts), first-try
+(zero-fix) success rate 25.8%→30.0% (+4.2pts, matches Observatory's own
+current 30.0%), avg Forge Score 75.6→84.0 (+8.4pts). The gap between
+the two success-rate figures shows most gains came from the
+deterministic repair layer catching first-pass mistakes, not from
+improved first-pass generation quality itself.
+
+**Recommendation: begin ForgeBench, not Exp101.** Exp090 (the prior
+milestone assessment) explicitly set the bar: only run ForgeBench
+after JourneyCRUDFailure's Create-path AND Edit-path fixes land, since
+running it earlier "would just re-discover [an already-characterized
+bug] at higher cost." Both have since shipped and been live-validated
+(Exp091-096), plus a full additional thread beyond what Exp090
+anticipated (Exp097-099). No prior real ForgeBench run exists in this
+project's history (only test-harness simulation fixtures) — this would
+be the genuine first milestone-scale checkpoint.
+
+**Beta Readiness Scorecard**: Architecture stable (Wave-based parallel
+generation is the one identified structural drift source, an accepted
+speed/consistency trade-off). Repair pipeline strong (several
+0%-self-heal classes converted to $0 deterministic corrections).
+Runtime healthy on dominant paths (one confirmed repair-loop-introduced
+regression this cycle, Exp099, not yet frequent). Security moderate/
+untouched by this arc (recent reviews ~70/100 medium risk — candidate
+for future, separate investment). Benchmark correctness substantially
+improved (Exp094-096 fixed a genuine test-harness bug producing false
+failures against spec-compliant code). Deterministic reliability high
+(51/54 test suite, same 3 pre-existing unrelated failures; every new
+patcher shipped with dedicated tests + full-corpus replay, catching 3
+real bugs before shipping). Remaining risks: the 3 ranked items above,
+none dominant.
+
+**Deliverables**: `docs/EXP100_RELIABILITY_MILESTONE_ASSESSMENT.md`,
+this entry. **Cost: $0, zero Cerebras calls, zero code changes.**
