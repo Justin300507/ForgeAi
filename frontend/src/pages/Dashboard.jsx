@@ -7,12 +7,13 @@ import { useVeil } from "../components/Veil";
 import { IDEA_DRAFT_KEY } from "../lib/cinematic";
 import { Trash2, Wrench, Zap, ArrowRight } from "lucide-react";
 
-const STATUS_DOT = {
-  pending:   "#facc15",
-  running:   "#818cf8",
-  done:      "#4ade80",
-  error:     "#f87171",
-  cancelled: "#9ca3af",
+// Colored pill badge per status -- mirrors the status-pill visual
+// language already used in ProjectDetail.jsx so the two pages agree.
+const STATUS_BADGE = {
+  pending:   { bg: "rgba(250,204,21,0.12)",  color: "#facc15", border: "rgba(250,204,21,0.25)" },
+  running:   { bg: "rgba(99,102,241,0.12)",  color: "#818cf8", border: "rgba(99,102,241,0.25)" },
+  error:     { bg: "rgba(239,68,68,0.12)",   color: "#f87171", border: "rgba(239,68,68,0.25)" },
+  cancelled: { bg: "rgba(156,163,175,0.12)", color: "#9ca3af", border: "rgba(156,163,175,0.25)" },
 };
 
 const TEMPLATES = [
@@ -206,20 +207,24 @@ export default function Dashboard() {
               return (
                 <div key={job.id}
                   className="anim-fade-up hover-lift flex items-center gap-4 glass-panel rounded-xl px-4 py-3.5 hover:border-white/15 group cursor-pointer"
-                  style={{ "--d": `${Math.min(i, 8) * 40}ms` }}
+                  style={{ "--d": `${Math.min(i, 8) * 60}ms` }}
                   onClick={() => navigate(`/projects/${job.id}`)}>
-                  <span className="flex items-center gap-1.5 text-xs shrink-0 w-24"
-                    style={{color: isDone && job.forge_score != null ? gradeColor : "#666"}}>
-                    {isDone && job.forge_score != null ? (
-                      <>✓ {job.forge_score} · {grade}</>
-                    ) : (
-                      <>
-                        <span className={`w-1.5 h-1.5 rounded-full shrink-0 ${isActive ? "live-dot" : ""}`}
-                          style={{background: STATUS_DOT[job.status] || STATUS_DOT.error}} aria-hidden="true" />
-                        {job.status}
-                      </>
-                    )}
-                  </span>
+                  {isDone && job.forge_score != null ? (
+                    <span className="text-xs font-medium px-2.5 py-1 rounded-full shrink-0 w-24 text-center"
+                      style={{background: `${gradeColor}20`, color: gradeColor, border: `1px solid ${gradeColor}40`}}>
+                      ✓ {job.forge_score} · {grade}
+                    </span>
+                  ) : (
+                    <span className="flex items-center justify-center gap-1.5 text-xs font-medium px-2.5 py-1 rounded-full shrink-0 w-24"
+                      style={{
+                        background: (STATUS_BADGE[job.status] || STATUS_BADGE.error).bg,
+                        color: (STATUS_BADGE[job.status] || STATUS_BADGE.error).color,
+                        border: `1px solid ${(STATUS_BADGE[job.status] || STATUS_BADGE.error).border}`,
+                      }}>
+                      {isActive && <span className="live-dot" style={{width:5, height:5, background:"currentColor", borderRadius:9999}} aria-hidden="true" />}
+                      {job.status}
+                    </span>
+                  )}
                   <p className="flex-1 text-sm text-gray-300 group-hover:text-white transition-colors line-clamp-1">{job.idea}</p>
                   <span className="text-xs text-gray-600 shrink-0">{timeAgo(job.created_at)}</span>
                   {needsFix && (
