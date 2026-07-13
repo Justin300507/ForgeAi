@@ -7111,3 +7111,76 @@ hangs, before scaling further.
 `backend/scripts/forgebench_v1.py`, `backend/scripts/_forgebench_worker.py`,
 `backend/benchmark_results/forgebench_v1_results.json`.
 **Cost: $1.8934, 25 live generation attempts (19 completed, 6 timed out).**
+
+---
+
+## Experiment 101: ForgeBench Regression Investigation
+
+2026-07-13. Investigation only, $0, zero Cerebras calls, zero code
+changes. Replay-only against ForgeBench v1.0's own telemetry (27
+bundles dedup to 7 unique incidents) and the still-on-disk generated
+projects — no new generation.
+
+**Per-incident findings, each checked against real code/architecture,
+not assumed**:
+- `forge_blog_cms` (JourneyCRUDFailure) — **Option C**. Architecture
+  correctly declares `PUT /posts/{id}`; backend generation never
+  implemented any update route at all. Not Exp095's PUT-vs-PATCH
+  mismatch (architecture and code would agree on the verb) — a second,
+  independent confirmation of Exp094's already-flagged-and-deferred
+  "missing update endpoint entirely" sub-case.
+- `inventory_manager` (JourneyCRUDFailure) — **Option E**. Full CRUD
+  exists and is correct; failure is an unseeded `category_id` FK
+  reference in the journey's generic payload — the already-tracked
+  seed-pipeline-reliability gap (Exp097-100), not ownership/method
+  bugs.
+- `library_management_system` (JourneyCRUDFailure) — **Option E,
+  likely correct behavior**. No discoverable role field for
+  "librarian" at all — plausibly an intentional non-self-registerable
+  admin role, not a defect.
+- `event_manager_platform` (JourneyCRUDFailure) — **Option A,
+  precisely confirmed**. A discoverable role vocabulary exists
+  (`Field(min_length=1, pattern="^(Organizer|Attendee)$")`), so the
+  V20.1.5 role-aware-retry mechanism should have elevated and retried.
+  Root-caused why it didn't: `_ROLE_FIELD_RE` requires a quoted
+  string *default* in `Field(...)`, which this required-field
+  declaration doesn't have; the fallback `_ROLE_EQ_RE` requires a
+  literal `.role ==/!=` access, but the actual gate uses
+  `getattr(current_user, "role", None) != "Organizer"` — neither
+  regex matches either shape.
+- `donation_tracker` (JourneyCRUDFailure) — **Option D/E**. Generic
+  Create payload's dummy dates violate a legitimate
+  end-date-after-start-date business rule the app correctly enforces.
+- `personal_expense_tracker` + `university_course_management`
+  (UserIdNotInjectedError) — **Option E, both confirmed via source
+  read**. Actual ownership-assignment code is present and correct in
+  both (`user_id=current_user.id`, and a legitimate registrar-driven
+  explicit-FK enrollment pattern that never used an ownership pattern
+  at all). Read `error_parser.py`: the tag fires on **any** NOT-NULL
+  violation on an `_id`-suffixed column, not specifically
+  `current_user.id` — a taxonomy-label misnomer inherited from its
+  original (genuine) discovery context, now over-broad.
+
+**Category tally**: A=1, B=0, C=1, D=1, E=4 (5 counting library as
+borderline D/E).
+
+**True remaining prevalence of the actual Exp091-096-fixed bugs: 0/7
+(0%).** Both fixes confirmed still working everywhere checked —
+Exp100's core conclusion holds. What ForgeBench actually found: one
+real, narrow gap in a *different* mechanism (role-vocabulary discovery
+regexes), one confirmed second instance of an already-deferred
+structural gap, and five incidents that are either already-tracked
+separately or arguably correct behavior mislabeled by overly broad
+taxonomy tags.
+
+**Recommendation for Exp102**: implement the two small, precisely-
+scoped role-discovery regex extensions (`_ROLE_FIELD_RE` to accept
+required fields without a default; `_ROLE_EQ_RE`/routes-fallback to
+match `getattr()`-based role checks) — reuses 100% of the existing
+V20.1.5 mechanism, zero new infrastructure. Do not chase the other 6
+incidents this cycle (below this project's evidence bar, already
+tracked elsewhere, or not actually bugs). Follow with a second,
+smaller ForgeBench confirmation run before any 100-app v1.1.
+
+**Deliverables**: `docs/EXP101_FORGEBENCH_REGRESSION_INVESTIGATION.md`,
+this entry. **Cost: $0, zero Cerebras calls, zero code changes.**
