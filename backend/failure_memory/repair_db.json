@@ -603,9 +603,9 @@
       "app/config/settings.py": "import os\n\nclass Settings:\n    PROJECT_NAME: str = \"Task Manager API\"\n    DATABASE_URL: str = os.getenv(\"DATABASE_URL\", \"sqlite:///./sql_app.db\")\n    SECRET_KEY: str = os.getenv(\"SECRET_KEY\", \"super-secret-key-change-me-in-production\")\n    ALGORITHM: str = \"HS256\"\n    ACCESS_TOKEN_EXPIRE_MINUTES: int = 60\n\nsettings = Settings()\n",
       "app/config/__init__.py": "from app.config.settings import settings\n"
     },
-    "success_count": 12,
+    "success_count": 13,
     "first_seen": "2026-07-11T11:27:08Z",
-    "last_seen": "2026-07-13T03:52:58Z",
+    "last_seen": "2026-07-13T04:37:14Z",
     "source_idea": "A todo list app with user accounts. Users can register and log in. Each user sees only their own tod"
   },
   "c3c63f97354b61ab": {
@@ -643,9 +643,9 @@
     "fix_content": {
       "src/pages/TaskListPage.jsx": "import React, { useState, useEffect } from 'react';\nimport API from '../api';\n\nexport default function TaskListPage() {\n  const [tasks, setTasks] = useState([]);\n  const [newTaskTitle, setNewTaskTitle] = useState('');\n  const [searchQuery, setSearchQuery] = useState('');\n  const [loading, setLoading] = useState(false);\n  const [error, setError] = useState('');\n\n  const fetchTasks = async () => {\n    setLoading(true);\n    try {\n      const response = await API.get('/tasks');\n      if (response.data && Array.isArray(response.data.items)) {\n        setTasks(response.data.items);\n      } else if (Array.isArray(response.data)) {\n        setTasks(response.data);\n      }\n    } catch (err) {\n      setError('Failed to fetch tasks');\n    } finally {\n      setLoading(false);\n    }\n  };\n\n  useEffect(() => {\n    fetchTasks();\n  }, []);\n\n  const handleAddTask = async (e) => {\n    e.preventDefault();\n    if (!newTaskTitle.trim()) return;\n    try {\n      const response = await API.post('/tasks', { title: newTaskTitle, done: false });\n      setTasks((prev) => [...prev, response.data]);\n      setNewTaskTitle('');\n    } catch (err) {\n      setError('Failed to add task');\n    }\n  };\n\n  const handleToggleTask = async (task) => {\n    try {\n      const updatedDone = !task.done;\n      const response = await API.put(`/tasks/${task.id}`, { ...task, done: updatedDone });\n      setTasks((prev) => prev.map((t) => (t.id === task.id ? response.data : t)));\n    } catch (err) {\n      setError('Failed to update task');\n    }\n  };\n\n  const handleDeleteTask = async (id) => {\n    try {\n      await API.delete(`/tasks/${id}`);\n      setTasks((prev) => prev.filter((t) => t.id !== id));\n    } catch (err) {\n      setError('Failed to delete task');\n    }\n  };\n\n  const filteredTasks = tasks.filter((task) =>\n    task.title ? task.title.toLowerCase().includes(searchQuery.toLowerCase()) : false\n  );\n\n  return (\n    <div className=\"task-list-container\">\n      <h1>Task List</h1>\n      {error && <p className=\"error-message\">{error}</p>}\n\n      <div className=\"search-bar\">\n        <label htmlFor=\"search-input\">Search Tasks:</label>\n        <input\n          id=\"search-input\"\n          type=\"text\"\n          placeholder=\"Search tasks...\"\n          value={searchQuery}\n          onChange={(e) => setSearchQuery(e.target.value)}\n          aria-label=\"Search tasks\"\n        />\n      </div>\n\n      <form onSubmit={handleAddTask} className=\"add-task-form\">\n        <label htmlFor=\"new-task-input\">New Task:</label>\n        <input\n          id=\"new-task-input\"\n          type=\"text\"\n          placeholder=\"Add a new task...\"\n          value={newTaskTitle}\n          onChange={(e) => setNewTaskTitle(e.target.value)}\n          aria-label=\"New task title\"\n        />\n        <button type=\"submit\">Add Task</button>\n      </form>\n\n      {loading ? (\n        <p>Loading tasks...</p>\n      ) : (\n        <ul className=\"task-list\">\n          {filteredTasks.map((task) => (\n            <li key={task.id} className={`task-item ${task.done ? 'completed' : ''}`}>\n              <label htmlFor={`task-checkbox-${task.id}`} className=\"sr-only\">\n                Toggle task completion\n              </label>\n              <input\n                id={`task-checkbox-${task.id}`}\n                type=\"checkbox\"\n                checked={task.done || false}\n                onChange={() => handleToggleTask(task)}\n                aria-label={`Mark ${task.title} as ${task.done ? 'incomplete' : 'complete'}`}\n              />\n              <span className=\"task-title\">{task.title}</span>\n              <button onClick={() => handleDeleteTask(task.id)} aria-label={`Delete task ${task.title}`}>\n                Delete\n              </button>\n            </li>\n          ))}\n        </ul>\n      )}\n    </div>\n  );\n}"
     },
-    "success_count": 6,
+    "success_count": 7,
     "first_seen": "2026-07-11T12:43:22Z",
-    "last_seen": "2026-07-12T20:02:06Z",
+    "last_seen": "2026-07-13T04:37:14Z",
     "source_idea": "A todo list app with user accounts. Users can register and log in. Each user sees only their own tod"
   },
   "e042e54f1e523e54": {
@@ -723,9 +723,9 @@
     "fix_content": {
       "app/schemas/task.py": "from datetime import datetime\nfrom typing import Optional\n\nfrom pydantic import BaseModel, Field, ConfigDict\n\nclass TaskCreate(BaseModel):\n    title: Optional[str] = Field(default=None, min_length=1)\n    description: Optional[str] = None\n    due_date: Optional[datetime] = None\n    completed: Optional[bool] = None\n\n    model_config = ConfigDict(from_attributes=True)\n\nclass TaskUpdate(BaseModel):\n    title: Optional[str] = Field(default=None, min_length=1)\n    description: Optional[str] = None\n    due_date: Optional[datetime] = None\n    completed: Optional[bool] = None\n\n    model_config = ConfigDict(from_attributes=True)\n\nclass TaskResponse(BaseModel):\n    id: int\n    title: Optional[str] = None\n    description: Optional[str] = None\n    due_date: Optional[datetime] = None\n    completed: Optional[bool] = None\n    created_at: Optional[datetime] = None\n    updated_at: Optional[datetime] = None\n    priority: Optional[dict] = None\n\n    model_config = ConfigDict(from_attributes=True)\n\nclass TaskRead(BaseModel):\n    id: Optional[int] = None\n    model_config = ConfigDict(from_attributes=True)\n"
     },
-    "success_count": 3,
+    "success_count": 4,
     "first_seen": "2026-07-11T22:39:05Z",
-    "last_seen": "2026-07-12T20:02:06Z",
+    "last_seen": "2026-07-13T04:37:14Z",
     "source_idea": "A todo list app with user accounts. Users can register and log in. Each user sees only their own tod"
   },
   "020205ee2bbadae0": {
@@ -927,5 +927,25 @@
     "first_seen": "2026-07-13T03:53:20Z",
     "last_seen": "2026-07-13T03:53:20Z",
     "source_idea": "A sports league management platform with user login. Admins create, edit, and archive leagues (name,"
+  },
+  "11ddbdd1e34c90d7": {
+    "fix_hash": "11ddbdd1e34c90d7",
+    "fix_content": {
+      "app/schemas/task.py": "from datetime import datetime\nfrom typing import Optional\n\nfrom pydantic import BaseModel, ConfigDict, Field\n\n\nclass TaskBase(BaseModel):\n    \"\"\"Base fields shared by creation and response schemas for a Task.\"\"\"\n    title: str = Field(..., min_length=1, description=\"Title of the task\")\n    description: Optional[str] = Field(None, description=\"Detailed description of the task\")\n    done: bool = Field(False, description=\"Completion flag for the task\")\n\n    # Enable ORM mode using the new Pydantic v2 style\n    model_config = ConfigDict(from_attributes=True)\n\n\nclass TaskCreate(TaskBase):\n    \"\"\"Schema used when a client creates a new task.\"\"\"\n    # Inherits all fields from TaskBase; no additional configuration needed\n    pass\n\n\nclass TaskResponse(TaskBase):\n    \"\"\"Schema returned to clients when they request task data.\"\"\"\n    id: int = Field(..., description=\"Database identifier of the task\")\n    created_at: datetime = Field(..., description=\"Timestamp when the task was created\")\n    updated_at: datetime = Field(..., description=\"Timestamp when the task was last updated\")\n\n    model_config = ConfigDict(from_attributes=True)\n"
+    },
+    "success_count": 1,
+    "first_seen": "2026-07-13T04:37:41Z",
+    "last_seen": "2026-07-13T04:37:41Z",
+    "source_idea": "A todo list app with user accounts. Users can register and log in. Each user sees only their own tod"
+  },
+  "5413eb07920eafb3": {
+    "fix_hash": "5413eb07920eafb3",
+    "fix_content": {
+      "app/schemas/auth.py": "from typing import Optional\n\nfrom pydantic import BaseModel, EmailStr, Field\n\n# Import the canonical UserCreate schema from the user module to avoid duplicate definitions.\nfrom app.schemas.user import UserCreate\n\n\nclass Token(BaseModel):\n    access_token: str = Field(..., description=\"JWT access token\")\n    token_type: str = Field(..., description=\"Token type, typically 'bearer'\")\n\n    class Config:\n        from_attributes = True\n\n\nclass TokenData(BaseModel):\n    username: Optional[str] = Field(None, description=\"Username extracted from the JWT payload\")\n\n    class Config:\n        from_attributes = True\n\n# Re‑export UserCreate for backward compatibility; code that imports\n# `UserCreate` from `app.schemas.auth` will receive the same class defined in\n# `app.schemas.user`.\n__all__ = [\"Token\", \"TokenData\", \"UserCreate\"]\n"
+    },
+    "success_count": 1,
+    "first_seen": "2026-07-13T04:37:41Z",
+    "last_seen": "2026-07-13T04:37:41Z",
+    "source_idea": "A todo list app with user accounts. Users can register and log in. Each user sees only their own tod"
   }
 }

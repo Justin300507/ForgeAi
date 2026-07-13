@@ -10963,6 +10963,169 @@
           "retry_history": []
         }
       ]
+    },
+    {
+      "label": "exp099-validation-r1",
+      "timestamp": "2026-07-13T04:38:44.037708+00:00",
+      "deploy": false,
+      "results": [
+        {
+          "app": "todo",
+          "crashed": false,
+          "forge_score": 76.86,
+          "grade": "C",
+          "build_ok": true,
+          "runtime_ok": false,
+          "crud_ok": null,
+          "browser_ok": null,
+          "deployed": false,
+          "fix_attempts": 4,
+          "elapsed_s": 222.1,
+          "dimensions": [
+            {
+              "name": "Compilation",
+              "score": 100.0,
+              "passed": true,
+              "na": false
+            },
+            {
+              "name": "Runtime Startup",
+              "score": 20.0,
+              "passed": false,
+              "na": false
+            },
+            {
+              "name": "API Functionality",
+              "score": 100.0,
+              "passed": true,
+              "na": false
+            },
+            {
+              "name": "Frontend Load",
+              "score": null,
+              "passed": false,
+              "na": true
+            },
+            {
+              "name": "Browser UX",
+              "score": null,
+              "passed": false,
+              "na": true
+            },
+            {
+              "name": "Integration",
+              "score": null,
+              "passed": false,
+              "na": true
+            },
+            {
+              "name": "Code Quality",
+              "score": 100.0,
+              "passed": true,
+              "na": false
+            },
+            {
+              "name": "Security",
+              "score": 100.0,
+              "passed": true,
+              "na": false
+            },
+            {
+              "name": "Completeness",
+              "score": 100.0,
+              "passed": true,
+              "na": false
+            },
+            {
+              "name": "Performance",
+              "score": 90,
+              "passed": true,
+              "na": false
+            },
+            {
+              "name": "Visual Judge",
+              "score": 100,
+              "passed": true,
+              "na": false
+            }
+          ],
+          "confidence": {
+            "probability": 0.1907,
+            "pct": 19.07,
+            "grade": "F",
+            "factors": {
+              "base": -0.5,
+              "overall_score": 1.477,
+              "runtime_health": 0.1,
+              "browser_ux": 0.0,
+              "compilation": 0.2,
+              "fix_penalty": -1.6,
+              "critical_errors": -1.0,
+              "historical_base_rate": -0.122
+            },
+            "historical_rate": 0.38,
+            "historical_n": 100,
+            "verdict": "Not deployment-ready — critical issues likely remain."
+          },
+          "retry_history": [
+            {
+              "attempt": 1,
+              "strategy": "patch_file",
+              "provider": "auto",
+              "score_before": 75.14,
+              "score_after": 75.57,
+              "delta": 0.43
+            },
+            {
+              "attempt": 2,
+              "strategy": "patch_file",
+              "provider": "auto",
+              "score_before": 75.57,
+              "score_after": 76.86,
+              "delta": 1.29
+            },
+            {
+              "attempt": 3,
+              "strategy": "regenerate_module",
+              "provider": "auto",
+              "score_before": 76.86,
+              "score_after": 76.86,
+              "delta": 0.0
+            },
+            {
+              "attempt": 4,
+              "strategy": "switch_model",
+              "provider": "gemini",
+              "score_before": 76.86,
+              "score_after": 76.86,
+              "delta": 0.0
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "label": "exp099-validation-r2",
+      "timestamp": "2026-07-13T04:49:40.412092+00:00",
+      "deploy": false,
+      "results": [
+        {
+          "app": "auth_heavy",
+          "crashed": false,
+          "forge_score": 0.0,
+          "grade": "F",
+          "build_ok": null,
+          "runtime_ok": null,
+          "crud_ok": null,
+          "browser_ok": null,
+          "deployed": false,
+          "fix_attempts": 0,
+          "elapsed_s": 10.9,
+          "dimensions": [],
+          "confidence": null,
+          "retry_history": null
+        }
+      ]
     }
   ]
 }

@@ -6897,3 +6897,79 @@ same pattern as prior live-validation cycles in this series.
 entry, code diff in `backend/app/services/deterministic_patcher.py`,
 new test file `backend/tests/reliability/test_exp098_schema_attr_mismatches.py`.
 **Cost: $0, zero Cerebras calls.**
+
+---
+
+## Experiment 099: Live Validation of Cross-Type Attribute Access Repair
+
+2026-07-13. Live, two Cerebras canaries. `backend/scripts/exp099_canary.py`
+wraps `_patch_attr_access_mismatches` to diff every route file it
+touches during a real generation.
+
+**r1 (todo, Exp097's exact confirmed incident shape)**: 76.9/100 (C),
+NEEDS REPAIR. Patcher activated twice (identical, same file re-verified
+across two repair passes): `user_routes.py`,
+`user.display_name = user_in.display_name` → `user.username = ...`.
+**Confirmed via isolated fixture testing against the exact pre-Exp098
+commit (git-checkout swap, restored after) that this specific
+activation is PRE-EXISTING behavior, byte-for-byte identical on both
+versions** — `user` was already resolvable via the pre-existing
+ORM-query-typing path, and `"display_name"` was already a pre-existing
+synonym key; this run provides no direct live evidence of the NEW
+Pydantic-schema pathway specifically (Exp098's own offline corpus
+replay already independently verified 2 real Pydantic-driven fixes,
+standing in as substitute evidence).
+
+**A real, live-reproducible correctness gap was found, confirmed
+pre-existing (not caused by Exp098)**: the generated
+`update_user`'s `if user_in.display_name is not None: user.username =
+user_in.display_name` sits in a separate `if` block from the correct
+`user.username = user_in.username` a few lines above — a client
+PUT-ing only `display_name` silently overwrites the real username.
+Worse than the pre-fix silent no-op. General characteristic of
+`_patch_attr_access_mismatches` rewriting assignment targets same as
+reads, confirmed identical pre/post Exp098. Not fixed this cycle (
+pre-existing, not "new"), flagged for Exp100.
+
+**r2 (auth-heavy, `14_auth.txt`)**: failed at the architect JSON-parsing
+stage (3 retries, all cache-hit) before any backend code was
+generated — unrelated, pre-existing infrastructure fragility, **$0
+cost**, uninformative for this experiment.
+
+**Runtime**: registration succeeded; seed script failed with
+`TypeError: 'display_name' is an invalid keyword argument for Users`
+(`seed_routes.py`, `Users(**udata)`) — a **different bug shape**
+(constructor-kwarg dict-unpack, not `.attr` access — out of
+`_patch_attr_access_mismatches`'s scope by design, a new sibling gap to
+investigate). CRUD journey degraded from 10/11 to 6/11 over the repair
+loop; traced to an unrelated, later `SQLAlchemyError`/`StatementError`
+from a different fix-loop attempt (contract-violation fixes targeting
+`TaskCreate`/duplicate `UserCreate`) — confirmed not caused by
+`_patch_attr_access_mismatches` (fired once, on an unrelated file,
+output identical to pre-Exp098 code). **Historical AttributeError class
+absent**: confirmed — final `generation_log.jsonl` tag for this run is
+`[SQLAlchemyError]`, no `[AttributeError]` anywhere in this run's
+telemetry.
+
+**Observatory**: regenerated; `canary_health` now `Unhealthy` (driven
+entirely by r2's architect-stage 0.0, unrelated to attribute-access
+repair). `top_failure_now` still shows `AttributeError` reflecting
+Exp097's already-known historical incidents, not a new one from this
+run.
+
+**Recommendation for Exp100**: two candidates surfaced this cycle —
+(1) `Users(**udata)` constructor-kwarg field mismatches (`TypeError`,
+same root cause as Exp097 but a different AST shape, check whether
+`patch_filter_dict_unpack_constructor_kwargs` already covers it), (2)
+restrict assignment-target rewriting for the identity-field cluster
+(confirmed pre-existing, confirmed live-reproducible data-corruption
+risk). Do not spend a live canary purely to force the Pydantic-pathway
+activation — offline evidence is sufficient, this cycle's null result
+is uninformative but not concerning, same pattern as Exp093/096.
+
+**Deliverables**: `docs/EXP099_LIVE_VALIDATION_ATTR_MISMATCH_REPAIR.md`,
+this entry, `backend/scripts/exp099_canary.py`,
+`backend/benchmark_results/exp099_attr_mismatch_invocations.json`,
+regenerated `backend/observatory_report.html`, two canary history
+entries (`exp099-validation-r1` BASELINE 76.9, `exp099-validation-r2`
+BASELINE 0.0). **Cost: $0.0546, one live generation.**

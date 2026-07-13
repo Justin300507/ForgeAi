@@ -43,6 +43,18 @@
       "tries": 1
     }
   },
+  "SQLAlchemyError": {
+    "regenerate_module": {
+      "generation": 2,
+      "successes": 0,
+      "tries": 1
+    },
+    "switch_model": {
+      "generation": 1,
+      "successes": 0,
+      "tries": 1
+    }
+  },
   "SyntaxError": {
     "patch_file": {
       "successes": 2,
@@ -82,8 +94,8 @@
   "contract": {
     "patch_file": {
       "generation": 1,
-      "successes": 55,
-      "tries": 132
+      "successes": 57,
+      "tries": 134
     },
     "regenerate_arch": {
       "successes": 9,
