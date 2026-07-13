@@ -227,16 +227,21 @@ export default function NewProject() {
               </div>
               <h2 className="hero-serif text-xl text-white mb-4">AI Pipeline</h2>
               <ol className="space-y-3.5">
-                {STAGES.map((stage, i) => (
-                  <li key={stage.id} className="flex items-center gap-3 text-sm text-gray-400">
-                    <span
-                      className={`pipeline-node-dot w-2 h-2 rounded-full bg-violet-300 shrink-0${igniting ? " igniting" : ""}`}
-                      style={{ "--node-delay": `${i * 420}ms`, "--ignite-delay": `${i * 65}ms` }}
-                      aria-hidden="true" />
-                    <span>{stage.label}</span>
-                    <span className="text-xs text-gray-600 ml-auto">{igniting ? "…" : "Waiting…"}</span>
-                  </li>
-                ))}
+                {STAGES.map((stage, i) => {
+                  const StageIcon = stage.Icon;
+                  return (
+                    <li key={stage.id} className="flex items-center gap-3 text-sm text-gray-400">
+                      <span
+                        className={`pipeline-node-dot w-5 h-5 rounded-full flex items-center justify-center bg-violet-300/15 text-violet-300 shrink-0${igniting ? " igniting" : ""}`}
+                        style={{ "--node-delay": `${i * 420}ms`, "--ignite-delay": `${i * 65}ms` }}
+                        aria-hidden="true">
+                        <StageIcon size={11} />
+                      </span>
+                      <span>{stage.label}</span>
+                      <span className="text-xs text-gray-600 ml-auto">{igniting ? "…" : "Waiting…"}</span>
+                    </li>
+                  );
+                })}
               </ol>
               <p className="text-xs text-gray-600 mt-5 pt-4 border-t border-white/5">
                 The full pipeline typically runs 3–5 minutes.
