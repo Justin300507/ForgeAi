@@ -6758,3 +6758,66 @@ regenerated `backend/observatory_report.html`, two canary history
 entries (`exp096-validation-r1` BASELINE 99.3,
 `exp096-validation-r2` BASELINE 92.4). **Cost: $0.3009, two live
 generations.**
+
+---
+
+## Experiment 097: Root Cause Investigation of Current Top AttributeError Class
+
+2026-07-13. Investigation only, $0, zero Cerebras calls, zero code
+changes.
+
+**Deduplicated the 16 `AttributeError`-tagged `generation_log.jsonl`
+records** (of 105 total) by excluding already-closed classes: 9
+`SignupRequest.username` (closed by commit `0d2c74d`, all 9 log entries
+pre-date the fix), 3 `ConfigAttributeError` (closed by commits
+`f2721c5`/`85514e5`, entries timestamped right around those fixes), 2
+older/historical (pre-dates the current telemetry window). **2 confirmed
+active, unclosed incidents remain**: `User.name` missing
+(2026-07-11T23:00:32Z) and `UserCreate.password` missing
+(2026-07-12T09:02:39Z) — both co-occurring with `POST /seed returned
+500`, both from the same recurring todo idea/architecture (LLM-cache-
+deterministic architecture hash) but 12 hours apart, i.e. genuinely
+distinct incidents, not retry-bundle duplicates of one run.
+`patterns.json` shows 22 lifetime `AttributeError` occurrences (467
+total runs) — `gym_tracker`'s current model has accumulated 3 separate
+overlapping credential columns (`password`/`password_hash`/
+`hashed_password`), direct evidence a past instance of this bug was
+"fixed" by adding a column rather than correcting the reference.
+
+**Root cause**: `shared_contract.py`'s mandatory "seed every table"
+instruction forces the Wave-4 routes LLM call (writing
+`seed_routes.py`) to construct demo `User`/`UserCreate` instances and
+guess at field names for identity/credential columns — with zero
+visibility into what the *concurrent*, separate Wave-2 (models) and
+Wave-3 (schemas) LLM calls independently decided for the same entity.
+Earliest deterministic divergence: the Wave 3/Wave 4 parallelization
+boundary itself — a missing cross-wave consistency check between
+independently-generated files describing the same entity.
+
+**Existing infrastructure**: `deterministic_patcher.py`'s
+`_patch_attr_access_mismatches()` already exists specifically for this
+bug class (AST-based, correctly class-scoped) but misses both confirmed
+cases for two distinct, precisely-identified reasons: (1) its
+`_FIELD_SYNONYMS_PATCHER` dict already uses `"name"`/`"password"`-shaped
+values under other keys but has no `"name"` or `"password"` keys of its
+own; (2) it only ever builds `model_cols` from `app/models/*.py`
+(`Column(...)` regex) — `_infer_model_typed_names` structurally can
+never resolve a Pydantic-schema-typed parameter (`UserCreate`) as a
+known class, independent of the dict gap.
+
+**Smallest deterministic implementation candidate**: (1) trivial —
+add `"name"`/`"password"` keys to `_FIELD_SYNONYMS_PATCHER`, reusing
+100% of existing machinery; (2) small — extend the same function with
+a parallel `schema_cols` map (scanning `app/schemas/*.py` for Pydantic
+field declarations, mirroring `model_cols`'s construction) so
+Pydantic-typed parameters can be resolved too, closing the
+`UserCreate.password` gap structurally.
+
+**Recommendation for Exp098**: implement both fixes in one cycle (same
+function, same test file), offline-validate against the two confirmed
+shapes plus a full-corpus replay (same methodology as Exp092/094)
+before any live canary, and verify `gym_tracker`'s already-scarred
+3-column model doesn't regress.
+
+**Deliverables**: `docs/EXP097_ATTRIBUTEERROR_ROOT_CAUSE.md`, this
+entry. **Cost: $0, zero Cerebras calls, zero code changes.**
