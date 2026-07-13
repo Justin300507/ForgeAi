@@ -6633,3 +6633,64 @@ revisit only if a future scan shows it recurring.
 
 **Deliverables**: `docs/EXP094_EDIT_PATH_405_ROOT_CAUSE.md`, this entry.
 **Cost: $0, zero Cerebras calls, zero code changes.**
+
+---
+
+## Experiment 095: Align CRUD Journey Runner with Architecture HTTP Methods
+
+2026-07-13. Offline implementation, $0, zero Cerebras calls. Implements
+Exp094's recommended fix in `app/runtime/user_journey_runner.py`: new
+`_detect_update_method(architecture, api_prefix, resource)` scans the
+architecture for a PUT or PATCH declared on the exact `<resource>/{id}`
+shape (excluding action sub-paths like `/posts/{id}/publish`), defaults
+to `"PUT"` when neither is declared (preserves prior behavior).
+`_detect_crud_entity()` now returns `(resource, update_method)` instead
+of a bare resource string. `do_edit()` picks `requests.patch` or
+`requests.put` accordingly instead of a hardcoded PUT — deliberately not
+`requests.request(...)`, since that would bypass `_ExchangeRecorder`'s
+forensic bundle-capture wrapper. No generated-code changes, no prompt
+changes, no new patcher.
+
+**Offline replay against both Exp094-confirmed architectures**:
+`sports_league_manager` now correctly resolves to `('leagues', 'PATCH')`
+(was would-405 PUT-only assumption); `volunteer_management_system`
+still resolves to `('events', 'PUT')` (unchanged — its selected entity
+has no update endpoint at all, a distinct sub-case this fix doesn't
+address, by design). **End-to-end confirmation**: built a fake HTTP
+server reproducing `sports_league_manager`'s exact PATCH-only shape and
+ran the real `run_user_journey()` against it — `Edit entity` passes
+(200). **Git-stash-verified**: reverted the fix, re-ran the identical
+replay, confirmed `Edit entity` fails with 501 (pre-fix hardcoded PUT)
+— proves this is a real fix for a real reproduced failure, not a no-op.
+
+**Regression check**: full-corpus re-scan of all 49 saved architectures
+— 46 unchanged (still resolve PUT), 1 now correctly resolves PATCH, 2
+unchanged no-entity-detected cases. Existing
+`test_role_aware_journey.py` (real PUT-based architecture/server): 2/2
+pass, unchanged. New `test_exp095_journey_method_alignment.py` (9 tests:
+method-detection unit coverage + end-to-end PATCH-only journey): 9/9
+pass. Full reliability suite: **50/53** (52 pre-existing + 1 new) — same
+3 pre-existing, unrelated failures this series has repeatedly confirmed
+(stale fixture dir, missing `jose` package, 2 unrelated write-corruption
+subtests), none touching `user_journey_runner.py`. Zero new regressions.
+
+**Estimated improvement**: eliminates the confirmed 1/49 (2.0%)
+current-snapshot false-405 outright and removes the latent risk in
+Exp094's 11/49 (22.4%) PATCH-containing-architecture pool for all future
+regenerations of those ideas — converts a confirmed 0%-self-heal false
+failure into a $0, deterministic non-issue. Does not address
+`volunteer_management_system`'s distinct missing-update-endpoint
+sub-case, unchanged as intended.
+
+**Recommendation for Exp096**: live-validate with 1-2 Cerebras canaries
+targeting ideas historically prone to architect PATCH choice
+(sports/league or task-management shaped ideas) rather than
+todo/blog_cms/crm, which currently resolve to PUT. A null result
+(architect chooses PUT again) would be uninformative but not
+concerning — same low-probability-per-run pattern as Exp093's
+Create-path live validation.
+
+**Deliverables**: `docs/EXP095_JOURNEY_METHOD_ALIGNMENT.md`, this entry,
+code diff in `backend/app/runtime/user_journey_runner.py`, new test file
+`backend/tests/reliability/test_exp095_journey_method_alignment.py`.
+**Cost: $0, zero Cerebras calls.**

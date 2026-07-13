@@ -287,10 +287,50 @@ def _parse_missing_fields(response) -> set:
     return set()
 
 
-def _detect_crud_entity(architecture: dict, api_prefix: str) -> str | None:
+def _detect_update_method(architecture: dict, api_prefix: str, resource: str) -> str:
+    """
+    Find the HTTP method the architecture declares for `resource`'s
+    single-entity update route (path shaped exactly `<resource>/{id}` —
+    deliberately ignoring nested action/sub-paths like
+    `/<resource>/{id}/publish`, which may legitimately use PATCH for an
+    unrelated partial state-transition without that being the resource's
+    canonical update verb).
+
+    Root cause (Experiment 094): the architect is explicitly permitted
+    (architect_prompt.py's HTTP-method allow-list) to choose PATCH
+    instead of PUT for this route, and often does — the generated code
+    is then spec-compliant, but a hardcoded `requests.put()` in
+    `do_edit()` 405s against it. Prefers PUT when both are somehow
+    declared for the exact same shape (not observed in practice).
+    Falls back to "PUT" when neither is declared for this exact shape,
+    preserving prior behavior (Task 4) — including the case where the
+    detected entity has no update route at all.
+    """
+    endpoints = (architecture or {}).get("api_endpoints", [])
+    found: set[str] = set()
+    for ep in endpoints:
+        path = ep.get("path", "")
+        method = (ep.get("method") or "").upper()
+        if method not in ("PUT", "PATCH"):
+            continue
+        stripped = path[len(api_prefix):] if api_prefix and path.startswith(api_prefix) else path
+        parts = [p for p in stripped.strip("/").split("/") if p]
+        if len(parts) == 2 and parts[0] == resource and parts[1].startswith("{"):
+            found.add(method)
+    if "PUT" in found:
+        return "PUT"
+    if "PATCH" in found:
+        return "PATCH"
+    return "PUT"
+
+
+def _detect_crud_entity(architecture: dict, api_prefix: str) -> tuple[str, str] | None:
     """
     Find the first resource that has all four CRUD methods, skipping
-    common prefix segments (api, v1, auth, etc.).
+    common prefix segments (api, v1, auth, etc.). Returns
+    (resource_name, update_method) — update_method is whichever of
+    PUT/PATCH the architecture declares for that resource's single-entity
+    update route (see _detect_update_method), defaulting to "PUT".
     """
     if not architecture:
         return None
@@ -309,25 +349,28 @@ def _detect_crud_entity(architecture: dict, api_prefix: str) -> str | None:
         if parts:
             by_resource[parts[0]].add(method)
 
+    def _resolved(resource: str) -> tuple[str, str]:
+        return resource, _detect_update_method(architecture, api_prefix, resource)
+
     # Prefer non-auth resources first (so we don't accidentally delete the registered user)
     for resource, methods in by_resource.items():
         if resource in _AUTH_RESOURCES:
             continue
         if {"GET", "POST", "PUT", "DELETE"}.issubset(methods):
-            return resource
+            return _resolved(resource)
 
     # Fallback: any full-CRUD resource including auth ones
     for resource, methods in by_resource.items():
         if {"GET", "POST", "PUT", "DELETE"}.issubset(methods):
-            return resource
+            return _resolved(resource)
 
     # Fallback: any resource with POST + GET (non-auth first)
     for resource, methods in by_resource.items():
         if resource not in _AUTH_RESOURCES and {"GET", "POST"}.issubset(methods):
-            return resource
+            return _resolved(resource)
     for resource, methods in by_resource.items():
         if {"GET", "POST"}.issubset(methods):
-            return resource
+            return _resolved(resource)
 
     return None
 
@@ -387,7 +430,9 @@ def run_user_journey(
     arch = architecture or {}
     api_prefix = _detect_api_prefix(arch)
     auth_paths = _detect_auth_paths(arch)
-    entity: str = _detect_crud_entity(arch, api_prefix) or "items"
+    _crud_detection = _detect_crud_entity(arch, api_prefix)
+    entity: str = _crud_detection[0] if _crud_detection else "items"
+    update_method: str = _crud_detection[1] if _crud_detection else "PUT"
     entity_url = f"{base}{api_prefix}/{entity}"
 
     steps: list[JourneyStep] = []
@@ -862,6 +907,10 @@ def run_user_journey(
     def do_edit():
         if entity_id is None:
             return False, "no entity_id captured"
+        # Use whichever verb the architecture actually declared for this
+        # entity's update route (Experiment 094/095) — a hardcoded PUT
+        # false-fails apps whose architecture legitimately chose PATCH.
+        edit_fn = requests.patch if update_method == "PATCH" else requests.put
         # Try multiple update payloads — different entities use title vs name
         for edit_payload in (
             {"title": "Journey Test Item EDITED", "name": "Journey Test Item EDITED",
@@ -870,9 +919,9 @@ def run_user_journey(
             {"title": "Journey Test Item EDITED"},
             {"name": "Journey Test Item EDITED"},
         ):
-            r = requests.put(f"{entity_url}/{entity_id}",
-                             json=edit_payload,
-                             headers=headers, timeout=5)
+            r = edit_fn(f"{entity_url}/{entity_id}",
+                        json=edit_payload,
+                        headers=headers, timeout=5)
             if r.status_code in (200, 201, 204):
                 return True, f"{r.status_code}"
             if r.status_code == 422:
