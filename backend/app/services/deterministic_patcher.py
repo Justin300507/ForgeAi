@@ -3442,6 +3442,32 @@ _FIELD_SYNONYMS_PATCHER = {
     "deadline": ["due_date", "due_at", "expires_at"],
     "creator_id": ["owner_id", "user_id", "created_by"],
     "author_id": ["owner_id", "user_id", "created_by"],
+    # Exp098: "name" and "password" already appeared as candidate VALUES
+    # above (e.g. "username": [..., "name", ...]) but never as their own
+    # KEYS -- Exp097 found a bad_attr of exactly "name" or "password" was
+    # therefore never considered fixable at all via the plain
+    # `.get(bad_attr)` lookup below, regardless of what the model/schema
+    # actually declared.
+    #
+    # A mechanical "also check values, reciprocally" fix was tried first
+    # and reverted: scanning the WHOLE dict for any key whose value list
+    # contains "name" pulls in "description"/"title"/"label" alongside
+    # the intended identity cluster (username/full_name/display_name) --
+    # and unlike identity fields, "description" is a body-text field,
+    # not a label/name substitute. Confirmed live via full-corpus replay
+    # against gym_tracker: `tag_in.name` (TagCreate genuinely has no
+    # "name", only "title"/"description") got "fixed" to
+    # `tag_in.description` instead of the correct `tag_in.title`, purely
+    # because "description" happens to be declared earlier in this dict
+    # than "title" -- a real, wrong rewrite, not a hypothetical risk.
+    # So "name"/"password" are curated explicit keys instead, scoped to
+    # only the identity/credential synonyms they were actually meant to
+    # cover -- deliberately NOT title/label/description, which stay
+    # reachable only in their own existing one-directional entries above.
+    "name": ["username", "full_name", "display_name"],
+    "password": ["password_hash", "hashed_password", "pwd"],
+    "password_hash": ["hashed_password", "password"],
+    "hashed_password": ["password_hash", "password"],
 }
 
 
@@ -3464,34 +3490,45 @@ def _query_target_class(call: ast.Call, model_cols: dict) -> Optional[str]:
     return None
 
 
-def _infer_model_typed_names(fn: ast.AST, model_cols: dict) -> dict:
-    """Best-effort, conservative {variable_name: model_class_name} map for
-    names PROVABLY bound to an instance of a known SQLAlchemy model class
-    within this function's own source -- constructor calls (`u = User(...)`),
-    ORM query results (`u = db.query(User).first()`, `for u in db.query(User)`),
-    and directly-typed parameters. A name absent from the result is never
+def _infer_model_typed_names(fn: ast.AST, model_cols: dict, schema_cols: dict | None = None) -> dict:
+    """Best-effort, conservative {variable_name: class_name} map for names
+    PROVABLY bound to an instance of a known SQLAlchemy model class OR
+    (Exp098) Pydantic schema class within this function's own source --
+    constructor calls (`u = User(...)`), ORM query results
+    (`u = db.query(User).first()`, `for u in db.query(User)`), and
+    directly-typed parameters. A name absent from the result is never
     treated as typed, so callers can never rewrite an attribute access whose
     object type isn't actually known.
+
+    `schema_cols` extends every one of the three "provably typed" shapes
+    above (typed parameter, annotated assignment, constructor call) to
+    also recognize Pydantic schema classes (e.g. `user_in: UserCreate`,
+    the shape route handlers and seed_routes.py actually use) --
+    SQLAlchemy detection via `model_cols` is completely unchanged, and
+    passing no `schema_cols` (the default) reproduces the exact prior
+    behavior byte-for-byte, since `name in {}` is always False.
     """
+    schema_cols = schema_cols or {}
     typed: dict = {}
 
     if isinstance(fn, (ast.FunctionDef, ast.AsyncFunctionDef)):
         for arg in fn.args.args:
             ann = arg.annotation
             name = ann.id if isinstance(ann, ast.Name) else None
-            if name and name in model_cols:
+            if name and (name in model_cols or name in schema_cols):
                 typed[arg.arg] = name
 
     for node in ast.walk(fn):
         if isinstance(node, ast.AnnAssign) and isinstance(node.target, ast.Name) \
-                and isinstance(node.annotation, ast.Name) and node.annotation.id in model_cols:
+                and isinstance(node.annotation, ast.Name) \
+                and (node.annotation.id in model_cols or node.annotation.id in schema_cols):
             # `var: ClassName = ...` -- the annotation itself is authoritative,
             # regardless of what (if anything) the RHS looks like.
             typed[node.target.id] = node.annotation.id
         elif isinstance(node, ast.Assign) and isinstance(node.value, ast.Call) \
                 and len(node.targets) == 1 and isinstance(node.targets[0], ast.Name):
             f = node.value.func
-            if isinstance(f, ast.Name) and f.id in model_cols:
+            if isinstance(f, ast.Name) and (f.id in model_cols or f.id in schema_cols):
                 typed[node.targets[0].id] = f.id
                 continue
             cls = _query_target_class(node.value, model_cols)
@@ -3504,6 +3541,38 @@ def _infer_model_typed_names(fn: ast.AST, model_cols: dict) -> dict:
                 typed[node.target.id] = cls
 
     return typed
+
+
+def _collect_schema_cols(schemas_dir: Path) -> dict:
+    """Build {cls_name -> frozenset(field_names)} for every Pydantic
+    BaseModel subclass declared across app/schemas/*.py.
+
+    Exp098: the schema-side counterpart to the model_cols dict built in
+    _patch_attr_access_mismatches -- reuses
+    fix_writer_service._collect_basemodel_classes per-file (local
+    inheritance resolution only, matching that helper's own documented
+    scope) and merges across files. Closes the gap where
+    _infer_model_typed_names could never resolve a Pydantic-schema-typed
+    parameter (e.g. `user_in: UserCreate`) because model_cols only ever
+    tracked SQLAlchemy models (Column(...) declarations in app/models/).
+    Returns {} if schemas_dir doesn't exist -- callers degrade gracefully
+    to SQLAlchemy-only behavior, never raise.
+    """
+    if not schemas_dir.exists():
+        return {}
+    from app.services.fix_writer_service import _collect_basemodel_classes
+
+    schema_cols: dict = {}
+    for sf in schemas_dir.glob("*.py"):
+        if sf.name == "__init__.py":
+            continue
+        try:
+            tree = ast.parse(sf.read_text(encoding="utf-8", errors="replace"))
+        except Exception:
+            continue
+        for cls_name, fields in _collect_basemodel_classes(tree).items():
+            schema_cols[cls_name] = frozenset(fields) | schema_cols.get(cls_name, frozenset())
+    return schema_cols
 
 
 def _iter_top_level_functions(tree: ast.Module):
@@ -3522,7 +3591,11 @@ def _iter_top_level_functions(tree: ast.Module):
 
 def _patch_attr_access_mismatches(project_path: Path) -> int:
     """Fix route files that access obj.invalid_attr where invalid_attr doesn't exist
-    on the SQLAlchemy model (e.g. user.username when model only has email).
+    on the SQLAlchemy model (e.g. user.username when model only has email) OR
+    (Exp098) on a Pydantic schema class (e.g. user_in.password when the
+    schema only has hashed_password) -- e.g. seed_routes.py constructing a
+    demo User/UserCreate with a guessed field name that Wave-2 (models) or
+    Wave-3 (schemas) never actually used (Exp097's root-caused gap).
 
     Exp073: CONFIRMED BUG, now fixed -- this used to apply the fix via a
     file-wide `re.sub()` on every `.bad_attr` occurrence in the file,
@@ -3533,12 +3606,13 @@ def _patch_attr_access_mismatches(project_path: Path) -> int:
     field, sitting in the same auth_routes.py as a `User` model missing
     that column) got silently corrupted alongside the real fix (Exp072).
     Now scoped via AST: only rewritten when the object is PROVABLY an
-    instance of the mismatched model class (constructor call, ORM query
-    result, typed parameter, or bare `ClassName.attr` access) within its
-    own function scope -- never a blanket file-wide substitution.
+    instance of the mismatched model/schema class (constructor call, ORM
+    query result, typed parameter, or bare `ClassName.attr` access) within
+    its own function scope -- never a blanket file-wide substitution.
     """
     routes_dir = project_path / "app" / "routes"
     models_dir = project_path / "app" / "models"
+    schemas_dir = project_path / "app" / "schemas"
     if not routes_dir.exists() or not models_dir.exists():
         return 0
 
@@ -3558,7 +3632,12 @@ def _patch_attr_access_mismatches(project_path: Path) -> int:
         except Exception:
             pass
 
-    if not model_cols:
+    # Exp098: Pydantic schema counterpart to model_cols -- {} if schemas_dir
+    # is missing/empty, in which case behavior is identical to before this
+    # experiment (schema_cols never contributes a match).
+    schema_cols = _collect_schema_cols(schemas_dir)
+
+    if not model_cols and not schema_cols:
         return 0
 
     patched = 0
@@ -3575,19 +3654,25 @@ def _patch_attr_access_mismatches(project_path: Path) -> int:
         by_line: dict = {}
 
         for fn in _iter_top_level_functions(tree):
-            typed_names = _infer_model_typed_names(fn, model_cols)
+            typed_names = _infer_model_typed_names(fn, model_cols, schema_cols)
             for node in ast.walk(fn):
                 if not (isinstance(node, ast.Attribute) and isinstance(node.value, ast.Name)):
                     continue
                 obj_name = node.value.id
-                cls_name = typed_names.get(obj_name) or (obj_name if obj_name in model_cols else None)
+                cls_name = (
+                    typed_names.get(obj_name)
+                    or (obj_name if obj_name in model_cols else None)
+                    or (obj_name if obj_name in schema_cols else None)
+                )
                 if not cls_name:
                     continue
                 # Attribute access must be single-line for a safe column-offset
                 # edit; multi-line chains (rare, e.g. inside parens) are skipped.
                 if node.value.end_lineno != node.lineno or node.end_lineno != node.lineno:
                     continue
-                valid_cols = model_cols[cls_name]
+                valid_cols = model_cols.get(cls_name) or schema_cols.get(cls_name)
+                if valid_cols is None:
+                    continue
                 bad_attr = node.attr
                 if bad_attr in valid_cols:
                     continue

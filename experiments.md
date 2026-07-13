@@ -6821,3 +6821,79 @@ before any live canary, and verify `gym_tracker`'s already-scarred
 
 **Deliverables**: `docs/EXP097_ATTRIBUTEERROR_ROOT_CAUSE.md`, this
 entry. **Cost: $0, zero Cerebras calls, zero code changes.**
+
+---
+
+## Experiment 098: Extend Attribute Access Repair Across Model and Schema Types
+
+2026-07-13. Offline implementation, $0, zero Cerebras calls. Extends
+Exp097's identified patcher, `_patch_attr_access_mismatches()`
+(`app/services/deterministic_patcher.py`), rather than a parallel one.
+
+Added curated `_FIELD_SYNONYMS_PATCHER` entries (`"name":
+["username", "full_name", "display_name"]`, `"password":
+["password_hash", "hashed_password", "pwd"]` + reciprocal
+`password_hash`/`hashed_password` entries) — both names already existed
+as candidate *values* under other keys but never as keys of their own
+(Exp097's finding). New `_collect_schema_cols()` reuses
+`fix_writer_service._collect_basemodel_classes()` to build a Pydantic
+field map from `app/schemas/*.py`; `_infer_model_typed_names()` now
+checks it alongside the existing SQLAlchemy `model_cols` in all three
+"provably typed" shapes, unchanged for SQLAlchemy (`schema_cols`
+defaults to `{}`).
+
+**A first design (mechanical reciprocal scan of the whole synonym dict)
+was implemented then reverted** after a full-corpus replay against
+`gym_tracker` found a real, wrong fix: `tag_in.name` (schema genuinely
+lacks `name`, has `title`/`description`) got rewritten to
+`tag_in.description` instead of the correct `tag_in.title`, purely
+because `"description"` sorts earlier than `"title"` in the dict.
+Root cause: those entries encode a one-way fallback ("description
+missing → try name"), not true bidirectional synonymy. Replaced with
+the curated, explicit keys above — replay against `gym_tracker`
+post-fix: 0 files changed.
+
+**Full-corpus replay** (57 projects, git-stash A/B comparison): 8 files
+changed identically in both old and new code (pre-existing, unrelated).
+**5 additional files newly fixed**, every one independently verified
+against real model/schema source: `simple_note_app`/
+`simple_task_tracker` (`user.password` → `user.password_hash`,
+confirmed column name), `todo_plus` (→ `hashed_password`, confirmed),
+`simple_expense_tracker` (`password_hash` → `hashed_password`,
+confirmed), `support_ticket_system/auth_routes.py` (two independent
+fixes, both confirmed against the real schema — including
+`full_name=request.full_name` → `request.username` since
+`AuthRegisterRequest` genuinely has no `full_name` field),
+`personal_expense_tracker` (`payload.username` → `payload.email`,
+confirmed `RegisterRequest` has no `username`). One additional change
+(`simple_note_app/note_routes.py`, `note_in.content` →
+`note_in.description`) is functionally inert — both occurrences are
+`hasattr()`-guarded and the guard was always `False` before and after
+(schema never had `content`), so no behavior change, not a regression.
+
+**Regression tests**: new `test_exp098_schema_attr_mismatches.py` (7
+tests — SQLAlchemy-only, Pydantic-only, mixed types, existing-behavior
+reproduction, an explicit guard against the reverted
+gym_tracker-discovered bug, unrelated plain dicts, missing schemas
+dir). Existing suites unchanged: `test_exp073_attr_scope_fix.py` 12/12,
+`test_sql_constructor_and_auth_repairs.py` 30/30. Full reliability
+suite: **51/54** (53 pre-existing + 1 new file), same 3 pre-existing
+unrelated failures, zero new regressions.
+
+**Estimated improvement**: fixes both of Exp097's confirmed active
+incidents plus 5 additional independently-verified real bugs across 4
+other projects, all guaranteed-crash registration/seed/update paths
+previously unreachable since Pydantic schemas were entirely untracked.
+Converts a confirmed 0%-LLM-self-heal bug class into a $0 deterministic
+correction.
+
+**Recommendation for Exp099**: live-validate with 1-2 Cerebras
+canaries, preferring todo-shaped ideas (Exp097's confirmed-reproducible
+shape) or auth-heavy ideas generally. A null result (neither exact
+confirmed shape reproduces) would be uninformative but not concerning,
+same pattern as prior live-validation cycles in this series.
+
+**Deliverables**: `docs/EXP098_SCHEMA_ATTR_ACCESS_REPAIR.md`, this
+entry, code diff in `backend/app/services/deterministic_patcher.py`,
+new test file `backend/tests/reliability/test_exp098_schema_attr_mismatches.py`.
+**Cost: $0, zero Cerebras calls.**
