@@ -1681,5 +1681,55 @@
     "font_heading": "'Plus Jakarta Sans', sans-serif",
     "shell": "sidebar",
     "data_density": "high"
+  },
+  {
+    "project_name": "sports_league_manager",
+    "category": "fitness",
+    "style": "glass",
+    "timestamp": "2026-07-13T03:50:35.850461+00:00",
+    "design_id": "3e9f3920bf74",
+    "idea_hash": "6c7a03d8aa68",
+    "layout": "sidebar",
+    "navigation": "gradient sidebar",
+    "motion": "base motion tokens, standard 40ms stagger",
+    "typography": "Inter",
+    "component_mix": [
+      "progress_ring",
+      "streak_heatmap"
+    ],
+    "density": "medium",
+    "hero_style": "greeting header + stats grid",
+    "palette": "orange",
+    "interaction_style": "touch-first: generous tap targets, thumb-reachable primary actions",
+    "experience_flow": "Today's streak and the next workout",
+    "posture": "consumer",
+    "font_heading": "Inter",
+    "shell": "sidebar",
+    "data_density": "medium"
+  },
+  {
+    "project_name": "secure_project_manager",
+    "category": "productivity",
+    "style": "minimal_editorial",
+    "timestamp": "2026-07-13T03:55:44.797386+00:00",
+    "design_id": "9151c6c0394f",
+    "idea_hash": "c68683c51ef3",
+    "layout": "sidebar",
+    "navigation": "gradient sidebar",
+    "motion": "Restrained",
+    "typography": "'Archivo', sans-serif",
+    "component_mix": [
+      "kanban_board",
+      "streak_heatmap"
+    ],
+    "density": "high",
+    "hero_style": "greeting header + stats grid",
+    "palette": "indigo",
+    "interaction_style": "keyboard-first: command palette, focus rings, hinted shortcuts",
+    "experience_flow": "Today's list, already prioritized",
+    "posture": "prosumer",
+    "font_heading": "'Archivo', sans-serif",
+    "shell": "sidebar",
+    "data_density": "high"
   }
 ]

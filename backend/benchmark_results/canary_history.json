@@ -10735,6 +10735,234 @@
           "retry_history": []
         }
       ]
+    },
+    {
+      "label": "exp096-validation-r1",
+      "timestamp": "2026-07-13T03:53:20.866636+00:00",
+      "deploy": false,
+      "results": [
+        {
+          "app": "sports_league",
+          "crashed": false,
+          "forge_score": 99.29,
+          "grade": "A+",
+          "build_ok": true,
+          "runtime_ok": true,
+          "crud_ok": null,
+          "browser_ok": null,
+          "deployed": false,
+          "fix_attempts": 2,
+          "elapsed_s": 195.4,
+          "dimensions": [
+            {
+              "name": "Compilation",
+              "score": 99.0,
+              "passed": true,
+              "na": false
+            },
+            {
+              "name": "Runtime Startup",
+              "score": 100.0,
+              "passed": true,
+              "na": false
+            },
+            {
+              "name": "API Functionality",
+              "score": 100.0,
+              "passed": true,
+              "na": false
+            },
+            {
+              "name": "Frontend Load",
+              "score": null,
+              "passed": false,
+              "na": true
+            },
+            {
+              "name": "Browser UX",
+              "score": null,
+              "passed": false,
+              "na": true
+            },
+            {
+              "name": "Integration",
+              "score": null,
+              "passed": false,
+              "na": true
+            },
+            {
+              "name": "Code Quality",
+              "score": 97.0,
+              "passed": false,
+              "na": false
+            },
+            {
+              "name": "Security",
+              "score": 100.0,
+              "passed": true,
+              "na": false
+            },
+            {
+              "name": "Completeness",
+              "score": 100.0,
+              "passed": true,
+              "na": false
+            },
+            {
+              "name": "Performance",
+              "score": 90,
+              "passed": true,
+              "na": false
+            },
+            {
+              "name": "Visual Judge",
+              "score": 100,
+              "passed": true,
+              "na": false
+            }
+          ],
+          "confidence": {
+            "probability": 0.848,
+            "pct": 84.8,
+            "grade": "B",
+            "factors": {
+              "base": -0.5,
+              "overall_score": 2.465,
+              "runtime_health": 0.5,
+              "browser_ux": 0.0,
+              "compilation": 0.198,
+              "fix_penalty": -0.8,
+              "historical_base_rate": -0.144
+            },
+            "historical_rate": 0.36,
+            "historical_n": 100,
+            "verdict": "Moderate confidence — review the fix history before deploying."
+          },
+          "retry_history": [
+            {
+              "attempt": 1,
+              "strategy": "patch_file",
+              "provider": "auto",
+              "score_before": 85.14,
+              "score_after": 97.14,
+              "delta": 12.0
+            },
+            {
+              "attempt": 2,
+              "strategy": "patch_file",
+              "provider": "auto",
+              "score_before": 97.14,
+              "score_after": 99.29,
+              "delta": 2.15
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "label": "exp096-validation-r2",
+      "timestamp": "2026-07-13T03:58:02.406781+00:00",
+      "deploy": false,
+      "results": [
+        {
+          "app": "task_management",
+          "crashed": false,
+          "forge_score": 92.43,
+          "grade": "A",
+          "build_ok": true,
+          "runtime_ok": true,
+          "crud_ok": null,
+          "browser_ok": null,
+          "deployed": false,
+          "fix_attempts": 0,
+          "elapsed_s": 171.3,
+          "dimensions": [
+            {
+              "name": "Compilation",
+              "score": 73.0,
+              "passed": true,
+              "na": false
+            },
+            {
+              "name": "Runtime Startup",
+              "score": 100.0,
+              "passed": true,
+              "na": false
+            },
+            {
+              "name": "API Functionality",
+              "score": 100.0,
+              "passed": true,
+              "na": false
+            },
+            {
+              "name": "Frontend Load",
+              "score": null,
+              "passed": false,
+              "na": true
+            },
+            {
+              "name": "Browser UX",
+              "score": null,
+              "passed": false,
+              "na": true
+            },
+            {
+              "name": "Integration",
+              "score": null,
+              "passed": false,
+              "na": true
+            },
+            {
+              "name": "Code Quality",
+              "score": 79.0,
+              "passed": false,
+              "na": false
+            },
+            {
+              "name": "Security",
+              "score": 100.0,
+              "passed": true,
+              "na": false
+            },
+            {
+              "name": "Completeness",
+              "score": 100.0,
+              "passed": true,
+              "na": false
+            },
+            {
+              "name": "Performance",
+              "score": 90,
+              "passed": true,
+              "na": false
+            },
+            {
+              "name": "Visual Judge",
+              "score": 100,
+              "passed": true,
+              "na": false
+            }
+          ],
+          "confidence": {
+            "probability": 0.8956,
+            "pct": 89.56,
+            "grade": "B+",
+            "factors": {
+              "base": -0.5,
+              "overall_score": 2.136,
+              "runtime_health": 0.5,
+              "browser_ux": 0.0,
+              "compilation": 0.146,
+              "historical_base_rate": -0.133
+            },
+            "historical_rate": 0.37,
+            "historical_n": 100,
+            "verdict": "Moderate confidence — review the fix history before deploying."
+          },
+          "retry_history": []
+        }
+      ]
     }
   ]
 }

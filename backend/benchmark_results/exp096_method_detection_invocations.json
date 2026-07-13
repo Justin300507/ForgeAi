@@ -1,0 +1,653 @@
+{
+  "all_runs": [
+    {
+      "label": "exp096-validation-r1",
+      "detect_calls": [
+        {
+          "api_prefix": "",
+          "result": [
+            "leagues",
+            "PUT"
+          ]
+        },
+        {
+          "api_prefix": "",
+          "result": [
+            "leagues",
+            "PUT"
+          ]
+        },
+        {
+          "api_prefix": "",
+          "result": [
+            "leagues",
+            "PUT"
+          ]
+        },
+        {
+          "api_prefix": "",
+          "result": [
+            "leagues",
+            "PUT"
+          ]
+        },
+        {
+          "api_prefix": "",
+          "result": [
+            "leagues",
+            "PUT"
+          ]
+        }
+      ],
+      "journey_results": [
+        {
+          "entity": "leagues",
+          "success": false,
+          "steps_passed": 10,
+          "steps_failed": 1,
+          "steps": [
+            {
+              "name": "Register",
+              "passed": true,
+              "detail": "200 @ register"
+            },
+            {
+              "name": "Login",
+              "passed": true,
+              "detail": "200 @ login"
+            },
+            {
+              "name": "Detect entity",
+              "passed": true,
+              "detail": "http://127.0.0.1:8001/leagues"
+            },
+            {
+              "name": "Create entity",
+              "passed": true,
+              "detail": "201 id=1"
+            },
+            {
+              "name": "List entities",
+              "passed": true,
+              "detail": "200 count=?"
+            },
+            {
+              "name": "Edit entity",
+              "passed": false,
+              "detail": "422",
+              "request": {
+                "method": "PUT",
+                "url": "http://127.0.0.1:8001/leagues/1",
+                "json": {
+                  "name": "Journey Test Item EDITED"
+                },
+                "has_auth": true
+              },
+              "response": {
+                "status_code": 422,
+                "body": {
+                  "detail": [
+                    {
+                      "type": "missing",
+                      "loc": [
+                        "body",
+                        "season"
+                      ],
+                      "msg": "Field required",
+                      "input": {
+                        "name": "Journey Test Item EDITED"
+                      }
+                    },
+                    {
+                      "type": "missing",
+                      "loc": [
+                        "body",
+                        "start_date"
+                      ],
+                      "msg": "Field required",
+                      "input": {
+                        "name": "Journey Test Item EDITED"
+                      }
+                    },
+                    {
+                      "type": "missing",
+                      "loc": [
+                        "body",
+                        "end_date"
+                      ],
+                      "msg": "Field required",
+                      "input": {
+                        "name": "Journey Test Item EDITED"
+                      }
+                    },
+                    {
+                      "type": "missing",
+                      "loc": [
+                        "body",
+                        "status"
+                      ],
+                      "msg": "Field required",
+                      "input": {
+                        "name": "Journey Test Item EDITED"
+                      }
+                    }
+                  ]
+                }
+              }
+            },
+            {
+              "name": "Delete entity",
+              "passed": true,
+              "detail": "204"
+            },
+            {
+              "name": "Verify deletion",
+              "passed": true,
+              "detail": "404 confirmed deleted"
+            },
+            {
+              "name": "Logout",
+              "passed": true,
+              "detail": "200"
+            },
+            {
+              "name": "Login again",
+              "passed": true,
+              "detail": "re-login 200"
+            },
+            {
+              "name": "Verify persistence",
+              "passed": true,
+              "detail": "deleted item absent — persistence confirmed"
+            }
+          ]
+        },
+        {
+          "entity": "leagues",
+          "success": true,
+          "steps_passed": 11,
+          "steps_failed": 0,
+          "steps": [
+            {
+              "name": "Register",
+              "passed": true,
+              "detail": "200 @ register"
+            },
+            {
+              "name": "Login",
+              "passed": true,
+              "detail": "200 @ login"
+            },
+            {
+              "name": "Detect entity",
+              "passed": true,
+              "detail": "http://127.0.0.1:8001/leagues"
+            },
+            {
+              "name": "Create entity",
+              "passed": true,
+              "detail": "201 id=1"
+            },
+            {
+              "name": "List entities",
+              "passed": true,
+              "detail": "200 count=?"
+            },
+            {
+              "name": "Edit entity",
+              "passed": true,
+              "detail": "200"
+            },
+            {
+              "name": "Delete entity",
+              "passed": true,
+              "detail": "204"
+            },
+            {
+              "name": "Verify deletion",
+              "passed": true,
+              "detail": "404 confirmed deleted"
+            },
+            {
+              "name": "Logout",
+              "passed": true,
+              "detail": "200"
+            },
+            {
+              "name": "Login again",
+              "passed": true,
+              "detail": "re-login 200"
+            },
+            {
+              "name": "Verify persistence",
+              "passed": true,
+              "detail": "deleted item absent — persistence confirmed"
+            }
+          ]
+        },
+        {
+          "entity": "leagues",
+          "success": true,
+          "steps_passed": 11,
+          "steps_failed": 0,
+          "steps": [
+            {
+              "name": "Register",
+              "passed": true,
+              "detail": "200 @ register"
+            },
+            {
+              "name": "Login",
+              "passed": true,
+              "detail": "200 @ login"
+            },
+            {
+              "name": "Detect entity",
+              "passed": true,
+              "detail": "http://127.0.0.1:8001/leagues"
+            },
+            {
+              "name": "Create entity",
+              "passed": true,
+              "detail": "201 id=1"
+            },
+            {
+              "name": "List entities",
+              "passed": true,
+              "detail": "200 count=?"
+            },
+            {
+              "name": "Edit entity",
+              "passed": true,
+              "detail": "200"
+            },
+            {
+              "name": "Delete entity",
+              "passed": true,
+              "detail": "204"
+            },
+            {
+              "name": "Verify deletion",
+              "passed": true,
+              "detail": "404 confirmed deleted"
+            },
+            {
+              "name": "Logout",
+              "passed": true,
+              "detail": "200"
+            },
+            {
+              "name": "Login again",
+              "passed": true,
+              "detail": "re-login 200"
+            },
+            {
+              "name": "Verify persistence",
+              "passed": true,
+              "detail": "deleted item absent — persistence confirmed"
+            }
+          ]
+        },
+        {
+          "entity": "leagues",
+          "success": true,
+          "steps_passed": 11,
+          "steps_failed": 0,
+          "steps": [
+            {
+              "name": "Register",
+              "passed": true,
+              "detail": "200 @ register"
+            },
+            {
+              "name": "Login",
+              "passed": true,
+              "detail": "200 @ login"
+            },
+            {
+              "name": "Detect entity",
+              "passed": true,
+              "detail": "http://127.0.0.1:8001/leagues"
+            },
+            {
+              "name": "Create entity",
+              "passed": true,
+              "detail": "201 id=1"
+            },
+            {
+              "name": "List entities",
+              "passed": true,
+              "detail": "200 count=?"
+            },
+            {
+              "name": "Edit entity",
+              "passed": true,
+              "detail": "200"
+            },
+            {
+              "name": "Delete entity",
+              "passed": true,
+              "detail": "204"
+            },
+            {
+              "name": "Verify deletion",
+              "passed": true,
+              "detail": "404 confirmed deleted"
+            },
+            {
+              "name": "Logout",
+              "passed": true,
+              "detail": "200"
+            },
+            {
+              "name": "Login again",
+              "passed": true,
+              "detail": "re-login 200"
+            },
+            {
+              "name": "Verify persistence",
+              "passed": true,
+              "detail": "deleted item absent — persistence confirmed"
+            }
+          ]
+        },
+        {
+          "entity": "leagues",
+          "success": true,
+          "steps_passed": 11,
+          "steps_failed": 0,
+          "steps": [
+            {
+              "name": "Register",
+              "passed": true,
+              "detail": "200 @ register"
+            },
+            {
+              "name": "Login",
+              "passed": true,
+              "detail": "200 @ login"
+            },
+            {
+              "name": "Detect entity",
+              "passed": true,
+              "detail": "http://127.0.0.1:8001/leagues"
+            },
+            {
+              "name": "Create entity",
+              "passed": true,
+              "detail": "201 id=1"
+            },
+            {
+              "name": "List entities",
+              "passed": true,
+              "detail": "200 count=?"
+            },
+            {
+              "name": "Edit entity",
+              "passed": true,
+              "detail": "200"
+            },
+            {
+              "name": "Delete entity",
+              "passed": true,
+              "detail": "204"
+            },
+            {
+              "name": "Verify deletion",
+              "passed": true,
+              "detail": "404 confirmed deleted"
+            },
+            {
+              "name": "Logout",
+              "passed": true,
+              "detail": "200"
+            },
+            {
+              "name": "Login again",
+              "passed": true,
+              "detail": "re-login 200"
+            },
+            {
+              "name": "Verify persistence",
+              "passed": true,
+              "detail": "deleted item absent — persistence confirmed"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "label": "exp096-validation-r2",
+      "detect_calls": [
+        {
+          "api_prefix": "",
+          "result": [
+            "projects",
+            "PUT"
+          ]
+        },
+        {
+          "api_prefix": "",
+          "result": [
+            "projects",
+            "PUT"
+          ]
+        },
+        {
+          "api_prefix": "",
+          "result": [
+            "projects",
+            "PUT"
+          ]
+        }
+      ],
+      "journey_results": [
+        {
+          "entity": "projects",
+          "success": false,
+          "steps_passed": 6,
+          "steps_failed": 5,
+          "steps": [
+            {
+              "name": "Register",
+              "passed": true,
+              "detail": "200 @ register"
+            },
+            {
+              "name": "Login",
+              "passed": true,
+              "detail": "200 @ login"
+            },
+            {
+              "name": "Detect entity",
+              "passed": true,
+              "detail": "http://127.0.0.1:8001/projects"
+            },
+            {
+              "name": "Create entity",
+              "passed": false,
+              "detail": "500 (server error)",
+              "request": {
+                "method": "POST",
+                "url": "http://127.0.0.1:8001/projects",
+                "json": {
+                  "title": "Journey Test Item",
+                  "name": "Journey Test Item",
+                  "description": "created by V5.5 journey runner",
+                  "start_date": "2026-01-01",
+                  "end_date": "2026-01-01"
+                },
+                "has_auth": true
+              },
+              "response": {
+                "status_code": 500,
+                "body": "Internal Server Error"
+              }
+            },
+            {
+              "name": "List entities",
+              "passed": true,
+              "detail": "200 count=?"
+            },
+            {
+              "name": "Edit entity",
+              "passed": false,
+              "detail": "no entity_id captured"
+            },
+            {
+              "name": "Delete entity",
+              "passed": false,
+              "detail": "no entity_id captured"
+            },
+            {
+              "name": "Verify deletion",
+              "passed": false,
+              "detail": "no entity_id"
+            },
+            {
+              "name": "Logout",
+              "passed": true,
+              "detail": "200"
+            },
+            {
+              "name": "Login again",
+              "passed": true,
+              "detail": "re-login 200"
+            },
+            {
+              "name": "Verify persistence",
+              "passed": false,
+              "detail": "no entity_id"
+            }
+          ]
+        },
+        {
+          "entity": "projects",
+          "success": true,
+          "steps_passed": 11,
+          "steps_failed": 0,
+          "steps": [
+            {
+              "name": "Register",
+              "passed": true,
+              "detail": "200 @ register"
+            },
+            {
+              "name": "Login",
+              "passed": true,
+              "detail": "200 @ login"
+            },
+            {
+              "name": "Detect entity",
+              "passed": true,
+              "detail": "http://127.0.0.1:8001/projects"
+            },
+            {
+              "name": "Create entity",
+              "passed": true,
+              "detail": "201 id=1"
+            },
+            {
+              "name": "List entities",
+              "passed": true,
+              "detail": "200 count=?"
+            },
+            {
+              "name": "Edit entity",
+              "passed": true,
+              "detail": "200"
+            },
+            {
+              "name": "Delete entity",
+              "passed": true,
+              "detail": "204"
+            },
+            {
+              "name": "Verify deletion",
+              "passed": true,
+              "detail": "404 confirmed deleted"
+            },
+            {
+              "name": "Logout",
+              "passed": true,
+              "detail": "200"
+            },
+            {
+              "name": "Login again",
+              "passed": true,
+              "detail": "re-login 200"
+            },
+            {
+              "name": "Verify persistence",
+              "passed": true,
+              "detail": "deleted item absent — persistence confirmed"
+            }
+          ]
+        },
+        {
+          "entity": "projects",
+          "success": true,
+          "steps_passed": 11,
+          "steps_failed": 0,
+          "steps": [
+            {
+              "name": "Register",
+              "passed": true,
+              "detail": "200 @ register"
+            },
+            {
+              "name": "Login",
+              "passed": true,
+              "detail": "200 @ login"
+            },
+            {
+              "name": "Detect entity",
+              "passed": true,
+              "detail": "http://127.0.0.1:8001/projects"
+            },
+            {
+              "name": "Create entity",
+              "passed": true,
+              "detail": "201 id=1"
+            },
+            {
+              "name": "List entities",
+              "passed": true,
+              "detail": "200 count=?"
+            },
+            {
+              "name": "Edit entity",
+              "passed": true,
+              "detail": "200"
+            },
+            {
+              "name": "Delete entity",
+              "passed": true,
+              "detail": "204"
+            },
+            {
+              "name": "Verify deletion",
+              "passed": true,
+              "detail": "404 confirmed deleted"
+            },
+            {
+              "name": "Logout",
+              "passed": true,
+              "detail": "200"
+            },
+            {
+              "name": "Login again",
+              "passed": true,
+              "detail": "re-login 200"
+            },
+            {
+              "name": "Verify persistence",
+              "passed": true,
+              "detail": "deleted item absent — persistence confirmed"
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

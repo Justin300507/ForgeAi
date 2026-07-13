@@ -394,405 +394,6 @@
           "file uploads"
         ]
       },
-      "score": 90.68,
-      "success_count": 1,
-      "generation_id": "078dfc12d37f49639132549f92bc4adf",
-      "timestamp": "2026-07-10T14:19:57Z"
-    },
-    {
-      "category": "todo_crud",
-      "idea": "A todo list app with user accounts. Users can register and log in. Each user sees only their own todos. Todos have a title, optional description, due date, priority (low/medium/high), and done/undone ",
-      "architecture": {
-        "api_endpoints": [
-          {
-            "method": "GET",
-            "path": "/users",
-            "description": "Retrieve a paginated list of users, optionally filtered by username search query.",
-            "file": "app\\routes\\user_routes.py"
-          },
-          {
-            "method": "GET",
-            "path": "/users/{id}",
-            "description": "Retrieve details of a specific user by ID.",
-            "file": "app\\routes\\user_routes.py"
-          },
-          {
-            "method": "POST",
-            "path": "/users",
-            "description": "Create a new user account with username and password.",
-            "file": "app\\routes\\user_routes.py"
-          },
-          {
-            "method": "PUT",
-            "path": "/users/{id}",
-            "description": "Update an existing user's information (e.g., username or password).",
-            "file": "app\\routes\\user_routes.py"
-          },
-          {
-            "method": "DELETE",
-            "path": "/users/{id}",
-            "description": "Delete a user account.",
-            "file": "app\\routes\\user_routes.py"
-          },
-          {
-            "method": "GET",
-            "path": "/tasks",
-            "description": "Retrieve a list of tasks for the authenticated user, supporting search by title/description and filters for status and priority.",
-            "file": "app\\routes\\task_routes.py"
-          },
-          {
-            "method": "GET",
-            "path": "/tasks/{id}",
-            "description": "Retrieve details of a specific task by ID.",
-            "file": "app\\routes\\task_routes.py"
-          },
-          {
-            "method": "POST",
-            "path": "/tasks",
-            "description": "Create a new task for the authenticated user.",
-            "file": "app\\routes\\task_routes.py"
-          },
-          {
-            "method": "PUT",
-            "path": "/tasks/{id}",
-            "description": "Update an existing task (title, description, due date, priority, completed flag).",
-            "file": "app\\routes\\task_routes.py"
-          },
-          {
-            "method": "DELETE",
-            "path": "/tasks/{id}",
-            "description": "Delete a task.",
-            "file": "app\\routes\\task_routes.py"
-          },
-          {
-            "method": "POST",
-            "path": "/auth/register",
-            "description": "Register a new user account (alias of POST /users).",
-            "file": "app\\routes\\auth_routes.py"
-          },
-          {
-            "method": "POST",
-            "path": "/auth/login",
-            "description": "Authenticate a user and return a JWT access token.",
-            "file": "app\\routes\\auth_routes.py"
-          },
-          {
-            "method": "POST",
-            "path": "/seed",
-            "description": "Populate the database with demo users, tasks, and priority levels.",
-            "file": "app\\routes\\seed_routes.py"
-          },
-          {
-            "method": "GET",
-            "path": "/stats/summary",
-            "description": "Return aggregate statistics such as total users, total tasks, and tasks per priority.",
-            "file": "app\\routes\\stats_routes.py"
-          }
-        ],
-        "database_schema": [
-          {
-            "table_name": "users",
-            "columns": [
-              {
-                "name": "id",
-                "type": "INTEGER",
-                "is_primary_key": true,
-                "is_nullable": false
-              },
-              {
-                "name": "username",
-                "type": "VARCHAR(150)",
-                "is_primary_key": false,
-                "is_nullable": false
-              },
-              {
-                "name": "hashed_password",
-                "type": "VARCHAR(255)",
-                "is_primary_key": false,
-                "is_nullable": false
-              },
-              {
-                "name": "created_at",
-                "type": "DATETIME",
-                "is_primary_key": false,
-                "is_nullable": false
-              }
-            ]
-          },
-          {
-            "table_name": "priorities",
-            "columns": [
-              {
-                "name": "id",
-                "type": "INTEGER",
-                "is_primary_key": true,
-                "is_nullable": false
-              },
-              {
-                "name": "name",
-                "type": "VARCHAR(50)",
-                "is_primary_key": false,
-                "is_nullable": false
-              },
-              {
-                "name": "level",
-                "type": "INTEGER",
-                "is_primary_key": false,
-                "is_nullable": false
-              }
-            ]
-          },
-          {
-            "table_name": "tasks",
-            "columns": [
-              {
-                "name": "id",
-                "type": "INTEGER",
-                "is_primary_key": true,
-                "is_nullable": false
-              },
-              {
-                "name": "user_id",
-                "type": "INTEGER",
-                "is_primary_key": false,
-                "is_nullable": false
-              },
-              {
-                "name": "title",
-                "type": "VARCHAR(200)",
-                "is_primary_key": false,
-                "is_nullable": false
-              },
-              {
-                "name": "description",
-                "type": "TEXT",
-                "is_primary_key": false,
-                "is_nullable": true
-              },
-              {
-                "name": "due_date",
-                "type": "DATETIME",
-                "is_primary_key": false,
-                "is_nullable": true
-              },
-              {
-                "name": "priority_id",
-                "type": "INTEGER",
-                "is_primary_key": false,
-                "is_nullable": true
-              },
-              {
-                "name": "completed",
-                "type": "BOOLEAN",
-                "is_primary_key": false,
-                "is_nullable": false
-              },
-              {
-                "name": "created_at",
-                "type": "DATETIME",
-                "is_primary_key": false,
-                "is_nullable": false
-              },
-              {
-                "name": "updated_at",
-                "type": "DATETIME",
-                "is_primary_key": false,
-                "is_nullable": true
-              }
-            ]
-          },
-          {
-            "table_name": "task_logs",
-            "columns": [
-              {
-                "name": "id",
-                "type": "INTEGER",
-                "is_primary_key": true,
-                "is_nullable": false
-              },
-              {
-                "name": "task_id",
-                "type": "INTEGER",
-                "is_primary_key": false,
-                "is_nullable": false
-              },
-              {
-                "name": "action",
-                "type": "VARCHAR(100)",
-                "is_primary_key": false,
-                "is_nullable": false
-              },
-              {
-                "name": "timestamp",
-                "type": "DATETIME",
-                "is_primary_key": false,
-                "is_nullable": false
-              }
-            ]
-          }
-        ],
-        "folder_structure": {
-          "backend": [
-            "app/models",
-            "app/schemas",
-            "app/routes",
-            "app/services",
-            "app/utils",
-            "app/config"
-          ]
-        },
-        "frontend_structure": {
-          "pages": [
-            "LoginPage",
-            "RegisterPage",
-            "DashboardPage",
-            "TaskListPage",
-            "TaskFormPage"
-          ],
-          "components": [
-            "Header",
-            "Footer",
-            "TaskCard",
-            "TaskForm",
-            "TaskFilterBar",
-            "AuthForm",
-            "Button",
-            "Input",
-            "Modal",
-            "Sidebar"
-          ]
-        }
-      },
-      "plan": {
-        "project_name": "todo_list_app",
-        "display_name": "Personal Todo List",
-        "features": [
-          "Allow users to create an account",
-          "Allow users to create new tasks",
-          "Allow users to log in to their account"
-        ],
-        "tech_stack": {
-          "backend": "FastAPI",
-          "database": "SQLite",
-          "auth": "JWT",
-          "frontend": "React + Vite"
-        },
-        "db_entities": [
-          "User",
-          "Task"
-        ],
-        "api_modules": [
-          "auth",
-          "tasks"
-        ],
-        "user_stories": [
-          {
-            "role": "User",
-            "want": "To register for an account",
-            "acceptance_criteria": [
-              "The user can enter a valid username and password to create an account",
-              "The user receives a confirmation message after successfully registering",
-              "The user is redirected to the login page after registration"
-            ]
-          },
-          {
-            "role": "User",
-            "want": "To log in to my account",
-            "acceptance_criteria": [
-              "The user can enter a valid username and password to log in",
-              "The user is redirected to the task list page after successful login",
-              "The user sees an error message if the login credentials are invalid"
-            ]
-          },
-          {
-            "role": "User",
-            "want": "To create a new task",
-            "acceptance_criteria": [
-              "The user can enter a task title and description",
-              "The user can select a due date and priority level for the task",
-              "The task is added to the user's task list after creation"
-            ]
-          },
-          {
-            "role": "User",
-            "want": "To edit an existing task",
-            "acceptance_criteria": [
-              "The user can select a task to edit",
-              "The user can update the task title, description, due date, and priority level",
-              "The task is updated in the user's task list after editing"
-            ]
-          },
-          {
-            "role": "User",
-            "want": "To delete a task",
-            "acceptance_criteria": [
-              "The user can select a task to delete",
-              "The task is removed from the user's task list after deletion",
-              "The user is prompted to confirm deletion before it is executed"
-            ]
-          },
-          {
-            "role": "User",
-            "want": "To mark a task as complete",
-            "acceptance_criteria": [
-              "The user can select a task to mark as complete",
-              "The task is updated to show as completed in the user's task list",
-              "The user can filter tasks by completion status"
-            ]
-          },
-          {
-            "role": "User",
-            "want": "To filter tasks by status and priority",
-            "acceptance_criteria": [
-              "The user can select a filter option (e.g. 'completed', 'high priority')",
-              "The task list is updated to show only tasks that match the selected filter",
-              "The user can clear the filter to show all tasks"
-            ]
-          }
-        ],
-        "non_functional_requirements": {
-          "authentication": "required — to ensure only authorized users can access their task list",
-          "authorization": "simple authentication, no role-based access",
-          "pagination": "not required — task lists are expected to be small",
-          "search": "not required — tasks can be filtered by status and priority",
-          "file_uploads": "no — no file uploads are needed",
-          "real_time": "no — real-time updates are not necessary"
-        },
-        "data_entities_detail": [
-          {
-            "name": "User",
-            "description": "Stores user account information",
-            "key_fields": [
-              "id",
-              "username",
-              "password"
-            ],
-            "relationships": [
-              "has many Tasks"
-            ]
-          },
-          {
-            "name": "Task",
-            "description": "Stores task information",
-            "key_fields": [
-              "id",
-              "title",
-              "description",
-              "due_date",
-              "priority",
-              "completed"
-            ],
-            "relationships": [
-              "belongs to User"
-            ]
-          }
-        ],
-        "out_of_scope": [
-          "team collaboration",
-          "task assignments",
-          "file uploads"
-        ]
-      },
       "score": 99.71,
       "success_count": 1,
       "generation_id": "0e3645aa70b34b54b570a237129b46fe",
@@ -1994,6 +1595,623 @@
       "success_count": 1,
       "generation_id": "9352c2a5f1eb45a8945ac2d61863dd89",
       "timestamp": "2026-07-12T18:57:46Z"
+    },
+    {
+      "category": "todo_crud",
+      "idea": "A project management tool with secure user login. Users create, edit, and delete projects with a name and description. Within each project, create tasks with a title, description, due date, and status",
+      "architecture": {
+        "api_endpoints": [
+          {
+            "method": "POST",
+            "path": "/auth/register",
+            "description": "Register a new user and return JWT",
+            "file": "app\\routes\\auth_routes.py"
+          },
+          {
+            "method": "POST",
+            "path": "/auth/login",
+            "description": "Authenticate user and return JWT",
+            "file": "app\\routes\\auth_routes.py"
+          },
+          {
+            "method": "GET",
+            "path": "/auth/me",
+            "description": "Get current authenticated user information",
+            "file": "app\\routes\\auth_routes.py"
+          },
+          {
+            "method": "GET",
+            "path": "/users",
+            "description": "List users with optional search, pagination (limit, offset)",
+            "file": "app\\routes\\user_routes.py"
+          },
+          {
+            "method": "GET",
+            "path": "/users/{id}",
+            "description": "Retrieve a user by ID",
+            "file": "app\\routes\\user_routes.py"
+          },
+          {
+            "method": "POST",
+            "path": "/users",
+            "description": "Create a new user (admin only)",
+            "file": "app\\routes\\user_routes.py"
+          },
+          {
+            "method": "PUT",
+            "path": "/users/{id}",
+            "description": "Update user details",
+            "file": "app\\routes\\user_routes.py"
+          },
+          {
+            "method": "DELETE",
+            "path": "/users/{id}",
+            "description": "Delete a user",
+            "file": "app\\routes\\user_routes.py"
+          },
+          {
+            "method": "GET",
+            "path": "/projects",
+            "description": "List projects with optional search and pagination",
+            "file": "app\\routes\\project_routes.py"
+          },
+          {
+            "method": "GET",
+            "path": "/projects/{id}",
+            "description": "Get project details by ID",
+            "file": "app\\routes\\project_routes.py"
+          },
+          {
+            "method": "POST",
+            "path": "/projects",
+            "description": "Create a new project",
+            "file": "app\\routes\\project_routes.py"
+          },
+          {
+            "method": "PUT",
+            "path": "/projects/{id}",
+            "description": "Update project information",
+            "file": "app\\routes\\project_routes.py"
+          },
+          {
+            "method": "DELETE",
+            "path": "/projects/{id}",
+            "description": "Delete a project and its tasks",
+            "file": "app\\routes\\project_routes.py"
+          },
+          {
+            "method": "GET",
+            "path": "/projects/{project_id}/tasks",
+            "description": "List tasks for a project with optional status filter and pagination",
+            "file": "app\\routes\\task_routes.py"
+          },
+          {
+            "method": "GET",
+            "path": "/projects/{project_id}/tasks/{id}",
+            "description": "Retrieve a task by ID within a project",
+            "file": "app\\routes\\task_routes.py"
+          },
+          {
+            "method": "POST",
+            "path": "/projects/{project_id}/tasks",
+            "description": "Create a new task in a project",
+            "file": "app\\routes\\task_routes.py"
+          },
+          {
+            "method": "PUT",
+            "path": "/projects/{project_id}/tasks/{id}",
+            "description": "Update task details",
+            "file": "app\\routes\\task_routes.py"
+          },
+          {
+            "method": "DELETE",
+            "path": "/projects/{project_id}/tasks/{id}",
+            "description": "Delete a task from a project",
+            "file": "app\\routes\\task_routes.py"
+          },
+          {
+            "method": "GET",
+            "path": "/projects/{project_id}/members",
+            "description": "List project members with optional search and pagination",
+            "file": "app\\routes\\projectmember_routes.py"
+          },
+          {
+            "method": "GET",
+            "path": "/projects/{project_id}/members/{id}",
+            "description": "Get details of a project member",
+            "file": "app\\routes\\projectmember_routes.py"
+          },
+          {
+            "method": "POST",
+            "path": "/projects/{project_id}/members",
+            "description": "Add a user to a project with a role",
+            "file": "app\\routes\\projectmember_routes.py"
+          },
+          {
+            "method": "PUT",
+            "path": "/projects/{project_id}/members/{id}",
+            "description": "Update a project member's role",
+            "file": "app\\routes\\projectmember_routes.py"
+          },
+          {
+            "method": "DELETE",
+            "path": "/projects/{project_id}/members/{id}",
+            "description": "Remove a member from a project",
+            "file": "app\\routes\\projectmember_routes.py"
+          },
+          {
+            "method": "GET",
+            "path": "/invitations",
+            "description": "List invitations with optional search and pagination",
+            "file": "app\\routes\\invitation_routes.py"
+          },
+          {
+            "method": "GET",
+            "path": "/invitations/{id}",
+            "description": "Retrieve invitation details by ID",
+            "file": "app\\routes\\invitation_routes.py"
+          },
+          {
+            "method": "POST",
+            "path": "/invitations",
+            "description": "Create a new project invitation",
+            "file": "app\\routes\\invitation_routes.py"
+          },
+          {
+            "method": "PUT",
+            "path": "/invitations/{id}",
+            "description": "Update invitation status or role",
+            "file": "app\\routes\\invitation_routes.py"
+          },
+          {
+            "method": "DELETE",
+            "path": "/invitations/{id}",
+            "description": "Delete an invitation",
+            "file": "app\\routes\\invitation_routes.py"
+          },
+          {
+            "method": "POST",
+            "path": "/seed",
+            "description": "Populate database with demo data",
+            "file": "app\\routes\\seed_routes.py"
+          },
+          {
+            "method": "GET",
+            "path": "/stats/summary",
+            "description": "Return aggregate counts and key metrics for dashboard",
+            "file": "app\\routes\\stats_routes.py"
+          }
+        ],
+        "database_schema": [
+          {
+            "table_name": "users",
+            "columns": [
+              {
+                "name": "id",
+                "type": "integer",
+                "is_primary_key": true,
+                "is_nullable": false
+              },
+              {
+                "name": "email",
+                "type": "string",
+                "is_primary_key": false,
+                "is_nullable": false
+              },
+              {
+                "name": "password_hash",
+                "type": "string",
+                "is_primary_key": false,
+                "is_nullable": false
+              },
+              {
+                "name": "name",
+                "type": "string",
+                "is_primary_key": false,
+                "is_nullable": true
+              },
+              {
+                "name": "created_at",
+                "type": "datetime",
+                "is_primary_key": false,
+                "is_nullable": false
+              }
+            ]
+          },
+          {
+            "table_name": "projects",
+            "columns": [
+              {
+                "name": "id",
+                "type": "integer",
+                "is_primary_key": true,
+                "is_nullable": false
+              },
+              {
+                "name": "name",
+                "type": "string",
+                "is_primary_key": false,
+                "is_nullable": false
+              },
+              {
+                "name": "description",
+                "type": "text",
+                "is_primary_key": false,
+                "is_nullable": true
+              },
+              {
+                "name": "owner_id",
+                "type": "integer",
+                "is_primary_key": false,
+                "is_nullable": false
+              },
+              {
+                "name": "created_at",
+                "type": "datetime",
+                "is_primary_key": false,
+                "is_nullable": false
+              }
+            ]
+          },
+          {
+            "table_name": "tasks",
+            "columns": [
+              {
+                "name": "id",
+                "type": "integer",
+                "is_primary_key": true,
+                "is_nullable": false
+              },
+              {
+                "name": "project_id",
+                "type": "integer",
+                "is_primary_key": false,
+                "is_nullable": false
+              },
+              {
+                "name": "title",
+                "type": "string",
+                "is_primary_key": false,
+                "is_nullable": false
+              },
+              {
+                "name": "description",
+                "type": "text",
+                "is_primary_key": false,
+                "is_nullable": true
+              },
+              {
+                "name": "due_date",
+                "type": "date",
+                "is_primary_key": false,
+                "is_nullable": true
+              },
+              {
+                "name": "status",
+                "type": "string",
+                "is_primary_key": false,
+                "is_nullable": false
+              },
+              {
+                "name": "created_at",
+                "type": "datetime",
+                "is_primary_key": false,
+                "is_nullable": false
+              },
+              {
+                "name": "updated_at",
+                "type": "datetime",
+                "is_primary_key": false,
+                "is_nullable": false
+              }
+            ]
+          },
+          {
+            "table_name": "project_members",
+            "columns": [
+              {
+                "name": "id",
+                "type": "integer",
+                "is_primary_key": true,
+                "is_nullable": false
+              },
+              {
+                "name": "project_id",
+                "type": "integer",
+                "is_primary_key": false,
+                "is_nullable": false
+              },
+              {
+                "name": "user_id",
+                "type": "integer",
+                "is_primary_key": false,
+                "is_nullable": false
+              },
+              {
+                "name": "role",
+                "type": "string",
+                "is_primary_key": false,
+                "is_nullable": false
+              },
+              {
+                "name": "added_at",
+                "type": "datetime",
+                "is_primary_key": false,
+                "is_nullable": false
+              }
+            ]
+          },
+          {
+            "table_name": "invitations",
+            "columns": [
+              {
+                "name": "id",
+                "type": "integer",
+                "is_primary_key": true,
+                "is_nullable": false
+              },
+              {
+                "name": "project_id",
+                "type": "integer",
+                "is_primary_key": false,
+                "is_nullable": false
+              },
+              {
+                "name": "email",
+                "type": "string",
+                "is_primary_key": false,
+                "is_nullable": false
+              },
+              {
+                "name": "role",
+                "type": "string",
+                "is_primary_key": false,
+                "is_nullable": false
+              },
+              {
+                "name": "status",
+                "type": "string",
+                "is_primary_key": false,
+                "is_nullable": false
+              },
+              {
+                "name": "created_at",
+                "type": "datetime",
+                "is_primary_key": false,
+                "is_nullable": false
+              }
+            ]
+          }
+        ],
+        "folder_structure": {
+          "backend": [
+            "app/models",
+            "app/schemas",
+            "app/routes",
+            "app/services",
+            "app/utils",
+            "app/config",
+            "app/dependencies",
+            "app/main.py"
+          ]
+        },
+        "frontend_structure": {
+          "pages": [
+            "LoginPage",
+            "DashboardPage",
+            "ProjectListPage",
+            "ProjectDetailPage",
+            "TaskDetailPage",
+            "UserManagementPage",
+            "InvitationPage",
+            "NotFoundPage"
+          ],
+          "components": [
+            "Navbar",
+            "ProjectCard",
+            "TaskCard",
+            "TaskStatusDropdown",
+            "ProjectMemberList",
+            "UserSearchBar",
+            "PaginationControls",
+            "ProtectedRoute",
+            "Footer",
+            "InviteMemberModal"
+          ]
+        }
+      },
+      "plan": {
+        "project_name": "secure_project_manager",
+        "display_name": "Secure Project Manager",
+        "features": [
+          "Login with email/password returning JWT for session authentication",
+          "Enforce manager vs. member permissions for project and task actions",
+          "Create, read, update, and delete projects with name and description",
+          "Create, read, update, and delete tasks that belong to a project",
+          "Allow members to change task status (todo, in_progress, done)"
+        ],
+        "tech_stack": {
+          "backend": "FastAPI",
+          "database": "SQLite",
+          "auth": "JWT",
+          "frontend": "React + Vite"
+        },
+        "db_entities": [
+          "User",
+          "Project",
+          "Task",
+          "ProjectMember"
+        ],
+        "api_modules": [
+          "auth",
+          "users",
+          "projects",
+          "tasks",
+          "project_members"
+        ],
+        "user_stories": [
+          {
+            "role": "Manager",
+            "want": "to create a new project",
+            "acceptance_criteria": [
+              "A logged‑in manager sees a \"Create Project\" button on the dashboard",
+              "Submitting a name and description creates a project record and returns its ID",
+              "The new project appears in the manager's project list immediately"
+            ]
+          },
+          {
+            "role": "Manager",
+            "want": "to delete a project",
+            "acceptance_criteria": [
+              "The Delete button is visible only to users with the manager role on that project",
+              "Confirming deletion removes the project and all its tasks from the database",
+              "The deleted project no longer appears in any user's project list"
+            ]
+          },
+          {
+            "role": "Manager",
+            "want": "to add a member to a project with a specific role",
+            "acceptance_criteria": [
+              "Manager can search for existing users by email and assign them as \"manager\" or \"member\"",
+              "The invited user appears in the project's member list with the selected role",
+              "An email invitation (or in‑app notification) is sent after the assignment"
+            ]
+          },
+          {
+            "role": "Member",
+            "want": "to view all tasks within a project",
+            "acceptance_criteria": [
+              "Member can navigate to a project and see a list of its tasks showing title, due date, and status",
+              "Tasks displayed belong only to the selected project",
+              "Edit and Delete controls are not visible to members"
+            ]
+          },
+          {
+            "role": "Member",
+            "want": "to update a task's status",
+            "acceptance_criteria": [
+              "Member can change the status dropdown from \"todo\" to \"in_progress\" or \"done\"",
+              "The new status is persisted and reflected after a page refresh",
+              "A timestamp of the status change is stored (verified via API response)"
+            ]
+          },
+          {
+            "role": "Manager",
+            "want": "to edit task details (title, description, due date)",
+            "acceptance_criteria": [
+              "Manager can open an edit form, modify fields, and save",
+              "All changed fields are saved and returned correctly by the API",
+              "The system rejects a due date that is in the past with a validation error"
+            ]
+          },
+          {
+            "role": "Manager",
+            "want": "to delete a task",
+            "acceptance_criteria": [
+              "Delete button appears only for managers on a task detail view",
+              "After confirmation, the task record is removed from the database",
+              "The task no longer appears in the project's task list"
+            ]
+          },
+          {
+            "role": "Any Authenticated User",
+            "want": "to log in securely",
+            "acceptance_criteria": [
+              "Providing valid email and password returns a JWT token",
+              "All subsequent API calls require a valid JWT or return 401 Unauthorized",
+              "Invalid credentials result in a 401 response with an error message"
+            ]
+          },
+          {
+            "role": "Manager",
+            "want": "to view the project's member list with roles",
+            "acceptance_criteria": [
+              "Project page displays a table of members showing name, email, and role",
+              "Roles are correctly labeled as \"manager\" or \"member\"",
+              "The list updates instantly after adding or removing a member"
+            ]
+          }
+        ],
+        "non_functional_requirements": {
+          "authentication": "required — all endpoints must verify JWT",
+          "authorization": "role‑based: managers can delete projects/members, members have read‑only access to project data",
+          "pagination": "required on /projects and /projects/{id}/tasks endpoints",
+          "search": "required on /users endpoint for member lookup",
+          "file_uploads": "no",
+          "real_time": "no"
+        },
+        "data_entities_detail": [
+          {
+            "name": "User",
+            "description": "Stores account credentials and profile information",
+            "key_fields": [
+              "id",
+              "email",
+              "password_hash",
+              "name"
+            ],
+            "relationships": [
+              "has many ProjectMember"
+            ]
+          },
+          {
+            "name": "Project",
+            "description": "Represents a container for tasks and members",
+            "key_fields": [
+              "id",
+              "name",
+              "description",
+              "owner_id",
+              "created_at"
+            ],
+            "relationships": [
+              "has many Task",
+              "has many ProjectMember"
+            ]
+          },
+          {
+            "name": "Task",
+            "description": "Individual work item belonging to a project",
+            "key_fields": [
+              "id",
+              "project_id",
+              "title",
+              "description",
+              "due_date",
+              "status",
+              "created_at",
+              "updated_at"
+            ],
+            "relationships": [
+              "belongs to Project"
+            ]
+          },
+          {
+            "name": "ProjectMember",
+            "description": "Links users to projects with a role (manager or member)",
+            "key_fields": [
+              "id",
+              "project_id",
+              "user_id",
+              "role"
+            ],
+            "relationships": [
+              "belongs to Project",
+              "belongs to User"
+            ]
+          }
+        ],
+        "out_of_scope": [
+          "File attachments to tasks",
+          "Real‑time collaborative editing",
+          "Integration with external calendar services",
+          "Advanced reporting dashboards"
+        ]
+      },
+      "score": 92.43,
+      "success_count": 1,
+      "generation_id": "ce0ff3039fc544e29495a4bd0f556564",
+      "timestamp": "2026-07-13T03:58:02Z"
     }
   ],
   "blog_cms": [
@@ -12637,6 +12855,592 @@
       "success_count": 1,
       "generation_id": "c632c61bd7bc448a8a4a4e584956c135",
       "timestamp": "2026-07-12T10:27:53Z"
+    }
+  ],
+  "game": [
+    {
+      "category": "game",
+      "idea": "A sports league management platform with user login. Admins create, edit, and archive leagues (name, season, start/end dates). Add teams to a league, edit team details, and assign coaches. Maintain pl",
+      "architecture": {
+        "api_endpoints": [
+          {
+            "method": "POST",
+            "path": "/auth/register",
+            "description": "Register a new user (admin or coach) with email and password",
+            "file": "app\\routes\\auth_routes.py"
+          },
+          {
+            "method": "POST",
+            "path": "/auth/login",
+            "description": "Authenticate user and return a JWT token",
+            "file": "app\\routes\\auth_routes.py"
+          },
+          {
+            "method": "GET",
+            "path": "/leagues",
+            "description": "List leagues with optional search query, status filter, pagination (limit, offset)",
+            "file": "app\\routes\\league_routes.py"
+          },
+          {
+            "method": "GET",
+            "path": "/leagues/{id}",
+            "description": "Retrieve a single league by its ID",
+            "file": "app\\routes\\league_routes.py"
+          },
+          {
+            "method": "POST",
+            "path": "/leagues",
+            "description": "Create a new league (name, season, start_date, end_date, status)",
+            "file": "app\\routes\\league_routes.py"
+          },
+          {
+            "method": "PUT",
+            "path": "/leagues/{id}",
+            "description": "Update all fields of an existing league",
+            "file": "app\\routes\\league_routes.py"
+          },
+          {
+            "method": "DELETE",
+            "path": "/leagues/{id}",
+            "description": "Delete a league permanently",
+            "file": "app\\routes\\league_routes.py"
+          },
+          {
+            "method": "GET",
+            "path": "/teams",
+            "description": "List teams with optional search query, league filter, pagination",
+            "file": "app\\routes\\team_routes.py"
+          },
+          {
+            "method": "GET",
+            "path": "/teams/{id}",
+            "description": "Retrieve a single team by its ID",
+            "file": "app\\routes\\team_routes.py"
+          },
+          {
+            "method": "POST",
+            "path": "/teams",
+            "description": "Create a new team (name, league_id, coach_user_id)",
+            "file": "app\\routes\\team_routes.py"
+          },
+          {
+            "method": "PUT",
+            "path": "/teams/{id}",
+            "description": "Update all fields of an existing team",
+            "file": "app\\routes\\team_routes.py"
+          },
+          {
+            "method": "DELETE",
+            "path": "/teams/{id}",
+            "description": "Delete a team permanently",
+            "file": "app\\routes\\team_routes.py"
+          },
+          {
+            "method": "GET",
+            "path": "/players",
+            "description": "List players with optional search query, team filter, pagination",
+            "file": "app\\routes\\player_routes.py"
+          },
+          {
+            "method": "GET",
+            "path": "/players/{id}",
+            "description": "Retrieve a single player by its ID",
+            "file": "app\\routes\\player_routes.py"
+          },
+          {
+            "method": "POST",
+            "path": "/players",
+            "description": "Create a new player (name, position, jersey_number, team_id) ensuring jersey number uniqueness per team",
+            "file": "app\\routes\\player_routes.py"
+          },
+          {
+            "method": "PUT",
+            "path": "/players/{id}",
+            "description": "Update all fields of an existing player while preserving jersey uniqueness",
+            "file": "app\\routes\\player_routes.py"
+          },
+          {
+            "method": "DELETE",
+            "path": "/players/{id}",
+            "description": "Delete a player permanently",
+            "file": "app\\routes\\player_routes.py"
+          },
+          {
+            "method": "GET",
+            "path": "/matches",
+            "description": "List matches with optional search query, league filter, status filter, pagination",
+            "file": "app\\routes\\match_routes.py"
+          },
+          {
+            "method": "GET",
+            "path": "/matches/{id}",
+            "description": "Retrieve a single match by its ID",
+            "file": "app\\routes\\match_routes.py"
+          },
+          {
+            "method": "POST",
+            "path": "/matches",
+            "description": "Create a new match (league_id, home_team_id, away_team_id, scheduled_at) validating teams belong to the league",
+            "file": "app\\routes\\match_routes.py"
+          },
+          {
+            "method": "PUT",
+            "path": "/matches/{id}",
+            "description": "Update match details (including scores) and set status to completed when results are recorded",
+            "file": "app\\routes\\match_routes.py"
+          },
+          {
+            "method": "DELETE",
+            "path": "/matches/{id}",
+            "description": "Delete a match permanently",
+            "file": "app\\routes\\match_routes.py"
+          },
+          {
+            "method": "POST",
+            "path": "/seed",
+            "description": "Populate the database with demo data for all tables",
+            "file": "app\\routes\\seed_routes.py"
+          },
+          {
+            "method": "GET",
+            "path": "/stats/summary",
+            "description": "Return aggregate counts and key metrics for dashboard (total leagues, teams, players, upcoming matches, etc.)",
+            "file": "app\\routes\\stats_routes.py"
+          }
+        ],
+        "database_schema": [
+          {
+            "table_name": "users",
+            "columns": [
+              {
+                "name": "id",
+                "type": "INTEGER",
+                "is_primary_key": true,
+                "is_nullable": false
+              },
+              {
+                "name": "email",
+                "type": "VARCHAR(255)",
+                "is_primary_key": false,
+                "is_nullable": false
+              },
+              {
+                "name": "hashed_password",
+                "type": "VARCHAR(255)",
+                "is_primary_key": false,
+                "is_nullable": false
+              },
+              {
+                "name": "role",
+                "type": "VARCHAR(50)",
+                "is_primary_key": false,
+                "is_nullable": false
+              },
+              {
+                "name": "is_active",
+                "type": "BOOLEAN",
+                "is_primary_key": false,
+                "is_nullable": false
+              }
+            ]
+          },
+          {
+            "table_name": "leagues",
+            "columns": [
+              {
+                "name": "id",
+                "type": "INTEGER",
+                "is_primary_key": true,
+                "is_nullable": false
+              },
+              {
+                "name": "name",
+                "type": "VARCHAR(200)",
+                "is_primary_key": false,
+                "is_nullable": false
+              },
+              {
+                "name": "season",
+                "type": "VARCHAR(100)",
+                "is_primary_key": false,
+                "is_nullable": false
+              },
+              {
+                "name": "start_date",
+                "type": "DATE",
+                "is_primary_key": false,
+                "is_nullable": false
+              },
+              {
+                "name": "end_date",
+                "type": "DATE",
+                "is_primary_key": false,
+                "is_nullable": false
+              },
+              {
+                "name": "status",
+                "type": "VARCHAR(50)",
+                "is_primary_key": false,
+                "is_nullable": false
+              }
+            ]
+          },
+          {
+            "table_name": "teams",
+            "columns": [
+              {
+                "name": "id",
+                "type": "INTEGER",
+                "is_primary_key": true,
+                "is_nullable": false
+              },
+              {
+                "name": "name",
+                "type": "VARCHAR(200)",
+                "is_primary_key": false,
+                "is_nullable": false
+              },
+              {
+                "name": "league_id",
+                "type": "INTEGER",
+                "is_primary_key": false,
+                "is_nullable": false
+              },
+              {
+                "name": "coach_user_id",
+                "type": "INTEGER",
+                "is_primary_key": false,
+                "is_nullable": false
+              }
+            ]
+          },
+          {
+            "table_name": "players",
+            "columns": [
+              {
+                "name": "id",
+                "type": "INTEGER",
+                "is_primary_key": true,
+                "is_nullable": false
+              },
+              {
+                "name": "name",
+                "type": "VARCHAR(200)",
+                "is_primary_key": false,
+                "is_nullable": false
+              },
+              {
+                "name": "position",
+                "type": "VARCHAR(50)",
+                "is_primary_key": false,
+                "is_nullable": false
+              },
+              {
+                "name": "jersey_number",
+                "type": "INTEGER",
+                "is_primary_key": false,
+                "is_nullable": false
+              },
+              {
+                "name": "team_id",
+                "type": "INTEGER",
+                "is_primary_key": false,
+                "is_nullable": false
+              }
+            ]
+          },
+          {
+            "table_name": "matches",
+            "columns": [
+              {
+                "name": "id",
+                "type": "INTEGER",
+                "is_primary_key": true,
+                "is_nullable": false
+              },
+              {
+                "name": "league_id",
+                "type": "INTEGER",
+                "is_primary_key": false,
+                "is_nullable": false
+              },
+              {
+                "name": "home_team_id",
+                "type": "INTEGER",
+                "is_primary_key": false,
+                "is_nullable": false
+              },
+              {
+                "name": "away_team_id",
+                "type": "INTEGER",
+                "is_primary_key": false,
+                "is_nullable": false
+              },
+              {
+                "name": "scheduled_at",
+                "type": "DATETIME",
+                "is_primary_key": false,
+                "is_nullable": false
+              },
+              {
+                "name": "home_score",
+                "type": "INTEGER",
+                "is_primary_key": false,
+                "is_nullable": true
+              },
+              {
+                "name": "away_score",
+                "type": "INTEGER",
+                "is_primary_key": false,
+                "is_nullable": true
+              },
+              {
+                "name": "status",
+                "type": "VARCHAR(50)",
+                "is_primary_key": false,
+                "is_nullable": false
+              }
+            ]
+          }
+        ],
+        "folder_structure": {
+          "backend": [
+            "app/models",
+            "app/schemas",
+            "app/routes",
+            "app/services",
+            "app/utils",
+            "app/dependencies",
+            "app/config",
+            "app/main.py"
+          ]
+        },
+        "frontend_structure": {
+          "pages": [
+            "LoginPage",
+            "DashboardPage",
+            "LeagueListPage",
+            "LeagueDetailPage",
+            "TeamListPage",
+            "TeamDetailPage",
+            "PlayerListPage",
+            "MatchSchedulePage",
+            "StandingsPage",
+            "NotFoundPage"
+          ],
+          "components": [
+            "Navbar",
+            "Sidebar",
+            "SearchBar",
+            "Pagination",
+            "LeagueCard",
+            "TeamCard",
+            "PlayerRow",
+            "MatchRow",
+            "StatsWidget",
+            "ProtectedRoute"
+          ]
+        }
+      },
+      "plan": {
+        "project_name": "sports_league_manager",
+        "display_name": "Sports League Management Platform",
+        "features": [
+          "Secure login with JWT tokens for admins and coaches",
+          "Create, edit, archive leagues with season dates and status",
+          "CRUD teams within a league and assign a coach user to each team",
+          "Add/edit players, enforce unique jersey numbers per team",
+          "Create fixtures, record scores, and mark matches as completed",
+          "Compute wins, draws, losses, points and rank teams after each result"
+        ],
+        "tech_stack": {
+          "backend": "FastAPI",
+          "database": "SQLite",
+          "auth": "JWT",
+          "frontend": "React + Vite"
+        },
+        "db_entities": [
+          "League",
+          "Team",
+          "Player",
+          "Match"
+        ],
+        "api_modules": [
+          "auth",
+          "leagues",
+          "teams",
+          "players",
+          "matches"
+        ],
+        "user_stories": [
+          {
+            "role": "Admin",
+            "want": "to log in securely",
+            "acceptance_criteria": [
+              "Given a valid email/password, the system returns a JWT token",
+              "Invalid credentials return a 401 error",
+              "Token expires after 24 hours"
+            ]
+          },
+          {
+            "role": "Admin",
+            "want": "to create, edit, and archive leagues",
+            "acceptance_criteria": [
+              "Create league requires name, season, start_date, end_date",
+              "Edit updates any of the required fields and persists changes",
+              "Archive sets league status to 'archived' and removes it from the active list endpoint"
+            ]
+          },
+          {
+            "role": "Admin",
+            "want": "to add teams to a league and assign a coach",
+            "acceptance_criteria": [
+              "Team creation requires name, league_id, and coach_user_id",
+              "Team appears in the league's team list after creation",
+              "Updating a team changes its name or coach and reflects in subsequent reads"
+            ]
+          },
+          {
+            "role": "Admin",
+            "want": "to manage player rosters with unique jersey numbers per team",
+            "acceptance_criteria": [
+              "Adding a player requires name, position, jersey_number, and team_id",
+              "System rejects a player if jersey_number already exists for the same team",
+              "Editing a player updates the stored fields and preserves jersey uniqueness"
+            ]
+          },
+          {
+            "role": "Admin",
+            "want": "to schedule matches between two teams in the same league",
+            "acceptance_criteria": [
+              "Match creation requires league_id, home_team_id, away_team_id, and scheduled_at",
+              "Both teams must belong to the specified league; otherwise a 400 error is returned",
+              "Scheduled match appears in the league's match schedule endpoint"
+            ]
+          },
+          {
+            "role": "Admin",
+            "want": "to record match results after games are played",
+            "acceptance_criteria": [
+              "Result entry requires home_score and away_score and sets match status to 'completed'",
+              "Scores are stored and cannot be changed without explicit 'reopen' action",
+              "After saving results, the league standings endpoint reflects updated win/draw/loss counts"
+            ]
+          },
+          {
+            "role": "System",
+            "want": "to compute league standings automatically",
+            "acceptance_criteria": [
+              "Standings calculate points (3 win, 1 draw, 0 loss) for each team",
+              "Teams are sorted descending by points, then goal difference, then jersey number",
+              "Standings update immediately after a match result is recorded"
+            ]
+          },
+          {
+            "role": "Coach",
+            "want": "to view my team's roster and upcoming matches",
+            "acceptance_criteria": [
+              "Coach logs in and sees only teams where they are assigned as coach",
+              "Roster endpoint returns all players for the coach's team",
+              "Schedule endpoint filters matches where the coach's team is home or away"
+            ]
+          },
+          {
+            "role": "Any logged‑in user",
+            "want": "to search leagues by name",
+            "acceptance_criteria": [
+              "Search endpoint accepts a query string and returns leagues whose name contains the term (case‑insensitive)",
+              "Results are paginated with a default page size of 20",
+              "Empty query returns a 400 error"
+            ]
+          }
+        ],
+        "non_functional_requirements": {
+          "authentication": "required — all endpoints except public health checks need a valid JWT",
+          "authorization": "role‑based: Admin can access all CRUD endpoints; Coach can view and edit only their assigned team and roster",
+          "pagination": "required on list endpoints for leagues, teams, players, and matches",
+          "search": "leagues (and teams) need text search capability",
+          "file_uploads": "no",
+          "real_time": "yes — standings are refreshed in real time via WebSocket after result entry"
+        },
+        "data_entities_detail": [
+          {
+            "name": "League",
+            "description": "Represents a competition season",
+            "key_fields": [
+              "id",
+              "name",
+              "season",
+              "start_date",
+              "end_date",
+              "status"
+            ],
+            "relationships": [
+              "has many Teams",
+              "has many Matches"
+            ]
+          },
+          {
+            "name": "Team",
+            "description": "Club participating in a league",
+            "key_fields": [
+              "id",
+              "name",
+              "league_id",
+              "coach_user_id"
+            ],
+            "relationships": [
+              "belongs to League",
+              "has many Players",
+              "appears in Matches as home or away"
+            ]
+          },
+          {
+            "name": "Player",
+            "description": "Individual athlete on a team roster",
+            "key_fields": [
+              "id",
+              "name",
+              "position",
+              "jersey_number",
+              "team_id"
+            ],
+            "relationships": [
+              "belongs to Team"
+            ]
+          },
+          {
+            "name": "Match",
+            "description": "Scheduled game between two teams with result",
+            "key_fields": [
+              "id",
+              "league_id",
+              "home_team_id",
+              "away_team_id",
+              "scheduled_at",
+              "home_score",
+              "away_score",
+              "status"
+            ],
+            "relationships": [
+              "belongs to League",
+              "references Team as home_team",
+              "references Team as away_team"
+            ]
+          }
+        ],
+        "out_of_scope": [
+          "Support for multiple sports types (e.g., basketball, baseball)",
+          "Payment processing for league fees",
+          "Native mobile applications",
+          "Advanced statistics, player performance analytics",
+          "Integration with external ticketing or broadcasting systems"
+        ]
+      },
+      "score": 99.29,
+      "success_count": 1,
+      "generation_id": "d3cc627878ee440e98add9d54220fe7b",
+      "timestamp": "2026-07-13T03:53:20Z"
     }
   ]
 }

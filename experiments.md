@@ -6694,3 +6694,67 @@ Create-path live validation.
 code diff in `backend/app/runtime/user_journey_runner.py`, new test file
 `backend/tests/reliability/test_exp095_journey_method_alignment.py`.
 **Cost: $0, zero Cerebras calls.**
+
+---
+
+## Experiment 096: Live Validation of Architecture-Aware Update Methods
+
+2026-07-13. Live, two Cerebras canaries (todo/blog_cms/crm's fixed
+3-app set intentionally not used — per this experiment's domain
+preference, custom ideas targeting sports/league and project/task
+management), $0.3009 total, 501,474 tokens. New
+`backend/scripts/exp096_canary.py` wraps
+`_detect_crud_entity`/`run_user_journey` to record the
+architecture-declared `(resource, update_method)` and full journey
+step detail non-invasively, reusing `run_canary.py`'s internals
+unmodified.
+
+**Results:** r1 (sports league, `sports_league_manager`-inspired):
+99.3/100 (A+), deploy-ready, 2/5 fix attempts. r2 (project/task
+management, `teamflow_pm`-inspired, generated as
+`secure_project_manager`): 92.4/100 (A), deploy-ready, 0/5 fix attempts.
+
+**Method detection**: both runs' `_detect_crud_entity()` resolved to
+PUT (`('leagues', 'PUT')` ×5 calls in r1, `('projects', 'PUT')` ×3
+calls in r2) — independently cross-verified against the actual
+generated route decorators on disk (`league_routes.py`,
+`project_routes.py`), exact match both times. Neither run exercised the
+PATCH branch — the architect chose PUT for the test-selected entity
+both times, a null result anticipated by Exp095's own recommendation
+(LLM verb-choice variance, ~2-4% base rate per Exp094's corpus scan) —
+uninformative for that one specific branch but not concerning.
+
+**Success criteria confirmed**: zero false 405s in either run (the two
+Edit-entity failures that did occur — a 422 in r1 from an unrelated,
+already-scoped-out partial-update-schema gap, and a cascading
+no-entity_id in r2 from an already-closed Create-path hiccup — both
+resolved via existing infrastructure, neither method-mismatch related).
+Endpoint inventory stable across every re-verification pass in both
+runs. ExchangeRecorder confirmed still capturing exchanges correctly —
+r1's failing 422 step recorded the full `{'method': 'PUT', ...}`
+request/response pair, proving the forensic bundle wrapper is intact
+post-Exp095 (the specific regression risk avoided by not using
+`requests.request(...)`). Runtime behavior matched architecture in
+both runs.
+
+**Observatory**: regenerated `observatory_report.html` —
+`top_failure_now` has shifted to `AttributeError`, no longer
+`JourneyCRUDFailure`. Direct count: 3 `JourneyCRUDFailure` in the last
+30 `generation_log.jsonl` records, 2 Edit-path-shaped (405) — both the
+same pre-existing historical runs that motivated Exp094/095; zero new
+Edit/405 entries since the fix shipped.
+
+**Recommendation for Exp097**: close this validation thread (same
+evidence bar as Exp082/086/089/093 — strong confirmatory + non-firing
+live result, backed by thorough offline replay). Pivot to the
+Observatory's own current top signal: `AttributeError` is now the
+highest-impact remaining active class and hasn't been investigated in
+this series yet.
+
+**Deliverables**: `docs/EXP096_LIVE_VALIDATION_METHOD_ALIGNMENT.md`,
+this entry, `backend/scripts/exp096_canary.py`,
+`backend/benchmark_results/exp096_method_detection_invocations.json`,
+regenerated `backend/observatory_report.html`, two canary history
+entries (`exp096-validation-r1` BASELINE 99.3,
+`exp096-validation-r2` BASELINE 92.4). **Cost: $0.3009, two live
+generations.**

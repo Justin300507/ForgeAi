@@ -603,9 +603,9 @@
       "app/config/settings.py": "import os\n\nclass Settings:\n    PROJECT_NAME: str = \"Task Manager API\"\n    DATABASE_URL: str = os.getenv(\"DATABASE_URL\", \"sqlite:///./sql_app.db\")\n    SECRET_KEY: str = os.getenv(\"SECRET_KEY\", \"super-secret-key-change-me-in-production\")\n    ALGORITHM: str = \"HS256\"\n    ACCESS_TOKEN_EXPIRE_MINUTES: int = 60\n\nsettings = Settings()\n",
       "app/config/__init__.py": "from app.config.settings import settings\n"
     },
-    "success_count": 11,
+    "success_count": 12,
     "first_seen": "2026-07-11T11:27:08Z",
-    "last_seen": "2026-07-12T20:02:06Z",
+    "last_seen": "2026-07-13T03:52:58Z",
     "source_idea": "A todo list app with user accounts. Users can register and log in. Each user sees only their own tod"
   },
   "c3c63f97354b61ab": {
@@ -887,5 +887,45 @@
     "first_seen": "2026-07-12T15:59:36Z",
     "last_seen": "2026-07-12T15:59:36Z",
     "source_idea": "A blog CMS with author and reader roles. Authors write posts with title, content (markdown), tags, a"
+  },
+  "8dd925ee79722e9f": {
+    "fix_hash": "8dd925ee79722e9f",
+    "fix_content": {
+      "app/schemas/league.py": "from datetime import date\nfrom typing import Optional\nfrom pydantic import BaseModel, Field, ConfigDict\n\n\nclass LeagueCreate(BaseModel):\n    model_config = ConfigDict(from_attributes=True)\n    name: Optional[str] = Field(default=None, min_length=1)\n    season: Optional[str] = Field(default=None, min_length=1)\n    start_date: Optional[date] = None\n    end_date: Optional[date] = None\n    status: Optional[str] = Field(default=None, min_length=1)\n\n\nclass LeagueUpdate(BaseModel):\n    model_config = ConfigDict(from_attributes=True)\n    name: Optional[str] = Field(default=None, min_length=1)\n    season: Optional[str] = Field(default=None, min_length=1)\n    start_date: Optional[date] = None\n    end_date: Optional[date] = None\n    status: Optional[str] = Field(default=None, min_length=1)\n\n\nclass LeagueResponse(BaseModel):\n    id: int\n    name: Optional[str] = None\n    season: Optional[str] = None\n    start_date: Optional[date] = None\n    end_date: Optional[date] = None\n    status: Optional[str] = None\n\n    model_config = ConfigDict(from_attributes=True)\n"
+    },
+    "success_count": 1,
+    "first_seen": "2026-07-13T03:52:58Z",
+    "last_seen": "2026-07-13T03:52:58Z",
+    "source_idea": "A sports league management platform with user login. Admins create, edit, and archive leagues (name,"
+  },
+  "769b17752322bd62": {
+    "fix_hash": "769b17752322bd62",
+    "fix_content": {
+      "app/schemas/player.py": "from typing import Optional, Any\nfrom pydantic import BaseModel, Field, ConfigDict\n\nclass PlayerCreate(BaseModel):\n    team_id: Optional[Any] = None\n    name: Optional[str] = Field(default=None, min_length=1)\n    position: Optional[str] = Field(default=None, min_length=1)\n    jersey_number: int\n\n    model_config = ConfigDict(from_attributes=True)\n\nclass PlayerUpdate(BaseModel):\n    name: Optional[str] = Field(default=None, min_length=1)\n    position: Optional[str] = Field(default=None, min_length=1)\n    jersey_number: Optional[int] = None\n\n    model_config = ConfigDict(from_attributes=True)\n\nclass PlayerResponse(BaseModel):\n    id: int\n    name: Optional[str] = None\n    position: Optional[str] = None\n    jersey_number: Optional[int] = None\n    team_id: Optional[int] = None\n\n    model_config = ConfigDict(from_attributes=True)\n"
+    },
+    "success_count": 1,
+    "first_seen": "2026-07-13T03:52:58Z",
+    "last_seen": "2026-07-13T03:52:58Z",
+    "source_idea": "A sports league management platform with user login. Admins create, edit, and archive leagues (name,"
+  },
+  "612b19e5c48cebcf": {
+    "fix_hash": "612b19e5c48cebcf",
+    "fix_content": {
+      "app/schemas/team.py": "from typing import Optional\n\nfrom pydantic import BaseModel, Field\nfrom pydantic.config import ConfigDict\n\n\nclass TeamCreate(BaseModel):\n    name: Optional[str] = Field(default=None, min_length=1)\n\n    model_config = ConfigDict(from_attributes=True)\n\n\nclass TeamUpdate(BaseModel):\n    name: Optional[str] = Field(default=None, min_length=1)\n\n    model_config = ConfigDict(from_attributes=True)\n\n\nclass TeamResponse(BaseModel):\n    id: int\n    name: Optional[str] = None\n    league_id: Optional[int] = None\n    coach_user_id: Optional[int] = None\n\n    model_config = ConfigDict(from_attributes=True)\n"
+    },
+    "success_count": 1,
+    "first_seen": "2026-07-13T03:52:58Z",
+    "last_seen": "2026-07-13T03:52:58Z",
+    "source_idea": "A sports league management platform with user login. Admins create, edit, and archive leagues (name,"
+  },
+  "8a9bd766abb24df2": {
+    "fix_hash": "8a9bd766abb24df2",
+    "fix_content": {
+      "src/App.jsx": "import React from \"react\";\nimport { BrowserRouter as Router, Routes, Route, Navigate } from \"react-router-dom\";\n\nimport Sidebar from \"./components/Sidebar.jsx\";\nimport SettingsPage from \"./pages/SettingsPage\";\nimport DashboardPage from \"./pages/DashboardPage\";\nimport LeagueDetailPage from \"./pages/LeagueDetailPage\";\nimport LeagueListPage from \"./pages/LeagueListPage\";\nimport LoginPage from \"./pages/LoginPage\";\nimport RegisterPage from \"./pages/RegisterPage\";\n\nfunction App() {\n  const token = localStorage.getItem(\"access_token\");\n\n  return (\n    <Router>\n      {token ? (\n        <div className=\"app-container\">\n          <Sidebar />\n          <Routes>\n            <Route path=\"/\" element={<Navigate to=\"/dashboard\" replace />} />\n            <Route path=\"/dashboard\" element={<DashboardPage />} />\n            <Route path=\"/leagues\" element={<LeagueListPage />} />\n            <Route path=\"/leagues/:id\" element={<LeagueDetailPage />} />\n            <Route path=\"/settings\" element={<SettingsPage />} />\n          </Routes>\n        </div>\n      ) : (\n        <Routes>\n          <Route path=\"/login\" element={<LoginPage />} />\n          <Route path=\"/register\" element={<RegisterPage />} />\n          <Route path=\"*\" element={<Navigate to=\"/login\" replace />} />\n        </Routes>\n      )}\n    </Router>\n  );\n}\n\nexport default App;\n"
+    },
+    "success_count": 1,
+    "first_seen": "2026-07-13T03:53:20Z",
+    "last_seen": "2026-07-13T03:53:20Z",
+    "source_idea": "A sports league management platform with user login. Admins create, edit, and archive leagues (name,"
   }
 }
