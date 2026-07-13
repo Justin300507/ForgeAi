@@ -1,18 +1,45 @@
 import React, { useEffect, useRef, useState, useCallback } from "react";
 import { useParams, Link } from "react-router-dom";
-import { Globe, BookOpen, Github, Download, ShieldCheck } from "lucide-react";
+import { Globe, BookOpen, Github, Download, ShieldCheck, Loader2 } from "lucide-react";
 import { jobsAPI } from "../api";
 import NavBar from "../components/NavBar";
+import { useSceneryBoost } from "../components/SceneryBoost";
 import { STAGES, detectStage } from "../lib/pipelineStages";
 
 function PipelineBar({ logs, status, vertical }) {
   const active = detectStage(logs);
   const activeIdx = STAGES.findIndex(s => s.id === active);
+  const prevActiveIdx = useRef(activeIdx);
+  const [celebrateIdx, setCelebrateIdx] = useState(-1);
+  const [shaking, setShaking] = useState(false);
+
+  // A stage just finished the moment the detected active stage advances --
+  // celebrate the one immediately before the new active stage with a
+  // one-shot pop, then clear the flag so it never replays on unrelated
+  // re-renders (e.g. new log lines arriving).
+  useEffect(() => {
+    if (activeIdx > prevActiveIdx.current) {
+      setCelebrateIdx(activeIdx - 1);
+      const t = setTimeout(() => setCelebrateIdx(-1), 450);
+      prevActiveIdx.current = activeIdx;
+      return () => clearTimeout(t);
+    }
+    prevActiveIdx.current = activeIdx;
+  }, [activeIdx]);
+
+  useEffect(() => {
+    if (status !== "error") return;
+    setShaking(true);
+    const t = setTimeout(() => setShaking(false), 400);
+    return () => clearTimeout(t);
+  }, [status]);
+
   return (
     <div className={vertical
       ? "flex flex-col gap-3"
       : "flex items-center gap-1 overflow-x-auto py-1"}>
       {STAGES.map((stage, i) => {
+        const StageIcon = stage.Icon;
         const past = activeIdx > i;
         const curr = activeIdx === i;
         const err  = status === "error" && curr;
@@ -20,14 +47,22 @@ function PipelineBar({ logs, status, vertical }) {
         // Live, in-progress node gets the neon-emerald glow; everything
         // else (done/error/upcoming) stays on the plain palette below.
         const isLiveActive = curr && !err && !fin;
+        const nodeClass = [
+          "w-6 h-6 rounded-full flex items-center justify-center text-xs font-bold border-2 transition-all shrink-0",
+          isLiveActive ? "stepper-node-active" : "",
+          celebrateIdx === i ? "stepper-node-complete" : "",
+          err && shaking ? "stepper-node-shake" : "",
+        ].filter(Boolean).join(" ");
         const node = (
-          <div className={`w-6 h-6 rounded-full flex items-center justify-center text-xs font-bold border-2 transition-all shrink-0 ${isLiveActive ? "stepper-node-active" : ""}`}
+          <div className={nodeClass}
             style={{
               borderColor: err ? "#ef4444" : (fin||past) ? "#4ade80" : isLiveActive ? "#34d399" : "#2a2a3d",
               background:  err ? "rgba(239,68,68,0.15)" : (fin||past) ? "rgba(74,222,128,0.15)" : isLiveActive ? "rgba(52,211,153,0.15)" : "#12121f",
-              color:       err ? "#f87171" : (fin||past) ? "#4ade80" : isLiveActive ? "#34d399" : "#444"
+              color:       err ? "#f87171" : (fin||past) ? "#4ade80" : isLiveActive ? "#34d399" : "#666"
             }}>
-            {(fin || past) ? "✓" : isLiveActive ? "…" : err ? "✕" : i+1}
+            {(fin || past) ? "✓" : err ? "✕" : isLiveActive
+              ? <Loader2 size={12} className="animate-spin" aria-hidden="true" />
+              : <StageIcon size={12} aria-hidden="true" />}
           </div>
         );
         const label = (
@@ -42,7 +77,9 @@ function PipelineBar({ logs, status, vertical }) {
               <div className="flex flex-col items-center shrink-0">
                 {node}
                 {i < STAGES.length - 1 && (
-                  <div className="w-px h-4 mt-1 transition-all" style={{background: past ? "#4ade8050" : "#2a2a3d"}} />
+                  <div className="stepper-connector--v w-px h-4 mt-1">
+                    <div className={`stepper-connector__fill${past ? " filled" : ""}`} />
+                  </div>
                 )}
               </div>
               <span className="text-xs font-medium"
@@ -59,7 +96,9 @@ function PipelineBar({ logs, status, vertical }) {
               <span className="mt-1">{label}</span>
             </div>
             {i < STAGES.length - 1 && (
-              <div className="h-px flex-1 min-w-[8px] transition-all" style={{background: past ? "#4ade8050" : "#2a2a3d"}} />
+              <div className="stepper-connector--h h-px flex-1 min-w-[8px]">
+                <div className={`stepper-connector__fill${past ? " filled" : ""}`} />
+              </div>
             )}
           </React.Fragment>
         );
@@ -195,6 +234,7 @@ export default function ProjectDetail() {
   const [notFound, setNotFound] = useState(false);
   const logsRef = useRef(null);
   const bottom = useRef(true);
+  const sceneryBoost = useSceneryBoost();
 
   const scrollBottom = () => { if (logsRef.current && bottom.current) logsRef.current.scrollTop = logsRef.current.scrollHeight; };
   useEffect(scrollBottom, [logs]);
@@ -217,9 +257,15 @@ export default function ProjectDetail() {
       if (msg.type === "log") setLogs(p => [...p, msg.message]);
       else if (["done","error","cancelled"].includes(msg.type)) { fetchJob(); ws.close(); }
     };
-    ws.onerror = () => ws.close();
+    ws.onerror = () => { sceneryBoost?.setSustained(false); ws.close(); };
     return () => ws.close();
   }, [job?.status, id, fetchJob]);
+
+  useEffect(() => {
+    const active = job?.status === "pending" || job?.status === "running";
+    sceneryBoost?.setSustained(active);
+    return () => sceneryBoost?.setSustained(false);
+  }, [job?.status]);
 
   if (notFound) return (
     <div className="app-shell flex items-center justify-center text-gray-500">
@@ -336,7 +382,7 @@ export default function ProjectDetail() {
             style={{background:"#07070f"}}>
             {logs.length === 0
               ? <p className="text-gray-700 italic">Waiting for pipeline output…</p>
-              : logs.map((line, i) => <p key={i} className="leading-relaxed whitespace-pre-wrap" style={{color:LOG_CLS(line)}}>{line}</p>)
+              : logs.map((line, i) => <p key={i} className="log-line-in leading-relaxed whitespace-pre-wrap" style={{color:LOG_CLS(line)}}>{line}</p>)
             }
             {isActive && <p className="animate-pulse" style={{color:"#333"}}>▌</p>}
           </div>

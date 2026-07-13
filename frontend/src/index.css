@@ -597,3 +597,102 @@ body {
   .hover-lift:hover { transform: none; }
   * { transition-duration: 0.01ms !important; }
 }
+
+/* ── Stepper node: one-shot completion pop + failure shake ───────────── */
+
+@keyframes stepper-node-complete {
+  0%   { transform: scale(1);    filter: brightness(1); }
+  45%  { transform: scale(1.28); filter: brightness(1.6); }
+  100% { transform: scale(1);    filter: brightness(1); }
+}
+
+.stepper-node-complete {
+  animation: stepper-node-complete 450ms cubic-bezier(0.34, 1.56, 0.64, 1) both;
+}
+
+@keyframes stepper-node-shake {
+  0%, 100% { transform: translateX(0); }
+  20%      { transform: translateX(-3px); }
+  40%      { transform: translateX(3px); }
+  60%      { transform: translateX(-2px); }
+  80%      { transform: translateX(2px); }
+}
+
+.stepper-node-shake {
+  animation: stepper-node-shake 400ms ease-in-out;
+}
+
+/* ── Stepper connector: animated left-to-right (or top-to-bottom) fill
+   when a stage completes, instead of an instant color swap ──────────── */
+
+.stepper-connector--h,
+.stepper-connector--v {
+  position: relative;
+  overflow: hidden;
+  background: #2a2a3d;
+}
+
+.stepper-connector__fill {
+  position: absolute;
+  inset: 0;
+  background: #4ade8050;
+  transition: transform 600ms cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.stepper-connector--h .stepper-connector__fill {
+  transform: scaleX(0);
+  transform-origin: left;
+}
+
+.stepper-connector--v .stepper-connector__fill {
+  transform: scaleY(0);
+  transform-origin: top;
+}
+
+.stepper-connector--h .stepper-connector__fill.filled {
+  transform: scaleX(1);
+}
+
+.stepper-connector--v .stepper-connector__fill.filled {
+  transform: scaleY(1);
+}
+
+/* ── Log stream: each new line eases in as it arrives ─────────────────── */
+
+@keyframes log-line-in {
+  from { opacity: 0; transform: translateY(4px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+.log-line-in {
+  animation: log-line-in 180ms ease-out both;
+}
+
+/* ── Scenery sustain: gentle, persistent intensification for the whole
+   duration of an active generation (vs. the punchy ~900ms Forge-press
+   .boosted above). Set via ProjectDetail.jsx while job.status is
+   pending/running. Composes with .boosted -- boosted's stronger values
+   win since both are just classes on the same element. ─────────────── */
+
+.scenery-layer.sustained .scenery-mist--a,
+.scenery-layer.sustained .scenery-mist--b,
+.scenery-layer.sustained .scenery-light {
+  filter: brightness(1.18);
+}
+
+.scenery-layer.sustained .scenery-scrim {
+  background: rgba(9, 6, 13, 0.80);
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  .scenery-layer.sustained .scenery-mist--a { animation-duration: 55s; }
+  .scenery-layer.sustained .scenery-mist--b { animation-duration: 69s; }
+  .scenery-layer.sustained .scenery-light   { animation-duration: 92s; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .stepper-node-complete { animation: none; }
+  .stepper-node-shake { animation: none; }
+  .stepper-connector__fill { transition: none; }
+  .log-line-in { animation: none; opacity: 1; transform: none; }
+}
