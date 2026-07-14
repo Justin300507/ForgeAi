@@ -191,21 +191,24 @@ export default function Observatory() {
                 trend={data.cockpit.first_try_trend}
                 sub={`confidence: ${data.cockpit.first_try_confidence?.toLowerCase()}`}
                 delay={0}
+                accent="#9db8ff"
               />
               <StatCard
                 label="Generation Success"
                 value={data.cockpit.generation_success_rate != null ? `${data.cockpit.generation_success_rate}%` : "—"}
                 sub={`last ${data.cockpit.window} generations`}
                 delay={40}
+                accent="#7ee0b0"
               />
               <StatCard
                 label="Avg Fix Iterations"
                 value={data.cockpit.avg_fix_iterations ?? "—"}
                 sub="per generation"
                 delay={80}
+                accent="#ffb457"
               />
               <div className="anim-fade-up glass-panel rounded-2xl px-5 py-4" style={{ "--d": "120ms" }}>
-                <p className="text-xs text-gray-500 uppercase tracking-wide">Canary Health</p>
+                <p className="forge-mono text-[10px] text-gray-500 uppercase">Canary Health</p>
                 <div className="flex items-center gap-2.5 mt-1.5">
                   {/* Mission-control heartbeat: the icon well breathes in the
                       current health color (shared badge-glow-pulse keyframe,

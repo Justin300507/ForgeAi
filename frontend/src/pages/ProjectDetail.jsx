@@ -8,6 +8,7 @@ import PillButton from "../components/PillButton";
 import EmptyState from "../components/EmptyState";
 import { useSceneryBoost } from "../components/SceneryBoost";
 import { STAGES, detectStage } from "../lib/pipelineStages";
+import { STAGE_COLORS } from "../lib/forgeAssets";
 
 function PipelineBar({ logs, status, vertical }) {
   const active = detectStage(logs);
@@ -56,12 +57,16 @@ function PipelineBar({ logs, status, vertical }) {
           celebrateIdx === i ? "stepper-node-complete" : "",
           err && shaking ? "stepper-node-shake" : "",
         ].filter(Boolean).join(" ");
+        // Upcoming stages carry a faint tint of their landing forge-arc
+        // color (see STAGE_COLORS) so the product stepper and the marketing
+        // forge read as one story; live/done/error semantics are unchanged.
+        const upcomingTint = STAGE_COLORS[i]?.accent || "#666";
         const node = (
           <div className={nodeClass}
             style={{
               borderColor: err ? "#ef4444" : (fin||past) ? "#4ade80" : isLiveActive ? "#34d399" : "#2a2a3d",
               background:  err ? "rgba(239,68,68,0.15)" : (fin||past) ? "rgba(74,222,128,0.15)" : isLiveActive ? "rgba(52,211,153,0.15)" : "#12121f",
-              color:       err ? "#f87171" : (fin||past) ? "#4ade80" : isLiveActive ? "#34d399" : "#666"
+              color:       err ? "#f87171" : (fin||past) ? "#4ade80" : isLiveActive ? "#34d399" : `${upcomingTint}99`
             }}>
             {(fin || past) ? "✓" : err ? "✕" : isLiveActive
               ? <Loader2 size={12} className="animate-spin" aria-hidden="true" />

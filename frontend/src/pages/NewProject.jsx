@@ -7,6 +7,7 @@ import { useVeil } from "../components/Veil";
 import { useSceneryBoost } from "../components/SceneryBoost";
 import { IDEA_DRAFT_KEY } from "../lib/cinematic";
 import { STAGES } from "../lib/pipelineStages";
+import { STAGE_COLORS } from "../lib/forgeAssets";
 
 const EXAMPLES = [
   "A habit tracker with streaks, badges, dark mode, and weekly reports",
@@ -102,7 +103,7 @@ export default function NewProject() {
 
             <div className={`space-y-8 forge-recede${igniting ? " igniting" : ""}`}>
               <div className="anim-fade-up" style={{ "--d": "100ms" }}>
-                <label htmlFor="idea" className="block text-sm font-medium text-gray-300 mb-2">The idea</label>
+                <label htmlFor="idea" className="forge-mono block text-[10px] uppercase text-gray-400 mb-2">The idea</label>
                 <div className="glass-panel glow-focus rounded-2xl p-1">
                   <textarea id="idea" value={idea} onChange={e => setIdea(e.target.value)} required rows={5}
                     placeholder="A habit tracker with streaks, badges, dark mode, and weekly reports..."
@@ -120,7 +121,7 @@ export default function NewProject() {
 
               {/* Model segmented control */}
               <fieldset className="anim-fade-up" style={{ "--d": "160ms" }}>
-                <legend className="block text-sm font-medium text-gray-300 mb-3">Model</legend>
+                <legend className="forge-mono block text-[10px] uppercase text-gray-400 mb-3">Model</legend>
                 <div className="liquid-glass rounded-full inline-flex p-1 gap-0.5">
                   {MODELS.map(m => (
                     <button key={m.id} type="button" onClick={() => setModel(m.id)}
@@ -139,7 +140,7 @@ export default function NewProject() {
 
               {/* Deployment cards */}
               <fieldset className="anim-fade-up" style={{ "--d": "220ms" }}>
-                <legend className="block text-sm font-medium text-gray-300 mb-3">Deployment</legend>
+                <legend className="forge-mono block text-[10px] uppercase text-gray-400 mb-3">Deployment</legend>
                 <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
                   {DEPLOYMENTS.map(d => {
                     const isSelected = deploy === d.id;
@@ -231,9 +232,18 @@ export default function NewProject() {
                   const StageIcon = stage.Icon;
                   return (
                     <li key={stage.id} className="flex items-center gap-3 text-sm text-gray-400">
+                      {/* Each stage wears its landing forge-arc color (cool
+                          idea-blue warming to ember, resolving emerald) —
+                          the preview is a still of the same story the
+                          marketing forge tells. */}
                       <span
-                        className={`pipeline-node-dot w-5 h-5 rounded-full flex items-center justify-center bg-violet-300/15 text-violet-300 shrink-0${igniting ? " igniting" : ""}`}
-                        style={{ "--node-delay": `${i * 420}ms`, "--ignite-delay": `${i * 65}ms` }}
+                        className={`pipeline-node-dot w-5 h-5 rounded-full flex items-center justify-center shrink-0${igniting ? " igniting" : ""}`}
+                        style={{
+                          "--node-delay": `${i * 420}ms`,
+                          "--ignite-delay": `${i * 65}ms`,
+                          color: STAGE_COLORS[i]?.accent || "#c4b5fd",
+                          background: `${STAGE_COLORS[i]?.accent || "#c4b5fd"}26`,
+                        }}
                         aria-hidden="true">
                         <StageIcon size={11} />
                       </span>

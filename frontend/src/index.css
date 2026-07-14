@@ -141,6 +141,32 @@ body {
   background: rgba(9, 6, 13, 0.88);
 }
 
+/* Blueprint drafting grid behind app pages — the landing forge's texture
+   at whisper volume. Drifts imperceptibly; masked to the upper canvas so
+   dense content areas stay clean. */
+.scenery-blueprint {
+  position: absolute;
+  inset: -8%;
+  background-image:
+    linear-gradient(rgba(157, 184, 255, 0.045) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(157, 184, 255, 0.045) 1px, transparent 1px);
+  background-size: 56px 56px;
+  -webkit-mask-image: radial-gradient(90% 70% at 50% 30%, black 20%, transparent 85%);
+  mask-image: radial-gradient(90% 70% at 50% 30%, black 20%, transparent 85%);
+  pointer-events: none;
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  .scenery-blueprint {
+    animation: scenery-blueprint-drift 90s linear infinite alternate;
+  }
+}
+
+@keyframes scenery-blueprint-drift {
+  from { transform: translate(0, 0); }
+  to   { transform: translate(-28px, -18px); }
+}
+
 /* ── Living Scenery: ambient mist + light drift (Phase 1) ────────────── */
 /* Autonomous, GPU-compositor-only (transform/opacity), no per-frame JS --
    safe to run behind the generation workspace's live WebSocket log stream.

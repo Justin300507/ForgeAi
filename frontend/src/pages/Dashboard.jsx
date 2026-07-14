@@ -162,15 +162,18 @@ export default function Dashboard() {
           </div>
         ) : (
           <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 mt-6 mb-10">
-            <StatCard icon={Boxes} label="Total Projects" value={stats.total} delay={190} />
-            <StatCard icon={Rocket} label="Deployed" value={stats.deployed} delay={230} />
-            <StatCard icon={Activity} label="In Progress" value={stats.inProgress} delay={270} />
+            {/* Accents follow the forge arc: idea-blue → launch-ember →
+                runtime-amber → resolved-emerald (see landing STAGE_COLORS) */}
+            <StatCard icon={Boxes} label="Total Projects" value={stats.total} delay={190} accent="#9db8ff" />
+            <StatCard icon={Rocket} label="Deployed" value={stats.deployed} delay={230} accent="#ffa96b" />
+            <StatCard icon={Activity} label="In Progress" value={stats.inProgress} delay={270} accent="#ffb457" />
             <StatCard
               icon={ShieldCheck}
               label="Success Rate"
               value={stats.successRate != null ? `${stats.successRate}%` : "—"}
               sub={stats.successRate != null ? undefined : "no scored runs yet"}
               delay={310}
+              accent="#7ee0b0"
             />
           </div>
         )}

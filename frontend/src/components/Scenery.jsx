@@ -16,6 +16,10 @@ export default function Scenery() {
     <div className={`scenery-layer${boost?.boosted ? " boosted" : ""}${boost?.sustained ? " sustained" : ""}`} aria-hidden="true">
       <div className="scenery-image" style={{ backgroundImage: `url(${sceneryStill})` }} />
       <div className="scenery-scrim" />
+      {/* Blueprint drafting grid — the landing forge's signature texture,
+          carried into the workspace at whisper volume so marketing and
+          product read as one world. */}
+      <div className="scenery-blueprint" />
       <div className="scenery-frame" style={{ backgroundImage: `url(${OVERLAY_PNG})` }} />
       <div className="scenery-mist--a" />
       <div className="scenery-mist--b" />
