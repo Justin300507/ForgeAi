@@ -18,6 +18,7 @@ import re
 import time
 from dataclasses import dataclass
 from pathlib import Path
+from typing import Optional
 
 
 # Classes always defined inline by the injected app/routes/auth_routes.py

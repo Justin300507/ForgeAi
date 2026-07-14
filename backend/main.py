@@ -206,7 +206,6 @@ def _normalize_v15_result(result: dict) -> dict:
 def _run_job(job_id: str, req: JobRequest):
     """Runs the V14 (default) or V15 (FORGE_PIPELINE_VERSION=v15) pipeline in a background thread."""
     import os
-    from app.services.v14_orchestrator import generate_project_v14
 
     store = JOB_STORE[job_id]
     _thread_local.job_logs = store["logs"]
@@ -246,6 +245,7 @@ def _run_job(job_id: str, req: JobRequest):
             )
             result = _normalize_v15_result(result)
         else:
+            from app.services.v14_orchestrator import generate_project_v14
             result = generate_project_v14(
                 idea=req.idea,
                 provider=req.provider,
