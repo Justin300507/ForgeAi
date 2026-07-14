@@ -4,7 +4,10 @@ import { AuthProvider, useAuth } from "./AuthContext";
 import { VeilProvider } from "./components/Veil";
 import { SceneryBoostProvider } from "./components/SceneryBoost";
 import Scenery from "./components/Scenery";
-import Landing from "./pages/Landing";
+
+// Lazy: the landing carries the whole scroll-cinema stack (three.js, GSAP,
+// Lenis, framer-motion) — app pages shouldn't download any of it.
+const Landing = React.lazy(() => import("./pages/Landing"));
 import Login from "./pages/Login";
 import Register from "./pages/Register";
 import Dashboard from "./pages/Dashboard";
@@ -43,7 +46,14 @@ export default function App() {
       <AuthProvider>
         <VeilProvider>
         <Routes>
-        <Route path="/" element={<Landing />} />
+        <Route
+          path="/"
+          element={
+            <React.Suspense fallback={<div className="min-h-screen bg-[#0b0813]" />}>
+              <Landing />
+            </React.Suspense>
+          }
+        />
         <Route path="/login" element={<PublicRoute><Login /></PublicRoute>} />
         <Route path="/register" element={<PublicRoute><Register /></PublicRoute>} />
         <Route path="/dashboard" element={<PrivateRoute><Dashboard /></PrivateRoute>} />

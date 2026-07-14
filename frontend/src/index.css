@@ -709,3 +709,141 @@ body {
   .stepper-connector__fill { transition: none; }
   .log-line-in { animation: none; opacity: 1; transform: none; }
 }
+
+/* ── Landing forge journey ────────────────────────────────────────────
+   The scroll story below the train-window hero: problem → forge morph
+   (pinned, scroll-scrubbed) → Seedance reveal → pipeline → examples →
+   stats → CTA. Consumes the same token layer as everything else; the
+   only new vocabulary is the forge accent arc (set per-stage via
+   --forge-accent / --forge-glow inline from ForgeMorph.jsx). */
+
+.forge-mono {
+  font-family: ui-monospace, SFMono-Regular, "Cascadia Mono", Menlo, monospace;
+  letter-spacing: 0.14em;
+}
+
+/* Quiet section shell — generous vertical air, content column centered */
+.forge-section {
+  position: relative;
+  padding: clamp(6rem, 14vh, 10rem) 1.25rem;
+}
+
+.forge-eyebrow {
+  font-size: 0.6875rem;
+  text-transform: uppercase;
+  color: rgba(255, 255, 255, 0.42);
+}
+
+/* Ambient accent wash behind the pinned forge stage — color driven by
+   the live stage via CSS var, crossfades as the object morphs. */
+.forge-stage-bg {
+  position: absolute;
+  inset: 0;
+  background:
+    radial-gradient(60% 50% at 50% 46%, var(--forge-glow, rgba(157, 184, 255, 0.2)), transparent 72%),
+    var(--ink-bg);
+  transition: background 600ms ease;
+  pointer-events: none;
+}
+
+/* Blueprint grid layer — drifts with scroll/mouse (transform set in JS) */
+.forge-grid-layer {
+  position: absolute;
+  inset: -12%;
+  background-image:
+    linear-gradient(rgba(157, 184, 255, 0.05) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(157, 184, 255, 0.05) 1px, transparent 1px);
+  background-size: 56px 56px;
+  -webkit-mask-image: radial-gradient(70% 62% at 50% 48%, black 30%, transparent 78%);
+  mask-image: radial-gradient(70% 62% at 50% 48%, black 30%, transparent 78%);
+  pointer-events: none;
+  will-change: transform;
+}
+
+.forge-grid-layer--image {
+  background-size: cover;
+  background-position: center;
+  opacity: 0.5;
+}
+
+/* Stage progress rail (right edge of the pinned forge section) */
+.forge-rail-node {
+  width: 7px;
+  height: 7px;
+  border-radius: 9999px;
+  background: rgba(255, 255, 255, 0.16);
+  transition: background 300ms ease, box-shadow 300ms ease, transform 300ms ease;
+}
+
+.forge-rail-node.lit {
+  background: var(--forge-accent, #9db8ff);
+  box-shadow: 0 0 10px var(--forge-glow, rgba(157, 184, 255, 0.4));
+  transform: scale(1.25);
+}
+
+/* Seedance reveal frame — scale/radius driven by GSAP scrub */
+.forge-reveal-frame {
+  position: relative;
+  overflow: hidden;
+  border-radius: 24px;
+  box-shadow:
+    0 40px 120px -40px rgba(255, 138, 61, 0.25),
+    0 24px 70px -28px rgba(124, 58, 237, 0.28);
+  will-change: transform, border-radius;
+}
+
+/* Shipped-example cards: 3D tilt space */
+.forge-tilt-space {
+  perspective: 1100px;
+}
+
+.forge-tilt-card {
+  transform-style: preserve-3d;
+  will-change: transform;
+}
+
+/* Custom cursor: a small forge ember + trailing ring. Mounted only on
+   the landing route; the native cursor stays available (never hidden on
+   interactive elements' focus styles). */
+@media (pointer: fine) and (prefers-reduced-motion: no-preference) {
+  .forge-cursor-active,
+  .forge-cursor-active a,
+  .forge-cursor-active button,
+  .forge-cursor-active input {
+    cursor: none;
+  }
+}
+
+.forge-cursor-dot,
+.forge-cursor-ring {
+  position: fixed;
+  top: 0;
+  left: 0;
+  border-radius: 9999px;
+  pointer-events: none;
+  z-index: 200;
+}
+
+.forge-cursor-dot {
+  width: 6px;
+  height: 6px;
+  background: var(--forge-accent, #ffd9a8);
+  box-shadow: 0 0 10px var(--forge-glow, rgba(255, 169, 107, 0.5));
+}
+
+.forge-cursor-ring {
+  width: 30px;
+  height: 30px;
+  border: 1px solid rgba(255, 255, 255, 0.28);
+  transition: transform 180ms ease, border-color 180ms ease;
+}
+
+.forge-cursor-ring.pressing {
+  transform: scale(0.7);
+  border-color: var(--forge-accent, #ffd9a8);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .forge-stage-bg { transition: none; }
+  .forge-cursor-dot, .forge-cursor-ring { display: none; }
+}

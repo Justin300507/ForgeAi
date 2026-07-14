@@ -1,9 +1,20 @@
 import React from "react";
 import { Link } from "react-router-dom";
-import { ArrowRight } from "lucide-react";
+import { ArrowRight, ChevronDown } from "lucide-react";
 import { useAuth } from "../AuthContext";
 import { useVeil } from "../components/Veil";
 import { VIDEOS, OVERLAY_PNG, IDEA_DRAFT_KEY } from "../lib/cinematic";
+import useLenis from "../landing/useLenis";
+import CursorFX from "../landing/CursorFX";
+import ForgeMorph from "../landing/ForgeMorph";
+import ForgeStrike from "../landing/ForgeStrike";
+import {
+  ProblemSection,
+  PipelineSection,
+  ExamplesSection,
+  StatsSection,
+  CtaFooter,
+} from "../landing/Sections";
 
 const SANS = { fontFamily: "system-ui, sans-serif" };
 const DARK_HERO = "#182C41";
@@ -11,20 +22,14 @@ const DARK_HERO = "#182C41";
 // How long each ambient scene holds before crossfading to the next.
 const SCENE_HOLD_MS = 3000;
 
-export default function Landing() {
+/* The train-window hero — unchanged concept: a journey unfolding behind
+   glass while you describe the app you imagine. First screen of the page;
+   the forge story now continues beneath it. */
+function Hero({ leaving, onLeave, onForge }) {
   const { user } = useAuth();
-  const { veilNav } = useVeil();
   const [activeVideo, setActiveVideo] = React.useState(0);
-  const [leaving, setLeaving] = React.useState(false);
   const [idea, setIdea] = React.useState("");
   const sceneRef = React.useRef(null);
-
-  // Camera-forward exit: zoom through the window glass while the veil
-  // sweeps in, so leaving the landing feels like entering the landscape.
-  const leave = (to) => {
-    setLeaving(true);
-    veilNav(to);
-  };
 
   // Ambient scenes cycle on their own — no controls, just weather.
   React.useEffect(() => {
@@ -42,8 +47,7 @@ export default function Landing() {
 
   const submitIdea = (e) => {
     e.preventDefault();
-    if (idea.trim()) sessionStorage.setItem(IDEA_DRAFT_KEY, idea.trim());
-    leave(user ? "/new" : "/register");
+    onForge(idea.trim());
   };
 
   const heroDark = activeVideo === 2;
@@ -102,7 +106,7 @@ export default function Landing() {
             ForgeAI
           </Link>
           <button
-            onClick={() => leave(primaryCta.to)}
+            onClick={() => onLeave(primaryCta.to)}
             className="bg-white text-slate-900 text-sm font-medium px-5 py-2 rounded-full hover:bg-white/90 transition-colors"
             style={SANS}
           >
@@ -153,7 +157,51 @@ export default function Landing() {
             </button>
           </form>
         </div>
+
+        {/* Scroll cue — the journey continues below the window */}
+        <div
+          className="absolute bottom-6 inset-x-0 flex flex-col items-center gap-1 pointer-events-none transition-colors duration-700"
+          style={{ ...SANS, ...heroMuted }}
+        >
+          <span className="forge-mono text-[10px] uppercase">The forge awaits</span>
+          <ChevronDown size={16} aria-hidden="true" className="animate-bounce" />
+        </div>
       </div>
     </section>
+  );
+}
+
+export default function Landing() {
+  const { user } = useAuth();
+  const { veilNav } = useVeil();
+  const [leaving, setLeaving] = React.useState(false);
+  useLenis();
+
+  // Camera-forward exit: zoom through the window glass while the veil
+  // sweeps in, so leaving the landing feels like entering the landscape.
+  const leave = (to) => {
+    setLeaving(true);
+    veilNav(to);
+  };
+
+  const forgeIdea = (idea) => {
+    if (idea) sessionStorage.setItem(IDEA_DRAFT_KEY, idea);
+    leave(user ? "/new" : "/register");
+  };
+
+  return (
+    <main className="relative bg-[#0b0813]">
+      <CursorFX />
+      <Hero leaving={leaving} onLeave={leave} onForge={forgeIdea} />
+      <div className={`scene-fade ${leaving ? "leaving" : ""}`}>
+        <ProblemSection />
+        <ForgeMorph />
+        <ForgeStrike />
+        <PipelineSection />
+        <ExamplesSection />
+        <StatsSection />
+        <CtaFooter onForge={forgeIdea} />
+      </div>
+    </main>
   );
 }
