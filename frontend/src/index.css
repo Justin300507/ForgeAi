@@ -572,6 +572,18 @@ body {
   animation: live-pulse 1.8s ease-in-out infinite;
 }
 
+/* Live StatusBadge: soft breathing glow in the badge's own status color
+   (--badge-glow set inline by StatusBadge.jsx). The mission-control pulse
+   lives in the shared primitive so pages can't fork their own glow. */
+@keyframes badge-glow-pulse {
+  0%, 100% { box-shadow: 0 0 0 0 var(--badge-glow); }
+  50%      { box-shadow: 0 0 14px 1px var(--badge-glow); }
+}
+
+.badge-live {
+  animation: badge-glow-pulse 2s ease-in-out infinite;
+}
+
 .train-bob {
   animation: train-bob 3s ease-in-out infinite;
 }
@@ -591,6 +603,7 @@ body {
   .anim-fade-up, .anim-scale-in { animation: none; opacity: 1; transform: none; }
   .skeleton { animation: none; }
   .live-dot { animation: none; }
+  .badge-live { animation: none; }
   .app-shell::before, .app-shell::after { animation: none; }
   .forge-veil { display: none; }
   .stepper-node-active { animation: none; }

@@ -4,6 +4,8 @@ import { Globe, BookOpen, Github, Download, ShieldCheck, Loader2 } from "lucide-
 import { jobsAPI } from "../api";
 import NavBar from "../components/NavBar";
 import StatusBadge from "../components/StatusBadge";
+import PillButton from "../components/PillButton";
+import EmptyState from "../components/EmptyState";
 import { useSceneryBoost } from "../components/SceneryBoost";
 import { STAGES, detectStage } from "../lib/pipelineStages";
 
@@ -269,8 +271,15 @@ export default function ProjectDetail() {
   }, [job?.status]);
 
   if (notFound) return (
-    <div className="app-shell flex items-center justify-center text-gray-500">
-      <div className="text-center"><p className="mb-4">Job not found</p><Link to="/dashboard" className="text-violet-400">Back to dashboard</Link></div>
+    <div className="app-shell">
+      <NavBar />
+      <div className="max-w-2xl mx-auto px-6 py-16">
+        <EmptyState title="This forge is cold" sub="The project doesn't exist or was deleted.">
+          <Link to="/dashboard" className="text-violet-300 text-sm underline underline-offset-4 decoration-violet-300/40 hover:decoration-violet-300">
+            Back to dashboard
+          </Link>
+        </EmptyState>
+      </div>
     </div>
   );
   if (!job) return (
@@ -350,10 +359,9 @@ export default function ProjectDetail() {
             )}
             {isActive && (
               <div className="mt-4 pt-4 border-t border-white/5">
-                <button onClick={async () => { await jobsAPI.cancel(id); fetchJob(); }}
-                  className="text-xs text-red-400 hover:text-red-300 border border-red-500/20 px-3 py-1.5 rounded-lg transition-colors">
+                <PillButton variant="danger" size="xs" onClick={async () => { await jobsAPI.cancel(id); fetchJob(); }}>
                   Cancel generation
-                </button>
+                </PillButton>
               </div>
             )}
           </div>

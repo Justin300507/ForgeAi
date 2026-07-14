@@ -2,6 +2,7 @@ import React, { useState, useEffect, useCallback } from "react";
 import { Github, Cloud, Train, Check } from "lucide-react";
 import NavBar from "../components/NavBar";
 import GlassInput from "../components/GlassInput";
+import PillButton from "../components/PillButton";
 import { credentialsAPI } from "../api";
 
 const SERVICES = [
@@ -116,12 +117,9 @@ function ServiceCard({ service, status, credentials, onSave, onDisconnect }) {
         </div>
 
         {connected ? (
-          <button
-            onClick={handleDisconnect}
-            className="text-xs text-gray-500 hover:text-red-400 transition-colors shrink-0"
-          >
+          <PillButton variant="danger" size="xs" onClick={handleDisconnect} className="shrink-0">
             Disconnect
-          </button>
+          </PillButton>
         ) : (
           <button
             onClick={() => setExpanded((v) => !v)}

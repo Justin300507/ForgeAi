@@ -169,7 +169,10 @@ export default function Observatory() {
         </div>
 
         {error && (
-          <div className="glass-panel rounded-2xl px-5 py-4 text-sm text-red-400 mb-8">{error}</div>
+          <div className="glass-panel rounded-xl px-4 py-3 mb-8 flex items-center gap-2" style={{ borderColor: "rgba(250,204,21,0.25)" }}>
+            <AlertTriangle size={15} className="text-amber-400 shrink-0" aria-hidden="true" />
+            <p className="text-sm text-amber-200/90">{error}</p>
+          </div>
         )}
 
         {!data && !error && (
@@ -203,10 +206,18 @@ export default function Observatory() {
               />
               <div className="anim-fade-up glass-panel rounded-2xl px-5 py-4" style={{ "--d": "120ms" }}>
                 <p className="text-xs text-gray-500 uppercase tracking-wide">Canary Health</p>
-                <div className="flex items-center gap-2 mt-1.5">
-                  {data.cockpit.canary_health === "Healthy"
-                    ? <ShieldCheck size={20} style={{ color: HEALTH_COLOR[data.cockpit.canary_health] }} aria-hidden="true" />
-                    : <AlertTriangle size={20} style={{ color: HEALTH_COLOR[data.cockpit.canary_health] || HEALTH_COLOR.Unknown }} aria-hidden="true" />}
+                <div className="flex items-center gap-2.5 mt-1.5">
+                  {/* Mission-control heartbeat: the icon well breathes in the
+                      current health color (shared badge-glow-pulse keyframe,
+                      static under prefers-reduced-motion). */}
+                  <span
+                    className="badge-live w-8 h-8 rounded-full liquid-glass flex items-center justify-center shrink-0"
+                    style={{ "--badge-glow": `${HEALTH_COLOR[data.cockpit.canary_health] || HEALTH_COLOR.Unknown}55` }}
+                  >
+                    {data.cockpit.canary_health === "Healthy"
+                      ? <ShieldCheck size={16} style={{ color: HEALTH_COLOR[data.cockpit.canary_health] }} aria-hidden="true" />
+                      : <AlertTriangle size={16} style={{ color: HEALTH_COLOR[data.cockpit.canary_health] || HEALTH_COLOR.Unknown }} aria-hidden="true" />}
+                  </span>
                   <p className="hero-serif text-2xl text-white leading-none">{data.cockpit.canary_health}</p>
                 </div>
                 <p className="text-xs text-gray-600 mt-1 truncate">{data.cockpit.canary_label}</p>
