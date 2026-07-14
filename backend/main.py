@@ -889,9 +889,13 @@ def cost_report():
     return {"history": load_cost_history()[-10:]}
 
 
-@app.get("/observatory")
+@app.get("/observatory/data")
 def observatory():
     """
+    Read-only reliability cockpit data endpoint. Lives under /observatory/data
+    (not /observatory) so a hard load / refresh of the SPA's /observatory page
+    falls through to the index.html catch-all instead of returning this JSON.
+
     Read-only reliability cockpit. Pure aggregation over telemetry that
     already exists -- generation_log.jsonl, canary_history.json,
     experiments.md -- computed by app/memory/reliability_metrics.py (the

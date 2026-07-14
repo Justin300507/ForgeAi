@@ -1,6 +1,6 @@
 import React from "react";
 import { Link } from "react-router-dom";
-import { ArrowRight, ChevronDown } from "lucide-react";
+import { ChevronDown } from "lucide-react";
 import { useAuth } from "../AuthContext";
 import { useVeil } from "../components/Veil";
 import { VIDEOS, OVERLAY_PNG, IDEA_DRAFT_KEY } from "../lib/cinematic";
@@ -25,10 +25,9 @@ const SCENE_HOLD_MS = 3000;
 /* The train-window hero — unchanged concept: a journey unfolding behind
    glass while you describe the app you imagine. First screen of the page;
    the forge story now continues beneath it. */
-function Hero({ leaving, onLeave, onForge }) {
+function Hero({ leaving, onLeave }) {
   const { user } = useAuth();
   const [activeVideo, setActiveVideo] = React.useState(0);
-  const [idea, setIdea] = React.useState("");
   const sceneRef = React.useRef(null);
 
   // Ambient scenes cycle on their own — no controls, just weather.
@@ -44,11 +43,6 @@ function Hero({ leaving, onLeave, onForge }) {
     );
     return () => clearInterval(t);
   }, []);
-
-  const submitIdea = (e) => {
-    e.preventDefault();
-    onForge(idea.trim());
-  };
 
   const heroDark = activeVideo === 2;
   const heroColor = { color: heroDark ? DARK_HERO : "#ffffff" };
@@ -134,28 +128,17 @@ function Hero({ leaving, onLeave, onForge }) {
             full-stack application while you watch.
           </p>
 
-          <form
-            onSubmit={submitIdea}
-            className="anim-fade-up liquid-glass rounded-full flex items-center gap-2 p-1.5 pl-5 mt-8 w-full max-w-[340px] sm:max-w-md"
-            style={{ ...SANS, "--d": "300ms" }}
+          {/* No form up front — the journey below earns the ask; the
+              idea input lives at the end of the scroll (CtaFooter). */}
+          <button
+            onClick={() =>
+              document.getElementById("forge-story")?.scrollIntoView({ behavior: "smooth" })
+            }
+            className="anim-fade-up liquid-glass rounded-full px-6 py-2.5 mt-8 text-sm transition-colors duration-700"
+            style={{ ...SANS, ...heroColor, "--d": "300ms" }}
           >
-            <input
-              type="text"
-              value={idea}
-              onChange={(e) => setIdea(e.target.value)}
-              placeholder="Describe the app you imagine…"
-              aria-label="Describe the app you want to build"
-              className="flex-1 min-w-0 bg-transparent outline-none text-sm placeholder-current transition-colors duration-700"
-              style={heroColor}
-            />
-            <button
-              type="submit"
-              className="bg-white text-slate-900 text-sm font-medium pl-4 pr-3 py-2 rounded-full whitespace-nowrap hover:bg-white/90 transition-colors flex items-center gap-1"
-            >
-              Forge It
-              <ArrowRight size={14} aria-hidden="true" />
-            </button>
-          </form>
+            See how it's forged
+          </button>
         </div>
 
         {/* Scroll cue — the journey continues below the window */}
@@ -192,8 +175,8 @@ export default function Landing() {
   return (
     <main className="relative bg-[#0b0813]">
       <CursorFX />
-      <Hero leaving={leaving} onLeave={leave} onForge={forgeIdea} />
-      <div className={`scene-fade ${leaving ? "leaving" : ""}`}>
+      <Hero leaving={leaving} onLeave={leave} />
+      <div id="forge-story" className={`scene-fade ${leaving ? "leaving" : ""}`}>
         <ProblemSection />
         <ForgeMorph />
         <ForgeStrike />

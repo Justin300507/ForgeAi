@@ -38,7 +38,7 @@ export const credentialsAPI = {
 };
 
 export const observatoryAPI = {
-  get: () => api.get("/observatory"),
+  get: () => api.get("/observatory/data"),
 };
 
 export default api;
