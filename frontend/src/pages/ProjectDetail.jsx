@@ -3,6 +3,7 @@ import { useParams, Link } from "react-router-dom";
 import { Globe, BookOpen, Github, Download, ShieldCheck, Loader2 } from "lucide-react";
 import { jobsAPI } from "../api";
 import NavBar from "../components/NavBar";
+import StatusBadge from "../components/StatusBadge";
 import { useSceneryBoost } from "../components/SceneryBoost";
 import { STAGES, detectStage } from "../lib/pipelineStages";
 
@@ -307,14 +308,7 @@ export default function ProjectDetail() {
             <div className="flex items-start justify-between gap-4">
               <div className="flex-1 min-w-0">
                 <div className="flex items-center gap-2 mb-3 flex-wrap">
-                  <span className="flex items-center gap-1.5 text-xs px-2.5 py-1 rounded-full font-medium" style={{
-                    background: isActive ? "rgba(99,102,241,0.12)" : isDone ? "rgba(34,197,94,0.12)" : "rgba(239,68,68,0.12)",
-                    color:      isActive ? "#818cf8" : isDone ? "#4ade80" : "#f87171",
-                    border:     `1px solid ${isActive ? "rgba(99,102,241,0.25)" : isDone ? "rgba(34,197,94,0.25)" : "rgba(239,68,68,0.25)"}`
-                  }}>
-                    {isActive && <span className="live-dot bg-indigo-400" style={{width:6, height:6}} aria-hidden="true" />}
-                    {job.status}
-                  </span>
+                  <StatusBadge status={job.status} live={isActive} />
                   <span className="text-xs text-gray-600">{job.provider}</span>
                 </div>
                 <p className="hero-serif text-xl sm:text-2xl text-white leading-snug">{job.idea}</p>

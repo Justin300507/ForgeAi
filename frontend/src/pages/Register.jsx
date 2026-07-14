@@ -3,6 +3,8 @@ import { Link, useNavigate } from "react-router-dom";
 import { Eye, EyeOff, Loader2 } from "lucide-react";
 import { useAuth } from "../AuthContext";
 import AuthScene from "../components/AuthScene";
+import GlassInput from "../components/GlassInput";
+import PillButton from "../components/PillButton";
 import { useVeil } from "../components/Veil";
 import { IDEA_DRAFT_KEY } from "../lib/cinematic";
 
@@ -55,7 +57,7 @@ export default function Register() {
         <form onSubmit={submit} className="space-y-4">
           <div>
             <label htmlFor="register-email" className="block text-sm text-white/70 mb-1.5">Email</label>
-            <input
+            <GlassInput
               id="register-email"
               type="email"
               autoComplete="email"
@@ -63,13 +65,12 @@ export default function Register() {
               onChange={(e) => setEmail(e.target.value)}
               required
               placeholder="you@example.com"
-              className="w-full rounded-xl px-4 py-3 text-sm text-white placeholder:text-white/35 bg-black/30 border border-white/15 focus:border-violet-300/70 focus:outline-none transition-colors"
             />
           </div>
           <div>
             <label htmlFor="register-password" className="block text-sm text-white/70 mb-1.5">Password</label>
             <div className="relative">
-              <input
+              <GlassInput
                 id="register-password"
                 type={showPw ? "text" : "password"}
                 autoComplete="new-password"
@@ -78,7 +79,7 @@ export default function Register() {
                 required
                 minLength={6}
                 placeholder="Min 6 characters"
-                className="w-full rounded-xl pl-4 pr-11 py-3 text-sm text-white placeholder:text-white/35 bg-black/30 border border-white/15 focus:border-violet-300/70 focus:outline-none transition-colors"
+                style={{ paddingRight: "2.75rem" }}
               />
               <button
                 type="button"
@@ -90,14 +91,10 @@ export default function Register() {
               </button>
             </div>
           </div>
-          <button
-            type="submit"
-            disabled={loading}
-            className="w-full flex items-center justify-center gap-2 font-medium bg-white text-slate-900 py-3 rounded-full text-sm hover:bg-white/90 transition-colors disabled:opacity-50"
-          >
+          <PillButton type="submit" size="lg" disabled={loading} className="w-full">
             {loading && <Loader2 size={15} className="animate-spin" aria-hidden="true" />}
             {loading ? "Creating account…" : "Create account"}
-          </button>
+          </PillButton>
         </form>
         <p className="text-sm text-white/50 text-center mt-6">
           Already have an account?{" "}

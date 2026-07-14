@@ -3,6 +3,8 @@ import { Link, useNavigate } from "react-router-dom";
 import { Eye, EyeOff, Loader2 } from "lucide-react";
 import { useAuth } from "../AuthContext";
 import AuthScene from "../components/AuthScene";
+import GlassInput from "../components/GlassInput";
+import PillButton from "../components/PillButton";
 import { useVeil } from "../components/Veil";
 
 const SANS = { fontFamily: "system-ui, sans-serif" };
@@ -49,7 +51,7 @@ export default function Login() {
         <form onSubmit={submit} className="space-y-4">
           <div>
             <label htmlFor="login-email" className="block text-sm text-white/70 mb-1.5">Email</label>
-            <input
+            <GlassInput
               id="login-email"
               type="email"
               autoComplete="email"
@@ -57,13 +59,12 @@ export default function Login() {
               onChange={(e) => setEmail(e.target.value)}
               required
               placeholder="you@example.com"
-              className="w-full rounded-xl px-4 py-3 text-sm text-white placeholder:text-white/35 bg-black/30 border border-white/15 focus:border-violet-300/70 focus:outline-none transition-colors"
             />
           </div>
           <div>
             <label htmlFor="login-password" className="block text-sm text-white/70 mb-1.5">Password</label>
             <div className="relative">
-              <input
+              <GlassInput
                 id="login-password"
                 type={showPw ? "text" : "password"}
                 autoComplete="current-password"
@@ -71,7 +72,7 @@ export default function Login() {
                 onChange={(e) => setPassword(e.target.value)}
                 required
                 placeholder="••••••••"
-                className="w-full rounded-xl pl-4 pr-11 py-3 text-sm text-white placeholder:text-white/35 bg-black/30 border border-white/15 focus:border-violet-300/70 focus:outline-none transition-colors"
+                style={{ paddingRight: "2.75rem" }}
               />
               <button
                 type="button"
@@ -83,14 +84,10 @@ export default function Login() {
               </button>
             </div>
           </div>
-          <button
-            type="submit"
-            disabled={loading}
-            className="w-full flex items-center justify-center gap-2 font-medium bg-white text-slate-900 py-3 rounded-full text-sm hover:bg-white/90 transition-colors disabled:opacity-50"
-          >
+          <PillButton type="submit" size="lg" disabled={loading} className="w-full">
             {loading && <Loader2 size={15} className="animate-spin" aria-hidden="true" />}
             {loading ? "Signing in…" : "Sign in"}
-          </button>
+          </PillButton>
         </form>
         <p className="text-sm text-white/50 text-center mt-6">
           No account?{" "}

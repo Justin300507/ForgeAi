@@ -3,19 +3,12 @@ import { useNavigate } from "react-router-dom";
 import { jobsAPI } from "../api";
 import NavBar from "../components/NavBar";
 import StatCard from "../components/StatCard";
+import StatusBadge from "../components/StatusBadge";
+import EmptyState from "../components/EmptyState";
 import { useAuth } from "../AuthContext";
 import { useVeil } from "../components/Veil";
 import { IDEA_DRAFT_KEY } from "../lib/cinematic";
 import { Trash2, Wrench, Zap, ArrowRight, Boxes, Rocket, Activity, ShieldCheck, AlertTriangle } from "lucide-react";
-
-// Colored pill badge per status -- mirrors the status-pill visual
-// language already used in ProjectDetail.jsx so the two pages agree.
-const STATUS_BADGE = {
-  pending:   { bg: "rgba(250,204,21,0.12)",  color: "#facc15", border: "rgba(250,204,21,0.25)" },
-  running:   { bg: "rgba(99,102,241,0.12)",  color: "#818cf8", border: "rgba(99,102,241,0.25)" },
-  error:     { bg: "rgba(239,68,68,0.12)",   color: "#f87171", border: "rgba(239,68,68,0.25)" },
-  cancelled: { bg: "rgba(156,163,175,0.12)", color: "#9ca3af", border: "rgba(156,163,175,0.25)" },
-};
 
 const TEMPLATES = [
   { label: "SaaS", idea: "A multi-tenant SaaS starter with team workspaces, billing, and role-based permissions" },
@@ -230,13 +223,11 @@ export default function Dashboard() {
             ))}
           </div>
         ) : jobs.length === 0 ? (
-          <div className="anim-fade-up text-center py-20 glass-panel rounded-2xl border-dashed">
-            <div className="mx-auto w-14 h-14 rounded-full liquid-glass flex items-center justify-center mb-5">
-              <Zap size={22} className="text-violet-300" aria-hidden="true" />
-            </div>
-            <p className="hero-serif text-xl text-white mb-1">The anvil is quiet</p>
-            <p className="text-gray-600 text-sm mb-6">Describe an idea above — your forged apps will live here</p>
-          </div>
+          <EmptyState
+            icon={Zap}
+            title="The anvil is quiet"
+            sub="Describe an idea above — your forged apps will live here"
+          />
         ) : (
           <div className="space-y-2">
             {jobs.map((job, i) => {
@@ -260,15 +251,7 @@ export default function Dashboard() {
                       ✓ {job.forge_score} · {grade}
                     </span>
                   ) : (
-                    <span className="flex items-center justify-center gap-1.5 text-xs font-medium px-2.5 py-1 rounded-full shrink-0 w-24"
-                      style={{
-                        background: (STATUS_BADGE[job.status] || STATUS_BADGE.error).bg,
-                        color: (STATUS_BADGE[job.status] || STATUS_BADGE.error).color,
-                        border: `1px solid ${(STATUS_BADGE[job.status] || STATUS_BADGE.error).border}`,
-                      }}>
-                      {isActive && <span className="live-dot" style={{width:5, height:5, background:"currentColor", borderRadius:9999}} aria-hidden="true" />}
-                      {job.status}
-                    </span>
+                    <StatusBadge status={job.status} live={isActive} className="shrink-0 w-24" />
                   )}
                   <p className="flex-1 text-sm text-gray-300 group-hover:text-white transition-colors line-clamp-1">{job.idea}</p>
                   <span className="text-xs text-gray-600 shrink-0">{timeAgo(job.created_at)}</span>

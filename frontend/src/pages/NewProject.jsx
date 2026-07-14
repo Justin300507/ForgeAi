@@ -14,14 +14,14 @@ const EXAMPLES = [
   "A CRM with contacts, deals, and activity timeline",
 ];
 
-// Cerebras is intentionally absent: the account returns 402 Payment Required
-// and the backend benches it, so offering it here is a dead-end choice.
-// Claude/OpenAI aren't wired into the backend's provider chain yet -- no
-// icon-only teaser entries here until they're actually selectable.
+// Cerebras is the primary provider (fresh key, 2026-07-12; router made it
+// first-leg 2026-07-14). Gemini is intentionally absent: its prepayment
+// credits are depleted (permanent 429), so offering it is a dead-end
+// choice -- the backend would just fall back to this same chain anyway.
 const MODELS = [
-  { id:"auto",   label:"Auto",   sub:"Best available" },
-  { id:"gemini", label:"Gemini", sub:"Google AI",  icon:"⚡" },
-  { id:"groq",   label:"Groq",   sub:"Ultra fast", icon:"🧠" },
+  { id:"auto",     label:"Auto",     sub:"Best available" },
+  { id:"cerebras", label:"Cerebras", sub:"Primary — fast", icon:"⚡" },
+  { id:"groq",     label:"Groq",     sub:"Ultra fast", icon:"🧠" },
 ];
 
 const DEPLOYMENTS = [

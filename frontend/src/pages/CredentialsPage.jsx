@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useCallback } from "react";
 import { Github, Cloud, Train, Check } from "lucide-react";
 import NavBar from "../components/NavBar";
+import GlassInput from "../components/GlassInput";
 import { credentialsAPI } from "../api";
 
 const SERVICES = [
@@ -92,7 +93,7 @@ function ServiceCard({ service, status, credentials, onSave, onDisconnect }) {
 
   return (
     <div
-      className="glass-panel hover-lift rounded-xl p-5"
+      className="glass-panel rounded-xl p-5"
       style={{
         borderColor: connected ? "rgba(52,211,153,0.25)" : undefined,
       }}
@@ -156,14 +157,12 @@ function ServiceCard({ service, status, credentials, onSave, onDisconnect }) {
                 {field.label}
               </label>
               <p className="text-xs text-gray-600 mb-1.5">{field.hint}</p>
-              <input
+              <GlassInput
                 type="password"
                 placeholder={field.placeholder}
                 defaultValue={credentials?.[field.key] || ""}
                 onChange={(e) => set(field.key, e.target.value)}
                 autoComplete="off"
-                className="w-full rounded-lg px-3 py-2 text-sm text-white placeholder:text-gray-700 border border-white/10 focus:border-violet-500/50 focus:outline-none transition-colors"
-                style={{ background: "#090912" }}
               />
             </div>
           ))}
@@ -176,7 +175,7 @@ function ServiceCard({ service, status, credentials, onSave, onDisconnect }) {
             onClick={handleSave}
             disabled={saving}
             className="w-full py-2 rounded-lg text-sm font-semibold text-white transition-all disabled:opacity-40"
-            style={{ background: "#7c3aed" }}
+            style={{ background: "var(--brand)" }}
           >
             {saving ? "Saving…" : "Save & Connect"}
           </button>
