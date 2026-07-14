@@ -92,12 +92,22 @@ def judge_screenshot(
 ) -> JudgmentResult:
     """
     Call a vision LLM to interpret screenshot + error context.
-    Falls back to text-only if no screenshot or vision model unavailable.
-    """
-    has_screenshot = bool(screenshot_b64 and len(screenshot_b64) > 100)
 
-    # Skip if there's nothing to judge
-    if not console_errors and not network_failures and not workflow_failures and not has_screenshot:
+    If vision is unavailable (no key, dead quota, transient error) and there
+    is also no error-context signal, this returns "info" rather than falling
+    back to a blind text completion. A text model asked to judge "the
+    attached screenshot" with zero image data and zero console/network/
+    workflow errors has nothing to reason from -- it can only pattern-match
+    on "AI-generated apps often have a blank-screen bug" and hallucinate a
+    plausible-sounding CRITICAL verdict. That's not hypothetical: it's
+    exactly what produced a false CRITICAL "blank screen" finding (confidence
+    0.84) that hard-blocked deployment of an otherwise 94.1/A run with 0
+    console errors, 0 network failures, and an 11/11-passing CRUD journey.
+    """
+    screenshot_provided = bool(screenshot_b64 and len(screenshot_b64) > 100)
+    has_error_signal = bool(console_errors or network_failures or workflow_failures)
+
+    if not has_error_signal and not screenshot_provided:
         return JudgmentResult(
             assessment="No errors or screenshot to analyze",
             severity="info",
@@ -105,21 +115,44 @@ def judge_screenshot(
             confidence=1.0,
         )
 
-    prompt = _build_vision_prompt(
-        console_errors, network_failures, workflow_failures, app_idea, has_screenshot
-    )
-
-    # Try to call with screenshot attached if we have one
-    try:
-        raw = _call_llm_with_optional_image(prompt, screenshot_b64 if has_screenshot else None, provider)
-    except Exception as exc:
-        return JudgmentResult(
-            assessment=f"LLM judge unavailable: {exc}",
-            severity="info",
-            fix_hint="",
-            confidence=0.0,
-            model_used="none",
+    raw: Optional[str] = None
+    image_analyzed = False
+    if screenshot_provided:
+        vision_prompt = _build_vision_prompt(
+            console_errors, network_failures, workflow_failures, app_idea, has_screenshot=True
         )
+        try:
+            raw = _call_vision(vision_prompt, screenshot_b64)
+            image_analyzed = True
+        except Exception:
+            raw = None
+
+    if raw is None:
+        if not has_error_signal:
+            # No image was actually analyzed and there's no other signal --
+            # a blind guess here is worse than no verdict at all.
+            return JudgmentResult(
+                assessment=("Screenshot could not be analyzed (no vision model available) and no "
+                            "console/network/workflow errors were detected -- nothing to judge."),
+                severity="info",
+                fix_hint="",
+                confidence=0.5,
+                screenshot_available=False,
+            )
+        text_prompt = _build_vision_prompt(
+            console_errors, network_failures, workflow_failures, app_idea, has_screenshot=False
+        )
+        try:
+            from app.providers.ai_provider import generate_content
+            raw = generate_content(text_prompt, provider=provider, max_tokens=1000, stage="llm_judge")
+        except Exception as exc:
+            return JudgmentResult(
+                assessment=f"LLM judge unavailable: {exc}",
+                severity="info",
+                fix_hint="",
+                confidence=0.0,
+                model_used="none",
+            )
 
     # Parse response
     try:
@@ -130,7 +163,7 @@ def judge_screenshot(
             severity=parsed.get("severity", "medium"),
             fix_hint=parsed.get("fix_hint", ""),
             confidence=float(parsed.get("confidence", 0.7)),
-            screenshot_available=has_screenshot,
+            screenshot_available=image_analyzed,
             raw_output=raw[:500],
         )
     except Exception:
@@ -141,37 +174,31 @@ def judge_screenshot(
             severity="medium",
             fix_hint="",
             confidence=0.4,
-            screenshot_available=has_screenshot,
+            screenshot_available=image_analyzed,
             raw_output=raw[:200],
         )
 
 
-def _call_llm_with_optional_image(
-    prompt: str,
-    image_b64: Optional[str],
-    provider: str,
-) -> str:
+def _call_vision(prompt: str, image_b64: str) -> str:
     """
-    Call an LLM with an optional image attachment.
-    Tries Gemini first (best vision support), then OpenRouter, then text-only.
+    Call a vision-capable LLM with the image actually attached.
+    Tries Gemini first (best vision support), then OpenRouter. Raises if
+    neither is available/working -- callers must NOT silently degrade to a
+    text-only call using a prompt that claims an image was attached.
     """
-    # Try Gemini vision (best image support)
-    if image_b64 and _has_api_key("GEMINI_API_KEY"):
+    if _has_api_key("GEMINI_API_KEY"):
         try:
             return _call_gemini_vision(prompt, image_b64)
         except Exception:
             pass
 
-    # Try OpenRouter vision (many multimodal models)
-    if image_b64 and _has_api_key("OPENROUTER_API_KEY"):
+    if _has_api_key("OPENROUTER_API_KEY"):
         try:
             return _call_openrouter_vision(prompt, image_b64)
         except Exception:
             pass
 
-    # Fallback: text-only via existing provider system
-    from app.providers.ai_provider import generate_content
-    return generate_content(prompt, provider=provider, max_tokens=1000, stage="llm_judge")
+    raise RuntimeError("no vision-capable provider available")
 
 
 def _has_api_key(key: str) -> bool:

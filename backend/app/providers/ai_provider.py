@@ -29,7 +29,18 @@ def _is_payment_required(exc: Exception) -> bool:
     if getattr(exc, "status_code", None) == 402:
         return True
     msg = str(exc).lower()
-    return "402" in msg and ("payment" in msg or "quota" in msg or "billing" in msg)
+    if "402" in msg and ("payment" in msg or "quota" in msg or "billing" in msg):
+        return True
+    # Gemini reports a fully-depleted prepayment balance as HTTP 429
+    # RESOURCE_EXHAUSTED, not 402 -- indistinguishable from a transient
+    # rate limit by status code alone. Without this, every call retries it
+    # 3x with a 5s backoff (auto_chain) before falling through, on an
+    # account that literally cannot succeed until billing is fixed. Match
+    # on the specific depleted-balance wording rather than "429" alone, so
+    # an actual transient rate limit still gets its normal retries.
+    if "resource_exhausted" in msg and ("credits are depleted" in msg or "prepayment" in msg):
+        return True
+    return False
 
 
 def _note_provider_result(provider_name: str, exc: Exception) -> None:

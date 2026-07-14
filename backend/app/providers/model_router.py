@@ -104,52 +104,56 @@ _SIGNALS: dict[str, int] = {
 }
 
 # Stage-specific model preferences (stage → complexity_tier → provider)
-# Gemini is the primary (user choice); its per-token cost is offset by the
-# global response cache in ai_provider.generate_content. OpenRouter is out
-# of credits (routing to it guarantees a failed call before the fallback
-# kicks in) — its former slots go to Cerebras (free tier, gpt-oss-120b).
+# Cerebras is primary as of 2026-07-14: routing every stage to "gemini" here
+# meant every single LLM call in the pipeline hit Gemini first even though
+# its prepayment credits are fully depleted (a permanent 429
+# RESOURCE_EXHAUSTED, not a transient rate limit) -- each call wasted a
+# failed round-trip before ai_provider's auto-chain fallback ever kicked in
+# and reached Cerebras. Cerebras is on its own separate quota (see
+# ai_provider._auto_chain's docstring) and is confirmed working, so routing
+# here directly rather than through a dead-then-fallback hop.
 _STAGE_ROUTES: dict[str, dict[str, str]] = {
     "planning": {
-        "low":        "gemini",
-        "medium":     "gemini",
-        "high":       "gemini",
-        "enterprise": "gemini",
+        "low":        "cerebras",
+        "medium":     "cerebras",
+        "high":       "cerebras",
+        "enterprise": "cerebras",
     },
     "architecture": {
-        "low":        "gemini",
-        "medium":     "gemini",
-        "high":       "gemini",
-        "enterprise": "gemini",
+        "low":        "cerebras",
+        "medium":     "cerebras",
+        "high":       "cerebras",
+        "enterprise": "cerebras",
     },
     "backend": {
-        "low":        "gemini",
-        "medium":     "gemini",
-        "high":       "gemini",
-        "enterprise": "gemini",
+        "low":        "cerebras",
+        "medium":     "cerebras",
+        "high":       "cerebras",
+        "enterprise": "cerebras",
     },
     "frontend": {
-        "low":        "gemini",
-        "medium":     "gemini",
-        "high":       "gemini",
-        "enterprise": "gemini",
+        "low":        "cerebras",
+        "medium":     "cerebras",
+        "high":       "cerebras",
+        "enterprise": "cerebras",
     },
     "fix_simple": {
-        "low":        "gemini",     # import errors, syntax: cheap model enough
-        "medium":     "gemini",
-        "high":       "gemini",
-        "enterprise": "gemini",
+        "low":        "cerebras",     # import errors, syntax: cheap model enough
+        "medium":     "cerebras",
+        "high":       "cerebras",
+        "enterprise": "cerebras",
     },
     "fix_complex": {
-        "low":        "gemini",     # logic bugs, auth, DB: need more capability
-        "medium":     "gemini",
-        "high":       "gemini",
-        "enterprise": "gemini",
+        "low":        "cerebras",     # logic bugs, auth, DB: need more capability
+        "medium":     "cerebras",
+        "high":       "cerebras",
+        "enterprise": "cerebras",
     },
     "fix_nuclear": {
-        "low":        "gemini",     # full regen
-        "medium":     "gemini",
-        "high":       "gemini",
-        "enterprise": "gemini",
+        "low":        "cerebras",     # full regen
+        "medium":     "cerebras",
+        "high":       "cerebras",
+        "enterprise": "cerebras",
     },
 }
 
