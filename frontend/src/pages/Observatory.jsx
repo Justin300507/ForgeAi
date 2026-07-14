@@ -1,8 +1,9 @@
 import React, { useEffect, useState } from "react";
 import NavBar from "../components/NavBar";
+import StatCard from "../components/StatCard";
 import { observatoryAPI } from "../api";
 import {
-  TrendingUp, TrendingDown, Minus, ShieldCheck, AlertTriangle,
+  ShieldCheck, AlertTriangle, TrendingUp, TrendingDown, Minus,
   Activity, FlaskConical, Rocket,
 } from "lucide-react";
 
@@ -12,32 +13,6 @@ const HEALTH_COLOR = {
   Unhealthy: "#f87171",
   Unknown: "#6b7280",
 };
-
-function StatCard({ label, value, sub, trend, delay }) {
-  return (
-    <div className="anim-fade-up glass-panel rounded-2xl px-5 py-4" style={{ "--d": `${delay}ms` }}>
-      <p className="text-xs text-gray-500 uppercase tracking-wide">{label}</p>
-      <div className="flex items-end gap-2 mt-1.5">
-        <p className="hero-serif text-3xl text-white leading-none">{value}</p>
-        {trend != null && trend !== 0 && (
-          <span
-            className="flex items-center gap-0.5 text-xs font-medium mb-0.5"
-            style={{ color: trend > 0 ? "#4ade80" : "#f87171" }}
-          >
-            {trend > 0 ? <TrendingUp size={13} aria-hidden="true" /> : <TrendingDown size={13} aria-hidden="true" />}
-            {Math.abs(trend)}
-          </span>
-        )}
-        {trend === 0 && (
-          <span className="flex items-center gap-0.5 text-xs font-medium mb-0.5 text-gray-600">
-            <Minus size={13} aria-hidden="true" />
-          </span>
-        )}
-      </div>
-      {sub && <p className="text-xs text-gray-600 mt-1">{sub}</p>}
-    </div>
-  );
-}
 
 function TrendChart({ points }) {
   const [hover, setHover] = useState(null);

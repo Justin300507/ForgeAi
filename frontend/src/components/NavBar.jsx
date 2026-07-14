@@ -6,8 +6,20 @@ import { useVeil } from "./Veil";
 
 const linkCls = ({ isActive }) =>
   isActive
-    ? "text-sm text-white bg-white/10 px-3.5 py-1.5 rounded-full transition-colors"
-    : "text-sm text-white/60 hover:text-white px-3.5 py-1.5 rounded-full transition-colors";
+    ? "text-sm text-white font-medium px-3.5 py-1.5 rounded-full transition-all duration-300"
+    : "text-sm text-white/60 hover:text-white px-3.5 py-1.5 rounded-full transition-all duration-300";
+
+// Active nav pill uses the brand accent gradient (same violet -> sunset
+// pink pairing as .stat-value and the aurora glow) instead of a flat
+// white/10 color swap, so "where you are" reads as part of the same
+// system as everything else.
+const linkStyle = ({ isActive }) =>
+  isActive
+    ? {
+        background: "linear-gradient(135deg, rgba(124,58,237,0.55), rgba(217,119,146,0.45))",
+        boxShadow: "inset 0 1px 1px rgba(255,255,255,0.12), 0 4px 18px -6px rgba(124,58,237,0.5)",
+      }
+    : {};
 
 export default function NavBar() {
   const { logout } = useAuth();
@@ -40,15 +52,15 @@ export default function NavBar() {
 
       <div className="flex items-center gap-2 sm:gap-3">
         <div className="hidden sm:flex items-center gap-0.5 liquid-glass rounded-full px-1.5 py-1">
-          <NavLink to="/dashboard" className={linkCls}>Dashboard</NavLink>
-          <NavLink to="/observatory" className={linkCls}>Observatory</NavLink>
-          <NavLink to="/settings" className={linkCls}>Deploy Keys</NavLink>
+          <NavLink to="/dashboard" className={linkCls} style={linkStyle}>Dashboard</NavLink>
+          <NavLink to="/observatory" className={linkCls} style={linkStyle}>Observatory</NavLink>
+          <NavLink to="/settings" className={linkCls} style={linkStyle}>Deploy Keys</NavLink>
         </div>
         {/* Mobile: plain links, no pill */}
         <div className="flex sm:hidden items-center gap-1">
-          <NavLink to="/dashboard" className={linkCls}>Dashboard</NavLink>
-          <NavLink to="/observatory" className={linkCls}>Observatory</NavLink>
-          <NavLink to="/settings" className={linkCls}>Keys</NavLink>
+          <NavLink to="/dashboard" className={linkCls} style={linkStyle}>Dashboard</NavLink>
+          <NavLink to="/observatory" className={linkCls} style={linkStyle}>Observatory</NavLink>
+          <NavLink to="/settings" className={linkCls} style={linkStyle}>Keys</NavLink>
         </div>
 
         <button

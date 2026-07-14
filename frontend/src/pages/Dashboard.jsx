@@ -1,11 +1,12 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { jobsAPI } from "../api";
 import NavBar from "../components/NavBar";
+import StatCard from "../components/StatCard";
 import { useAuth } from "../AuthContext";
 import { useVeil } from "../components/Veil";
 import { IDEA_DRAFT_KEY } from "../lib/cinematic";
-import { Trash2, Wrench, Zap, ArrowRight } from "lucide-react";
+import { Trash2, Wrench, Zap, ArrowRight, Boxes, Rocket, Activity, ShieldCheck, AlertTriangle } from "lucide-react";
 
 // Colored pill badge per status -- mirrors the status-pill visual
 // language already used in ProjectDetail.jsx so the two pages agree.
@@ -43,6 +44,7 @@ function greeting() {
 export default function Dashboard() {
   const [jobs, setJobs] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [fetchError, setFetchError] = useState(false);
   const [deleting, setDeleting] = useState(null);
   const [deletingAll, setDeletingAll] = useState(false);
   const [idea, setIdea] = useState("");
@@ -50,8 +52,24 @@ export default function Dashboard() {
   const { veilNav } = useVeil();
   const navigate = useNavigate();
 
-  const fetchJobs = () => jobsAPI.list().then(r => setJobs(r.data.jobs || [])).catch(console.error).finally(() => setLoading(false));
+  const fetchJobs = () => jobsAPI.list()
+    .then(r => { setJobs(r.data.jobs || []); setFetchError(false); })
+    .catch(() => setFetchError(true))
+    .finally(() => setLoading(false));
   useEffect(() => { fetchJobs(); const t = setInterval(fetchJobs, 4000); return () => clearInterval(t); }, []);
+
+  // Cockpit row — derived entirely from the jobs already in memory, no
+  // extra requests.
+  const stats = useMemo(() => {
+    const total = jobs.length;
+    const deployed = jobs.filter(j => j.backend_url || j.frontend_url).length;
+    const inProgress = jobs.filter(j => j.status === "running" || j.status === "pending").length;
+    const finished = jobs.filter(j => j.forge_score != null);
+    const successRate = finished.length
+      ? Math.round((finished.filter(j => j.forge_score >= 80).length / finished.length) * 100)
+      : null;
+    return { total, deployed, inProgress, successRate };
+  }, [jobs]);
 
   const forgeIdea = (e) => {
     e.preventDefault();
@@ -107,7 +125,6 @@ export default function Dashboard() {
     }
   };
 
-  const running = jobs.filter(j => j.status === "running" || j.status === "pending").length;
   const firstName = user?.email ? user.email.split("@")[0] : null;
 
   return (
@@ -144,9 +161,37 @@ export default function Dashboard() {
           </form>
         </div>
 
+        {/* Cockpit row — the same glass stat tile used on Observatory,
+            reused rather than re-invented, with gradient headline numbers. */}
+        {loading ? (
+          <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 mt-6 mb-10" aria-label="Loading stats">
+            {[0, 1, 2, 3].map(i => <div key={i} className="skeleton rounded-2xl" style={{ height: "84px" }} />)}
+          </div>
+        ) : (
+          <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 mt-6 mb-10">
+            <StatCard icon={Boxes} label="Total Projects" value={stats.total} delay={190} />
+            <StatCard icon={Rocket} label="Deployed" value={stats.deployed} delay={230} />
+            <StatCard icon={Activity} label="In Progress" value={stats.inProgress} delay={270} />
+            <StatCard
+              icon={ShieldCheck}
+              label="Success Rate"
+              value={stats.successRate != null ? `${stats.successRate}%` : "—"}
+              sub={stats.successRate != null ? undefined : "no scored runs yet"}
+              delay={310}
+            />
+          </div>
+        )}
+
+        {fetchError && (
+          <div className="anim-fade-up glass-panel rounded-xl px-4 py-3 mb-6 flex items-center gap-2" style={{ borderColor: "rgba(250,204,21,0.25)" }}>
+            <AlertTriangle size={15} className="text-amber-400 shrink-0" aria-hidden="true" />
+            <p className="text-sm text-amber-200/90">Couldn't reach the server — this list may be out of date. Retrying automatically.</p>
+          </div>
+        )}
+
         {/* Templates — quick-fill chips, same pattern as New App's example
             chips. No navigation, just prefills the prompt above. */}
-        <div className="anim-fade-up flex flex-wrap gap-2 mt-4 mb-10" style={{ "--d": "220ms" }}>
+        <div className="anim-fade-up flex flex-wrap gap-2 mt-4 mb-10" style={{ "--d": "350ms" }}>
           {TEMPLATES.map((t) => (
             <button
               key={t.label}
@@ -162,9 +207,9 @@ export default function Dashboard() {
         <div className="flex items-center justify-between mb-4">
           <h2 className="hero-serif text-2xl text-white">Recent Projects</h2>
           <div className="flex items-center gap-2">
-            {running > 0 && (
+            {stats.inProgress > 0 && (
               <span className="flex items-center gap-1.5 text-xs px-2.5 py-1 rounded-full border" style={{background:"rgba(99,102,241,0.1)",color:"#818cf8",borderColor:"rgba(99,102,241,0.2)"}}>
-                <span className="live-dot bg-indigo-400" aria-hidden="true" /> {running} running
+                <span className="live-dot bg-indigo-400" aria-hidden="true" /> {stats.inProgress} running
               </span>
             )}
             {jobs.some(j => j.status !== "pending" && j.status !== "running") && (
@@ -207,7 +252,7 @@ export default function Dashboard() {
               return (
                 <div key={job.id}
                   className="anim-fade-up hover-lift flex items-center gap-4 glass-panel rounded-xl px-4 py-3.5 hover:border-white/15 group cursor-pointer"
-                  style={{ "--d": `${Math.min(i, 8) * 60}ms` }}
+                  style={{ "--d": `${390 + Math.min(i, 8) * 60}ms` }}
                   onClick={() => navigate(`/projects/${job.id}`)}>
                   {isDone && job.forge_score != null ? (
                     <span className="text-xs font-medium px-2.5 py-1 rounded-full shrink-0 w-24 text-center"
