@@ -6385,6 +6385,87 @@ def _patch_redirect_missing_backend_imports(project_path: Path) -> int:
     return patched
 
 
+_HYPHEN_ROUTER_RE = re.compile(r"\b([A-Za-z_]\w*(?:-\w+)+_router)\b")
+
+
+def _patch_hyphenated_router_identifiers(project_path: Path) -> int:
+    """Rewrite hyphenated `*_router` identifiers to underscores.
+
+    Confirmed live twice (Exp107, ForgeBench v1 era 2026-07-13):
+    hospital_management_system's main.py contained
+    `from app.routes.consultation_note_routes import consultation-note_router`
+    and real_estate_marketplace had `agent-dashboard_router` — the LLM
+    derives the router symbol from a hyphenated resource/path name. A
+    hyphen in an identifier is a SyntaxError in main.py: the app cannot
+    even be imported, every dimension fails at once, and no downstream
+    patcher runs (they all skip unparseable files).
+
+    After sanitizing, exact-duplicate router import/include lines are
+    dropped (the repair loop often adds the correctly-spelled line next
+    to the broken one, so a plain rename would leave both).
+
+    The same generations also produce HYPHENATED ROUTE FILENAMES
+    (`agent-dashboard_routes.py`) — a module that can never be imported —
+    so those are renamed to underscores first and every
+    `app.routes.<hyphenated>` module reference is rewritten to match."""
+    root = project_path.resolve()
+    candidates = [root / "app" / "main.py"]
+    route_dirs = [d for d in (root / "app" / "routes", root / "app" / "routers") if d.is_dir()]
+    patched = 0
+
+    # 1) rename hyphenated route files (un-importable module names)
+    for d in route_dirs:
+        for pf in list(d.glob("*-*.py")):
+            target = pf.with_name(pf.name.replace("-", "_"))
+            if target.exists():
+                continue  # a correctly-named twin already exists; leave both
+            pf.rename(target)
+            patched += 1
+            print(f"  [patcher] Renamed un-importable route module {pf.name} -> {target.name}")
+
+    for d in route_dirs:
+        candidates.extend(d.glob("*.py"))
+
+    # 2) rewrite hyphenated module segments in route imports
+    module_ref_re = re.compile(r"(from\s+app\.route(?:r)?s\.)([\w-]*-[\w-]*)(\s+import\b)")
+    for pf in candidates:
+        if not pf.is_file():
+            continue
+        try:
+            src = pf.read_text(encoding="utf-8", errors="replace")
+        except Exception:
+            continue
+        if not (_HYPHEN_ROUTER_RE.search(src) or module_ref_re.search(src)):
+            continue
+        fixed_names = sorted({m.group(1) for m in _HYPHEN_ROUTER_RE.finditer(src)})
+        fixed_names += sorted({m.group(2) for m in module_ref_re.finditer(src)})
+        new_src = _HYPHEN_ROUTER_RE.sub(lambda m: m.group(1).replace("-", "_"), src)
+        new_src = module_ref_re.sub(
+            lambda m: m.group(1) + m.group(2).replace("-", "_") + m.group(3), new_src)
+
+        # Drop exact-duplicate router import/include lines the rename may
+        # have created.
+        seen: set[str] = set()
+        out_lines = []
+        for line in new_src.splitlines(keepends=True):
+            stripped = line.strip()
+            is_router_line = (
+                (stripped.startswith("from app.route") and "_router" in stripped)
+                or stripped.startswith("app.include_router(")
+            )
+            if is_router_line:
+                if stripped in seen:
+                    continue
+                seen.add(stripped)
+            out_lines.append(line)
+        new_src = "".join(out_lines)
+
+        pf.write_text(new_src, encoding="utf-8")
+        patched += 1
+        print(f"  [patcher] Fixed hyphenated router identifier(s) in {pf.name}: {fixed_names}")
+    return patched
+
+
 def _patch_quoted_route_annotations(project_path: Path) -> int:
     """Unquote string annotations in route files that name a real
     schema/model class, hoisting the import to module level.
@@ -7276,6 +7357,10 @@ def run_deterministic_patches(project_path: str, skip_protected_injections: bool
 
     # Router names: `router` → `{resource}_router` (eliminates RouterExportMismatch)
     _run_patch_isolated(counts, "_patch_router_names", _patch_router_names, root)
+
+    # Hyphenated router identifiers (`consultation-note_router`) are a
+    # SyntaxError that kills main.py outright — sanitize + dedupe (Exp107)
+    _run_patch_isolated(counts, "_patch_hyphenated_router_identifiers", _patch_hyphenated_router_identifiers, root)
 
     # Parameter ordering: Path(...) before body param → SyntaxError → reorder
     _run_patch_isolated(counts, "_patch_param_order", _patch_param_order, root)

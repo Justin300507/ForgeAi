@@ -7464,3 +7464,35 @@ shapes, below the evidence bar.
 `app/services/deterministic_patcher.py`,
 `tests/reliability/test_exp106_quoted_annotations.py`, this entry.
 **Cost: $0.**
+
+---
+
+## Experiment 107: Hyphenated Router Identifiers/Filenames (SyntaxError in main.py)
+
+2026-07-15. Offline implementation, $0. Found while checking whether any
+of Exp106's 14 import-failing corpus apps came from the CURRENT pipeline
+era — two did (ForgeBench v1, 2026-07-13), and both had the same shape:
+the LLM derives router symbols from hyphenated resource names —
+`consultation-note_router` (hospital_management_system),
+`agent-dashboard_router` (real_estate_marketplace) — a SyntaxError in
+main.py, so the app cannot even be imported: every dimension fails at
+once and every downstream patcher skips the unparseable file. The
+second app also had HYPHENATED FILENAMES (`agent-dashboard_routes.py`),
+an un-importable module regardless of spelling.
+
+**Fix**: `_patch_hyphenated_router_identifiers` in
+deterministic_patcher.py (registered right after _patch_router_names):
+renames hyphenated route files to underscores (skipping when a
+correctly-named twin exists), rewrites `app.routes.<hyphenated>` module
+refs, sanitizes `X-Y_router` identifiers everywhere, and dedupes the
+exact-duplicate import/include lines left behind when a repair attempt
+had already added the correctly-spelled line next to the broken one
+(hospital's actual state).
+
+**Validation**: patched copies of both real apps go from SyntaxError to
+**importing AND building OpenAPI (probe: OK)**; corpus-wide dry run
+changes exactly these 2 apps, zero false positives;
+`tests/reliability/test_exp107_hyphenated_routers.py` 4/4 (both live
+shapes, clean-project no-op, twin-exists rename guard).
+
+**Deliverables**: patcher diff, test file, this entry. **Cost: $0.**
