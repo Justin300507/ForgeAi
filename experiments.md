@@ -7582,3 +7582,35 @@ untouched).
 
 **Deliverables**: patcher diff, test file, this entry. **Cost: $0**
 (diagnosis reused the already-running canary's failure).
+
+---
+
+## Experiment 111: Wrong Schema Class as response_model (id stripped)
+
+2026-07-16. Root-caused live from the same milestone canary, crm leg:
+`Create entity: 201 id=None` — Create SUCCEEDS but the journey (and any
+real API consumer) can never learn the new entity's id, because every
+contact route declared `response_model=ContactBase` (no `id`) while a
+correct `ContactResponse` (with `id: int`) sat unused in the same
+schema module; FastAPI filters responses through the declared model, so
+`id` was stripped from Create AND List (the journey's list-fallback for
+id capture also found nothing) — Edit/Delete/Verify cascade-failed.
+Same file also used `response_model=NoteCreate` on a POST.
+
+**Prevalence**: 19 occurrences across 5 corpus apps (incl. the live
+one). This is a genuine product bug for every consumer of the API, not
+a journey artifact.
+
+**Fix**: `_patch_wrong_schema_class_as_response_model` — swaps
+`response_model=XBase/XCreate/XUpdate` (incl. `List[...]`) to the
+sibling `XResponse`/`XOut`/`XRead` when one exists in app/schemas or
+the route file, adds the import if needed, AST-verifies. Parameter
+annotations (genuine Create usages) are untouched; nothing changes when
+no better class exists.
+
+**Validation**: patched isolated copy of the real simple_crm — all 9
+declarations swapped, app boots, live POST /contacts returns
+`{"id": 1, ...}` (id was previously stripped);
+`tests/reliability/test_exp111_response_model_swap.py` 3/3.
+
+**Deliverables**: patcher diff, test file, this entry. **Cost: $0.**

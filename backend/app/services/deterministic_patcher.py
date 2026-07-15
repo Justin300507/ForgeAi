@@ -6405,6 +6405,98 @@ def _patch_redirect_missing_backend_imports(project_path: Path) -> int:
     return patched
 
 
+_WRONG_RESPONSE_MODEL_RE = re.compile(
+    r"(response_model\s*=\s*(?:List\[|list\[)?\s*)(\w+?)(Base|Create|Update)\b")
+
+
+def _patch_wrong_schema_class_as_response_model(project_path: Path) -> int:
+    """Swap `response_model=XBase/XCreate/XUpdate` for the sibling
+    XResponse/XOut/XRead class when one exists.
+
+    Confirmed live (Exp111, simple_crm during the exp109-milestone-r2
+    canary): every contact route declared `response_model=ContactBase` —
+    a schema WITHOUT `id` — while a perfectly good `ContactResponse`
+    (with `id: int`) sat unused in the same schema module. FastAPI
+    filters responses through the declared model, so every Create/List/
+    Get response had its `id` stripped: the CRUD journey logged
+    `Create entity: 201 id=None`, and Edit/Delete/Verify cascade-failed.
+    This breaks any real API consumer the same way, not just the journey.
+    Corpus prevalence: 19 occurrences across 5 apps. Nothing is changed
+    when no better class exists."""
+    import ast as _ast
+    root = project_path.resolve()
+    schemas_dir = root / "app" / "schemas"
+    routes_dirs = [d for d in (root / "app" / "routes", root / "app" / "routers") if d.is_dir()]
+    if not routes_dirs:
+        return 0
+
+    schema_class_modules: dict[str, str] = {}
+    if schemas_dir.is_dir():
+        for sf in schemas_dir.glob("*.py"):
+            try:
+                tree = _ast.parse(sf.read_text(encoding="utf-8", errors="replace"))
+            except Exception:
+                continue
+            for node in tree.body:
+                if isinstance(node, _ast.ClassDef):
+                    schema_class_modules[node.name] = f"app.schemas.{sf.stem}"
+
+    patched = 0
+    for routes_dir in routes_dirs:
+        for rf in routes_dir.glob("*.py"):
+            try:
+                src = rf.read_text(encoding="utf-8", errors="replace")
+                tree = _ast.parse(src)
+            except Exception:
+                continue
+
+            local_names: set[str] = set()
+            for node in tree.body:
+                if isinstance(node, _ast.ClassDef):
+                    local_names.add(node.name)
+                elif isinstance(node, _ast.ImportFrom):
+                    local_names.update(a.asname or a.name for a in node.names)
+
+            swapped: dict[str, str] = {}
+
+            def _swap(m: re.Match) -> str:
+                prefix_txt, cls_prefix, kind = m.group(1), m.group(2), m.group(3)
+                for suffix in ("Response", "Out", "Read"):
+                    candidate = cls_prefix + suffix
+                    if candidate in local_names or candidate in schema_class_modules:
+                        swapped[f"{cls_prefix}{kind}"] = candidate
+                        return prefix_txt + candidate
+                return m.group(0)
+
+            new_src = _WRONG_RESPONSE_MODEL_RE.sub(_swap, src)
+            if new_src == src:
+                continue
+
+            missing = sorted({c for c in swapped.values()
+                              if c not in local_names and c in schema_class_modules})
+            if missing:
+                by_module: dict[str, list[str]] = {}
+                for name in missing:
+                    by_module.setdefault(schema_class_modules[name], []).append(name)
+                import_lines = "".join(
+                    f"from {mod} import {', '.join(ns)}\n" for mod, ns in sorted(by_module.items()))
+                lines = new_src.splitlines(keepends=True)
+                last_import = 0
+                for i, line in enumerate(lines):
+                    if re.match(r"(from\s+\S+\s+import\b|import\s+\S+)", line):
+                        last_import = i + 1
+                new_src = "".join(lines[:last_import]) + import_lines + "".join(lines[last_import:])
+
+            try:
+                _ast.parse(new_src)
+            except Exception:
+                continue
+            rf.write_text(new_src, encoding="utf-8")
+            patched += 1
+            print(f"  [patcher] response_model class swap(s) in {rf.name}: {swapped}")
+    return patched
+
+
 def _patch_unbound_conditional_db_ops(project_path: Path) -> int:
     """Guard `db.refresh(x)` / `db.add(x)` / `db.delete(x)` statements whose
     target is only ever assigned inside a nested block of the same function.
@@ -7479,6 +7571,10 @@ def run_deterministic_patches(project_path: str, skip_protected_injections: bool
     # db.refresh/add/delete on a name bound only inside a nested block →
     # UnboundLocalError 500 on empty input (Exp110, forge_blog_cms)
     _run_patch_isolated(counts, "_patch_unbound_conditional_db_ops", _patch_unbound_conditional_db_ops, root)
+
+    # response_model=XBase/XCreate strips id from every response when an
+    # XResponse exists — journey can never capture an entity id (Exp111)
+    _run_patch_isolated(counts, "_patch_wrong_schema_class_as_response_model", _patch_wrong_schema_class_as_response_model, root)
 
     # Parameter ordering: Path(...) before body param → SyntaxError → reorder
     _run_patch_isolated(counts, "_patch_param_order", _patch_param_order, root)
