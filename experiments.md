@@ -7547,3 +7547,38 @@ there), so genuinely-all-dead cases only pay one extra pause.
 Code-only change validated by py_compile + existing suite; live effect
 lands on the next generation run (the running canary predates the
 import). **Cost: $0.**
+
+---
+
+## Experiment 110: Unbound Conditionally-Assigned db-op Targets
+
+2026-07-16. Root-caused LIVE during the exp109-milestone-r2 canary while
+blog_cms was stuck in its repair loop. Reproduced locally by running the
+generated app and firing the journey's exact Create payload:
+`db.refresh(association)` runs unconditionally but `association` is only
+bound inside `if post_in.tags:` — the journey sends `tags: []`, so
+Create 500s with UnboundLocalError, no entity_id is captured, and every
+downstream CRUD step cascade-fails. The repair loop spent all 5 retries
+(69.4 → 75.1 → 74.7/C final, NOT deployed) without ever fixing it: the
+smoke tests pass (15/15) because they never send the CRUD payload shape,
+so the LLM kept getting pointed at the wrong thing.
+
+**Prevalence**: AST scan of 494 corpus route files — 2 genuine hits (the
+live blog_cms one + simple_todo's seed_db `db.refresh(new_todo)` after a
+for loop). Low corpus prevalence, but live-blocking the 80+/deployed
+milestone, total-CRUD-killer severity, and narrowly fixable.
+
+**Fix**: `_patch_unbound_conditional_db_ops` in deterministic_patcher —
+for `db.refresh/add/delete(name)` at function-body level where `name` is
+never bound unconditionally: initialize `name = None` at function start
+and guard with `if name is not None:`. AST-verified before write.
+
+**Validation**: patched an isolated copy of the real forge_blog_cms and
+re-ran it — the exact failing payload returned **201 Created** (was 500).
+Corpus dry run touches exactly the 2 scanned hits.
+`tests/reliability/test_exp110_unbound_db_ops.py` 4/4 (live shape +
+for-loop shape guarded; unconditional and parameter-named targets
+untouched).
+
+**Deliverables**: patcher diff, test file, this entry. **Cost: $0**
+(diagnosis reused the already-running canary's failure).

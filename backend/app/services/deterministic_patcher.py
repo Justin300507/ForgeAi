@@ -6405,6 +6405,100 @@ def _patch_redirect_missing_backend_imports(project_path: Path) -> int:
     return patched
 
 
+def _patch_unbound_conditional_db_ops(project_path: Path) -> int:
+    """Guard `db.refresh(x)` / `db.add(x)` / `db.delete(x)` statements whose
+    target is only ever assigned inside a nested block of the same function.
+
+    Confirmed live (Exp110, forge_blog_cms create_post): the LLM writes
+
+        if post_in.tags:
+            for tag_name in post_in.tags:
+                association = PostTags(...)
+                db.add(association)
+        db.commit()
+        db.refresh(association)      # <- UnboundLocalError when tags == []
+
+    The journey's Create payload sends `tags: []`, so the loop never binds
+    the name and the route 500s — killing every downstream CRUD step. Fix:
+    initialize the name to None at function start and guard the statement
+    with `if x is not None:`. AST-verified; a file that stops parsing is
+    left untouched."""
+    import ast as _ast
+    root = project_path.resolve()
+    routes_dirs = [d for d in (root / "app" / "routes", root / "app" / "routers") if d.is_dir()]
+
+    patched = 0
+    for routes_dir in routes_dirs:
+        for pf in routes_dir.glob("*.py"):
+            try:
+                src = pf.read_text(encoding="utf-8", errors="replace")
+                tree = _ast.parse(src)
+            except Exception:
+                continue
+
+            fixes = []  # (stmt_lineno, name, first_body_lineno)
+            for fn in _ast.walk(tree):
+                if not isinstance(fn, (_ast.FunctionDef, _ast.AsyncFunctionDef)):
+                    continue
+                top_assigned = {a.arg for a in fn.args.args} | {a.arg for a in fn.args.kwonlyargs}
+                for node in fn.body:
+                    if isinstance(node, _ast.Assign):
+                        top_assigned.update(t.id for t in node.targets if isinstance(t, _ast.Name))
+                    elif isinstance(node, (_ast.AnnAssign, _ast.AugAssign)) and isinstance(node.target, _ast.Name):
+                        top_assigned.add(node.target.id)
+                all_assigned = set()
+                for node in _ast.walk(fn):
+                    if isinstance(node, _ast.Assign):
+                        all_assigned.update(t.id for t in node.targets if isinstance(t, _ast.Name))
+                    elif isinstance(node, (_ast.AnnAssign, _ast.AugAssign)) and isinstance(node.target, _ast.Name):
+                        all_assigned.add(node.target.id)
+                    elif isinstance(node, _ast.For) and isinstance(node.target, _ast.Name):
+                        all_assigned.add(node.target.id)
+                for node in fn.body:
+                    if not (isinstance(node, _ast.Expr) and isinstance(node.value, _ast.Call)):
+                        continue
+                    call = node.value
+                    if (isinstance(call.func, _ast.Attribute)
+                            and isinstance(call.func.value, _ast.Name)
+                            and call.func.value.id == "db"
+                            and call.func.attr in ("refresh", "add", "delete")
+                            and len(call.args) == 1
+                            and isinstance(call.args[0], _ast.Name)):
+                        name = call.args[0].id
+                        if name in all_assigned and name not in top_assigned:
+                            fixes.append((node.lineno, name, fn.body[0].lineno))
+
+            if not fixes:
+                continue
+
+            lines = src.splitlines(keepends=True)
+            # Guard statements bottom-up so line numbers stay valid.
+            for stmt_lineno, name, _ in sorted(fixes, key=lambda f: -f[0]):
+                idx = stmt_lineno - 1
+                line = lines[idx]
+                indent = line[: len(line) - len(line.lstrip())]
+                lines[idx] = (f"{indent}if {name} is not None:\n"
+                              f"{indent}    {line.lstrip()}")
+            # Initialize each name once at the top of its function.
+            for first_body_lineno, name in sorted(
+                    {(f[2], f[1]) for f in fixes}, key=lambda x: -x[0]):
+                idx = first_body_lineno - 1
+                line = lines[idx]
+                indent = line[: len(line) - len(line.lstrip())]
+                lines[idx] = f"{indent}{name} = None\n{line}"
+
+            new_src = "".join(lines)
+            try:
+                _ast.parse(new_src)
+            except Exception:
+                continue
+            pf.write_text(new_src, encoding="utf-8")
+            patched += 1
+            print(f"  [patcher] Guarded conditionally-bound db op target(s) in {pf.name}: "
+                  f"{sorted({f[1] for f in fixes})}")
+    return patched
+
+
 _HYPHEN_ROUTER_RE = re.compile(r"\b([A-Za-z_]\w*(?:-\w+)+_router)\b")
 
 
@@ -7381,6 +7475,10 @@ def run_deterministic_patches(project_path: str, skip_protected_injections: bool
     # Hyphenated router identifiers (`consultation-note_router`) are a
     # SyntaxError that kills main.py outright — sanitize + dedupe (Exp107)
     _run_patch_isolated(counts, "_patch_hyphenated_router_identifiers", _patch_hyphenated_router_identifiers, root)
+
+    # db.refresh/add/delete on a name bound only inside a nested block →
+    # UnboundLocalError 500 on empty input (Exp110, forge_blog_cms)
+    _run_patch_isolated(counts, "_patch_unbound_conditional_db_ops", _patch_unbound_conditional_db_ops, root)
 
     # Parameter ordering: Path(...) before body param → SyntaxError → reorder
     _run_patch_isolated(counts, "_patch_param_order", _patch_param_order, root)
