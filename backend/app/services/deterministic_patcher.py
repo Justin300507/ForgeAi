@@ -2644,7 +2644,12 @@ def _patch_from_orm(content: str) -> str:
 # minimal Pydantic stub files so uvicorn can at least start and run the endpoint.
 
 _SCHEMA_IMPORT_RE = re.compile(
-    r"^from app\.schemas\.(\w+) import ([^\n]+)", re.MULTILINE
+    # `^\s*` — function-body imports count too. Confirmed live (Exp106,
+    # restaurant_pos_system): the handler deferred
+    # `from app.schemas.sale import SaleOut` inside the function, the
+    # module never existed, and the column-0 anchor made this patcher
+    # blind to it — every GET /sales 500'd at request time.
+    r"^\s*from app\.schemas\.(\w+) import ([^\n]+)", re.MULTILINE
 )
 _COL_RE = re.compile(r"^\s*(\w+)\s*=\s*Column\s*\(\s*(\w+)", re.MULTILINE)
 _TYPE_MAP = {
@@ -6380,6 +6385,122 @@ def _patch_redirect_missing_backend_imports(project_path: Path) -> int:
     return patched
 
 
+def _patch_quoted_route_annotations(project_path: Path) -> int:
+    """Unquote string annotations in route files that name a real
+    schema/model class, hoisting the import to module level.
+
+    Confirmed live twice (Exp106, 2026-07-15): the LLM writes
+    `response_model=List["SaleOut"]` (restaurant_pos_system) or
+    `def update(budget_in: "BudgetCreate")` (expense_tracker on Railway)
+    with the actual `from app.schemas... import ...` deferred INSIDE the
+    handler body. The route works at request time (the inner import runs),
+    but FastAPI keeps an unresolvable ForwardRef, so /openapi.json 500s
+    with PydanticUserError "'X' is not fully defined" — which both breaks
+    /docs on the deployed app and blinds the CRUD journey's schema
+    introspection (the Exp105 incident's precondition).
+
+    Only quoted strings that exactly match a class defined at module level
+    in app/schemas/*.py or app/models/*.py are touched, and only in
+    annotation positions (response_model=..., `param: "X"`,
+    `List["X"]`/`Optional["X"]`). Every rewritten file must still
+    ast-parse or it is left untouched."""
+    import ast as _ast
+    root = project_path.resolve()
+    schemas_dir = root / "app" / "schemas"
+    models_dir = root / "app" / "models"
+    routes_dirs = [d for d in (root / "app" / "routes", root / "app" / "routers") if d.is_dir()]
+    if not routes_dirs:
+        return 0
+
+    # class name -> dotted module (schemas win over models on collision,
+    # matching what a response_model/body annotation almost always means)
+    class_modules: dict[str, str] = {}
+    for base, prefix in ((models_dir, "app.models"), (schemas_dir, "app.schemas")):
+        if not base.is_dir():
+            continue
+        for pf in base.glob("*.py"):
+            try:
+                tree = _ast.parse(pf.read_text(encoding="utf-8", errors="replace"))
+            except Exception:
+                continue
+            for node in tree.body:
+                if isinstance(node, _ast.ClassDef):
+                    class_modules[node.name] = f"{prefix}.{pf.stem}"
+    if not class_modules:
+        return 0
+
+    names_alt = "|".join(re.escape(n) for n in sorted(class_modules, key=len, reverse=True))
+    # `param: "X"` — an UNQUOTED identifier before the colon plus a
+    # comma/paren/default after the name keeps dict literals ({"role": "X"})
+    # and ordinary string values out of reach.
+    ann_re = re.compile(rf'(\b[a-zA-Z_]\w*\s*:\s*)(["\'])({names_alt})\2(?=\s*[,)=])')
+    # `-> "X":` return annotations
+    ret_re = re.compile(rf'(->\s*)(["\'])({names_alt})\2(?=\s*:)')
+    # List["X"] / Optional["X"] / list["X"] anywhere (incl. response_model=...)
+    generic_re = re.compile(rf'((?:List|Optional|list|Sequence)\[\s*)(["\'])({names_alt})\2(\s*\])')
+    # response_model="X"
+    respmodel_re = re.compile(rf'(response_model\s*=\s*)(["\'])({names_alt})\2')
+
+    patched = 0
+    for routes_dir in routes_dirs:
+        for rf in routes_dir.glob("*.py"):
+            try:
+                src = rf.read_text(encoding="utf-8", errors="replace")
+                tree = _ast.parse(src)
+            except Exception:
+                continue
+
+            used: set[str] = set()
+
+            def _unquote(m: re.Match) -> str:
+                used.add(m.group(3))
+                groups = m.groups()
+                return groups[0] + groups[2] + (groups[3] if len(groups) > 3 else "")
+
+            new_src = ann_re.sub(_unquote, src)
+            new_src = ret_re.sub(_unquote, new_src)
+            new_src = generic_re.sub(_unquote, new_src)
+            new_src = respmodel_re.sub(_unquote, new_src)
+            if new_src == src:
+                continue
+
+            # Names already visible at module level need no new import.
+            module_level: set[str] = set()
+            for node in tree.body:
+                if isinstance(node, _ast.ClassDef):
+                    module_level.add(node.name)
+                elif isinstance(node, _ast.ImportFrom):
+                    module_level.update(a.asname or a.name for a in node.names)
+                elif isinstance(node, _ast.Import):
+                    module_level.update((a.asname or a.name).split(".")[0] for a in node.names)
+            missing = sorted(used - module_level)
+            if missing:
+                by_module: dict[str, list[str]] = {}
+                for name in missing:
+                    by_module.setdefault(class_modules[name], []).append(name)
+                import_lines = "".join(
+                    f"from {mod} import {', '.join(ns)}\n" for mod, ns in sorted(by_module.items())
+                )
+                lines = new_src.splitlines(keepends=True)
+                last_import = 0
+                for i, line in enumerate(lines):
+                    # column-0 only — an indented (function-body) import as
+                    # the anchor would inject the new import mid-function
+                    if re.match(r"(from\s+\S+\s+import\b|import\s+\S+)", line):
+                        last_import = i + 1
+                new_src = "".join(lines[:last_import]) + import_lines + "".join(lines[last_import:])
+
+            try:
+                _ast.parse(new_src)
+            except Exception:
+                continue
+            rf.write_text(new_src, encoding="utf-8")
+            patched += 1
+            print(f"  [patcher] Unquoted ForwardRef annotation(s) in {rf.name}: {sorted(used)}")
+
+    return patched
+
+
 _STATUS_PARAGRAPH_RE = re.compile(r"\{status && <p[^>]*>\{status\}</p>\}\n?[ \t]*")
 
 
@@ -7208,6 +7329,12 @@ def run_deterministic_patches(project_path: str, skip_protected_injections: bool
     # Create stub schema files for any route imports that point to missing modules
     # (common after architecture repair generates new route files)
     _run_patch_isolated(counts, "_patch_create_missing_schemas", _patch_create_missing_schemas, root)
+
+    # Unquote string annotations (`response_model=List["X"]`, `p: "X"`) whose
+    # class really exists in app/schemas|models and hoist the import — the
+    # unresolved-ForwardRef shape 500s /openapi.json (Exp106). Must run AFTER
+    # _patch_create_missing_schemas so freshly stubbed classes resolve too.
+    _run_patch_isolated(counts, "_patch_quoted_route_annotations", _patch_quoted_route_annotations, root)
 
     # Make Response schema fields Optional so ORM field-name mismatches don't crash
     # (e.g. UserResponse.username required but User model uses email only)

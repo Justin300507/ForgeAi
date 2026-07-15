@@ -7408,3 +7408,59 @@ measurement first.
 **Deliverables**: code diff in `app/runtime/user_journey_runner.py`,
 `tests/reliability/test_exp105_journey_date_fields.py`, this entry.
 **Cost: $0.**
+
+---
+
+## Experiment 106: Quoted-Annotation ForwardRef Fix (openapi 500)
+
+2026-07-15. Offline implementation + full-corpus A/B with the real
+OpenAPI builder, $0. The Exp105-queued candidate.
+
+**Measurement first**: probed all 73 corpus apps by importing app.main
+and calling `app.openapi()` for real. 56 OK, 14 import-fail (stale
+historical artifacts from older pipeline eras), 3 in the live
+incident's class — restaurant_pos_system being an exact match:
+`response_model=List["SaleOut"]` with the import deferred INSIDE the
+handler and `app/schemas/sale.py` never generated at all. The quoted
+annotation leaves FastAPI holding an unresolvable ForwardRef →
+`/openapi.json` 500s (PydanticUserError "not fully defined") → /docs
+broken on deployed apps AND journey schema introspection blinded
+(Exp105's precondition). The duplicate-class theory from the live log
+was a red herring — most duplicates are the injected auth template's
+own classes (benign) and nested pydantic Config classes (scan
+artifact).
+
+**Two root causes, two fixes in `deterministic_patcher.py`**:
+1. NEW `_patch_quoted_route_annotations` — unquotes annotation-position
+   strings (`response_model=List["X"]`, `param: "X"`, `-> "X"`) ONLY
+   when X is a module-level class in app/schemas|models, hoists the
+   import to module level (column-0 anchor — first version used any
+   import line as the anchor and injected mid-function; caught by the
+   validation loop when sale_routes.py silently failed its post-patch
+   ast.parse). Registered AFTER _patch_create_missing_schemas so fresh
+   stubs resolve too.
+2. `_SCHEMA_IMPORT_RE` now accepts indented imports — its column-0
+   anchor made _patch_create_missing_schemas blind to function-body
+   `from app.schemas.sale import SaleOut`, which is exactly where the
+   LLM puts "lazy" imports.
+
+**Validation**:
+- Full-corpus A/B with the real OpenAPI builder: 135 route files
+  unquoted across 73 apps, **zero regressions** (every OK app stays
+  OK), restaurant_pos_system broken → **OK**.
+- `tests/reliability/test_exp106_quoted_annotations.py` (5 tests, incl.
+  both confirmed live shapes, dict-literal/unknown-name guards,
+  no-duplicate-import, and the full stub-then-unquote chain). 5/5.
+- Full reliability suite: same pre-existing failures; also identified
+  `test_role_aware_journey.py` as FLAKY (2/3 pass — single-threaded
+  fake server races the elevated-registration retry), not an Exp106
+  regression. Known-flaky, queued.
+
+Remaining openapi-fail singletons (todo_manager `_SessionBind` leak,
+support_ticket_system pydantic-v1 kwargs) are one-off historical
+shapes, below the evidence bar.
+
+**Deliverables**: patcher + regex diff in
+`app/services/deterministic_patcher.py`,
+`tests/reliability/test_exp106_quoted_annotations.py`, this entry.
+**Cost: $0.**
