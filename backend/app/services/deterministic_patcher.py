@@ -6315,6 +6315,26 @@ def _patch_redirect_missing_backend_imports(project_path: Path) -> int:
             specs = [n.strip() for n in names_raw.split(",") if n.strip() and n.strip() != "*"]
             base_names = [s.split(" as ")[0].strip() for s in specs]
             if not base_names:
+                # Star import of a missing module (`from app.models.users
+                # import *`) — the symbol index can't help, but a
+                # singular/plural sibling usually can. Confirmed live
+                # (Exp108, tiny_notes): model file is user.py, main.py
+                # star-imports app.models.users → hard ModuleNotFoundError
+                # at startup; both redirect passes skipped '*' entirely.
+                if "*" in names_raw:
+                    head, _, last = dotted.rpartition(".")
+                    variants = []
+                    if last.endswith("ies"):
+                        variants.append(last[:-3] + "y")
+                    if last.endswith("s"):
+                        variants.append(last[:-1])
+                    variants.append(last + "s")
+                    if last.endswith("y"):
+                        variants.append(last[:-1] + "ies")
+                    for v in variants:
+                        sibling = f"{head}.{v}" if head else v
+                        if _backend_module_exists(root, f"app.{sibling}"):
+                            return f"from app.{sibling} import *"
                 return m.group(0)
             # Find a real module defining the MOST of the imported names.
             candidates: dict[str, int] = {}

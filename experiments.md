@@ -7496,3 +7496,31 @@ changes exactly these 2 apps, zero false positives;
 shapes, clean-project no-op, twin-exists rename guard).
 
 **Deliverables**: patcher diff, test file, this entry. **Cost: $0.**
+
+---
+
+## Experiment 108: Star-Import Redirect for Missing Modules
+
+2026-07-15. Offline, $0. Third and last of the current-era import-fail
+apps from Exp106's probe: tiny_notes has the model file `user.py` but
+main.py does `from app.models.users import *` — and BOTH passes of
+_patch_redirect_missing_backend_imports explicitly filtered out `*`,
+so the missing-module star import fell through to a hard
+ModuleNotFoundError at startup.
+
+**Fix**: in the redirect pass, a star import of a missing module is now
+redirected to a singular/plural sibling module (`users`→`user`,
+`note`→`notes`, `ies`↔`y`) when one exists; anything unresolvable is
+left alone as before.
+
+**Validation**: patched copy of the real tiny_notes imports and builds
+OpenAPI (probe OK); `tests/reliability/test_exp108_star_import_redirect.py`
+4/4; full reliability suite 55/59 — identical 4 pre-existing unrelated
+failures (journey-test flake separately fixed this session via
+ThreadingHTTPServer, commit d3d3071).
+
+With Exp106+107+108, all three CURRENT-era total-crash import failures
+found in the corpus are covered deterministically.
+
+**Deliverables**: diff in deterministic_patcher.py, test file, this
+entry. **Cost: $0.**
