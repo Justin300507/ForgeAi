@@ -2,6 +2,7 @@ import React from "react";
 import Lenis from "lenis";
 import gsap from "gsap";
 import { ScrollTrigger } from "gsap/ScrollTrigger";
+import { deviceTier } from "../lib/perf";
 
 gsap.registerPlugin(ScrollTrigger);
 
@@ -12,6 +13,9 @@ gsap.registerPlugin(ScrollTrigger);
 export default function useLenis() {
   React.useEffect(() => {
     if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) return;
+    // Low tier renders the static forge sections (no pinned scrub), so
+    // smooth-scroll would be a permanent rAF loop with nothing to sync.
+    if (deviceTier() === "low") return;
 
     const lenis = new Lenis({ lerp: 0.11, wheelMultiplier: 1 });
     lenis.on("scroll", ScrollTrigger.update);

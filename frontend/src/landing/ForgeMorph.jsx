@@ -95,8 +95,10 @@ function loadStageTextures() {
   });
 }
 
-/* Reduced-motion fallback: the eight states as static frames with plain
-   crossfade-on-scroll-into-view — no pin, no parallax, no cursor work. */
+/* Static fallback — served to reduced-motion users AND low-tier devices
+   (budget phones/laptops, where even a paused-offscreen pinned WebGL
+   scrub can't hold frame rate): the eight states as static frames —
+   no pin, no parallax, no cursor work. */
 function StaticStages() {
   return (
     <section className="forge-section" aria-label="The forge pipeline">
@@ -143,13 +145,15 @@ export default function ForgeMorph() {
   const bgRef = React.useRef(null);
   const gridRef = React.useRef(null);
   const [stage, setStage] = React.useState(0);
-  const reduced = React.useMemo(
-    () => window.matchMedia("(prefers-reduced-motion: reduce)").matches,
+  const staticMode = React.useMemo(
+    () =>
+      window.matchMedia("(prefers-reduced-motion: reduce)").matches ||
+      deviceTier() === "low",
     []
   );
 
   React.useEffect(() => {
-    if (reduced) return;
+    if (staticMode) return;
     const host = canvasHostRef.current;
     const root = rootRef.current;
     if (!host || !root) return;
@@ -363,9 +367,9 @@ export default function ForgeMorph() {
       renderer.dispose();
       host.removeChild(renderer.domElement);
     };
-  }, [reduced]);
+  }, [staticMode]);
 
-  if (reduced) return <StaticStages />;
+  if (staticMode) return <StaticStages />;
 
   const current = STAGES[stage];
 

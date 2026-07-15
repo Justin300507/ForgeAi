@@ -49,13 +49,17 @@ export default function ForgeStrike() {
   const hostRef = React.useRef(null);
   const flashRef = React.useRef(null);
   const headlineRef = React.useRef(null);
-  const reduced = React.useMemo(
-    () => window.matchMedia("(prefers-reduced-motion: reduce)").matches,
+  // Static on reduced-motion AND low-tier devices — same reasoning as
+  // ForgeMorph: a pinned WebGL scrub is the wrong spend on a budget GPU.
+  const staticMode = React.useMemo(
+    () =>
+      window.matchMedia("(prefers-reduced-motion: reduce)").matches ||
+      deviceTier() === "low",
     []
   );
 
   React.useEffect(() => {
-    if (reduced) return;
+    if (staticMode) return;
     const root = rootRef.current;
     const host = hostRef.current;
     if (!root || !host) return;
@@ -264,10 +268,10 @@ export default function ForgeStrike() {
       renderer.dispose();
       host.removeChild(renderer.domElement);
     };
-  }, [reduced]);
+  }, [staticMode]);
 
-  // Reduced motion: the before/after of the strike as two calm frames.
-  if (reduced) {
+  // Static mode: the before/after of the strike as two calm frames.
+  if (staticMode) {
     return (
       <section className="forge-section" aria-label="The forge strike" style={SANS}>
         <div className="max-w-4xl mx-auto text-center">

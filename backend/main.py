@@ -1550,13 +1550,18 @@ if _os.path.isdir(_dist):
     if _os.path.isdir(_assets):
         app.mount("/assets", StaticFiles(directory=_assets), name="assets")
 
+    # index.html must never be cached: it's the pointer to the hashed asset
+    # bundles, and a stale copy keeps serving the previous deploy's UI until
+    # the user hard-refreshes. The hashed /assets files stay long-cacheable.
+    _NO_CACHE = {"Cache-Control": "no-cache, must-revalidate"}
+
     @app.get("/", include_in_schema=False)
     async def serve_root():
-        return FileResponse(_os.path.join(_dist, "index.html"))
+        return FileResponse(_os.path.join(_dist, "index.html"), headers=_NO_CACHE)
 
     @app.get("/{full_path:path}", include_in_schema=False)
     async def serve_spa(full_path: str):
         file = _os.path.join(_dist, full_path)
         if _os.path.isfile(file):
             return FileResponse(file)
-        return FileResponse(_os.path.join(_dist, "index.html"))
+        return FileResponse(_os.path.join(_dist, "index.html"), headers=_NO_CACHE)
