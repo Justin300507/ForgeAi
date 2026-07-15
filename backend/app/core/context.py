@@ -458,9 +458,35 @@ class GenerationContext:
         # miss entirely -- see _dim_llm_judge_visual's docstring. It hard-
         # blocks here rather than only nudging the weighted average, which an
         # already-high score can absorb without ever dropping below threshold.
+        #
+        # UNLESS every hard runtime stage contradicts it (Exp115): the judge
+        # interprets ACCUMULATED diagnostics, which include failures from
+        # earlier, since-repaired rounds of the same run -- and its response
+        # is served from the byte-identical-prompt LLM cache, so a stale
+        # "failing to load any initial data" verdict from a broken earlier
+        # generation can outlive the fix entirely. Confirmed live
+        # (exp114-milestone-r5, forge_blog_cms): journey 11/11, runtime
+        # startup passed, frontend build passed, browser stage found no
+        # blank page -- and a cache-HIT judge verdict still blocked the
+        # deploy of an 87.6/B app. A critical *user-visible* failure that
+        # no runtime stage can corroborate is a misread, not a blocker.
         if self.llm_judge_severity == ErrorSeverity.CRITICAL and self.llm_judge_confidence >= 0.6:
-            return (f"visual judge flagged a critical user-visible failure "
-                    f"(confidence {self.llm_judge_confidence:.0%})")
+            stage_status = {r.stage: r.status for r in self.static_results}
+            corroborated = any(
+                stage_status.get(stage) == StageStatus.FAILED
+                for stage in ("runtime", "frontend_build", "browser")
+            ) or (
+                self.browser_result is not None
+                and not getattr(self.browser_result, "skipped", False)
+                and (getattr(self.browser_result, "blank_page", False)
+                     or bool(getattr(self.browser_result, "console_errors", [])))
+            )
+            if corroborated:
+                return (f"visual judge flagged a critical user-visible failure "
+                        f"(confidence {self.llm_judge_confidence:.0%})")
+            print("  [deploy gate] Visual judge critical verdict is contradicted by "
+                  "every runtime stage (runtime/build/browser all passed, no console "
+                  "errors) — treating as stale/misread, not blocking deployment")
         # Same reasoning for any critical stage that outright failed: a
         # renormalized score over the remaining dimensions can still clear
         # DEPLOY_THRESHOLD (that's the point of renormalization) even though

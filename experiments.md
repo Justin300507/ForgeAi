@@ -7712,3 +7712,33 @@ r5 with this fix in place.
 
 **Deliverables**: `app/utils/proc.py`, call-site diffs, test file, this
 entry. **Cost: $0.**
+
+---
+
+## Experiment 115: Judge-Critical Hard-Block vs Contradicting Runtime Evidence
+
+2026-07-16. blog_cms's r5 leg ended 87.6/B DEPLOY READY with journey
+11/11, runtime startup PASSED, frontend build PASSED, no blank page —
+and was still blocked: "Deployment skipped — visual judge flagged a
+critical user-visible failure (confidence 95%)". The log shows the
+verdict was an **LLM-cache HIT** ("failing to load any initial data"),
+i.e. a stale judgment replayed from an earlier round's byte-identical
+prompt — the judge interprets ACCUMULATED diagnostics, which include
+failures from since-repaired rounds, so its verdict can outlive the fix
+entirely. (Same hard-block class as the 2026-07-14 fix — this is the
+next hole in it.)
+
+**Fix**: `deployment_block_reason` now requires runtime corroboration
+before a judge-critical verdict blocks: at least one of
+runtime/frontend_build/browser stages FAILED, or the browser stage saw
+a blank page / console errors. Uncorroborated critical verdicts log
+loudly and do not block. Real failures still block (both via the judge
+path when corroborated and via the critical-stage path).
+
+**Validation**: `tests/reliability/test_exp115_judge_gate_contradiction.py`
+4/4 — uncorroborated verdict passes the gate; runtime-failed and
+console-error cases still block; no-verdict behavior unchanged.
+
+**Deliverables**: gate diff in `app/core/context.py`, test file, this
+entry. blog_cms re-run queued as r6 after crm's r5 leg finishes
+(crm hit 93.9/A DEPLOY READY during this write-up). **Cost: $0.**
