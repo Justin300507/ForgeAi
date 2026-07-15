@@ -7349,3 +7349,62 @@ a browsable app and no dist/ at all.
 **Deliverables**: code diff in `app/services/frontend_service.py`,
 `tests/reliability/test_frontend_jsx_fixers.py`, this entry.
 **Cost: $0.**
+
+---
+
+## Experiment 105: Journey Date-Field Guessing + Two-Round 422 Retry
+
+2026-07-15. Offline implementation + behavioral tests, $0. Root-caused
+directly from a user-supplied LIVE Railway generation log
+(expense_tracker) that failed while this session was open.
+
+**The incident**: the app's `/openapi.json` 500'd (separate Pydantic
+forward-ref bug), so Create's schema introspection was blind; the
+required `date` field surfaced only via the 422 "missing" branch, whose
+filler stuffed `"journey-test"` into it (its ad-hoc chain only knew
+email/_id/is_); the second 422 (`date_from_datetime_parsing`) had no
+`_TYPE_COERCIONS` entry AND the targeted retry was single-shot — so it
+gave up exactly there. No entity_id → Edit/Delete/Verify/persistence
+cascade-failed → JourneyCRUDFailure, Runtime 20/100, and the runtime-fix
+hint pointed the LLM at route handlers that were never the problem
+(matches the Exp101 finding that many JourneyCRUDFailures are journey-
+payload artifacts, not app bugs).
+
+**Three fixes in `app/runtime/user_journey_runner.py`** (one defect
+class — Create-payload guessing for date-typed fields — per the
+batch-fixes-per-cycle rule):
+1. Extracted the enriched-payload name heuristics into module-level
+   `_guess_field_value()` and reused it in the 422 missing-field filler
+   — a field literally named `date` now gets `"2026-01-01"`.
+2. `_TYPE_COERCIONS` gains the pydantic-v2 date/datetime/time family
+   (`date_type/parsing/from_datetime_parsing/from_datetime_inexact`,
+   `datetime_*`, `time_*`, plus past/future substitutions) —
+   substituting known-valid literals, since no date can be derived from
+   a wrong string.
+3. The targeted 422 retry now runs up to TWO rounds (bounded; round 2
+   only if round 1 changed the payload and returned fresh 422 detail),
+   because round 1 often only reveals the next constraint — the live
+   log's exact two-stage shape (missing → then wrong type).
+
+**Validation**: new
+`tests/reliability/test_exp105_journey_date_fields.py` — a real stdlib
+HTTP server reproducing the incident precisely, including the 500ing
+`/openapi.json` (same genuine-HTTP methodology as
+test_role_aware_journey.py). 7/7 pass: the live shape now 201s via the
+heuristic fill; a date field with an unhelpful name (`start`) heals via
+round 2 + coercion (the exact pre-Exp105 dead end); an uncoercible 422
+still terminates in bounded rounds with the honest soft-pass. Full
+reliability suite: 52/56 files, identical 4 pre-existing unrelated
+failures as before the change.
+
+**Queued next candidate (NOT fixed this cycle)**: the same live log's
+`/openapi.json` 500 — `PydanticUserError: 'BudgetCreate' is not fully
+defined` — co-occurring with validation-loop findings of duplicate
+class definitions (BudgetResponse/UserUpdate defined in BOTH
+app/routes/*.py and app/schemas/*.py). Duplicate-class dedup at the
+deterministic-patcher layer looks like the lever; needs prevalence
+measurement first.
+
+**Deliverables**: code diff in `app/runtime/user_journey_runner.py`,
+`tests/reliability/test_exp105_journey_date_fields.py`, this entry.
+**Cost: $0.**

@@ -109,7 +109,56 @@ _TYPE_COERCIONS = {
     "bool_type":     lambda v: str(v).strip().lower() in ("true", "1", "yes") if isinstance(v, str) else bool(v),
     "bool_parsing":  lambda v: str(v).strip().lower() in ("true", "1", "yes") if isinstance(v, str) else bool(v),
     "list_type":     lambda v: v if isinstance(v, list) else [v],
+    # Date/datetime/time rejections can't be derived from the wrong value
+    # (there is no date hiding inside "journey-test") — substitute a known
+    # valid literal instead. Confirmed live (Exp105, expense_tracker):
+    # a required `date` field discovered only via the 422 "missing" branch
+    # (the app's /openapi.json 500'd, so schema introspection was blind)
+    # got the generic string fill, then `date_from_datetime_parsing` had no
+    # entry here — Create never captured an id and every downstream CRUD
+    # step cascade-failed. past/future variants substitute accordingly.
+    "date_type":                  lambda v: "2026-01-01",
+    "date_parsing":               lambda v: "2026-01-01",
+    "date_from_datetime_parsing": lambda v: "2026-01-01",
+    "date_from_datetime_inexact": lambda v: "2026-01-01",
+    "date_past":                  lambda v: "2020-01-01",
+    "date_future":                lambda v: "2030-01-01",
+    "datetime_type":              lambda v: "2026-01-01T12:00:00",
+    "datetime_parsing":           lambda v: "2026-01-01T12:00:00",
+    "datetime_from_date_parsing": lambda v: "2026-01-01T12:00:00",
+    "datetime_past":              lambda v: "2020-01-01T12:00:00",
+    "datetime_future":            lambda v: "2030-01-01T12:00:00",
+    "time_type":                  lambda v: "12:00:00",
+    "time_parsing":               lambda v: "12:00:00",
 }
+
+
+def _guess_field_value(field_name: str, field_defaults: dict | None = None):
+    """Name-based guess for a required field's value. Shared by the
+    schema-introspection payload builder AND the 422 "missing field" filler —
+    the latter used to fall straight to "journey-test" for anything that
+    wasn't an email/_id/is_ field, which is how a field literally named
+    `date` got a non-date string (Exp105)."""
+    fl = field_name.lower()
+    if field_defaults and field_name in field_defaults:
+        return field_defaults[field_name]
+    if any(fl == s or fl.endswith(f"_{s}") for s in ("name", "title", "label", "heading", "subject", "caption")):
+        return "Journey Test Item"
+    if any(fl == s or fl.endswith(f"_{s}") for s in ("description", "desc", "details", "notes", "content", "body", "text", "message", "summary", "about", "bio")):
+        return "Journey runner test"
+    if fl.endswith("_id") and fl != "id":
+        return 1
+    if any(fl.startswith(p) for p in ("is_", "has_", "can_", "allow_", "enable_")) or fl in ("active", "enabled", "visible", "public", "completed", "done"):
+        return True
+    if any(fl == s or fl.endswith(f"_{s}") for s in ("count", "num", "number", "amount", "price", "quantity", "total", "score", "rating", "rank", "age", "size", "order", "limit", "max", "min", "hours", "minutes", "duration")):
+        return 1
+    if any(fl == s or fl.endswith(f"_{s}") for s in ("date", "time", "at", "on", "deadline", "due", "expires")):
+        return "2026-01-01"
+    if "email" in fl:
+        return "journey@test.com"
+    if any(fl == s or fl.endswith(f"_{s}") for s in ("url", "link", "href", "src", "image", "avatar", "photo", "icon")):
+        return "https://example.com"
+    return "journey-test"
 
 
 def _detect_api_prefix(architecture: dict) -> str:
@@ -660,7 +709,6 @@ def run_user_journey(
         for field_name in schema_fields:
             if field_name in enriched_payload:
                 continue
-            fl = field_name.lower()
             prop_schema = schema_props.get(field_name) or {}
             enum_values = prop_schema.get("enum")
             prop_type = prop_schema.get("type")
@@ -676,35 +724,12 @@ def run_user_journey(
                 enriched_payload[field_name] = 1.0
             elif prop_type == "array":
                 enriched_payload[field_name] = []
-            elif field_name in _FIELD_DEFAULTS:
-                enriched_payload[field_name] = _FIELD_DEFAULTS[field_name]
-            # Name/title-like fields with entity prefix (team_name, task_title, etc.)
-            elif any(fl == s or fl.endswith(f"_{s}") for s in ("name", "title", "label", "heading", "subject", "caption")):
-                enriched_payload[field_name] = "Journey Test Item"
-            # Description-like fields
-            elif any(fl == s or fl.endswith(f"_{s}") for s in ("description", "desc", "details", "notes", "content", "body", "text", "message", "summary", "about", "bio")):
-                enriched_payload[field_name] = "Journey runner test"
-            # Foreign-key-like fields not already covered
-            elif fl.endswith("_id") and fl != "id":
-                enriched_payload[field_name] = 1
-            # Boolean flags
-            elif any(fl.startswith(p) for p in ("is_", "has_", "can_", "allow_", "enable_")) or fl in ("active", "enabled", "visible", "public", "completed", "done"):
-                enriched_payload[field_name] = True
-            # Numeric fields
-            elif any(fl == s or fl.endswith(f"_{s}") for s in ("count", "num", "number", "amount", "price", "quantity", "total", "score", "rating", "rank", "age", "size", "order", "limit", "max", "min", "hours", "minutes", "duration")):
-                enriched_payload[field_name] = 1
-            # Date/time fields
-            elif any(fl == s or fl.endswith(f"_{s}") for s in ("date", "time", "at", "on", "deadline", "due", "expires")):
-                enriched_payload[field_name] = "2026-01-01"
-            # Email fields
-            elif "email" in fl:
-                enriched_payload[field_name] = "journey@test.com"
-            # URL fields
-            elif any(fl == s or fl.endswith(f"_{s}") for s in ("url", "link", "href", "src", "image", "avatar", "photo", "icon")):
-                enriched_payload[field_name] = "https://example.com"
-            # Fallback: non-empty string so the field is present
             else:
-                enriched_payload[field_name] = "journey-test"
+                # Name-based heuristics (shared with the 422 missing-field
+                # filler): defaults dict, name/title, description, _id,
+                # boolean flags, numerics, dates, email, url, then the
+                # non-empty string fallback.
+                enriched_payload[field_name] = _guess_field_value(field_name, _FIELD_DEFAULTS)
 
         # Send the enriched (schema-aware) payload. Do NOT also try the bare
         # base_payload afterwards — it is a strict subset of enriched_payload
@@ -740,8 +765,18 @@ def run_user_journey(
             try:
                 detail = last_r.json().get("detail", [])
                 _422_detail = detail
-                if isinstance(detail, list) and detail:
-                    targeted = dict(enriched_payload)
+                targeted = dict(enriched_payload)
+                # Up to TWO targeted rounds. One round often only REVEALS the
+                # next constraint rather than clearing them all: confirmed
+                # live (Exp105, expense_tracker) — round 1 fills the missing
+                # `date` field, and only round 2's error says the filled
+                # value has the wrong type. A single-shot retry gave up
+                # exactly there. Round 2 runs only if round 1 actually
+                # changed the payload AND the server returned a fresh 422
+                # detail, so this can't loop on a payload it isn't changing.
+                for _round in range(2):
+                    if not (isinstance(detail, list) and detail):
+                        break
                     changed = False
                     for err in detail:
                         loc = err.get("loc", [])
@@ -752,17 +787,12 @@ def run_user_journey(
                         msg = err.get("msg", "").lower()
                         if "missing" in msg or msg_type == "missing":
                             if field_name not in targeted:
-                                fl = field_name.lower()
-                                if field_name in _FIELD_DEFAULTS:
-                                    targeted[field_name] = _FIELD_DEFAULTS[field_name]
-                                elif "email" in fl:
-                                    targeted[field_name] = "journey@test.com"
-                                elif fl.endswith("_id"):
-                                    targeted[field_name] = 1
-                                elif any(fl.startswith(p) for p in ("is_", "has_", "can_")):
-                                    targeted[field_name] = True
-                                else:
-                                    targeted[field_name] = "journey-test"
+                                # Same name-based heuristics as the enriched
+                                # payload builder (Exp105 — this branch used
+                                # to fill any non-email/_id/is_ field with
+                                # "journey-test", including fields literally
+                                # named `date`).
+                                targeted[field_name] = _guess_field_value(field_name, _FIELD_DEFAULTS)
                                 changed = True
                         elif "extra" in msg or "extra_forbidden" in msg_type or "not_permitted" in msg_type:
                             if field_name in targeted:
@@ -786,32 +816,35 @@ def run_user_journey(
                                         changed = True
                                 except Exception:
                                     pass
-                    if changed:
-                        r3 = requests.post(entity_url, json=targeted, headers=headers, timeout=5)
-                        if r3.status_code in (200, 201):
-                            try:
-                                data = r3.json()
-                                entity_id = data.get("id") or (data[0].get("id") if isinstance(data, list) else None)
-                            except Exception:
-                                pass
-                            return True, f"{r3.status_code} id={entity_id} (422-fixed)"
-                        if r3.status_code == 422:
-                            try:
-                                _422_detail = r3.json().get("detail", _422_detail)
-                            except Exception:
-                                pass
-                        elif r3.status_code >= 500:
-                            # The retry itself crashed the server (e.g. a NOT
-                            # NULL constraint the 422 fix-up didn't touch).
-                            # Falling through to the generic "schema mismatch,
-                            # server alive" return below would report this
-                            # step as PASSED while masking a real 500 --
-                            # confirmed live in Experiment 014 (crm):
-                            # phone_number's 422 got fixed, the retry then hit
-                            # `IntegrityError: NOT NULL constraint failed:
-                            # contacts.name`, and the step was still recorded
-                            # as passed with a stale 422 message.
-                            return False, f"{r3.status_code} (server error on 422-retry)"
+                    if not changed:
+                        break
+                    r3 = requests.post(entity_url, json=targeted, headers=headers, timeout=5)
+                    if r3.status_code in (200, 201):
+                        try:
+                            data = r3.json()
+                            entity_id = data.get("id") or (data[0].get("id") if isinstance(data, list) else None)
+                        except Exception:
+                            pass
+                        return True, f"{r3.status_code} id={entity_id} (422-fixed)"
+                    if r3.status_code >= 500:
+                        # The retry itself crashed the server (e.g. a NOT
+                        # NULL constraint the 422 fix-up didn't touch).
+                        # Falling through to the generic "schema mismatch,
+                        # server alive" return below would report this
+                        # step as PASSED while masking a real 500 --
+                        # confirmed live in Experiment 014 (crm):
+                        # phone_number's 422 got fixed, the retry then hit
+                        # `IntegrityError: NOT NULL constraint failed:
+                        # contacts.name`, and the step was still recorded
+                        # as passed with a stale 422 message.
+                        return False, f"{r3.status_code} (server error on 422-retry)"
+                    if r3.status_code != 422:
+                        break
+                    try:
+                        detail = r3.json().get("detail", [])
+                        _422_detail = detail or _422_detail
+                    except Exception:
+                        break
             except Exception:
                 pass
             # Surface the actual validation error instead of a content-free
