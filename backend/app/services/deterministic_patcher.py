@@ -7662,6 +7662,19 @@ def run_deterministic_patches(project_path: str, skip_protected_injections: bool
     # (kills the recurring "required but model allows NULL" validator error)
     _run_patch_isolated(counts, "_patch_schema_nullable_required_mismatch", _patch_schema_nullable_required_mismatch, root)
 
+    # The inverse gap — a nullable=False model column that no *required*
+    # Create-schema field can ever populate — lives in repair/preflight
+    # (fix_model_schema_notnull_gap, Exp012/013) and used to run ONLY
+    # there, i.e. AFTER the V6-stage validation loop had already crashed
+    # its journey on the guaranteed IntegrityError and burned LLM fix
+    # calls on it (Exp113, forge_blog_cms posts.content_markdown: two
+    # journey crashes + a runtime-fix round per run, every run, before
+    # the preflight relax ever fired). Run it here too, pre-validation.
+    def _early_notnull_gap(project_root: Path) -> int:
+        from app.repair.preflight import _fix_model_schema_notnull_gap
+        return 1 if _fix_model_schema_notnull_gap(project_root, []) else 0
+    _run_patch_isolated(counts, "fix_model_schema_notnull_gap_early", _early_notnull_gap, root)
+
     # Response schemas must expose id (journey/frontends need it) and must
     # type DateTime columns as datetime, not str (else 500 on every row)
     _run_patch_isolated(counts, "_patch_response_schema_id_and_datetimes", _patch_response_schema_id_and_datetimes, root)

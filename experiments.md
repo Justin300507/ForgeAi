@@ -7647,3 +7647,33 @@ mixed-extension dedupe).
 
 **Deliverables**: regex + registration diff, test file, this entry.
 **Cost: $0.**
+
+---
+
+## Experiment 113: NotNull-Gap Fixer Ran a Stage Too Late
+
+2026-07-16. The r3 log settled a two-run mystery with line numbers:
+forge_blog_cms's recurring `posts.content_markdown` NOT NULL journey
+crash was NOT a gap in fix_model_schema_notnull_gap's logic — offline
+replay on the exact cached generation relaxes the column correctly —
+but a STAGE bug: the fixer lived only in repair/preflight, which runs
+after the V6-stage validation loop. Sequence per run (r3 lines 290→401):
+V6 runtime validation journey crash #1 → LLM runtime-fix burned →
+journey crash #2 → ... → only THEN `[preflight]
+fix_model_schema_notnull_gap: applied`. Because the LLM response cache
+replays the identical generation, this repeated identically in r2 and
+r3.
+
+**Fix**: run the same preflight function inside
+run_deterministic_patches (new `fix_model_schema_notnull_gap_early`
+entry, lazy import, right after _patch_schema_nullable_required_
+mismatch) — so the guaranteed-unsatisfiable column is relaxed BEFORE
+any validation stage ever exercises it.
+
+**Validation**: end-to-end through run_deterministic_patches on a
+reconstructed pre-relax copy of the real app — early count=1, column
+relaxed; covered-required column stays strict
+(tests/reliability/test_exp113_early_notnull_gap.py 1/1); Exp106/110/
+111 patcher tests still green.
+
+**Deliverables**: wiring diff, test file, this entry. **Cost: $0.**
