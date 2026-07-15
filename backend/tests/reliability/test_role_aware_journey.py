@@ -22,7 +22,7 @@ import shutil
 import sys
 import tempfile
 import threading
-from http.server import BaseHTTPRequestHandler, HTTPServer
+from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from pathlib import Path
 
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), "..", ".."))
@@ -115,7 +115,7 @@ class _FakeRestaurantAppHandler(BaseHTTPRequestHandler):
 def _run_journey_against_fake_server(role_info):
     _FakeRestaurantAppHandler.users = {}
     _FakeRestaurantAppHandler.items = {}
-    server = HTTPServer(("127.0.0.1", 0), _FakeRestaurantAppHandler)
+    server = ThreadingHTTPServer(("127.0.0.1", 0), _FakeRestaurantAppHandler)
     port = server.server_address[1]
     thread = threading.Thread(target=server.serve_forever, daemon=True)
     thread.start()

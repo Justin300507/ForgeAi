@@ -29,7 +29,7 @@ import shutil
 import sys
 import tempfile
 import threading
-from http.server import BaseHTTPRequestHandler, HTTPServer
+from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from pathlib import Path
 
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), "..", ".."))
@@ -148,7 +148,7 @@ def _run_journey(required_fields, poison_field=None):
     _FakeExpenseAppHandler.items = {}
     _FakeExpenseAppHandler.required_fields = required_fields
     _FakeExpenseAppHandler.poison_field = poison_field
-    server = HTTPServer(("127.0.0.1", 0), _FakeExpenseAppHandler)
+    server = ThreadingHTTPServer(("127.0.0.1", 0), _FakeExpenseAppHandler)
     port = server.server_address[1]
     threading.Thread(target=server.serve_forever, daemon=True).start()
     project_root = Path(tempfile.mkdtemp(prefix="datejourney_"))
