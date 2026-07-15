@@ -6,11 +6,12 @@ import React from "react";
 // legible -- but they're drawn from the house palette's softened tints,
 // defined once here instead of re-hardcoded per page.
 const STATUS_STYLES = {
-  pending:   { bg: "rgba(250,204,21,0.12)",  color: "#facc15", border: "rgba(250,204,21,0.25)",  glow: "rgba(250,204,21,0.35)" },
-  running:   { bg: "rgba(99,102,241,0.12)",  color: "#818cf8", border: "rgba(99,102,241,0.25)",  glow: "rgba(99,102,241,0.45)" },
-  done:      { bg: "rgba(34,197,94,0.12)",   color: "#4ade80", border: "rgba(34,197,94,0.25)",   glow: "rgba(34,197,94,0.4)" },
-  error:     { bg: "rgba(239,68,68,0.12)",   color: "#f87171", border: "rgba(239,68,68,0.25)",   glow: "rgba(239,68,68,0.4)" },
-  cancelled: { bg: "rgba(156,163,175,0.12)", color: "#9ca3af", border: "rgba(156,163,175,0.25)", glow: "rgba(156,163,175,0.3)" },
+  pending:   { bg: "rgba(232,179,75,0.12)",  color: "#e8b34b", border: "rgba(232,179,75,0.25)",  glow: "rgba(232,179,75,0.35)" },
+  // Running = the forge is hot: ember, the palette's one loud voice.
+  running:   { bg: "rgba(255,138,61,0.12)",  color: "#ffa96b", border: "rgba(255,138,61,0.28)",  glow: "rgba(255,138,61,0.5)" },
+  done:      { bg: "rgba(88,201,131,0.12)",  color: "#58c983", border: "rgba(88,201,131,0.25)",  glow: "rgba(88,201,131,0.4)" },
+  error:     { bg: "rgba(230,99,88,0.12)",   color: "#e6675c", border: "rgba(230,99,88,0.25)",   glow: "rgba(230,99,88,0.4)" },
+  cancelled: { bg: "rgba(143,167,196,0.10)", color: "#9fb0c4", border: "rgba(143,167,196,0.22)", glow: "rgba(143,167,196,0.3)" },
 };
 
 // live=true adds the pulsing current-color dot AND a soft breathing glow

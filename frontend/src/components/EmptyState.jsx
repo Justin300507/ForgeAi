@@ -8,7 +8,7 @@ export default function EmptyState({ icon: Icon, title, sub, children, className
     <div className={`anim-fade-up text-center py-20 glass-panel rounded-2xl border-dashed ${className}`}>
       {Icon && (
         <div className="mx-auto w-14 h-14 rounded-full liquid-glass flex items-center justify-center mb-5">
-          <Icon size={22} className="text-violet-300" aria-hidden="true" />
+          <Icon size={22} style={{ color: "var(--ember-soft)" }} aria-hidden="true" />
         </div>
       )}
       <p className="hero-serif text-xl text-white mb-1">{title}</p>

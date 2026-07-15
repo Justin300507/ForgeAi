@@ -6,8 +6,9 @@ import NavBar from "../components/NavBar";
 import { useVeil } from "../components/Veil";
 import { useSceneryBoost } from "../components/SceneryBoost";
 import { IDEA_DRAFT_KEY } from "../lib/cinematic";
+import ForgeMeter from "../components/ForgeMeter";
 import { STAGES } from "../lib/pipelineStages";
-import { STAGE_COLORS } from "../lib/forgeAssets";
+import { STAGE_COLORS_APP } from "../lib/forgeAssets";
 
 const EXAMPLES = [
   "A habit tracker with streaks, badges, dark mode, and weekly reports",
@@ -149,11 +150,11 @@ export default function NewProject() {
                         aria-pressed={isSelected}
                         className={`deploy-card${isSelected ? " selected" : ""} liquid-glass rounded-2xl px-4 py-5 border text-center flex flex-col items-center gap-2`}
                         style={{
-                          background: isSelected ? "rgba(124,58,237,0.14)" : undefined,
-                          borderColor: isSelected ? "rgba(167,139,250,0.6)" : "rgba(255,255,255,0.08)",
+                          background: isSelected ? "rgba(255,138,61,0.12)" : undefined,
+                          borderColor: isSelected ? "rgba(255,169,107,0.55)" : "rgba(255,255,255,0.08)",
                         }}>
                         <span className="w-10 h-10 rounded-full liquid-glass flex items-center justify-center">
-                          <d.Icon size={17} className={isSelected ? "text-violet-200" : "text-gray-400"} aria-hidden="true" />
+                          <d.Icon size={17} className={isSelected ? "text-[#ffcf9e]" : "text-gray-400"} aria-hidden="true" />
                         </span>
                         <div className="text-sm font-semibold text-white">{d.label}</div>
                         <div className="text-xs text-gray-500">{d.sub}</div>
@@ -162,7 +163,7 @@ export default function NewProject() {
                             {allConnected ? "Ready" : "Setup needed"}
                           </span>
                         )}
-                        {isSelected && <Check size={15} className="text-violet-300" aria-hidden="true" />}
+                        {isSelected && <Check size={15} className="text-[#ffb47a]" aria-hidden="true" />}
                       </button>
                     );
                   })}
@@ -224,35 +225,44 @@ export default function NewProject() {
           <div className="lg:col-span-5">
             <div className="anim-fade-up glass-panel rounded-2xl p-6 lg:sticky lg:top-24" style={{ "--d": "200ms" }}>
               <div className="w-12 h-12 rounded-full liquid-glass flex items-center justify-center mb-5">
-                <Zap size={20} className="text-violet-300" aria-hidden="true" />
+                <Zap size={20} className="text-[#ffb47a]" aria-hidden="true" />
               </div>
               <h2 className="hero-serif text-xl text-white mb-4">AI Pipeline</h2>
-              <ol className="space-y-3.5">
-                {STAGES.map((stage, i) => {
-                  const StageIcon = stage.Icon;
-                  return (
-                    <li key={stage.id} className="flex items-center gap-3 text-sm text-gray-400">
-                      {/* Each stage wears its landing forge-arc color (cool
-                          idea-blue warming to ember, resolving emerald) —
-                          the preview is a still of the same story the
-                          marketing forge tells. */}
-                      <span
-                        className={`pipeline-node-dot w-5 h-5 rounded-full flex items-center justify-center shrink-0${igniting ? " igniting" : ""}`}
-                        style={{
-                          "--node-delay": `${i * 420}ms`,
-                          "--ignite-delay": `${i * 65}ms`,
-                          color: STAGE_COLORS[i]?.accent || "#c4b5fd",
-                          background: `${STAGE_COLORS[i]?.accent || "#c4b5fd"}26`,
-                        }}
-                        aria-hidden="true">
-                        <StageIcon size={11} />
-                      </span>
-                      <span>{stage.label}</span>
-                      <span className="text-xs text-gray-600 ml-auto">{igniting ? "…" : "Waiting…"}</span>
-                    </li>
-                  );
-                })}
-              </ol>
+              {/* The ForgeMeter waits beside the stage list as a pilot
+                  light; pressing Forge starts it heating, and the live
+                  run view it hands off to continues the same column. */}
+              <div className="flex gap-5">
+                <ForgeMeter
+                  progress={igniting ? 0.1 : 0}
+                  status={igniting ? "running" : "idle"}
+                  className="self-stretch shrink-0"
+                />
+                <ol className="space-y-3.5 flex-1 min-w-0">
+                  {STAGES.map((stage, i) => {
+                    const StageIcon = stage.Icon;
+                    return (
+                      <li key={stage.id} className="flex items-center gap-3 text-sm text-gray-400">
+                        {/* Each stage wears its forge-arc color (cool
+                            idea-blue heating through copper and ember,
+                            resolving emerald). */}
+                        <span
+                          className={`pipeline-node-dot w-5 h-5 rounded-full flex items-center justify-center shrink-0${igniting ? " igniting" : ""}`}
+                          style={{
+                            "--node-delay": `${i * 420}ms`,
+                            "--ignite-delay": `${i * 65}ms`,
+                            color: STAGE_COLORS_APP[i]?.accent || "#ffb47a",
+                            background: `${STAGE_COLORS_APP[i]?.accent || "#ffb47a"}26`,
+                          }}
+                          aria-hidden="true">
+                          <StageIcon size={11} />
+                        </span>
+                        <span>{stage.label}</span>
+                        <span className="text-xs text-gray-600 ml-auto">{igniting ? "…" : "Waiting…"}</span>
+                      </li>
+                    );
+                  })}
+                </ol>
+              </div>
               <p className="text-xs text-gray-600 mt-5 pt-4 border-t border-white/5">
                 The full pipeline typically runs 3–5 minutes.
               </p>

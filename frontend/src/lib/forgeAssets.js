@@ -38,6 +38,18 @@ export const STAGE_COLORS = [
   { id: "done",     accent: "#7ee0b0", glow: "rgba(126, 224, 176, 0.20)" },
 ];
 
+// App-side variant of the arc: identical except the two purple-family
+// entries (backend violet, frontend pink) become heated-metal steps, so
+// product screens carry zero purple. The landing keeps STAGE_COLORS
+// above by explicit request — its color story is frozen as shipped.
+export const STAGE_COLORS_APP = STAGE_COLORS.map((s) =>
+  s.id === "backend"
+    ? { ...s, accent: "#cb9058", glow: "rgba(203, 144, 88, 0.22)" }
+    : s.id === "frontend"
+    ? { ...s, accent: "#f2a95c", glow: "rgba(242, 169, 92, 0.22)" }
+    : s
+);
+
 // One-line honest descriptions of what each stage actually does — kept
 // in the marketing voice but true to the real V15 pipeline.
 export const STAGE_COPY = {

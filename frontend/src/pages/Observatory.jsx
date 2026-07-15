@@ -1,18 +1,84 @@
 import React, { useEffect, useState } from "react";
+import { Link } from "react-router-dom";
 import NavBar from "../components/NavBar";
 import StatCard from "../components/StatCard";
-import { observatoryAPI } from "../api";
+import StatusBadge from "../components/StatusBadge";
+import ForgeMeter from "../components/ForgeMeter";
+import { observatoryAPI, jobsAPI } from "../api";
+import { STAGES, detectStage } from "../lib/pipelineStages";
 import {
   ShieldCheck, AlertTriangle, TrendingUp, TrendingDown, Minus,
-  Activity, FlaskConical, Rocket,
+  Activity, FlaskConical, Rocket, Flame,
 } from "lucide-react";
 
 const HEALTH_COLOR = {
-  Healthy: "#4ade80",
-  Degraded: "#facc15",
-  Unhealthy: "#f87171",
+  Healthy: "#58c983",
+  Degraded: "#e8b34b",
+  Unhealthy: "#e6675c",
   Unknown: "#6b7280",
 };
+
+// Observatory is a watch floor, but when the forge is actually burning
+// it should say so: any running/pending jobs surface here with the same
+// ForgeMeter charge column the run view uses, linking into the run.
+function LiveForge() {
+  const [live, setLive] = useState([]);
+
+  useEffect(() => {
+    let mounted = true;
+    const poll = async () => {
+      try {
+        const r = await jobsAPI.list();
+        const active = (r.data.jobs || []).filter(
+          (j) => j.status === "running" || j.status === "pending"
+        );
+        const detailed = await Promise.all(
+          active.slice(0, 4).map(async (j) => {
+            try {
+              const d = await jobsAPI.get(j.id);
+              const idx = Math.max(0, STAGES.findIndex((s) => s.id === detectStage(d.data.logs || [])));
+              return { ...j, progress: idx / (STAGES.length - 1) };
+            } catch {
+              return { ...j, progress: 0 };
+            }
+          })
+        );
+        if (mounted) setLive(detailed);
+      } catch {
+        // Watch floor stays calm on a failed poll; next tick retries.
+      }
+    };
+    poll();
+    const t = setInterval(poll, 5000);
+    return () => { mounted = false; clearInterval(t); };
+  }, []);
+
+  if (!live.length) return null;
+  return (
+    <div className="anim-fade-up glass-panel rounded-2xl px-5 py-4 mb-8">
+      <h2 className="hero-serif text-xl text-white mb-3 flex items-center gap-2">
+        <Flame size={18} className="text-[#ffb47a]" aria-hidden="true" /> Live forge
+      </h2>
+      <div className="grid sm:grid-cols-2 gap-3">
+        {live.map((j) => (
+          <Link
+            key={j.id}
+            to={`/projects/${j.id}`}
+            className="hover-lift flex items-center gap-4 rounded-xl border border-white/5 bg-white/[0.02] px-4 py-3"
+          >
+            <ForgeMeter progress={j.progress} status="running" className="h-16 shrink-0" />
+            <div className="flex-1 min-w-0">
+              <p className="text-sm text-gray-200 line-clamp-1">{j.idea}</p>
+              <div className="mt-1.5 flex">
+                <StatusBadge status={j.status} live />
+              </div>
+            </div>
+          </Link>
+        ))}
+      </div>
+    </div>
+  );
+}
 
 function TrendChart({ points }) {
   const [hover, setHover] = useState(null);
@@ -37,18 +103,18 @@ function TrendChart({ points }) {
         ))}
         <defs>
           <linearGradient id="obs-trend-fill" x1="0" y1="0" x2="0" y2="1">
-            <stop offset="0%" stopColor="#818cf8" stopOpacity="0.22" />
-            <stop offset="100%" stopColor="#818cf8" stopOpacity="0" />
+            <stop offset="0%" stopColor="#8fa7c4" stopOpacity="0.22" />
+            <stop offset="100%" stopColor="#8fa7c4" stopOpacity="0" />
           </linearGradient>
         </defs>
         <path d={areaPath} fill="url(#obs-trend-fill)" stroke="none" />
-        <path d={path} fill="none" stroke="#818cf8" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+        <path d={path} fill="none" stroke="#8fa7c4" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
         {points.map((p, i) => (
           <circle
             key={i}
             cx={xAt(i)} cy={yAt(p.avg_score)}
             r={hover === i ? 5 : 3}
-            fill={hover === i ? "#c7d2fe" : "#818cf8"}
+            fill={hover === i ? "#cfdcec" : "#8fa7c4"}
             style={{ transition: "r 120ms ease-out" }}
           />
         ))}
@@ -75,7 +141,7 @@ function TrendChart({ points }) {
         >
           <p className="text-white font-medium">{points[hover].label}</p>
           <p className="text-gray-500">{points[hover].timestamp} · n={points[hover].n}</p>
-          <p className="text-indigo-300 mt-0.5">avg score {points[hover].avg_score}</p>
+          <p className="text-[#aec1da] mt-0.5">avg score {points[hover].avg_score}</p>
         </div>
       )}
     </div>
@@ -97,7 +163,7 @@ function PreventionBars({ byCategory }) {
           <div className="h-1.5 rounded-full bg-white/5 overflow-hidden">
             <div
               className="h-full rounded-full"
-              style={{ width: `${(count / max) * 100}%`, background: "linear-gradient(90deg, #818cf8, #a78bfa)" }}
+              style={{ width: `${(count / max) * 100}%`, background: "linear-gradient(90deg, #8fa7c4, #ffb47a)" }}
             />
           </div>
         </div>
@@ -107,7 +173,7 @@ function PreventionBars({ byCategory }) {
 }
 
 function AttributionRow({ row, delay }) {
-  const color = row.direction === "improved" ? "#4ade80" : row.direction === "regressed" ? "#f87171" : "#6b7280";
+  const color = row.direction === "improved" ? "#58c983" : row.direction === "regressed" ? "#e6675c" : "#6b7280";
   const Icon = row.direction === "improved" ? TrendingUp : row.direction === "regressed" ? TrendingDown : Minus;
   return (
     <div className="anim-fade-up flex items-center gap-3 glass-panel rounded-xl px-4 py-3" style={{ "--d": `${delay}ms` }}>
@@ -130,7 +196,7 @@ function ExperimentCard({ exp, delay }) {
   return (
     <div className="anim-fade-up glass-panel rounded-xl px-4 py-3.5" style={{ "--d": `${delay}ms` }}>
       <div className="flex items-center gap-2 mb-1">
-        <span className="text-xs font-mono text-indigo-300">#{exp.number}</span>
+        <span className="text-xs font-mono text-[#aec1da]">#{exp.number}</span>
         {exp.cost_free && (
           <span className="text-[10px] px-1.5 py-0.5 rounded-full border border-emerald-500/30 text-emerald-400">
             $0
@@ -159,7 +225,7 @@ export default function Observatory() {
       <div className="max-w-5xl mx-auto px-6 py-12">
         <div className="anim-fade-up mb-8">
           <h1 className="hero-serif text-4xl sm:text-5xl text-white leading-tight flex items-center gap-3">
-            <Activity size={34} className="text-violet-300" aria-hidden="true" />
+            <Activity size={34} className="text-[#ffb47a]" aria-hidden="true" />
             Observatory
           </h1>
           <p className="text-gray-500 text-sm mt-2">
@@ -180,6 +246,8 @@ export default function Observatory() {
             {[0, 1, 2].map((i) => <div key={i} className="skeleton h-20 rounded-2xl" />)}
           </div>
         )}
+
+        <LiveForge />
 
         {data && (
           <>
@@ -263,7 +331,7 @@ export default function Observatory() {
 
               <div className="anim-fade-up glass-panel rounded-2xl px-5 py-5" style={{ "--d": "280ms" }}>
                 <h2 className="hero-serif text-xl text-white mb-1 flex items-center gap-2">
-                  <Rocket size={18} className="text-violet-300" aria-hidden="true" /> Experiment Attribution
+                  <Rocket size={18} className="text-[#ffb47a]" aria-hidden="true" /> Experiment Attribution
                 </h2>
                 <p className="text-xs text-gray-600 mb-4">Before → after score per canary run. A confounded confidence still means "check the log," not "trust the delta."</p>
                 <div className="space-y-2 max-h-[280px] overflow-y-auto pr-1">
@@ -277,7 +345,7 @@ export default function Observatory() {
             {/* Recent experiments */}
             <div className="anim-fade-up mb-4" style={{ "--d": "320ms" }}>
               <h2 className="hero-serif text-2xl text-white flex items-center gap-2">
-                <FlaskConical size={20} className="text-violet-300" aria-hidden="true" /> Recent Experiments
+                <FlaskConical size={20} className="text-[#ffb47a]" aria-hidden="true" /> Recent Experiments
               </h2>
             </div>
             <div className="grid sm:grid-cols-2 gap-3">

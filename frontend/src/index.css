@@ -3,11 +3,24 @@
 @tailwind utilities;
 
 :root {
-  --brand: #7c3aed;
-  --brand-soft: #a78bfa;
-  --sunset: #d97792; /* the hero horizon's warm pink, carried inside */
-  --ink-bg: #0b0813;
-  --surface: rgba(25, 20, 38, 0.5);
+  /* ── Forge palette: heated metal on obsidian ─────────────────────────
+     The base is a cool near-black so the warm accents actually glow.
+     Ember carries every active/primary state; steel is the restrained
+     cool counterweight for waiting/inactive states; status colors stay
+     recognizable but desaturated so they sit in the same room. */
+  --ink-bg: #08090c;                    /* obsidian */
+  --surface: rgba(19, 21, 26, 0.55);    /* charcoal glass */
+  --ember: #ff8a3d;                     /* heated metal — primary accent */
+  --ember-soft: #ffb47a;                /* lifted ember for text/icons */
+  --molten: #ffd9a8;                    /* white-hot highlight */
+  --copper: #c9834e;                    /* cooled metal — borders, quiet warmth */
+  --steel: #8fa7c4;                     /* cool secondary — inactive/waiting */
+  --ok: #58c983;
+  --warn: #e8b34b;
+  --err: #e66358;
+  /* Legacy aliases so any straggler resolves warm, never purple. */
+  --brand: var(--ember);
+  --brand-soft: var(--ember-soft);
 }
 
 body {
@@ -18,12 +31,12 @@ body {
 
 ::-webkit-scrollbar { width: 6px; }
 ::-webkit-scrollbar-track { background: transparent; }
-::-webkit-scrollbar-thumb { background: #2a2a3d; border-radius: 3px; }
+::-webkit-scrollbar-thumb { background: #262a31; border-radius: 3px; }
 
-::selection { background: rgba(124, 58, 237, 0.45); }
+::selection { background: rgba(255, 138, 61, 0.40); }
 
 :focus-visible {
-  outline: 2px solid rgba(167, 139, 250, 0.75);
+  outline: 2px solid rgba(255, 180, 122, 0.8);
   outline-offset: 2px;
   border-radius: 4px;
 }
@@ -67,13 +80,13 @@ body {
 
 .glass-panel {
   background: var(--surface);
-  /* Warm sunset accent border — ties app cards to the hero horizon */
-  border: 1px solid rgba(217, 119, 146, 0.10);
-  /* Ambient colorful bleed instead of a harsh flat-black drop shadow */
+  /* Copper accent border — cards read as metal catching the forge light */
+  border: 1px solid rgba(201, 131, 78, 0.14);
+  /* Ambient ember bleed instead of a harsh flat-black drop shadow */
   box-shadow:
     inset 0 1px 1px rgba(255, 255, 255, 0.05),
-    0 20px 60px -24px rgba(124, 58, 237, 0.20),
-    0 10px 30px -12px rgba(217, 119, 146, 0.10);
+    0 20px 60px -24px rgba(255, 138, 61, 0.14),
+    0 10px 30px -12px rgba(201, 131, 78, 0.10);
   backdrop-filter: blur(12px);
   -webkit-backdrop-filter: blur(12px);
 }
@@ -83,14 +96,14 @@ body {
    busiest part of the twilight background (stepper + live log), so it
    needs a touch more opacity/blur to keep text legible. */
 .workspace-shell {
-  background: rgba(25, 20, 38, 0.55);
+  background: rgba(19, 21, 26, 0.6);
   backdrop-filter: blur(16px);
   -webkit-backdrop-filter: blur(16px);
-  border: 1px solid rgba(217, 119, 146, 0.08);
+  border: 1px solid rgba(201, 131, 78, 0.10);
   box-shadow:
     inset 0 1px 1px rgba(255, 255, 255, 0.05),
-    0 24px 70px -28px rgba(124, 58, 237, 0.22),
-    0 12px 34px -14px rgba(217, 119, 146, 0.10);
+    0 24px 70px -28px rgba(255, 138, 61, 0.16),
+    0 12px 34px -14px rgba(201, 131, 78, 0.10);
 }
 
 /* Independent-scroll panes for the split workspace layout — each pane owns
@@ -138,7 +151,7 @@ body {
 .scenery-scrim {
   position: absolute;
   inset: 0;
-  background: rgba(9, 6, 13, 0.88);
+  background: rgba(6, 7, 10, 0.88);
 }
 
 /* Blueprint drafting grid behind app pages — the landing forge's texture
@@ -183,11 +196,11 @@ body {
 }
 
 .scenery-mist--a {
-  background: radial-gradient(ellipse at 30% 40%, rgba(168, 132, 255, 0.10), transparent 60%);
+  background: radial-gradient(ellipse at 30% 40%, rgba(255, 158, 90, 0.09), transparent 60%);
 }
 
 .scenery-mist--b {
-  background: radial-gradient(ellipse at 70% 65%, rgba(217, 119, 146, 0.08), transparent 60%);
+  background: radial-gradient(ellipse at 70% 65%, rgba(201, 131, 78, 0.08), transparent 60%);
 }
 
 .scenery-light {
@@ -239,7 +252,7 @@ body {
 }
 
 .scenery-particle--dust {
-  background: rgba(226, 218, 255, 0.4);
+  background: rgba(255, 229, 205, 0.38);
 }
 
 .scenery-particle--firefly {
@@ -276,7 +289,7 @@ body {
 }
 
 .scenery-layer.boosted .scenery-scrim {
-  background: rgba(9, 6, 13, 0.74);
+  background: rgba(6, 7, 10, 0.74);
 }
 
 .scenery-layer.boosted .scenery-mist--a,
@@ -322,8 +335,8 @@ body {
   width: 70vw;
   height: 70vh;
   background:
-    radial-gradient(closest-side at 60% 45%, rgba(217, 119, 146, 0.22), transparent 70%),
-    radial-gradient(closest-side at 30% 70%, rgba(124, 58, 237, 0.12), transparent 70%);
+    radial-gradient(closest-side at 60% 45%, rgba(255, 138, 61, 0.16), transparent 70%),
+    radial-gradient(closest-side at 30% 70%, rgba(201, 131, 78, 0.10), transparent 70%);
   filter: blur(55px);
   animation: aurora-drift 26s ease-in-out infinite alternate;
   pointer-events: none;
@@ -339,8 +352,8 @@ body {
   width: 65vw;
   height: 65vh;
   background:
-    radial-gradient(closest-side at 45% 55%, rgba(56, 132, 255, 0.10), transparent 70%),
-    radial-gradient(closest-side at 70% 30%, rgba(124, 58, 237, 0.09), transparent 70%);
+    radial-gradient(closest-side at 45% 55%, rgba(143, 167, 196, 0.10), transparent 70%),
+    radial-gradient(closest-side at 70% 30%, rgba(255, 138, 61, 0.05), transparent 70%);
   filter: blur(60px);
   animation: aurora-drift 32s ease-in-out infinite alternate-reverse;
   pointer-events: none;
@@ -352,9 +365,20 @@ body {
   z-index: 1;
 }
 
-/* Serif numerals blooming from white into the sunset pink */
+/* Serif numerals blooming from white into the sunset pink.
+   LANDING-ONLY (StatsSection) — the landing keeps its original color
+   story by explicit request; app screens use .forge-stat-value below. */
 .stat-value {
   background: linear-gradient(135deg, #ffffff 30%, #c4b5fd 75%, #e8a2b5 100%);
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+}
+
+/* Serif numerals blooming from white heat into ember — the app-side
+   number treatment (StatCard cockpit tiles). */
+.forge-stat-value {
+  background: linear-gradient(135deg, #ffffff 30%, var(--molten) 68%, var(--ember) 100%);
   -webkit-background-clip: text;
   background-clip: text;
   color: transparent;
@@ -395,9 +419,9 @@ body {
   align-items: center;
   justify-content: center;
   background:
-    radial-gradient(900px 620px at 50% 62%, rgba(124, 58, 237, 0.30), transparent 65%),
-    radial-gradient(720px 480px at 75% 15%, rgba(217, 119, 146, 0.18), transparent 60%),
-    #0b0813;
+    radial-gradient(900px 620px at 50% 62%, rgba(255, 138, 61, 0.20), transparent 65%),
+    radial-gradient(720px 480px at 75% 15%, rgba(201, 131, 78, 0.14), transparent 60%),
+    #08090c;
   opacity: 0;
   pointer-events: none;
   transition: opacity 0.55s cubic-bezier(0.4, 0, 0.2, 1);
@@ -413,7 +437,7 @@ body {
   width: min(70vw, 640px);
   height: min(70vw, 640px);
   border-radius: 9999px;
-  background: radial-gradient(closest-side, rgba(255, 217, 168, 0.32), rgba(217, 119, 146, 0.16) 45%, transparent 72%);
+  background: radial-gradient(closest-side, rgba(255, 217, 168, 0.32), rgba(255, 138, 61, 0.16) 45%, transparent 72%);
   opacity: 0;
   pointer-events: none;
 }
@@ -486,11 +510,11 @@ body {
 }
 
 .glow-focus:focus-within {
-  border-color: rgba(167, 139, 250, 0.5);
+  border-color: rgba(255, 180, 122, 0.5);
   box-shadow:
     inset 0 1px 1px rgba(255, 255, 255, 0.05),
-    0 0 0 1px rgba(167, 139, 250, 0.25),
-    0 0 28px rgba(124, 58, 237, 0.18);
+    0 0 0 1px rgba(255, 180, 122, 0.25),
+    0 0 28px rgba(255, 138, 61, 0.16);
 }
 
 .glow-focus textarea,
@@ -517,7 +541,7 @@ body {
 
 .deploy-card.selected {
   transform: translateY(-3px) scale(1.02);
-  box-shadow: 0 20px 48px -16px rgba(124, 58, 237, 0.38);
+  box-shadow: 0 20px 48px -16px rgba(255, 138, 61, 0.32);
 }
 
 .pipeline-node-dot {
@@ -639,10 +663,11 @@ body {
   animation: train-bob 3s ease-in-out infinite;
 }
 
-/* Active stepper node: crisp neon-emerald glow (vs. plain violet before) */
+/* Active stepper node: the live stage is the hottest point in the run —
+   it glows ember, not emerald (green is reserved for "done"). */
 @keyframes stepper-pulse {
-  0%, 100% { box-shadow: 0 0 0 0 rgba(52, 211, 153, 0.45), 0 0 14px 2px rgba(52, 211, 153, 0.35); }
-  50%      { box-shadow: 0 0 0 4px rgba(52, 211, 153, 0.08), 0 0 20px 4px rgba(52, 211, 153, 0.5); }
+  0%, 100% { box-shadow: 0 0 0 0 rgba(255, 138, 61, 0.45), 0 0 14px 2px rgba(255, 138, 61, 0.35); }
+  50%      { box-shadow: 0 0 0 4px rgba(255, 138, 61, 0.08), 0 0 20px 4px rgba(255, 138, 61, 0.5); }
 }
 
 .stepper-node-active {
@@ -699,7 +724,7 @@ body {
 .stepper-connector__fill {
   position: absolute;
   inset: 0;
-  background: #4ade8050;
+  background: rgba(88, 201, 131, 0.31);
   transition: transform 600ms cubic-bezier(0.16, 1, 0.3, 1);
 }
 
@@ -745,7 +770,7 @@ body {
 }
 
 .scenery-layer.sustained .scenery-scrim {
-  background: rgba(9, 6, 13, 0.80);
+  background: rgba(6, 7, 10, 0.80);
 }
 
 @media (prefers-reduced-motion: no-preference) {
@@ -938,4 +963,245 @@ body {
 @media (prefers-reduced-motion: reduce) {
   .forge-stage-bg { transition: none; }
   .forge-cursor-dot, .forge-cursor-ring { display: none; }
+}
+
+/* ── Scenery moods: same world, different rooms ───────────────────────
+   Scenery.jsx stamps one mood class on .scenery-layer from the route.
+   Every mood is compositor-only (opacity/filter/animation timing on the
+   layers that already exist) — no new elements, no per-frame JS.
+
+   calm      Dashboard — coals banked for the night (the recolored default)
+   work      New App + run view — the forge lit and working
+   watch     Observatory — cool steel vigilance, ember held back
+   still     Deploy Keys — a quiet vault; almost no motion
+   threshold Auth — the doorway, warm light pooling low */
+
+.scenery-layer.mood-work .scenery-mist--a,
+.scenery-layer.mood-work .scenery-mist--b,
+.scenery-layer.mood-work .scenery-light {
+  filter: brightness(1.12);
+}
+
+.scenery-layer.mood-work .scenery-scrim {
+  background: rgba(6, 7, 10, 0.84);
+}
+
+.scenery-layer.mood-watch .scenery-mist--a {
+  background: radial-gradient(ellipse at 30% 40%, rgba(143, 167, 196, 0.10), transparent 60%);
+}
+
+.scenery-layer.mood-watch .scenery-mist--b {
+  background: radial-gradient(ellipse at 70% 65%, rgba(255, 158, 90, 0.05), transparent 60%);
+}
+
+.scenery-layer.mood-watch .scenery-light {
+  background: radial-gradient(480px 480px at 50% 35%, rgba(196, 216, 240, 0.07), transparent 70%);
+}
+
+.scenery-layer.mood-watch .scenery-scrim {
+  background: rgba(5, 6, 9, 0.90);
+}
+
+/* Deploy Keys: credentials screen — dimmest, and effectively motionless. */
+.scenery-layer.mood-still .scenery-scrim {
+  background: rgba(5, 6, 9, 0.92);
+}
+
+.scenery-layer.mood-still .scenery-mist--a,
+.scenery-layer.mood-still .scenery-mist--b,
+.scenery-layer.mood-still .scenery-light,
+.scenery-layer.mood-still .scenery-particle,
+.scenery-layer.mood-still .scenery-blueprint {
+  animation: none;
+}
+
+.scenery-layer.mood-still .scenery-particle {
+  opacity: calc(var(--particle-base-opacity) * 0.5);
+}
+
+.scenery-layer.mood-threshold .scenery-scrim {
+  background: rgba(6, 7, 10, 0.84);
+}
+
+.scenery-layer.mood-threshold .scenery-light {
+  background: radial-gradient(560px 520px at 50% 78%, rgba(255, 190, 130, 0.12), transparent 70%);
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  .scenery-layer.mood-work .scenery-mist--a { animation-duration: 48s; }
+  .scenery-layer.mood-work .scenery-mist--b { animation-duration: 62s; }
+  .scenery-layer.mood-work .scenery-light   { animation-duration: 80s; }
+  /* Observatory: steady, not dreamy — drift exists but doesn't wander. */
+  .scenery-layer.mood-watch .scenery-light  { animation: none; }
+}
+
+/* ── ForgeMeter: the charge column beside a pipeline ──────────────────
+   One shared primitive (components/ForgeMeter.jsx) for the New App
+   preview, the live run view, and Observatory's live strip. The fill is
+   a window onto a fixed molten gradient sized to the whole tube, so the
+   visible color naturally climbs from dull heat to white-hot as the run
+   progresses — the meter IS the metal heating. Set `--fill` (0..1)
+   inline; .running/.done/.error/.idle drive the state looks. */
+
+.forge-meter {
+  --fill: 0;
+  position: relative;
+  width: 18px;
+  display: flex;
+  align-items: stretch;
+  justify-content: center;
+}
+
+.forge-meter__tube {
+  position: relative;
+  width: 100%;
+  border-radius: 9999px;
+  background: rgba(255, 255, 255, 0.04);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  overflow: hidden;
+  transition: box-shadow 700ms ease, border-color 700ms ease;
+  box-shadow:
+    inset 0 1px 2px rgba(0, 0, 0, 0.5),
+    0 0 calc(4px + var(--fill) * 22px) rgba(255, 138, 61, calc(0.10 + var(--fill) * 0.45));
+}
+
+.forge-meter__fill {
+  position: absolute;
+  inset-inline: 0;
+  bottom: 0;
+  height: calc(var(--fill) * 100%);
+  overflow: hidden;
+  transition: height 900ms cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+/* Fixed-height gradient revealed by the fill window: dull coal-red at
+   the bottom, ember mid, molten white heat at the top. */
+.forge-meter__molten {
+  position: absolute;
+  inset-inline: 0;
+  bottom: 0;
+  height: calc(100% / max(var(--fill), 0.02));
+  background: linear-gradient(
+    to top,
+    #7e3a1e 0%,
+    #d96a2e 38%,
+    var(--ember) 62%,
+    var(--molten) 86%,
+    #fff6e8 100%
+  );
+}
+
+/* Melt line: the bright surface where the metal is being worked. */
+.forge-meter__surface {
+  position: absolute;
+  inset-inline: 0;
+  top: 0;
+  height: 3px;
+  background: rgba(255, 246, 232, 0.9);
+  box-shadow: 0 0 8px rgba(255, 217, 168, 0.8);
+}
+
+/* Stage notches: 8 faint ticks so the fill reads as stages, not percent */
+.forge-meter__notch {
+  position: absolute;
+  left: 20%;
+  right: 20%;
+  height: 1px;
+  background: rgba(255, 255, 255, 0.10);
+  pointer-events: none;
+}
+
+/* Rising embers: born at the melt line, drift up and burn out. Only
+   rendered while .running (the component gates them). */
+.forge-meter__ember {
+  position: absolute;
+  bottom: calc(var(--fill) * 100%);
+  border-radius: 9999px;
+  background: var(--molten);
+  box-shadow: 0 0 6px rgba(255, 169, 107, 0.8);
+  opacity: 0;
+  animation: forge-ember-rise var(--ember-duration, 2.2s) ease-out infinite;
+  animation-delay: var(--ember-delay, 0s);
+}
+
+@keyframes forge-ember-rise {
+  0%   { opacity: 0; transform: translateY(2px) scale(1); }
+  12%  { opacity: 0.9; }
+  100% { opacity: 0; transform: translateY(-34px) scale(0.5); }
+}
+
+/* Idle (New App preview, nothing running yet): a pilot light waiting at
+   the base of the tube. */
+.forge-meter.idle .forge-meter__surface { display: none; }
+
+.forge-meter.idle .forge-meter__tube::after {
+  content: '';
+  position: absolute;
+  left: 50%;
+  bottom: 5px;
+  width: 6px;
+  height: 6px;
+  margin-left: -3px;
+  border-radius: 9999px;
+  background: var(--ember);
+  box-shadow: 0 0 8px rgba(255, 138, 61, 0.7);
+  animation: forge-pilot-breathe 2.8s ease-in-out infinite;
+}
+
+@keyframes forge-pilot-breathe {
+  0%, 100% { opacity: 0.45; }
+  50%      { opacity: 1; }
+}
+
+/* Running: the whole column breathes with the work. */
+.forge-meter.running .forge-meter__tube {
+  animation: forge-meter-breathe 2.4s ease-in-out infinite;
+}
+
+@keyframes forge-meter-breathe {
+  0%, 100% { filter: brightness(1); }
+  50%      { filter: brightness(1.18); }
+}
+
+/* Done: full column settles into a steady, calm, cooled-into-shape glow. */
+.forge-meter.done .forge-meter__tube {
+  animation: none;
+  border-color: rgba(255, 180, 122, 0.35);
+  box-shadow:
+    inset 0 1px 2px rgba(0, 0, 0, 0.4),
+    0 0 18px rgba(255, 169, 107, 0.35);
+}
+
+.forge-meter.done .forge-meter__molten {
+  filter: saturate(0.85) brightness(0.96);
+  transition: filter 1.4s ease;
+}
+
+.forge-meter.done .forge-meter__surface {
+  box-shadow: 0 0 5px rgba(255, 217, 168, 0.5);
+  background: rgba(255, 236, 210, 0.75);
+}
+
+/* Error: the forge goes cold — the metal dims and desaturates instead of
+   bolting an unrelated red icon onto the metaphor. */
+.forge-meter.error .forge-meter__tube {
+  animation: none;
+  box-shadow: inset 0 1px 2px rgba(0, 0, 0, 0.5), 0 0 0 rgba(0, 0, 0, 0);
+}
+
+.forge-meter.error .forge-meter__molten {
+  filter: grayscale(0.65) brightness(0.5) hue-rotate(-16deg);
+  transition: filter 1.6s ease;
+}
+
+.forge-meter.error .forge-meter__surface {
+  background: rgba(160, 170, 185, 0.4);
+  box-shadow: none;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .forge-meter__fill { transition: none; }
+  .forge-meter__ember { display: none; }
+  .forge-meter.running .forge-meter__tube,
+  .forge-meter.idle .forge-meter__tube::after { animation: none; }
 }

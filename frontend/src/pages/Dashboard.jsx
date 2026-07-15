@@ -204,8 +204,8 @@ export default function Dashboard() {
           <h2 className="hero-serif text-2xl text-white">Recent Projects</h2>
           <div className="flex items-center gap-2">
             {stats.inProgress > 0 && (
-              <span className="flex items-center gap-1.5 text-xs px-2.5 py-1 rounded-full border" style={{background:"rgba(99,102,241,0.1)",color:"#818cf8",borderColor:"rgba(99,102,241,0.2)"}}>
-                <span className="live-dot bg-indigo-400" aria-hidden="true" /> {stats.inProgress} running
+              <span className="flex items-center gap-1.5 text-xs px-2.5 py-1 rounded-full border" style={{background:"rgba(255,138,61,0.1)",color:"#ffa96b",borderColor:"rgba(255,138,61,0.22)"}}>
+                <span className="live-dot bg-[#ffa96b]" aria-hidden="true" /> {stats.inProgress} running
               </span>
             )}
             {jobs.some(j => j.status !== "pending" && j.status !== "running") && (
@@ -241,7 +241,7 @@ export default function Dashboard() {
                 ? (job.forge_score >= 90 ? "A" : job.forge_score >= 80 ? "B" : job.forge_score >= 70 ? "C" : job.forge_score >= 60 ? "D" : "F")
                 : null;
               const gradeColor = job.forge_score != null
-                ? (job.forge_score >= 80 ? "#4ade80" : job.forge_score >= 60 ? "#facc15" : "#f87171")
+                ? (job.forge_score >= 80 ? "#58c983" : job.forge_score >= 60 ? "#e8b34b" : "#e6675c")
                 : null;
               return (
                 <div key={job.id}

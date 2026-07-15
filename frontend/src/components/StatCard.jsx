@@ -5,14 +5,14 @@ import { TrendingUp, TrendingDown, Minus } from "lucide-react";
 // cockpit row so both draw from the same primitive instead of two near-
 // identical local components drifting apart over time.
 //
-// `accent` (any CSS color) ties the tile into the landing forge's stage
-// color arc: it tints the icon and lights a soft ember glow along the top
-// edge on hover. Omitted -> the previous neutral violet behavior.
+// `accent` (any CSS color) ties the tile into the forge's stage color
+// arc: it tints the icon and lights a soft ember glow along the top
+// edge on hover. Omitted -> the house ember-soft.
 export default function StatCard({ icon: Icon, label, value, sub, trend, delay = 0, accent }) {
   return (
     <div
       className="anim-fade-up hover-lift group glass-panel rounded-2xl px-5 py-4 relative overflow-hidden"
-      style={{ "--d": `${delay}ms`, "--stat-accent": accent || "#a78bfa" }}
+      style={{ "--d": `${delay}ms`, "--stat-accent": accent || "var(--ember-soft)" }}
     >
       {/* Ember edge — wakes up on hover in the tile's own stage color */}
       <div
@@ -35,11 +35,11 @@ export default function StatCard({ icon: Icon, label, value, sub, trend, delay =
         )}
       </div>
       <div className="flex items-end gap-2 mt-1.5">
-        <p className="stat-value hero-serif text-3xl leading-none">{value}</p>
+        <p className="forge-stat-value hero-serif text-3xl leading-none">{value}</p>
         {trend != null && trend !== 0 && (
           <span
             className="flex items-center gap-0.5 text-xs font-medium mb-0.5"
-            style={{ color: trend > 0 ? "#4ade80" : "#f87171" }}
+            style={{ color: trend > 0 ? "var(--ok)" : "var(--err)" }}
           >
             {trend > 0 ? <TrendingUp size={13} aria-hidden="true" /> : <TrendingDown size={13} aria-hidden="true" />}
             {Math.abs(trend)}

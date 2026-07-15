@@ -7,8 +7,9 @@ import StatusBadge from "../components/StatusBadge";
 import PillButton from "../components/PillButton";
 import EmptyState from "../components/EmptyState";
 import { useSceneryBoost } from "../components/SceneryBoost";
+import ForgeMeter from "../components/ForgeMeter";
 import { STAGES, detectStage } from "../lib/pipelineStages";
-import { STAGE_COLORS } from "../lib/forgeAssets";
+import { STAGE_COLORS_APP } from "../lib/forgeAssets";
 
 function PipelineBar({ logs, status, vertical }) {
   const active = detectStage(logs);
@@ -64,13 +65,13 @@ function PipelineBar({ logs, status, vertical }) {
         // Upcoming stages carry a faint tint of their landing forge-arc
         // color (see STAGE_COLORS) so the product stepper and the marketing
         // forge read as one story; live/done/error semantics are unchanged.
-        const upcomingTint = STAGE_COLORS[i]?.accent || "#666";
+        const upcomingTint = STAGE_COLORS_APP[i]?.accent || "#666";
         const node = (
           <div className={nodeClass}
             style={{
-              borderColor: err ? "#ef4444" : (fin||past) ? "#4ade80" : isLiveActive ? "#34d399" : "#2a2a3d",
-              background:  err ? "rgba(239,68,68,0.15)" : (fin||past) ? "rgba(74,222,128,0.15)" : isLiveActive ? "rgba(52,211,153,0.15)" : "#12121f",
-              color:       err ? "#f87171" : (fin||past) ? "#4ade80" : isLiveActive ? "#34d399" : `${upcomingTint}99`
+              borderColor: err ? "#d95c4f" : (fin||past) ? "#58c983" : isLiveActive ? "#ff9a55" : "#262a31",
+              background:  err ? "rgba(230,99,88,0.15)" : (fin||past) ? "rgba(88,201,131,0.15)" : isLiveActive ? "rgba(255,138,61,0.15)" : "#12151b",
+              color:       err ? "#e6675c" : (fin||past) ? "#58c983" : isLiveActive ? "#ff9a55" : `${upcomingTint}99`
             }}>
             {(fin || past) ? "✓" : err ? "✕" : isLiveActive
               ? <Loader2 size={12} className="animate-spin" aria-hidden="true" />
@@ -79,7 +80,7 @@ function PipelineBar({ logs, status, vertical }) {
         );
         const label = (
           <span className="text-[9px] whitespace-nowrap font-medium"
-            style={{color: err ? "#f87171" : (fin||past) ? "#4ade80" : isLiveActive ? "#34d399" : "#444"}}>
+            style={{color: err ? "#e6675c" : (fin||past) ? "#58c983" : isLiveActive ? "#ff9a55" : "#444"}}>
             {stage.label}
           </span>
         );
@@ -95,7 +96,7 @@ function PipelineBar({ logs, status, vertical }) {
                 )}
               </div>
               <span className="text-xs font-medium"
-                style={{color: err ? "#f87171" : (fin||past) ? "#4ade80" : isLiveActive ? "#34d399" : "#666"}}>
+                style={{color: err ? "#e6675c" : (fin||past) ? "#58c983" : isLiveActive ? "#ff9a55" : "#666"}}>
                 {stage.label}
               </span>
             </div>
@@ -120,11 +121,11 @@ function PipelineBar({ logs, status, vertical }) {
 }
 
 const LOG_CLS = (line) => {
-  if (/error|failed|FAIL/i.test(line))   return "#f87171";
-  if (/warn/i.test(line))               return "#facc15";
-  if (/✓|passed|OK\b|done/i.test(line)) return "#4ade80";
-  if (/\[CEREBRAS\]/i.test(line))       return "#a78bfa";
-  if (/===|###/.test(line))             return "#818cf8";
+  if (/error|failed|FAIL/i.test(line))   return "#e6675c";
+  if (/warn/i.test(line))               return "#e8b34b";
+  if (/✓|passed|OK\b|done/i.test(line)) return "#58c983";
+  if (/\[CEREBRAS\]/i.test(line))       return "#ffb47a";
+  if (/===|###/.test(line))             return "#8fa7c4";
   return "#9ca3af";
 };
 
@@ -284,7 +285,7 @@ export default function ProjectDetail() {
       <NavBar />
       <div className="max-w-2xl mx-auto px-6 py-16">
         <EmptyState title="This forge is cold" sub="The project doesn't exist or was deleted.">
-          <Link to="/dashboard" className="text-violet-300 text-sm underline underline-offset-4 decoration-violet-300/40 hover:decoration-violet-300">
+          <Link to="/dashboard" className="text-[#ffb47a] text-sm underline underline-offset-4 decoration-[#ffb47a]/40 hover:decoration-[#ffb47a]">
             Back to dashboard
           </Link>
         </EmptyState>
@@ -306,6 +307,12 @@ export default function ProjectDetail() {
   const score    = job.forge_score;
   const grade    = score >= 90 ? "A" : score >= 80 ? "B" : score >= 70 ? "C" : score >= 60 ? "D" : "F";
 
+  // The charge column beside the stepper: fill tracks the detected stage,
+  // and the meter's temperament follows the job (heating / settled / cold).
+  const activeStageIdx = Math.max(0, STAGES.findIndex(s => s.id === detectStage(logs)));
+  const meterProgress = isDone ? 1 : activeStageIdx / (STAGES.length - 1);
+  const meterStatus = isActive ? "running" : isDone ? "done" : "error";
+
   return (
     <div className="app-shell">
       <NavBar />
@@ -316,9 +323,13 @@ export default function ProjectDetail() {
       <div className="max-w-7xl mx-auto px-6 py-8 grid grid-cols-1 lg:grid-cols-5 gap-4 items-start lg:h-[calc(100dvh-6.5rem)]">
         {/* Left pane — 40% */}
         <div className="lg:col-span-2 flex flex-col gap-4 lg:h-full min-h-0">
-          {/* Stepper header */}
-          <div className="anim-fade-up workspace-shell rounded-2xl px-5 py-4 shrink-0">
-            <PipelineBar logs={logs} status={job.status} vertical />
+          {/* Stepper header — the ForgeMeter charge column rises beside
+              the stage list: the run's heat, readable at a glance. */}
+          <div className="anim-fade-up workspace-shell rounded-2xl px-5 py-4 shrink-0 flex gap-5">
+            <ForgeMeter progress={meterProgress} status={meterStatus} className="self-stretch shrink-0" />
+            <div className="flex-1 min-w-0">
+              <PipelineBar logs={logs} status={job.status} vertical />
+            </div>
           </div>
 
           {/* Info card — prompt context, status, results */}
@@ -334,7 +345,7 @@ export default function ProjectDetail() {
               </div>
               {isDone && score != null && (
                 <div className="text-right shrink-0">
-                  <div className="hero-serif text-5xl" style={{color: score>=80?"#4ade80":score>=60?"#facc15":"#f87171"}}>{score}</div>
+                  <div className="hero-serif text-5xl" style={{color: score>=80?"#58c983":score>=60?"#e8b34b":"#e6675c"}}>{score}</div>
                   <div className="text-gray-500 text-xs uppercase tracking-widest mt-1">({grade}) Forge Score</div>
                 </div>
               )}
@@ -343,7 +354,7 @@ export default function ProjectDetail() {
               <div className="flex flex-wrap gap-2 mt-4 pt-4 border-t border-white/5">
                 {job.frontend_url && <a href={job.frontend_url} target="_blank" rel="noopener noreferrer"
                   className="flex items-center gap-1.5 text-xs font-medium px-3 py-1.5 rounded-lg border transition-colors"
-                  style={{background:"rgba(124,58,237,0.12)",color:"#a78bfa",borderColor:"rgba(124,58,237,0.25)"}}>
+                  style={{background:"rgba(255,138,61,0.12)",color:"#ffb47a",borderColor:"rgba(255,138,61,0.25)"}}>
                   <Globe size={13} aria-hidden="true" /> Live frontend</a>}
                 {job.backend_url && (
                   <a href={`${job.backend_url}/docs`} target="_blank" rel="noopener noreferrer"
@@ -386,7 +397,7 @@ export default function ProjectDetail() {
             </span>
             <span className="text-xs font-medium text-gray-400">Generation log</span>
             <span className="text-xs text-gray-600">· {logs.length} lines</span>
-            {isActive && <span className="live-dot bg-violet-400 ml-1" aria-hidden="true" />}
+            {isActive && <span className="live-dot bg-[#ffa96b] ml-1" aria-hidden="true" />}
           </div>
           <div ref={logsRef} onScroll={onScroll}
             className="pane-scroll h-80 lg:h-auto lg:flex-1 min-h-0 p-4 font-mono text-xs space-y-0.5"

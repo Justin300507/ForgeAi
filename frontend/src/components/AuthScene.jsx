@@ -16,7 +16,7 @@ export default function AuthScene({ children }) {
         aria-hidden="true"
         style={{
           background:
-            "radial-gradient(900px 600px at 50% 112%, rgba(124,58,237,0.30), transparent 65%), radial-gradient(640px 420px at 50% -12%, rgba(217,119,146,0.14), transparent 70%)",
+            "radial-gradient(900px 600px at 50% 112%, rgba(255,138,61,0.22), transparent 65%), radial-gradient(640px 420px at 50% -12%, rgba(201,131,78,0.12), transparent 70%)",
         }}
       />
       <div className="relative z-10 w-full max-w-sm">

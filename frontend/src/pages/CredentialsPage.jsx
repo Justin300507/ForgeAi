@@ -123,7 +123,7 @@ function ServiceCard({ service, status, credentials, onSave, onDisconnect }) {
         ) : (
           <button
             onClick={() => setExpanded((v) => !v)}
-            className="text-xs font-medium text-violet-400 hover:text-violet-300 border border-violet-500/30 hover:border-violet-400/50 px-3 py-1.5 rounded-lg transition-all shrink-0"
+            className="text-xs font-medium text-[#ffb47a] hover:text-[#ffcf9e] border border-[#ff8a3d]/30 hover:border-[#ffa96b]/50 px-3 py-1.5 rounded-lg transition-all shrink-0"
           >
             {expanded ? "Cancel" : "Connect"}
           </button>
@@ -172,8 +172,8 @@ function ServiceCard({ service, status, credentials, onSave, onDisconnect }) {
           <button
             onClick={handleSave}
             disabled={saving}
-            className="w-full py-2 rounded-lg text-sm font-semibold text-white transition-all disabled:opacity-40"
-            style={{ background: "var(--brand)" }}
+            className="w-full py-2 rounded-lg text-sm font-semibold text-slate-900 transition-all disabled:opacity-40 hover:brightness-110"
+            style={{ background: "var(--ember)" }}
           >
             {saving ? "Saving…" : "Save & Connect"}
           </button>

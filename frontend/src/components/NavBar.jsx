@@ -9,15 +9,15 @@ const linkCls = ({ isActive }) =>
     ? "text-sm text-white font-medium px-3.5 py-1.5 rounded-full transition-all duration-300"
     : "text-sm text-white/60 hover:text-white px-3.5 py-1.5 rounded-full transition-all duration-300";
 
-// Active nav pill uses the brand accent gradient (same violet -> sunset
-// pink pairing as .stat-value and the aurora glow) instead of a flat
-// white/10 color swap, so "where you are" reads as part of the same
-// system as everything else.
+// Active nav pill glows ember -> copper (the same heated-metal pairing
+// as .forge-stat-value and the aurora glow) instead of a flat white/10
+// color swap, so "where you are" reads as part of the same system as
+// everything else.
 const linkStyle = ({ isActive }) =>
   isActive
     ? {
-        background: "linear-gradient(135deg, rgba(124,58,237,0.55), rgba(217,119,146,0.45))",
-        boxShadow: "inset 0 1px 1px rgba(255,255,255,0.12), 0 4px 18px -6px rgba(124,58,237,0.5)",
+        background: "linear-gradient(135deg, rgba(255,138,61,0.5), rgba(201,131,78,0.4))",
+        boxShadow: "inset 0 1px 1px rgba(255,255,255,0.12), 0 4px 18px -6px rgba(255,138,61,0.5)",
       }
     : {};
 
