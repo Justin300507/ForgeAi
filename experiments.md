@@ -7239,3 +7239,113 @@ generation + journey run yet.
 entry, code diff in `backend/app/services/deterministic_patcher.py`,
 extended test file `backend/tests/reliability/test_role_aware_auth_template.py`.
 **Cost: $0, zero Cerebras calls.**
+
+---
+
+## Experiment 103: Live Validation of Role-Vocabulary Discovery (Exp102)
+
+2026-07-15. One Cerebras generation, no deploy — the confirmation run
+Exp102 queued before any ForgeBench v1.1.
+
+**Hypothesis**: a live generation of ForgeBench's 15_event_management
+idea (the exact app whose required-role-field / getattr()-gate shapes
+Exp102's regex extensions were built from) now resolves a role
+vocabulary via `_discover_role_vocabulary()`, so the V20.1.5
+role-aware journey retry can elevate past a legitimate 403 instead of
+recording a phantom JourneyCRUDFailure.
+
+**Method**: `scripts/exp103_canary.py`, same non-invasive
+instrumentation methodology as Exp079/082/086/089/093/096/099 — wraps
+`_discover_role_vocabulary` (module attribute; both call sites import
+lazily) to record every invocation's result, and `run_user_journey`
+to record every step's name/passed/detail, so "elevated after 403" is
+observed directly, not inferred from the score. Observations persisted
+to `benchmark_results/exp103_role_discovery_observations.json`.
+
+**Result: CONFIRMED, mechanism observed end-to-end live.**
+- `_discover_role_vocabulary()` invoked 9 times, resolved
+  `('user', ['Attendee', 'Organizer', 'user'])` every time — exactly
+  the Exp102-predicted synthesized-default shape for a required role
+  field with no default.
+- 8 journey runs observed. Run 1 (pre-repair) failed on a Create 500
+  (unrelated backend bug the repair loop then fixed). Runs 2-8 all
+  full-pass with `Create entity: 201 (role=Organizer, elevated after
+  403)` — the retry registered an Organizer identity, elevated, and
+  the entire CRUD journey (List/Edit/Delete/Verify/persistence)
+  completed as that identity.
+- Score 90.71/A vs the same idea's 67.86/D in ForgeBench v1 (single
+  run, LLM variance applies — the mechanism observations above are the
+  actual deliverable, and those are direct). fix_attempts=4,
+  elapsed 16,849s wall (provider cooldowns; Cerebras leg).
+
+**Exp101-102 thread now fully CLOSED** (found → root-caused → fixed →
+offline-replayed → live-confirmed). ForgeBench v1.1 is unblocked from
+this thread's side.
+
+**Bonus finding → Exp104**: the one thing keeping this run from A+ was
+a vite build break — `className={`...`)}` (stray paren after the
+template literal) in Dashboard.jsx/LoginPage.jsx — which the 4-attempt
+repair loop never fixed. Root-caused same session; see Experiment 104.
+
+**Deliverables**: `scripts/exp103_canary.py`,
+`benchmark_results/exp103_role_discovery_observations.json`, this
+entry. **Cost: 1 Cerebras generation.**
+
+---
+
+## Experiment 104: Stray-Paren Attribute Template Fix (JSX `)}`)
+
+2026-07-15. Offline implementation + full-corpus replay, $0, zero
+LLM calls. Root-caused from Exp103's one failing dimension.
+
+**The bug**: the frontend LLM emits `className={`... ${x}`)}` — a
+stray `)` between the closing backtick and `}` — almost always in the
+toast `<div>` reproduced from the frontend prompt's own toast example
+(`frontend_prompt.py:437`, whose syntax is CORRECT; the model adds the
+paren on its own, plausibly bleeding the wrapper's legitimate `)}`
+closer into the attribute). esbuild fails the whole build ("Expected
+'}' but found ')'"), which in Exp103's run failed Compilation AND
+N/A'd Frontend Load, Browser UX, and Integration (dist/ never built) —
+one character, four dimensions.
+
+**Evidence chain**:
+- Raw LLM output check: `frontend_response.txt` contains the broken
+  shape verbatim (1 hit broken, 0 correct) → generation bug, NOT a
+  patcher bug. This also **clears the deferred Exp049-era suspicion**
+  that `_fix_jsx_truncated_templates` might be producing this shape —
+  none of the write-time fixers inserts a paren.
+- Corpus prevalence: 32 files across 7 apps (event_manager_platform,
+  hospital_management_system, recipe_manager, a_hotel_booking_system,
+  gym_tracker, restaurant_pos_system + 1), always exactly once per
+  file, same toast line. The 4-attempt repair loop never fixed any of
+  them — write-time deterministic fix is the right layer.
+
+**The fix**: `_fix_stray_paren_after_attr_template()` in
+`app/services/frontend_service.py`, wired into the existing write-time
+chain in `generate_frontend` (after `_fix_jsx_brace_errors`). Regex
+`={`...`)}` requires the backtick to open immediately after `={`, so a
+`)` there can only be legitimate if it closes a paren opened inside a
+`${...}` interpolation — a paren-balance guard skips those spans
+instead of guessing.
+
+**Validation (Exp049's lesson — full corpus, real parser)**:
+- Full-corpus replay: 1,106 .jsx files scanned, exactly the 32
+  known-bad files changed, 0 false positives, every change single-line.
+- Real-parser check: esbuild transform of the actual broken
+  event_manager_platform Dashboard.jsx: exit 1 (the exact canary
+  error) before, exit 0 after.
+- Tests: new `tests/reliability/test_frontend_jsx_fixers.py` (7 tests:
+  confirmed shape, balanced-parens-inside-${} still fixed, unbalanced
+  guard skips, correct form untouched, function-call attributes
+  untouched, multi-occurrence, write-chain wiring guard). 7/7 pass.
+- Full reliability suite: 51/55 files, identical failure set with the
+  change stashed vs applied (all 4 pre-existing, unrelated).
+
+**Estimated improvement**: removes the #1 build-break shape in the
+current corpus (present in 7 of the corpus apps' frontends); in
+Exp103's run alone it was the difference between A and A+ and between
+a browsable app and no dist/ at all.
+
+**Deliverables**: code diff in `app/services/frontend_service.py`,
+`tests/reliability/test_frontend_jsx_fixers.py`, this entry.
+**Cost: $0.**

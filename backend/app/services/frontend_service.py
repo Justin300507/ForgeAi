@@ -23,6 +23,32 @@ def _fix_jsx_brace_errors(content: str) -> str:
     return content
 
 
+_STRAY_PAREN_ATTR_TEMPLATE_RE = re.compile(r"=\{(`[^`]*`)\)\}")
+
+
+def _fix_stray_paren_after_attr_template(content: str) -> str:
+    """
+    Fix the LLM JSX bug where an attribute's template literal is closed with
+    `)}` instead of `}`:  className={`... ${x}`)}  →  className={`... ${x}`}.
+
+    Confirmed live (Exp104, 2026-07-15): the raw frontend LLM response emits
+    this shape verbatim (32 files across 7 corpus apps, always exactly once
+    per file, almost always the toast <div> reproduced from the prompt's own
+    correct example) and it esbuild-breaks the whole build. There is no '('
+    between `={` and the opening backtick, so the ')' can only be legitimate
+    if it closes a paren opened inside a ${...} interpolation — the balance
+    guard below skips those (and any nested-backtick span the regex would
+    truncate shows up as unbalanced, so it is skipped too).
+    """
+    def _repl(m: re.Match) -> str:
+        template = m.group(1)
+        if template.count("(") != template.count(")"):
+            return m.group(0)
+        return "={" + template + "}"
+
+    return _STRAY_PAREN_ATTR_TEMPLATE_RE.sub(_repl, content)
+
+
 def _fix_empty_template_expressions(content: str) -> str:
     """
     Fix the LLM JSX bug where a template literal has an empty interpolation:
@@ -176,6 +202,7 @@ def generate_frontend(
             path = file["path"].strip()
             file["path"] = path
             content = _fix_jsx_brace_errors(file["content"])
+            content = _fix_stray_paren_after_attr_template(content)
             content = _fix_jsx_truncated_templates(content)
             content = _fix_empty_template_expressions(content)
             file["content"] = content
