@@ -3,6 +3,7 @@ import * as THREE from "three";
 import gsap from "gsap";
 import { ScrollTrigger } from "gsap/ScrollTrigger";
 import { STAGE_TEXTURES } from "../lib/forgeAssets";
+import { deviceTier, dprCap, particleBudget, onVisible } from "../lib/perf";
 
 gsap.registerPlugin(ScrollTrigger);
 
@@ -59,8 +60,13 @@ export default function ForgeStrike() {
     const host = hostRef.current;
     if (!root || !host) return;
 
-    const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
-    renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+    // Tier-scaled: AA and full DPR only where the GPU can afford them.
+    const renderer = new THREE.WebGLRenderer({
+      antialias: deviceTier() === "high",
+      alpha: true,
+      powerPreference: "high-performance",
+    });
+    renderer.setPixelRatio(Math.min(window.devicePixelRatio, dprCap()));
     renderer.outputEncoding = THREE.sRGBEncoding;
     host.appendChild(renderer.domElement);
 
@@ -123,7 +129,7 @@ export default function ForgeStrike() {
     scene.add(beamGlow);
 
     // ── Spark burst: directions fixed, radius is a function of scroll ──
-    const COUNT = 900;
+    const COUNT = particleBudget(900);
     const dirs = new Float32Array(COUNT * 3);
     const speeds = new Float32Array(COUNT);
     for (let i = 0; i < COUNT; i++) {
@@ -217,9 +223,13 @@ export default function ForgeStrike() {
       onUpdate: (self) => applyProgress(self.progress),
     });
 
+    // Frame loop — runs only while the strike is on screen (it used to
+    // render every frame for the whole life of the page).
     let raf;
+    let running = false;
     const clock = new THREE.Clock();
     const tick = () => {
+      if (!running) return;
       const t = clock.getElapsedTime();
       // Ambient life on top of the scrubbed state (subtle, additive only).
       slab.position.y = Math.sin(t * 0.7) * 0.04;
@@ -227,9 +237,20 @@ export default function ForgeStrike() {
       renderer.render(scene, camera);
       raf = requestAnimationFrame(tick);
     };
-    raf = requestAnimationFrame(tick);
+    const stopVisibility = onVisible(root, (visible) => {
+      if (visible && !running) {
+        running = true;
+        clock.start();
+        raf = requestAnimationFrame(tick);
+      } else if (!visible) {
+        running = false;
+        cancelAnimationFrame(raf);
+      }
+    });
 
     return () => {
+      running = false;
+      stopVisibility();
       cancelAnimationFrame(raf);
       st.kill();
       window.removeEventListener("resize", resize);

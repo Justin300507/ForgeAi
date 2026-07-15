@@ -3,6 +3,12 @@ import { authAPI } from "./api";
 
 const AuthContext = createContext(null);
 
+// Survives logout (unlike the token): once someone has signed in on this
+// device, the landing page may offer "Open Dashboard" instead of onboarding.
+const RETURNING_KEY = "forge_returning";
+export const hasLoggedInBefore = () =>
+  localStorage.getItem(RETURNING_KEY) === "1";
+
 export function AuthProvider({ children }) {
   const [user, setUser] = useState(null);
   const [loading, setLoading] = useState(true);
@@ -16,6 +22,7 @@ export function AuthProvider({ children }) {
   const login = async (email, password) => {
     const res = await authAPI.login(email, password);
     localStorage.setItem("token", res.data.access_token);
+    localStorage.setItem(RETURNING_KEY, "1");
     const me = await authAPI.me();
     setUser(me.data);
   };

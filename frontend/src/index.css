@@ -403,6 +403,31 @@ body {
   transition: opacity 0.55s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
+/* Forge-strike bloom behind the wordmark while the veil covers: a warm
+   ember flash blooming outward once, so every scene change reads as one
+   hammer-strike of light instead of a plain fade. Compositor-only
+   (opacity + transform). */
+.forge-veil::after {
+  content: '';
+  position: absolute;
+  width: min(70vw, 640px);
+  height: min(70vw, 640px);
+  border-radius: 9999px;
+  background: radial-gradient(closest-side, rgba(255, 217, 168, 0.32), rgba(217, 119, 146, 0.16) 45%, transparent 72%);
+  opacity: 0;
+  pointer-events: none;
+}
+
+.forge-veil.cover::after {
+  animation: veil-bloom 0.9s cubic-bezier(0.16, 1, 0.3, 1) both;
+}
+
+@keyframes veil-bloom {
+  0%   { opacity: 0;   transform: scale(0.4); }
+  35%  { opacity: 0.9; }
+  100% { opacity: 0;   transform: scale(1.7); }
+}
+
 .forge-veil.cover {
   opacity: 1;
   pointer-events: all;
@@ -826,6 +851,47 @@ body {
 .forge-tilt-card {
   transform-style: preserve-3d;
   will-change: transform;
+}
+
+/* The single door at the end of the landing story: a serif "Forge It"
+   pill breathing with ember light. The glow pulse is the only ambient
+   motion — the button itself moves solely in response to the cursor. */
+.forge-cta-btn {
+  box-shadow:
+    0 0 0 1px rgba(255, 255, 255, 0.25),
+    0 10px 46px -8px rgba(255, 169, 107, 0.45),
+    0 24px 80px -20px rgba(124, 58, 237, 0.45);
+  transition: transform 250ms cubic-bezier(0.16, 1, 0.3, 1), box-shadow 250ms ease;
+}
+
+.forge-cta-btn:hover {
+  animation: none; /* let the brighter hover glow win over the breathe loop */
+  transform: translateY(-2px) scale(1.03);
+  box-shadow:
+    0 0 0 1px rgba(255, 255, 255, 0.35),
+    0 14px 56px -8px rgba(255, 169, 107, 0.6),
+    0 30px 90px -20px rgba(124, 58, 237, 0.55);
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  .forge-cta-btn {
+    animation: forge-cta-breathe 3.2s ease-in-out infinite;
+  }
+}
+
+@keyframes forge-cta-breathe {
+  0%, 100% {
+    box-shadow:
+      0 0 0 1px rgba(255, 255, 255, 0.25),
+      0 10px 46px -8px rgba(255, 169, 107, 0.45),
+      0 24px 80px -20px rgba(124, 58, 237, 0.45);
+  }
+  50% {
+    box-shadow:
+      0 0 0 1px rgba(255, 255, 255, 0.3),
+      0 12px 54px -8px rgba(255, 169, 107, 0.62),
+      0 28px 88px -20px rgba(124, 58, 237, 0.55);
+  }
 }
 
 /* Custom cursor: a small forge ember + trailing ring. Mounted only on

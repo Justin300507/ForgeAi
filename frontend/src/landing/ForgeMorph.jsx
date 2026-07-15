@@ -4,6 +4,7 @@ import gsap from "gsap";
 import { ScrollTrigger } from "gsap/ScrollTrigger";
 import { STAGES } from "../lib/pipelineStages";
 import { STAGE_TEXTURES, STAGE_COLORS, STAGE_COPY } from "../lib/forgeAssets";
+import { deviceTier, dprCap, particleBudget, onVisible } from "../lib/perf";
 
 gsap.registerPlugin(ScrollTrigger);
 
@@ -154,8 +155,13 @@ export default function ForgeMorph() {
     if (!host || !root) return;
 
     // ── Scene ──
-    const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
-    renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+    // Tier-scaled: AA and full DPR only where the GPU can afford them.
+    const renderer = new THREE.WebGLRenderer({
+      antialias: deviceTier() === "high",
+      alpha: true,
+      powerPreference: "high-performance",
+    });
+    renderer.setPixelRatio(Math.min(window.devicePixelRatio, dprCap()));
     renderer.outputEncoding = THREE.sRGBEncoding;
     host.appendChild(renderer.domElement);
 
@@ -201,7 +207,7 @@ export default function ForgeMorph() {
 
     // Ember/spark particles in a shallow volume behind + around the slab.
     // They drift upward slowly and shy away from the cursor.
-    const COUNT = 220;
+    const COUNT = particleBudget(220);
     const pos = new Float32Array(COUNT * 3);
     const base = new Float32Array(COUNT * 3);
     for (let i = 0; i < COUNT; i++) {
@@ -284,10 +290,14 @@ export default function ForgeMorph() {
       },
     });
 
-    // ── Frame loop ──
+    // ── Frame loop — runs only while the section is on screen. This
+    // renderer used to burn a full rAF + render pass for the entire life
+    // of the page, even under the hero or past the footer. ──
     let raf;
+    let running = false;
     const clock = new THREE.Clock();
     const tick = () => {
+      if (!running) return;
       const t = clock.getElapsedTime();
       mouse.lx += (mouse.x - mouse.lx) * 0.06;
       mouse.ly += (mouse.y - mouse.ly) * 0.06;
@@ -327,9 +337,20 @@ export default function ForgeMorph() {
       renderer.render(scene, camera);
       raf = requestAnimationFrame(tick);
     };
-    raf = requestAnimationFrame(tick);
+    const stopVisibility = onVisible(root, (visible) => {
+      if (visible && !running) {
+        running = true;
+        clock.start();
+        raf = requestAnimationFrame(tick);
+      } else if (!visible) {
+        running = false;
+        cancelAnimationFrame(raf);
+      }
+    });
 
     return () => {
+      running = false;
+      stopVisibility();
       cancelAnimationFrame(raf);
       st.kill();
       window.removeEventListener("resize", resize);

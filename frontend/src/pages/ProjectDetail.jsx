@@ -16,14 +16,18 @@ function PipelineBar({ logs, status, vertical }) {
   const prevActiveIdx = useRef(activeIdx);
   const [celebrateIdx, setCelebrateIdx] = useState(-1);
   const [shaking, setShaking] = useState(false);
+  const sceneryBoost = useSceneryBoost();
 
   // A stage just finished the moment the detected active stage advances --
   // celebrate the one immediately before the new active stage with a
   // one-shot pop, then clear the flag so it never replays on unrelated
-  // re-renders (e.g. new log lines arriving).
+  // re-renders (e.g. new log lines arriving). The whole scenery flares
+  // with it: every stage the forge completes is felt in the room, not
+  // just on the stepper.
   useEffect(() => {
     if (activeIdx > prevActiveIdx.current) {
       setCelebrateIdx(activeIdx - 1);
+      sceneryBoost?.boost();
       const t = setTimeout(() => setCelebrateIdx(-1), 450);
       prevActiveIdx.current = activeIdx;
       return () => clearTimeout(t);

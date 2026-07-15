@@ -1,9 +1,10 @@
 import React from "react";
 import { Link } from "react-router-dom";
 import { ChevronDown } from "lucide-react";
-import { useAuth } from "../AuthContext";
+import { useAuth, hasLoggedInBefore } from "../AuthContext";
 import { useVeil } from "../components/Veil";
-import { VIDEOS, OVERLAY_PNG, IDEA_DRAFT_KEY } from "../lib/cinematic";
+import { VIDEOS, OVERLAY_PNG } from "../lib/cinematic";
+import { deviceTier, onVisible } from "../lib/perf";
 import useLenis from "../landing/useLenis";
 import CursorFX from "../landing/CursorFX";
 import ForgeMorph from "../landing/ForgeMorph";
@@ -20,15 +21,37 @@ const SANS = { fontFamily: "system-ui, sans-serif" };
 const DARK_HERO = "#182C41";
 
 // How long each ambient scene holds before crossfading to the next.
-const SCENE_HOLD_MS = 3000;
+const SCENE_HOLD_MS = 6000;
+// The crossfade itself (matches the videos' transition-opacity duration-1000)
+// plus a beat — after this, the outgoing video can safely stop decoding.
+const FADE_SETTLE_MS = 1100;
 
 /* The train-window hero — unchanged concept: a journey unfolding behind
    glass while you describe the app you imagine. First screen of the page;
-   the forge story now continues beneath it. */
+   the forge story now continues beneath it.
+
+   Performance contract: only the scene currently on screen decodes video.
+   Low-tier devices park on a single scene (no cycling, one decoder);
+   everyone else plays exactly one video at a time, pausing the outgoing
+   scene once its crossfade settles, and the whole window goes dormant the
+   moment it scrolls out of view. */
 function Hero({ leaving, onLeave }) {
   const { user } = useAuth();
+  // Cycle scenes only where the device can afford multiple video decoders.
+  const scenes = React.useMemo(
+    () => (deviceTier() === "low" ? [VIDEOS[0]] : VIDEOS),
+    []
+  );
   const [activeVideo, setActiveVideo] = React.useState(0);
+  const [heroVisible, setHeroVisible] = React.useState(true);
   const sceneRef = React.useRef(null);
+
+  // Dormancy: the hero is a whole screen tall — once it scrolls away, its
+  // videos must stop decoding or they drag every section below it.
+  React.useEffect(
+    () => onVisible(sceneRef.current, setHeroVisible, "0px"),
+    []
+  );
 
   // Ambient scenes cycle on their own — no controls, just weather.
   React.useEffect(() => {
@@ -37,12 +60,36 @@ function Hero({ leaving, onLeave }) {
       sceneRef.current?.querySelectorAll("video").forEach((v) => v.pause());
       return;
     }
+    if (!heroVisible || scenes.length < 2) return;
     const t = setInterval(
-      () => setActiveVideo((v) => (v + 1) % VIDEOS.length),
+      () => setActiveVideo((v) => (v + 1) % scenes.length),
       SCENE_HOLD_MS
     );
     return () => clearInterval(t);
-  }, []);
+  }, [heroVisible, scenes.length]);
+
+  // Playback management: play the active scene, stop every other one
+  // after the crossfade settles; stop everything when off-screen.
+  React.useEffect(() => {
+    const vids = sceneRef.current?.querySelectorAll("video");
+    if (!vids) return;
+    if (
+      !heroVisible ||
+      window.matchMedia("(prefers-reduced-motion: reduce)").matches
+    ) {
+      vids.forEach((v) => v.pause());
+      return;
+    }
+    vids.forEach((v, i) => {
+      if (i === activeVideo) v.play().catch(() => {});
+    });
+    const t = setTimeout(() => {
+      vids.forEach((v, i) => {
+        if (i !== activeVideo) v.pause();
+      });
+    }, FADE_SETTLE_MS);
+    return () => clearTimeout(t);
+  }, [activeVideo, heroVisible]);
 
   const heroDark = activeVideo === 2;
   const heroColor = { color: heroDark ? DARK_HERO : "#ffffff" };
@@ -51,7 +98,10 @@ function Hero({ leaving, onLeave }) {
     // Soft halo keeps the muted text readable over the busy treeline scene.
     textShadow: heroDark ? "0 1px 14px rgba(255,255,255,0.45)" : "none",
   };
-  const primaryCta = user
+  // "Open Dashboard" is earned: it appears only for an active session or a
+  // device that has signed in before. First-time visitors get onboarding.
+  const returning = Boolean(user) || hasLoggedInBefore();
+  const primaryCta = returning
     ? { to: "/dashboard", label: "Open Dashboard" }
     : { to: "/register", label: "Get Started" };
 
@@ -63,14 +113,15 @@ function Hero({ leaving, onLeave }) {
     >
       {/* Scene layer: videos + window frame, zoomed through on exit */}
       <div className={`scene-zoom ${leaving ? "leaving" : ""}`}>
-        {VIDEOS.map((video, index) => (
+        {scenes.map((video, index) => (
           <video
             key={video.src}
             src={video.src}
-            autoPlay
+            autoPlay={index === 0}
             muted
             loop
             playsInline
+            preload={index === 0 ? "auto" : "metadata"}
             disablePictureInPicture
             aria-hidden="true"
             tabIndex={-1}
@@ -128,8 +179,8 @@ function Hero({ leaving, onLeave }) {
             full-stack application while you watch.
           </p>
 
-          {/* No form up front — the journey below earns the ask; the
-              idea input lives at the end of the scroll (CtaFooter). */}
+          {/* No form up front — the journey below earns the ask; the single
+              Forge It door lives at the end of the scroll (CtaFooter). */}
           <button
             onClick={() =>
               document.getElementById("forge-story")?.scrollIntoView({ behavior: "smooth" })
@@ -167,10 +218,9 @@ export default function Landing() {
     veilNav(to);
   };
 
-  const forgeIdea = (idea) => {
-    if (idea) sessionStorage.setItem(IDEA_DRAFT_KEY, idea);
-    leave(user ? "/new" : "/register");
-  };
+  // The one door at the end of the story: signed-in smiths go straight to
+  // the anvil, everyone else to the sign-in threshold.
+  const forgeIt = () => leave(user ? "/new" : "/login");
 
   return (
     <main className="relative bg-[#0b0813]">
@@ -183,7 +233,7 @@ export default function Landing() {
         <PipelineSection />
         <ExamplesSection />
         <StatsSection />
-        <CtaFooter onForge={forgeIdea} />
+        <CtaFooter onForge={forgeIt} />
       </div>
     </main>
   );

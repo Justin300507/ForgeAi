@@ -38,7 +38,7 @@ export default function Login() {
 
   return (
     <AuthScene>
-      <div className="liquid-glass rounded-3xl p-8" style={SANS}>
+      <div className="glass-panel rounded-3xl p-8" style={SANS}>
         <h1 className="hero-serif text-3xl text-white mb-1">
           Welcome back
         </h1>

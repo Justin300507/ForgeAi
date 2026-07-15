@@ -219,39 +219,33 @@ export function StatsSection() {
   );
 }
 
-/* ── Closing CTA + footer ─────────────────────────────────────────────── */
+/* ── Closing CTA + footer ─────────────────────────────────────────────
+   No prompt here anymore — the story has made its case, so the ending is
+   a single door: Forge It. The idea gets asked for inside, at the anvil
+   (NewProject), after sign-in. */
 export function CtaFooter({ onForge }) {
-  const [idea, setIdea] = React.useState("");
   return (
     <footer className="forge-section pb-12" style={SANS}>
       <div className="max-w-2xl mx-auto text-center">
         <motion.h2 {...rise} className="hero-serif text-4xl sm:text-6xl text-white leading-[1.12]">
           Your turn at the anvil.
         </motion.h2>
-        <motion.form
+        <motion.p
           {...rise}
-          transition={{ ...rise.transition, delay: 0.1 }}
-          onSubmit={(e) => {
-            e.preventDefault();
-            onForge(idea.trim());
-          }}
-          className="liquid-glass glow-focus rounded-full flex items-center gap-2 p-1.5 pl-5 mt-9 w-full max-w-md mx-auto"
+          transition={{ ...rise.transition, delay: 0.08 }}
+          className="text-white/50 text-sm sm:text-base mt-5"
         >
-          <input
-            type="text"
-            value={idea}
-            onChange={(e) => setIdea(e.target.value)}
-            placeholder="Describe the app you imagine…"
-            aria-label="Describe the app you want to build"
-            className="flex-1 min-w-0 bg-transparent outline-none text-sm text-white placeholder-white/40"
-          />
+          Step inside — describe your idea at the forge.
+        </motion.p>
+        <motion.div {...rise} transition={{ ...rise.transition, delay: 0.16 }}>
           <button
-            type="submit"
-            className="bg-white text-slate-900 text-sm font-medium px-5 py-2 rounded-full whitespace-nowrap hover:bg-white/90 transition-colors"
+            type="button"
+            onClick={onForge}
+            className="forge-cta-btn hero-serif text-lg sm:text-xl mt-9 px-12 py-4 rounded-full bg-white text-slate-900"
           >
             Forge It
           </button>
-        </motion.form>
+        </motion.div>
       </div>
       <div className="max-w-5xl mx-auto mt-24 pt-6 border-t border-white/10 flex items-center justify-between text-white/35 text-xs">
         <span className="hero-serif italic text-white/60 text-base">ForgeAI</span>
