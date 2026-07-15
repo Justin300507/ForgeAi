@@ -7614,3 +7614,36 @@ declarations swapped, app boots, live POST /contacts returns
 `tests/reliability/test_exp111_response_model_swap.py` 3/3.
 
 **Deliverables**: patcher diff, test file, this entry. **Cost: $0.**
+
+---
+
+## Experiment 112: Wirer Extension-Blindness (duplicate App.jsx imports)
+
+2026-07-16. Root-caused live from the milestone canary's crm leg: crm
+scored 86.5/B DEPLOY READY but **"Deployment skipped — critical stage
+'frontend_build' failed"** — esbuild: `The symbol "AddContactPage" has
+already been declared` × 7. App.jsx had every page imported twice:
+once by the LLM with `./pages/X.jsx`, once extensionless.
+
+**Root cause**: `_patch_wire_orphan_frontend_routes`'s import regex
+required the closing quote IMMEDIATELY after the module name
+(`\./pages/(\w+)['"]`), so `.jsx`-suffixed imports were invisible — the
+wirer believed every page was un-imported and re-injected all of them.
+The dedupe patcher couldn't help because it runs BEFORE the wirer (its
+own docstring claimed the ordering protected the wirer's injections —
+backwards). The fix loop's error count even went 7→8→7 as another
+attempt added one more duplicate.
+
+**Fixes**: (1) extension made optional in the wirer's regex
+(`(?:\.jsx|\.js|\.tsx|\.ts)?`); (2) a dedupe backstop re-run registered
+AFTER the wirer in run_deterministic_patches.
+
+**Validation**: on the real broken simple_crm frontend — dedupe removes
+all 7 duplicate symbols, the FIXED wirer then injects 0 lines, and
+esbuild transforms the result exit 0 (was exit 1);
+`tests/reliability/test_exp112_wirer_extension_blindness.py` 4/4
+(no-reinject, genuine-orphan still wired, backstop ordering guard,
+mixed-extension dedupe).
+
+**Deliverables**: regex + registration diff, test file, this entry.
+**Cost: $0.**

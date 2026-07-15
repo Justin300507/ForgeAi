@@ -5539,7 +5539,14 @@ def _patch_wire_orphan_frontend_routes(project_path: Path) -> None:
     original = content
 
     # Page components imported into App.jsx: import X from './pages/Y'
-    import_re = re.compile(r"^import\s+(\w+)\s+from\s+['\"]\./pages/(\w+)['\"]", re.MULTILINE)
+    # Extension optional: the LLM writes './pages/X.jsx' while this patcher
+    # injects './pages/X' — requiring the closing quote right after \w+ made
+    # every .jsx-suffixed import invisible, so the wirer re-imported EVERY
+    # page and esbuild died on duplicate symbols (Exp112, simple_crm: the
+    # sole reason an 86.5/B app was blocked from deploying).
+    import_re = re.compile(
+        r"^import\s+(\w+)\s+from\s+['\"]\./pages/(\w+)(?:\.jsx|\.js|\.tsx|\.ts)?['\"]",
+        re.MULTILINE)
     imported_pairs = import_re.findall(content)
     imported_modules = {module for _name, module in imported_pairs}
 
@@ -7615,6 +7622,11 @@ def run_deterministic_patches(project_path: str, skip_protected_injections: bool
     # mounted on a <Route> (see docstring for why this is invisible to
     # every other automated check).
     _run_patch_isolated(counts, "_patch_wire_orphan_frontend_routes", _patch_wire_orphan_frontend_routes, root)
+
+    # Backstop re-run: the wirer above (and the LLM fix loop) can introduce
+    # duplicate identifier imports AFTER the first dedupe pass — esbuild
+    # treats those as a hard error (Exp112).
+    _run_patch_isolated(counts, "_patch_dedupe_frontend_imports_post_wire", _patch_dedupe_frontend_imports, root)
 
     # Must run after the line above: if the app's main authenticated page
     # isn't literally named "Dashboard", login/register's hardcoded
