@@ -7524,3 +7524,26 @@ found in the corpus are covered deterministically.
 
 **Deliverables**: diff in deterministic_patcher.py, test file, this
 entry. **Cost: $0.**
+
+---
+
+## Experiment 109: Final Cerebras Retry in the Auto Chain
+
+2026-07-15. Observed live during the exp109-milestone-r1 canary: one fix
+call died as "Cerebras, Gemini (after retries), and Groq all failed" —
+but the three failures were not equivalent. Cerebras: transient
+"Request timed out" (it served the very next call normally). Gemini:
+429 RESOURCE_EXHAUSTED, prepaid credits depleted (dead for the day).
+Groq: 413, its 12k TPM cap can NEVER take the ~14k-token fix prompt —
+deterministic. So for any large prompt, a single transient Cerebras
+hiccup had zero working fallback and the fix was silently skipped
+(same shape visible in the user's Railway expense_tracker log:
+"Fix failed for src/pages/ExpensesPage.jsx").
+
+**Fix**: `_auto_chain` now ends with ONE Cerebras retry after a 15s
+backoff, skipped when Cerebras is on 402 cooldown (retrying can't help
+there), so genuinely-all-dead cases only pay one extra pause.
+
+Code-only change validated by py_compile + existing suite; live effect
+lands on the next generation run (the running canary predates the
+import). **Cost: $0.**

@@ -72,6 +72,7 @@ def _tracked(provider_name: str, model: str, prompt: str, fn, stage: str = "unkn
 
 _GEMINI_RETRY_ATTEMPTS = 3
 _GEMINI_RETRY_BACKOFF_SECONDS = 5
+_CEREBRAS_FINAL_RETRY_BACKOFF_SECONDS = 15
 
 
 def _auto_chain(prompt, stage, max_tokens, thinking_budget, skip: frozenset = frozenset()):
@@ -120,6 +121,22 @@ def _auto_chain(prompt, stage, max_tokens, thinking_budget, skip: frozenset = fr
         except Exception as e:
             print(f"Groq failed: {e}")
             _note_provider_result("groq", e)
+
+    # Final leg: ONE Cerebras retry after a short backoff. Confirmed live
+    # (Exp109, exp109-milestone-r1): Cerebras failed with a transient
+    # "Request timed out" while Gemini was credit-depleted and Groq 413'd
+    # deterministically (12k TPM cap vs a ~14k-token fix prompt) — the
+    # chain abandoned a call that Cerebras itself served fine seconds
+    # later. Skipped when Cerebras is on cooldown (402) — retrying can't
+    # help there — so genuinely-all-dead cases only pay one extra pause.
+    if "cerebras" not in skip and not _on_cooldown("cerebras"):
+        try:
+            time.sleep(_CEREBRAS_FINAL_RETRY_BACKOFF_SECONDS)
+            print("Using Cerebras (final retry — fallback legs failed)")
+            return _tracked("cerebras", "gpt-oss-120b", prompt, cerebras_generate, stage, max_tokens=max_tokens)
+        except Exception as e:
+            print(f"Cerebras final retry failed: {e}")
+            _note_provider_result("cerebras", e)
 
     raise RuntimeError("Cerebras, Gemini (after retries), and Groq all failed")
 
