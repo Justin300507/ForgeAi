@@ -216,6 +216,10 @@ def main():
     parser.add_argument("--provider", default="auto",
                          help="LLM provider (auto|gemini|groq|cerebras|...); auto already tries "
                               "Gemini first with retries, falling back to Groq")
+    parser.add_argument("--apps", default="",
+                         help="Comma-separated subset of canary app keys (todo,blog_cms,crm) — "
+                              "for resuming a killed run without re-burning finished apps. "
+                              "Default: all three.")
     args = parser.parse_args()
 
     _acquire_lock(args.label)
@@ -227,8 +231,11 @@ def main():
             last_run = history["runs"][-1]
             prior_by_app = {r["app"]: r for r in last_run["results"]}
 
+        wanted = {a.strip() for a in args.apps.split(",") if a.strip()}
         results = []
         for idea_key, filename in CANARY_APPS:
+            if wanted and idea_key not in wanted:
+                continue
             idea = (BENCHMARKS_DIR / filename).read_text(encoding="utf-8").strip()
             results.append(_check_result(idea_key, idea, deploy, provider=args.provider))
 
