@@ -7677,3 +7677,38 @@ relaxed; covered-required column stays strict
 111 patcher tests still green.
 
 **Deliverables**: wiring diff, test file, this entry. **Cost: $0.**
+
+---
+
+## Experiment 114: subprocess Timeout Is a No-Op Under npm (tree-kill fix)
+
+2026-07-16. Root-caused live: the exp113-milestone-r4 canary froze at
+"Installing dependencies (npm install)..." for **78 minutes** — despite
+`subprocess.run(..., timeout=300)`. Mechanism (Windows): `npm` resolves
+to a cmd.exe wrapper; on timeout Python kills the wrapper, but the
+node.exe GRANDCHILD survives and keeps the inherited stdout/stderr pipe
+handles open, so the post-kill `communicate()` blocks until the orphan
+exits — the documented timeout becomes an unbounded hang. This is the
+mechanism behind ForgeBench v1's flagged **24% execution-level hang
+rate** ("environment issue"), now explained and fixed.
+
+**Fix**: new `app/utils/proc.py: run_tree_capped()` — Popen +
+communicate(timeout), and on expiry kills the ENTIRE tree
+(`taskkill /F /T` on Windows), drains, and re-raises the standard
+TimeoutExpired so existing handlers work unchanged. Converted:
+frontend_runner npm install (300s) + vite build (180s, was 120),
+cloudflare_provider `_run` (wrangler/npm deploy calls, bytes+stdin
+mode preserved).
+
+**Validation**: `tests/reliability/test_exp114_tree_kill_timeout.py`
+reproduces the exact topology (child spawns a pipe-holding grandchild,
+both sleep 120s, timeout=5): pre-fix behavior blocks ≥120s; the helper
+returns in <40s AND the grandchild is verified dead via tasklist. 3/3.
+
+**Incident note**: the same wakeup that found the hang also killed the
+r4 canary moments after npm self-recovered — blog_cms had just scored
+94.4/A with only the frontend-build crash left to repair. Relaunched as
+r5 with this fix in place.
+
+**Deliverables**: `app/utils/proc.py`, call-site diffs, test file, this
+entry. **Cost: $0.**

@@ -190,15 +190,18 @@ class FrontendRunner:
                 print("[Frontend] node_modules exists but vite missing — reinstalling...")
             else:
                 print("[Frontend] Installing dependencies (npm install)...")
-            install = subprocess.run(
+            from app.utils.proc import run_tree_capped
+            install = run_tree_capped(
                 # No --prefer-offline: Render has no npm cache, that flag causes
                 # silent ENOENT failures when packages aren't cached locally.
                 # --no-fund / --no-audit keep output clean; --legacy-peer-deps
                 # avoids peer conflict aborts on generated dependency sets.
+                # run_tree_capped (Exp114): plain subprocess.run's timeout is
+                # a no-op here on Windows — the npm.cmd wrapper dies but the
+                # node grandchild holds the pipes and communicate() hangs
+                # unbounded (78 min observed live).
                 [npm, "install", "--no-fund", "--no-audit", "--legacy-peer-deps"],
                 cwd=str(project_dir),
-                capture_output=True,
-                text=True,
                 timeout=300,
                 env=env,
             )
@@ -250,12 +253,11 @@ class FrontendRunner:
 
         for build_try in (1, 2):
             print("Running vite build...")
-            build = subprocess.run(
+            from app.utils.proc import run_tree_capped
+            build = run_tree_capped(
                 [npm, "run", "build"],
                 cwd=project_dir,
-                capture_output=True,
-                text=True,
-                timeout=120,
+                timeout=180,
                 env=env,
             )
             if build.returncode != 0 and _is_oom(build.returncode, build.stdout, build.stderr) and build_try == 1:

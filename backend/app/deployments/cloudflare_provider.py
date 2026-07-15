@@ -58,8 +58,12 @@ class CloudflareProvider(BaseDeploymentProvider):
         return None
 
     def _run(self, cmd: list[str], cwd: str, env: dict) -> subprocess.CompletedProcess:
-        result = subprocess.run(
-            cmd, cwd=cwd, capture_output=True, timeout=300, env=env,
+        from app.utils.proc import run_tree_capped
+        # run_tree_capped (Exp114): kills the whole npm/wrangler process tree
+        # on timeout — subprocess.run's own timeout leaves a node grandchild
+        # holding the pipes on Windows and hangs the deploy leg unbounded.
+        result = run_tree_capped(
+            cmd, cwd=cwd, timeout=300, env=env, text=False,
             input=b"y\n",  # auto-confirm any interactive "create project?" prompts
         )
         stdout = (result.stdout or b"").decode("utf-8", errors="replace")
