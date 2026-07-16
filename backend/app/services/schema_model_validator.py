@@ -87,6 +87,46 @@ def _is_optional_annotation(annotation):
     return False
 
 
+# Self-ownership FK targets a create route conventionally fills in from the
+# authenticated user / request context rather than the client body (e.g.
+# `user_id=current_user.id` inline in the handler) -- these are legitimately
+# absent from a Create schema and must not be flagged by the missing-FK
+# check below.
+_SELF_OWNERSHIP_FK_TABLES = {"users", "user", "accounts", "account"}
+
+
+def _column_call_info(call_node):
+    """Given the ast.Call for a Column(...)/mapped_column(...) declaration,
+    return (nullable, has_default, fk_table). fk_table is the table name a
+    ForeignKey(...) argument targets (e.g. "categories.id" -> "categories"),
+    or None if this column isn't a foreign key."""
+
+    nullable = False
+    has_default = False
+    fk_table = None
+
+    for kw in call_node.keywords:
+        if kw.arg in ("nullable",) and isinstance(kw.value, ast.Constant):
+            nullable = kw.value.value
+        if kw.arg in ("default", "server_default"):
+            has_default = True
+        if kw.arg == "primary_key" and isinstance(kw.value, ast.Constant) and kw.value.value:
+            has_default = True  # autoincrement PK -- never client-supplied
+
+    for arg in call_node.args:
+        if (
+            isinstance(arg, ast.Call)
+            and hasattr(arg.func, "id")
+            and arg.func.id == "ForeignKey"
+            and arg.args
+            and isinstance(arg.args[0], ast.Constant)
+            and isinstance(arg.args[0].value, str)
+        ):
+            fk_table = arg.args[0].value.split(".")[0]
+
+    return nullable, has_default, fk_table
+
+
 def validate_schema_model_consistency(
     project_path,
     errors,
@@ -94,6 +134,10 @@ def validate_schema_model_consistency(
 ):
 
     models = {}
+    # field -> (has_default, fk_table); populated alongside `models[...]`
+    # (which stays field -> nullable for backward compatibility with the
+    # existing checks below).
+    model_field_meta = {}
     schemas = {}
 
     for root, _, files in os.walk(project_path):
@@ -127,6 +171,7 @@ def validate_schema_model_consistency(
                         continue
 
                     fields = {}
+                    field_meta = {}
 
                     for child in node.body:
 
@@ -140,19 +185,7 @@ def validate_schema_model_consistency(
                                 and child.value.func.id == "Column"
                             ):
 
-                                nullable = False
-
-                                for kw in child.value.keywords:
-
-                                    if kw.arg == "nullable":
-
-                                        if (
-                                            isinstance(
-                                                kw.value,
-                                                ast.Constant
-                                            )
-                                        ):
-                                            nullable = kw.value.value
+                                nullable, has_default, fk_table = _column_call_info(child.value)
 
                                 for target in child.targets:
 
@@ -161,6 +194,7 @@ def validate_schema_model_consistency(
                                         ast.Name
                                     ):
                                         fields[target.id] = nullable
+                                        field_meta[target.id] = (has_default, fk_table)
 
                         # SQLAlchemy 2.0 typed-declarative style:
                         # `name: Mapped[int] = mapped_column(...)`.
@@ -172,16 +206,10 @@ def validate_schema_model_consistency(
                             and child.value.func.id == "mapped_column"
                         ):
 
-                            nullable = False
-
-                            for kw in child.value.keywords:
-
-                                if kw.arg == "nullable":
-
-                                    if isinstance(kw.value, ast.Constant):
-                                        nullable = kw.value.value
+                            nullable, has_default, fk_table = _column_call_info(child.value)
 
                             fields[child.target.id] = nullable
+                            field_meta[child.target.id] = (has_default, fk_table)
 
                         # A `@property` (e.g. an `id` alias for a
                         # differently-named primary key) is a legitimate,
@@ -200,8 +228,10 @@ def validate_schema_model_consistency(
                             )
                         ):
                             fields[child.name] = False
+                            field_meta[child.name] = (True, None)
 
                     models[node.name] = fields
+                    model_field_meta[node.name] = field_meta
 
             if "schemas" in path.lower():
 
@@ -285,3 +315,40 @@ def validate_schema_model_consistency(
                             f"schema but '{field}' does not exist as a column on "
                             f"the {model_name} model",
                             schema_file)
+
+            # A NOT NULL, no-default foreign key to some OTHER resource (not
+            # the auth/user table) that the Create schema never exposes at
+            # all is a guaranteed IntegrityError on every single create call
+            # -- there is no value the client could ever send for it, since
+            # the schema doesn't even accept the field (live case:
+            # personal_expense_tracker, 2026-07-16 -- Expense.category_id is
+            # nullable=False but ExpenseCreate has no category_id field at
+            # all; every POST /expenses 500'd with a NOT NULL/FK
+            # IntegrityError, the fix loop patched other files 5 times, and
+            # the deploy score plateaued in the low 70s without ever finding
+            # this). Scoped to Create schemas only -- Update schemas
+            # legitimately omit FKs that shouldn't change after creation.
+            if schema_name.endswith("Create"):
+
+                field_meta = model_field_meta.get(model_name, {})
+
+                for field, nullable in model_fields.items():
+
+                    if nullable or field in schema_fields:
+                        continue
+
+                    has_default, fk_table = field_meta.get(field, (False, None))
+
+                    if has_default or not fk_table:
+                        continue
+
+                    if fk_table.lower() in _SELF_OWNERSHIP_FK_TABLES:
+                        continue
+
+                    _add_schema(errors, diagnostics,
+                        f"Schema mismatch: {schema_file}: "
+                        f"{schema_name} is missing '{field}' — the {model_name} "
+                        f"model requires it (NOT NULL, references {fk_table}) "
+                        f"but the Create schema never exposes it, so every "
+                        f"create call will fail with a database IntegrityError",
+                        schema_file)
