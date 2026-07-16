@@ -7742,3 +7742,32 @@ console-error cases still block; no-verdict behavior unchanged.
 **Deliverables**: gate diff in `app/core/context.py`, test file, this
 entry. blog_cms re-run queued as r6 after crm's r5 leg finishes
 (crm hit 93.9/A DEPLOY READY during this write-up). **Cost: $0.**
+
+---
+
+## Experiment 116: npm Install Timeout Self-Heal (clean retry, warm cache)
+
+2026-07-16. Follow-on from Exp114: the tree-kill worked exactly as
+designed in r5 — no more infinite hangs, clean "timed out after 300
+seconds" reports — but crm's from-scratch npm install then timed out
+4/4 times, blocking a 93.9/A app from deploying ("critical stage
+'frontend_build' failed"). Meanwhile blog_cms's warm-node_modules
+installs in the same run took seconds: the cost is the OneDrive-synced
+tree amplifying from-scratch installs (thousands of files through the
+sync filter driver), aggravated by a partial node_modules left when the
+r4 canary got killed mid-install.
+
+**Fix**: the install now gets two attempts — timeout raised to 420s;
+on timeout/failure, the partial node_modules is cleared and attempt 2
+adds `--prefer-offline` (npm's cache holds most packages by then, so
+it's mostly local I/O). `--prefer-offline` stays off for attempt 1:
+on cache-less hosts (Render) it causes silent ENOENT failures (the
+original reason it was removed). Also pre-warmed simple_crm's
+node_modules manually so the r6 leg builds instantly.
+
+**Validation**: py_compile + the Exp114 test suite still passes (the
+retry wraps run_tree_capped, whose behavior is already tree-kill
+tested); live validation lands with r6.
+
+**Deliverables**: install-retry diff in frontend_runner.py, this entry.
+**Cost: $0.**

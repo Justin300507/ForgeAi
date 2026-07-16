@@ -191,20 +191,40 @@ class FrontendRunner:
             else:
                 print("[Frontend] Installing dependencies (npm install)...")
             from app.utils.proc import run_tree_capped
-            install = run_tree_capped(
-                # No --prefer-offline: Render has no npm cache, that flag causes
-                # silent ENOENT failures when packages aren't cached locally.
-                # --no-fund / --no-audit keep output clean; --legacy-peer-deps
-                # avoids peer conflict aborts on generated dependency sets.
-                # run_tree_capped (Exp114): plain subprocess.run's timeout is
-                # a no-op here on Windows — the npm.cmd wrapper dies but the
-                # node grandchild holds the pipes and communicate() hangs
-                # unbounded (78 min observed live).
-                [npm, "install", "--no-fund", "--no-audit", "--legacy-peer-deps"],
-                cwd=str(project_dir),
-                timeout=300,
-                env=env,
-            )
+            # run_tree_capped (Exp114): plain subprocess.run's timeout is a
+            # no-op here on Windows — the npm.cmd wrapper dies but the node
+            # grandchild holds the pipes and communicate() hangs unbounded
+            # (78 min observed live).
+            #
+            # Two attempts (Exp116): from-scratch installs under a OneDrive-
+            # synced tree intermittently exceed any sane timeout (crm's leg
+            # timed out 4/4 at 300s while blog's warm-node_modules installs
+            # took seconds). Attempt 2 clears the partial node_modules and
+            # uses --prefer-offline — by then npm's cache holds most
+            # packages, so it's mostly local I/O. --prefer-offline stays OFF
+            # for attempt 1: on cache-less hosts (Render) it causes silent
+            # ENOENT failures.
+            base_cmd = [npm, "install", "--no-fund", "--no-audit", "--legacy-peer-deps"]
+            install = None
+            for attempt in (1, 2):
+                cmd = base_cmd + (["--prefer-offline"] if attempt == 2 else [])
+                try:
+                    install = run_tree_capped(cmd, cwd=str(project_dir),
+                                              timeout=420, env=env)
+                except subprocess.TimeoutExpired:
+                    if attempt == 2:
+                        raise
+                    print("[Frontend] npm install timed out — clearing partial "
+                          "node_modules and retrying with --prefer-offline...")
+                    import shutil as _shutil
+                    _shutil.rmtree(str(node_modules), ignore_errors=True)
+                    continue
+                if install.returncode == 0 or attempt == 2:
+                    break
+                print(f"[Frontend] npm install failed (rc={install.returncode}) — "
+                      "clearing node_modules and retrying with --prefer-offline...")
+                import shutil as _shutil
+                _shutil.rmtree(str(node_modules), ignore_errors=True)
             if install.returncode != 0:
                 # Full output — never truncate, debugging blind is the real cost
                 diag = (
