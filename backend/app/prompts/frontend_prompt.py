@@ -72,6 +72,50 @@ wrapped in PrivateRoute — it must render for logged-out visitors.
         else ""
     )
 
+    # Pre-computed (not inline f-string substitutions): Python <3.12 forbids
+    # a backslash anywhere inside an f-string {...} expression part, and
+    # these conditional strings need escaped quotes / \n — a real Railway
+    # (python:3.11-slim) crash confirmed this live: "SyntaxError: f-string
+    # expression part cannot include a backslash". Computing them as plain
+    # variables first and referencing a bare {name} in the f-string avoids
+    # the restriction entirely, and works identically on every Python version.
+    checklist_19_root_note = (
+        ' -- and if a LANDING PAGE section appears above, verify the exact '
+        'root path "/" renders LandingPage, NOT a redirect to /dashboard; '
+        'otherwise (no landing page requested) verify "/" also redirects to '
+        '/dashboard, same as the wildcard'
+        if include_landing_page else
+        ' (the exact root path "/" gets this same /dashboard redirect too, '
+        'since no landing page was requested)'
+    )
+    checklist_28_landing_page = (
+        "28. Verify src/pages/LandingPage.jsx is a REAL marketing page for THIS "
+        "app's actual domain (hero headline naming what the app specifically "
+        "does, 3 feature cards pulled from its real entities/features, a CTA "
+        "linking to /register) using Tailwind classes and this app's gradient "
+        "tokens — NOT a generic placeholder, NOT inline style={} objects, and "
+        "NOT content/stats copied from a different app category than this one.\n"
+        if include_landing_page else ""
+    )
+    checklist_29_motion_library = (
+        "29. Verify `motion` (import from 'motion/react') is ACTUALLY imported "
+        "and used somewhere (AnimatePresence route transitions, whileInView "
+        "reveals, or whileHover/whileTap) — this app's MOTION INTENSITY is "
+        "\"heavy\", which specifically requires it; the base Tailwind "
+        "animate-* tokens alone do NOT satisfy this tier.\n"
+        if motion_intensity == "heavy" else ""
+    )
+    root_redirect_note = (
+        'The exact root path "/" is handled by the LANDING PAGE section above '
+        "instead — do NOT also add a plain redirect-to-/dashboard route for "
+        '"/", that would override the landing page route.'
+        if include_landing_page else
+        'The root path "/" gets the SAME redirect as the wildcard above:\n'
+        "```jsx\n"
+        '<Route path="/" element={<Navigate to="/dashboard" replace />} />\n'
+        "```"
+    )
+
     pwa_note = (
         "\n\nPWA TARGET — apply ALL of these:"
         "\n• Import and render <InstallPrompt /> in App.jsx (provided at src/components/InstallPrompt.jsx — do NOT re-generate it)"
@@ -758,16 +802,7 @@ unauthenticated users from there to /login automatically):
 ```jsx
 <Route path="*" element={{<Navigate to="/dashboard" replace />}} />
 ```
-{
-    "The exact root path \"/\" is handled by the LANDING PAGE section above "
-    "instead — do NOT also add a plain redirect-to-/dashboard route for \"/\", "
-    "that would override the landing page route."
-    if include_landing_page else
-    "The root path \"/\" gets the SAME redirect as the wildcard above:\n"
-    "```jsx\n"
-    "<Route path=\"/\" element={<Navigate to=\"/dashboard\" replace />} />\n"
-    "```"
-}
+{root_redirect_note}
 
 2. LOGIN PAGE — POST JSON to /auth/login, store token + user info, redirect:
 ```jsx
@@ -859,7 +894,7 @@ Before returning:
 16. Verify signup does auto-login after account creation — NEVER redirect to /login after signup
 17. Verify login stores display_name, user_id, user_email in localStorage from response
 18. Verify logout clears ALL keys: token, display_name, user_id, user_email
-19. Verify App.jsx's wildcard route (path="*") points to /dashboard so an unmatched URL never shows a 404{" -- and if a LANDING PAGE section appears above, verify the exact root path \"/\" renders LandingPage, NOT a redirect to /dashboard; otherwise (no landing page requested) verify \"/\" also redirects to /dashboard, same as the wildcard" if include_landing_page else " (the exact root path \"/\" gets this same /dashboard redirect too, since no landing page was requested)"}
+19. Verify App.jsx's wildcard route (path="*") points to /dashboard so an unmatched URL never shows a 404{checklist_19_root_note}
 20. Verify EVERY page's main content wrapper has animate-fade-in-up, and every mapped card/row list has the staggered animationDelay — no page or list may appear instantly
 21. Verify loading states use the .skeleton class (shimmer), not plain animate-pulse boxes
 22. Verify toasts/modals enter with animate-scale-in, ambient blobs have animate-float-slow / animate-float-slower, and the dashboard's recent-activity section has a live-dot
@@ -868,21 +903,4 @@ Before returning:
 25. Verify this style's MOTION INTENSITY guidance (stagger timing, which entrance animation to prefer) was actually followed, not just the base motion tokens by default
 26. If a LAYOUT OVERRIDE — TOP-NAV SHELL section appears in the design system above, verify NO page renders a sidebar or ml-56 margin — every authenticated page uses the sticky top-nav shell with the centered max-w-6xl content column
 27. Verify the EXPERIENCE BLUEPRINT's delight moment and empty-state treatment are actually implemented (using the existing motion tokens), not just the generic empty-state fallback
-{
-    (
-        "28. Verify src/pages/LandingPage.jsx is a REAL marketing page for THIS "
-        "app's actual domain (hero headline naming what the app specifically "
-        "does, 3 feature cards pulled from its real entities/features, a CTA "
-        "linking to /register) using Tailwind classes and this app's gradient "
-        "tokens — NOT a generic placeholder, NOT inline style={} objects, and "
-        "NOT content/stats copied from a different app category than this one.\n"
-    ) if include_landing_page else ""
-}{
-    (
-        "29. Verify `motion` (import from 'motion/react') is ACTUALLY imported "
-        "and used somewhere (AnimatePresence route transitions, whileInView "
-        "reveals, or whileHover/whileTap) — this app's MOTION INTENSITY is "
-        "\"heavy\", which specifically requires it; the base Tailwind "
-        "animate-* tokens alone do NOT satisfy this tier.\n"
-    ) if motion_intensity == "heavy" else ""
-}"""
+{checklist_28_landing_page}{checklist_29_motion_library}"""
