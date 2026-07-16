@@ -1158,6 +1158,24 @@ class FixOrchestrator:
                 modified = _regenerate_architecture(ctx, cfg)
                 all_modified.extend(modified)
                 break  # full regen covers all groups
+            elif _protected_auth_file_in_group(g):
+                # Checked BEFORE the strategy branch, not just inside
+                # _apply_fix_group -- REGENERATE_MODULE routes to
+                # _regenerate_module()'s own architecture_fix_service path,
+                # which bypassed the in-function guard entirely (live,
+                # hospital_management, 2026-07-17: same duplicate-kwarg
+                # is_active crash recurred on the very next run after the
+                # first protection landed, because this group happened to
+                # get REGENERATE_MODULE's higher-severity strategy instead
+                # of PATCH_FILE). Any strategy for a group touching these
+                # files gets the same known-good re-injection, never the LLM.
+                from app.services.deterministic_patcher import _patch_auth_routes, _patch_auth_utils
+                project_path = Path(ctx.project_path)
+                _patch_auth_utils(project_path)
+                _patch_auth_routes(project_path)
+                print(f"    [fix] Group {g.group_id} touches protected auth file(s) — "
+                      f"re-injecting known-good templates instead of calling the LLM")
+                modified, fix_content = (["app/routes/auth_routes.py", "app/utils/auth.py"], {})
             elif cfg.strategy == FixStrategy.REGENERATE_MODULE:
                 modified, fix_content = _regenerate_module(g, ctx, cfg)
             else:
