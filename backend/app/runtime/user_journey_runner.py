@@ -90,6 +90,22 @@ _PREFIX_SEGMENTS = {"api", "v1", "v2", "v3", "v4", "auth", "me", "admin"}
 # Resources that are auth-related — prefer to test other entities first
 _AUTH_RESOURCES = {"users", "user", "accounts", "account", "members", "member"}
 
+# Read-only aggregate/utility endpoints that are never a real CRUD entity --
+# do_detect_entity's fallback (below) used to accept the first 200-returning
+# GET endpoint with no path param, with no filter for this. A dashboard
+# summary route is almost always GET-only and trivially returns 200 (no
+# dependencies), so it kept winning the fallback over the actual entity
+# whenever the architecture-derived entity_url's own initial check failed
+# for any reason -- silently redirecting the whole CRUD journey onto an
+# endpoint that Create/Edit/Delete can never succeed against (live case:
+# personal_expense_tracker, 2026-07-16 -- fell back to /stats/summary,
+# "Create entity" 405'd, and the fix loop chased a phantom bug for 2 more
+# attempts instead of ever seeing the real /expenses failure).
+_NON_ENTITY_UTILITY_SEGMENTS = {
+    "stats", "stat", "summary", "reports", "report", "dashboard",
+    "analytics", "metrics", "health", "seed", "docs", "openapi",
+}
+
 # Pydantic v2 type-mismatch error tags -> a coercion of the current (wrong)
 # guessed value into what the error says is actually expected. Confirmed
 # live (2026-07-06): a schema-introspected field (e.g. `phone_number`)
@@ -658,10 +674,14 @@ def run_user_journey(
         for ep in arch.get("api_endpoints", []):
             p = ep.get("path", "")
             m = ep.get("method", "").upper()
-            if m == "GET" and "{" not in p and "auth" not in p.lower():
-                url = f"{base}{p}"
-                if url != entity_url and url not in candidates:
-                    candidates.append(url)
+            if m != "GET" or "{" in p or "auth" in p.lower():
+                continue
+            segments = {s.lower() for s in p.strip("/").split("/") if s}
+            if segments & _NON_ENTITY_UTILITY_SEGMENTS:
+                continue  # aggregate/utility endpoint -- never a real CRUD entity
+            url = f"{base}{p}"
+            if url != entity_url and url not in candidates:
+                candidates.append(url)
         for url in candidates[:6]:
             r2 = requests.get(url, headers=headers, timeout=3)
             if r2.status_code == 200:
