@@ -64,6 +64,18 @@ def _diag(message: str, hint: str, file_path: str | None = None) -> Diagnostic:
 def _check_files_exist(contract: AppContract, project_path: Path) -> list[Diagnostic]:
     out = []
     for f in contract.files:
+        # architecture.folder_structure.backend occasionally contains a bare
+        # folder name ("routes", "models") instead of an actual file path --
+        # the architect LLM lists the folder rather than a specific file for
+        # that entry. Treating that as "a required file that was never
+        # written" spawns a real (LLM-costing) missing-file fix for a path
+        # with no real content to generate, which reliably produces garbage
+        # (live: habit_tracker, 2026-07-16 -- created a stray root-level
+        # routes.py and an unrelated app/models/todo.py) and burns a repair-
+        # loop group slot on nothing. A real planned file always has an
+        # extension; a bare directory name never does.
+        if "." not in Path(f.path).name:
+            continue
         if not (project_path / f.path).exists():
             out.append(_diag(
                 f"Contract lists '{f.path}' ({f.kind}) but it was never written to the project.",
