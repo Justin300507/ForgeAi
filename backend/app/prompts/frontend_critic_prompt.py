@@ -6,6 +6,8 @@ def build_frontend_critic_prompt(
     signature_components: list[str],
     shell: str = "sidebar",
     experience_goal: str = "",
+    motion_intensity: str | None = None,
+    include_landing_page: bool = False,
 ) -> str:
     file_blocks = "\n\n".join(
         f"=== {path} ===\n{content[:2500]}"
@@ -21,6 +23,27 @@ def build_frontend_critic_prompt(
     experience_note = (
         f"\nExperience goal for the first screen: {experience_goal}" if experience_goal else ""
     )
+    intensity = motion_intensity or "moderate"
+    motion_check_note = (
+        f"\nThis app's user-selected MOTION INTENSITY is \"{intensity}\" — "
+        + (
+            "verify real `motion` (motion/react) usage actually appears where "
+            "specified (AnimatePresence route transitions, whileInView reveals, "
+            "whileHover/whileTap on interactive elements), not just the base "
+            "Tailwind animate-* tokens; missing it at this tier is a real gap, "
+            "not a nitpick."
+            if intensity == "heavy"
+            else "the base Tailwind motion tokens are sufficient at this tier — "
+            "do NOT flag the absence of the `motion` JS library as an issue."
+        )
+    )
+    landing_page_note = (
+        "\nThis app was told to generate a public LandingPage.jsx at \"/\" "
+        "(hero, feature highlights, CTA to signup) — verify it actually exists "
+        "and reads as a real marketing page, not a stub; its absence is a "
+        "real gap here, not optional."
+        if include_landing_page else ""
+    )
 
     return f"""You are a senior product designer reviewing a generated React +
 Tailwind frontend, the way you would review a junior designer's PR before it
@@ -30,7 +53,7 @@ ships — not a code linter, a DESIGN reviewer. This app is supposed to be:
 Assigned category: {category_label}
 Assigned visual style: {style_label}
 Assigned app shell: {shell_note}
-Signature components this app was told to include somewhere: {components_str}{experience_note}
+Signature components this app was told to include somewhere: {components_str}{experience_note}{motion_check_note}{landing_page_note}
 
 PROJECT FILES:
 {file_blocks}

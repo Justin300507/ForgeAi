@@ -124,6 +124,9 @@ def generate_project_v6(
     skip_reviews: bool = False,
     frontend_target: str = "web",
     arch_template: str = "",     # optional: Architecture DB template injection
+    style_override: str | None = None,
+    motion_intensity: str | None = None,
+    include_landing_page: bool = False,
 ) -> dict[str, Any]:
     """
     Full V6 multi-agent pipeline.
@@ -250,7 +253,11 @@ def generate_project_v6(
 
     def _run_frontend():
         print("\n=== FRONTEND TEAM (V6) ===")
-        resp = generate_frontend(architecture, provider, frontend_target=frontend_target, idea=idea)
+        resp = generate_frontend(
+            architecture, provider, frontend_target=frontend_target, idea=idea,
+            style_override=style_override, motion_intensity=motion_intensity,
+            include_landing_page=include_landing_page,
+        )
         return resp.get("files", []) if isinstance(resp, dict) else []
 
     print("\n=== BACKEND + FRONTEND — PARALLEL ===")
@@ -725,7 +732,11 @@ def generate_project_v6(
             data={"score": performance_report.performance_score},
         )
 
-        frontend_critic_report = run_frontend_critic(project_path, idea, provider)
+        frontend_critic_report = run_frontend_critic(
+            project_path, idea, provider,
+            style_override=style_override, motion_intensity=motion_intensity,
+            include_landing_page=include_landing_page,
+        )
         collab.record_decision(
             agent="frontend_critic",
             decision="frontend_critic_complete",

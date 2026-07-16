@@ -8,7 +8,12 @@ load_dotenv()
 client = OpenAI(
     api_key=os.getenv("CEREBRAS_API_KEY", "not-configured"),
     base_url="https://api.cerebras.ai/v1",
-    timeout=20
+    # Large-output calls (frontend/backend generation, max_completion_tokens
+    # up to 14000) routinely take 25-35s even on a clean run (confirmed live:
+    # a successful control-test frontend generation took 29.4s) -- 20s left
+    # no margin at all and risked spurious timeouts on any request that's
+    # merely a bit larger or a bit slower than average, not actually stuck.
+    timeout=60
 )
 
 DEFAULT_MODEL = "gpt-oss-120b"

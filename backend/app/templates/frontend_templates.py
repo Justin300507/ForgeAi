@@ -40,7 +40,8 @@ PACKAGE_JSON = """{
     "lucide-react": "^0.263.1",
     "recharts": "^2.10.3",
     "clsx": "^2.1.0",
-    "react-hot-toast": "^2.4.1"
+    "react-hot-toast": "^2.4.1",
+    "motion": "^12.0.0"
   },
   "devDependencies": {
     "@vitejs/plugin-react": "^4.2.1",

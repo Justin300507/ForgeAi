@@ -114,12 +114,19 @@ def generate_frontend(
     max_tokens=14000,
     frontend_target: str = "web",
     idea: str = "",
+    style_override: str | None = None,
+    motion_intensity: str | None = None,
+    include_landing_page: bool = False,
 ):
     try:
 
         print("\n=== START FRONTEND ===")
 
-        prompt = build_frontend_prompt(architecture, target=frontend_target, idea=idea)
+        prompt = build_frontend_prompt(
+            architecture, target=frontend_target, idea=idea,
+            style_override=style_override, motion_intensity=motion_intensity,
+            include_landing_page=include_landing_page,
+        )
 
         from app.utils.llm_cache import get_cached, set_cached
         _cache_payload = {"prompt": prompt, "mt": max_tokens}

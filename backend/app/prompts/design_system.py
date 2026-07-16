@@ -333,22 +333,39 @@ def detect_category(idea: str) -> dict:
     return CATEGORIES[detect_category_key(idea)]
 
 
-def build_design_system_injection(idea: str) -> str:
+def build_design_system_injection(
+    idea: str,
+    style_override: str | None = None,
+    motion_intensity: str | None = None,
+) -> str:
     """
     Return a design-system block to inject into the frontend prompt.
     Tells the LLM exactly which colors, icons, patterns, and signature
     components to use for this specific app type.
+
+    style_override:   explicit user choice from the New Project form (one of
+                       style_system.STYLES' keys); None = today's deterministic
+                       per-idea pick, unchanged.
+    motion_intensity: "subtle" | "moderate" | "heavy"; None/unrecognized falls
+                       back to "moderate" (today's implicit behavior).
     """
     category_key = detect_category_key(idea)
     ds = CATEGORIES[category_key]
     icons_str = ", ".join(ds["icons"][:8])
     components_str = "\n".join(f"  - {c}" for c in ds.get("components", []))
 
-    from app.prompts.style_system import build_style_injection, select_style
-    style_block = build_style_injection(idea, ds)
+    from app.prompts.style_system import (
+        build_intensity_injection,
+        build_style_injection,
+        select_style,
+    )
+    style_block = build_style_injection(idea, ds, override=style_override)
+    intensity_block = build_intensity_injection(motion_intensity)
 
     from app.prompts.component_library import build_component_reference
-    component_ref_block = build_component_reference(ds, style_key=select_style(idea))
+    component_ref_block = build_component_reference(
+        ds, style_key=select_style(idea, override=style_override)
+    )
 
     # Design-intelligence brief (experience blueprint, design principles,
     # layout plan) — deterministic, appended after the token/style sections.
@@ -479,4 +496,4 @@ EXAMPLE STAT CARD for this category (glass-lite surface + ring + hover lift + gr
 Note the `/80` and `/70` opacity + `backdrop-blur-xl` on the card background —
 combined with the ambient blobs behind it, this is what gives the whole app
 its depth. A fully opaque `bg-white` card here looks flat again by comparison.
-{style_block}{brief_block}"""
+{style_block}{intensity_block}{brief_block}"""

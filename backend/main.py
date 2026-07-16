@@ -171,6 +171,9 @@ class JobRequest(BaseModel):
     provider: str = "auto"
     deploy_to: str = "none"
     frontend_target: str = "web"
+    style_override: str | None = None       # one of style_system.STYLES' keys, or None for auto
+    motion_intensity: str | None = None      # "subtle" | "moderate" | "heavy"
+    include_landing_page: bool = False
 
 
 def _normalize_v15_result(result: dict) -> dict:
@@ -242,6 +245,9 @@ def _run_job(job_id: str, req: JobRequest):
                 deploy=req.deploy_to != "none",
                 deploy_to=req.deploy_to if req.deploy_to != "none" else "both",
                 job_id=job_id,
+                style_override=req.style_override,
+                motion_intensity=req.motion_intensity,
+                include_landing_page=req.include_landing_page,
             )
             result = _normalize_v15_result(result)
         else:
@@ -251,6 +257,9 @@ def _run_job(job_id: str, req: JobRequest):
                 provider=req.provider,
                 deploy_to=req.deploy_to,
                 frontend_target=req.frontend_target,
+                style_override=req.style_override,
+                motion_intensity=req.motion_intensity,
+                include_landing_page=req.include_landing_page,
             )
         report = result.get("report", {})
         # V15 can report failure as a normal return (no exception raised) — treat
@@ -1226,6 +1235,9 @@ class V14Request(BaseModel):
     run_improvement_cycle: bool = False
     skip_reviews: bool = True
     frontend_target: str = "web"
+    style_override: str | None = None
+    motion_intensity: str | None = None
+    include_landing_page: bool = False
 
 
 class V15Request(BaseModel):
@@ -1259,6 +1271,9 @@ def project_v14(request: V14Request):
         run_improvement_cycle=request.run_improvement_cycle,
         skip_reviews=request.skip_reviews,
         frontend_target=request.frontend_target,
+        style_override=request.style_override,
+        motion_intensity=request.motion_intensity,
+        include_landing_page=request.include_landing_page,
     )
 
 

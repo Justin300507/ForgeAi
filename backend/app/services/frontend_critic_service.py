@@ -112,6 +112,9 @@ def run_frontend_critic(
     project_path: str,
     idea: str,
     provider: str = "auto",
+    style_override: str | None = None,
+    motion_intensity: str | None = None,
+    include_landing_page: bool = False,
 ) -> FrontendCriticReport:
     """Run the Frontend Critic agent on a generated project's .jsx files."""
     print("\n=== FRONTEND CRITIC (V6) ===")
@@ -126,7 +129,7 @@ def run_frontend_critic(
     from app.prompts.design_system import detect_category
     from app.prompts.style_system import STYLES, select_style
     ds = detect_category(idea)
-    style_label = STYLES.get(select_style(idea), {}).get("label", "Glassmorphism")
+    style_label = STYLES.get(select_style(idea, override=style_override), {}).get("label", "Glassmorphism")
 
     shell, experience_goal = "sidebar", ""
     try:
@@ -142,6 +145,7 @@ def run_frontend_critic(
         prompt = build_frontend_critic_prompt(
             files, idea, ds["label"], style_label, ds.get("components", []),
             shell=shell, experience_goal=experience_goal,
+            motion_intensity=motion_intensity, include_landing_page=include_landing_page,
         )
         raw_text = generate_content(prompt, provider, max_tokens=6000, stage="frontend_critic")
         data = extract_json(raw_text)

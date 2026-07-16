@@ -54,6 +54,9 @@ def generate_project_v7(
     improvement_cycle_every_n: int = 5,
     skip_reviews: bool = False,
     frontend_target: str = "web",
+    style_override: str | None = None,
+    motion_intensity: str | None = None,
+    include_landing_page: bool = False,
 ) -> dict[str, Any]:
     """
     V7 pipeline = V6 generation + self-improvement cycle.
@@ -77,7 +80,10 @@ def generate_project_v7(
 
     # ── Step 1: Generate with V6 multi-agent pipeline ────────────────────
     collab = AgentCollaboration()
-    v6_result = generate_project_v6(idea, provider=provider, collab=collab, skip_reviews=skip_reviews, frontend_target=frontend_target)
+    v6_result = generate_project_v6(
+        idea, provider=provider, collab=collab, skip_reviews=skip_reviews, frontend_target=frontend_target,
+        style_override=style_override, motion_intensity=motion_intensity, include_landing_page=include_landing_page,
+    )
 
     # ── Step 2: Record to failure dataset ────────────────────────────────
     _record_to_dataset(idea, run_id, provider, v6_result)

@@ -20,8 +20,13 @@ export const authAPI = {
 
 export const jobsAPI = {
   list: () => api.get("/jobs"),
-  create: (idea, provider = "cerebras", deploy_to = "none", frontend_target = "web") =>
-    api.post("/jobs", { idea, provider, deploy_to, frontend_target }),
+  create: (idea, provider = "cerebras", deploy_to = "none", frontend_target = "web", visualPolish = {}) =>
+    api.post("/jobs", {
+      idea, provider, deploy_to, frontend_target,
+      style_override: visualPolish.styleOverride ?? null,
+      motion_intensity: visualPolish.motionIntensity ?? null,
+      include_landing_page: visualPolish.includeLandingPage ?? false,
+    }),
   get: (id) => api.get(`/jobs/${id}`),
   cancel: (id) => api.post(`/jobs/${id}/cancel`),
   retry: (id) => api.post(`/jobs/${id}/retry`),

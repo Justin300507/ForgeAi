@@ -33,6 +33,9 @@ def generate_project_v15(
     deploy_to:  str = "both",    # "render" | "cloudflare" | "both"
     job_id:     Optional[str] = None,
     log_fn:     Optional[Any] = None,  # callable(str) for WebSocket streaming
+    style_override: Optional[str] = None,
+    motion_intensity: Optional[str] = None,
+    include_landing_page: bool = False,
 ) -> dict[str, Any]:
     """
     Run the full V15 autonomous generation pipeline.
@@ -122,7 +125,11 @@ def generate_project_v15(
     )
 
     # ── Run ───────────────────────────────────────────────────────────────
-    result = pipeline.run(idea=idea, provider=provider, job_id=job_id)
+    result = pipeline.run(
+        idea=idea, provider=provider, job_id=job_id,
+        style_override=style_override, motion_intensity=motion_intensity,
+        include_landing_page=include_landing_page,
+    )
     result["elapsed_s"] = round(time.time() - start, 2)
 
     _print_final_report(result)

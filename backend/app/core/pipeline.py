@@ -93,6 +93,9 @@ class V15Pipeline:
         provider:     str = "auto",
         output_dir:   Optional[str] = None,
         job_id:       Optional[str] = None,
+        style_override: Optional[str] = None,
+        motion_intensity: Optional[str] = None,
+        include_landing_page: bool = False,
     ) -> dict[str, Any]:
         """
         Run the full V15 pipeline.
@@ -124,6 +127,9 @@ class V15Pipeline:
             idea=idea,
             provider=effective_provider,
             output_dir=output_dir,
+            style_override=style_override,
+            motion_intensity=motion_intensity,
+            include_landing_page=include_landing_page,
         )
 
         if project_path is None:
@@ -404,6 +410,9 @@ class V15Pipeline:
         idea:       str,
         provider:   str,
         output_dir: Optional[str],
+        style_override: Optional[str] = None,
+        motion_intensity: Optional[str] = None,
+        include_landing_page: bool = False,
     ) -> tuple[Optional[Path], str, dict]:
         """
         Run V6 generation. If the Architecture Database has a proven template
@@ -430,6 +439,12 @@ class V15Pipeline:
                 print(f"[V15] output_dir requested but not supported by v6_orchestrator — ignoring: {output_dir}")
             if arch_template_injection:
                 kwargs["arch_template"] = arch_template_injection
+            if style_override:
+                kwargs["style_override"] = style_override
+            if motion_intensity:
+                kwargs["motion_intensity"] = motion_intensity
+            if include_landing_page:
+                kwargs["include_landing_page"] = include_landing_page
 
             result = generate_project_v6(**kwargs)
             project_path_str = result.get("project_path") or ""

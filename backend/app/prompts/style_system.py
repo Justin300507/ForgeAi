@@ -207,20 +207,86 @@ primary decoration.
 }
 
 
-def select_style(idea: str) -> str:
+def select_style(idea: str, override: str | None = None) -> str:
     """Deterministic style pick from the idea text — the same idea always
     gets the same style (stable across "Check & Fix" re-runs on an existing
-    app), while different ideas spread across the catalog."""
+    app), while different ideas spread across the catalog.
+
+    `override`: an explicit user choice from the New Project form (one of
+    STYLES' keys). Falls through to the deterministic pick when None or not
+    a recognized key — a stale/typo'd override must never crash generation.
+    """
+    if override and override in STYLES:
+        return override
     keys = sorted(STYLES.keys())
     digest = hashlib.md5(idea.strip().lower().encode("utf-8")).hexdigest()
     return keys[int(digest, 16) % len(keys)]
 
 
-def build_style_injection(idea: str, category_ds: dict) -> str:
+# ── Motion intensity — orthogonal to style, opt-in real Motion (motion.dev) ──
+# usage. Every style above already has a `motion_tier` (Tailwind-keyframe
+# pacing baked into that style's identity) — this is a SEPARATE dial layered
+# on top, independent of which style is active: "moderate" matches today's
+# implicit behavior (Tailwind tokens only, no regression for existing
+# generations), "subtle" dials down further, "heavy" is the only tier that
+# actually pulls in the `motion` library (already a guaranteed package.json
+# dependency — see frontend_templates.py) for scroll-linked reveals and
+# route transitions the pure-CSS token set can't do.
+MOTION_INTENSITIES: dict[str, str] = {
+    "subtle": (
+        "SUBTLE motion — restraint over decoration. Keep only page-mount "
+        "`animate-fade-in-up` and button `active:scale-[0.97]` press feedback. "
+        "Skip list/grid stagger delays (every item enters together, not "
+        "cascaded). No ambient float-slow/float-slower background blobs. "
+        "Do not import the `motion` library for this tier — CSS tokens only."
+    ),
+    "moderate": (
+        "MODERATE motion — this is the baseline documented in the MOTION "
+        "TOKENS section above: page-mount fade-in-up, staggered list/grid "
+        "entrances (40ms per item), animate-scale-in on toasts/modals, "
+        "ambient float-slow/float-slower blobs. Do not import the `motion` "
+        "library for this tier — the existing CSS tokens already cover it."
+    ),
+    "heavy": (
+        "HEAVY motion — everything in MODERATE, plus real `motion` (import "
+        "from 'motion/react') for effects CSS keyframes can't do:\n"
+        "  - Wrap route transitions in <AnimatePresence mode=\"wait\"> in "
+        "App.jsx so navigating between pages crossfades instead of hard-cutting.\n"
+        "  - Hero/stat numbers and section headers use `whileInView={{ opacity: 1, y: 0 }}` "
+        "with `initial={{ opacity: 0, y: 16 }}` (via `<motion.div>`) instead of the "
+        "static fade-in-up class, so they animate in as the user scrolls to them, "
+        "not just once on mount.\n"
+        "  - Interactive cards/buttons get `whileHover={{ scale: 1.02 }}` / "
+        "`whileTap={{ scale: 0.97 }}` on a `<motion.div>`/`<motion.button>` wrapper "
+        "in addition to (not instead of) the Tailwind hover/active classes already "
+        "documented above.\n"
+        "  Never replace an existing Tailwind motion token wholesale with `motion` — "
+        "layer it on for the specific effects above only; the rest of the app keeps "
+        "using the CSS tokens exactly as documented."
+    ),
+}
+
+DEFAULT_MOTION_INTENSITY = "moderate"
+
+
+def build_intensity_injection(intensity: str) -> str:
+    """Text block for the given intensity tier — falls back to the
+    no-regression default for an unrecognized/missing value."""
+    tier = MOTION_INTENSITIES.get(intensity, MOTION_INTENSITIES[DEFAULT_MOTION_INTENSITY])
+    return f"""
+═══════════════════════════════════════════════════════
+MOTION INTENSITY (user-selected, independent of style above)
+═══════════════════════════════════════════════════════
+
+{tier}
+"""
+
+
+def build_style_injection(idea: str, category_ds: dict, override: str | None = None) -> str:
     """Style override block to append after the category design-system
     injection. Empty for "glass" -- the base frontend prompt already
     describes glass, no override needed."""
-    style_key = select_style(idea)
+    style_key = select_style(idea, override=override)
     style = STYLES[style_key]
     if style_key == "glass" or "example" not in style:
         return ""

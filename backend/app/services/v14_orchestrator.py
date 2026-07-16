@@ -35,6 +35,9 @@ def generate_project_v14(
     run_improvement_cycle: bool = False,
     skip_reviews: bool = True,
     frontend_target: str = "web",
+    style_override: str | None = None,
+    motion_intensity: str | None = None,
+    include_landing_page: bool = False,
 ) -> dict[str, Any]:
     """
     V14 One-Click Deployment.
@@ -79,6 +82,9 @@ def generate_project_v14(
         run_improvement_cycle=run_improvement_cycle,
         skip_reviews=skip_reviews,
         frontend_target=frontend_target,
+        style_override=style_override,
+        motion_intensity=motion_intensity,
+        include_landing_page=include_landing_page,
     )
 
     project_name = v7_result.get("project_name", "")

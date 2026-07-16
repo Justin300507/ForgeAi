@@ -3,7 +3,14 @@ import json
 from app.prompts.design_system import build_design_system_injection
 
 
-def build_frontend_prompt(architecture, target: str = "web", idea: str = ""):
+def build_frontend_prompt(
+    architecture,
+    target: str = "web",
+    idea: str = "",
+    style_override: str | None = None,
+    motion_intensity: str | None = None,
+    include_landing_page: bool = False,
+):
     # Extract idea from architecture if not passed directly
     if not idea:
         idea = (
@@ -11,7 +18,59 @@ def build_frontend_prompt(architecture, target: str = "web", idea: str = ""):
             + " "
             + " ".join(architecture.get("features", []))
         )
-    design_system = build_design_system_injection(idea)
+    design_system = build_design_system_injection(idea, style_override, motion_intensity)
+
+    landing_page_note = (
+        """
+
+═══════════════════════════════════════════════════════
+LANDING PAGE  (user opted in — generate this in addition to everything else)
+═══════════════════════════════════════════════════════
+
+Generate an extra file, src/pages/LandingPage.jsx, a PUBLIC page (no auth
+required, no sidebar/app-shell) shown at "/" instead of the usual immediate
+redirect to the dashboard. This is the very first thing a visitor sees,
+before signing up — it must sell the app's actual purpose, not restate
+"Welcome back" like the login page does.
+
+Structure (single scrolling page, use this app's gradient/primary_name
+tokens from the design system above throughout — never a neutral/indigo
+default here of all places):
+  1. Hero: large headline stating the app's core value proposition in this
+     app's actual domain (not generic "Manage everything in one place" —
+     name the real thing this app does, e.g. for a task tracker: "Ship your
+     to-do list, not your excuses"), a supporting one-line subhead, and a
+     primary CTA button ("Get Started" / "Sign Up Free") linking to
+     /register, using the same gradient primary-button treatment as
+     everywhere else in this app.
+  2. Feature highlights: 3 short cards, each with a lucide-react icon from
+     this app's ICON VOCABULARY above, a bolded feature name, and one
+     sentence — pull these from the app's actual entities/features in the
+     architecture above, never generic filler ("Fast", "Secure", "Easy").
+  3. Closing CTA band: a second, simpler call-to-action ("Ready to start?"
+     + the same Sign Up button) so a visitor who scrolled past the hero
+     still has an obvious next step.
+  4. A minimal top bar with the app name (gradient brand text, same pattern
+     as the sidebar) and a "Sign In" link to /login on the right.
+
+Use the same ambient background blobs technique from the design system
+above. Apply this style's MOTION INTENSITY guidance to the landing page
+too — the hero and feature cards are exactly the kind of content that
+benefits from scroll-triggered entrances when intensity is "heavy".
+
+Routing change (App.jsx): the root path "/" now renders LandingPage
+instead of an immediate redirect —
+```jsx
+<Route path="/" element={<LandingPage />} />
+<Route path="*" element={<Navigate to="/dashboard" replace />} />
+```
+(the wildcard "*" fallback for unmatched paths still points at /dashboard,
+unchanged — only the exact "/" root path changes). LandingPage is NOT
+wrapped in PrivateRoute — it must render for logged-out visitors.
+"""
+        if include_landing_page
+        else ""
+    )
 
     pwa_note = (
         "\n\nPWA TARGET — apply ALL of these:"
@@ -45,6 +104,9 @@ STACK  (mandatory — no exceptions)
 ✅ react-router-dom for routing
 ✅ React.useState / React.useEffect for state
 ✅ axios for API calls (import axios from 'axios')
+✅ motion (import from 'motion/react') — ONLY for the specific effects the
+   MOTION INTENSITY section below calls for at this app's selected tier;
+   never as a general replacement for the Tailwind animate-* tokens
 ❌ NO inline style={{}} objects (only Tailwind classes)
 ❌ NO @mui, @chakra-ui, antd, or other component libraries
 ❌ NO external CSS files except src/index.css (already provided)
@@ -307,6 +369,7 @@ background blobs, for the logo badge / link color / submit button):
 actual tokens from the design system above, same as the primary button rule.
 The Register page follows the identical pattern.
 
+{landing_page_note}
 DASHBOARD PAGE — MUST include ALL of:
   1. Page header with greeting + current date
   2. Stats grid (4 cards) — grid-cols-1 sm:grid-cols-2 lg:grid-cols-4
@@ -689,12 +752,22 @@ const PrivateRoute = ({{ children }}) =>
 ```
 Wrap every authenticated route: `<Route path="/dashboard" element={{<PrivateRoute><Layout><Dashboard /></Layout></PrivateRoute>}} />`
 
-ALWAYS add a root redirect as the LAST route so `/` never shows a 404:
+ALWAYS add a wildcard fallback as the LAST route so an unmatched path never
+shows a 404 — it redirects to /dashboard (PrivateRoute redirects
+unauthenticated users from there to /login automatically):
 ```jsx
-<Route path="/" element={{<Navigate to="/dashboard" replace />}} />
 <Route path="*" element={{<Navigate to="/dashboard" replace />}} />
 ```
-(PrivateRoute will redirect unauthenticated users from /dashboard → /login automatically)
+{
+    "The exact root path \"/\" is handled by the LANDING PAGE section above "
+    "instead — do NOT also add a plain redirect-to-/dashboard route for \"/\", "
+    "that would override the landing page route."
+    if include_landing_page else
+    "The root path \"/\" gets the SAME redirect as the wildcard above:\n"
+    "```jsx\n"
+    "<Route path=\"/\" element={<Navigate to=\"/dashboard\" replace />} />\n"
+    "```"
+}
 
 2. LOGIN PAGE — POST JSON to /auth/login, store token + user info, redirect:
 ```jsx
@@ -786,7 +859,7 @@ Before returning:
 16. Verify signup does auto-login after account creation — NEVER redirect to /login after signup
 17. Verify login stores display_name, user_id, user_email in localStorage from response
 18. Verify logout clears ALL keys: token, display_name, user_id, user_email
-19. Verify App.jsx has a root redirect (path="/") and wildcard (path="*") pointing to /dashboard so the root URL never shows a 404
+19. Verify App.jsx's wildcard route (path="*") points to /dashboard so an unmatched URL never shows a 404{" -- and if a LANDING PAGE section appears above, verify the exact root path \"/\" renders LandingPage, NOT a redirect to /dashboard; otherwise (no landing page requested) verify \"/\" also redirects to /dashboard, same as the wildcard" if include_landing_page else " (the exact root path \"/\" gets this same /dashboard redirect too, since no landing page was requested)"}
 20. Verify EVERY page's main content wrapper has animate-fade-in-up, and every mapped card/row list has the staggered animationDelay — no page or list may appear instantly
 21. Verify loading states use the .skeleton class (shimmer), not plain animate-pulse boxes
 22. Verify toasts/modals enter with animate-scale-in, ambient blobs have animate-float-slow / animate-float-slower, and the dashboard's recent-activity section has a live-dot
@@ -795,4 +868,21 @@ Before returning:
 25. Verify this style's MOTION INTENSITY guidance (stagger timing, which entrance animation to prefer) was actually followed, not just the base motion tokens by default
 26. If a LAYOUT OVERRIDE — TOP-NAV SHELL section appears in the design system above, verify NO page renders a sidebar or ml-56 margin — every authenticated page uses the sticky top-nav shell with the centered max-w-6xl content column
 27. Verify the EXPERIENCE BLUEPRINT's delight moment and empty-state treatment are actually implemented (using the existing motion tokens), not just the generic empty-state fallback
-"""
+{
+    (
+        "28. Verify src/pages/LandingPage.jsx is a REAL marketing page for THIS "
+        "app's actual domain (hero headline naming what the app specifically "
+        "does, 3 feature cards pulled from its real entities/features, a CTA "
+        "linking to /register) using Tailwind classes and this app's gradient "
+        "tokens — NOT a generic placeholder, NOT inline style={} objects, and "
+        "NOT content/stats copied from a different app category than this one.\n"
+    ) if include_landing_page else ""
+}{
+    (
+        "29. Verify `motion` (import from 'motion/react') is ACTUALLY imported "
+        "and used somewhere (AnimatePresence route transitions, whileInView "
+        "reveals, or whileHover/whileTap) — this app's MOTION INTENSITY is "
+        "\"heavy\", which specifically requires it; the base Tailwind "
+        "animate-* tokens alone do NOT satisfy this tier.\n"
+    ) if motion_intensity == "heavy" else ""
+}"""

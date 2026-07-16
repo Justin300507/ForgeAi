@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef } from "react";
 import { Link, useNavigate } from "react-router-dom";
-import { Zap, Download, Globe, Rocket, Github, Cloud, Train, Triangle, Database, Check, Loader2 } from "lucide-react";
+import { Zap, Download, Globe, Rocket, Github, Cloud, Train, Triangle, Database, Check, Loader2, Sparkles } from "lucide-react";
 import { jobsAPI, credentialsAPI } from "../api";
 import NavBar from "../components/NavBar";
 import { useVeil } from "../components/Veil";
@@ -33,6 +33,23 @@ const DEPLOYMENTS = [
   { id:"vercel",     Icon:Triangle, label:"Vercel",        sub:"Frontend + backend, one project", requires:["vercel","neon"] },
 ];
 
+// Mirrors backend/app/prompts/style_system.py's STYLES catalog exactly —
+// "auto" (empty override) keeps today's deterministic per-idea pick.
+const STYLES = [
+  { id:"",                  label:"Auto",             sub:"Picked from your idea" },
+  { id:"glass",              label:"Glassmorphism",    sub:"Translucent, blurred, layered" },
+  { id:"bento",              label:"Bento Grid",       sub:"Apple-style modular cards" },
+  { id:"neubrutalist",       label:"Neubrutalist",     sub:"Bold blocks, hard shadows" },
+  { id:"soft_clay",          label:"Soft Clay",        sub:"Pastel, rounded, tactile" },
+  { id:"minimal_editorial",  label:"Minimal Editorial",sub:"Swiss-grid, huge whitespace" },
+];
+
+const INTENSITIES = [
+  { id:"subtle",   label:"Subtle",   sub:"Restrained — minimal motion" },
+  { id:"moderate", label:"Moderate", sub:"Today's default feel" },
+  { id:"heavy",    label:"Heavy",    sub:"Scroll reveals, page transitions" },
+];
+
 const SERVICE_META = {
   github:     { label:"GitHub",     Icon:Github },
   cloudflare: { label:"Cloudflare", Icon:Cloud },
@@ -48,6 +65,9 @@ export default function NewProject() {
   const [idea, setIdea] = useState(() => sessionStorage.getItem(IDEA_DRAFT_KEY) || "");
   const [model, setModel] = useState("auto");
   const [deploy, setDeploy] = useState("none");
+  const [visualPolish, setVisualPolish] = useState(false);
+  const [styleOverride, setStyleOverride] = useState("");
+  const [motionIntensity, setMotionIntensity] = useState("moderate");
   const [loading, setLoading] = useState(false);
   const [igniting, setIgniting] = useState(false);
   const [error, setError] = useState("");
@@ -85,7 +105,11 @@ export default function NewProject() {
     // so the click feels instant regardless of network timing.
     sceneryBoost?.boost();
     try {
-      const res = await jobsAPI.create(idea.trim(), model, deploy, "web");
+      const res = await jobsAPI.create(idea.trim(), model, deploy, "web", visualPolish ? {
+        styleOverride: styleOverride || null,
+        motionIntensity,
+        includeLandingPage: true,
+      } : {});
       // Same veil sweep as landing/auth: crossing into the live generation
       // workspace is a scene change, not a plain route swap.
       await veil.cover();
@@ -152,6 +176,65 @@ export default function NewProject() {
                     </button>
                   ))}
                 </div>
+              </fieldset>
+
+              {/* Visual polish — landing page + style/motion opt-in */}
+              <fieldset className="anim-fade-up" style={{ "--d": "190ms" }}>
+                <div className="flex items-center justify-between mb-3">
+                  <legend className="forge-mono text-[10px] uppercase text-gray-400">Visual polish</legend>
+                  <button type="button" role="switch" aria-checked={visualPolish}
+                    onClick={() => setVisualPolish(v => !v)}
+                    className={`relative w-10 h-5.5 rounded-full transition-colors shrink-0 ${visualPolish ? "bg-[#ff8a3d]" : "bg-white/10"}`}>
+                    <span className={`absolute top-0.5 w-4.5 h-4.5 rounded-full bg-white transition-transform ${visualPolish ? "translate-x-[19px]" : "translate-x-0.5"}`} />
+                  </button>
+                </div>
+                <button type="button" onClick={() => setVisualPolish(v => !v)}
+                  className="w-full text-left liquid-glass rounded-2xl px-4 py-3 flex items-center gap-3 mb-3">
+                  <span className="w-9 h-9 rounded-full liquid-glass flex items-center justify-center shrink-0">
+                    <Sparkles size={15} className="text-[#ffb47a]" aria-hidden="true" />
+                  </span>
+                  <span className="min-w-0">
+                    <span className="block text-sm font-medium text-white">Add a landing page</span>
+                    <span className="block text-xs text-gray-500">Plus a chosen visual style and motion level for the whole app</span>
+                  </span>
+                </button>
+
+                {visualPolish && (
+                  <div className="space-y-3 pl-1">
+                    <div>
+                      <p className="forge-mono text-[10px] uppercase text-gray-500 mb-2">Style</p>
+                      <div className="flex flex-wrap gap-2">
+                        {STYLES.map(s => (
+                          <button key={s.id} type="button" onClick={() => setStyleOverride(s.id)}
+                            aria-pressed={styleOverride === s.id} title={s.sub}
+                            className={
+                              styleOverride === s.id
+                                ? "bg-white text-slate-900 text-xs font-medium px-3 py-1.5 rounded-full transition-colors"
+                                : "text-white/60 hover:text-white text-xs px-3 py-1.5 rounded-full transition-colors liquid-glass"
+                            }>
+                            {s.label}
+                          </button>
+                        ))}
+                      </div>
+                    </div>
+                    <div>
+                      <p className="forge-mono text-[10px] uppercase text-gray-500 mb-2">Motion intensity</p>
+                      <div className="flex flex-wrap gap-2">
+                        {INTENSITIES.map(i => (
+                          <button key={i.id} type="button" onClick={() => setMotionIntensity(i.id)}
+                            aria-pressed={motionIntensity === i.id} title={i.sub}
+                            className={
+                              motionIntensity === i.id
+                                ? "bg-white text-slate-900 text-xs font-medium px-3 py-1.5 rounded-full transition-colors"
+                                : "text-white/60 hover:text-white text-xs px-3 py-1.5 rounded-full transition-colors liquid-glass"
+                            }>
+                            {i.label}
+                          </button>
+                        ))}
+                      </div>
+                    </div>
+                  </div>
+                )}
               </fieldset>
 
               {/* Deployment cards */}
