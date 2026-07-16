@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef } from "react";
 import { Link, useNavigate } from "react-router-dom";
-import { Zap, Download, Globe, Rocket, Github, Cloud, Train, Check, Loader2 } from "lucide-react";
+import { Zap, Download, Globe, Rocket, Github, Cloud, Train, Triangle, Database, Check, Loader2 } from "lucide-react";
 import { jobsAPI, credentialsAPI } from "../api";
 import NavBar from "../components/NavBar";
 import { useVeil } from "../components/Veil";
@@ -30,12 +30,15 @@ const DEPLOYMENTS = [
   { id:"none",       Icon:Download, label:"Download Only", sub:"Generate & download the code", requires:[] },
   { id:"cloudflare", Icon:Globe,    label:"Frontend Only", sub:"Deploy to Cloudflare Pages",   requires:["github","cloudflare"] },
   { id:"both",       Icon:Rocket,   label:"Full Stack",    sub:"GitHub + Cloudflare + Railway", requires:["github","cloudflare","railway"] },
+  { id:"vercel",     Icon:Triangle, label:"Vercel",        sub:"Frontend + backend, one project", requires:["vercel","neon"] },
 ];
 
 const SERVICE_META = {
   github:     { label:"GitHub",     Icon:Github },
   cloudflare: { label:"Cloudflare", Icon:Cloud },
   railway:    { label:"Railway",    Icon:Train },
+  vercel:     { label:"Vercel",     Icon:Triangle },
+  neon:       { label:"Neon",       Icon:Database },
 };
 
 export default function NewProject() {
@@ -154,7 +157,7 @@ export default function NewProject() {
               {/* Deployment cards */}
               <fieldset className="anim-fade-up" style={{ "--d": "220ms" }}>
                 <legend className="forge-mono block text-[10px] uppercase text-gray-400 mb-3">Deployment</legend>
-                <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
                   {DEPLOYMENTS.map(d => {
                     const isSelected = deploy === d.id;
                     return (

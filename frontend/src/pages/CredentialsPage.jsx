@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useCallback } from "react";
-import { Github, Cloud, Train, Check } from "lucide-react";
+import { Github, Cloud, Train, Check, Triangle, Database } from "lucide-react";
 import NavBar from "../components/NavBar";
 import GlassInput from "../components/GlassInput";
 import PillButton from "../components/PillButton";
@@ -51,6 +51,34 @@ const SERVICES = [
         label: "Personal Token",
         placeholder: "...",
         hint: "railway.app → Account → Tokens → Create Token",
+      },
+    ],
+  },
+  {
+    key: "vercel",
+    name: "Vercel",
+    Icon: Triangle,
+    description: "Deploy full-stack apps (frontend + backend, one project)",
+    fields: [
+      {
+        key: "vercel_token",
+        label: "Access Token",
+        placeholder: "...",
+        hint: "vercel.com → Account Settings → Tokens → Create Token",
+      },
+    ],
+  },
+  {
+    key: "neon",
+    name: "Neon",
+    Icon: Database,
+    description: "Provisions a free Postgres database for each Vercel deploy",
+    fields: [
+      {
+        key: "neon_api_key",
+        label: "API Key",
+        placeholder: "...",
+        hint: "console.neon.tech → Account Settings → API keys → Create key",
       },
     ],
   },

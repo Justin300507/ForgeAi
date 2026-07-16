@@ -15,7 +15,7 @@ from app.deployments.base_provider import DeploymentResult
 
 METADATA_FILE = Path(__file__).parent.parent.parent / "deployment_metadata.json"
 
-DeploymentProvider = Literal["railway", "render", "flyio"]
+DeploymentProvider = Literal["railway", "render", "flyio", "vercel"]
 
 DOCKERFILE = """\
 FROM python:3.11-slim
@@ -76,6 +76,9 @@ def get_provider(name: DeploymentProvider):
     if name == "flyio":
         from app.deployments.flyio_provider import FlyioProvider
         return FlyioProvider()
+    if name == "vercel":
+        from app.deployments.vercel_provider import VercelProvider
+        return VercelProvider()
     raise ValueError(f"Unknown deployment provider: {name!r}")
 
 

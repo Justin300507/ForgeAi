@@ -31,7 +31,7 @@ from app.services.deployment_config_service import generate_deployment_configs
 def generate_project_v14(
     idea: str,
     provider: str = "auto",
-    deploy_to: str = "both",          # "render" | "cloudflare" | "both" | "none"  ("railway" accepted as alias for "render")
+    deploy_to: str = "both",          # "render" | "cloudflare" | "both" | "vercel" | "none"  ("railway" accepted as alias for "render")
     run_improvement_cycle: bool = False,
     skip_reviews: bool = True,
     frontend_target: str = "web",
@@ -42,7 +42,9 @@ def generate_project_v14(
     Args:
         idea:                   plain-English project description
         provider:               LLM provider (auto/cerebras/groq/gemini/openai)
-        deploy_to:              where to deploy — "render", "cloudflare", "both", or "none"
+        deploy_to:              where to deploy — "render", "cloudflare", "both",
+                                "vercel" (single-project full-stack deploy with a
+                                provisioned Neon Postgres), or "none"
                                 ("railway" is accepted as an alias for "render")
         run_improvement_cycle:  run V7 self-improvement after generation
         skip_reviews:           skip QA/Security reviews (faster, cheaper)
@@ -64,6 +66,7 @@ def generate_project_v14(
         "github": {},
         "railway": {},
         "cloudflare": {},
+        "vercel": {},
         "health": {},
         "report": {},
     }
@@ -166,6 +169,18 @@ def generate_project_v14(
     result["cloudflare"] = cloudflare_result
 
     frontend_url = cloudflare_result.get("url")
+
+    # ── Step 4c: Vercel — single-project full-stack deploy ────────────────────
+    # Mutually exclusive with the Render+Cloudflare split above (Vercel hosts
+    # both frontend and backend from one project on the same origin).
+    vercel_result: dict = {"skipped": True}
+    if deploy_to == "vercel":
+        print("\n[V14] Step 4c/5 — Deploying to Vercel (frontend + backend, one project)...")
+        vercel_result = _deploy_vercel(project_path, project_name)
+        result["vercel"] = vercel_result
+        if vercel_result.get("success"):
+            backend_url = vercel_result.get("backend_url")
+            frontend_url = vercel_result.get("frontend_url")
 
     # ── Step 5: Health checks ─────────────────────────────────────────────────
     print("\n[V14] Step 5/5 — Health checks...")
@@ -273,6 +288,41 @@ def _deploy_cloudflare(project_path: str, project_name: str, backend_url: str | 
         }
     except Exception as exc:
         print(f"  [V14] Cloudflare deploy exception: {exc}")
+        return {"success": False, "error": str(exc), "url": None}
+
+
+def _deploy_vercel(project_path: str, project_name: str) -> dict:
+    """
+    One Vercel project hosts both frontend and backend (same origin, backend
+    mounted under /api — see vercel_provider.py). Vercel has no disk, so a
+    real Postgres is provisioned via Neon first and passed in as DATABASE_URL.
+    """
+    try:
+        from app.deployments.neon_provider import provision_database
+        from app.deployments.vercel_provider import VercelProvider
+
+        db_url, db_err = provision_database(project_name)
+        if db_err:
+            print(f"  [Vercel] Neon provisioning failed: {db_err}")
+            return {"success": False, "error": f"Database provisioning failed: {db_err}", "url": None}
+
+        provider = VercelProvider()
+        res = provider.deploy(project_path, project_name, env_vars={"DATABASE_URL": db_url})
+        if not res.success:
+            print(f"  [Vercel] Deploy failed: {(res.error or '')[:400]}")
+            if res.logs:
+                print(f"  [Vercel] Logs: {res.logs[-300:]}")
+        return {
+            "success": res.success,
+            "url": res.url,
+            "backend_url": res.metadata.get("backend_url"),
+            "frontend_url": res.metadata.get("frontend_url"),
+            "error": res.error,
+            "logs": res.logs[-500:] if res.logs else "",
+            "metadata": res.metadata,
+        }
+    except Exception as exc:
+        print(f"  [Vercel] Exception: {exc}")
         return {"success": False, "error": str(exc), "url": None}
 
 

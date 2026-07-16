@@ -1375,6 +1375,8 @@ def _merged_creds() -> dict:
         "railway_token": stored.get("railway_token") or os.getenv("RAILWAY_TOKEN", ""),
         "cloudflare_api_token": stored.get("cloudflare_api_token") or os.getenv("CLOUDFLARE_API_TOKEN", ""),
         "cloudflare_account_id": stored.get("cloudflare_account_id") or os.getenv("CLOUDFLARE_ACCOUNT_ID", ""),
+        "vercel_token": stored.get("vercel_token") or os.getenv("VERCEL_TOKEN", ""),
+        "neon_api_key": stored.get("neon_api_key") or os.getenv("NEON_API_KEY", ""),
     }
 
 
@@ -1383,6 +1385,8 @@ class CredentialsRequest(BaseModel):
     railway_token: str = ""
     cloudflare_api_token: str = ""
     cloudflare_account_id: str = ""
+    vercel_token: str = ""
+    neon_api_key: str = ""
 
 
 @app.get("/credentials", tags=["credentials"])
@@ -1398,6 +1402,8 @@ def save_credentials(req: CredentialsRequest):
         "railway_token": req.railway_token or existing.get("railway_token", ""),
         "cloudflare_api_token": req.cloudflare_api_token or existing.get("cloudflare_api_token", ""),
         "cloudflare_account_id": req.cloudflare_account_id or existing.get("cloudflare_account_id", ""),
+        "vercel_token": req.vercel_token or existing.get("vercel_token", ""),
+        "neon_api_key": req.neon_api_key or existing.get("neon_api_key", ""),
     })
     _save_creds(existing)
     return {"saved": True}
@@ -1414,9 +1420,11 @@ def credentials_status():
     railway_token = c["railway_token"]
     cloudflare_api_token = c["cloudflare_api_token"]
     cloudflare_account_id = c["cloudflare_account_id"]
+    vercel_token = c["vercel_token"]
+    neon_api_key = c["neon_api_key"]
 
-    if not any([github_token, railway_token, cloudflare_api_token]):
-        return {"github": None, "cloudflare": None, "railway": None}
+    if not any([github_token, railway_token, cloudflare_api_token, vercel_token, neon_api_key]):
+        return {"github": None, "cloudflare": None, "railway": None, "vercel": None, "neon": None}
 
     out: dict = {}
 
@@ -1476,6 +1484,45 @@ def credentials_status():
         out["railway"] = {"connected": valid, "name": "justin300507" if valid else None}
     else:
         out["railway"] = None
+
+    # ── Vercel ────────────────────────────────────────────────────────────────
+    if vercel_token:
+        try:
+            req = _urlreq.Request(
+                "https://api.vercel.com/v2/user",
+                headers={"Authorization": f"Bearer {vercel_token}"},
+            )
+            with _urlreq.urlopen(req, timeout=8) as resp:
+                data = _json.loads(resp.read())
+            user = data.get("user") or {}
+            out["vercel"] = {
+                "connected": True,
+                "username": user.get("username"),
+                "email": user.get("email"),
+            }
+        except Exception:
+            out["vercel"] = {"connected": False}
+    else:
+        out["vercel"] = None
+
+    # ── Neon ──────────────────────────────────────────────────────────────────
+    if neon_api_key:
+        try:
+            req = _urlreq.Request(
+                "https://console.neon.tech/api/v2/users/me",
+                headers={"Authorization": f"Bearer {neon_api_key}"},
+            )
+            with _urlreq.urlopen(req, timeout=8) as resp:
+                data = _json.loads(resp.read())
+            out["neon"] = {
+                "connected": True,
+                "email": data.get("email"),
+                "name": data.get("name"),
+            }
+        except Exception:
+            out["neon"] = {"connected": False}
+    else:
+        out["neon"] = None
 
     return out
 
