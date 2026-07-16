@@ -30,7 +30,7 @@ def generate_project_v15(
     idea:       str,
     provider:   str = "auto",
     deploy:     bool = True,
-    deploy_to:  str = "both",    # "render" | "cloudflare" | "both"
+    deploy_to:  str = "vercel",    # "vercel" | "render" | "cloudflare" | "both"
     job_id:     Optional[str] = None,
     log_fn:     Optional[Any] = None,  # callable(str) for WebSocket streaming
     style_override: Optional[str] = None,

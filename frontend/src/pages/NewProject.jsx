@@ -81,13 +81,18 @@ export default function NewProject() {
     sessionStorage.removeItem(IDEA_DRAFT_KEY);
     credentialsAPI.status().then(r => {
       setConnStatus(r.data);
-      // Full Stack is the default whenever the deploy accounts are ready:
-      // every completed forge should end with a live, shareable app link,
-      // not just a zip. "Download Only" stays the fallback when accounts
-      // aren't connected.
-      const ready = ["github", "cloudflare", "railway"]
-        .every(s => r.data?.[s]?.connected === true);
-      if (ready && !deployTouched.current) setDeploy("both");
+      // Vercel is the default whenever its accounts are ready: single
+      // project (frontend+backend, one origin), deploys in under a
+      // minute end-to-end, vs. Full Stack's ~5min Render backend cold
+      // build for the same result. Every completed forge should end with
+      // a live, shareable app link, not just a zip -- "Download Only"
+      // stays the fallback when no deploy accounts are connected.
+      if (!deployTouched.current) {
+        const vercelReady = ["vercel", "neon"].every(s => r.data?.[s]?.connected === true);
+        const fullStackReady = ["github", "cloudflare", "railway"].every(s => r.data?.[s]?.connected === true);
+        if (vercelReady) setDeploy("vercel");
+        else if (fullStackReady) setDeploy("both");
+      }
     }).catch(() => {});
   }, []);
 

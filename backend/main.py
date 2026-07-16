@@ -243,7 +243,7 @@ def _run_job(job_id: str, req: JobRequest):
                 idea=req.idea,
                 provider=req.provider,
                 deploy=req.deploy_to != "none",
-                deploy_to=req.deploy_to if req.deploy_to != "none" else "both",
+                deploy_to=req.deploy_to if req.deploy_to != "none" else "vercel",
                 job_id=job_id,
                 style_override=req.style_override,
                 motion_intensity=req.motion_intensity,
@@ -1244,7 +1244,7 @@ class V15Request(BaseModel):
     idea: str
     provider: str = "auto"
     deploy: bool = True
-    deploy_to: str = "both"          # "railway" | "cloudflare" | "both" | "none"
+    deploy_to: str = "vercel"          # "vercel" | "render" | "cloudflare" | "both" | "none"
 
 
 @app.post("/project/v14", dependencies=[GENERATION_RATE_LIMIT])

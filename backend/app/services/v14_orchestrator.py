@@ -31,7 +31,7 @@ from app.services.deployment_config_service import generate_deployment_configs
 def generate_project_v14(
     idea: str,
     provider: str = "auto",
-    deploy_to: str = "both",          # "render" | "cloudflare" | "both" | "vercel" | "none"  ("railway" accepted as alias for "render")
+    deploy_to: str = "vercel",          # "vercel" | "render" | "cloudflare" | "both" | "none"  ("railway" accepted as alias for "render")
     run_improvement_cycle: bool = False,
     skip_reviews: bool = True,
     frontend_target: str = "web",
