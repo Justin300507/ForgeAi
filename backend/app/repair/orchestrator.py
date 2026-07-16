@@ -599,6 +599,31 @@ _SAFE_SEED_ROUTES_STUB = (
 )
 
 
+_PROTECTED_AUTH_FILES = {
+    "app/routes/auth_routes.py", "app\\routes\\auth_routes.py",
+    "app/utils/auth.py", "app\\utils\\auth.py",
+}
+
+
+def _protected_auth_file_in_group(group: DiagnosticGroup) -> bool:
+    """
+    True if this group targets auth_routes.py or utils/auth.py.
+
+    v6_orchestrator.py's OWN (inner, per-file) fix loop never lets the LLM
+    touch these two files -- it always re-injects the known-good template
+    instead, since they're battle-tested and any LLM rewrite risks
+    reintroducing a subtle auth bug. This OUTER (V15) repair loop had no
+    equivalent guard, so a later repair attempt could -- and did, live
+    (hospital_management, 2026-07-16) -- LLM-regenerate auth_routes.py in
+    response to an unrelated diagnostic (a 404 on /auth/register vs
+    /auth/signup), reintroducing a duplicate-keyword-argument crash
+    (`User(**{...}, is_active=False)` where the dict already contained
+    is_active) in the SAME file the known-good template had already fixed
+    earlier in the same run.
+    """
+    return any(f in _PROTECTED_AUTH_FILES for f in group.affected_files)
+
+
 def _is_seed_related_group(group: DiagnosticGroup) -> bool:
     """
     True only if EVERY diagnostic in the group is about /seed or
@@ -646,6 +671,15 @@ def _apply_fix_group(
                   f"writing known-good seed_routes.py stub instead of calling the LLM")
             return (["app/routes/seed_routes.py"],
                     {"app/routes/seed_routes.py": _SAFE_SEED_ROUTES_STUB})
+
+    if _protected_auth_file_in_group(group):
+        from app.services.deterministic_patcher import _patch_auth_routes, _patch_auth_utils
+        project_path = Path(ctx.project_path)
+        _patch_auth_utils(project_path)
+        _patch_auth_routes(project_path)
+        print(f"    [fix] Group {group.group_id} touches protected auth file(s) — "
+              f"re-injecting known-good templates instead of calling the LLM")
+        return (["app/routes/auth_routes.py", "app/utils/auth.py"], {})
 
     # ── Fix cache lookup ──────────────────────────────────────────────────────
     try:
