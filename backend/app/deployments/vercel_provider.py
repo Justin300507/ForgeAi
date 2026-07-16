@@ -73,14 +73,35 @@ app = FastAPI()
 app.mount("/api", _generated_app)
 '''
 
-_VERCEL_JSON = {
-    "version": 2,
-    "routes": [
-        {"src": "/api/(.*)", "dest": "api/index.py"},
-        {"handle": "filesystem"},
-        {"src": "/(.*)", "dest": "/index.html"},
-    ],
-}
+def _build_vercel_json(dist_dir: Path) -> dict:
+    """
+    Legacy `builds`+`routes` config (paired with the raw-file-upload
+    deployments API) only builds what's explicitly listed — unlike a
+    git-connected deploy, it does NOT implicitly add a static builder for
+    leftover files. Every top-level entry actually present in dist/ must be
+    declared or Vercel serves the Python function fine but 404s everything
+    else (confirmed: an api-only builds array left dist/'s files sitting in
+    the build's `src/` stage and never copied into the served `out/`).
+    """
+    static_builds = []
+    for child in sorted(dist_dir.iterdir()):
+        if child.is_dir():
+            static_builds.append({"src": f"{child.name}/**", "use": "@vercel/static"})
+        else:
+            static_builds.append({"src": child.name, "use": "@vercel/static"})
+
+    return {
+        "version": 2,
+        "builds": [
+            {"src": "api/index.py", "use": "@vercel/python"},
+            *static_builds,
+        ],
+        "routes": [
+            {"src": "/api/(.*)", "dest": "api/index.py"},
+            {"handle": "filesystem"},
+            {"src": "/(.*)", "dest": "/index.html"},
+        ],
+    }
 
 
 class VercelProvider(BaseDeploymentProvider):
@@ -235,12 +256,19 @@ class VercelProvider(BaseDeploymentProvider):
             (api_dir / "index.py").write_text(_API_WRAPPER, encoding="utf-8")
 
             req_src = app_dir / "requirements.txt"
-            if req_src.exists():
-                shutil.copy2(str(req_src), str(build_dir / "requirements.txt"))
-            else:
-                (build_dir / "requirements.txt").write_text("fastapi\nuvicorn\nsqlalchemy\n", encoding="utf-8")
+            req_text = req_src.read_text(encoding="utf-8") if req_src.exists() else "fastapi\nuvicorn\nsqlalchemy\n"
+            # Generated requirements.txt is written assuming SQLite (Render's
+            # own deploy needs the same fix, but that's a separate pipeline).
+            # Since DATABASE_URL here is always a Neon Postgres URL, the app's
+            # own eager `Base.metadata.create_all()` at import time needs a
+            # real driver or the whole function crashes on cold start.
+            db_url = deploy_env.get("DATABASE_URL", "")
+            if db_url.startswith("postgres") and "psycopg2" not in req_text and "pg8000" not in req_text:
+                req_text = req_text.rstrip() + "\npsycopg2-binary\n"
+            (build_dir / "requirements.txt").write_text(req_text, encoding="utf-8")
 
-            (build_dir / "vercel.json").write_text(json.dumps(_VERCEL_JSON, indent=2), encoding="utf-8")
+            vercel_json = _build_vercel_json(dist_dir)
+            (build_dir / "vercel.json").write_text(json.dumps(vercel_json, indent=2), encoding="utf-8")
 
             # ── Collect deployable files: built frontend + api/ + app/ + vercel.json ──
             deploy_files: list[Path] = []
@@ -303,6 +331,12 @@ class VercelProvider(BaseDeploymentProvider):
             print(f"  [Vercel] Deployment queued: {final_url} (building...)")
             logs.append(f"[Vercel] deployment {deploy_id} → {final_url}")
 
+            # Team/org accounts on Vercel default new projects to Deployment
+            # Protection (an SSO login wall) on every environment including
+            # production. Generated apps are meant to be publicly reachable —
+            # a wall here would make every deploy look broken to end users.
+            self._disable_deployment_protection(slug, logs)
+
             return DeploymentResult(
                 success=bool(final_url),
                 url=final_url,
@@ -324,6 +358,22 @@ class VercelProvider(BaseDeploymentProvider):
         finally:
             if build_dir and build_dir.exists():
                 shutil.rmtree(str(build_dir), ignore_errors=True)
+
+    def _disable_deployment_protection(self, project_slug: str, logs: list) -> None:
+        try:
+            r = requests.patch(
+                f"{VERCEL_API}/v9/projects/{project_slug}",
+                headers={**self._headers(), "Content-Type": "application/json"},
+                params=self._qs(),
+                json={"ssoProtection": None},
+                timeout=15,
+            )
+            if r.ok:
+                print(f"  [Vercel] Disabled deployment protection for '{project_slug}'")
+            else:
+                logs.append(f"[Vercel] Could not disable deployment protection: {r.status_code} {r.text[:200]}")
+        except Exception as exc:
+            logs.append(f"[Vercel] Deployment protection call failed: {exc}")
 
     def get_logs(self, deploy_id: str) -> str:
         if not self.token or not deploy_id:
