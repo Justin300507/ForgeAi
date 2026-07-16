@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { Zap, Download, Globe, Rocket, Github, Cloud, Train, Check, Loader2 } from "lucide-react";
 import { jobsAPI, credentialsAPI } from "../api";
@@ -49,11 +49,23 @@ export default function NewProject() {
   const [igniting, setIgniting] = useState(false);
   const [error, setError] = useState("");
   const [connStatus, setConnStatus] = useState(null);
+  // Tracks whether the user has picked a deployment card themselves — the
+  // async connected-accounts default below must never override a choice.
+  const deployTouched = useRef(false);
 
   useEffect(() => {
     // The landing/dashboard draft has served its purpose once it lands here.
     sessionStorage.removeItem(IDEA_DRAFT_KEY);
-    credentialsAPI.status().then(r => setConnStatus(r.data)).catch(() => {});
+    credentialsAPI.status().then(r => {
+      setConnStatus(r.data);
+      // Full Stack is the default whenever the deploy accounts are ready:
+      // every completed forge should end with a live, shareable app link,
+      // not just a zip. "Download Only" stays the fallback when accounts
+      // aren't connected.
+      const ready = ["github", "cloudflare", "railway"]
+        .every(s => r.data?.[s]?.connected === true);
+      if (ready && !deployTouched.current) setDeploy("both");
+    }).catch(() => {});
   }, []);
 
   const selected = DEPLOYMENTS.find(d => d.id === deploy);
@@ -146,7 +158,8 @@ export default function NewProject() {
                   {DEPLOYMENTS.map(d => {
                     const isSelected = deploy === d.id;
                     return (
-                      <button key={d.id} type="button" onClick={() => setDeploy(d.id)}
+                      <button key={d.id} type="button"
+                        onClick={() => { deployTouched.current = true; setDeploy(d.id); }}
                         aria-pressed={isSelected}
                         className={`deploy-card${isSelected ? " selected" : ""} liquid-glass rounded-2xl px-4 py-5 border text-center flex flex-col items-center gap-2`}
                         style={{
