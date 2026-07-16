@@ -612,6 +612,87 @@ def validate_frontend_nav_targets(project_path, errors):
         errors.append(f"Missing frontend import target: ./pages/{page_name}")
 
 
+_ROUTE_PLACEHOLDER_TEXT_RE = re.compile(
+    r'\b(placeholder|not implemented|coming soon|to be implemented|tbd)\b',
+    re.IGNORECASE,
+)
+_JSX_COMPONENT_TAG_RE = re.compile(r'<([A-Z]\w*)[\s/>]')
+# Layout/guard HOCs a route legitimately wraps a real page in -- their
+# presence alone doesn't mean a real page component is being rendered
+# (e.g. <PrivateRoute><div>Dashboard Placeholder</div></PrivateRoute>
+# would otherwise false-negative just because PrivateRoute is capitalized).
+_ROUTE_WRAPPER_COMPONENTS = {
+    "PrivateRoute", "ProtectedRoute", "RequireAuth", "AuthRoute",
+    "AuthGuard", "GuestRoute", "PublicRoute", "Suspense", "Fragment",
+    "ErrorBoundary", "Layout", "AppLayout",
+}
+
+
+def validate_frontend_placeholder_routes(project_path, errors):
+    """
+    When frontend generation truncates badly enough that only App.jsx
+    survives salvage, the LLM sometimes writes literal inline placeholder
+    JSX straight into a Route's `element` prop (`<div>Login Page
+    Placeholder</div>`) instead of importing a real page component that
+    never got generated. There is no `import` statement and no
+    <Link>/navigate() call pointing at a missing file in this case, so
+    neither validate_frontend_imports nor validate_frontend_nav_targets can
+    see it -- App.jsx is syntactically complete and every route "renders",
+    so the app ships looking done while every primary route is functionally
+    blank (live case: habit_tracker, 2026-07-16 -- every route crashed/blank
+    in production despite an 85/B Forge Score).
+
+    Emits errors in the same "Missing frontend import target: X" format
+    validate_frontend_imports/validate_frontend_nav_targets already use so
+    this flows through the existing missing-file fix dispatch
+    (v6_orchestrator.py's regex on that exact string) with no new wiring.
+    """
+    src_path = os.path.join(project_path, "src")
+    app_jsx = os.path.join(src_path, "App.jsx")
+    if not os.path.exists(app_jsx):
+        return
+
+    try:
+        with open(app_jsx, "r", encoding="utf-8") as f:
+            content = f.read()
+    except Exception:
+        return
+
+    reported = set()
+    for m in re.finditer(r'<Route\s+path="([^"]+)"', content):
+        route_path = m.group(1)
+        if route_path == "*":
+            continue
+
+        elem_m = re.search(r'element=\{', content[m.end():m.end() + 4000])
+        if not elem_m:
+            continue
+
+        elem_start = m.end() + elem_m.end()
+        depth = 1
+        i = elem_start
+        while i < len(content) and depth > 0:
+            if content[i] == "{":
+                depth += 1
+            elif content[i] == "}":
+                depth -= 1
+            i += 1
+        element_body = content[elem_start:i - 1]
+
+        tags = set(_JSX_COMPONENT_TAG_RE.findall(element_body))
+        if tags - _ROUTE_WRAPPER_COMPONENTS:
+            continue  # renders a real imported component -- fine
+
+        if not _ROUTE_PLACEHOLDER_TEXT_RE.search(element_body):
+            continue  # inline JSX with no placeholder-ish wording -- don't guess
+
+        page_name = "LandingPage" if route_path.rstrip("/") == "" else _page_name_for_path(route_path)
+        if page_name in reported:
+            continue
+        reported.add(page_name)
+        errors.append(f"Missing frontend import target: ./pages/{page_name}")
+
+
 def validate_frontend_api_client(project_path, errors):
     """
     Flag raw fetch() calls with relative URLs in src/ files.
@@ -1168,6 +1249,10 @@ def validate_project(project_path):
         errors
     )
     validate_frontend_nav_targets(
+        project_path,
+        errors
+    )
+    validate_frontend_placeholder_routes(
         project_path,
         errors
     )
