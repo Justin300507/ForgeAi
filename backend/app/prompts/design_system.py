@@ -360,7 +360,12 @@ def build_design_system_injection(
         select_style,
     )
     style_block = build_style_injection(idea, ds, override=style_override)
-    intensity_block = build_intensity_injection(motion_intensity)
+    # Only inject the MOTION INTENSITY block when the user actually opted in
+    # via the New Project form -- motion_intensity=None (the default for
+    # every generation that never touched the Visual Polish toggle) must
+    # add ZERO extra prompt text so untouched generations stay byte-for-byte
+    # identical to before this feature existed, not just behaviorally similar.
+    intensity_block = build_intensity_injection(motion_intensity) if motion_intensity else ""
 
     from app.prompts.component_library import build_component_reference
     component_ref_block = build_component_reference(
