@@ -75,7 +75,8 @@ _GEMINI_RETRY_BACKOFF_SECONDS = 5
 _CEREBRAS_FINAL_RETRY_BACKOFF_SECONDS = 15
 
 
-def _auto_chain(prompt, stage, max_tokens, thinking_budget, skip: frozenset = frozenset()):
+def _auto_chain(prompt, stage, max_tokens, thinking_budget, skip: frozenset = frozenset(),
+                 _cerebras_already_tried: bool = False):
     """
     Cerebras → Gemini (with retries) → Groq. Cerebras is main as of
     2026-07-12: it's on its own separate quota from Gemini/Groq (both of
@@ -89,8 +90,20 @@ def _auto_chain(prompt, stage, max_tokens, thinking_budget, skip: frozenset = fr
     it was proven reliable in an earlier confirmed test, so failing
     through to it beats an outright stage failure, which is what tanked a
     run from 95 to 44 the one time it got removed instead of demoted.
+
+    _cerebras_already_tried: set by generate_content's explicit
+    provider=="cerebras" branch when ITS OWN try already failed with a
+    transient error (not a 402 cooldown) before calling in here with
+    skip={"cerebras"} to avoid an instant, pointless re-attempt of the
+    identical call. Only suppresses the FIRST Cerebras leg below --
+    the final-retry leg (after Gemini+Groq both also fail) still runs
+    regardless, since that's the exact safety net Exp109 was built for
+    (a transient Cerebras timeout, Gemini credit-depleted, Groq 413 on
+    TPM) and skip={"cerebras"} used to wall it off entirely, silently
+    disabling it for the single most common call path (model router
+    defaults to explicit provider="cerebras", not "auto").
     """
-    if "cerebras" not in skip and not _on_cooldown("cerebras"):
+    if "cerebras" not in skip and not _cerebras_already_tried and not _on_cooldown("cerebras"):
         try:
             print("Using Cerebras (main)")
             return _tracked("cerebras", "gpt-oss-120b", prompt, cerebras_generate, stage, max_tokens=max_tokens)
@@ -214,7 +227,12 @@ def _generate_uncached(
         except Exception as e:
             print(f"Cerebras failed ({e}) — falling back to auto chain")
             _note_provider_result("cerebras", e)
-            return _auto_chain(prompt, stage, max_tokens, thinking_budget, skip=frozenset({"cerebras"}))
+            # Don't skip cerebras outright -- a transient failure here (timeout,
+            # brief 5xx) still leaves it eligible for _auto_chain's deliberate
+            # final-retry leg once Gemini+Groq also fail. Only _cerebras_already_tried
+            # suppresses the redundant immediate re-attempt; a real 402 cooldown
+            # (handled above) is the only case that should skip cerebras entirely.
+            return _auto_chain(prompt, stage, max_tokens, thinking_budget, _cerebras_already_tried=True)
 
     if provider == "groq":
         if _on_cooldown("groq"):
