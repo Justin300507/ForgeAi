@@ -1506,18 +1506,20 @@ def credentials_status():
         out["vercel"] = None
 
     # ── Neon ──────────────────────────────────────────────────────────────────
+    # /users/me is personal-account-only and 403s for organization API keys
+    # (the kind neonctl's `api_keys` command issues) — /projects works for both
+    # personal and org-scoped keys, so it's the one real capability check here.
     if neon_api_key:
         try:
             req = _urlreq.Request(
-                "https://console.neon.tech/api/v2/users/me",
+                "https://console.neon.tech/api/v2/projects?limit=1",
                 headers={"Authorization": f"Bearer {neon_api_key}"},
             )
             with _urlreq.urlopen(req, timeout=8) as resp:
                 data = _json.loads(resp.read())
             out["neon"] = {
                 "connected": True,
-                "email": data.get("email"),
-                "name": data.get("name"),
+                "project_count": len(data.get("projects", [])),
             }
         except Exception:
             out["neon"] = {"connected": False}
