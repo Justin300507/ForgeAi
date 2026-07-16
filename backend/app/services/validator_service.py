@@ -39,6 +39,7 @@ from app.services.stub_handler_validator import validate_stub_handlers
 from app.services.global_statement_validator import validate_module_level_global
 from app.services.duplicate_class_validator import validate_duplicate_class_definitions
 from app.services.model_attribute_validator import validate_model_attribute_access
+from app.services.foreign_key_validator import validate_foreign_key_targets
 
 
 def rel(project_path, file_path):
@@ -1199,6 +1200,11 @@ def validate_project(project_path):
         errors
     )
     validate_model_attribute_access(
+        project_path,
+        errors,
+        diagnostics
+    )
+    validate_foreign_key_targets(
         project_path,
         errors,
         diagnostics
