@@ -292,6 +292,34 @@ class CloudflareProvider(BaseDeploymentProvider):
                 shutil.rmtree(str(build_dir), ignore_errors=True)
 
     def _ensure_project_exists(self, slug: str, logs: list) -> bool:
+        """Retrying wrapper around _ensure_project_exists_once.
+
+        Exp117: a single transient `[WinError 10054] connection forcibly
+        closed` on the existence-check API call permanently failed the
+        WHOLE frontend deploy of a 91.6/A app (exp116-milestone-r6,
+        forge_blog_cms: backend went live on Render, Cloudflare leg
+        abandoned). Network blips on one 15s API call must not be
+        terminal — retry up to 3 times with backoff before giving up."""
+        import time as _time
+        import urllib.error
+        for attempt in (1, 2, 3):
+            try:
+                return self._ensure_project_exists_once(slug, logs)
+            except (urllib.error.URLError, ConnectionError, TimeoutError, OSError) as ex:
+                msg = (f"[CF API] transient error on project check/create for "
+                       f"'{slug}' (attempt {attempt}/3): {ex}")
+                print(f"  {msg}")
+                logs.append(msg)
+                if attempt < 3:
+                    _time.sleep(5 * attempt)
+            except Exception as ex:
+                msg = f"[CF API] _ensure_project_exists error: {ex}"
+                print(f"  {msg}")
+                logs.append(msg)
+                return False
+        return False
+
+    def _ensure_project_exists_once(self, slug: str, logs: list) -> bool:
         """Create the Cloudflare Pages project via REST API if it doesn't exist yet.
         Wrangler in CI mode (CI=true) will NOT auto-create projects, so we do it here.
 
@@ -304,60 +332,57 @@ class CloudflareProvider(BaseDeploymentProvider):
         below failed with wrangler's opaque "Project not found", with the
         only trace of why buried in an internal `logs` list nothing ever
         printed to the console. Every branch below is loud on purpose.
+
+        Transient network errors (URLError/ConnectionError/OSError) PROPAGATE
+        to the retrying wrapper above — only definitive API answers return.
         """
+        import urllib.request
+        import json as _json
+        api_base = f"https://api.cloudflare.com/client/v4/accounts/{self.account_id}/pages/projects"
+        headers = {
+            "Authorization": f"Bearer {self.api_token}",
+            "Content-Type": "application/json",
+        }
+
+        def _read_success(resp) -> bool:
+            try:
+                return bool(_json.loads(resp.read().decode("utf-8", errors="replace")).get("success"))
+            except Exception:
+                return False
+
+        # Check if project exists
+        req = urllib.request.Request(f"{api_base}/{slug}", headers=headers)
         try:
-            import urllib.request
-            import json as _json
-            api_base = f"https://api.cloudflare.com/client/v4/accounts/{self.account_id}/pages/projects"
-            headers = {
-                "Authorization": f"Bearer {self.api_token}",
-                "Content-Type": "application/json",
-            }
-
-            def _read_success(resp) -> bool:
-                try:
-                    return bool(_json.loads(resp.read().decode("utf-8", errors="replace")).get("success"))
-                except Exception:
-                    return False
-
-            # Check if project exists
-            req = urllib.request.Request(f"{api_base}/{slug}", headers=headers)
-            try:
-                resp = urllib.request.urlopen(req, timeout=15)
-                if _read_success(resp):
-                    msg = f"[CF API] Project '{slug}' already exists"
-                    print(f"  {msg}")
-                    logs.append(msg)
-                    return True
-                # HTTP 200 but success=false — project doesn't actually exist; fall through to create
-            except urllib.error.HTTPError as e:
-                if e.code != 404:
-                    msg = f"[CF API] Unexpected status {e.code} checking project '{slug}'"
-                    print(f"  {msg}")
-                    logs.append(msg)
-                    return False
-
-            # Doesn't exist → create it
-            body = _json.dumps({"name": slug, "production_branch": "main"}).encode()
-            create_req = urllib.request.Request(api_base, data=body, headers=headers, method="POST")
-            try:
-                resp = urllib.request.urlopen(create_req, timeout=15)
-                if _read_success(resp):
-                    print(f"  [Cloudflare] Created Pages project '{slug}'")
-                    logs.append(f"[CF API] Created project '{slug}'")
-                    return True
-                msg = f"[CF API] Create returned HTTP 200 but success=false for '{slug}'"
+            resp = urllib.request.urlopen(req, timeout=15)
+            if _read_success(resp):
+                msg = f"[CF API] Project '{slug}' already exists"
+                print(f"  {msg}")
+                logs.append(msg)
+                return True
+            # HTTP 200 but success=false — project doesn't actually exist; fall through to create
+        except urllib.error.HTTPError as e:
+            if e.code != 404:
+                msg = f"[CF API] Unexpected status {e.code} checking project '{slug}'"
                 print(f"  {msg}")
                 logs.append(msg)
                 return False
-            except urllib.error.HTTPError as e:
-                err = e.read().decode("utf-8", errors="replace")[:200]
-                msg = f"[CF API] Could not create project '{slug}': {e.code} {err}"
-                print(f"  {msg}")
-                logs.append(msg)
-                return False
-        except Exception as ex:
-            msg = f"[CF API] _ensure_project_exists error: {ex}"
+
+        # Doesn't exist → create it
+        body = _json.dumps({"name": slug, "production_branch": "main"}).encode()
+        create_req = urllib.request.Request(api_base, data=body, headers=headers, method="POST")
+        try:
+            resp = urllib.request.urlopen(create_req, timeout=15)
+            if _read_success(resp):
+                print(f"  [Cloudflare] Created Pages project '{slug}'")
+                logs.append(f"[CF API] Created project '{slug}'")
+                return True
+            msg = f"[CF API] Create returned HTTP 200 but success=false for '{slug}'"
+            print(f"  {msg}")
+            logs.append(msg)
+            return False
+        except urllib.error.HTTPError as e:
+            err = e.read().decode("utf-8", errors="replace")[:200]
+            msg = f"[CF API] Could not create project '{slug}': {e.code} {err}"
             print(f"  {msg}")
             logs.append(msg)
             return False

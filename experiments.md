@@ -7771,3 +7771,31 @@ tested); live validation lands with r6.
 
 **Deliverables**: install-retry diff in frontend_runner.py, this entry.
 **Cost: $0.**
+
+---
+
+## Experiment 117: Cloudflare API Transient-Error Retry
+
+2026-07-16. blog_cms's r6 leg finally cleared every gate — 91.6/A,
+Exp115 passing the stale judge verdict, Exp116's install retry
+recovering the build — and then went PARTIAL: backend live on Render,
+frontend abandoned because ONE `<urlopen error [WinError 10054]
+connection forcibly closed>` hit the 15s project-existence API call
+and the catch-all returned permanent failure.
+
+**Fix**: `_ensure_project_exists` is now a retrying wrapper (3 attempts,
+5s/10s backoff) around `_ensure_project_exists_once`; transient network
+exceptions (URLError/ConnectionError/TimeoutError/OSError) propagate to
+the wrapper, while definitive API answers (success/failure envelopes,
+HTTP 4xx) return immediately without retry.
+
+**Validation**: `tests/reliability/test_exp117_cf_transient_retry.py`
+3/3 — transient-then-success retries through, persistent transient
+gives up after 3 loud log lines, definitive answers are never retried.
+
+Meanwhile Exp115 and Exp116 both CONFIRMED live in r6: the deploy gate
+logged the contradiction and did not block, and the npm-timeout retry
+recovered a build that would previously have died.
+
+**Deliverables**: retry diff in cloudflare_provider.py, test file, this
+entry. **Cost: $0.**
