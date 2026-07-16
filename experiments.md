@@ -7799,3 +7799,44 @@ recovered a build that would previously have died.
 
 **Deliverables**: retry diff in cloudflare_provider.py, test file, this
 entry. **Cost: $0.**
+
+---
+
+## MILESTONE COMPLETE: All 3 Canary Apps 80+ AND Deployed (Exp103–117)
+
+2026-07-16. The user's explicit target — "every app deployed, 80+" —
+is met for the full canary suite, each app verified LIVE by exercising
+signup → authenticated create → list against the deployed backends:
+
+| app      | score   | backend                                            | frontend                                   |
+|----------|---------|----------------------------------------------------|--------------------------------------------|
+| todo     | 97.0/A+ | todo-list-app-backend-no0t.onrender.com            | b94efb30.todo-list-app-1eu.pages.dev       |
+| blog_cms | 93.4/A  | forge-blog-cms-backend.onrender.com                | 5d01ae56.forge-blog-cms.pages.dev          |
+| crm      | 88.9/B  | simple-crm-backend-m54t.onrender.com               | 104e040b.simple-crm-8hz.pages.dev          |
+
+blog_cms's final create-post verification used the exact `tags: []`
+payload that 500'd every run at the start of this thread — 201 with an
+id, Exp110's guard and Exp113's early relax both visible in production,
+as is Exp111's id-bearing response on crm and Exp117's retry (the CF
+project create succeeded on attempt 3/3 after two live SSL transients).
+
+**The 15-experiment arc that got here** (all $0 except two live
+generations, every fix root-caused from a real failure, offline-
+validated against the actual broken app, tested, committed):
+Exp103 role-discovery live confirmation → Exp104 stray-paren JSX →
+Exp105 journey date healing → Exp106 quoted-annotation ForwardRefs →
+Exp107 hyphenated routers → Exp108 star-import redirect → Exp109
+Cerebras final retry → Exp110 unbound db-op guard → Exp111
+response_model swap → Exp112 wirer extension-blindness → Exp113
+notnull-gap stage fix → Exp114 tree-kill subprocess timeout (the
+ForgeBench 24% hang, explained) → Exp115 judge-gate corroboration →
+Exp116 npm install self-heal → Exp117 CF transient retry.
+
+**Honest caveats**: single-pass-per-app evidence, with the LLM cache
+making re-runs partially deterministic; Render free-tier backends
+cold-start ~40s; blog_cms's GET /posts returns a paginated envelope
+whose default filter hides draft posts (cosmetic, worth a look);
+Gemini remains credit-depleted (chain runs Cerebras→Groq+final-retry);
+consistency across NOVEL ideas is the next thing to prove — a
+ForgeBench v1.1 run is the right instrument now that the hang class
+and the top deterministic failure classes are closed.
