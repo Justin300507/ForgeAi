@@ -658,6 +658,26 @@ def validate_frontend_placeholder_routes(project_path, errors):
     except Exception:
         return
 
+    # App.jsx with ZERO <Route> elements at all means the router itself was
+    # never generated -- every check in this module (this one included)
+    # only scans INSIDE existing <Route> elements, so a completely
+    # route-less App.jsx is invisible to all of them despite being the most
+    # severe possible frontend defect: no page is reachable, period. Live
+    # case (habit_tracker, 2026-07-16, scored 97.57/A+ and deployed):
+    # frontend_fix_service.py's create_missing_stubs() treats every missing
+    # relative import identically, including App.jsx itself when the LLM's
+    # frontend response never included it (truncation) -- it silently wrote
+    # `const App = () => <div>App</div>;` the same way it would stub a
+    # missing StatCard.jsx, and nothing downstream ever flagged the result:
+    # syntactically valid, builds clean, and the CRUD journey tests the
+    # backend directly over HTTP so it never touches the frontend at all.
+    # Every generated app in this codebase's contract uses react-router
+    # with real routes, so this is unconditional -- there is no legitimate
+    # case here where App.jsx has zero routes.
+    if "<Route" not in content:
+        errors.append("Missing frontend import target: ./App")
+        return
+
     reported = set()
     for m in re.finditer(r'<Route\s+path="([^"]+)"', content):
         route_path = m.group(1)

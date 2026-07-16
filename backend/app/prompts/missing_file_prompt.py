@@ -148,6 +148,39 @@ def _find_reference_sibling(project_path, filepath):
     return None
 
 
+_NON_ENTITY_ROUTE_FILES = {"auth_routes.py", "seed_routes.py", "stats_routes.py"}
+
+
+def _find_app_root_resources(project_path):
+    """
+    When App.jsx itself is the missing file (the LLM's frontend response
+    never included it, or it got reduced to a trivial stub), the missing-
+    file agent has nothing to route to unless it's told what the backend
+    actually exposes -- a bare "regenerate App.jsx" prompt produces a
+    generic 2-3 route shell (login/register/home) with none of the real
+    entity pages, since it has zero project context otherwise. Scans
+    app/routes/ for resource route files (skipping auth/seed/stats) and
+    returns the inferred Page component names, so the regenerated router
+    at least references the real pages -- any that don't exist yet will
+    themselves be caught by validate_frontend_imports and regenerated in
+    a follow-up round, same as any other missing page.
+    """
+    if not project_path:
+        return []
+    routes_dir = os.path.join(project_path, "app", "routes")
+    if not os.path.isdir(routes_dir):
+        return []
+    resources = []
+    for fname in sorted(os.listdir(routes_dir)):
+        if not fname.endswith("_routes.py") or fname in _NON_ENTITY_ROUTE_FILES:
+            continue
+        stem = fname[: -len("_routes.py")]
+        words = re.split(r"[_-]", stem)
+        page_name = "".join(w.capitalize() for w in words if w) + "Page"
+        resources.append(page_name)
+    return resources
+
+
 def build_missing_file_prompt(
     filepath,
     error,
@@ -171,6 +204,39 @@ different convention -- copy this project's real one.
 
 --- {ref_path} ---
 {ref_content}
+"""
+
+    is_app_root = os.path.normpath(filepath).replace("\\", "/").endswith("src/App.jsx")
+    app_root_block = ""
+    if is_app_root:
+        resources = _find_app_root_resources(project_path)
+        resource_lines = "\n".join(f'- ./pages/{r}' for r in resources) if resources else ""
+        app_root_block = f"""
+========================================
+THIS IS THE APP'S ROOT ROUTER -- NOT AN ORDINARY COMPONENT
+========================================
+
+App.jsx is the top-level router for the ENTIRE application. It is NOT a
+placeholder shell (`const App = () => <div>App</div>;` is never acceptable
+here under any circumstance) -- every page in the app is unreachable until
+this file wires up real routing.
+
+This backend exposes these resources, each needing its own page and route
+(import every one of these from './pages/{{Name}}' and mount it -- if a
+page file doesn't exist yet on disk, import it anyway; a separate pass
+regenerates any page that's actually missing):
+{resource_lines if resource_lines else "(no additional resources detected beyond auth -- still include Login/Register/Dashboard)"}
+
+Required structure:
+- BrowserRouter + Routes from react-router-dom
+- Public routes: /login -> LoginPage, /register -> RegisterPage
+- A PrivateRoute wrapper (check for a token in localStorage under the key
+  'token'; redirect to /login if absent) wrapping every authenticated route
+- /  and /dashboard -> DashboardPage (protected)
+- One protected route per resource above, at a sensible plural/kebab path
+  (e.g. HabitsPage -> /habits), rendering the real imported page component
+  -- never an inline placeholder div in the route's element prop
+- A catch-all 404 route
 """
 
     intent = _find_page_intent(project_path, filepath)
@@ -208,7 +274,7 @@ MISSING FILE
 ========================================
 
 {filepath}
-{intent_block}
+{intent_block}{app_root_block}
 ========================================
 VALIDATION ERROR
 ========================================
