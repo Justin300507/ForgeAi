@@ -127,6 +127,12 @@ class CloudflareProvider(BaseDeploymentProvider):
         # which would be inherited by {**os.environ} and break the build.
         build_env = {k: v for k, v in os.environ.items() if k != "CI"}
         build_env["npm_config_cache"] = npm_cache
+        # Force devDependencies to install regardless of the ForgeAI server's
+        # own NODE_ENV -- vite/plugin-react/tailwind all live in the generated
+        # project's devDependencies, and npm classically skips devDependencies
+        # under NODE_ENV=production. See frontend_runner.py's identical fix
+        # for the full incident (production Render deploy, 2026-07-16).
+        build_env["NODE_ENV"] = "development"
         if env_vars:
             wrangler_env.update(env_vars)
             build_env.update(env_vars)

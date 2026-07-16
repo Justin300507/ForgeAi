@@ -165,6 +165,21 @@ class FrontendRunner:
         # (Railway /data volumes, Docker layers, etc.)
         import tempfile
         env["npm_config_cache"] = str(Path(tempfile.gettempdir()) / ".npm-forge-cache")
+        # Force devDependencies to install regardless of the ForgeAI server
+        # process's own NODE_ENV. vite, @vitejs/plugin-react, tailwindcss etc.
+        # all live in the generated project's devDependencies (correctly --
+        # they're build-time only) but `os.environ.copy()` above inherits
+        # NODE_ENV=production if the hosting platform sets it for the ForgeAI
+        # backend service itself, and npm's classic behavior is to silently
+        # skip devDependencies under NODE_ENV=production. Confirmed live
+        # (2026-07-16, production Render deploy of habit_tracker): "npm
+        # install complete" printed with no error, then every single build
+        # attempt failed identically with "sh: 1: vite: not found" -- 5 fix
+        # attempts plus a full architecture regeneration all burned trying
+        # to patch code that was never the problem, and a 97.6/A+ app never
+        # deployed. This verification build always needs the full dep tree,
+        # independent of whatever env the server itself runs under.
+        env["NODE_ENV"] = "development"
 
         t0 = time.time()
 

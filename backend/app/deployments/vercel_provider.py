@@ -173,6 +173,10 @@ class VercelProvider(BaseDeploymentProvider):
             build_env = {k: v for k, v in os.environ.items() if k != "CI"}
             npm_cache = str(Path(tempfile.gettempdir()) / ".npm-forge-cache")
             build_env["npm_config_cache"] = npm_cache
+            # Force devDependencies to install regardless of the ForgeAI
+            # server's own NODE_ENV -- see cloudflare_provider.py's identical
+            # fix for the full incident (production Render deploy, 2026-07-16).
+            build_env["NODE_ENV"] = "development"
 
             package_json = Path(project_path) / "package.json"
             if not package_json.exists():
