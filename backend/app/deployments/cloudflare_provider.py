@@ -133,6 +133,15 @@ class CloudflareProvider(BaseDeploymentProvider):
         # under NODE_ENV=production. See frontend_runner.py's identical fix
         # for the full incident (production Render deploy, 2026-07-16).
         build_env["NODE_ENV"] = "development"
+        # Cap Node's heap for this build too -- it runs as a child process of
+        # ForgeAI's own web service (512MB Render free-tier instance), and
+        # with no cap Node's auto-detected default heap sizing is just as
+        # capable of OOM-killing the whole instance as the uncapped case
+        # frontend_runner.py already fixed. See that fix for the full
+        # incident (a vite build exceeded the instance's real memory limit
+        # and Render auto-restarted it mid-generation, 2026-07-17).
+        heap_mb = os.environ.get("FORGE_FRONTEND_BUILD_HEAP_MB", "400")
+        build_env["NODE_OPTIONS"] = (build_env.get("NODE_OPTIONS", "") + f" --max-old-space-size={heap_mb}").strip()
         if env_vars:
             wrangler_env.update(env_vars)
             build_env.update(env_vars)

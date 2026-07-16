@@ -177,6 +177,11 @@ class VercelProvider(BaseDeploymentProvider):
             # server's own NODE_ENV -- see cloudflare_provider.py's identical
             # fix for the full incident (production Render deploy, 2026-07-16).
             build_env["NODE_ENV"] = "development"
+            # Cap Node's heap -- see cloudflare_provider.py's identical fix
+            # for the full incident (a vite build OOM-killed and auto-
+            # restarted ForgeAI's own 512MB Render instance, 2026-07-17).
+            heap_mb = os.environ.get("FORGE_FRONTEND_BUILD_HEAP_MB", "400")
+            build_env["NODE_OPTIONS"] = (build_env.get("NODE_OPTIONS", "") + f" --max-old-space-size={heap_mb}").strip()
 
             package_json = Path(project_path) / "package.json"
             if not package_json.exists():

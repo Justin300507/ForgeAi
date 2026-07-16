@@ -276,8 +276,19 @@ class FrontendRunner:
         # Cap the V8 heap explicitly: on small containers (Railway) vite/rollup
         # with Node's default heap sizing died with exit 134 (V8 fatal OOM)
         # right after a fresh npm install, and the parser reported "0 errors".
+        #
+        # The cap used to be 1536MB -- three times the ENTIRE memory budget
+        # of the Render free-tier instance ForgeAI's own backend actually
+        # runs on (512MB total, shared with the parent Python/FastAPI
+        # process). Live incident (2026-07-17): a vite build spawned as a
+        # child of that same web service exceeded the instance's real
+        # memory limit and Render auto-restarted it mid-generation, killing
+        # whatever job was running. 400MB leaves real headroom for the
+        # parent process + OS on a 512MB instance; override via
+        # FORGE_FRONTEND_BUILD_HEAP_MB for a larger/paid tier.
         if "--max-old-space-size" not in env.get("NODE_OPTIONS", ""):
-            env["NODE_OPTIONS"] = (env.get("NODE_OPTIONS", "") + " --max-old-space-size=1536").strip()
+            heap_mb = os.environ.get("FORGE_FRONTEND_BUILD_HEAP_MB", "400")
+            env["NODE_OPTIONS"] = (env.get("NODE_OPTIONS", "") + f" --max-old-space-size={heap_mb}").strip()
 
         def _is_oom(rc: int, out: str, err: str) -> bool:
             combined = out + err
