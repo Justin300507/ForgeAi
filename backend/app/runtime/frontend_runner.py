@@ -219,13 +219,25 @@ class FrontendRunner:
             # packages, so it's mostly local I/O. --prefer-offline stays OFF
             # for attempt 1: on cache-less hosts (Render) it causes silent
             # ENOENT failures.
+            #
+            # Attempt-1 timeout (Exp132): this runner is only ever called for
+            # local verification builds (engine.py/_run_frontend_build,
+            # project_service.py) -- deploy providers build server-side and
+            # never touch it -- so the host npm cache is always this same
+            # dev machine's, already warm from prior generations. A hung
+            # attempt 1 was burning its full budget (observed 420s of a
+            # 685s total run) before ever reaching the fast --prefer-offline
+            # path. 90s is enough for a real cold-cache network install of a
+            # typical React+Vite dep set; a hang past that is the OneDrive
+            # I/O issue, not a slow registry, so bail early into attempt 2.
             base_cmd = [npm, "install", "--no-fund", "--no-audit", "--legacy-peer-deps"]
+            attempt_timeouts = {1: 90, 2: 300}
             install = None
             for attempt in (1, 2):
                 cmd = base_cmd + (["--prefer-offline"] if attempt == 2 else [])
                 try:
                     install = run_tree_capped(cmd, cwd=str(project_dir),
-                                              timeout=420, env=env)
+                                              timeout=attempt_timeouts[attempt], env=env)
                 except subprocess.TimeoutExpired:
                     if attempt == 2:
                         raise

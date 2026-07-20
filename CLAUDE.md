@@ -45,24 +45,24 @@ REST API), `/deploy/{github,railway,cloudflare}`, `/health`.
 
 Create `backend/.env`:
 ```
+OPENAI_API_KEY=...
 GEMINI_API_KEY=...
 GROQ_API_KEY=...
 CEREBRAS_API_KEY=...
-# Optional, not part of the live auto-fallback chain:
+# Optional, not part of the live routing:
 OPENROUTER_API_KEY=...
 DEEPSEEK_API_KEY=...
-OPENAI_API_KEY=...
 ```
 
-`app/providers/ai_provider.py`'s `auto` mode chain is **Cerebras (main)
-→ Gemini (with retries) → Groq** — Cerebras re-added 2026-07-12 with a
-fresh key (confirmed working via direct smoke test) and made the primary
-leg specifically to conserve Gemini/Groq's daily free-tier quota, which
-both run close to most days; Gemini/Groq are the fallback for when
-Cerebras itself fails or cools down. OpenRouter/DeepSeek/OpenAI are still
-not part of the auto chain. The response cache (`FORGE_LLM_CACHE`,
-default on) checks every call regardless of provider before any of this
-runs — an identical prompt costs $0 tokens on any leg.
+**OpenAI (`gpt-4o-mini`) is the primary provider as of 2026-07-20** —
+`app/providers/model_router.py`'s `_STAGE_ROUTES` sends every stage
+(planning/architecture/backend/frontend/all fix tiers) to `"openai"`
+directly, superseding the earlier Cerebras-primary routing. `ai_provider.py`
+still keeps Cerebras → Gemini → Groq as the fallback chain for when an
+OpenAI call itself errors (e.g. a connection failure mid-run falls back to
+Cerebras). The response cache (`FORGE_LLM_CACHE`, default on) checks every
+call regardless of provider before any of this runs — an identical prompt
+costs $0 tokens on any leg.
 
 ## V15 Generation Pipeline (`app/core/pipeline.py`, `V15Pipeline`)
 
