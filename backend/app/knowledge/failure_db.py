@@ -71,6 +71,31 @@ def _normalize_message(msg: str) -> str:
     return re.sub(r"\s+", " ", msg).strip()
 
 
+def _diag_field(d, name, default=None):
+    """Read a field off a Diagnostic or a dict, tolerating both shapes --
+    same convention _diagnostic_hash already uses."""
+    if isinstance(d, dict):
+        return d.get(name, default)
+    return getattr(d, name, default)
+
+
+def _composite_key_for_diagnostic(d) -> str:
+    msg = _diag_field(d, "message", "") or ""
+    cat = _diag_field(d, "category", "")
+    cat_val = getattr(cat, "value", cat) or ""
+    fpath = _diag_field(d, "file_path", None)
+    basename = os.path.basename(fpath) if fpath else ""
+    return f"{cat_val}|{basename}|{_normalize_message(msg)}"
+
+
+def _composite_hash(diagnostics: list) -> str:
+    """Group-level fuzzy-match key: sorted, joined per-diagnostic composite
+    keys, hashed the same way _diagnostic_hash already sorts+joins raw
+    messages for the exact-match key."""
+    keys = sorted(_composite_key_for_diagnostic(d) for d in diagnostics)
+    return hashlib.sha256("\n".join(keys).encode()).hexdigest()[:16]
+
+
 def _diagnostic_hash(diagnostics: list) -> str:
     """Stable hash of a diagnostic set. Order-independent."""
     msgs = sorted(
@@ -128,6 +153,14 @@ class FixCache:
                 self._data = json.loads(_CACHE_PATH.read_text(encoding="utf-8"))
             except Exception:
                 self._data = {}
+        self._rebuild_normalized_index()
+
+    def _rebuild_normalized_index(self):
+        self._normalized_index: dict[str, list[str]] = {}
+        for fix_hash, entry in self._data.items():
+            chash = entry.get("composite_hash")
+            if chash:
+                self._normalized_index.setdefault(chash, []).append(fix_hash)
 
     def _save(self):
         _MEM_DIR.mkdir(parents=True, exist_ok=True)
@@ -154,12 +187,28 @@ class FixCache:
         if not diagnostics or not _is_cacheable(diagnostics):
             return ""
         h = _diagnostic_hash(diagnostics)
+        chash = _composite_hash(diagnostics)
+        cat_raw = _diag_field(diagnostics[0], "category", "")
+        cat_val = getattr(cat_raw, "value", cat_raw) or ""
+        first_file = next(
+            (_diag_field(d, "file_path", None) for d in diagnostics if _diag_field(d, "file_path", None)),
+            None,
+        )
+        basename = os.path.basename(first_file) if first_file else ""
+        signature = " | ".join(sorted(
+            _normalize_message(_diag_field(d, "message", "") or "") for d in diagnostics
+        ))
         ts = time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime())
         existing = self._data.get(h)
         if existing:
             existing["success_count"] = existing.get("success_count", 0) + 1
             existing["last_seen"] = ts
             existing["fix_content"] = fix_content  # update to latest working fix
+            existing["composite_hash"] = chash
+            existing["category"] = cat_val
+            existing["file_basename"] = basename
+            existing["normalized_signature"] = signature
+            existing["files_changed"] = list(fix_content.keys())
         else:
             self._data[h] = {
                 "fix_hash":      h,
@@ -168,8 +217,16 @@ class FixCache:
                 "first_seen":    ts,
                 "last_seen":     ts,
                 "source_idea":   idea[:100],
+                "composite_hash": chash,
+                "category": cat_val,
+                "file_basename": basename,
+                "normalized_signature": signature,
+                "files_changed": list(fix_content.keys()),
+                "imports_added": [],
+                "symbols_added": [],
             }
         self._save()
+        self._rebuild_normalized_index()
         return h
 
     def hit_rate_summary(self) -> dict:

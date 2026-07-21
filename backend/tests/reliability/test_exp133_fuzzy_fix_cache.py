@@ -78,6 +78,38 @@ def test_normalization_preserves_dangerous_identifiers():
     assert c != d, "quoted symbol names must remain distinguishable"
 
 
+def test_composite_key_distinguishes_undefined_symbols():
+    d1 = Diagnostic(error_id="1", category=ErrorCategory.RUNTIME, severity=ErrorSeverity.HIGH,
+                     source="static", message="Undefined symbol 'User' in app/routes/stats_routes.py",
+                     file_path="app/routes/stats_routes.py")
+    d2 = Diagnostic(error_id="2", category=ErrorCategory.RUNTIME, severity=ErrorSeverity.HIGH,
+                     source="static", message="Undefined symbol 'func' in app/routes/stats_routes.py",
+                     file_path="app/routes/stats_routes.py")
+    assert fdb._composite_key_for_diagnostic(d1) != fdb._composite_key_for_diagnostic(d2)
+
+
+def test_composite_key_merges_benign_numeric_variation():
+    d1 = Diagnostic(error_id="1", category=ErrorCategory.API, severity=ErrorSeverity.MEDIUM,
+                     source="runtime", file_path="app/routes/auth_routes.py",
+                     message="[JourneyCRUDFailure] Backend healthy but CRUD journey failed -- Edit entity: 405")
+    d2 = Diagnostic(error_id="2", category=ErrorCategory.API, severity=ErrorSeverity.MEDIUM,
+                     source="runtime", file_path="app/routes/auth_routes.py",
+                     message="[JourneyCRUDFailure] Backend healthy but CRUD journey failed -- Edit entity: 422")
+    assert fdb._composite_key_for_diagnostic(d1) == fdb._composite_key_for_diagnostic(d2)
+
+
+def test_store_persists_and_index_finds_composite_hash():
+    with tempfile.TemporaryDirectory() as td:
+        _isolated_cache(td)
+        cache = fdb.FixCache()
+        diags = [Diagnostic(error_id="1", category=ErrorCategory.IMPORT, severity=ErrorSeverity.CRITICAL,
+                             source="static", message="No module named 'jwt'")]
+        h = cache.store(diags, {"app/utils/auth.py": "import jwt"}, idea="test app")
+        chash = fdb._composite_hash(diags)
+        assert chash in cache._normalized_index
+        assert h in cache._normalized_index[chash]
+
+
 if __name__ == "__main__":
     import traceback
     tests = [obj for name, obj in list(globals().items()) if name.startswith("test_")]
