@@ -20,6 +20,24 @@ Result: of 5 normalized signatures that merged distinct raw messages, 2 were ben
 
 **Conclusion: quoted identifiers are part of the root cause, not noise, and must never be stripped.** This finding directly shaped the design below — normalization is deliberately narrow.
 
+**Proxy-analysis numbers, preserved for future reference:**
+
+| Metric | Value |
+|---|---|
+| Generation runs analyzed (`generation_log.jsonl`) | 278 |
+| Total `dominant_errors` mentions | 441 |
+| Unique raw messages | 176 |
+| Unique normalized signatures (quoted-identifier-stripping scheme) | 153 |
+| Normalized signatures merging >1 distinct raw message | 5 |
+| — of which benign (same remediation regardless of the merged value) | 2 |
+| — of which unsafe (different root cause, different fix) | 3 |
+
+If a future contributor asks "why not also normalize model/symbol names for broader reuse," this table is the answer: it was tried, in effect, against real data, and 3 of 5 resulting merges were between failures needing different fixes.
+
+## Why this is not semantic matching
+
+This experiment intentionally avoids semantic or embedding-based matching. It only tolerates incidental numeric variation (line numbers, HTTP status codes, counts, ids) while preserving identifiers, file paths, categories, and file context exactly. Generalization across different symbols, models, imports, or other application-specific diagnostic content remains explicitly out of scope — the proxy analysis above is the evidence for why, not just a stated preference.
+
 ## Current behavior (unchanged by this experiment)
 
 - `app/repair/grouper.py`'s `group_diagnostics()` already clusters raw diagnostics into `DiagnosticGroup`s per repair round (by file, by category, by import-cascade), capping at `max_groups=8`. This experiment does not touch grouping.
