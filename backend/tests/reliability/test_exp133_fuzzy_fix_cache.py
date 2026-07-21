@@ -147,6 +147,47 @@ def test_lookup_fuzzy_disabled_returns_none():
             fdb._FUZZY_MATCH_ENABLED = old
 
 
+def test_fuzzy_eligible_allowlisted_file():
+    d = [Diagnostic(error_id="1", category=ErrorCategory.RUNTIME, severity=ErrorSeverity.HIGH,
+                     source="static", message="m", file_path="app/routes/auth_routes.py")]
+    assert fdb._is_fuzzy_eligible(d) is True
+
+
+def test_fuzzy_ineligible_non_allowlisted_file():
+    d = [Diagnostic(error_id="1", category=ErrorCategory.RUNTIME, severity=ErrorSeverity.HIGH,
+                     source="static", message="m", file_path="app/routes/donors_routes.py")]
+    assert fdb._is_fuzzy_eligible(d) is False
+
+
+def test_fuzzy_eligible_import_cascade_no_file():
+    d = [Diagnostic(error_id="1", category=ErrorCategory.IMPORT, severity=ErrorSeverity.CRITICAL,
+                     source="static", message="No module named 'jwt'")]
+    assert fdb._is_fuzzy_eligible(d) is True
+
+
+def test_fuzzy_ineligible_mixed_group_fails_closed():
+    d = [
+        Diagnostic(error_id="1", category=ErrorCategory.RUNTIME, severity=ErrorSeverity.HIGH,
+                   source="static", message="m", file_path="app/routes/auth_routes.py"),
+        Diagnostic(error_id="2", category=ErrorCategory.RUNTIME, severity=ErrorSeverity.HIGH,
+                   source="static", message="m2", file_path="app/routes/donors_routes.py"),
+    ]
+    assert fdb._is_fuzzy_eligible(d) is False
+
+
+def test_lookup_fuzzy_ignores_ineligible_match():
+    with tempfile.TemporaryDirectory() as td:
+        _isolated_cache(td)
+        cache = fdb.FixCache()
+        diags = [Diagnostic(error_id="1", category=ErrorCategory.RUNTIME, severity=ErrorSeverity.HIGH,
+                             source="static", message="Some app-specific business logic bug",
+                             file_path="app/routes/donors_routes.py")]
+        cache.store(diags, {"app/routes/donors_routes.py": "fixed"}, idea="a")
+        cache.store(diags, {"app/routes/donors_routes.py": "fixed"}, idea="b")
+        # success_count is 2, but donors_routes.py is not in the scaffold allowlist
+        assert cache.lookup_fuzzy(diags) is None
+
+
 if __name__ == "__main__":
     import traceback
     tests = [obj for name, obj in list(globals().items()) if name.startswith("test_")]

@@ -37,6 +37,22 @@ _FUZZY_MATCH_ENABLED     = True   # master switch: compute/observe fuzzy candida
 _FUZZY_REPLAY_ENABLED    = False  # shadow mode until a human flips this after reviewing live telemetry
 _FUZZY_MIN_SUCCESS_COUNT = 2      # a fuzzy candidate must already be proven under exact matching
 
+# Exp133 v1: deliberately narrow. Reusing the same files already
+# special-cased elsewhere in the repair loop (protected auth files,
+# known-good seed stub) plus the equally boilerplate auth pages -- content
+# in these files is already near-identical across unrelated generated apps,
+# which is why exact-match already gets high reuse on them (see the design
+# spec's repair_db.json numbers). NOT expanded to CRUD routers/models/
+# middleware/components in this experiment -- that's an explicit follow-up,
+# gated on this one's measured shadow-mode results.
+_SCAFFOLD_ALLOWLIST = {
+    "app/routes/auth_routes.py",
+    "app/utils/auth.py",
+    "app/routes/seed_routes.py",
+    "src/pages/RegisterPage.jsx",
+    "src/pages/LoginPage.jsx",
+}
+
 
 # ── Fix Cache ──────────────────────────────────────────────────────────────────
 
@@ -133,6 +149,31 @@ def _is_cacheable(diagnostics: list) -> bool:
     return False
 
 
+def _normalized_path(p: str) -> str:
+    return p.replace("\\", "/").lstrip("/")
+
+
+def _is_fuzzy_eligible(diagnostics: list) -> bool:
+    """
+    Fail closed: every diagnostic in the group must be either a known
+    scaffold file or a file-less IMPORT-cascade diagnostic. One ineligible
+    diagnostic disqualifies the whole group -- no partial matching.
+    """
+    if not diagnostics or not _is_cacheable(diagnostics):
+        return False
+    for d in diagnostics:
+        fpath = _diag_field(d, "file_path", None)
+        if fpath:
+            if _normalized_path(fpath) not in _SCAFFOLD_ALLOWLIST:
+                return False
+        else:
+            cat = _diag_field(d, "category", None)
+            cat_val = getattr(cat, "value", cat)
+            if cat_val != "import":
+                return False
+    return True
+
+
 class FixCache:
     """
     Hash-based lookup: same failure pattern → reuse the fix that worked before.
@@ -186,13 +227,13 @@ class FixCache:
     def lookup_fuzzy(self, diagnostics: list) -> Optional[CachedFix]:
         """
         Second-tier lookup, meant to be consulted only after an exact
-        lookup() miss. For now returns based purely on the composite-hash
-        index and success_count -- the next change tightens this method to
-        also fail closed on ineligible diagnostics (see _is_fuzzy_eligible).
+        lookup() miss. Fails closed via _is_fuzzy_eligible: only fires for
+        the scaffold-file allowlist or file-less IMPORT cascades, and only
+        for entries already proven (success_count >= _FUZZY_MIN_SUCCESS_COUNT).
         """
         if not _FUZZY_MATCH_ENABLED:
             return None
-        if not diagnostics or not _is_cacheable(diagnostics):
+        if not _is_fuzzy_eligible(diagnostics):
             return None
         chash = _composite_hash(diagnostics)
         best = None
