@@ -42,6 +42,17 @@ class CachedFix:
     first_seen:   str  = ""
     last_seen:    str  = ""
     source_idea:  str  = ""    # which app idea produced this fix
+    # Exp133: composite-key near-duplicate matching, additive only --
+    # existing repair_db.json entries load with these defaulted to empty,
+    # and an empty composite_hash never matches a real lookup key, so old
+    # entries are simply never fuzzy-eligible until re-stored.
+    composite_hash:       str  = ""   # fuzzy-match index key (category|file_basename|normalized-message, hashed)
+    category:             str  = ""   # informational: dominant diagnostic category for this fix
+    file_basename:        str  = ""   # informational: dominant file basename for this fix
+    normalized_signature: str  = ""   # informational: human-readable normalized message(s), for debugging
+    files_changed:        list = field(default_factory=list)
+    imports_added:        list = field(default_factory=list)  # not consumed yet -- seeds a future patch/diff-replay experiment
+    symbols_added:        list = field(default_factory=list)  # not consumed yet -- seeds a future patch/diff-replay experiment
 
 
 def _diagnostic_hash(diagnostics: list) -> str:
