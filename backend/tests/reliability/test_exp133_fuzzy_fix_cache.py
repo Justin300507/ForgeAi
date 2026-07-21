@@ -110,6 +110,43 @@ def test_store_persists_and_index_finds_composite_hash():
         assert h in cache._normalized_index[chash]
 
 
+def test_lookup_fuzzy_requires_min_success_count():
+    with tempfile.TemporaryDirectory() as td:
+        _isolated_cache(td)
+        cache = fdb.FixCache()
+        diags = [Diagnostic(error_id="1", category=ErrorCategory.IMPORT, severity=ErrorSeverity.CRITICAL,
+                             source="static", message="No module named 'jwt'",
+                             file_path="app/utils/auth.py")]
+        cache.store(diags, {"app/utils/auth.py": "import jwt"}, idea="app one")
+        # Only stored once -- success_count == 1, below the fuzzy threshold
+        same_shape = [Diagnostic(error_id="2", category=ErrorCategory.IMPORT, severity=ErrorSeverity.CRITICAL,
+                                  source="static", message="No module named 'jwt'",
+                                  file_path="app/utils/auth.py")]
+        assert cache.lookup_fuzzy(same_shape) is None
+
+        cache.store(diags, {"app/utils/auth.py": "import jwt"}, idea="app two")  # success_count -> 2
+        hit = cache.lookup_fuzzy(same_shape)
+        assert hit is not None
+        assert hit.success_count == 2
+
+
+def test_lookup_fuzzy_disabled_returns_none():
+    with tempfile.TemporaryDirectory() as td:
+        _isolated_cache(td)
+        cache = fdb.FixCache()
+        diags = [Diagnostic(error_id="1", category=ErrorCategory.IMPORT, severity=ErrorSeverity.CRITICAL,
+                             source="static", message="No module named 'jwt'",
+                             file_path="app/utils/auth.py")]
+        cache.store(diags, {"app/utils/auth.py": "import jwt"}, idea="a")
+        cache.store(diags, {"app/utils/auth.py": "import jwt"}, idea="b")
+        old = fdb._FUZZY_MATCH_ENABLED
+        fdb._FUZZY_MATCH_ENABLED = False
+        try:
+            assert cache.lookup_fuzzy(diags) is None
+        finally:
+            fdb._FUZZY_MATCH_ENABLED = old
+
+
 if __name__ == "__main__":
     import traceback
     tests = [obj for name, obj in list(globals().items()) if name.startswith("test_")]

@@ -33,6 +33,10 @@ _MEM_DIR   = Path(__file__).parent.parent.parent / "failure_memory"
 _CACHE_PATH = _MEM_DIR / "repair_db.json"
 _LOG_PATH   = _MEM_DIR / "generation_log.jsonl"
 
+_FUZZY_MATCH_ENABLED     = True   # master switch: compute/observe fuzzy candidates at all
+_FUZZY_REPLAY_ENABLED    = False  # shadow mode until a human flips this after reviewing live telemetry
+_FUZZY_MIN_SUCCESS_COUNT = 2      # a fuzzy candidate must already be proven under exact matching
+
 
 # ── Fix Cache ──────────────────────────────────────────────────────────────────
 
@@ -178,6 +182,33 @@ class FixCache:
             return CachedFix(**entry)
         except Exception:
             return None
+
+    def lookup_fuzzy(self, diagnostics: list) -> Optional[CachedFix]:
+        """
+        Second-tier lookup, meant to be consulted only after an exact
+        lookup() miss. For now returns based purely on the composite-hash
+        index and success_count -- the next change tightens this method to
+        also fail closed on ineligible diagnostics (see _is_fuzzy_eligible).
+        """
+        if not _FUZZY_MATCH_ENABLED:
+            return None
+        if not diagnostics or not _is_cacheable(diagnostics):
+            return None
+        chash = _composite_hash(diagnostics)
+        best = None
+        for fix_hash in self._normalized_index.get(chash, []):
+            entry = self._data.get(fix_hash)
+            if not entry:
+                continue
+            try:
+                cf = CachedFix(**entry)
+            except Exception:
+                continue
+            if cf.success_count < _FUZZY_MIN_SUCCESS_COUNT:
+                continue
+            if best is None or cf.success_count > best.success_count:
+                best = cf
+        return best
 
     def store(self, diagnostics: list, fix_content: dict, idea: str = "") -> str:
         """
