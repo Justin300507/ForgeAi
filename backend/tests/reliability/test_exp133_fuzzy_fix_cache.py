@@ -56,6 +56,28 @@ def test_old_entries_load_without_migration():
         assert cf.symbols_added == []
 
 
+def test_normalization_strips_only_digits():
+    assert fdb._normalize_message("Edit entity: 405") == "Edit entity: <N>"
+    assert fdb._normalize_message("Edit entity: 422") == "Edit entity: <N>"
+    assert fdb._normalize_message("Transform failed with 6 errors") == \
+        fdb._normalize_message("Transform failed with 9 errors")
+
+
+def test_normalization_preserves_dangerous_identifiers():
+    # Exp133 proxy analysis (generation_log.jsonl, 278 runs): stripping quoted
+    # identifiers merged 3 of 5 collisions into failures needing DIFFERENT
+    # fixes. These two must never normalize to the same string.
+    a = fdb._normalize_message(
+        "[AttributeError] AttributeError: type object 'Response' has no attribute 'create'")
+    b = fdb._normalize_message(
+        "[AttributeError] AttributeError: type object 'Donation' has no attribute 'create'")
+    assert a != b, "quoted class names must remain distinguishable"
+
+    c = fdb._normalize_message("Undefined symbol 'User' in app/routes/stats_routes.py")
+    d = fdb._normalize_message("Undefined symbol 'func' in app/routes/stats_routes.py")
+    assert c != d, "quoted symbol names must remain distinguishable"
+
+
 if __name__ == "__main__":
     import traceback
     tests = [obj for name, obj in list(globals().items()) if name.startswith("test_")]

@@ -21,6 +21,8 @@ from __future__ import annotations
 
 import hashlib
 import json
+import os
+import re
 import time
 from dataclasses import asdict, dataclass, field
 from pathlib import Path
@@ -53,6 +55,20 @@ class CachedFix:
     files_changed:        list = field(default_factory=list)
     imports_added:        list = field(default_factory=list)  # not consumed yet -- seeds a future patch/diff-replay experiment
     symbols_added:        list = field(default_factory=list)  # not consumed yet -- seeds a future patch/diff-replay experiment
+
+
+def _normalize_message(msg: str) -> str:
+    """
+    Strip only incidental numeric noise (line numbers, HTTP status codes,
+    counts, ids) -- NEVER quoted identifiers. Exp133's proxy analysis of
+    generation_log.jsonl (278 runs, 176 unique messages) found that
+    stripping quoted identifiers merges failures needing different fixes
+    (e.g. "AttributeError: type object 'Response'/'Donation' has no
+    attribute 'create'" -- different models, different fixes). See
+    docs/superpowers/specs/2026-07-21-fixcache-fuzzy-matching-design.md.
+    """
+    msg = re.sub(r"\d+", "<N>", msg)
+    return re.sub(r"\s+", " ", msg).strip()
 
 
 def _diagnostic_hash(diagnostics: list) -> str:
