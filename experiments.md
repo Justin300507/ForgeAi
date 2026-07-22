@@ -8170,3 +8170,86 @@ previously-open members of that class, not the class itself.
 test-isolation flakes, both confirmed passing in isolation), all four
 fixes individually runtime-verified against real (not mocked) generated
 project code, not just unit-tested.
+
+---
+
+## Experiment 140: Live Render OOM — spawn() vs fork() for Windows-Dev-Assumed Code Running on Linux Prod
+
+2026-07-22, same session. While Exp138/139 were being validated, the user
+reported two things arriving live: the web UI stuck on a real generation
+job at "Waiting for pipeline output... 0 lines" with status still
+"running", and a Render email notification that the "forgeai" web service
+(free tier, 512MB, no disk) exceeded its memory limit. Both point at the
+same event: the OOM killer took down the process mid-job, severing the
+parent-child IPC pipe with no terminal event ever reaching the frontend.
+
+**Root cause**: `app/jobs/v15_supervisor.py` (Exp136, shipped earlier
+today) has its own docstring stating "Bounded, **Windows**-spawn-safe
+execution" and its `_terminate_owned_process_tree` helper's non-Windows
+branch comment literally says "The production target is Windows." Both
+are wrong for the actual deployment: ForgeAI's production is a Render
+Linux container (render.yaml, no OS field, confirmed free tier
+`srv-d9c5siflk1mc7398jrig`), not Windows -- that assumption just matches
+this repo's *dev* environment, which is Windows. Built on that
+assumption, `run_v15_supervisor` called
+`multiprocessing.get_context("spawn")` unconditionally. `spawn` is the
+ONLY option on Windows (no `fork()` syscall exists there), so it wasn't
+wrong for dev -- but it's the wrong default for Linux prod: spawn starts
+a brand-new Python interpreter per job and re-imports this app's entire
+dependency chain (every one of `deterministic_patcher.py`'s ~8,000 lines,
+every provider SDK, SQLAlchemy, ...) from scratch, on top of the
+already-running parent server's own copy of the exact same modules.
+`fork()`, available on Linux, is copy-on-write against the parent's
+already-loaded memory instead and costs a small fraction of that per job.
+On a 512MB free-tier instance, spawning even one job's worth of duplicate
+interpreter state is enough to tip the service over.
+
+A second, independent occurrence of the identical pattern (same "Windows-
+spawn-safe" framing, same unconditional `mp.get_context("spawn")`) was
+found in `app/queue/worker.py`'s `_run_pipeline_in_child` -- the separate
+`/queue` worker-REST-API path CLAUDE.md also documents as live. Fixed
+both.
+
+**Fix**: `mp.get_context("spawn" if os.name == "nt" else "fork")` in both
+`run_v15_supervisor` (jobs) and `_run_pipeline_in_child` (queue). Also
+mitigated the specific, well-documented fork+SQLAlchemy hazard this
+introduces: a forked child inherits the parent's already-open
+`app.database.engine` connection pool at the OS level, and SQLite does
+not support sharing a connection object across processes (unlike a
+Postgres socket-based pool, a shared SQLite handle risks "database is
+locked" errors or corruption, not just a stale connection). Both
+`_run_v15_child` and `_pipeline_child` now call
+`engine.dispose(close=False)` -- SQLAlchemy's documented post-fork
+pattern -- as their first action on the fork path (never on spawn/
+Windows, where there is nothing yet to have inherited): drop the
+inherited pool references without attempting to close them out from
+under the still-running parent, and lazily open fresh connections for
+everything the child does from here on.
+
+**What could not be validated directly**: this dev machine is Windows,
+where `multiprocessing.get_context("fork")` raises `ValueError` outright
+-- there is no way to execute the actual fork() code path from here.
+Verified everything that CAN be verified without Linux: both dispatch
+branches (`fork` selected on `os.name != "nt"`, `spawn` still selected on
+`os.name == "nt"`, matching the pre-existing, unchanged dev behavior
+exactly) and the dispose-before-any-DB-use ordering, via 10 new logic-
+level tests across both call sites that mock `os.name` rather than
+actually forking. The specific fork-vs-threaded-server deadlock risk
+(a lock held by another thread at fork time staying locked forever in
+the child) was reasoned through, not executed: this child never touches
+the parent's asyncio loop, HTTP listener socket, or any of this app's own
+explicit locks (`_SPAWN_ENV_LOCK` is never acquired by the child's own
+code path) -- it opens its own fresh DB session and its own fresh HTTP
+calls to LLM providers, a workload profile with low exposure to that
+class of hazard, not zero. **This should be watched on Render's memory
+graph after this deploys** -- if jobs start hanging (not OOMing) instead
+of completing, that would point at the fork-safety risk manifesting
+rather than at a fix that didn't fully address the OOM.
+
+**Validation**: 10/10 new tests
+(`test_exp140_supervisor_fork_on_linux.py`,
+`test_exp140_queue_worker_fork_on_linux.py`) pass. Full reliability suite
+934/936 (two known pre-existing test-isolation flakes, both confirmed
+passing in isolation -- one of them, `test_role_aware_journey.py`, hit a
+genuine transient Windows TCP reset this run, confirmed by 3/3 clean
+reruns immediately after, unrelated to this change).

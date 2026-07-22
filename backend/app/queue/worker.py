@@ -169,11 +169,24 @@ def _child_event(messages, payload: dict) -> None:
 
 
 def _pipeline_child(job: Job, messages, pipeline_runner=None) -> None:
-    """Windows-spawn-safe process target. The parent exclusively owns SQLite."""
+    """Process target. The parent exclusively owns SQLite."""
     try:
         if pipeline_runner is not None:
             result = pipeline_runner(job)
         else:
+            # See app/jobs/v15_supervisor.py's identical fix (Exp140, live
+            # Render OOM incident 2026-07-22) for the full rationale: on the
+            # fork() path (non-Windows -- see _run_pipeline_in_child below)
+            # this child's copy of app.database's module-level `engine`,
+            # and any pooled connections it already opened in the PARENT
+            # before fork, was duplicated by the OS fork, not freshly
+            # created. dispose(close=False) drops those inherited
+            # references without touching what the parent may still be
+            # using, and is a no-op under spawn (Windows), where the child
+            # is a fresh interpreter that hasn't opened any connections yet.
+            if os.name != "nt":
+                from app.database import engine as _inherited_engine
+                _inherited_engine.dispose(close=False)
             from app.core.events import EventBus
             from app.services.v15_orchestrator import generate_project_v15
             config = validate_v15_queue_config(job.config)
@@ -202,7 +215,14 @@ def _run_pipeline_in_child(job: Job, *, pipeline_runner=None,
     # before enqueueing.  Do this before allocating child IPC resources.
     if pipeline_runner is None:
         validate_v15_queue_config(job.config)
-    ctx = mp.get_context("spawn")
+    # See app/jobs/v15_supervisor.py's run_v15_supervisor for the full
+    # rationale (Exp140, live Render OOM incident 2026-07-22): "spawn" is
+    # required on Windows (this repo's dev environment) but re-imports this
+    # app's entire dependency chain from scratch per job on top of the
+    # already-running parent server's own copy -- expensive enough to OOM
+    # a 512MB production instance. fork() is copy-on-write against the
+    # parent's already-loaded memory on the actual production OS (Linux).
+    ctx = mp.get_context("spawn" if os.name == "nt" else "fork")
     messages = ctx.Queue(maxsize=64)
     process = ctx.Process(target=_pipeline_child, args=(job, messages, pipeline_runner), daemon=False)
     seconds = _job_deadline_s(deadline_s)

@@ -309,7 +309,7 @@ def _child_event(messages, payload: dict[str, Any]) -> None:
 
 
 def _run_v15_child(job_id: str, options: dict[str, Any], messages, pipeline_runner=None) -> None:
-    """Spawn target.  It does no terminal job-state writing."""
+    """Spawn/fork target.  It does no terminal job-state writing."""
     try:
         if pipeline_runner is not None:
             result = pipeline_runner(job_id, options, messages)
@@ -318,7 +318,25 @@ def _run_v15_child(job_id: str, options: dict[str, Any], messages, pipeline_runn
 
         # The prompt is read from the job row inside the child, rather than
         # serialized over IPC.  Only the job id and non-sensitive options are
-        # arguments to multiprocessing's Windows spawn transport.
+        # arguments to multiprocessing's transport.
+        from app.database import engine as _inherited_engine
+        if os.name != "nt":
+            # On the fork() path (see run_v15_supervisor), this child's copy
+            # of app.database's module-level `engine` -- and any pooled
+            # connections it already opened in the PARENT before fork -- was
+            # duplicated by the OS fork, not freshly created. SQLite (this
+            # app's default) does not support sharing a connection across
+            # processes; using an inherited one here risks "database is
+            # locked" or silent corruption if the parent touches the same
+            # connection concurrently. dispose(close=False) is SQLAlchemy's
+            # documented post-fork pattern: drop the inherited pool
+            # references without attempting to close them (the parent still
+            # owns and may still be using them), and lazily open brand-new
+            # connections for everything this child does from here on. A
+            # no-op under spawn (Windows): the child there is a fresh
+            # interpreter that hasn't created any connections yet.
+            _inherited_engine.dispose(close=False)
+
         from app.database import SessionLocal
         from app.models.generation_job import GenerationJob
         from app.core.events import EventBus, Events
@@ -376,7 +394,25 @@ def run_v15_supervisor(
     pipeline_runner=None,
 ) -> V15SupervisorResult:
     """Run one V15 child and surface safe progress to the parent thread."""
-    ctx = mp.get_context("spawn")
+    # "spawn" is the only option on Windows (this repo's dev environment),
+    # which is why this module's docstring calls it out by name -- but
+    # ForgeAI's actual PRODUCTION target is a Linux container (Render), not
+    # Windows, and this file's own os.name=="nt" branches elsewhere already
+    # acknowledge that split. spawn starts a brand-new interpreter per job
+    # and re-imports this app's full dependency chain (every deterministic
+    # patcher, every provider SDK, SQLAlchemy, ...) from scratch, on top of
+    # the already-running parent server's own copy of the same. On Render's
+    # free-tier 512MB instance this is expensive enough to OOM-kill the
+    # whole service (confirmed live, 2026-07-22, right after this module
+    # shipped) -- fork() is copy-on-write against the parent's already-
+    # loaded memory and costs a small fraction of that per job. The
+    # documented risk of fork alongside a threaded server (a lock held by
+    # another thread at fork time staying locked forever in the child) is
+    # mitigated here: the child never touches the parent's asyncio loop,
+    # HTTP listener, or in-process locks -- it opens its own fresh DB
+    # session and its own fresh HTTP calls -- and _run_v15_child disposes
+    # any inherited DB connection pool as its very first action.
+    ctx = mp.get_context("spawn" if os.name == "nt" else "fork")
     messages = ctx.Queue(maxsize=64)
     process = ctx.Process(
         target=_run_v15_child,
