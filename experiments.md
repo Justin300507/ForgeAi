@@ -8020,3 +8020,60 @@ unrelated fixes (see the note on Exp134).
 depending on the pre-existing bundle-wiring flake's isolation), down from
 25 failures at the start of this pass. `py_compile` clean on all touched
 files.
+
+---
+
+## Experiment 138: Deploy-to-Vercel Wiring Gap in the Live V15 Pipeline
+
+2026-07-22. Post-stabilization canary validation (3-app, `--provider auto`,
+deploy enabled) found `simple_crm` deployed backend-only to Render with the
+frontend silently skipped, no error surfaced. Root cause: Exp131 (already
+committed, prior session) switched `main.py`'s default `deploy_to` to
+`"vercel"`, but `V15Pipeline._deploy()` in `app/core/pipeline.py` only
+special-cased `"render"`/`"cloudflare"`/`"both"` — it had no `"vercel"`
+branch at all. `self.deploy_to == "vercel"` matched neither the
+unconditional Render call nor the `if self.deploy_to in ("cloudflare",
+"both")` frontend gate, so every default-config V15 deploy since Exp131
+silently deployed only the Render backend and never attempted a frontend,
+with no error logged (the fallback message printed a generic "see
+cloudflare result" with an empty reason). The legacy V14 orchestrator
+already had a correct, working `"vercel"` branch
+(`_deploy_vercel()` — single Vercel project hosting frontend + backend from
+one origin, backend mounted under `/api`, Neon-provisioned Postgres) that
+V15's `_deploy()` never called.
+
+**Fix**: `_deploy()` now branches on `self.deploy_to == "vercel"` before
+the Render/Cloudflare logic, calling the same `_deploy_vercel()` V14
+already uses (mutually exclusive with Render+Cloudflare, matching V14's
+own pattern), and returns a `"vercel"` key in the deploy result alongside
+`render`/`cloudflare` for backward-compatible callers.
+
+**Live validation**: ran the fixed `_deploy()` directly against the
+already-generated `simple_crm` project (no regeneration cost) with
+`deploy_to="vercel"`. Result: `success=True`, `frontend_deployed=True`,
+backend and frontend both live at
+`https://simple-crm-vercel-test-b7pq1lx0q-forgeai4123.vercel.app`
+(backend under `/api`), health check 200/200 on both. This is a real,
+disposable validation deployment (own GitHub repo
+`Justin300507/simple-crm-vercel-test`, own Neon DB) — not a claim about
+`simple_crm`'s canary run being retroactively fixed.
+
+**Local validation**: full reliability suite 916/919 (only the pre-existing
+`test_engine_bundle_wiring.py` isolation flake), `py_compile` clean.
+
+**Canary context this was found in** (`exp137-full-deploy-validation`,
+`--provider auto`, deploy enabled, 3 apps): `todo` scored 96.5/A+ on an
+earlier isolated no-deploy run, then 76.5/C twice in a row within this
+canary — traced to `TaskCreate.priority_id` being a required FK the
+generic CRUD-journey test doesn't know to seed a `Priority` row for first.
+This is LLM architectural variance in a known, pre-existing failure class
+(`JourneyCRUDFailure`, hundreds of prior forensic bundles already on
+record), not a regression from Exp134-138 — none of today's changes touch
+task/priority generation or the journey runner's entity-seeding logic.
+`blog_cms` scored 89.5/B and correctly did NOT deploy: the app had a real
+`GET /stats/summary` 500 crash, and the pre-existing (not touched today)
+"judge-critical hard-block" gate from Exp115 withheld deployment rather
+than shipping a broken endpoint — the safety gate working as designed.
+`crm` scored 89.7/B and deployed with a live Render backend
+(`simple-crm-backend-m54t.onrender.com`); its Vercel-path frontend gap is
+exactly what Exp138 above fixes.

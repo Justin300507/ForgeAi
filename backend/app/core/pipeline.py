@@ -541,12 +541,15 @@ class V15Pipeline:
         self.scoring_engine.print_report(score)
 
     def _deploy(self, ctx: GenerationContext) -> dict:
-        """Deploy to Render (backend) + Cloudflare (frontend) via V14 helpers."""
+        """Deploy via V14 helpers: Vercel (single-project full-stack) when
+        self.deploy_to=="vercel", otherwise Render (backend) + optionally
+        Cloudflare (frontend)."""
         try:
             from app.services.v14_orchestrator import (
                 _push_to_github,
                 _deploy_render,
                 _deploy_cloudflare,
+                _deploy_vercel,
                 _run_health_checks,
             )
             # Push the freshly-generated code to GitHub first. Without this,
@@ -560,33 +563,56 @@ class V15Pipeline:
                 print(f"[V15] GitHub push failed: {github_result.get('error')} "
                       f"-- Render deploy will be skipped (no repo to deploy from)")
 
-            # Deploy backend
-            render_result    = _deploy_render(
-                str(ctx.project_path), ctx.project_name, github_result.get("repo_url")
-            )
-            backend_url      = render_result.get("backend_url") or render_result.get("url")
-
-            # Deploy frontend — but not if verification already proved the
-            # build fails: Cloudflare runs the identical `npm run build` and
-            # would just reproduce the same error, wasting the deploy call
-            # and leaving deployment_result looking like a fresh failure
-            # instead of the already-diagnosed one.
-            cloudflare_result = {"skipped": True}
-            if self.deploy_to in ("cloudflare", "both"):
-                if _frontend_build_ok(ctx):
-                    cloudflare_result = _deploy_cloudflare(
-                        str(ctx.project_path), ctx.project_name, backend_url
-                    )
+            # "vercel" hosts frontend + backend from a single project (same
+            # origin, backend mounted under /api) and is mutually exclusive
+            # with the Render+Cloudflare split below -- mirrors
+            # v14_orchestrator's already-proven deploy_to=="vercel" branch.
+            # Before this, self.deploy_to=="vercel" (main.py's default since
+            # Exp131) matched neither the Cloudflare condition below nor any
+            # Vercel-specific branch here, so every default-config deploy
+            # silently deployed only the Render backend and never attempted
+            # a frontend at all.
+            if self.deploy_to == "vercel":
+                render_result = {"skipped": True, "reason": "deploy_to=vercel — single-project full-stack deploy"}
+                vercel_result = _deploy_vercel(str(ctx.project_path), ctx.project_name)
+                if vercel_result.get("success"):
+                    backend_url  = vercel_result.get("backend_url") or vercel_result.get("url")
+                    frontend_url = vercel_result.get("frontend_url") or vercel_result.get("url")
                 else:
-                    cloudflare_result = {
-                        "skipped": True,
-                        "reason": "frontend build already failing in verification — "
-                                  "see the frontend_build diagnostic for the real error",
-                    }
-                    print("[V15] Skipping Cloudflare deploy: frontend build is known-broken "
-                          "(would fail identically)")
+                    backend_url  = None
+                    frontend_url = None
+                    print(f"[V15] Vercel deploy failed: {vercel_result.get('error')}")
+                cloudflare_result = {"skipped": True, "reason": "deploy_to=vercel"}
+            else:
+                vercel_result = {"skipped": True}
+                # Deploy backend
+                render_result    = _deploy_render(
+                    str(ctx.project_path), ctx.project_name, github_result.get("repo_url")
+                )
+                backend_url      = render_result.get("backend_url") or render_result.get("url")
 
-            frontend_url = cloudflare_result.get("url")
+                # Deploy frontend — but not if verification already proved the
+                # build fails: Cloudflare runs the identical `npm run build` and
+                # would just reproduce the same error, wasting the deploy call
+                # and leaving deployment_result looking like a fresh failure
+                # instead of the already-diagnosed one.
+                cloudflare_result = {"skipped": True}
+                if self.deploy_to in ("cloudflare", "both"):
+                    if _frontend_build_ok(ctx):
+                        cloudflare_result = _deploy_cloudflare(
+                            str(ctx.project_path), ctx.project_name, backend_url
+                        )
+                    else:
+                        cloudflare_result = {
+                            "skipped": True,
+                            "reason": "frontend build already failing in verification — "
+                                      "see the frontend_build diagnostic for the real error",
+                        }
+                        print("[V15] Skipping Cloudflare deploy: frontend build is known-broken "
+                              "(would fail identically)")
+
+                frontend_url = cloudflare_result.get("url")
+
             health       = _run_health_checks(backend_url, frontend_url)
 
             # "success" historically meant "backend is live" -- kept for
@@ -595,10 +621,11 @@ class V15Pipeline:
             # must check frontend_deployed, not success alone: a project can
             # have a live backend and a build-failed frontend at the same time.
             frontend_deployed = bool(frontend_url)
+            _frontend_result = vercel_result if self.deploy_to == "vercel" else cloudflare_result
             if bool(backend_url) and not frontend_deployed:
                 print(f"[V15] PARTIAL DEPLOY: backend is live at {backend_url}, "
                       f"but the frontend did NOT deploy "
-                      f"({cloudflare_result.get('reason') or cloudflare_result.get('error') or 'see cloudflare result'})")
+                      f"({_frontend_result.get('reason') or _frontend_result.get('error') or 'see deploy result'})")
 
             # Record this deployment attempt to deployment_memory.json. Prior
             # to this, the store's only writer was the V11 orchestrator
@@ -612,7 +639,8 @@ class V15Pipeline:
                 error_types = [
                     tag for tag in (
                         github_result.get("error") and "github_push",
-                        (not backend_url) and "render_backend",
+                        (self.deploy_to != "vercel" and not backend_url) and "render_backend",
+                        (self.deploy_to == "vercel" and not backend_url) and "vercel_deploy",
                         (self.deploy_to in ("cloudflare", "both")
                          and not cloudflare_result.get("skipped")
                          and not frontend_deployed) and "cloudflare_frontend",
@@ -634,6 +662,7 @@ class V15Pipeline:
                 "github":             github_result,
                 "render":             render_result,
                 "cloudflare":         cloudflare_result,
+                "vercel":             vercel_result,
                 "health":             health,
             }
         except Exception as exc:

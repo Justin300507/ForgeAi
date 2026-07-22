@@ -221,10 +221,19 @@
     "fix_content": {
       "app/services/auth_service.py": "import bcrypt\nfrom sqlalchemy.orm import Session\n\nfrom app.models.user import User\n\n\nclass AuthService:\n    def __init__(self, db: Session):\n        self.db = db\n\n    def hash_password(self, password: str) -> str:\n        # bcrypt.gensalt() generates a salt, bcrypt.hashpw hashes the password with the salt\n        hashed_password = bcrypt.hashpw(password.encode('utf-8'), bcrypt.gensalt())\n        return hashed_password.decode('utf-8')\n\n    def verify_password(self, plain_password: str, hashed_password: str) -> bool:\n        # bcrypt.checkpw verifies a plain password against a hashed one\n        return bcrypt.checkpw(plain_password.encode('utf-8'), hashed_password.encode('utf-8'))\n\n    def get_user_by_email(self, email: str) -> User | None:\n        return self.db.query(User).filter(User.email == email).first()\n\n    def get_user_by_id(self, user_id: int) -> User | None:\n        return self.db.query(User).filter(User.id == user_id).first()\n"
     },
-    "success_count": 7,
+    "success_count": 8,
     "first_seen": "2026-07-06T07:40:26Z",
-    "last_seen": "2026-07-20T09:28:34Z",
-    "source_idea": "A simple CRM for small businesses with user login. Users manage contacts (name, email, phone, compan"
+    "last_seen": "2026-07-22T08:34:29Z",
+    "source_idea": "A simple CRM for small businesses with user login. Users manage contacts (name, email, phone, compan",
+    "composite_hash": "92c510de629d1999",
+    "category": "contract",
+    "file_basename": "auth_service.py",
+    "normalized_signature": "Contract lists 'app/services/auth_service.py' (service) but it was never written to the project.",
+    "files_changed": [
+      "app/services/auth_service.py"
+    ],
+    "imports_added": [],
+    "symbols_added": []
   },
   "9d8b4f9d82a84206": {
     "fix_hash": "9d8b4f9d82a84206",
@@ -490,20 +499,38 @@
     "fix_content": {
       "app/schemas/user.py": "from datetime import datetime\nfrom pydantic import BaseModel, Field\nfrom typing import Optional, List\n\nclass UserCreate(BaseModel):\n    model_config = {\"from_attributes\": True}\n    email: Optional[str] = Field(default=None, min_length=1)\n    password_hash: Optional[str] = Field(default=None, min_length=1)\n\nclass UserUpdate(BaseModel):\n    model_config = {\"from_attributes\": True}\n    email: Optional[str] = None\n    password_hash: Optional[str] = None\n\nclass UserResponse(BaseModel):\n    id: int\n    email: Optional[str] = None\n    created_at: Optional[datetime] = None\n    updated_at: Optional[datetime] = None\n    contacts: Optional[List[str]] = None\n\n    class Config:\n        from_attributes = True"
     },
-    "success_count": 6,
+    "success_count": 7,
     "first_seen": "2026-07-10T14:32:55Z",
-    "last_seen": "2026-07-20T09:28:34Z",
-    "source_idea": "A simple CRM for small businesses with user login. Users manage contacts (name, email, phone, compan"
+    "last_seen": "2026-07-22T08:33:46Z",
+    "source_idea": "A simple CRM for small businesses with user login. Users manage contacts (name, email, phone, compan",
+    "composite_hash": "a15266faa31c4cc8",
+    "category": "contract",
+    "file_basename": "user.py",
+    "normalized_signature": "Schema mismatch: app/schemas/user.py: UserCreate.email required but model allows NULL | Schema mismatch: app/schemas/user.py: UserCreate.password_hash required but model allows NULL",
+    "files_changed": [
+      "app/schemas/user.py"
+    ],
+    "imports_added": [],
+    "symbols_added": []
   },
   "a05604f980d0a7bb": {
     "fix_hash": "a05604f980d0a7bb",
     "fix_content": {
       "app/schemas/note.py": "from datetime import datetime\nfrom pydantic import BaseModel, Field\n\n\nclass NoteBase(BaseModel):\n    title: str = Field(..., min_length=1, max_length=255)\n    content: str = Field(..., min_length=1)\n\n\nclass NoteCreate(NoteBase):\n    pass\n\n\nclass NoteUpdate(NoteBase):\n    title: str | None = Field(None, min_length=1, max_length=255)\n    content: str | None = Field(None, min_length=1)\n\n\nclass NoteResponse(NoteBase):\n    id: int\n    user_id: int\n    created_at: datetime\n    updated_at: datetime\n\n    class Config:\n        from_attributes = True\n"
     },
-    "success_count": 4,
+    "success_count": 5,
     "first_seen": "2026-07-10T14:32:55Z",
-    "last_seen": "2026-07-15T19:17:52Z",
-    "source_idea": "A simple CRM for small businesses with user login. Users manage contacts (name, email, phone, compan"
+    "last_seen": "2026-07-22T08:33:46Z",
+    "source_idea": "A simple CRM for small businesses with user login. Users manage contacts (name, email, phone, compan",
+    "composite_hash": "d63498ae7a92ed07",
+    "category": "contract",
+    "file_basename": "note.py",
+    "normalized_signature": "Contract lists 'app/schemas/note.py' (schema) but it was never written to the project.",
+    "files_changed": [
+      "app/schemas/note.py"
+    ],
+    "imports_added": [],
+    "symbols_added": []
   },
   "2d944a48979361c5": {
     "fix_hash": "2d944a48979361c5",
@@ -651,9 +678,9 @@
     "fix_content": {
       "app/schemas/user.py": "from datetime import datetime\nfrom typing import Optional\nfrom pydantic import BaseModel, Field, ConfigDict\n\nclass UserCreate(BaseModel):\n    model_config = ConfigDict(from_attributes=True)\n    username: Optional[str] = Field(default=None, min_length=1, max_length=150, description=\"The unique username for the user account\")\n    hashed_password: Optional[str] = Field(default=None, min_length=1, max_length=255, description=\"The plain text password to be hashed and stored\")\n\nclass UserUpdate(BaseModel):\n    model_config = ConfigDict(from_attributes=True)\n    username: Optional[str] = Field(default=None, min_length=1, max_length=150, description=\"The updated username\")\n    hashed_password: Optional[str] = Field(default=None, min_length=1, max_length=255, description=\"The updated plain text password\")\n\nclass UserResponse(BaseModel):\n    id: int\n    username: Optional[str] = None\n    created_at: Optional[datetime] = None\n\n    model_config = ConfigDict(from_attributes=True)"
     },
-    "success_count": 15,
+    "success_count": 18,
     "first_seen": "2026-07-11T12:43:22Z",
-    "last_seen": "2026-07-22T04:08:47Z",
+    "last_seen": "2026-07-22T08:42:32Z",
     "source_idea": "A todo list app with user accounts. Users can register and log in. Each user sees only their own tod",
     "composite_hash": "bcf7a0b6d0b68a20",
     "category": "contract",
@@ -730,10 +757,19 @@
     "fix_content": {
       "app/schemas/task.py": "from datetime import datetime\nfrom typing import Optional\n\nfrom pydantic import BaseModel, Field, ConfigDict\n\nclass TaskCreate(BaseModel):\n    title: Optional[str] = Field(default=None, min_length=1)\n    description: Optional[str] = None\n    due_date: Optional[datetime] = None\n    completed: Optional[bool] = None\n\n    model_config = ConfigDict(from_attributes=True)\n\nclass TaskUpdate(BaseModel):\n    title: Optional[str] = Field(default=None, min_length=1)\n    description: Optional[str] = None\n    due_date: Optional[datetime] = None\n    completed: Optional[bool] = None\n\n    model_config = ConfigDict(from_attributes=True)\n\nclass TaskResponse(BaseModel):\n    id: int\n    title: Optional[str] = None\n    description: Optional[str] = None\n    due_date: Optional[datetime] = None\n    completed: Optional[bool] = None\n    created_at: Optional[datetime] = None\n    updated_at: Optional[datetime] = None\n    priority: Optional[dict] = None\n\n    model_config = ConfigDict(from_attributes=True)\n\nclass TaskRead(BaseModel):\n    id: Optional[int] = None\n    model_config = ConfigDict(from_attributes=True)\n"
     },
-    "success_count": 9,
+    "success_count": 12,
     "first_seen": "2026-07-11T22:39:05Z",
-    "last_seen": "2026-07-20T14:54:49Z",
-    "source_idea": "A todo list app with user accounts. Users can register and log in. Each user sees only their own tod"
+    "last_seen": "2026-07-22T08:42:32Z",
+    "source_idea": "A todo list app with user accounts. Users can register and log in. Each user sees only their own tod",
+    "composite_hash": "18a86bdbdf7d23f1",
+    "category": "contract",
+    "file_basename": "task.py",
+    "normalized_signature": "Schema mismatch: app/schemas/task.py: TaskCreate.title required but model allows NULL",
+    "files_changed": [
+      "app/schemas/task.py"
+    ],
+    "imports_added": [],
+    "symbols_added": []
   },
   "020205ee2bbadae0": {
     "fix_hash": "020205ee2bbadae0",
@@ -1868,10 +1904,19 @@
     "fix_content": {
       "app/schemas/reservations.py": "from pydantic import BaseModel, Field\nfrom typing import Optional\nimport datetime as _datetime\n\nclass ReservationsCreate(BaseModel):\n    model_config = {\"from_attributes\": True}\n    party_size: int = Field(...)\n    date: _datetime.date = Field(...)\n    time: _datetime.time = Field(...)\n    table_id: int = Field(...)\n\nclass ReservationsUpdate(BaseModel):\n    model_config = {\"from_attributes\": True}\n    party_size: Optional[int] = None\n    date: Optional[_datetime.date] = None\n    time: Optional[_datetime.time] = None\n    table_id: Optional[int] = None\n\nclass ReservationsResponse(BaseModel):\n    id: int\n    party_size: Optional[int] = None\n    date: Optional[_datetime.date] = None\n    time: Optional[_datetime.time] = None\n    table_id: Optional[int] = None\n\n    class Config:\n        from_attributes = True"
     },
-    "success_count": 8,
+    "success_count": 9,
     "first_seen": "2026-07-20T16:45:06Z",
-    "last_seen": "2026-07-21T17:51:35Z",
-    "source_idea": "A restaurant reservation platform for diners and restaurant staff. Core data: restaurants (name, cui"
+    "last_seen": "2026-07-22T08:21:58Z",
+    "source_idea": "A restaurant reservation platform for diners and restaurant staff. Core data: restaurants (name, cui",
+    "composite_hash": "3e933c2caefe3958",
+    "category": "runtime",
+    "file_basename": "stats_routes.py",
+    "normalized_signature": "[Unknown] Traceback (most recent call last): File \"<frozen runpy>\", line <N>, in _run_module_as_main File \"<frozen runpy>\", line <N>, in _run_code File \"C:\\Users\\jerry\\onedrive\\Desktop\\forgeai\\backend\\venv\\Lib\\site-packages\\uvicorn\\__main__.py\", line <N>, in <module> uvicorn.main() ~~~~~~~~~~~~^^ File \"C:\\Users\\jerry\\onedrive\\Desktop\\forgeai\\backend\\venv\\Lib\\site-packages\\click\\core.py\", line <N>",
+    "files_changed": [
+      "app/schemas/reservations.py"
+    ],
+    "imports_added": [],
+    "symbols_added": []
   },
   "e481b0038ba86b9f": {
     "fix_hash": "e481b0038ba86b9f",
@@ -3061,6 +3106,120 @@
     "normalized_signature": "error during build: [vite:esbuild] Transform failed with <N> error: | C:/Users/jerry/OneDrive/Desktop/forgeAi/generated_projects/event_manager_platform/src/pages/MyRegistrationsPage.jsx:<N>:<N>: ERROR: Expected \"}\" but found \")\" | file: C:/Users/jerry/OneDrive/Desktop/forgeAi/generated_projects/event_manager_platform/src/pages/MyRegistrationsPage.jsx:<N>:<N> | Expected \"}\" but found \")\" | <N> | )} | <N> | {toast && ( | <N> | <div className={`animate-scale-in fixed bottom-<N> right-<N> px-<N> py-<N> rounded-xl shadow-lg text-sm font-medium text-white z-<N> ${toastColorClass}`)}> | | ^ | <N> | {toast.msg} | <N> | </div> | at failureErrorWithLog (C:\\Users\\jerry\\OneDrive\\Desktop\\forgeAi\\generated_projects\\event_manager_platform\\node_modules\\esbuild\\lib\\main.js:<N>:<N>) | at C:\\Users\\jerry\\OneDrive\\Desktop\\forgeAi\\generated_projects\\event_manager_platform\\node_modules\\esbuild\\lib\\main.js:<N>:<N> | at responseCallbacks.<computed> (C:\\Users\\jerry\\OneDrive\\Desktop\\forgeAi\\generated_projects\\event_manager_platform\\node_modules\\esbuild\\lib\\main.js:<N>:<N>)",
     "files_changed": [
       "src/pages/MyRegistrationsPage.jsx"
+    ],
+    "imports_added": [],
+    "symbols_added": []
+  },
+  "705ff48ae7d5b0a8": {
+    "fix_hash": "705ff48ae7d5b0a8",
+    "fix_content": {
+      "app/routes/stats_routes.py": "from fastapi import APIRouter, Depends\nfrom app.database import get_db\nfrom sqlalchemy.orm import Session\nfrom sqlalchemy import func\nfrom app.models.priorities import Priority\nfrom app.models.tasks import Task\nfrom app.models.user import User\n\nstats_router = APIRouter()\n\n@stats_router.get('/stats/summary')\ndef summary(db: Session = Depends(get_db)):\n    total_users = db.query(func.count()).select_from(User).scalar()\n    total_tasks = db.query(func.count()).select_from(Task).scalar()\n    tasks_per_priority = db.query(Priority.name, func.count(Task.id)).join(Task, Task.priority_id == Priority.id).group_by(Priority.name).all()\n    return {\n        'total_users': total_users,\n        'total_tasks': total_tasks,\n        'tasks_per_priority': dict(tasks_per_priority)\n    }\n"
+    },
+    "success_count": 1,
+    "first_seen": "2026-07-22T08:21:58Z",
+    "last_seen": "2026-07-22T08:21:58Z",
+    "source_idea": "A todo list app with user accounts. Users can register and log in. Each user sees only their own tod",
+    "composite_hash": "51ea0824cc922c76",
+    "category": "import",
+    "file_basename": "stats_routes.py",
+    "normalized_signature": "Undefined symbol 'Depends' in app\\routes\\stats_routes.py | Undefined symbol 'User' in app\\routes\\stats_routes.py",
+    "files_changed": [
+      "app/routes/stats_routes.py"
+    ],
+    "imports_added": [],
+    "symbols_added": []
+  },
+  "63b6a5b2221951f4": {
+    "fix_hash": "63b6a5b2221951f4",
+    "fix_content": {
+      "app/routes/task_routes.py": "from typing import Any\nfrom fastapi import APIRouter, Depends, HTTPException, Query\nfrom sqlalchemy.orm import Session\nfrom app.database import get_db\nfrom app.models.task import Task\nfrom app.schemas.task import TaskCreate, TaskUpdate\nfrom app.utils.auth import get_current_user\n\ntask_router = APIRouter()\n\n@task_router.get('/tasks')\ndef get_tasks(limit: int = Query(50, ge=1, le=500), offset: int = Query(0, ge=0), current_user: Any = Depends(get_current_user), db: Session = Depends(get_db)):\n    return db.query(Task).filter(Task.user_id == current_user.id).offset(offset).limit(limit).all()\n\n@task_router.get('/tasks/{id}')\ndef get_task(id: int, current_user: Any = Depends(get_current_user), db: Session = Depends(get_db)):\n    task = db.query(Task).filter(Task.id == id, Task.user_id == current_user.id).first()\n    if task is None:\n        raise HTTPException(status_code=404, detail=\"Task not found\")\n    return task\n\n@task_router.post('/tasks')\ndef create_task(task_create: TaskCreate, current_user: Any = Depends(get_current_user), db: Session = Depends(get_db)):\n    task = Task(**task_create.dict(), user_id=current_user.id)\n    db.add(task)\n    db.commit()\n    db.refresh(task)\n    return task\n\n@task_router.put('/tasks/{id}')\ndef update_task(id: int, task_update: TaskUpdate, current_user: Any = Depends(get_current_user), db: Session = Depends(get_db)):\n    task = db.query(Task).filter(Task.id == id, Task.user_id == current_user.id).first()\n    if task is None:\n        raise HTTPException(status_code=404, detail=\"Task not found\")\n    for key, value in task_update.dict(exclude_unset=True).items():\n        setattr(task, key, value)\n    db.commit()\n    return task\n\n@task_router.delete('/tasks/{id}')\ndef delete_task(id: int, current_user: Any = Depends(get_current_user), db: Session = Depends(get_db)):\n    task = db.query(Task).filter(Task.id == id, Task.user_id == current_user.id).first()\n    if task is None:\n        raise HTTPException(status_code=404, detail=\"Task not found\")\n    db.delete(task)\n    db.commit()\n    return {\"detail\": \"Task deleted successfully\"}"
+    },
+    "success_count": 1,
+    "first_seen": "2026-07-22T08:21:58Z",
+    "last_seen": "2026-07-22T08:21:58Z",
+    "source_idea": "A todo list app with user accounts. Users can register and log in. Each user sees only their own tod",
+    "composite_hash": "c2069f259e7a84f1",
+    "category": "api",
+    "file_basename": "task_routes.py",
+    "normalized_signature": "Missing endpoint DELETE /tasks/{id} (expected in app/routes/task_routes.py) | Missing endpoint GET /tasks/{id} (expected in app/routes/task_routes.py) | Missing endpoint POST /tasks (expected in app/routes/task_routes.py) | Missing endpoint PUT /tasks/{id} (expected in app/routes/task_routes.py)",
+    "files_changed": [
+      "app/routes/task_routes.py"
+    ],
+    "imports_added": [],
+    "symbols_added": []
+  },
+  "f4a2303362ec791a": {
+    "fix_hash": "f4a2303362ec791a",
+    "fix_content": {
+      "app/routes/contact_routes.py": "from datetime import date\nfrom typing import Any, List, Optional\nfrom fastapi import APIRouter, Depends, HTTPException, Query\nfrom sqlalchemy.orm import Session\nfrom app.database import get_db\nfrom app.models.contact import Contact\nfrom app.schemas.contact import ContactCreate, ContactUpdate, ContactResponse\nfrom app.utils.auth import get_current_user\n\ncontact_router = APIRouter()\n\n@contact_router.get(\"/contacts\", response_model=List[ContactResponse])\ndef get_contacts(limit: int = Query(50, ge=1, le=500), offset: int = Query(0, ge=0), current_user: Any = Depends(get_current_user), db: Session = Depends(get_db)):\n    return db.query(Contact).filter(Contact.user_id == current_user.id).offset(offset).limit(limit).all()\n\n@contact_router.get(\"/contacts/search\")\ndef search_contacts(name: Optional[str] = None, company: Optional[str] = None, current_user: Any = Depends(get_current_user), db: Session = Depends(get_db)):\n    query = db.query(Contact).filter(Contact.user_id == current_user.id)\n    if name:\n        query = query.filter(Contact.name.ilike(f\"%{name}%\"))\n    if company:\n        query = query.filter(Contact.company.ilike(f\"%{company}%\"))\n    return query.all()\n\n@contact_router.get(\"/contacts/{contact_id}\", response_model=ContactResponse)\ndef get_contact(contact_id: int, current_user: Any = Depends(get_current_user), db: Session = Depends(get_db)):\n    contact = db.query(Contact).filter(Contact.id == contact_id, Contact.user_id == current_user.id).first()\n    if not contact:\n        raise HTTPException(status_code=404, detail=\"Contact not found\")\n    return contact\n\n@contact_router.post(\"/contacts\", response_model=ContactResponse)\ndef create_contact(contact_in: ContactCreate, current_user: Any = Depends(get_current_user), db: Session = Depends(get_db)):\n    contact = Contact(**{k: v for k, v in contact_in.dict().items() if k in Contact.__table__.columns.keys() and k not in {'user_id'}}, user_id=current_user.id)\n    db.add(contact)\n    db.commit()\n    db.refresh(contact)\n    return contact\n\n@contact_router.put(\"/contacts/{contact_id}\", response_model=ContactResponse)\ndef update_contact(contact_id: int, contact_in: ContactUpdate, current_user: Any = Depends(get_current_user), db: Session = Depends(get_db)):\n    contact = db.query(Contact).filter(Contact.id == contact_id, Contact.user_id == current_user.id).first()\n    if not contact:\n        raise HTTPException(status_code=404, detail=\"Contact not found\")\n    for key, value in contact_in.dict(exclude_unset=True).items():\n        setattr(contact, key, value)\n    db.commit()\n    return contact\n\n@contact_router.delete(\"/contacts/{contact_id}\")\ndef delete_contact(contact_id: int, current_user: Any = Depends(get_current_user), db: Session = Depends(get_db)):\n    contact = db.query(Contact).filter(Contact.id == contact_id, Contact.user_id == current_user.id).first()\n    if not contact:\n        raise HTTPException(status_code=404, detail=\"Contact not found\")\n    db.delete(contact)\n    db.commit()"
+    },
+    "success_count": 1,
+    "first_seen": "2026-07-22T08:33:46Z",
+    "last_seen": "2026-07-22T08:33:46Z",
+    "source_idea": "A simple CRM for small businesses with user login. Users manage contacts (name, email, phone, compan",
+    "composite_hash": "a5c34968e665f449",
+    "category": "runtime",
+    "file_basename": "contact_routes.py",
+    "normalized_signature": "[ResponseValidationError] fastapi.exceptions.ResponseValidationError: <N> validation errors: [CRUD journey failed — Create entity: <N> (server error on <N>-retry); List entities: <N>; Edit entity: no entity_id captured; Delete entity: no entity_id captured]",
+    "files_changed": [
+      "app/routes/contact_routes.py"
+    ],
+    "imports_added": [],
+    "symbols_added": []
+  },
+  "8808a9d2301f72ed": {
+    "fix_hash": "8808a9d2301f72ed",
+    "fix_content": {
+      "app/routes/contact_routes.py": "from datetime import date\nfrom typing import Any, List, Optional\nfrom fastapi import APIRouter, Depends, HTTPException, Query\nfrom sqlalchemy.orm import Session\nfrom app.database import get_db\nfrom app.models.contact import Contact\nfrom app.schemas.contact import ContactCreate, ContactUpdate, ContactResponse\nfrom app.schemas.note import NoteCreate, NoteResponse\nfrom app.schemas.interaction import InteractionCreate, InteractionResponse\nfrom app.utils.auth import get_current_user\n\ncontact_router = APIRouter()\n\n@contact_router.get(\"/contacts\", response_model=List[ContactResponse])\ndef get_contacts(limit: int = Query(50, ge=1, le=500), offset: int = Query(0, ge=0), current_user: Any = Depends(get_current_user), db: Session = Depends(get_db)):\n    return db.query(Contact).filter(Contact.user_id == current_user.id).offset(offset).limit(limit).all()\n\n@contact_router.get(\"/contacts/search\")\ndef search_contacts(name: Optional[str] = None, company: Optional[str] = None, current_user: Any = Depends(get_current_user), db: Session = Depends(get_db)):\n    query = db.query(Contact).filter(Contact.user_id == current_user.id)\n    if name:\n        query = query.filter(Contact.name.ilike(f\"%{name}%\"))\n    if company:\n        query = query.filter(Contact.company.ilike(f\"%{company}%\"))\n    return query.all()\n\n@contact_router.get(\"/contacts/{contact_id}\", response_model=ContactResponse)\ndef get_contact(contact_id: int, current_user: Any = Depends(get_current_user), db: Session = Depends(get_db)):\n    contact = db.query(Contact).filter(Contact.id == contact_id, Contact.user_id == current_user.id).first()\n    if not contact:\n        raise HTTPException(status_code=404, detail=\"Contact not found\")\n    return contact\n\n@contact_router.post(\"/contacts\", response_model=ContactResponse)\ndef create_contact(contact_in: ContactCreate, current_user: Any = Depends(get_current_user), db: Session = Depends(get_db)):\n    contact = Contact(**{k: v for k, v in contact_in.dict().items() if k in Contact.__table__.columns.keys() and k not in {'user_id'}}, user_id=current_user.id)\n    db.add(contact)\n    db.commit()\n    db.refresh(contact)\n    return contact\n\n@contact_router.put(\"/contacts/{contact_id}\", response_model=ContactResponse)\ndef update_contact(contact_id: int, contact_in: ContactUpdate, current_user: Any = Depends(get_current_user), db: Session = Depends(get_db)):\n    contact = db.query(Contact).filter(Contact.id == contact_id, Contact.user_id == current_user.id).first()\n    if not contact:\n        raise HTTPException(status_code=404, detail=\"Contact not found\")\n    for key, value in contact_in.dict(exclude_unset=True).items():\n        setattr(contact, key, value)\n    db.commit()\n    return contact\n\n@contact_router.delete(\"/contacts/{contact_id}\")\ndef delete_contact(contact_id: int, current_user: Any = Depends(get_current_user), db: Session = Depends(get_db)):\n    contact = db.query(Contact).filter(Contact.id == contact_id, Contact.user_id == current_user.id).first()\n    if not contact:\n        raise HTTPException(status_code=404, detail=\"Contact not found\")\n    db.delete(contact)\n    db.commit()\n\n@contact_router.post(\"/contacts/{contact_id}/notes\", response_model=NoteResponse)\ndef create_note(contact_id: int, note_in: NoteCreate, current_user: Any = Depends(get_current_user), db: Session = Depends(get_db)):\n    contact = db.query(Contact).filter(Contact.id == contact_id, Contact.user_id == current_user.id).first()\n    if not contact:\n        raise HTTPException(status_code=404, detail=\"Contact not found\")\n    note = Note(**note_in.dict(), contact_id=contact_id)\n    db.add(note)\n    db.commit()\n    db.refresh(note)\n    return note\n\n@contact_router.get(\"/contacts/{contact_id}/notes\", response_model=List[NoteResponse])\ndef get_notes(contact_id: int, current_user: Any = Depends(get_current_user), db: Session = Depends(get_db)):\n    contact = db.query(Contact).filter(Contact.id == contact_id, Contact.user_id == current_user.id).first()\n    if not contact:\n        raise HTTPException(status_code=404, detail=\"Contact not found\")\n    return db.query(Note).filter(Note.contact_id == contact_id).all()\n\n@contact_router.post(\"/contacts/{contact_id}/interactions\", response_model=InteractionResponse)\ndef create_interaction(contact_id: int, interaction_in: InteractionCreate, current_user: Any = Depends(get_current_user), db: Session = Depends(get_db)):\n    contact = db.query(Contact).filter(Contact.id == contact_id, Contact.user_id == current_user.id).first()\n    if not contact:\n        raise HTTPException(status_code=404, detail=\"Contact not found\")\n    interaction = Interaction(**interaction_in.dict(), contact_id=contact_id)\n    db.add(interaction)\n    db.commit()\n    db.refresh(interaction)\n    return interaction\n\n@contact_router.get(\"/contacts/{contact_id}/interactions\", response_model=List[InteractionResponse])\ndef get_interactions(contact_id: int, current_user: Any = Depends(get_current_user), db: Session = Depends(get_db)):\n    contact = db.query(Contact).filter(Contact.id == contact_id, Contact.user_id == current_user.id).first()\n    if not contact:\n        raise HTTPException(status_code=404, detail=\"Contact not found\")\n    return db.query(Interaction).filter(Interaction.contact_id == contact_id).all()"
+    },
+    "success_count": 1,
+    "first_seen": "2026-07-22T08:33:46Z",
+    "last_seen": "2026-07-22T08:33:46Z",
+    "source_idea": "A simple CRM for small businesses with user login. Users manage contacts (name, email, phone, compan",
+    "composite_hash": "aeef0961d2f8e660",
+    "category": "import",
+    "file_basename": "contact_routes.py",
+    "normalized_signature": "Undefined symbol 'InteractionCreate' in app\\routes\\contact_routes.py | Undefined symbol 'NoteCreate' in app\\routes\\contact_routes.py",
+    "files_changed": [
+      "app/routes/contact_routes.py"
+    ],
+    "imports_added": [],
+    "symbols_added": []
+  },
+  "098f4b263fa683ef": {
+    "fix_hash": "098f4b263fa683ef",
+    "fix_content": {
+      "app/schemas/interaction.py": "from typing import Optional\nfrom pydantic import BaseModel, Field\n\n\nclass InteractionCreate(BaseModel):\n    id: Optional[int] = None\n    contact_id: int = Field(...)\n    model_config = {'from_attributes': True}\n\n\nclass InteractionResponse(BaseModel):\n    id: Optional[int] = None\n    contact_id: int = Field(...)\n    model_config = {'from_attributes': True}\n"
+    },
+    "success_count": 1,
+    "first_seen": "2026-07-22T08:34:29Z",
+    "last_seen": "2026-07-22T08:34:29Z",
+    "source_idea": "A simple CRM for small businesses with user login. Users manage contacts (name, email, phone, compan",
+    "composite_hash": "2b49b7f394a14de6",
+    "category": "contract",
+    "file_basename": "interaction.py",
+    "normalized_signature": "Schema mismatch: app/schemas/interaction.py: InteractionCreate is missing 'contact_id' — the Interaction model requires it (NOT NULL, references contacts) but the Create schema never exposes it, so every create call will fail with a database IntegrityError",
+    "files_changed": [
+      "app/schemas/interaction.py"
+    ],
+    "imports_added": [],
+    "symbols_added": []
+  },
+  "2ad81b7bcf514909": {
+    "fix_hash": "2ad81b7bcf514909",
+    "fix_content": {
+      "app/schemas/note.py": "from typing import Optional, Any\nfrom datetime import datetime\nfrom pydantic import BaseModel, Field\n\n\nclass NoteBase(BaseModel):\n    model_config = {\"from_attributes\": True}\n    title: str = Field(..., min_length=1, max_length=255)\n    content: str = Field(..., min_length=1)\n\n\nclass NoteCreate(NoteBase):\n    contact_id: int = Field(...)\n\n\nclass NoteUpdate(NoteBase):\n    title: Optional[str] = Field(None, min_length=1, max_length=255)\n    content: Optional[str] = Field(None, min_length=1)\n\n\nclass NoteResponse(NoteBase):\n    content: Optional[Any] = None\n    title: Optional[Any] = None\n    id: int\n    user_id: Optional[int] = None\n    created_at: Optional[datetime] = None\n    updated_at: Optional[datetime] = None\n\n    class Config:\n        from_attributes = True"
+    },
+    "success_count": 1,
+    "first_seen": "2026-07-22T08:34:29Z",
+    "last_seen": "2026-07-22T08:34:29Z",
+    "source_idea": "A simple CRM for small businesses with user login. Users manage contacts (name, email, phone, compan",
+    "composite_hash": "9ada5c029be59499",
+    "category": "contract",
+    "file_basename": "note.py",
+    "normalized_signature": "Schema mismatch: app/schemas/note.py: NoteCreate is missing 'contact_id' — the Note model requires it (NOT NULL, references contacts) but the Create schema never exposes it, so every create call will fail with a database IntegrityError",
+    "files_changed": [
+      "app/schemas/note.py"
     ],
     "imports_added": [],
     "symbols_added": []

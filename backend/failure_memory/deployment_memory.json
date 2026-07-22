@@ -1,7 +1,7 @@
 {
-  "total_deployments": 14,
-  "successful_deployments": 10,
-  "avg_health_latency_ms": 4896.0,
+  "total_deployments": 16,
+  "successful_deployments": 12,
+  "avg_health_latency_ms": 4591.916666666667,
   "errors": {},
   "deployment_log": [
     {
@@ -93,6 +93,18 @@
       "ts": "2026-07-16T19:04:23.398720",
       "success": true,
       "health_latency_ms": null,
+      "error_types": []
+    },
+    {
+      "ts": "2026-07-22T08:37:54.373669",
+      "success": true,
+      "health_latency_ms": null,
+      "error_types": []
+    },
+    {
+      "ts": "2026-07-22T08:50:23.334397",
+      "success": true,
+      "health_latency_ms": 1247,
       "error_types": []
     }
   ]

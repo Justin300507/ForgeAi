@@ -217,7 +217,7 @@
       "stage": "generation"
     },
     "MissingEndpoint": {
-      "count": 348,
+      "count": 352,
       "examples": [
         {
           "project": "bug_tracker",
@@ -241,7 +241,7 @@
         }
       ],
       "first_seen": "2026-06-22T07:49:29.613937",
-      "last_seen": "2026-07-22T04:31:43.532556",
+      "last_seen": "2026-07-22T08:19:33.844077",
       "stage": "generation"
     },
     "FastAPIError": {
@@ -393,7 +393,7 @@
       "stage": "runtime"
     },
     "NotNullViolationError": {
-      "count": 39,
+      "count": 41,
       "examples": [
         {
           "project": "todo_list_app",
@@ -417,7 +417,7 @@
         }
       ],
       "first_seen": "2026-07-01T19:37:49.712563",
-      "last_seen": "2026-07-22T04:25:49.557771",
+      "last_seen": "2026-07-22T08:35:26.395515",
       "stage": "runtime"
     },
     "AttributeError": {
@@ -533,6 +533,6 @@
       "last_seen": "2026-07-21T00:54:41.523672"
     }
   },
-  "total_runs": 820,
-  "last_updated": "2026-07-22T04:36:46.280150"
+  "total_runs": 826,
+  "last_updated": "2026-07-22T08:40:14.914059"
 }
