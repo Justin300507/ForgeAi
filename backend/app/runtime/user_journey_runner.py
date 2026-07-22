@@ -177,6 +177,53 @@ def _guess_field_value(field_name: str, field_defaults: dict | None = None):
     return "journey-test"
 
 
+def _resolve_fk_reference_id(requests_mod, base_url: str, headers: dict, arch: dict, field_name: str):
+    """Best-effort: look up a REAL existing row id for a foreign-key field
+    (e.g. `priority_id` -> GET a `/priorities`-like collection and use its
+    first row's id) instead of blindly guessing 1.
+
+    Root cause (this experiment, todo canary): `POST /seed` populates
+    independent lookup tables (priorities, categories, ...) but nothing
+    guarantees their first row gets id=1 -- the old blind `1` guess in
+    `_guess_field_value` 500'd via IntegrityError whenever it didn't.
+    Self-referential FKs (user_id, owner_id, task_id, ...) are excluded by
+    the caller since they're already covered by `_FIELD_DEFAULTS` and refer
+    to entities this same journey just created (id=1 is a safe guess there).
+    Returns None on any failure so the caller can fall back to the old
+    blind guess rather than crash the journey step itself.
+    """
+    stem = field_name[:-3].lower()  # strip "_id"
+    if not stem:
+        return None
+    plausible_names = {stem, stem + "s", stem + "es", stem.rstrip("y") + "ies"}
+    candidates = []
+    for ep in arch.get("api_endpoints", []):
+        if ep.get("method", "").upper() != "GET":
+            continue
+        p = ep.get("path", "")
+        if "{" in p:
+            continue
+        segments = [s.lower() for s in p.strip("/").split("/") if s]
+        if segments and segments[-1] in plausible_names:
+            candidates.append(p)
+    if not candidates:
+        # Architecture didn't list it (or wasn't passed) -- try the plain
+        # pluralized guess directly; a 404 below is harmless and cheap.
+        candidates = [f"/{stem}s"]
+    for p in candidates[:3]:
+        try:
+            r = requests_mod.get(f"{base_url}{p}", headers=headers, timeout=3)
+            if r.status_code != 200:
+                continue
+            data = r.json()
+            items = data if isinstance(data, list) else (data.get("items") or data.get("results") or [])
+            if items and isinstance(items[0], dict) and "id" in items[0]:
+                return items[0]["id"]
+        except Exception:
+            continue
+    return None
+
+
 def _detect_api_prefix(architecture: dict) -> str:
     """Return the common URL prefix for all non-auth endpoints (e.g. '/api/v1')."""
     endpoints = (architecture or {}).get("api_endpoints", [])
@@ -732,7 +779,20 @@ def run_user_journey(
             prop_schema = schema_props.get(field_name) or {}
             enum_values = prop_schema.get("enum")
             prop_type = prop_schema.get("type")
-            if enum_values:
+            fl = field_name.lower()
+            # An independent-lookup FK (priority_id, category_id, ...) --
+            # NOT one of the self-referential ones already in
+            # _FIELD_DEFAULTS (user_id/owner_id/task_id/... refer to
+            # entities this same journey just created, so id=1 is a safe
+            # guess there). These reference a table only POST /seed
+            # populates, with no guarantee its first row is id=1 -- look up
+            # a real id before falling back to the old blind guess.
+            resolved_fk = None
+            if fl.endswith("_id") and fl != "id" and field_name not in _FIELD_DEFAULTS:
+                resolved_fk = _resolve_fk_reference_id(requests, base, headers, arch, fl)
+            if resolved_fk is not None:
+                enriched_payload[field_name] = resolved_fk
+            elif enum_values:
                 # A Literal/Enum field — any name-based guess is almost
                 # certainly not a member and 422s with no recovery path.
                 enriched_payload[field_name] = enum_values[0]
@@ -807,12 +867,22 @@ def run_user_journey(
                         msg = err.get("msg", "").lower()
                         if "missing" in msg or msg_type == "missing":
                             if field_name not in targeted:
-                                # Same name-based heuristics as the enriched
-                                # payload builder (Exp105 — this branch used
-                                # to fill any non-email/_id/is_ field with
-                                # "journey-test", including fields literally
-                                # named `date`).
-                                targeted[field_name] = _guess_field_value(field_name, _FIELD_DEFAULTS)
+                                # Same independent-lookup FK resolution as
+                                # the enriched payload builder, then the same
+                                # name-based heuristics (Exp105 — this branch
+                                # used to fill any non-email/_id/is_ field
+                                # with "journey-test", including fields
+                                # literally named `date`).
+                                _fl = field_name.lower()
+                                _resolved = (
+                                    _resolve_fk_reference_id(requests, base, headers, arch, _fl)
+                                    if _fl.endswith("_id") and _fl != "id" and field_name not in _FIELD_DEFAULTS
+                                    else None
+                                )
+                                targeted[field_name] = (
+                                    _resolved if _resolved is not None
+                                    else _guess_field_value(field_name, _FIELD_DEFAULTS)
+                                )
                                 changed = True
                         elif "extra" in msg or "extra_forbidden" in msg_type or "not_permitted" in msg_type:
                             if field_name in targeted:

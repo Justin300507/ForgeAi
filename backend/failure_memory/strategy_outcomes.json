@@ -46,8 +46,13 @@
     },
     "regenerate_module": {
       "generation": 2,
-      "successes": 2,
-      "tries": 6
+      "successes": 3,
+      "tries": 10
+    },
+    "switch_model": {
+      "generation": 1,
+      "successes": 1,
+      "tries": 1
     }
   },
   "PydanticSerializationError": {
@@ -165,8 +170,8 @@
   "contract": {
     "patch_file": {
       "generation": 1,
-      "successes": 185,
-      "tries": 629
+      "successes": 187,
+      "tries": 631
     },
     "regenerate_arch": {
       "generation": 1,
@@ -192,7 +197,7 @@
     "regenerate_arch": {
       "generation": 1,
       "successes": 0,
-      "tries": 1
+      "tries": 2
     },
     "regenerate_module": {
       "generation": 2,

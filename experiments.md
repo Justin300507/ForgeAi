@@ -8077,3 +8077,96 @@ than shipping a broken endpoint — the safety gate working as designed.
 `crm` scored 89.7/B and deployed with a live Render backend
 (`simple-crm-backend-m54t.onrender.com`); its Vercel-path frontend gap is
 exactly what Exp138 above fixes.
+
+---
+
+## Experiment 139: Three More Real Bugs Behind Today's `todo`/`blog_cms` Failures
+
+2026-07-22, same session as Exp138. User asked to "fix deployment" after
+Exp138; rather than treat the two remaining canary failures as unfixable
+LLM variance, root-caused each one to a real, distinct, fixable bug —
+none touched by anything earlier today.
+
+**Bug 1 — FK-reference field guessed blind (`app/runtime/
+user_journey_runner.py`)**: `_guess_field_value` filled ANY `_id`-suffixed
+field with the literal `1`, including independent-lookup FKs like
+`priority_id` that reference a table only `POST /seed` populates, with no
+guarantee the seeded table's first row is actually id 1. Added
+`_resolve_fk_reference_id`: looks up a real row id from the architecture's
+matching GET collection endpoint (or a plain pluralized guess) before
+falling back to the old blind `1`. Self-referential FKs already in
+`_FIELD_DEFAULTS` (user_id, owner_id, task_id, ...) are untouched by
+design — they refer to entities the same journey just created, `1` is
+already correct there, and adding a lookup would cost an HTTP round-trip
+for no benefit. Wired into both payload-building call sites (schema-driven
+enrichment, 422 targeted retry). Unit-tested against the exact live shape
+(priorities seeded starting at id 7): 6/6 new tests pass
+(`test_exp139_fk_reference_lookup.py`).
+
+**Bug 2 — repair-loop seed fallback never seeds anything
+(`app/repair/orchestrator.py`)**: when an LLM-generated `seed_routes.py`
+crashes at runtime (caught by the repair loop, not initial generation),
+`_apply_fix_group`'s seed-group branch replaced it with
+`_SAFE_SEED_ROUTES_STUB` — a literal zero-insert no-op that still claims
+`{'message': 'Demo data ready'}`. `v6_orchestrator.py`'s INITIAL
+generation path already calls the existing deterministic ADR-002 seeder
+(`app/services/deterministic_seed_generator.py`, previously called from
+that one site only) in this exact situation; the repair-loop path never
+did.
+Wired the same deterministic seeder into the repair-loop fallback,
+falling back to the static stub only if the generator itself returns
+nothing usable or raises. 3/3 new tests pass
+(`test_exp139_repair_loop_seed_fallback.py`), including a real
+`Priority(` row-insert assertion and a generator-exception survival test.
+Bug 1 alone cannot fix this class: there is no real row to discover when
+the reference table was never populated in the first place.
+
+**Bug 3 — Postgres-only `func.interval()` SQL against SQLite
+(`app/services/deterministic_patcher.py`)**: `blog_cms`'s
+`GET /stats/summary` crashed with `OperationalError: no such function:
+interval` from `Post.created_at >= func.now() - func.interval('1 day')`.
+`func.interval(...)` is Postgres syntax; every generated app runs on
+SQLite (`app/database.py`), which has neither an `interval` function nor
+native date arithmetic on its text-based datetime columns — this call can
+never work regardless of which row triggers it. New patcher
+`_patch_postgres_only_sql_interval`: regex-matches the specific
+`func.now() - func.interval('N unit(s)')` compound and rewrites it to
+`datetime.utcnow() - timedelta(unit=N)`, injecting the import if missing;
+`func.interval(` present but not this exact shape is left untouched.
+Registered in `run_deterministic_patches` alongside the sibling
+runtime-crash patchers. Runtime-verified against the actual broken app: a
+live server call to the previously-500ing endpoint now returns
+`200 {"total_members":0,"total_posts":0,"total_tags":0,"active_today":0}`.
+
+**Bug 4 — constructor-collision patcher only matched a bare (unexclusion)
+filter (`app/services/deterministic_patcher.py`)**: a second, DIFFERENT
+`todo` regeneration crashed on `POST /tasks` with `TypeError:
+app.models.tasks.Task() got multiple values for keyword argument
+'completed'`. The existing `_patch_filtered_ctor_kwarg_collision` (built
+for exactly this bug class, confirmed live once already on a habits app)
+only matched `Model(**{k: v for ... if k in Model.__table__.columns.
+keys()}, kwarg=value)` with NO exclusion clause at all — but this
+instance already had a PARTIAL one (`and k not in {'user_id'}`, from an
+earlier patcher pass) that simply didn't cover the second trailing kwarg,
+`completed`. The regex now optionally captures an existing exclusion set
+and unions it with every trailing kwarg instead of requiring a clean
+slate. All 30 pre-existing tests in
+`test_sql_constructor_and_auth_repairs.py` still pass unchanged (the
+bare-filter case is untouched). Runtime-verified against the actual
+broken app: `POST /tasks` now returns `200` with the created row instead
+of `500`.
+
+**What this means for `todo`'s instability specifically**: three
+DIFFERENT LLM regenerations of the same "todo list app" idea hit three
+DIFFERENT bugs (priority FK guess, seed-crash-fallback-produces-empty-
+tables, constructor kwarg collision) — each now fixed, but each was a
+distinct root cause, not one recurring issue. This is consistent with
+this project's long-standing "LLM generation variance" pattern (hundreds
+of prior `JourneyCRUDFailure` bundles across many different apps) rather
+than a single fixable defect; today's work closes three specific,
+previously-open members of that class, not the class itself.
+
+**Validation**: full reliability suite 924-925/927 (the two pre-existing
+test-isolation flakes, both confirmed passing in isolation), all four
+fixes individually runtime-verified against real (not mocked) generated
+project code, not just unit-tested.

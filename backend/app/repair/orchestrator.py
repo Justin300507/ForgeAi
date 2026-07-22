@@ -671,15 +671,41 @@ def _apply_fix_group(
     # seen live across two separate generations). The inner per-file fix
     # loop already never calls the LLM for this file for the same reason;
     # this group-based outer loop had no equivalent guard and kept burning
-    # whole fix attempts re-discovering the same dead end. Always write the
-    # known-good minimal stub instead.
+    # whole fix attempts re-discovering the same dead end.
+    #
+    # Try the deterministic ADR-002 seeder first (reuses entity_metadata.py
+    # to seed real lookup/reference tables) -- v6_orchestrator.py's initial
+    # generation path already does this; this repair-loop path (triggered
+    # when an LLM-generated seed_routes.py crashes at runtime AFTER initial
+    # generation) still wrote the old zero-insert stub. Confirmed live
+    # (Exp139, todo canary, 2026-07-22): a seed crash here fell back to the
+    # zero-insert stub, priorities/etc. stayed empty, and every subsequent
+    # `POST /tasks` with a required `priority_id` FK failed with
+    # IntegrityError no matter what id was guessed -- the reference table
+    # was never populated at all. Fall back to the static stub only if the
+    # deterministic generator returns nothing usable; never let this branch
+    # fail generation outright.
     if _is_seed_related_group(group):
         target = _safe_patch_target(ctx.project_path, "app/routes/seed_routes.py")
         if target is not None:
             target.parent.mkdir(parents=True, exist_ok=True)
+            try:
+                from app.services.deterministic_seed_generator import generate as _generate_seed
+                source, telemetry = _generate_seed(str(ctx.project_path))
+            except Exception as exc:
+                source, telemetry = None, {"fallback_reason": f"generator raised: {exc}"}
+            if source is not None:
+                target.write_text(source, encoding="utf-8")
+                print(f"    [fix] Seed-related group {group.group_id}: "
+                      f"ADR-002 deterministic seed_routes.py generated "
+                      f"({telemetry['lookup_entities']} lookup entities, "
+                      f"{telemetry['generation_time_ms']}ms)")
+                return (["app/routes/seed_routes.py"], {"app/routes/seed_routes.py": source})
             target.write_text(_SAFE_SEED_ROUTES_STUB, encoding="utf-8")
             print(f"    [fix] Seed-related group {group.group_id}: "
-                  f"writing known-good seed_routes.py stub instead of calling the LLM")
+                  f"deterministic seeder returned nothing usable "
+                  f"({telemetry.get('fallback_reason', 'unknown')}) — "
+                  f"writing known-good zero-insert stub instead of calling the LLM")
             return (["app/routes/seed_routes.py"],
                     {"app/routes/seed_routes.py": _SAFE_SEED_ROUTES_STUB})
 

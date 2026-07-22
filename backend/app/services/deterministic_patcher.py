@@ -3676,16 +3676,17 @@ def _patch_star_dict_extra_fields(project_path: Path) -> int:
 
 _FILTERED_CTOR_KWARG_COLLISION_RE = re.compile(
     r'\b([A-Z]\w+)\(\*\*\{k: v for k, v in (\w+)\.(?:dict|model_dump)\(\)\.items\(\)'
-    r' if k in \1\.__table__\.columns\.keys\(\)\}((?:[^)]*)?)\)',
+    r' if k in \1\.__table__\.columns\.keys\(\)'
+    r'(?: and k not in \{(?P<existing>[^}]*)\})?\}((?:[^)]*)?)\)',
 )
 
 
 def _patch_filtered_ctor_kwarg_collision(project_path: Path) -> int:
     """
     Fix an already-generated `Model(**{k: v for ... if k in Model.__table__.
-    columns.keys()}, some_kwarg=value)` call that's missing the "and k not in
-    {...}" exclusion _patch_star_dict_extra_fields now adds for any trailing
-    explicit kwarg.
+    columns.keys()}, some_kwarg=value)` call that's missing (or only
+    partially has) the "and k not in {...}" exclusion
+    _patch_star_dict_extra_fields now adds for every trailing explicit kwarg.
 
     Without it, if the schema also accepts a same-named field as client input
     (HabitCreate exposing `user_id` as optional -- a MassAssignment gap flagged
@@ -3695,6 +3696,17 @@ def _patch_filtered_ctor_kwarg_collision(project_path: Path) -> int:
     every single request for exactly this reason, and the pipeline's own
     runtime-fix loop failed to resolve it before giving up, shipping the app
     at "deploy ready" with a completely broken create flow.
+
+    A second, distinct reproduction (Exp139, todo canary, 2026-07-22):
+    `Task(**{k: v for k, v in task_in.dict().items() if k in
+    Task.__table__.columns.keys() and k not in {'user_id'}}, user_id=
+    current_user.id, completed=False)` -- an exclusion clause WAS present
+    (for `user_id`) but didn't cover `completed`, the route's own second
+    trailing kwarg, so the collision fired for `completed` instead. The
+    original regex only matched a bare filter with no exclusion clause at
+    all and silently skipped this already-partially-fixed shape; it now
+    captures an existing exclusion set and unions it with every trailing
+    kwarg rather than requiring a clean slate.
     """
     routes_dir = project_path / "app" / "routes"
     if not routes_dir.exists():
@@ -3710,11 +3722,15 @@ def _patch_filtered_ctor_kwarg_collision(project_path: Path) -> int:
             continue
 
         def _fix(m: re.Match) -> str:
-            cls_name, schema_var, extra_args = m.group(1), m.group(2), m.group(3)
-            explicit_kwargs = sorted(set(re.findall(r'(?:^|,)\s*(\w+)\s*=', extra_args)))
-            if not explicit_kwargs:
-                return m.group(0)
-            exclude_set = "{" + ", ".join(f"'{k}'" for k in explicit_kwargs) + "}"
+            cls_name, schema_var, existing, extra_args = (
+                m.group(1), m.group(2), m.group("existing"), m.group(4)
+            )
+            explicit_kwargs = set(re.findall(r'(?:^|,)\s*(\w+)\s*=', extra_args))
+            existing_kwargs = set(re.findall(r"'([^']*)'", existing or ""))
+            all_excludes = sorted(explicit_kwargs | existing_kwargs)
+            if not all_excludes or all_excludes == sorted(existing_kwargs):
+                return m.group(0)  # nothing new to exclude -- leave untouched
+            exclude_set = "{" + ", ".join(f"'{k}'" for k in all_excludes) + "}"
             filtered = (
                 f"{{k: v for k, v in {schema_var}.dict().items() "
                 f"if k in {cls_name}.__table__.columns.keys() and k not in {exclude_set}}}"
@@ -6962,6 +6978,79 @@ def _patch_wrong_schema_class_as_response_model(project_path: Path) -> int:
     return patched
 
 
+_SQL_INTERVAL_RE = re.compile(
+    r"func\.now\(\)\s*-\s*func\.interval\(\s*['\"](\d+)\s*(second|minute|hour|day|week)s?['\"]\s*\)"
+)
+_INTERVAL_UNIT_TO_TIMEDELTA_KWARG = {
+    "second": "seconds", "minute": "minutes", "hour": "hours",
+    "day": "days", "week": "weeks",
+}
+
+
+def _patch_postgres_only_sql_interval(project_path: Path) -> int:
+    """Replace `func.now() - func.interval('N day(s)')` with a Python-side
+    `datetime.utcnow() - timedelta(days=N)`.
+
+    Confirmed live (forge_blog_cms, 2026-07-22): `GET /stats/summary`
+    500'd with `OperationalError: no such function: interval`.
+    `func.interval(...)` is Postgres-only SQL -- every generated app runs
+    on SQLite (see app/database.py), which has neither an `interval`
+    function nor native date arithmetic on its text-based datetime
+    columns, so this expression can never work regardless of which row
+    calls it. `func.now()` alone is fine (SQLAlchemy special-cases it to
+    `CURRENT_TIMESTAMP` for sqlite); only the interval-subtraction
+    compound is unsupported. Evaluating the cutoff in Python and binding
+    it as a literal sidesteps the dialect gap entirely -- AST-unverified
+    (regex-only, mirrors this file's other narrow content patches) but
+    the match is specific enough that a false positive is not plausible."""
+    root = project_path.resolve()
+    dirs = [d for d in (root / "app" / "routes", root / "app" / "routers", root / "app" / "services")
+            if d.is_dir()]
+
+    patched = 0
+    for d in dirs:
+        for pf in d.glob("*.py"):
+            try:
+                src = pf.read_text(encoding="utf-8", errors="replace")
+            except Exception:
+                continue
+            if "func.interval(" not in src:
+                continue
+
+            need_dt: set[str] = set()
+
+            def _replace(m: re.Match) -> str:
+                amount, unit = m.group(1), m.group(2)
+                kwarg = _INTERVAL_UNIT_TO_TIMEDELTA_KWARG[unit]
+                need_dt.update({"datetime", "timedelta"})
+                return f"datetime.utcnow() - timedelta({kwarg}={amount})"
+
+            new_src = _SQL_INTERVAL_RE.sub(_replace, src)
+            if new_src == src:
+                continue  # func.interval( present but not this exact shape -- leave untouched
+
+            if need_dt:
+                m = re.search(r"^from datetime import ([^\n]+)$", new_src, re.MULTILINE)
+                if m:
+                    existing = {n.strip() for n in m.group(1).split(",")}
+                    missing = sorted(need_dt - existing)
+                    if missing:
+                        new_src = (new_src[:m.end(1)] + ", " + ", ".join(missing) + new_src[m.end(1):])
+                else:
+                    new_src = f"from datetime import {', '.join(sorted(need_dt))}\n" + new_src
+
+            try:
+                ast.parse(new_src)
+            except SyntaxError:
+                continue  # never write a file we can't confirm still parses
+
+            pf.write_text(new_src, encoding="utf-8")
+            patched += 1
+            print(f"  [patcher] Replaced Postgres-only func.interval() SQL with a Python-side "
+                  f"cutoff in {pf.name}")
+    return patched
+
+
 def _patch_unbound_conditional_db_ops(project_path: Path) -> int:
     """Guard `db.refresh(x)` / `db.add(x)` / `db.delete(x)` statements whose
     target is only ever assigned inside a nested block of the same function.
@@ -8109,6 +8198,11 @@ def run_deterministic_patches(project_path: str, skip_protected_injections: bool
     # db.refresh/add/delete on a name bound only inside a nested block →
     # UnboundLocalError 500 on empty input (Exp110, forge_blog_cms)
     _run_patch_isolated(counts, "_patch_unbound_conditional_db_ops", _patch_unbound_conditional_db_ops, root)
+
+    # func.now() - func.interval(...) is Postgres-only SQL; every generated
+    # app runs on SQLite, which has no `interval` function at all →
+    # OperationalError 500 (Exp139, forge_blog_cms /stats/summary)
+    _run_patch_isolated(counts, "_patch_postgres_only_sql_interval", _patch_postgres_only_sql_interval, root)
 
     # response_model=XBase/XCreate strips id from every response when an
     # XResponse exists — journey can never capture an entity id (Exp111)

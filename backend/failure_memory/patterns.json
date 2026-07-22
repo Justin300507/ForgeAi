@@ -217,7 +217,7 @@
       "stage": "generation"
     },
     "MissingEndpoint": {
-      "count": 352,
+      "count": 356,
       "examples": [
         {
           "project": "bug_tracker",
@@ -241,7 +241,7 @@
         }
       ],
       "first_seen": "2026-06-22T07:49:29.613937",
-      "last_seen": "2026-07-22T08:19:33.844077",
+      "last_seen": "2026-07-22T10:39:39.601411",
       "stage": "generation"
     },
     "FastAPIError": {
@@ -533,6 +533,6 @@
       "last_seen": "2026-07-21T00:54:41.523672"
     }
   },
-  "total_runs": 826,
-  "last_updated": "2026-07-22T08:40:14.914059"
+  "total_runs": 830,
+  "last_updated": "2026-07-22T10:59:39.173881"
 }

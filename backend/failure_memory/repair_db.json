@@ -89,9 +89,9 @@
     "fix_content": {
       "app/routes/seed_routes.py": "from fastapi import APIRouter, Depends\nfrom sqlalchemy.orm import Session\nfrom app.database import get_db\n\nseed_router = APIRouter()\n\n@seed_router.post('/seed')\ndef seed_data(db: Session = Depends(get_db)):\n    return {'seeded': True, 'message': 'Demo data ready'}\n"
     },
-    "success_count": 36,
+    "success_count": 37,
     "first_seen": "2026-07-05T10:01:42Z",
-    "last_seen": "2026-07-22T04:34:13Z",
+    "last_seen": "2026-07-22T10:36:08Z",
     "source_idea": "a recipe sharing platform",
     "composite_hash": "e27522b9541f3843",
     "category": "api",
@@ -678,9 +678,9 @@
     "fix_content": {
       "app/schemas/user.py": "from datetime import datetime\nfrom typing import Optional\nfrom pydantic import BaseModel, Field, ConfigDict\n\nclass UserCreate(BaseModel):\n    model_config = ConfigDict(from_attributes=True)\n    username: Optional[str] = Field(default=None, min_length=1, max_length=150, description=\"The unique username for the user account\")\n    hashed_password: Optional[str] = Field(default=None, min_length=1, max_length=255, description=\"The plain text password to be hashed and stored\")\n\nclass UserUpdate(BaseModel):\n    model_config = ConfigDict(from_attributes=True)\n    username: Optional[str] = Field(default=None, min_length=1, max_length=150, description=\"The updated username\")\n    hashed_password: Optional[str] = Field(default=None, min_length=1, max_length=255, description=\"The updated plain text password\")\n\nclass UserResponse(BaseModel):\n    id: int\n    username: Optional[str] = None\n    created_at: Optional[datetime] = None\n\n    model_config = ConfigDict(from_attributes=True)"
     },
-    "success_count": 18,
+    "success_count": 20,
     "first_seen": "2026-07-11T12:43:22Z",
-    "last_seen": "2026-07-22T08:42:32Z",
+    "last_seen": "2026-07-22T10:52:00Z",
     "source_idea": "A todo list app with user accounts. Users can register and log in. Each user sees only their own tod",
     "composite_hash": "bcf7a0b6d0b68a20",
     "category": "contract",
@@ -757,9 +757,9 @@
     "fix_content": {
       "app/schemas/task.py": "from datetime import datetime\nfrom typing import Optional\n\nfrom pydantic import BaseModel, Field, ConfigDict\n\nclass TaskCreate(BaseModel):\n    title: Optional[str] = Field(default=None, min_length=1)\n    description: Optional[str] = None\n    due_date: Optional[datetime] = None\n    completed: Optional[bool] = None\n\n    model_config = ConfigDict(from_attributes=True)\n\nclass TaskUpdate(BaseModel):\n    title: Optional[str] = Field(default=None, min_length=1)\n    description: Optional[str] = None\n    due_date: Optional[datetime] = None\n    completed: Optional[bool] = None\n\n    model_config = ConfigDict(from_attributes=True)\n\nclass TaskResponse(BaseModel):\n    id: int\n    title: Optional[str] = None\n    description: Optional[str] = None\n    due_date: Optional[datetime] = None\n    completed: Optional[bool] = None\n    created_at: Optional[datetime] = None\n    updated_at: Optional[datetime] = None\n    priority: Optional[dict] = None\n\n    model_config = ConfigDict(from_attributes=True)\n\nclass TaskRead(BaseModel):\n    id: Optional[int] = None\n    model_config = ConfigDict(from_attributes=True)\n"
     },
-    "success_count": 12,
+    "success_count": 14,
     "first_seen": "2026-07-11T22:39:05Z",
-    "last_seen": "2026-07-22T08:42:32Z",
+    "last_seen": "2026-07-22T10:52:00Z",
     "source_idea": "A todo list app with user accounts. Users can register and log in. Each user sees only their own tod",
     "composite_hash": "18a86bdbdf7d23f1",
     "category": "contract",
@@ -1804,10 +1804,19 @@
     "fix_content": {
       "app/schemas/task.py": "from datetime import datetime\nfrom typing import Optional\n\nfrom pydantic import BaseModel, Field, ConfigDict\n\nclass TaskCreate(BaseModel):\n    title: Optional[str] = Field(default=None, min_length=1)\n    description: Optional[str] = None\n    due_date: Optional[datetime] = None\n    completed: Optional[bool] = None\n    priority_id: int  # Added priority_id as required field\n\n    model_config = ConfigDict(from_attributes=True)\n\nclass TaskUpdate(BaseModel):\n    title: Optional[str] = Field(default=None, min_length=1)\n    description: Optional[str] = None\n    due_date: Optional[datetime] = None\n    completed: Optional[bool] = None\n    priority_id: Optional[int] = None  # Allow updating priority_id\n\n    model_config = ConfigDict(from_attributes=True)\n\nclass TaskResponse(BaseModel):\n    id: int\n    title: Optional[str] = None\n    description: Optional[str] = None\n    due_date: Optional[datetime] = None\n    completed: Optional[bool] = None\n    created_at: Optional[datetime] = None\n    updated_at: Optional[datetime] = None\n    priority: Optional[dict] = None\n\n    model_config = ConfigDict(from_attributes=True)\n\nclass TaskRead(BaseModel):\n    id: Optional[int] = None\n\n    model_config = ConfigDict(from_attributes=True)"
     },
-    "success_count": 1,
+    "success_count": 2,
     "first_seen": "2026-07-20T14:56:02Z",
-    "last_seen": "2026-07-20T14:56:02Z",
-    "source_idea": "A todo list app with user accounts. Users can register and log in. Each user sees only their own tod"
+    "last_seen": "2026-07-22T10:38:43Z",
+    "source_idea": "A todo list app with user accounts. Users can register and log in. Each user sees only their own tod",
+    "composite_hash": "c018ef50fdd5cc42",
+    "category": "contract",
+    "file_basename": "task.py",
+    "normalized_signature": "Schema mismatch: app/schemas/task.py: TaskCreate is missing 'priority_id' — the Task model requires it (NOT NULL, references priorities) but the Create schema never exposes it, so every create call will fail with a database IntegrityError",
+    "files_changed": [
+      "app/schemas/task.py"
+    ],
+    "imports_added": [],
+    "symbols_added": []
   },
   "043068ff778723aa": {
     "fix_hash": "043068ff778723aa",
@@ -3220,6 +3229,25 @@
     "normalized_signature": "Schema mismatch: app/schemas/note.py: NoteCreate is missing 'contact_id' — the Note model requires it (NOT NULL, references contacts) but the Create schema never exposes it, so every create call will fail with a database IntegrityError",
     "files_changed": [
       "app/schemas/note.py"
+    ],
+    "imports_added": [],
+    "symbols_added": []
+  },
+  "4e8a130b28752e4c": {
+    "fix_hash": "4e8a130b28752e4c",
+    "fix_content": {
+      "app/routes/task_routes.py": "from typing import Any\nfrom fastapi import APIRouter, Depends, HTTPException, Query\nfrom sqlalchemy.orm import Session\nfrom app.database import get_db\nfrom app.models.tasks import Task\nfrom app.schemas.task import TaskCreate\nfrom app.schemas.task import TaskUpdate\nfrom app.utils.auth import get_current_user\n\n# Create the router\n\ntask_router = APIRouter()\n\n\n@task_router.get(\"/tasks\")\ndef get_tasks(\n    title: str = None,\n    description: str = None,\n    completed: bool = None,\n    priority_id: int = None,\n    limit: int = Query(50, ge=1, le=500),\n    offset: int = Query(0, ge=0),\n    db: Session = Depends(get_db),\n    current_user: Any = Depends(get_current_user)\n):\n    query = db.query(Task).filter(Task.user_id == current_user.id)\n    if title:\n        query = query.filter(Task.title.ilike(f\"%{title}%\"))\n    if description:\n        query = query.filter(Task.description.ilike(f\"%{description}%\"))\n    if completed is not None:\n        query = query.filter(Task.completed == completed)\n    if priority_id:\n        query = query.filter(Task.priority_id == priority_id)\n    tasks = query.offset(offset).limit(limit).all()\n    total = query.count()\n    return {\"items\": tasks, \"total\": total}\n\n\n@task_router.get(\"/tasks/{id}\")\ndef get_task(id: int, db: Session = Depends(get_db), current_user: Any = Depends(get_current_user)):\n    task = db.query(Task).filter(Task.id == id, Task.user_id == current_user.id).first()\n    if not task:\n        raise HTTPException(status_code=404, detail=\"Not found\")\n    return task\n\n\n@task_router.post(\"/tasks\")\ndef create_task(task_in: TaskCreate, db: Session = Depends(get_db), current_user: Any = Depends(get_current_user)):\n    task = Task(**{k: v for k, v in task_in.dict().items() if k in Task.__table__.columns.keys() and k not in {'user_id'}}, user_id=current_user.id, completed=False)\n    db.add(task)\n    db.commit()\n    db.refresh(task)\n    return task\n\n\n@task_router.put(\"/tasks/{id}\")\ndef update_task(id: int, task_in: TaskUpdate, db: Session = Depends(get_db), current_user: Any = Depends(get_current_user)):\n    task = db.query(Task).filter(Task.id == id, Task.user_id == current_user.id).first()\n    if not task:\n        raise HTTPException(status_code=404, detail=\"Not found\")\n    for key, value in task_in.dict(exclude_unset=True).items():\n        setattr(task, key, value)\n    db.commit()\n    db.refresh(task)\n    return task\n\n\n@task_router.delete(\"/tasks/{id}\")\ndef delete_task(id: int, db: Session = Depends(get_db), current_user: Any = Depends(get_current_user)):\n    task = db.query(Task).filter(Task.id == id, Task.user_id == current_user.id).first()\n    if not task:\n        raise HTTPException(status_code=404, detail=\"Not found\")\n    db.delete(task)\n    db.commit()\n    return HTTPException(status_code=204)"
+    },
+    "success_count": 1,
+    "first_seen": "2026-07-22T10:36:08Z",
+    "last_seen": "2026-07-22T10:36:08Z",
+    "source_idea": "A todo list app with user accounts. Users can register and log in. Each user sees only their own tod",
+    "composite_hash": "c2707ecec5d20e85",
+    "category": "runtime",
+    "file_basename": "task_routes.py",
+    "normalized_signature": "[SQLAlchemyError] TypeError: app.models.tasks.Task() got multiple values for keyword argument 'completed' [CRUD journey failed — Create entity: <N> (server error); Edit entity: no entity_id captured; Delete entity: no entity_id captured; Verify deletion: no entity_id]",
+    "files_changed": [
+      "app/routes/task_routes.py"
     ],
     "imports_added": [],
     "symbols_added": []
