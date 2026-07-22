@@ -8253,3 +8253,59 @@ rather than at a fix that didn't fully address the OOM.
 passing in isolation -- one of them, `test_role_aware_journey.py`, hit a
 genuine transient Windows TCP reset this run, confirmed by 3/3 clean
 reruns immediately after, unrelated to this change).
+
+**Follow-up, same day: the fork() fix was necessary but not sufficient.**
+Confirmed via Render's own event API (`GET /v1/services/{id}/events`),
+which is authoritative (deploy IDs, commit SHAs, and `oomKilled` reasons
+all directly attributable, not inferred from a health-check's response
+time): a THIRD `oomKilled` event fired at 2026-07-22T16:20:45Z --
+recovering at 16:21:33Z -- roughly 1h44m *after* the f1660fd fork() fix
+had already deployed and gone live (confirmed live at 14:36:26Z). The
+event history end to end:
+
+| time (UTC) | event | commit live at the time |
+|---|---|---|
+| 2026-07-22T03:25:00Z | oomKilled | f5bf745 (Exp136 first ships spawn-based V15 supervisor) |
+| 2026-07-22T11:27:53Z | oomKilled | 158d587 (Exp139) |
+| 2026-07-22T14:36:26Z | f1660fd (Exp140 fork() fix) deploy succeeded | |
+| 2026-07-22T16:20:45Z | oomKilled | f1660fd -- **after** the fix |
+
+The fork()-vs-spawn() diagnosis was directionally correct (2 crashes
+before it existed, tied to the exact commits that introduced the
+spawn-everywhere pattern) but was not the whole picture. Reasoned root
+cause for the residual crash: CPython's own reference counting writes to
+an object's header on nearly every access, including reads -- a forked
+child touching almost any shared object (including ones it only reads)
+triggers copy-on-write duplication of that object's memory page anyway,
+so `fork()`'s savings over `spawn()` in a real CPython workload are real
+but much smaller than the idealized "child costs nothing until it
+writes" model this fix's write-up assumed. Separately and additively,
+`app/runtime/playwright_runner.py` and `playwright_workflow.py` launched
+headless Chromium with zero memory-related flags at all
+(`pw.chromium.launch(headless=True)`) -- a plain headless Chromium
+instance routinely holds 150-300MB+ RSS on its own, running inside the
+same 512MB container as the parent server, the job's child process, and
+the frontend's own npm/vite build (already capped at 400MB heap via
+`FORGE_FRONTEND_BUILD_HEAP_MB`, per an earlier, separate incident).
+
+**Additional fix**: both Chromium launch call sites now pass
+`--disable-dev-shm-usage` (avoids `/dev/shm` exhaustion in small
+containers), `--disable-gpu` (headless mode never uses GPU compositing),
+and `--js-flags=--max-old-space-size=128` (caps the V8 heap available to
+the verified PAGE's own JS -- generated CRUD apps are simple SPAs and do
+not need more). Smoke-tested directly (not just via mocked unit tests):
+launched Chromium with the exact new args, navigated a real page, read
+its content back successfully.
+
+**Honest assessment, not yet resolved with confidence**: these flags are
+a real, additive reduction, not a redesign of the pipeline's memory
+profile. A single 512MB container concurrently or sequentially hosting a
+FastAPI server, a forked Python child running an ~8,000-line deterministic
+patcher plus every provider SDK, a Node/Vite frontend build, and a
+headless browser is fundamentally tight regardless of further flag
+tuning -- there is a real possibility the honest fix is a Render plan
+upgrade (more RAM) rather than continuing to chase software-level
+reductions with diminishing returns. Flagged to the user directly rather
+than silently declared fixed. Watch Render's event log for further
+`oomKilled` events after this deploy; if they continue, do not keep
+adding flags -- escalate to a plan upgrade instead.

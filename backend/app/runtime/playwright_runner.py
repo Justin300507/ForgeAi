@@ -143,7 +143,25 @@ def run_playwright_tests(
     try:
         routes = _default_routes(architecture)
         with sync_playwright() as pw:
-            browser = pw.chromium.launch(headless=True)
+            # Low-memory flags for the shared 512MB Render instance (Exp140
+            # follow-up, live OOM 2026-07-22): an unflagged headless
+            # Chromium routinely holds 150-300MB+ RSS on its own, on top of
+            # the parent server, the job's forked child, and the frontend's
+            # own npm/vite build (already capped via
+            # FORGE_FRONTEND_BUILD_HEAP_MB) all sharing the same container.
+            # --disable-dev-shm-usage avoids /dev/shm exhaustion in small
+            # containers; --disable-gpu skips GPU compositing that headless
+            # mode doesn't use anyway; --js-flags caps the V8 heap available
+            # to the PAGE's own JS (generated CRUD apps are simple SPAs and
+            # do not need more).
+            browser = pw.chromium.launch(
+                headless=True,
+                args=[
+                    "--disable-dev-shm-usage",
+                    "--disable-gpu",
+                    "--js-flags=--max-old-space-size=128",
+                ],
+            )
             context = browser.new_context()
 
             for route in routes:

@@ -157,7 +157,17 @@ def run_workflow_tests(
 
     try:
         with sync_playwright() as pw:
-            browser = pw.chromium.launch(headless=True)
+            # Low-memory flags for the shared 512MB Render instance -- see
+            # playwright_runner.py's identical fix (Exp140 follow-up, live
+            # OOM 2026-07-22) for the full rationale.
+            browser = pw.chromium.launch(
+                headless=True,
+                args=[
+                    "--disable-dev-shm-usage",
+                    "--disable-gpu",
+                    "--js-flags=--max-old-space-size=128",
+                ],
+            )
             context = browser.new_context()
             page = context.new_page()
 
