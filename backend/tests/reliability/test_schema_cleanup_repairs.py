@@ -28,6 +28,9 @@ sys.path.insert(0, os.path.join(os.path.dirname(__file__), "..", ".."))
 from app.services.deterministic_patcher import (
     _patch_schemas_from_attributes,
     _patch_pydantic_orm_mode,
+    _patch_bare_pydantic_from_attributes,
+    _patch_pydantic_field_type_name_collisions,
+    _patch_required_create_schema_model_nullability,
     _patch_schema_nullable_required_mismatch,
     _patch_response_schema_id_and_datetimes,
     _patch_missing_pydantic_imports,
@@ -209,6 +212,53 @@ def test_nullable_mismatch_fixes_required_field_on_nullable_column():
     assert "notes: Optional[str] = None" in content
     # name maps to a NOT NULL column -- must be left required
     assert "name: str\n" in content
+
+
+def test_required_create_schema_makes_nullable_model_column_not_null():
+    root = _make_project({
+        "app/models/habit.py": _HABIT_MODEL,
+        "app/schemas/habit.py": "from pydantic import BaseModel\n\nclass HabitCreate(BaseModel):\n    notes: str\n",
+    })
+    n = _patch_required_create_schema_model_nullability(root)
+    content = (root / "app/models/habit.py").read_text(encoding="utf-8")
+    _cleanup(root)
+    assert n == 1
+    assert "notes = Column(String, nullable=False)" in content
+
+
+def test_bare_pydantic_from_attributes_is_repaired_but_config_is_preserved():
+    root = _make_project({
+        "app/schemas/task.py": (
+            "from pydantic import BaseModel\n\n"
+            "class TaskOut(BaseModel):\n"
+            "    from_attributes = True\n"
+            "    title: str\n\n"
+            "class LegacyOut(BaseModel):\n"
+            "    class Config:\n"
+            "        from_attributes = True\n"
+        ),
+    })
+    n = _patch_bare_pydantic_from_attributes(root)
+    content = (root / "app/schemas/task.py").read_text(encoding="utf-8")
+    _cleanup(root)
+    assert n == 1
+    assert 'model_config = {"from_attributes": True}' in content
+    assert "class Config:\n        from_attributes = True" in content
+
+
+def test_pydantic_date_field_type_collision_uses_module_alias():
+    root = _make_project({
+        "app/schemas/event.py": (
+            "from datetime import date\nfrom pydantic import BaseModel\n\n"
+            "class EventCreate(BaseModel):\n    date: date\n"
+        ),
+    })
+    n = _patch_pydantic_field_type_name_collisions(root)
+    content = (root / "app/schemas/event.py").read_text(encoding="utf-8")
+    _cleanup(root)
+    assert n == 1
+    assert "import datetime as _datetime" in content
+    assert "date: _datetime.date" in content
 
 
 def test_nullable_mismatch_noop_when_column_not_nullable():
@@ -561,6 +611,24 @@ def test_orm_type_in_route_schemas_noop_when_no_pydantic_class():
     n = _patch_orm_type_in_route_schemas(root)
     _cleanup(root)
     assert n == 0
+
+
+def test_orm_type_in_route_schemas_replaces_orm_list_response_model_without_local_schema():
+    route = (
+        "from fastapi import APIRouter\n"
+        "from app.models.label import Label\n"
+        "from app.schemas.label import LabelResponse\n\n"
+        "router = APIRouter()\n\n"
+        "@router.get('/labels', response_model=list[Label])\n"
+        "def labels():\n    return []\n"
+    )
+    root = _make_project({"app/models/label.py": _LABEL_MODEL, "app/routes/label.py": route})
+    n = _patch_orm_type_in_route_schemas(root)
+    content = (root / "app/routes/label.py").read_text(encoding="utf-8")
+    _cleanup(root)
+    assert n == 1
+    assert "response_model=list[LabelResponse]" in content
+    assert "response_model=list[Label]" not in content
 
 
 def test_orm_type_in_route_schemas_idempotent():

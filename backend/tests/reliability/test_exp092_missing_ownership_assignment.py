@@ -141,6 +141,37 @@ def test_idempotent_second_pass_no_op():
     assert after_first == after_second
 
 
+def test_post_llm_repair_convergence_restores_removed_assignment_idempotently():
+    """The V6 convergence batch must undo an LLM repair that drops ownership."""
+    root = _make_project({
+        "app/models/tasks.py": _TASK_MODEL,
+        "app/routes/task_routes.py": _route_missing_assignment(),
+    })
+    route_path = root / "app" / "routes" / "task_routes.py"
+
+    # Initial deterministic generation made the route safe.
+    assert _patch_missing_ownership_assignment(root) == 1
+    assert "task.user_id = current_user.id" in route_path.read_text(encoding="utf-8")
+
+    # Simulate an LLM repair overwriting the otherwise-valid route and dropping
+    # the critical ownership assignment. The post-repair convergence patch must
+    # restore it, and its repeat pass must be a no-op.
+    route_path.write_text(_route_missing_assignment(), encoding="utf-8")
+    assert _patch_missing_ownership_assignment(root) == 1
+    restored = route_path.read_text(encoding="utf-8")
+    assert "task.user_id = current_user.id" in restored
+    assert _patch_missing_ownership_assignment(root) == 0
+    assert route_path.read_text(encoding="utf-8") == restored
+
+    # Structural guard: both V6 post-LLM-repair convergence batches invoke the
+    # same deterministic safety net after attribute-access normalization.
+    from app.services import v6_orchestrator
+    import inspect
+
+    source = inspect.getsource(v6_orchestrator)
+    assert source.count("_patch_missing_ownership_assignment(_Path(project_path))") == 2
+
+
 # ---------------------------------------------------------------------------
 # Task 5: preservation cases
 # ---------------------------------------------------------------------------

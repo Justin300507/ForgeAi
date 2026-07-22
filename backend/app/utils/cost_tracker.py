@@ -15,6 +15,10 @@ _COST_LOG = Path(__file__).parent.parent.parent / "failure_memory" / "cost_log.j
 # Gemini 2.5 Flash: $0.15/1M input, $0.60/1M output (thinking disabled, was $3.50/1M thinking)
 # Groq free tier: $0.00 (daily rate-limited, not billed)
 _COST_PER_1M_INPUT = {
+    # gpt-4o-mini standard API pricing. Keep input/output separate: source
+    # code generation is output-heavy, so an averaged provider rate makes
+    # the per-app budget report misleading.
+    "openai": 0.15,
     "gemini": 0.15,
     "cerebras": 0.60,
     "groq": 0.00,
@@ -23,6 +27,7 @@ _COST_PER_1M_INPUT = {
     "auto": 0.60,
 }
 _COST_PER_1M_OUTPUT = {
+    "openai": 0.60,
     "gemini": 0.60,
     "cerebras": 0.60,
     "groq": 0.00,
@@ -32,6 +37,7 @@ _COST_PER_1M_OUTPUT = {
 }
 
 _session_calls: list[dict] = []  # in-memory log for the current run
+_session_failures: list[dict] = []  # redacted failed provider attempts
 
 # Run-level cumulative totals. Unlike _session_calls, these survive
 # flush_to_log() — V6 flushes (and clears) the session log at ITS end, which
@@ -82,6 +88,66 @@ def record_llm_call(
     _run_totals["cost_usd"] += estimated_cost
 
 
+def _is_timeout_error(exc: Exception) -> bool:
+    """Classify timeouts without reading arbitrary provider error text."""
+    error_name = type(exc).__name__.lower()
+    return (
+        isinstance(exc, TimeoutError)
+        or "timeout" in error_name
+    )
+
+
+def _safe_failure_classification(exc: Exception) -> tuple[str, str, bool]:
+    """Map type/status metadata to a small, non-sensitive telemetry vocabulary.
+
+    Provider exceptions frequently echo request bodies, headers, or user input
+    in ``str(exc)``. This function must therefore never call ``str(exc)``.
+    """
+    timeout = _is_timeout_error(exc)
+    status_code = getattr(exc, "status_code", None)
+
+    if timeout or status_code == 408:
+        return "timeout", "provider request timed out", True
+    if status_code == 402:
+        return "payment_required", "provider billing is unavailable", False
+    if status_code == 429:
+        return "rate_limited", "provider rate limit reached", False
+    if status_code in (401, 403):
+        return "authentication_error", "provider authentication was rejected", False
+    if status_code == 413:
+        return "request_too_large", "provider rejected request size", False
+    if isinstance(exc, ConnectionError):
+        return "connection_error", "provider connection failed", False
+    if isinstance(status_code, int) and 500 <= status_code <= 599:
+        return "provider_unavailable", "provider service is unavailable", False
+    return "provider_error", "provider request failed", False
+
+
+def record_llm_failure(
+    stage: str,
+    provider: str,
+    model: str,
+    duration_s: float,
+    exc: Exception,
+) -> None:
+    """Record one redacted failed provider attempt without charging tokens."""
+    error_class, error_summary, timeout = _safe_failure_classification(exc)
+    _session_failures.append({
+        "stage": stage,
+        "provider": provider,
+        "model": model,
+        "duration_s": round(duration_s, 2),
+        "error_class": error_class,
+        "error_summary": error_summary,
+        "timeout": timeout,
+    })
+
+
+def get_session_failures() -> list[dict]:
+    """Return a shallow copy of redacted failed-attempt telemetry."""
+    return list(_session_failures)
+
+
 def record_cache_hit(stage: str, prompt_tokens: int, completion_tokens: int) -> None:
     """Call this when generate_content() serves a cached response instead of
     billing a provider — makes the LLM cache's savings visible in the cost
@@ -103,13 +169,16 @@ def get_run_totals() -> dict:
 def get_session_summary() -> dict:
     """Return aggregated stats for all calls in the current session."""
     if not _session_calls:
-        return {
+        summary = {
             "total_calls": 0,
             "total_tokens": 0,
             "total_cost_usd": 0.0,
             "total_llm_time_s": 0.0,
             "by_stage": {},
         }
+        summary["failed_calls"] = len(_session_failures)
+        summary["failures"] = get_session_failures()
+        return summary
 
     by_stage: dict[str, dict] = {}
     for call in _session_calls:
@@ -127,6 +196,8 @@ def get_session_summary() -> dict:
         "total_cost_usd": round(sum(c["estimated_cost_usd"] for c in _session_calls), 6),
         "total_llm_time_s": round(sum(c["duration_s"] for c in _session_calls), 2),
         "by_stage": by_stage,
+        "failed_calls": len(_session_failures),
+        "failures": get_session_failures(),
     }
 
 
@@ -149,11 +220,13 @@ def flush_to_log(project_name: str, forge_score: int, total_wall_time_s: float) 
     _COST_LOG.write_text(json.dumps(data, indent=2, ensure_ascii=False), encoding="utf-8")
 
     _session_calls.clear()
+    _session_failures.clear()
 
 
 def reset_session() -> None:
     """Clear in-memory call log AND run totals for a new generation."""
     _session_calls.clear()
+    _session_failures.clear()
     for k in _run_totals:
         _run_totals[k] = 0.0 if k.endswith("_usd") else 0
 

@@ -104,6 +104,18 @@ def create_access_token(data: dict, expires_delta: Optional[timedelta] = None):
     return encoded_jwt
 
 async def get_current_user(token: str = Depends(oauth2_scheme), db: Session = Depends(get_db)) -> User:
+    return get_user_from_access_token(token, db)
+
+
+def get_user_from_access_token(token: str, db: Session) -> User:
+    """Resolve an already-extracted bearer token without logging its value.
+
+    HTTP routes receive a token through ``OAuth2PasswordBearer``; WebSocket
+    clients cannot set that header from the browser, so their authenticated
+    handshake reuses this verifier after receiving the token in the socket
+    frame.  Keeping verification in one place prevents the two transports
+    from drifting apart.
+    """
     credentials_exception = HTTPException(
         status_code=status.HTTP_401_UNAUTHORIZED,
         detail="Could not validate credentials",

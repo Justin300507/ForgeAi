@@ -1,7 +1,7 @@
 {
   "patterns": {
     "RouterExportMismatch": {
-      "count": 9,
+      "count": 39,
       "examples": [
         {
           "project": "test_app",
@@ -25,7 +25,7 @@
         }
       ],
       "first_seen": "2026-06-21T20:43:34.977754",
-      "last_seen": "2026-07-06T01:13:44.604568",
+      "last_seen": "2026-07-22T04:31:43.532541",
       "stage": "build"
     },
     "NoReferencedTableError": {
@@ -113,7 +113,7 @@
       "stage": "runtime"
     },
     "SQLAlchemyError": {
-      "count": 13,
+      "count": 15,
       "examples": [
         {
           "project": "HR Onboarding System",
@@ -137,7 +137,7 @@
         }
       ],
       "first_seen": "2026-06-21T21:30:53.208370",
-      "last_seen": "2026-07-13T14:56:58.518636",
+      "last_seen": "2026-07-21T21:37:49.022810",
       "stage": "runtime"
     },
     "ValidationError": {
@@ -177,7 +177,7 @@
       "stage": "runtime"
     },
     "ImportError": {
-      "count": 14,
+      "count": 195,
       "examples": [
         {
           "project": "inventory_system",
@@ -201,7 +201,7 @@
         }
       ],
       "first_seen": "2026-06-22T05:55:11.076646",
-      "last_seen": "2026-07-12T08:59:26.024558",
+      "last_seen": "2026-07-22T04:25:49.557666",
       "stage": "runtime"
     },
     "MonolithicSchemaError": {
@@ -217,7 +217,7 @@
       "stage": "generation"
     },
     "MissingEndpoint": {
-      "count": 66,
+      "count": 348,
       "examples": [
         {
           "project": "bug_tracker",
@@ -241,7 +241,7 @@
         }
       ],
       "first_seen": "2026-06-22T07:49:29.613937",
-      "last_seen": "2026-07-13T14:50:14.403610",
+      "last_seen": "2026-07-22T04:31:43.532556",
       "stage": "generation"
     },
     "FastAPIError": {
@@ -341,7 +341,7 @@
       "stage": "runtime"
     },
     "JourneyCRUDFailure": {
-      "count": 37,
+      "count": 41,
       "examples": [
         {
           "project": "BlogSphere",
@@ -365,7 +365,7 @@
         }
       ],
       "first_seen": "2026-06-29T23:47:06.584012",
-      "last_seen": "2026-07-13T14:06:07.391484",
+      "last_seen": "2026-07-16T18:41:14.355587",
       "stage": "integration"
     },
     "InvalidDependsType": {
@@ -393,7 +393,7 @@
       "stage": "runtime"
     },
     "NotNullViolationError": {
-      "count": 5,
+      "count": 39,
       "examples": [
         {
           "project": "todo_list_app",
@@ -417,11 +417,11 @@
         }
       ],
       "first_seen": "2026-07-01T19:37:49.712563",
-      "last_seen": "2026-07-12T09:15:54.727920",
+      "last_seen": "2026-07-22T04:25:49.557771",
       "stage": "runtime"
     },
     "AttributeError": {
-      "count": 25,
+      "count": 27,
       "examples": [
         {
           "project": "gym_tracker",
@@ -445,7 +445,7 @@
         }
       ],
       "first_seen": "2026-07-01T22:56:38.596264",
-      "last_seen": "2026-07-13T11:05:35.125201",
+      "last_seen": "2026-07-16T09:53:13.235642",
       "stage": "runtime"
     },
     "ConfigAttributeError": {
@@ -493,7 +493,7 @@
       "stage": "runtime"
     },
     "SyntaxError": {
-      "count": 23,
+      "count": 27,
       "examples": [
         {
           "project": "forge_blog_cms",
@@ -517,10 +517,22 @@
         }
       ],
       "first_seen": "2026-07-06T01:13:44.604581",
-      "last_seen": "2026-07-13T14:50:14.403683",
+      "last_seen": "2026-07-21T00:40:04.560768",
       "stage": "build"
+    },
+    "StubHandler": {
+      "count": 1,
+      "examples": [
+        {
+          "project": "legal_case_tracker",
+          "error": "Stub handler risk in app\\routes\\auth_routes.py: function 'signup' has an empty body (pass) but declares response_model — this will crash with a ResponseValidationError when called"
+        }
+      ],
+      "first_seen": "2026-07-21T00:54:41.523668",
+      "stage": "generation",
+      "last_seen": "2026-07-21T00:54:41.523672"
     }
   },
-  "total_runs": 507,
-  "last_updated": "2026-07-13T14:56:58.518594"
+  "total_runs": 820,
+  "last_updated": "2026-07-22T04:36:46.280150"
 }

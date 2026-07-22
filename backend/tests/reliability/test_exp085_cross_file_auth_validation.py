@@ -262,7 +262,7 @@ from app.schemas.auth import SignupRequest
 
 router = APIRouter()
 
-@router.post("/auth/register")
+@router.post("/auth/signup")
 def signup(req: SignupRequest):
     return {"email": req.email, "name": req.display_name}
 
@@ -277,7 +277,7 @@ from app.schemas.auth import SignupRequest
 
 router = APIRouter()
 
-@router.post("/auth/register")
+@router.post("/auth/signup")
 def signup(req: SignupRequest):
     return {"email": req.email, "name": req.username}
 

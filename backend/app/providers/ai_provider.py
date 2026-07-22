@@ -1,5 +1,8 @@
 import os
 import time
+from contextlib import contextmanager
+from contextvars import ContextVar
+from typing import Callable, Iterator
 
 from app.providers.deepseek_provider import generate as deepseek_generate
 from app.providers.cerebras_provider import generate as cerebras_generate
@@ -8,6 +11,7 @@ from app.providers.gemini_provider import current_model as gemini_current_model
 from app.providers.openrouter_provider import generate as openrouter_generate
 from app.providers.groq_provider import generate as groq_generate
 from app.providers.ollama_provider import generate as ollama_generate
+from app.providers.openai_provider import DEFAULT_MODEL as openai_default_model
 from app.providers.openai_provider import generate as openai_generate
 
 
@@ -23,6 +27,49 @@ from app.providers.openai_provider import generate as openai_generate
 # if billing gets fixed without needing a redeploy.
 _provider_cooldown_until: dict = {}
 _COOLDOWN_SECONDS = 3600
+
+# This observer is intentionally process-local and opt-in.  V15's spawned
+# supervisor binds it around one child pipeline so it can report *physical*
+# provider attempts without copying prompts, responses, exception text, or
+# credentials across the process boundary.  ContextVar keeps concurrent
+# in-process callers isolated too.
+_provider_attempt_observer: ContextVar[Callable[[dict], None] | None] = ContextVar(
+    "forge_provider_attempt_observer", default=None
+)
+_provider_attempt_count: ContextVar[int] = ContextVar("forge_provider_attempt_count", default=0)
+
+
+@contextmanager
+def observe_provider_attempts(observer: Callable[[dict], None]) -> Iterator[None]:
+    """Temporarily receive sanitized physical-provider attempt events.
+
+    Callers must bind this only where progress reporting is required.  The
+    observer is best-effort: telemetry failures can never change generation
+    or fallback behavior.
+    """
+    token = _provider_attempt_observer.set(observer)
+    count_token = _provider_attempt_count.set(0)
+    try:
+        yield
+    finally:
+        _provider_attempt_count.reset(count_token)
+        _provider_attempt_observer.reset(token)
+
+
+def _emit_provider_attempt(stage: str, provider: str, attempt: int, status: str) -> None:
+    """Emit the four allowlisted fields for one physical provider call."""
+    observer = _provider_attempt_observer.get()
+    if observer is None:
+        return
+    try:
+        observer({
+            "stage": str(stage),
+            "provider": str(provider),
+            "attempt": int(attempt),
+            "status": status,
+        })
+    except Exception:
+        pass
 
 
 def _is_payment_required(exc: Exception) -> bool:
@@ -55,9 +102,31 @@ def _on_cooldown(provider_name: str) -> bool:
 
 
 def _tracked(provider_name: str, model: str, prompt: str, fn, stage: str = "unknown", **kwargs) -> str:
-    """Wrap a provider call with cost tracking."""
+    """Wrap one provider attempt with success/failure telemetry.
+
+    The failure record deliberately contains provider metadata only.  Prompts
+    can contain user data and generated credentials, so they must never be
+    copied into operational telemetry.
+    """
+    # A ContextVar counter makes started/terminal events share an attempt
+    # number without global state leaking between concurrent pipeline runs.
+    attempt = _provider_attempt_count.get() + 1
+    _provider_attempt_count.set(attempt)
+    _emit_provider_attempt(stage, provider_name, attempt, "started")
     t0 = time.time()
-    result = fn(prompt, **kwargs)
+    try:
+        result = fn(prompt, **kwargs)
+    except Exception as exc:
+        elapsed = time.time() - t0
+        try:
+            from app.utils.cost_tracker import record_llm_failure
+            record_llm_failure(stage, provider_name, model, elapsed, exc)
+        except Exception:
+            # Observability must never alter the provider fallback path.
+            pass
+        _emit_provider_attempt(stage, provider_name, attempt, "failed")
+        raise
+
     elapsed = time.time() - t0
     try:
         from app.utils.cost_tracker import record_llm_call
@@ -67,6 +136,7 @@ def _tracked(provider_name: str, model: str, prompt: str, fn, stage: str = "unkn
         record_llm_call(stage, provider_name, model, prompt_tokens, completion_tokens, elapsed)
     except Exception:
         pass
+    _emit_provider_attempt(stage, provider_name, attempt, "succeeded")
     return result
 
 
@@ -78,18 +148,9 @@ _CEREBRAS_FINAL_RETRY_BACKOFF_SECONDS = 15
 def _auto_chain(prompt, stage, max_tokens, thinking_budget, skip: frozenset = frozenset(),
                  _cerebras_already_tried: bool = False):
     """
-    Cerebras → Gemini (with retries) → Groq. Cerebras is main as of
-    2026-07-12: it's on its own separate quota from Gemini/Groq (both of
-    which run close to their free-tier daily cap most days), so routing
-    the bulk of calls there first directly conserves the two legs that
-    actually run out. It was excluded for a while (402 Payment Required on
-    the old key, confirmed via direct provider test) and is back with a
-    fresh key, confirmed working via direct smoke test + a forced
-    auto_chain call. Gemini keeps its retries as the first paid-quota
-    fallback since most of its 503s are short-lived; Groq stays last —
-    it was proven reliable in an earlier confirmed test, so failing
-    through to it beats an outright stage failure, which is what tanked a
-    run from 95 to 44 the one time it got removed instead of demoted.
+    OpenAI → Cerebras → Gemini (with retries) → Groq. OpenAI is the primary
+    provider; the others are independent fallbacks for transient errors,
+    rate limits, and billing outages.
 
     _cerebras_already_tried: set by generate_content's explicit
     provider=="cerebras" branch when ITS OWN try already failed with a
@@ -103,6 +164,14 @@ def _auto_chain(prompt, stage, max_tokens, thinking_budget, skip: frozenset = fr
     disabling it for the single most common call path (model router
     defaults to explicit provider="cerebras", not "auto").
     """
+    if "openai" not in skip and not _on_cooldown("openai"):
+        try:
+            print("Using OpenAI (main)")
+            return _tracked("openai", openai_default_model, prompt, openai_generate, stage, max_tokens=max_tokens)
+        except Exception as e:
+            print(f"OpenAI failed: {e}")
+            _note_provider_result("openai", e)
+
     if "cerebras" not in skip and not _cerebras_already_tried and not _on_cooldown("cerebras"):
         try:
             print("Using Cerebras (main)")
@@ -151,7 +220,7 @@ def _auto_chain(prompt, stage, max_tokens, thinking_budget, skip: frozenset = fr
             print(f"Cerebras final retry failed: {e}")
             _note_provider_result("cerebras", e)
 
-    raise RuntimeError("Cerebras, Gemini (after retries), and Groq all failed")
+    raise RuntimeError("OpenAI, Cerebras, Gemini (after retries), and Groq all failed")
 
 
 def generate_content(
@@ -268,12 +337,24 @@ def _generate_uncached(
             return _auto_chain(prompt, stage, max_tokens, thinking_budget, skip=frozenset({"gemini"}))
 
     if provider == "openai":
+        if _on_cooldown("openai"):
+            return _auto_chain(prompt, stage, max_tokens, thinking_budget, skip=frozenset({"openai"}))
         try:
             print("Using OpenAI")
-            return _tracked("openai", "gpt-4o-mini", prompt, openai_generate, stage, max_tokens=max_tokens)
+            return _tracked("openai", openai_default_model, prompt, openai_generate, stage, max_tokens=max_tokens)
         except Exception as e:
-            print(f"OpenAI failed ({e}) — falling back to auto chain")
-            return _auto_chain(prompt, stage, max_tokens, thinking_budget)
+            print(f"OpenAI failed ({e}) — falling back to Cerebras chain")
+            _note_provider_result("openai", e)
+            # OpenAI was already attempted for this request. Skip its first
+            # auto-chain leg so the next provider is Cerebras rather than
+            # spending a second OpenAI attempt on the same failing call.
+            return _auto_chain(
+                prompt,
+                stage,
+                max_tokens,
+                thinking_budget,
+                skip=frozenset({"openai"}),
+            )
 
     if provider == "ollama":
         print("Using Ollama")

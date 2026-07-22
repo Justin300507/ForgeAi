@@ -252,6 +252,10 @@ def _dim_llm_judge_visual(ctx: GenerationContext) -> ScoreDimension:
     GenerationContext.is_deployment_ready for high-confidence critical
     findings) is what makes that verdict actually count.
     """
+    if not getattr(ctx, "llm_judge_evaluated", False):
+        return ScoreDimension(name="Visual Judge", score=None, weight=0.05,
+                              passed=False, details="visual review deferred")
+
     severity = getattr(ctx, "llm_judge_severity", None)
     if severity is None:
         return ScoreDimension(name="Visual Judge", score=100, weight=0.05,

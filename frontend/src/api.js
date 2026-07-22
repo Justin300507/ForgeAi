@@ -30,6 +30,7 @@ export const jobsAPI = {
   get: (id) => api.get(`/jobs/${id}`),
   cancel: (id) => api.post(`/jobs/${id}/cancel`),
   retry: (id) => api.post(`/jobs/${id}/retry`),
+  downloadZip: (id) => api.get(`/api/download/${id}`, { responseType: "blob" }),
   delete: (id) => api.delete(`/jobs/${id}`),
   deleteAll: () => api.delete("/jobs"),
   checkDeployed: (id) => api.post(`/jobs/${id}/check-deployed`),

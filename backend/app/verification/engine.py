@@ -1330,16 +1330,35 @@ class VerificationEngine:
       need all other results first).
     """
 
-    def __init__(self, run_runtime: bool = True, run_browser: bool = True):
+    def __init__(self, run_runtime: bool = True, run_browser: bool = True,
+                 run_llm_judge: bool = True):
         self.run_runtime = run_runtime
         self.run_browser = run_browser
+        self.run_llm_judge = run_llm_judge
         self._extra: list[Any] = []
 
     def register(self, verifier) -> "VerificationEngine":
         self._extra.append(verifier)
         return self
 
-    def run(self, ctx: GenerationContext) -> list[VerificationResult]:
+    def run(self, ctx: GenerationContext, run_llm_judge: Optional[bool] = None,
+            skip_perf_a11y: bool = False, skip_browser: bool = False) -> list[VerificationResult]:
+        """
+        skip_perf_a11y / skip_browser (Exp134): scoped "affected-only"
+        re-verification for the FixOrchestrator's intermediate attempts --
+        NEVER set by the initial verify, the final pre-deploy verify, or
+        the best-state-restore verify, which always need a full, honest
+        pass. Confirmed via scoring/engine.py: Performance reads
+        ctx.runtime_result (already computed by the always-on runtime
+        stage, not _run_performance_check's own diagnostics), and there is
+        no accessibility scoring dimension at all -- so skip_perf_a11y is
+        zero-risk to score accuracy on every call, not just backend-only
+        ones. skip_browser DOES feed _dim_browser_ux (15% weight), so the
+        caller must only set it when this attempt touched no frontend
+        files -- ctx.browser_result is preserved across the call (not
+        wiped to None) so that dimension keeps scoring from the last real
+        browser pass instead of going N/A.
+        """
         # A prior run() may have left a backend alive (keep_alive=True) for its
         # own later stages -- stop it before starting a fresh one on the same port.
         prior_runner = getattr(ctx, "_backend_runner", None)
@@ -1349,12 +1368,17 @@ class VerificationEngine:
             except Exception:
                 pass
 
+        prior_browser_result = ctx.browser_result if skip_browser else None
+
         results: list[VerificationResult] = []
         ctx.static_results  = []
         ctx.runtime_result  = None
         ctx.browser_result  = None
         ctx.extra_results   = []
         ctx._backend_runner = None
+        ctx.llm_judge_severity = None
+        ctx.llm_judge_confidence = 0.0
+        ctx.llm_judge_evaluated = False
         all_screenshots:  list[str] = []
 
         # ── Stage 1: Static ───────────────────────────────────────────────────
@@ -1454,7 +1478,11 @@ class VerificationEngine:
         )
 
         if runtime_ok and self.run_browser:
-            print("  [verify] 4-9: Running HTTP / Schema-DB / Browser / Performance / Accessibility in parallel...")
+            stage_label = "HTTP / Schema-DB" + \
+                ("" if skip_browser else " / Browser") + \
+                ("" if skip_perf_a11y else " / Performance / Accessibility")
+            print(f"  [verify] 4-9: Running {stage_label} in parallel"
+                  f"{' (UI stages reused from prior pass)' if skip_browser or skip_perf_a11y else ''}...")
             evt = ctx.begin_stage("parallel-checks")
 
             # browser_result captures + screenshots stored separately
@@ -1465,26 +1493,31 @@ class VerificationEngine:
             a11y_vr: Optional[VerificationResult]    = None
 
             with ThreadPoolExecutor(max_workers=5) as pool:
-                fut_http   = pool.submit(_run_http_tests, ctx)
-                fut_schema = pool.submit(_run_schema_db_assertion, ctx)
-                fut_browser = pool.submit(_run_browser_and_screenshots, ctx)
-                fut_perf   = pool.submit(_run_performance_check, ctx)
-                fut_a11y   = pool.submit(_run_accessibility_check, ctx)
+                futures = {
+                    pool.submit(_run_http_tests, ctx): "http",
+                    pool.submit(_run_schema_db_assertion, ctx): "schema",
+                }
+                if not skip_browser:
+                    futures[pool.submit(_run_browser_and_screenshots, ctx)] = "browser"
+                if not skip_perf_a11y:
+                    futures[pool.submit(_run_performance_check, ctx)] = "perf"
+                    futures[pool.submit(_run_accessibility_check, ctx)] = "a11y"
 
                 # Collect results as they finish
-                for fut in as_completed([fut_http, fut_schema, fut_browser, fut_perf, fut_a11y]):
+                for fut in as_completed(futures):
+                    kind = futures[fut]
                     try:
                         result = fut.result()
-                        if fut is fut_browser:
+                        if kind == "browser":
                             browser_vr, screenshots = result
                             all_screenshots.extend(s for s in screenshots if s)
-                        elif fut is fut_http:
+                        elif kind == "http":
                             http_vr = result
-                        elif fut is fut_schema:
+                        elif kind == "schema":
                             schema_vr = result
-                        elif fut is fut_perf:
+                        elif kind == "perf":
                             perf_vr = result
-                        elif fut is fut_a11y:
+                        elif kind == "a11y":
                             a11y_vr = result
                     except Exception as exc:
                         results.append(VerificationResult(
@@ -1492,6 +1525,10 @@ class VerificationEngine:
                             diagnostics=[_diag("parallel", f"Parallel stage crashed: {exc}",
                                                ErrorSeverity.MEDIUM, ErrorCategory.RUNTIME)],
                         ))
+
+            if skip_browser and prior_browser_result is not None:
+                ctx.browser_result = prior_browser_result
+                print("  [verify]       browser: reused from prior pass (no frontend files changed)")
 
             ctx.end_stage(evt, StageStatus.PASSED)
 
@@ -1530,9 +1567,29 @@ class VerificationEngine:
         # same underlying issue, so content-hashing it for regression detection
         # would make almost every judge comment look "new" and falsely revert
         # real improvements. It stays informational (printed) only.
-        print("  [verify] 11/11 LLM Judge...")
         all_pre_judge_diags = [d for r in results for d in r.diagnostics]
-        judge_vr = _run_llm_judge(ctx, all_pre_judge_diags, all_screenshots)
+        judge_enabled = self.run_llm_judge if run_llm_judge is None else run_llm_judge
+        has_blocking_diagnostics = any(
+            d.severity in (ErrorSeverity.CRITICAL, ErrorSeverity.HIGH)
+            for d in all_pre_judge_diags
+        )
+        if judge_enabled and not has_blocking_diagnostics:
+            print("  [verify] 11/11 LLM Judge...")
+            judge_vr = _run_llm_judge(ctx, all_pre_judge_diags, all_screenshots)
+            # A skipped provider call is not evidence of a clean UI. Keep
+            # the score N/A unless the judge actually completed a verdict.
+            ctx.llm_judge_evaluated = judge_vr.status != StageStatus.SKIPPED
+        else:
+            reason = (
+                "deferred during repair verification"
+                if not judge_enabled else
+                "deferred until critical/high deterministic failures are resolved"
+            )
+            judge_vr = VerificationResult(
+                stage="llm_judge", status=StageStatus.SKIPPED,
+                metadata={"reason": reason},
+            )
+            print(f"  [verify] 11/11 LLM Judge: SKIPPED ({reason})")
         results.append(judge_vr)
         if judge_vr.diagnostics:
             print(f"  [verify]       LLM Judge: {judge_vr.diagnostics[0].message[:80]}")

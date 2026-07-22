@@ -19,6 +19,7 @@ Storage:
 """
 from __future__ import annotations
 
+import ast
 import hashlib
 import json
 import os
@@ -114,6 +115,64 @@ def _composite_hash(diagnostics: list) -> str:
     messages for the exact-match key."""
     keys = sorted(_composite_key_for_diagnostic(d) for d in diagnostics)
     return hashlib.sha256("\n".join(keys).encode()).hexdigest()[:16]
+
+
+def _python_import_names(content: str) -> tuple[set, set]:
+    modules, symbols = set(), set()
+    tree = ast.parse(content)
+    for node in ast.walk(tree):
+        if isinstance(node, ast.Import):
+            for alias in node.names:
+                modules.add(alias.name)
+        elif isinstance(node, ast.ImportFrom) and node.module:
+            modules.add(node.module)
+            for alias in node.names:
+                symbols.add(alias.name)
+    return modules, symbols
+
+
+def _diff_python_imports(old_content: str, new_content: str) -> tuple[list[str], list[str]]:
+    old_mods, old_syms = _python_import_names(old_content)
+    new_mods, new_syms = _python_import_names(new_content)
+    return sorted(new_mods - old_mods), sorted(new_syms - old_syms)
+
+
+_JS_IMPORT_RE = re.compile(r"import\s+(?:\{([^}]*)\}|(\w+))\s+from\s+['\"]([^'\"]+)['\"]")
+
+
+def _js_import_names(content: str) -> tuple[set, set]:
+    modules, symbols = set(), set()
+    for m in _JS_IMPORT_RE.finditer(content):
+        named, default, module = m.groups()
+        modules.add(module)
+        if named:
+            symbols.update(s.strip().split(" as ")[0].strip() for s in named.split(",") if s.strip())
+        if default:
+            symbols.add(default)
+    return modules, symbols
+
+
+def _diff_js_imports(old_content: str, new_content: str) -> tuple[list[str], list[str]]:
+    old_mods, old_syms = _js_import_names(old_content)
+    new_mods, new_syms = _js_import_names(new_content)
+    return sorted(new_mods - old_mods), sorted(new_syms - old_syms)
+
+
+def _diff_imports(old_content: str, new_content: str, rel_path: str) -> tuple[list[str], list[str]]:
+    """
+    Best-effort: imports/symbols a fix introduced, vs the pre-fix file.
+    NOT consumed by any matching logic in Exp133 -- stored purely to seed a
+    future move from whole-file replay to patch/diff replay. Any parse
+    failure yields empty lists; never raises.
+    """
+    try:
+        if rel_path.endswith(".py"):
+            return _diff_python_imports(old_content, new_content)
+        if rel_path.endswith((".jsx", ".js", ".tsx", ".ts")):
+            return _diff_js_imports(old_content, new_content)
+    except Exception:
+        pass
+    return [], []
 
 
 def _diagnostic_hash(diagnostics: list) -> str:
@@ -251,7 +310,8 @@ class FixCache:
                 best = cf
         return best
 
-    def store(self, diagnostics: list, fix_content: dict, idea: str = "") -> str:
+    def store(self, diagnostics: list, fix_content: dict, idea: str = "",
+              pre_fix_content: Optional[dict] = None) -> str:
         """
         Record a successful fix for this failure pattern.
         Returns the hash key.
@@ -270,6 +330,15 @@ class FixCache:
         signature = " | ".join(sorted(
             _normalize_message(_diag_field(d, "message", "") or "") for d in diagnostics
         ))
+        imports_added, symbols_added = set(), set()
+        if pre_fix_content:
+            for rel_path, new_content in fix_content.items():
+                old_content = pre_fix_content.get(rel_path)
+                if old_content is None:
+                    continue
+                added_mods, added_syms = _diff_imports(old_content, new_content, rel_path)
+                imports_added.update(added_mods)
+                symbols_added.update(added_syms)
         ts = time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime())
         existing = self._data.get(h)
         if existing:
@@ -281,6 +350,8 @@ class FixCache:
             existing["file_basename"] = basename
             existing["normalized_signature"] = signature
             existing["files_changed"] = list(fix_content.keys())
+            existing["imports_added"] = sorted(imports_added)
+            existing["symbols_added"] = sorted(symbols_added)
         else:
             self._data[h] = {
                 "fix_hash":      h,
@@ -294,8 +365,8 @@ class FixCache:
                 "file_basename": basename,
                 "normalized_signature": signature,
                 "files_changed": list(fix_content.keys()),
-                "imports_added": [],
-                "symbols_added": [],
+                "imports_added": sorted(imports_added),
+                "symbols_added": sorted(symbols_added),
             }
         self._save()
         self._rebuild_normalized_index()

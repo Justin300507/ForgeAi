@@ -21,16 +21,24 @@ live process.
 Run directly: python tests/reliability/test_exp071_auth_completeness.py
 """
 import json
+import inspect
 import os
 import shutil
 import sys
 import tempfile
 from contextlib import contextmanager
 from pathlib import Path
+from types import SimpleNamespace
+from unittest import mock
 
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), "..", ".."))
 
-from app.repair.auth_completeness import check_auth_completeness, ensure_auth_completeness
+from app.repair.auth_completeness import (
+    check_auth_completeness,
+    ensure_auth_completeness,
+    ensure_auth_completeness_if_signaled,
+    project_signals_auth,
+)
 import app.repair.auth_completeness as auth_completeness_module
 
 
@@ -102,11 +110,19 @@ _TASK_ROUTES = (
     "def list_tasks():\n"
     "    return []\n"
 )
+_BUSINESS_USER_MODEL = (
+    "from app.database import Base\n"
+    "from sqlalchemy import Column, Integer, String\n\n"
+    "class User(Base):\n"
+    "    __tablename__ = 'business_users'\n"
+    "    id = Column(Integer, primary_key=True)\n"
+    "    display_name = Column(String)\n"
+)
 _FULL_AUTH_ROUTES = (
     "from fastapi import APIRouter\n\n"
     "auth_router = APIRouter()\n\n"
-    "@auth_router.post('/auth/register')\n"
-    "def register():\n"
+    "@auth_router.post('/auth/signup')\n"
+    "def signup():\n"
     "    return {}\n\n"
     "@auth_router.post('/auth/login')\n"
     "def login():\n"
@@ -124,7 +140,7 @@ def test_missing_router_no_auth_file_at_all():
         _write(td, "app/routes/task_routes.py", _TASK_ROUTES)
         r = check_auth_completeness(td)
         assert not r.complete
-        assert "POST /auth/register" in r.missing_required
+        assert "POST /auth/signup" in r.missing_required
         assert "POST /auth/login" in r.missing_required
 
 
@@ -149,7 +165,7 @@ def test_missing_endpoint_login_only():
         ))
         r = check_auth_completeness(td)
         assert not r.complete
-        assert r.missing_required == ["POST /auth/register"]
+        assert r.missing_required == ["POST /auth/signup"]
 
 
 # ---------------------------------------------------------------------------
@@ -212,13 +228,13 @@ def test_duplicate_registration_detected_but_not_fatal_if_one_is_wired():
         _write(td, "app/routes/api_routes.py", (
             "from fastapi import APIRouter\n\n"
             "api_router = APIRouter()\n\n"
-            "@api_router.post('/auth/register')\n"  # duplicate path, different (unwired) router
-            "def api_register():\n"
+            "@api_router.post('/auth/signup')\n"  # duplicate path, different (unwired) router
+            "def api_signup():\n"
             "    return {}\n"
         ))
         r = check_auth_completeness(td)
         assert r.complete, "one correctly-wired registrar is enough"
-        assert any("/auth/register" in d for d in r.duplicate_registrations)
+        assert any("/auth/signup" in d for d in r.duplicate_registrations)
 
 
 # ---------------------------------------------------------------------------
@@ -262,7 +278,7 @@ def test_template_drift_recognized_as_complete_not_overwritten():
             "# no _read_password sentinel, different variable names, a\n"
             "# custom in-memory user store instead of SQLAlchemy.\n"
             "_users = {}\n\n"
-            "@auth_router.post('/auth/register')\n"
+            "@auth_router.post('/auth/signup')\n"
             "def custom_signup(email: str, password: str):\n"
             "    _users[email] = password\n"
             "    return {'ok': True}\n\n"
@@ -298,8 +314,8 @@ def test_false_positive_prefixed_router_still_detected():
         _write(td, "app/routes/auth_routes.py", (
             "from fastapi import APIRouter\n\n"
             "auth_router = APIRouter(prefix='/auth')\n\n"
-            "@auth_router.post('/register')\n"
-            "def register():\n"
+            "@auth_router.post('/signup')\n"
+            "def signup():\n"
             "    return {}\n\n"
             "@auth_router.post('/login')\n"
             "def login():\n"
@@ -318,7 +334,7 @@ def test_false_positive_route_mentioned_only_in_comment_not_detected():
         _write(td, "app/routes/task_routes.py", (
             "from fastapi import APIRouter\n\n"
             "task_router = APIRouter()\n\n"
-            "# TODO: someday add @auth_router.post(\"/auth/register\") here\n"
+            "# TODO: someday add @auth_router.post(\"/auth/signup\") here\n"
             "\"\"\"This app should eventually support POST /auth/login too.\"\"\"\n\n"
             "@task_router.get('/tasks')\n"
             "def list_tasks():\n"
@@ -339,8 +355,8 @@ def test_false_positive_trailing_slash_normalized():
         _write(td, "app/routes/auth_routes.py", (
             "from fastapi import APIRouter\n\n"
             "auth_router = APIRouter()\n\n"
-            "@auth_router.post('/auth/register/')\n"
-            "def register():\n"
+            "@auth_router.post('/auth/signup/')\n"
+            "def signup():\n"
             "    return {}\n\n"
             "@auth_router.post('/auth/login/')\n"
             "def login():\n"
@@ -422,6 +438,164 @@ def test_ensure_auth_completeness_is_noop_on_already_complete_project():
         assert after_mtime == original_mtime
 
 
+def test_auth_convergence_skips_auth_free_project_without_writing_routes():
+    with _tmp_project() as td, _isolated_telemetry_log() as log_path:
+        os.remove(os.path.join(td, "app", "models", "user.py"))
+        _write(td, "app/main.py", _MAIN_NO_AUTH)
+        _write(td, "app/routes/task_routes.py", _TASK_ROUTES)
+
+        result = ensure_auth_completeness_if_signaled(
+            td, "auth_free", {"api_endpoints": [{"path": "/tasks"}]},
+        )
+
+        assert result == {"status": "skipped", "reason": "auth_not_signaled"}
+        assert not Path(td, "app", "routes", "auth_routes.py").exists()
+        assert not log_path.exists(), "a skipped app must not emit auth-repair telemetry"
+
+
+def test_auth_convergence_repairs_when_credentialed_user_model_signals_auth():
+    with _tmp_project() as td, _isolated_telemetry_log() as log_path:
+        _write(td, "app/main.py", _MAIN_NO_AUTH)
+        _write(td, "app/routes/task_routes.py", _TASK_ROUTES)
+
+        result = ensure_auth_completeness_if_signaled(td, "user_model_auth", {"api_endpoints": []})
+
+        assert result["status"] == "repaired"
+        assert result["after"].complete
+        assert log_path.exists()
+
+
+def test_architecture_auth_endpoint_signals_convergence_without_model_file():
+    with _tmp_project() as td:
+        os.remove(os.path.join(td, "app", "models", "user.py"))
+        _write(td, "app/main.py", _MAIN_NO_AUTH)
+        _write(td, "app/routes/task_routes.py", _TASK_ROUTES)
+
+        assert project_signals_auth(
+            td, {"api_endpoints": [{"method": "POST", "path": "/auth/login"}]},
+        )
+
+
+def test_author_path_and_business_user_model_do_not_signal_auth():
+    with _tmp_project() as td:
+        _write(td, "app/models/user.py", _BUSINESS_USER_MODEL)
+        _write(td, "app/main.py", _MAIN_NO_AUTH)
+        _write(td, "app/routes/author_routes.py", (
+            "from fastapi import APIRouter\n"
+            "author_router = APIRouter()\n"
+            "@author_router.get('/author')\n"
+            "def author(): return {}\n"
+        ))
+
+        assert not project_signals_auth(
+            td,
+            {"api_endpoints": [{"method": "GET", "path": "/author"}],
+             "database_entities": [{"name": "User", "fields": ["id", "display_name"]}]},
+        )
+
+
+def _v15_context(project_path: str, architecture: dict):
+    from app.core.context import GenerationContext
+    return GenerationContext("exp071", "test", Path(project_path), "exp071_app"), architecture
+
+
+def test_v15_initial_deterministic_pass_keeps_business_user_app_auth_free():
+    from app.core.pipeline import V15Pipeline
+
+    with _tmp_project() as td:
+        _write(td, "app/models/user.py", _BUSINESS_USER_MODEL)
+        _write(td, "app/main.py", _MAIN_NO_AUTH)
+        _write(td, "app/routes/task_routes.py", _TASK_ROUTES)
+        ctx, architecture = _v15_context(td, {
+            "api_endpoints": [{"method": "GET", "path": "/tasks"}],
+            "database_entities": [{"name": "User", "fields": ["id", "display_name"]}],
+        })
+        ctx.architecture = architecture
+
+        V15Pipeline()._deterministic_patch(ctx)
+
+        assert not Path(td, "app", "routes", "auth_routes.py").exists()
+        assert not Path(td, "app", "utils", "auth.py").exists()
+        assert ctx.prevention_counts["auth_completeness"] == 0
+
+
+def test_v15_initial_deterministic_pass_enables_credentialed_auth_model():
+    from app.core.pipeline import V15Pipeline
+
+    with _tmp_project() as td:
+        _write(td, "app/main.py", _MAIN_NO_AUTH)
+        _write(td, "app/routes/task_routes.py", _TASK_ROUTES)
+        ctx, architecture = _v15_context(td, {
+            "api_endpoints": [{"method": "POST", "path": "/auth/login"}],
+            "database_entities": [{"name": "User", "fields": ["email", "hashed_password"]}],
+        })
+        ctx.architecture = architecture
+
+        V15Pipeline()._deterministic_patch(ctx)
+
+        assert Path(td, "app", "routes", "auth_routes.py").exists()
+
+
+def test_v15_repair_convergence_keeps_business_user_app_auth_free_without_network():
+    from app.core.context import Diagnostic, ErrorCategory, ErrorSeverity, VerificationResult, StageStatus, FixStrategy
+    from app.repair.orchestrator import FixOrchestrator
+    from app.retry.manager import StrategyConfig
+
+    class _NoNetworkVerifier:
+        def run(self, _ctx, **_kwargs):
+            return None
+
+    class _NoNetworkScorer:
+        def score(self, _ctx, **_kwargs):
+            return SimpleNamespace(overall=0.0)
+
+        def print_report(self, _score):
+            return None
+
+    with _tmp_project() as td:
+        _write(td, "app/models/user.py", _BUSINESS_USER_MODEL)
+        _write(td, "app/main.py", _MAIN_NO_AUTH)
+        _write(td, "app/routes/task_routes.py", _TASK_ROUTES)
+        ctx, architecture = _v15_context(td, {
+            "api_endpoints": [{"method": "GET", "path": "/tasks"}],
+            "database_entities": [{"name": "User", "fields": ["id", "display_name"]}],
+        })
+        ctx.architecture = architecture
+        ctx.static_results = [VerificationResult(
+            stage="synthetic", status=StageStatus.FAILED,
+            diagnostics=[Diagnostic(
+                error_id="exp071", category=ErrorCategory.SYNTAX,
+                severity=ErrorSeverity.LOW, source="test", message="synthetic repair trigger",
+                file_path="app/routes/task_routes.py",
+            )],
+        )]
+        config = StrategyConfig(1, FixStrategy.PATCH_FILE, "test", "test")
+        orchestrator = FixOrchestrator(_NoNetworkVerifier(), _NoNetworkScorer())
+
+        with mock.patch("app.repair.orchestrator._apply_fix_group", return_value=(["app/routes/task_routes.py"], {})):
+            orchestrator.run_attempt(ctx, config)
+
+        assert not Path(td, "app", "routes", "auth_routes.py").exists()
+        assert not Path(td, "app", "utils", "auth.py").exists()
+
+
+def test_v15_converges_auth_after_initial_and_repair_preflight_passes():
+    """Keep the two V15 convergence points from drifting apart."""
+    from app.core.pipeline import V15Pipeline
+    from app.repair.orchestrator import FixOrchestrator
+
+    initial_source = inspect.getsource(V15Pipeline._deterministic_patch)
+    repair_source = inspect.getsource(FixOrchestrator.run_attempt)
+
+    assert "ensure_auth_completeness_if_signaled" in initial_source
+    assert initial_source.index("preflight.run") < initial_source.index("auth_result = ensure_auth_completeness_if_signaled")
+    assert "skip_protected_injections=not auth_signaled" in initial_source
+    assert 'counts["auth_completeness"]' in initial_source
+    assert "ensure_auth_completeness_if_signaled" in repair_source
+    assert repair_source.index("preflight.run") < repair_source.index("ensure_auth_completeness_if_signaled(\n")
+    assert "skip_protected_injections=not auth_signaled" in repair_source
+
+
 # ---------------------------------------------------------------------------
 # Replay: Experiment 068's forensic bundles (backend/failure_memory/bundles/)
 #
@@ -461,14 +635,15 @@ def test_replay_exp068_bundle_missing_auth_register_404():
 
         before = check_auth_completeness(td)
         assert not before.complete
-        assert "POST /auth/register" in before.missing_required, (
-            "this is the exact endpoint 9/14 real Exp068 bundles recorded as 404"
+        assert "POST /auth/signup" in before.missing_required, (
+            "the anchor endpoint was later renamed /auth/register -> /auth/signup; "
+            "this is the same missing-auth-surface shape 9/14 real Exp068 bundles recorded as 404"
         )
 
         result = ensure_auth_completeness(td, "todo_list_app_replay")
         assert result["status"] == "repaired"
         assert result["after"].complete
-        assert "POST /auth/register" not in result["after"].missing_required
+        assert "POST /auth/signup" not in result["after"].missing_required
 
 
 def test_replay_exp068_bundles_non_auth_symptoms_correctly_ignored():

@@ -17,6 +17,10 @@ client = OpenAI(
 )
 
 DEFAULT_MODEL = "gpt-oss-120b"
+# Large generation gets exactly one provider request before ai_provider moves
+# to its independent fallback chain.  Keep this value in the executable tests
+# so a future retry loop cannot silently reintroduce multi-minute stalls.
+_MAX_LARGE_GENERATION_ATTEMPTS = 1
 
 
 def generate(
@@ -24,42 +28,21 @@ def generate(
     max_tokens: int = 4000,
     model: str = DEFAULT_MODEL
 ):
-    # For large-output tasks (backend/frontend generation), disable reasoning to
-    # avoid ~60% of the token budget being consumed by thinking tokens.
-    # Use temperature=1 which bypasses thinking on Cerebras reasoning models.
-    # For small-output tasks (fixes, critic), reasoning is fine and stays on.
-    use_no_reasoning = max_tokens >= 8000
+    # For large-output tasks (backend/frontend generation), keep reasoning low
+    # so completion budget remains available for generated application code.
+    use_low_reasoning = max_tokens >= 8000
 
     kwargs = dict(
         model=model,
         messages=[{"role": "user", "content": prompt}],
         max_completion_tokens=max_tokens,
-        temperature=1 if use_no_reasoning else 0.2,
+        temperature=0.2,
     )
-    # Attempt to disable reasoning (thinking) for large-output tasks.
-    # Try several known Cerebras thinking-disable parameter formats.
-    if use_no_reasoning:
-        response = None
-        for extra in [
-            {"thinking": {"type": "disabled"}},           # format A
-            {"thinking": {"budget_tokens": 0}},           # format B
-            {"budget_tokens": 0},                         # format C (top-level)
-        ]:
-            try:
-                response = client.chat.completions.create(**kwargs, extra_body=extra)
-                # Check if reasoning was actually reduced
-                if (hasattr(response, "usage") and response.usage
-                        and hasattr(response.usage, "completion_tokens_details")
-                        and response.usage.completion_tokens_details):
-                    r = response.usage.completion_tokens_details.reasoning_tokens or 0
-                    # If still high reasoning AND hit the cap, retry with next format
-                    if r > kwargs["max_completion_tokens"] * 0.4 and response.usage.completion_tokens == kwargs["max_completion_tokens"]:
-                        continue
-                break
-            except Exception:
-                continue
-        if response is None:
-            response = client.chat.completions.create(**kwargs)
+    # Cerebras documents reasoning_effort for GPT-OSS through its OpenAI-
+    # compatible client.  One documented request is both cheaper and bounded;
+    # failures propagate immediately to ai_provider's provider fallback.
+    if use_low_reasoning:
+        response = client.chat.completions.create(**kwargs, reasoning_effort="low")
     else:
         response = client.chat.completions.create(**kwargs)
 

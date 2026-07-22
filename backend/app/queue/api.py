@@ -25,19 +25,34 @@ Typical flow:
 """
 from __future__ import annotations
 
-from fastapi import APIRouter, HTTPException
-from pydantic import BaseModel
+import os
+import secrets
+
+from fastapi import APIRouter, Depends, Header, HTTPException, status
+from pydantic import BaseModel, ConfigDict
 from typing import Optional
 
-from app.queue.job_queue import forge_queue
+from app.queue.job_queue import forge_queue, UnsupportedQueueConfig, validate_v15_queue_config
 from app.queue.dispatcher import dispatcher
+from app.dependencies.auth import get_current_user
 
-router = APIRouter(prefix="/queue", tags=["queue"])
+# Queue submission exposes paid generation and worker control.  Keep the
+# authentication boundary on the router so future queue routes cannot
+# accidentally be added without JWT enforcement.  Internal workers invoke
+# queue/dispatcher objects directly and do not traverse this HTTP router.
+router = APIRouter(
+    prefix="/queue",
+    tags=["queue"],
+    dependencies=[Depends(get_current_user)],
+)
 
 
 # ── Request/Response models ───────────────────────────────────────────────────
 
 class SubmitRequest(BaseModel):
+    # A caller must not be able to smuggle an ownership or privilege field into
+    # a paid-generation request; ownership is derived only from the JWT user.
+    model_config = ConfigDict(extra="forbid")
     idea:     str
     provider: str = "auto"
     config:   dict = {}
@@ -55,10 +70,27 @@ class WorkerScaleRequest(BaseModel):
     n_workers: int
 
 
+def require_queue_operator(
+    operator_token: Optional[str] = Header(default=None, alias="X-Forge-Queue-Operator"),
+) -> None:
+    """Gate global worker/PID controls behind an explicitly configured secret.
+
+    JWT authentication remains required by the router.  This second boundary
+    prevents any ordinary application user from operating the shared worker
+    pool.  An unset token disables these routes rather than accidentally
+    making them public.
+    """
+    expected = os.getenv("FORGE_QUEUE_OPERATOR_TOKEN", "")
+    if not expected:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Not found")
+    if not operator_token or not secrets.compare_digest(operator_token, expected):
+        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Forbidden")
+
+
 # ── Job endpoints ─────────────────────────────────────────────────────────────
 
 @router.post("/submit", response_model=SubmitResponse, summary="Enqueue a generation job")
-def submit_job(req: SubmitRequest):
+def submit_job(req: SubmitRequest, current_user=Depends(get_current_user)):
     """
     Add a ForgeAI generation job to the queue.
 
@@ -68,8 +100,16 @@ def submit_job(req: SubmitRequest):
     if not req.idea or len(req.idea.strip()) < 5:
         raise HTTPException(400, "idea must be at least 5 characters")
 
-    job_id = forge_queue.enqueue(idea=req.idea.strip(), provider=req.provider, config=req.config)
-    stats  = forge_queue.stats()
+    try:
+        config = validate_v15_queue_config(req.config)
+    except UnsupportedQueueConfig:
+        raise HTTPException(400, "unsupported queue configuration")
+    # Ownership is always derived from the authenticated user; request input
+    # deliberately has no owner field.
+    job_id = forge_queue.enqueue(
+        idea=req.idea.strip(), provider=req.provider, config=config, owner_id=current_user.id,
+    )
+    stats  = forge_queue.stats_for_owner(current_user.id)
     queue_depth = stats.get("pending", 0)
 
     return SubmitResponse(
@@ -81,7 +121,7 @@ def submit_job(req: SubmitRequest):
 
 
 @router.get("/status/{job_id}", summary="Get job status and result")
-def job_status(job_id: str):
+def job_status(job_id: str, current_user=Depends(get_current_user)):
     """
     Poll this endpoint after submitting a job.
 
@@ -91,20 +131,22 @@ def job_status(job_id: str):
       - error:  error message (only when status=failed)
       - worker_id, attempts, timing fields
     """
-    job = forge_queue.get_job(job_id)
+    job = forge_queue.get_job_for_owner(job_id, current_user.id)
     if not job:
-        raise HTTPException(404, f"Job {job_id!r} not found")
+        # Do not distinguish a missing job from a foreign job (IDOR defense).
+        raise HTTPException(404, "Job not found")
     return job.to_api()
 
 
 @router.get("/jobs", summary="List recent jobs")
-def list_jobs(status: Optional[str] = None, limit: int = 20):
+def list_jobs(status: Optional[str] = None, limit: int = 20,
+              current_user=Depends(get_current_user)):
     """
     List recent jobs, optionally filtered by status.
 
     status options: pending | running | completed | failed
     """
-    jobs = forge_queue.list_jobs(status=status, limit=limit)
+    jobs = forge_queue.list_jobs_for_owner(current_user.id, status=status, limit=limit)
     return {
         "jobs": [j.to_api() for j in jobs],
         "count": len(jobs),
@@ -112,15 +154,15 @@ def list_jobs(status: Optional[str] = None, limit: int = 20):
 
 
 @router.get("/stats", summary="Queue stats by status")
-def queue_stats():
+def queue_stats(current_user=Depends(get_current_user)):
     """Return counts of jobs in each status bucket."""
-    return forge_queue.stats()
+    return forge_queue.stats_for_owner(current_user.id)
 
 
 # ── Worker management ─────────────────────────────────────────────────────────
 
 @router.post("/workers/start", summary="Start N worker processes")
-def start_workers(req: WorkerStartRequest):
+def start_workers(req: WorkerStartRequest, _operator=Depends(require_queue_operator)):
     """
     Spawn N ForgeAI worker processes. Each worker is an independent OS process
     that polls the queue and runs the full generation pipeline.
@@ -141,7 +183,8 @@ def start_workers(req: WorkerStartRequest):
 
 
 @router.post("/workers/stop", summary="Stop all workers gracefully")
-def stop_workers(worker_id: Optional[str] = None, force: bool = False):
+def stop_workers(worker_id: Optional[str] = None, force: bool = False,
+                 _operator=Depends(require_queue_operator)):
     """
     Stop workers gracefully (SIGTERM, waits 30s, then SIGKILL).
 
@@ -157,7 +200,7 @@ def stop_workers(worker_id: Optional[str] = None, force: bool = False):
 
 
 @router.post("/workers/scale", summary="Resize the worker pool")
-def scale_workers(req: WorkerScaleRequest):
+def scale_workers(req: WorkerScaleRequest, _operator=Depends(require_queue_operator)):
     """
     Resize the worker pool to exactly n_workers. Starts or stops workers as needed.
     """
@@ -168,7 +211,7 @@ def scale_workers(req: WorkerScaleRequest):
 
 
 @router.get("/workers/status", summary="Current worker pool state")
-def workers_status():
+def workers_status(_operator=Depends(require_queue_operator)):
     """
     Returns the current worker pool: how many are alive, their PIDs,
     started_at timestamps, and whether they're running.
@@ -177,7 +220,7 @@ def workers_status():
 
 
 @router.post("/workers/reclaim", summary="Re-queue stale jobs (manual trigger)")
-def reclaim_stale():
+def reclaim_stale(_operator=Depends(require_queue_operator)):
     """
     Manually trigger stale-job reclaim. Workers do this automatically every 30s,
     but you can call it immediately if you know a worker just crashed.

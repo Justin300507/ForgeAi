@@ -886,7 +886,7 @@ Before returning:
 8. Verify every form has placeholder text, a loading state on submit, and toast feedback
 9. Verify every data-fetching page has a loading skeleton
 10. Verify dashboard stats come from the /stats/summary API endpoint
-11. Verify src/api.js uses baseURL: import.meta.env.VITE_API_URL || '' — this reads the Render backend URL when deployed to Cloudflare, and falls back to relative URLs for local dev with the Vite proxy
+11. Verify src/api.js uses baseURL: import.meta.env.VITE_API_URL || 'http://localhost:8000' — this reads the deployed backend URL in production and contacts FastAPI directly in local development. Do NOT proxy `/` through Vite; it prevents the React SPA entrypoint from loading.
 12. Verify every auth error uses parseError() helper — never display raw detail or use plain || fallback
 13. Verify signup page validates password.length >= 8 before submitting, with visible hint text
 14. Verify App.jsx has PrivateRoute wrapping all authenticated routes
@@ -903,4 +903,6 @@ Before returning:
 25. Verify this style's MOTION INTENSITY guidance (stagger timing, which entrance animation to prefer) was actually followed, not just the base motion tokens by default
 26. If a LAYOUT OVERRIDE — TOP-NAV SHELL section appears in the design system above, verify NO page renders a sidebar or ml-56 margin — every authenticated page uses the sticky top-nav shell with the centered max-w-6xl content column
 27. Verify the EXPERIENCE BLUEPRINT's delight moment and empty-state treatment are actually implemented (using the existing motion tokens), not just the generic empty-state fallback
+28. Verify every `<Link>`, `<NavLink>`, and `navigate('/...')` target is declared as an exact `<Route path="...">` in App.jsx. Never rely on the wildcard redirect for a navigation control.
+29. Verify every navigation component you generate is rendered by the authenticated Layout/App shell, and every authenticated route wraps that same shell. Do not generate an unused Sidebar/Header.
 {checklist_28_landing_page}{checklist_29_motion_library}"""

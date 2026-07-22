@@ -40,12 +40,31 @@ _DB_PATH = Path(__file__).parent.parent.parent / "failure_memory" / "job_queue.d
 
 HEARTBEAT_TIMEOUT_S = 60   # reclaim jobs whose worker hasn't pulsed in 60s
 MAX_ATTEMPTS        = 3    # retry up to 3x before marking permanently failed
+V15_QUEUE_CONFIG_KEYS = frozenset({
+    "deploy", "deploy_to", "style_override", "motion_intensity", "include_landing_page",
+})
+
+
+class UnsupportedQueueConfig(ValueError):
+    """A persisted queue job contains options the V15 queue runner cannot honor."""
+
+
+def validate_v15_queue_config(config: dict | None) -> dict:
+    """Return a shallow safe config copy or reject keys rather than dropping them."""
+    value = config or {}
+    if not isinstance(value, dict) or set(value) - V15_QUEUE_CONFIG_KEYS:
+        raise UnsupportedQueueConfig("unsupported queue configuration")
+    return dict(value)
 
 
 @dataclass
 class Job:
     id:            str
     idea:          str
+    # Jobs created before queue ownership was introduced intentionally retain
+    # a NULL owner.  They remain runnable by local workers but are never
+    # exposed through owner-scoped HTTP reads.
+    owner_id:      Optional[str] = None
     provider:      str          = "auto"
     config:        dict         = field(default_factory=dict)
     status:        str          = "pending"   # pending | running | completed | failed
@@ -58,6 +77,12 @@ class Job:
     heartbeat_at:  Optional[str] = None
     result_json:   Optional[str] = None
     error:         Optional[str] = None
+    # Watchdog observability is deliberately metadata-only.  Never persist a
+    # stage message here: provider exceptions and prompts can contain secrets.
+    last_stage:     Optional[str] = None
+    last_stage_at:  Optional[str] = None
+    deadline_at:    Optional[str] = None
+    deadline_exceeded: bool      = False
 
     # Result deserialized on demand
     @property
@@ -105,6 +130,7 @@ class SQLiteQueue:
                 CREATE TABLE IF NOT EXISTS jobs (
                     id           TEXT PRIMARY KEY,
                     idea         TEXT NOT NULL,
+                    owner_id     TEXT,
                     provider     TEXT DEFAULT 'auto',
                     config_json  TEXT DEFAULT '{}',
                     status       TEXT DEFAULT 'pending',
@@ -116,19 +142,39 @@ class SQLiteQueue:
                     completed_at TEXT,
                     heartbeat_at TEXT,
                     result_json  TEXT,
-                    error        TEXT
+                    error        TEXT,
+                    last_stage   TEXT,
+                    last_stage_at TEXT,
+                    deadline_at  TEXT,
+                    deadline_exceeded INTEGER DEFAULT 0
                 )
             """)
+            # Existing installs predate watchdog state.  SQLite does not add
+            # columns through CREATE TABLE IF NOT EXISTS, so keep this small,
+            # additive migration idempotent and transactionally local.
+            columns = {row["name"] for row in conn.execute("PRAGMA table_info(jobs)")}
+            for name, ddl in (
+                ("owner_id", "TEXT"),
+                ("last_stage", "TEXT"),
+                ("last_stage_at", "TEXT"),
+                ("deadline_at", "TEXT"),
+                ("deadline_exceeded", "INTEGER DEFAULT 0"),
+            ):
+                if name not in columns:
+                    conn.execute(f"ALTER TABLE jobs ADD COLUMN {name} {ddl}")
             conn.execute("CREATE INDEX IF NOT EXISTS idx_status ON jobs(status, created_at)")
+            conn.execute("CREATE INDEX IF NOT EXISTS idx_owner_created ON jobs(owner_id, created_at)")
 
-    def enqueue(self, idea: str, provider: str = "auto", config: dict | None = None) -> str:
+    def enqueue(self, idea: str, provider: str = "auto", config: dict | None = None,
+                owner_id: str | int | None = None) -> str:
         job_id = str(uuid.uuid4())
         now    = time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime())
         with self._connect() as conn:
             conn.execute("""
-                INSERT INTO jobs (id, idea, provider, config_json, status, created_at, max_attempts)
-                VALUES (?, ?, ?, ?, 'pending', ?, ?)
-            """, (job_id, idea, provider, json.dumps(config or {}), now, MAX_ATTEMPTS))
+                INSERT INTO jobs (id, idea, owner_id, provider, config_json, status, created_at, max_attempts)
+                VALUES (?, ?, ?, ?, ?, 'pending', ?, ?)
+            """, (job_id, idea, str(owner_id) if owner_id is not None else None,
+                  provider, json.dumps(config or {}), now, MAX_ATTEMPTS))
         return job_id
 
     def dequeue(self, worker_id: str) -> Optional[Job]:
@@ -169,6 +215,27 @@ class SQLiteQueue:
         now = time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime())
         with self._connect() as conn:
             conn.execute("UPDATE jobs SET heartbeat_at=? WHERE id=?", (now, job_id))
+
+    def record_progress(self, job_id: str, stage: str) -> None:
+        """Persist an allowlisted V15 stage for status polling and watchdog diagnostics."""
+        now = time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime())
+        with self._connect() as conn:
+            conn.execute(
+                "UPDATE jobs SET last_stage=?, last_stage_at=?, heartbeat_at=? WHERE id=?",
+                (stage, now, now, job_id),
+            )
+
+    def mark_deadline_exceeded(self, job_id: str, stage: str, deadline_at: str) -> None:
+        """Fail a timed-out job terminally; watchdog failures must not auto-retry."""
+        now = time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime())
+        error = f"deadline_exceeded at stage {stage}"
+        with self._connect() as conn:
+            conn.execute("""
+                UPDATE jobs
+                SET status='failed', completed_at=?, error=?, last_stage=?,
+                    last_stage_at=?, deadline_at=?, deadline_exceeded=1
+                WHERE id=?
+            """, (now, error, stage, now, deadline_at, job_id))
 
     def complete(self, job_id: str, result: dict) -> None:
         now = time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime())
@@ -238,6 +305,14 @@ class SQLiteQueue:
             if conn is None:
                 _conn.close()
 
+    def get_job_for_owner(self, job_id: str, owner_id: str | int) -> Optional[Job]:
+        """Return a job only when it belongs to the authenticated owner."""
+        with self._connect() as conn:
+            row = conn.execute(
+                "SELECT * FROM jobs WHERE id=? AND owner_id=?", (job_id, str(owner_id))
+            ).fetchone()
+            return _row_to_job(row) if row else None
+
     def list_jobs(self, status: str | None = None, limit: int = 50) -> list[Job]:
         with self._connect() as conn:
             if status:
@@ -249,6 +324,22 @@ class SQLiteQueue:
                 rows = conn.execute(
                     "SELECT * FROM jobs ORDER BY created_at DESC LIMIT ?",
                     (limit,)
+                ).fetchall()
+            return [_row_to_job(r) for r in rows]
+
+    def list_jobs_for_owner(self, owner_id: str | int, status: str | None = None,
+                            limit: int = 50) -> list[Job]:
+        """List only jobs owned by one authenticated user."""
+        with self._connect() as conn:
+            if status:
+                rows = conn.execute(
+                    "SELECT * FROM jobs WHERE owner_id=? AND status=? ORDER BY created_at DESC LIMIT ?",
+                    (str(owner_id), status, limit),
+                ).fetchall()
+            else:
+                rows = conn.execute(
+                    "SELECT * FROM jobs WHERE owner_id=? ORDER BY created_at DESC LIMIT ?",
+                    (str(owner_id), limit),
                 ).fetchall()
             return [_row_to_job(r) for r in rows]
 
@@ -268,6 +359,22 @@ class SQLiteQueue:
             "total":     sum(counts.values()),
         }
 
+    def stats_for_owner(self, owner_id: str | int) -> dict:
+        """Return status counts for one owner without leaking global queue load."""
+        with self._connect() as conn:
+            counts = {
+                row["status"]: row["cnt"]
+                for row in conn.execute(
+                    "SELECT status, COUNT(*) as cnt FROM jobs WHERE owner_id=? GROUP BY status",
+                    (str(owner_id),),
+                ).fetchall()
+            }
+        return {
+            "pending": counts.get("pending", 0), "running": counts.get("running", 0),
+            "completed": counts.get("completed", 0), "failed": counts.get("failed", 0),
+            "total": sum(counts.values()),
+        }
+
 
 def _row_to_job(row: sqlite3.Row) -> Job:
     config = {}
@@ -278,6 +385,7 @@ def _row_to_job(row: sqlite3.Row) -> Job:
     return Job(
         id            = row["id"],
         idea          = row["idea"],
+        owner_id      = row["owner_id"] if "owner_id" in row.keys() else None,
         provider      = row["provider"] or "auto",
         config        = config,
         status        = row["status"],
@@ -290,6 +398,10 @@ def _row_to_job(row: sqlite3.Row) -> Job:
         heartbeat_at  = row["heartbeat_at"],
         result_json   = row["result_json"],
         error         = row["error"],
+        last_stage    = row["last_stage"] if "last_stage" in row.keys() else None,
+        last_stage_at = row["last_stage_at"] if "last_stage_at" in row.keys() else None,
+        deadline_at   = row["deadline_at"] if "deadline_at" in row.keys() else None,
+        deadline_exceeded = bool(row["deadline_exceeded"]) if "deadline_exceeded" in row.keys() else False,
     )
 
 
@@ -310,10 +422,12 @@ class RedisQueue:
         self._QUEUE_KEY  = "forgeai:queue:pending"
         self._JOBS_KEY   = "forgeai:jobs"       # hash: job_id → json
 
-    def enqueue(self, idea: str, provider: str = "auto", config: dict | None = None) -> str:
+    def enqueue(self, idea: str, provider: str = "auto", config: dict | None = None,
+                owner_id: str | int | None = None) -> str:
         job_id = str(uuid.uuid4())
         job = Job(
-            id=job_id, idea=idea, provider=provider, config=config or {},
+            id=job_id, idea=idea, owner_id=str(owner_id) if owner_id is not None else None,
+            provider=provider, config=config or {},
             status="pending", created_at=time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime())
         )
         self._r.hset(self._JOBS_KEY, job_id, json.dumps(asdict(job), default=str))
@@ -342,6 +456,26 @@ class RedisQueue:
             data["heartbeat_at"] = time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime())
             self._r.hset(self._JOBS_KEY, job_id, json.dumps(data, default=str))
 
+    def record_progress(self, job_id: str, stage: str) -> None:
+        raw = self._r.hget(self._JOBS_KEY, job_id)
+        if raw:
+            data = json.loads(raw)
+            now = time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime())
+            data.update(last_stage=stage, last_stage_at=now, heartbeat_at=now)
+            self._r.hset(self._JOBS_KEY, job_id, json.dumps(data, default=str))
+
+    def mark_deadline_exceeded(self, job_id: str, stage: str, deadline_at: str) -> None:
+        raw = self._r.hget(self._JOBS_KEY, job_id)
+        if raw:
+            data = json.loads(raw)
+            data.update(
+                status="failed", completed_at=time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime()),
+                error=f"deadline_exceeded at stage {stage}", last_stage=stage,
+                last_stage_at=time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime()),
+                deadline_at=deadline_at, deadline_exceeded=True,
+            )
+            self._r.hset(self._JOBS_KEY, job_id, json.dumps(data, default=str))
+
     def complete(self, job_id: str, result: dict) -> None:
         raw = self._r.hget(self._JOBS_KEY, job_id)
         if raw:
@@ -366,7 +500,67 @@ class RedisQueue:
             self._r.hset(self._JOBS_KEY, job_id, json.dumps(data, default=str))
 
     def reclaim_stale(self, timeout_s: int = HEARTBEAT_TIMEOUT_S) -> int:
-        return 0  # Redis TTL + keyspace notifications handle this better; skip for now
+        """Requeue or fail stale running jobs, matching SQLiteQueue semantics.
+
+        Redis hashes do not gain reliable expiry behavior merely by storing a
+        heartbeat timestamp, so recover explicitly from the persisted job
+        records.  Worker loops may call this concurrently; duplicate recovery
+        is harmless because only jobs still marked ``running`` are considered.
+        """
+        cutoff_ts = time.time() - timeout_s
+        cutoff_str = time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime(cutoff_ts))
+        reclaimed = 0
+        for raw in self._r.hvals(self._JOBS_KEY):
+            try:
+                data = json.loads(raw)
+            except (TypeError, ValueError):
+                continue
+            job_id = data.get("id")
+            if job_id and self._reclaim_one_stale(job_id, cutoff_str):
+                reclaimed += 1
+        return reclaimed
+
+    def _reclaim_one_stale(self, job_id: str, cutoff_str: str) -> bool:
+        """Atomically reclaim one stale Redis job using optimistic CAS.
+
+        Redis stores queue jobs in one hash, so WATCH protects the hash while
+        this method re-reads the specific job field and queues its replacement.
+        If another worker changes the hash first, EXEC aborts and we re-check
+        state; this prevents duplicate rpush operations.
+        """
+        for _ in range(3):
+            pipe = self._r.pipeline()
+            try:
+                pipe.watch(self._JOBS_KEY)
+                raw = pipe.hget(self._JOBS_KEY, job_id)
+                if not raw:
+                    return False
+                data = json.loads(raw)
+                heartbeat_at = data.get("heartbeat_at")
+                if data.get("status") != "running" or not heartbeat_at or heartbeat_at >= cutoff_str:
+                    return False
+                if data.get("attempts", 0) >= data.get("max_attempts", MAX_ATTEMPTS):
+                    data.update(status="failed", error="Worker crashed — max attempts reached")
+                    requeue = False
+                else:
+                    data.update(status="pending", worker_id=None, started_at=None, heartbeat_at=None)
+                    requeue = True
+                pipe.multi()
+                pipe.hset(self._JOBS_KEY, job_id, json.dumps(data, default=str))
+                if requeue:
+                    pipe.rpush(self._QUEUE_KEY, job_id)
+                pipe.execute()
+                return True
+            except Exception as exc:
+                # redis-py raises WatchError on a competing write.  Avoid a
+                # hard dependency in the optional Redis backend while never
+                # swallowing unrelated client/serialization failures.
+                if type(exc).__name__ == "WatchError":
+                    continue
+                raise
+            finally:
+                pipe.reset()
+        return False
 
     def get_job(self, job_id: str, **_) -> Optional[Job]:
         raw = self._r.hget(self._JOBS_KEY, job_id)
@@ -374,6 +568,10 @@ class RedisQueue:
             return None
         data = json.loads(raw)
         return Job(**{k: data.get(k) for k in Job.__dataclass_fields__})
+
+    def get_job_for_owner(self, job_id: str, owner_id: str | int) -> Optional[Job]:
+        job = self.get_job(job_id)
+        return job if job and job.owner_id == str(owner_id) else None
 
     def list_jobs(self, status: str | None = None, limit: int = 50) -> list[Job]:
         all_raw = self._r.hvals(self._JOBS_KEY)
@@ -388,11 +586,25 @@ class RedisQueue:
         jobs.sort(key=lambda j: j.created_at, reverse=True)
         return jobs[:limit]
 
+    def list_jobs_for_owner(self, owner_id: str | int, status: str | None = None,
+                            limit: int = 50) -> list[Job]:
+        owner = str(owner_id)
+        jobs = [job for job in self.list_jobs(status=status, limit=10000) if job.owner_id == owner]
+        return jobs[:limit]
+
     def stats(self) -> dict:
         jobs = self.list_jobs(limit=10000)
         counts: dict[str, int] = {}
         for j in jobs:
             counts[j.status] = counts.get(j.status, 0) + 1
+        return {**{"pending": 0, "running": 0, "completed": 0, "failed": 0}, **counts,
+                "total": len(jobs)}
+
+    def stats_for_owner(self, owner_id: str | int) -> dict:
+        jobs = self.list_jobs_for_owner(owner_id, limit=10000)
+        counts: dict[str, int] = {}
+        for job in jobs:
+            counts[job.status] = counts.get(job.status, 0) + 1
         return {**{"pending": 0, "running": 0, "completed": 0, "failed": 0}, **counts,
                 "total": len(jobs)}
 

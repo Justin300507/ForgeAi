@@ -604,6 +604,17 @@ _PROTECTED_AUTH_FILES = {
     "app/utils/auth.py", "app\\utils\\auth.py",
 }
 
+_FRONTEND_PATH_MARKERS = (".jsx", ".tsx", ".css", ".html", "src/", "src\\",
+                          "package.json", "vite.config")
+
+
+def _touches_frontend(paths: list[str]) -> bool:
+    """True if any path in this fix attempt's modified-files list is
+    frontend-owned. Used to gate whether a re-verify can safely skip the
+    Playwright browser stage and reuse the prior pass's ctx.browser_result
+    (see FixOrchestrator.run_attempt's re-verify step)."""
+    return any(any(marker in p for marker in _FRONTEND_PATH_MARKERS) for p in paths)
+
 
 def _protected_auth_file_in_group(group: DiagnosticGroup) -> bool:
     """
@@ -1185,20 +1196,63 @@ class FixOrchestrator:
                 group_fix_contents.append((g, fix_content))
 
         # 4. Apply deterministic + preflight patches on top of LLM fixes
-        if all_modified:
+        # Always converge deterministic invariants before re-verification.
+        # A failed/empty LLM repair leaves ``all_modified`` empty, but the
+        # current project may still contain a known mechanical failure such
+        # as a hyphenated route identifier. Skipping the patch pass in that
+        # case causes the same syntax error to consume every repair attempt.
+        if all_modified or all_diags:
             try:
                 from app.services.deterministic_patcher import run_deterministic_patches
                 from app.services.database_patcher import patch_database_py
                 from app.repair.preflight import preflight
-                run_deterministic_patches(str(ctx.project_path))
+                from app.repair.auth_completeness import (
+                    ensure_auth_completeness_if_signaled,
+                    project_signals_auth,
+                )
+                auth_signaled = project_signals_auth(ctx.project_path, ctx.architecture)
+                run_deterministic_patches(
+                    str(ctx.project_path), skip_protected_injections=not auth_signaled,
+                )
+                # LLM repair can overwrite an initially-correct model with
+                # nullable=True columns after the broad patch pass.  A Create
+                # schema's required fields are the API contract, so converge
+                # those columns again immediately before re-verification.
+                from app.services.deterministic_patcher import (
+                    _patch_required_create_schema_model_nullability,
+                )
+                _patch_required_create_schema_model_nullability(ctx.project_path)
                 patch_database_py(str(ctx.project_path))
                 preflight.run(ctx.project_path, all_diags)
+                # LLM repair may have touched routing or models. Converge the
+                # existing auth implementation again, but only when the
+                # project/architecture explicitly requires authentication.
+                ensure_auth_completeness_if_signaled(
+                    ctx.project_path, ctx.project_name, ctx.architecture,
+                )
             except Exception as exc:
                 print(f"    [fix] Deterministic patch warning: {exc}")
 
         # 5. Re-verify
         ve = self._get_ve()
-        ve.run(ctx)
+        # Visual-review prose is not repair input; defer the paid call until
+        # the final deployment-candidate verification.
+        #
+        # Exp134: skip_perf_a11y is unconditional and zero-risk on every
+        # intermediate attempt -- scoring/engine.py's Performance dimension
+        # reads ctx.runtime_result (already produced by the always-on
+        # runtime stage), and there is no accessibility scoring dimension
+        # at all, so re-running those two Playwright-backed stages here
+        # only ever refreshed diagnostics nothing downstream scores on.
+        # skip_browser reuses ctx.browser_result from the prior pass (still
+        # feeds 15% via Browser UX) but ONLY when this attempt's own
+        # modified files are all backend -- a frontend-touching fix must
+        # still get a fresh browser pass. Neither flag is ever set on the
+        # initial verify, the final pre-deploy verify, or the best-state
+        # restore verify (see pipeline.py) -- those always run the full
+        # suite so the reported score is never computed from stale data.
+        skip_browser = bool(all_modified) and not _touches_frontend(all_modified)
+        ve.run(ctx, run_llm_judge=False, skip_perf_a11y=True, skip_browser=skip_browser)
 
         # 6. Score the (unreverted) post-fix state
         se = self._get_se()
@@ -1232,7 +1286,7 @@ class FixOrchestrator:
 
         if regression_detected:
             snapshot.revert()
-            ve.run(ctx)
+            ve.run(ctx, run_llm_judge=False)
             score_after_obj = se.score(ctx, attempt_number=cfg.attempt)
             score_after = score_after_obj.overall
 

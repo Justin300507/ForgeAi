@@ -580,6 +580,7 @@ def generate_project_v6(
             from app.services.deterministic_patcher import (
                 _patch_model_aliases, _patch_schemas_from_attributes,
                 _patch_missing_pydantic_imports, _patch_attr_access_mismatches,
+                _patch_missing_ownership_assignment,
                 _patch_response_schemas_optional, _patch_create_missing_service_stubs,
                 _patch_wire_orphan_routers, _patch_wire_orphan_frontend_routes,
                 _patch_login_redirect_target, _patch_frontend_package_json,
@@ -588,6 +589,7 @@ def generate_project_v6(
             _patch_schemas_from_attributes(_Path(project_path))
             _patch_missing_pydantic_imports(_Path(project_path))
             _patch_attr_access_mismatches(_Path(project_path))
+            _patch_missing_ownership_assignment(_Path(project_path))
             _patch_response_schemas_optional(_Path(project_path))
             _patch_create_missing_service_stubs(_Path(project_path))
             _patch_wire_orphan_routers(_Path(project_path))
@@ -1169,6 +1171,7 @@ def repair_project(
             from app.services.deterministic_patcher import (
                 _patch_model_aliases, _patch_schemas_from_attributes,
                 _patch_missing_pydantic_imports, _patch_attr_access_mismatches,
+                _patch_missing_ownership_assignment,
                 _patch_response_schemas_optional, _patch_create_missing_service_stubs,
                 _patch_wire_orphan_routers, _patch_wire_orphan_frontend_routes,
                 _patch_login_redirect_target, _patch_frontend_package_json,
@@ -1183,6 +1186,7 @@ def repair_project(
             _patch_schemas_from_attributes(_Path(project_path))
             _patch_missing_pydantic_imports(_Path(project_path))
             _patch_attr_access_mismatches(_Path(project_path))
+            _patch_missing_ownership_assignment(_Path(project_path))
             _patch_response_schemas_optional(_Path(project_path))
             _patch_create_missing_service_stubs(_Path(project_path))
             _patch_wire_orphan_routers(_Path(project_path))

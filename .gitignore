@@ -14,3 +14,10 @@ venv/
 .env
 .aider*
 backend/benchmark_results/.canary.lock
+backend/failure_memory/bundles/
+backend/benchmark_results/logs/
+backend/benchmark_results/*.log
+backend/benchmark_results/*.err
+backend/benchmark_results/2*/
+backend/graphify-out/
+graphify-out/cache/

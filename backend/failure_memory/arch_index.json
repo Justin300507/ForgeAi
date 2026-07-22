@@ -2228,107 +2228,296 @@
   },
   "generic": {
     "category": "generic",
-    "idea": "a simple counter app",
+    "idea": "A hospital management system. Manages departments, doctors, nurses, patients, admissions, bed allocation, surgery scheduling, lab results, pharmacy dispensing, and insurance billing.",
     "architecture": {
       "api_endpoints": [
         {
           "method": "POST",
-          "path": "/auth/register",
-          "description": "Registers a new user.",
-          "file": "app\\routes\\auth_routes.py"
-        },
-        {
-          "method": "POST",
-          "path": "/auth/login",
-          "description": "Authenticates a user and returns an access token.",
-          "file": "app\\routes\\auth_routes.py"
-        },
-        {
-          "method": "GET",
-          "path": "/users/me",
-          "description": "Retrieves the currently authenticated user's profile.",
-          "file": "app\\routes\\user_routes.py"
-        },
-        {
-          "method": "POST",
-          "path": "/counters",
-          "description": "Creates a new counter for the authenticated user.",
-          "file": "app\\routes\\counter_routes.py"
-        },
-        {
-          "method": "GET",
-          "path": "/counters",
-          "description": "Retrieves all counters for the authenticated user.",
-          "file": "app\\routes\\counter_routes.py"
-        },
-        {
-          "method": "GET",
-          "path": "/counters/{counter_id}",
-          "description": "Retrieves a specific counter by ID for the authenticated user.",
-          "file": "app\\routes\\counter_routes.py"
-        },
-        {
-          "method": "PATCH",
-          "path": "/counters/{counter_id}/increment",
-          "description": "Increments a specific counter's value by one.",
-          "file": "app\\routes\\counter_routes.py"
-        },
-        {
-          "method": "PATCH",
-          "path": "/counters/{counter_id}/decrement",
-          "description": "Decrements a specific counter's value by one.",
-          "file": "app\\routes\\counter_routes.py"
-        },
-        {
-          "method": "PATCH",
-          "path": "/counters/{counter_id}/reset",
-          "description": "Resets a specific counter's value to zero.",
-          "file": "app\\routes\\counter_routes.py"
-        },
-        {
-          "method": "PUT",
-          "path": "/counters/{counter_id}",
-          "description": "Updates a specific counter's name or value.",
-          "file": "app\\routes\\counter_routes.py"
-        },
-        {
-          "method": "DELETE",
-          "path": "/counters/{counter_id}",
-          "description": "Deletes a specific counter.",
-          "file": "app\\routes\\counter_routes.py"
-        },
-        {
-          "method": "GET",
-          "path": "/counters?search={query}",
-          "description": "Searches counters by name for the authenticated user.",
-          "file": "app\\routes\\counter_routes.py"
-        },
-        {
-          "method": "POST",
           "path": "/seed",
-          "description": "Populates database with realistic demo data.",
+          "description": "Populate the database with demo data for patients, beds, admissions, and users.",
           "file": "app\\routes\\seed_routes.py"
         },
         {
           "method": "GET",
           "path": "/stats/summary",
-          "description": "Returns aggregate counts and key metrics for the dashboard.",
+          "description": "Return aggregate counts such as total patients, occupied beds, and active admissions for dashboard overview.",
           "file": "app\\routes\\stats_routes.py"
+        },
+        {
+          "method": "POST",
+          "path": "/auth/register",
+          "description": "Create a new user account with role assignment.",
+          "file": "app\\routes\\auth_routes.py"
+        },
+        {
+          "method": "POST",
+          "path": "/auth/login",
+          "description": "Authenticate a user and return a JWT access token.",
+          "file": "app\\routes\\auth_routes.py"
+        },
+        {
+          "method": "GET",
+          "path": "/auth/me",
+          "description": "Retrieve the currently authenticated user's profile.",
+          "file": "app\\routes\\auth_routes.py"
+        },
+        {
+          "method": "GET",
+          "path": "/patients",
+          "description": "Search and list patients; supports ?search=, ?limit=, ?offset= for pagination.",
+          "file": "app\\routes\\patient_routes.py"
+        },
+        {
+          "method": "GET",
+          "path": "/patients/{patient_id}",
+          "description": "Get detailed information for a specific patient.",
+          "file": "app\\routes\\patient_routes.py"
+        },
+        {
+          "method": "POST",
+          "path": "/patients",
+          "description": "Create a new patient record.",
+          "file": "app\\routes\\patient_routes.py"
+        },
+        {
+          "method": "PUT",
+          "path": "/patients/{patient_id}",
+          "description": "Replace an existing patient record with the supplied data.",
+          "file": "app\\routes\\patient_routes.py"
+        },
+        {
+          "method": "DELETE",
+          "path": "/patients/{patient_id}",
+          "description": "Delete a patient record.",
+          "file": "app\\routes\\patient_routes.py"
+        },
+        {
+          "method": "GET",
+          "path": "/beds",
+          "description": "List beds with optional search (e.g., by ward) and pagination.",
+          "file": "app\\routes\\bed_routes.py"
+        },
+        {
+          "method": "GET",
+          "path": "/beds/{bed_id}",
+          "description": "Retrieve details of a specific bed.",
+          "file": "app\\routes\\bed_routes.py"
+        },
+        {
+          "method": "POST",
+          "path": "/beds",
+          "description": "Create a new bed record.",
+          "file": "app\\routes\\bed_routes.py"
+        },
+        {
+          "method": "PUT",
+          "path": "/beds/{bed_id}",
+          "description": "Update an existing bed's information.",
+          "file": "app\\routes\\bed_routes.py"
+        },
+        {
+          "method": "DELETE",
+          "path": "/beds/{bed_id}",
+          "description": "Remove a bed from the system.",
+          "file": "app\\routes\\bed_routes.py"
+        },
+        {
+          "method": "GET",
+          "path": "/admissions",
+          "description": "List admissions with search, pagination, and optional filters.",
+          "file": "app\\routes\\admission_routes.py"
+        },
+        {
+          "method": "GET",
+          "path": "/admissions/{admission_id}",
+          "description": "Get full details of a specific admission, including patient and bed info.",
+          "file": "app\\routes\\admission_routes.py"
+        },
+        {
+          "method": "POST",
+          "path": "/admissions",
+          "description": "Create a new admission, assigning a patient to a free bed.",
+          "file": "app\\routes\\admission_routes.py"
+        },
+        {
+          "method": "PUT",
+          "path": "/admissions/{admission_id}",
+          "description": "Replace an admission record (e.g., change diagnosis or reassign bed).",
+          "file": "app\\routes\\admission_routes.py"
+        },
+        {
+          "method": "PATCH",
+          "path": "/admissions/{admission_id}",
+          "description": "Discharge a patient by setting discharge_date; automatically frees the bed.",
+          "file": "app\\routes\\admission_routes.py"
+        },
+        {
+          "method": "DELETE",
+          "path": "/admissions/{admission_id}",
+          "description": "Delete an admission record.",
+          "file": "app\\routes\\admission_routes.py"
         }
       ],
       "database_schema": [
         {
-          "table_name": "users",
+          "table_name": "patient",
           "columns": [
             {
-              "name": "id",
+              "name": "patient_id",
+              "type": "INTEGER",
+              "is_primary_key": true,
+              "is_nullable": false
+            },
+            {
+              "name": "name",
+              "type": "VARCHAR(255)",
+              "is_primary_key": false,
+              "is_nullable": false
+            },
+            {
+              "name": "dob",
+              "type": "DATE",
+              "is_primary_key": false,
+              "is_nullable": false
+            },
+            {
+              "name": "gender",
+              "type": "VARCHAR(50)",
+              "is_primary_key": false,
+              "is_nullable": false
+            },
+            {
+              "name": "contact",
+              "type": "VARCHAR(255)",
+              "is_primary_key": false,
+              "is_nullable": false
+            },
+            {
+              "name": "created_at",
+              "type": "DATETIME",
+              "is_primary_key": false,
+              "is_nullable": false
+            },
+            {
+              "name": "updated_at",
+              "type": "DATETIME",
+              "is_primary_key": false,
+              "is_nullable": false
+            }
+          ]
+        },
+        {
+          "table_name": "bed",
+          "columns": [
+            {
+              "name": "bed_id",
+              "type": "INTEGER",
+              "is_primary_key": true,
+              "is_nullable": false
+            },
+            {
+              "name": "ward",
+              "type": "VARCHAR(100)",
+              "is_primary_key": false,
+              "is_nullable": false
+            },
+            {
+              "name": "room_number",
+              "type": "VARCHAR(50)",
+              "is_primary_key": false,
+              "is_nullable": false
+            },
+            {
+              "name": "is_occupied",
+              "type": "BOOLEAN",
+              "is_primary_key": false,
+              "is_nullable": false
+            },
+            {
+              "name": "created_at",
+              "type": "DATETIME",
+              "is_primary_key": false,
+              "is_nullable": false
+            },
+            {
+              "name": "updated_at",
+              "type": "DATETIME",
+              "is_primary_key": false,
+              "is_nullable": false
+            }
+          ]
+        },
+        {
+          "table_name": "admission",
+          "columns": [
+            {
+              "name": "admission_id",
+              "type": "INTEGER",
+              "is_primary_key": true,
+              "is_nullable": false
+            },
+            {
+              "name": "patient_id",
+              "type": "INTEGER",
+              "is_primary_key": false,
+              "is_nullable": false
+            },
+            {
+              "name": "bed_id",
+              "type": "INTEGER",
+              "is_primary_key": false,
+              "is_nullable": false
+            },
+            {
+              "name": "admission_date",
+              "type": "DATETIME",
+              "is_primary_key": false,
+              "is_nullable": false
+            },
+            {
+              "name": "discharge_date",
+              "type": "DATETIME",
+              "is_primary_key": false,
+              "is_nullable": true
+            },
+            {
+              "name": "diagnosis",
+              "type": "VARCHAR(500)",
+              "is_primary_key": false,
+              "is_nullable": false
+            },
+            {
+              "name": "created_at",
+              "type": "DATETIME",
+              "is_primary_key": false,
+              "is_nullable": false
+            },
+            {
+              "name": "updated_at",
+              "type": "DATETIME",
+              "is_primary_key": false,
+              "is_nullable": false
+            }
+          ]
+        },
+        {
+          "table_name": "user",
+          "columns": [
+            {
+              "name": "user_id",
               "type": "INTEGER",
               "is_primary_key": true,
               "is_nullable": false
             },
             {
               "name": "username",
-              "type": "VARCHAR(50)",
+              "type": "VARCHAR(150)",
+              "is_primary_key": false,
+              "is_nullable": false
+            },
+            {
+              "name": "email",
+              "type": "VARCHAR(255)",
               "is_primary_key": false,
               "is_nullable": false
             },
@@ -2337,33 +2526,28 @@
               "type": "VARCHAR(255)",
               "is_primary_key": false,
               "is_nullable": false
-            }
-          ]
-        },
-        {
-          "table_name": "counters",
-          "columns": [
-            {
-              "name": "id",
-              "type": "INTEGER",
-              "is_primary_key": true,
-              "is_nullable": false
             },
             {
-              "name": "name",
-              "type": "VARCHAR(100)",
+              "name": "role",
+              "type": "VARCHAR(50)",
               "is_primary_key": false,
               "is_nullable": false
             },
             {
-              "name": "value",
-              "type": "INTEGER",
+              "name": "is_active",
+              "type": "BOOLEAN",
               "is_primary_key": false,
               "is_nullable": false
             },
             {
-              "name": "user_id",
-              "type": "INTEGER",
+              "name": "created_at",
+              "type": "DATETIME",
+              "is_primary_key": false,
+              "is_nullable": false
+            },
+            {
+              "name": "updated_at",
+              "type": "DATETIME",
               "is_primary_key": false,
               "is_nullable": false
             }
@@ -2372,64 +2556,49 @@
       ],
       "folder_structure": {
         "backend": [
-          "app/",
-          "app/main.py",
-          "app/config.py",
-          "app/database.py",
-          "app/models/",
-          "app/models/user.py",
-          "app/models/counter.py",
-          "app/schemas/",
-          "app/schemas/user.py",
-          "app/schemas/counter.py",
-          "app/schemas/auth.py",
-          "app/services/",
-          "app/services/user_service.py",
-          "app/services/counter_service.py",
-          "app/utils/",
-          "app/utils/auth.py",
-          "app/utils/security.py",
-          "app/routes/",
-          "app/routes/auth_routes.py",
-          "app/routes/user_routes.py",
-          "app/routes/counter_routes.py",
-          "app/routes/seed_routes.py",
-          "app/routes/stats_routes.py"
+          "app/models",
+          "app/schemas",
+          "app/routes",
+          "app/services",
+          "app/utils",
+          "app/dependencies",
+          "app/config",
+          "app/main.py"
         ]
       },
       "frontend_structure": {
         "pages": [
-          "LoginPage.jsx",
-          "RegisterPage.jsx",
-          "DashboardPage.jsx",
-          "CounterDetailPage.jsx",
-          "NotFoundPage.jsx"
+          "LoginPage",
+          "DashboardPage",
+          "PatientListPage",
+          "PatientDetailPage",
+          "PatientCreatePage",
+          "BedListPage",
+          "BedDetailPage",
+          "AdmissionListPage",
+          "AdmissionDetailPage",
+          "AdmissionCreatePage"
         ],
         "components": [
-          "Header.jsx",
-          "Footer.jsx",
-          "LoginForm.jsx",
-          "RegisterForm.jsx",
-          "CounterList.jsx",
-          "CounterCard.jsx",
-          "CreateCounterForm.jsx",
-          "EditCounterForm.jsx",
-          "Button.jsx",
-          "Input.jsx",
-          "Modal.jsx"
+          "Header",
+          "Footer",
+          "SearchBar",
+          "Pagination",
+          "PatientCard",
+          "BedCard",
+          "AdmissionCard",
+          "AdmissionForm",
+          "PatientForm",
+          "BedStatusBadge"
         ]
       }
     },
     "plan": {
-      "project_name": "simple_counter_app",
-      "display_name": "Simple Counter",
+      "project_name": "hospital_management",
+      "display_name": "Hospital Management System",
       "features": [
-        "Allows users to create new counters with a user-defined name, initialized to zero.",
-        "Provides a mechanism to increase a counter's value by one.",
-        "Provides a mechanism to decrease a counter's value by one.",
-        "Allows users to set a specific counter's value back to zero.",
-        "Displays all counters created by the user with their current values.",
-        "Enables users to remove unwanted counters."
+        "Create, read, update, and search patient records.",
+        "Create, view, paginate, and discharge admissions, linking patients to beds."
       ],
       "tech_stack": {
         "backend": "FastAPI",
@@ -2438,117 +2607,135 @@
         "frontend": "React + Vite"
       },
       "db_entities": [
-        "User",
-        "Counter"
+        "Patient",
+        "Bed",
+        "Admission"
       ],
       "api_modules": [
         "auth",
-        "users",
-        "counters"
+        "patients",
+        "admissions"
       ],
       "user_stories": [
         {
-          "role": "User",
-          "want": "to create a new counter with a specific name",
+          "role": "Admission clerk",
+          "want": "to create a new admission for a patient and assign a free bed",
           "acceptance_criteria": [
-            "The user can input a name for the new counter.",
-            "Upon creation, the new counter's value is initialized to 0.",
-            "The newly created counter is visible in my list of counters."
+            "POST /admissions returns 201 with a generated admission_id",
+            "The created admission record contains patient_id, bed_id, and admission_date",
+            "The assigned bed's is_occupied flag is set to true"
           ]
         },
         {
-          "role": "User",
-          "want": "to increment a counter's value",
+          "role": "Admission clerk",
+          "want": "to view a paginated list of current admissions",
           "acceptance_criteria": [
-            "Clicking an 'increment' button increases the counter's value by 1.",
-            "The displayed value of the counter updates immediately after incrementing.",
-            "The incremented value is persisted and remains correct upon refresh."
+            "GET /admissions?page=1&size=20 returns a paginated response with total count",
+            "Each item includes patient name, bed location, and admission date",
+            "Changing page or size parameters returns the correct slice of data"
           ]
         },
         {
-          "role": "User",
-          "want": "to decrement a counter's value",
+          "role": "Admission clerk",
+          "want": "to discharge a patient",
           "acceptance_criteria": [
-            "Clicking a 'decrement' button decreases the counter's value by 1.",
-            "The displayed value of the counter updates immediately after decrementing.",
-            "The decremented value is persisted and remains correct upon refresh."
+            "PATCH /admissions/{id} with discharge_date sets the field on the admission",
+            "The related bed's is_occupied flag is automatically set to false",
+            "GET /admissions/{id} shows a non‑null discharge_date"
           ]
         },
         {
-          "role": "User",
-          "want": "to reset a counter's value to zero",
+          "role": "Doctor",
+          "want": "to view a patient’s admission details",
           "acceptance_criteria": [
-            "There is a clear option to reset a specific counter.",
-            "Confirming the reset action sets the counter's value to 0.",
-            "The reset value is persisted and remains 0 upon refresh."
+            "GET /admissions/{id} returns patient full name, diagnosis, bed ward/room, and dates",
+            "The endpoint is accessible only to authenticated users with role doctor or admin",
+            "If the admission does not exist, the API returns 404"
           ]
         },
         {
-          "role": "User",
-          "want": "to view all my created counters and their current values",
+          "role": "Staff member",
+          "want": "to search for patients by name",
           "acceptance_criteria": [
-            "Upon logging in, a list of all my counters is displayed.",
-            "Each counter in the list shows its name and current numerical value.",
-            "The list is updated to reflect any changes made to individual counters."
+            "GET /patients?search=smith returns all patients whose name contains 'smith' case‑insensitively",
+            "Partial matches are supported (e.g., 'jo' matches 'John')",
+            "If no matches are found, an empty list is returned with 200 status"
           ]
         },
         {
-          "role": "User",
-          "want": "to delete an existing counter",
+          "role": "Admin",
+          "want": "to add a new patient record",
           "acceptance_criteria": [
-            "There is a clear option to delete a specific counter.",
-            "After confirming deletion, the counter is removed from my list.",
-            "The deleted counter is no longer accessible or visible."
+            "POST /patients with required fields (name, dob, gender, contact) returns 201 and patient_id",
+            "Missing required fields cause a 400 response with a validation error message",
+            "The new patient appears in subsequent GET /patients searches"
           ]
         }
       ],
       "non_functional_requirements": {
-        "authentication": "required — Users need to log in to manage their personal counters.",
-        "authorization": "Users can only view, create, update, and delete their own counters.",
-        "pagination": "not required",
-        "search": "not required",
+        "authentication": "required — all endpoints must be accessed by an authenticated user",
+        "authorization": "role‑based: admin (full access), clerk (patient & admission CRUD), doctor (read‑only admission view)",
+        "pagination": "required on GET /admissions",
+        "search": "required on GET /patients (name search)",
         "file_uploads": "no",
         "real_time": "no"
       },
       "data_entities_detail": [
         {
-          "name": "User",
-          "description": "Stores user authentication information.",
+          "name": "Patient",
+          "description": "Stores demographic and contact information for each person receiving care.",
           "key_fields": [
-            "id",
-            "username",
-            "hashed_password"
+            "patient_id",
+            "name",
+            "dob",
+            "gender",
+            "contact"
           ],
           "relationships": [
-            "has many Counter"
+            "has many Admissions"
           ]
         },
         {
-          "name": "Counter",
-          "description": "Stores individual counter data.",
+          "name": "Bed",
+          "description": "Represents a physical hospital bed with location and occupancy status.",
           "key_fields": [
-            "id",
-            "name",
-            "value",
-            "user_id"
+            "bed_id",
+            "ward",
+            "room_number",
+            "is_occupied"
           ],
           "relationships": [
-            "belongs to User"
+            "has many Admissions"
+          ]
+        },
+        {
+          "name": "Admission",
+          "description": "Tracks a patient’s stay, linking them to a bed and storing clinical info.",
+          "key_fields": [
+            "admission_id",
+            "patient_id",
+            "bed_id",
+            "admission_date",
+            "discharge_date",
+            "diagnosis"
+          ],
+          "relationships": [
+            "belongs to Patient",
+            "belongs to Bed"
           ]
         }
       ],
       "out_of_scope": [
-        "Sharing counters with other users",
-        "Counter history or logging of changes",
-        "Customizable increment/decrement steps",
-        "Tags or categories for counters",
-        "Notifications or alerts based on counter values"
+        "Surgery scheduling and operating‑room management",
+        "Laboratory results and pharmacy dispensing",
+        "Insurance billing and claims processing",
+        "Multi‑department or multi‑hospital tenancy"
       ]
     },
-    "score": 94.67,
+    "score": 99.71,
     "success_count": 1,
-    "generation_id": "802a85e74ee14c8496abf118c7486805",
-    "timestamp": "2026-07-05T08:56:18Z"
+    "generation_id": "ff7ace516086486a87fcfb69b1dc0e24",
+    "timestamp": "2026-07-16T19:04:23Z"
   },
   "crm": {
     "category": "crm",
@@ -3003,104 +3190,146 @@
         "Multi-user accounts or team features"
       ]
     },
-    "score": 91.57,
+    "score": 95.0,
     "success_count": 1,
-    "generation_id": "9eb5aaff56204dd68e2a6765f8ec6dd2",
-    "timestamp": "2026-07-06T13:48:49Z"
+    "generation_id": "0ba82ca2efdb4b1c88ee407e23eedc5a",
+    "timestamp": "2026-07-16T14:13:45Z"
   },
   "inventory": {
     "category": "inventory",
-    "idea": "An inventory management system with user login. Users manage products (SKU, name, category, unit cost, selling price, current stock, reorder threshold). Add stock via purchase orders (supplier name, q",
+    "idea": "Build a multi-warehouse inventory management SaaS for small retailers: secure user registration and login; products with SKU, reorder threshold, supplier, cost and selling price; warehouse stock level",
     "architecture": {
       "api_endpoints": [
         {
-          "method": "POST",
-          "path": "/auth/register",
-          "description": "Register a new user with email and password",
-          "file": "app\\routes\\auth_routes.py"
-        },
-        {
-          "method": "POST",
-          "path": "/auth/login",
-          "description": "Authenticate user and return JWT token",
-          "file": "app\\routes\\auth_routes.py"
+          "method": "GET",
+          "path": "/users?search=&limit=&offset=",
+          "description": "Retrieve a list of users with optional search and pagination.",
+          "file": "app\\routes\\user_routes.py"
         },
         {
           "method": "GET",
-          "path": "/auth/me",
-          "description": "Get current authenticated user profile",
-          "file": "app\\routes\\auth_routes.py"
+          "path": "/users/{id}",
+          "description": "Retrieve a specific user by ID.",
+          "file": "app\\routes\\user_routes.py"
+        },
+        {
+          "method": "POST",
+          "path": "/users",
+          "description": "Create a new user account.",
+          "file": "app\\routes\\user_routes.py"
+        },
+        {
+          "method": "PUT",
+          "path": "/users/{id}",
+          "description": "Update an existing user account.",
+          "file": "app\\routes\\user_routes.py"
+        },
+        {
+          "method": "DELETE",
+          "path": "/users/{id}",
+          "description": "Delete a user account.",
+          "file": "app\\routes\\user_routes.py"
         },
         {
           "method": "GET",
-          "path": "/products",
-          "description": "Retrieve paginated list of products with optional search by name or SKU and filter by category",
+          "path": "/products?search=&limit=&offset=",
+          "description": "Retrieve a list of products with optional search and pagination.",
           "file": "app\\routes\\product_routes.py"
         },
         {
           "method": "GET",
           "path": "/products/{id}",
-          "description": "Get details of a single product by its ID",
+          "description": "Retrieve a specific product by ID.",
           "file": "app\\routes\\product_routes.py"
         },
         {
           "method": "POST",
           "path": "/products",
-          "description": "Create a new product; current_stock is initialized to 0",
+          "description": "Add a new product to the inventory.",
           "file": "app\\routes\\product_routes.py"
         },
         {
           "method": "PUT",
           "path": "/products/{id}",
-          "description": "Replace an existing product with new data; validates unique SKU",
+          "description": "Update an existing product in the inventory.",
           "file": "app\\routes\\product_routes.py"
         },
         {
           "method": "DELETE",
           "path": "/products/{id}",
-          "description": "Delete a product by its ID",
+          "description": "Remove a product from the inventory.",
           "file": "app\\routes\\product_routes.py"
         },
         {
           "method": "GET",
-          "path": "/transactions",
-          "description": "Retrieve paginated list of transactions with optional filter by type and date range",
+          "path": "/transactions?search=&limit=&offset=",
+          "description": "Retrieve a list of transactions with optional search and pagination.",
           "file": "app\\routes\\transaction_routes.py"
         },
         {
           "method": "GET",
           "path": "/transactions/{id}",
-          "description": "Get details of a single transaction by its ID",
+          "description": "Retrieve a specific transaction by ID.",
           "file": "app\\routes\\transaction_routes.py"
         },
         {
           "method": "POST",
           "path": "/transactions",
-          "description": "Create a purchase or sale transaction; updates product stock accordingly",
+          "description": "Record a new stock transaction.",
           "file": "app\\routes\\transaction_routes.py"
         },
         {
           "method": "PUT",
           "path": "/transactions/{id}",
-          "description": "Update an existing transaction; stock adjustments are re‑applied",
+          "description": "Update an existing transaction.",
           "file": "app\\routes\\transaction_routes.py"
         },
         {
           "method": "DELETE",
           "path": "/transactions/{id}",
-          "description": "Delete a transaction and revert its stock effect",
+          "description": "Delete a transaction record.",
           "file": "app\\routes\\transaction_routes.py"
+        },
+        {
+          "method": "GET",
+          "path": "/suppliers?search=&limit=&offset=",
+          "description": "Retrieve a list of suppliers with optional search and pagination.",
+          "file": "app\\routes\\supplier_routes.py"
+        },
+        {
+          "method": "GET",
+          "path": "/suppliers/{id}",
+          "description": "Retrieve a specific supplier by ID.",
+          "file": "app\\routes\\supplier_routes.py"
+        },
+        {
+          "method": "POST",
+          "path": "/suppliers",
+          "description": "Add a new supplier.",
+          "file": "app\\routes\\supplier_routes.py"
+        },
+        {
+          "method": "PUT",
+          "path": "/suppliers/{id}",
+          "description": "Update an existing supplier.",
+          "file": "app\\routes\\supplier_routes.py"
+        },
+        {
+          "method": "DELETE",
+          "path": "/suppliers/{id}",
+          "description": "Remove a supplier.",
+          "file": "app\\routes\\supplier_routes.py"
         },
         {
           "method": "POST",
           "path": "/seed",
-          "description": "Populate the database with demo data for users, categories, products, and transactions",
+          "description": "Populates database with realistic demo data.",
           "file": "app\\routes\\seed_routes.py"
         },
         {
           "method": "GET",
-          "path": "/dashboard/summary",
-          "description": "Return low‑stock alerts, total inventory value, and recent transactions for dashboard display",
+          "path": "/stats/summary",
+          "description": "Returns aggregate counts and key metrics for the dashboard.",
           "file": "app\\routes\\stats_routes.py"
         }
       ],
@@ -3116,36 +3345,13 @@
             },
             {
               "name": "email",
-              "type": "VARCHAR(255)",
+              "type": "TEXT",
               "is_primary_key": false,
               "is_nullable": false
             },
             {
-              "name": "hashed_password",
-              "type": "VARCHAR(255)",
-              "is_primary_key": false,
-              "is_nullable": false
-            },
-            {
-              "name": "created_at",
-              "type": "DATETIME",
-              "is_primary_key": false,
-              "is_nullable": false
-            }
-          ]
-        },
-        {
-          "table_name": "categories",
-          "columns": [
-            {
-              "name": "id",
-              "type": "INTEGER",
-              "is_primary_key": true,
-              "is_nullable": false
-            },
-            {
-              "name": "name",
-              "type": "VARCHAR(100)",
+              "name": "password_hash",
+              "type": "TEXT",
               "is_primary_key": false,
               "is_nullable": false
             }
@@ -3161,44 +3367,26 @@
               "is_nullable": false
             },
             {
-              "name": "sku",
-              "type": "VARCHAR(50)",
+              "name": "SKU",
+              "type": "TEXT",
               "is_primary_key": false,
               "is_nullable": false
             },
             {
-              "name": "name",
-              "type": "VARCHAR(200)",
-              "is_primary_key": false,
-              "is_nullable": false
-            },
-            {
-              "name": "category_id",
+              "name": "supplier_id",
               "type": "INTEGER",
               "is_primary_key": false,
               "is_nullable": false
             },
             {
-              "name": "unit_cost",
-              "type": "FLOAT",
+              "name": "cost",
+              "type": "REAL",
               "is_primary_key": false,
               "is_nullable": false
             },
             {
-              "name": "current_stock",
-              "type": "INTEGER",
-              "is_primary_key": false,
-              "is_nullable": false
-            },
-            {
-              "name": "reorder_threshold",
-              "type": "INTEGER",
-              "is_primary_key": false,
-              "is_nullable": false
-            },
-            {
-              "name": "created_at",
-              "type": "DATETIME",
+              "name": "selling_price",
+              "type": "REAL",
               "is_primary_key": false,
               "is_nullable": false
             }
@@ -3220,38 +3408,25 @@
               "is_nullable": false
             },
             {
-              "name": "type",
-              "type": "VARCHAR(20)",
+              "name": "transaction_type",
+              "type": "TEXT",
               "is_primary_key": false,
               "is_nullable": false
-            },
+            }
+          ]
+        },
+        {
+          "table_name": "suppliers",
+          "columns": [
             {
-              "name": "quantity",
+              "name": "id",
               "type": "INTEGER",
-              "is_primary_key": false,
+              "is_primary_key": true,
               "is_nullable": false
             },
             {
-              "name": "unit_price",
-              "type": "FLOAT",
-              "is_primary_key": false,
-              "is_nullable": false
-            },
-            {
-              "name": "partner_name",
-              "type": "VARCHAR(200)",
-              "is_primary_key": false,
-              "is_nullable": true
-            },
-            {
-              "name": "transaction_date",
-              "type": "DATETIME",
-              "is_primary_key": false,
-              "is_nullable": false
-            },
-            {
-              "name": "created_at",
-              "type": "DATETIME",
+              "name": "name",
+              "type": "TEXT",
               "is_primary_key": false,
               "is_nullable": false
             }
@@ -3260,48 +3435,43 @@
       ],
       "folder_structure": {
         "backend": [
+          "app/routes",
           "app/models",
           "app/schemas",
-          "app/routes",
           "app/services",
-          "app/utils",
-          "app/config",
-          "app/dependencies",
-          "app/auth"
+          "app/utils"
         ]
       },
       "frontend_structure": {
         "pages": [
-          "LoginPage",
-          "DashboardPage",
-          "ProductsPage",
-          "ProductFormPage",
-          "TransactionsPage",
-          "TransactionFormPage",
-          "SettingsPage"
+          "Dashboard",
+          "UserRegistration",
+          "UserLogin",
+          "ProductList",
+          "ProductDetail",
+          "TransactionList",
+          "SupplierList",
+          "LowStockDashboard"
         ],
         "components": [
           "Navbar",
+          "Footer",
           "ProductCard",
-          "TransactionItem",
-          "SearchBar",
-          "Pagination",
-          "ProductForm",
+          "UserForm",
           "TransactionForm",
-          "DashboardStats",
-          "LowStockAlert",
-          "CategoryFilter"
+          "SupplierForm",
+          "SearchBar",
+          "Notification"
         ]
       }
     },
     "plan": {
-      "project_name": "inventory_manager",
-      "display_name": "Inventory Management System",
+      "project_name": "multi_warehouse_inventory_management",
+      "display_name": "Multi-Warehouse Inventory Management",
       "features": [
-        "Secure login using email/password and JWT tokens for API protection",
-        "CRUD endpoints for products with fields like SKU, name, category, costs, stock, and reorder threshold",
-        "Create purchase and sale transactions that automatically adjust product stock levels",
-        "Shows low‑stock alerts, total inventory value, and recent stock movements"
+        "Secure user registration and login functionality.",
+        "Add, edit, and manage products with SKU, supplier, cost, and selling price.",
+        "Track stock levels, receipts, transfers, and adjustments."
       ],
       "tech_stack": {
         "backend": "FastAPI",
@@ -3312,131 +3482,150 @@
       "db_entities": [
         "User",
         "Product",
-        "Transaction"
+        "Transaction",
+        "Supplier"
       ],
       "api_modules": [
         "auth",
+        "users",
         "products",
-        "transactions"
+        "transactions",
+        "suppliers"
       ],
       "user_stories": [
         {
-          "role": "Business owner",
-          "want": "to log in to the system",
+          "role": "small retailer",
+          "want": "to register and log in securely",
           "acceptance_criteria": [
-            "Valid email and password return a JWT token with 200 status",
-            "The token must be required for all subsequent API calls (401 if missing/invalid)",
-            "Invalid credentials return a 401 error with an appropriate error message"
+            "User can create an account with a unique email and password.",
+            "User can log in with valid credentials and is redirected to the dashboard."
           ]
         },
         {
-          "role": "Business owner",
-          "want": "to add a new product",
+          "role": "small retailer",
+          "want": "to add products with SKU, supplier, cost, and selling price",
           "acceptance_criteria": [
-            "POST /products with all required fields creates a product and returns 201",
-            "The newly created product appears in the GET /products list",
-            "current_stock is initialized to 0 and cannot be negative"
+            "User can input product details including SKU, supplier, cost, and selling price.",
+            "Product is saved and displayed in the inventory list."
           ]
         },
         {
-          "role": "Business owner",
-          "want": "to record a purchase order",
+          "role": "warehouse manager",
+          "want": "to view current stock levels for each warehouse",
           "acceptance_criteria": [
-            "POST /transactions with type='purchase' updates product.current_stock = previous + quantity",
-            "The transaction is persisted with correct product_id, quantity, unit_cost, date, and partner_name",
-            "Response includes the updated product stock value"
+            "User can see a dashboard displaying stock levels for all warehouses.",
+            "Stock levels are updated in real-time as adjustments are made."
           ]
         },
         {
-          "role": "Business owner",
-          "want": "to record a sale",
+          "role": "small retailer",
+          "want": "to set reorder thresholds for products",
           "acceptance_criteria": [
-            "POST /transactions with type='sale' reduces product.current_stock by quantity",
-            "If quantity exceeds current_stock, the API returns 400 with an error message",
-            "The sale transaction is stored with all supplied fields"
+            "User can set and save reorder thresholds for each product.",
+            "User receives a notification when stock falls below the threshold."
           ]
         },
         {
-          "role": "Business owner",
-          "want": "to view a dashboard",
+          "role": "warehouse manager",
+          "want": "to record stock receipts, transfers, and adjustments",
           "acceptance_criteria": [
-            "GET /dashboard returns a list of products where current_stock < reorder_threshold",
-            "Response includes total_inventory_value = sum(product.current_stock * product.unit_cost)",
-            "Response includes the 5 most recent transactions sorted by date descending"
+            "User can input stock receipts, transfers, and adjustments through a form.",
+            "All transactions are logged in the audit trail."
           ]
         },
         {
-          "role": "Business owner",
-          "want": "to search products by category",
+          "role": "small retailer",
+          "want": "to view a low-stock dashboard",
           "acceptance_criteria": [
-            "GET /products?category=Electronics returns only products in the Electronics category",
-            "Search is case‑insensitive and trims whitespace",
-            "Pagination parameters (page, limit) work and default to page=1, limit=20"
+            "Dashboard displays products below the reorder threshold.",
+            "User can click on a product to view its details."
           ]
         },
         {
-          "role": "Business owner",
-          "want": "to edit product details",
+          "role": "small retailer",
+          "want": "to search and filter products",
           "acceptance_criteria": [
-            "PATCH /products/{id} updates allowed fields and returns 200 with the updated product",
-            "Changing SKU to a value that already exists on another product returns 400",
-            "Updated fields are reflected in subsequent GET /products calls"
+            "User can enter search terms and see relevant products.",
+            "User can filter products by supplier or stock level."
+          ]
+        },
+        {
+          "role": "small retailer",
+          "want": "to view inventory valuation",
+          "acceptance_criteria": [
+            "User can view a report showing total inventory value based on cost prices.",
+            "User can export the valuation report as a CSV file."
           ]
         }
       ],
       "non_functional_requirements": {
-        "authentication": "required — protects all data endpoints",
-        "authorization": "any authenticated user can perform CRUD; no role hierarchy needed",
-        "pagination": "required on GET /products and GET /transactions endpoints",
-        "search": "products endpoint supports category filter and name/SKU search",
-        "file_uploads": "no",
-        "real_time": "no"
+        "authentication": "required — to ensure secure access to user data.",
+        "authorization": "Role-based access where small retailers can manage their inventory and warehouse managers can oversee stock levels.",
+        "pagination": "required on product listing endpoints.",
+        "search": "Products need search functionality.",
+        "file_uploads": "no — no file uploads are required.",
+        "real_time": "yes — for stock level updates and notifications."
       },
       "data_entities_detail": [
         {
           "name": "User",
-          "description": "Stores login credentials and basic profile information",
+          "description": "Stores user information and credentials.",
           "key_fields": [
             "id",
-            "email"
+            "email",
+            "password_hash"
           ],
-          "relationships": []
+          "relationships": [
+            "has many Products",
+            "has many Transactions"
+          ]
         },
         {
           "name": "Product",
-          "description": "Represents an inventory item with pricing and stock thresholds",
+          "description": "Stores product details including SKU, pricing, and supplier.",
           "key_fields": [
             "id",
-            "sku"
+            "SKU",
+            "supplier_id"
           ],
           "relationships": [
-            "has many Transaction"
+            "belongs to User",
+            "has many Transactions"
           ]
         },
         {
           "name": "Transaction",
-          "description": "Records a purchase or sale that modifies product stock",
+          "description": "Stores records of stock receipts, transfers, and adjustments.",
           "key_fields": [
             "id",
             "product_id",
-            "type"
+            "transaction_type"
           ],
           "relationships": [
             "belongs to Product"
           ]
+        },
+        {
+          "name": "Supplier",
+          "description": "Stores supplier information for products.",
+          "key_fields": [
+            "id",
+            "name"
+          ],
+          "relationships": [
+            "has many Products"
+          ]
         }
       ],
       "out_of_scope": [
-        "Role‑based permissions beyond simple authentication",
-        "Supplier or customer management beyond name fields in transactions",
-        "Advanced reporting, export/import, or email notifications",
-        "Multi‑tenant or organization support"
+        "Integration with external accounting software",
+        "Advanced analytics and reporting features"
       ]
     },
-    "score": 94.62,
+    "score": 95.52,
     "success_count": 1,
-    "generation_id": "c632c61bd7bc448a8a4a4e584956c135",
-    "timestamp": "2026-07-12T10:27:53Z"
+    "generation_id": "a5d39ba9-3e29-4d6d-b673-96aad771ac95",
+    "timestamp": "2026-07-19T19:08:17Z"
   },
   "game": {
     "category": "game",
@@ -4529,9 +4718,490 @@
         "Advanced analytics — such as machine learning-based progress tracking"
       ]
     },
-    "score": 86.39,
+    "score": 88.67,
     "success_count": 1,
-    "generation_id": "6225462b727b4639ba537ece9e8fc696",
-    "timestamp": "2026-07-13T11:37:07Z"
+    "generation_id": "7eb3b5cb-8682-4750-ba88-60ea4e12d98c",
+    "timestamp": "2026-07-19T17:44:45Z"
+  },
+  "iot_monitoring": {
+    "category": "iot_monitoring",
+    "idea": "An advanced fleet management system with real-time GPS tracking, route optimization, fuel consumption monitoring, predictive maintenance alerts, driver performance scoring, and compliance reporting.",
+    "architecture": {
+      "api_endpoints": [
+        {
+          "method": "POST",
+          "path": "/seed",
+          "description": "Populate the database with demo data for users, vehicles, telemetry, and fuel logs.",
+          "file": "app\\routes\\seed_routes.py"
+        },
+        {
+          "method": "GET",
+          "path": "/stats/summary",
+          "description": "Return aggregate counts and key metrics such as total vehicles, active drivers, and average fuel consumption.",
+          "file": "app\\routes\\stats_routes.py"
+        },
+        {
+          "method": "POST",
+          "path": "/auth/register",
+          "description": "Create a new user account (manager or driver) and return a JWT token.",
+          "file": "app\\routes\\auth_routes.py"
+        },
+        {
+          "method": "POST",
+          "path": "/auth/login",
+          "description": "Authenticate a user and issue a JWT token.",
+          "file": "app\\routes\\auth_routes.py"
+        },
+        {
+          "method": "GET",
+          "path": "/users",
+          "description": "Retrieve a paginated list of users with optional search by email.",
+          "file": "app\\routes\\user_routes.py"
+        },
+        {
+          "method": "GET",
+          "path": "/users/{id}",
+          "description": "Get details of a specific user by ID.",
+          "file": "app\\routes\\user_routes.py"
+        },
+        {
+          "method": "POST",
+          "path": "/users",
+          "description": "Create a new user (admin use).",
+          "file": "app\\routes\\user_routes.py"
+        },
+        {
+          "method": "PUT",
+          "path": "/users/{id}",
+          "description": "Replace an existing user's information.",
+          "file": "app\\routes\\user_routes.py"
+        },
+        {
+          "method": "DELETE",
+          "path": "/users/{id}",
+          "description": "Delete a user from the system.",
+          "file": "app\\routes\\user_routes.py"
+        },
+        {
+          "method": "GET",
+          "path": "/vehicles",
+          "description": "Retrieve a paginated list of vehicles with optional search by license_plate and filter for maintenance alerts.",
+          "file": "app\\routes\\vehicle_routes.py"
+        },
+        {
+          "method": "GET",
+          "path": "/vehicles/{id}",
+          "description": "Get detailed information for a vehicle, including latest GPS data and performance score. Access controlled by role.",
+          "file": "app\\routes\\vehicle_routes.py"
+        },
+        {
+          "method": "POST",
+          "path": "/vehicles",
+          "description": "Create a new vehicle record.",
+          "file": "app\\routes\\vehicle_routes.py"
+        },
+        {
+          "method": "PUT",
+          "path": "/vehicles/{id}",
+          "description": "Replace all mutable fields of a vehicle.",
+          "file": "app\\routes\\vehicle_routes.py"
+        },
+        {
+          "method": "DELETE",
+          "path": "/vehicles/{id}",
+          "description": "Remove a vehicle from the system.",
+          "file": "app\\routes\\vehicle_routes.py"
+        },
+        {
+          "method": "PATCH",
+          "path": "/vehicles/{id}",
+          "description": "Update the fuel_level of a vehicle after refueling; returns updated fuel_level and last_fuel_update timestamp.",
+          "file": "app\\routes\\vehicle_routes.py"
+        },
+        {
+          "method": "POST",
+          "path": "/vehicles/{id}/optimize_route",
+          "description": "Calculate an optimized route between two addresses for the vehicle, returning total distance and estimated fuel usage.",
+          "file": "app\\routes\\vehicle_routes.py"
+        },
+        {
+          "method": "GET",
+          "path": "/vehicles/compliance_report",
+          "description": "Generate a compliance report of vehicles with overdue maintenance; optional CSV export via format=csv query param.",
+          "file": "app\\routes\\vehicle_routes.py"
+        }
+      ],
+      "database_schema": [
+        {
+          "table_name": "users",
+          "columns": [
+            {
+              "name": "id",
+              "type": "INTEGER",
+              "is_primary_key": true,
+              "is_nullable": false
+            },
+            {
+              "name": "email",
+              "type": "VARCHAR(255)",
+              "is_primary_key": false,
+              "is_nullable": false
+            },
+            {
+              "name": "hashed_password",
+              "type": "VARCHAR(255)",
+              "is_primary_key": false,
+              "is_nullable": false
+            },
+            {
+              "name": "role",
+              "type": "VARCHAR(20)",
+              "is_primary_key": false,
+              "is_nullable": false
+            },
+            {
+              "name": "created_at",
+              "type": "DATETIME",
+              "is_primary_key": false,
+              "is_nullable": false
+            }
+          ]
+        },
+        {
+          "table_name": "vehicles",
+          "columns": [
+            {
+              "name": "id",
+              "type": "INTEGER",
+              "is_primary_key": true,
+              "is_nullable": false
+            },
+            {
+              "name": "license_plate",
+              "type": "VARCHAR(20)",
+              "is_primary_key": false,
+              "is_nullable": false
+            },
+            {
+              "name": "assigned_driver_id",
+              "type": "INTEGER",
+              "is_primary_key": false,
+              "is_nullable": true
+            },
+            {
+              "name": "latitude",
+              "type": "FLOAT",
+              "is_primary_key": false,
+              "is_nullable": true
+            },
+            {
+              "name": "longitude",
+              "type": "FLOAT",
+              "is_primary_key": false,
+              "is_nullable": true
+            },
+            {
+              "name": "last_reported_at",
+              "type": "DATETIME",
+              "is_primary_key": false,
+              "is_nullable": true
+            },
+            {
+              "name": "fuel_level",
+              "type": "FLOAT",
+              "is_primary_key": false,
+              "is_nullable": true
+            },
+            {
+              "name": "last_fuel_update",
+              "type": "DATETIME",
+              "is_primary_key": false,
+              "is_nullable": true
+            },
+            {
+              "name": "performance_score",
+              "type": "FLOAT",
+              "is_primary_key": false,
+              "is_nullable": true
+            },
+            {
+              "name": "maintenance_due",
+              "type": "DATE",
+              "is_primary_key": false,
+              "is_nullable": true
+            },
+            {
+              "name": "fuel_consumption_rate",
+              "type": "FLOAT",
+              "is_primary_key": false,
+              "is_nullable": true
+            }
+          ]
+        },
+        {
+          "table_name": "vehicle_telemetry",
+          "columns": [
+            {
+              "name": "id",
+              "type": "INTEGER",
+              "is_primary_key": true,
+              "is_nullable": false
+            },
+            {
+              "name": "vehicle_id",
+              "type": "INTEGER",
+              "is_primary_key": false,
+              "is_nullable": false
+            },
+            {
+              "name": "latitude",
+              "type": "FLOAT",
+              "is_primary_key": false,
+              "is_nullable": false
+            },
+            {
+              "name": "longitude",
+              "type": "FLOAT",
+              "is_primary_key": false,
+              "is_nullable": false
+            },
+            {
+              "name": "timestamp",
+              "type": "DATETIME",
+              "is_primary_key": false,
+              "is_nullable": false
+            }
+          ]
+        },
+        {
+          "table_name": "fuel_logs",
+          "columns": [
+            {
+              "name": "id",
+              "type": "INTEGER",
+              "is_primary_key": true,
+              "is_nullable": false
+            },
+            {
+              "name": "vehicle_id",
+              "type": "INTEGER",
+              "is_primary_key": false,
+              "is_nullable": false
+            },
+            {
+              "name": "fuel_level",
+              "type": "FLOAT",
+              "is_primary_key": false,
+              "is_nullable": false
+            },
+            {
+              "name": "logged_at",
+              "type": "DATETIME",
+              "is_primary_key": false,
+              "is_nullable": false
+            }
+          ]
+        },
+        {
+          "table_name": "maintenance_alerts",
+          "columns": [
+            {
+              "name": "id",
+              "type": "INTEGER",
+              "is_primary_key": true,
+              "is_nullable": false
+            },
+            {
+              "name": "vehicle_id",
+              "type": "INTEGER",
+              "is_primary_key": false,
+              "is_nullable": false
+            },
+            {
+              "name": "alert_type",
+              "type": "VARCHAR(50)",
+              "is_primary_key": false,
+              "is_nullable": false
+            },
+            {
+              "name": "created_at",
+              "type": "DATETIME",
+              "is_primary_key": false,
+              "is_nullable": false
+            },
+            {
+              "name": "resolved",
+              "type": "BOOLEAN",
+              "is_primary_key": false,
+              "is_nullable": false
+            }
+          ]
+        }
+      ],
+      "folder_structure": {
+        "backend": [
+          "app/models",
+          "app/schemas",
+          "app/routes",
+          "app/services",
+          "app/utils",
+          "app/auth",
+          "app/dependencies"
+        ]
+      },
+      "frontend_structure": {
+        "pages": [
+          "LoginPage",
+          "DashboardPage",
+          "VehiclesListPage",
+          "VehicleDetailPage",
+          "OptimizeRoutePage",
+          "ComplianceReportPage",
+          "MaintenanceAlertsPage",
+          "FuelUpdatePage"
+        ],
+        "components": [
+          "Header",
+          "Footer",
+          "VehicleCard",
+          "VehicleTable",
+          "Pagination",
+          "SearchBar",
+          "MapView",
+          "RouteResult",
+          "MaintenanceAlertCard",
+          "FuelLevelForm"
+        ]
+      }
+    },
+    "plan": {
+      "project_name": "fleet_manager_pro",
+      "display_name": "Fleet Manager Pro",
+      "features": [
+        "Continuously streams each vehicle's latitude, longitude and timestamp to the dashboard",
+        "Records fuel level and calculates consumption rate to identify inefficiencies"
+      ],
+      "tech_stack": {
+        "backend": "FastAPI",
+        "database": "SQLite",
+        "auth": "JWT",
+        "frontend": "React + Vite"
+      },
+      "db_entities": [
+        "User",
+        "Vehicle"
+      ],
+      "api_modules": [
+        "auth",
+        "vehicles"
+      ],
+      "user_stories": [
+        {
+          "role": "Fleet manager",
+          "want": "view a list of all vehicles with their latest GPS coordinates",
+          "acceptance_criteria": [
+            "GET /vehicles returns a paginated list",
+            "Each vehicle object includes latitude, longitude, and last_reported_at fields",
+            "Response is limited to 20 items per page by default"
+          ]
+        },
+        {
+          "role": "Driver",
+          "want": "see details of the vehicle assigned to me, including performance score",
+          "acceptance_criteria": [
+            "GET /vehicles/{id} returns vehicle only if assigned_driver_id matches logged‑in user",
+            "Response includes performance_score field",
+            "If vehicle not assigned, API returns 403"
+          ]
+        },
+        {
+          "role": "Fleet manager",
+          "want": "receive real‑time location updates for a vehicle",
+          "acceptance_criteria": [
+            "WebSocket endpoint /ws/vehicles/{id} streams latitude, longitude, timestamp",
+            "First message is sent within 2 seconds of location change",
+            "Connection is closed if no auth token provided"
+          ]
+        },
+        {
+          "role": "Fleet manager",
+          "want": "request an optimized route for a vehicle between two addresses",
+          "acceptance_criteria": [
+            "POST /vehicles/{id}/optimize_route with start and end addresses returns a route object",
+            "Route includes total_distance_km and estimated_fuel_liters",
+            "Route calculation completes within 5 seconds"
+          ]
+        },
+        {
+          "role": "Fleet manager",
+          "want": "view predictive maintenance alerts for vehicles",
+          "acceptance_criteria": [
+            "GET /vehicles?maintenance_alert=true returns only vehicles where fuel_consumption_rate increased >20% over last 7 days",
+            "Each returned vehicle includes maintenance_due date",
+            "Alert list is paginated"
+          ]
+        },
+        {
+          "role": "Fleet manager",
+          "want": "generate a compliance report showing vehicles with overdue maintenance",
+          "acceptance_criteria": [
+            "GET /vehicles/compliance_report returns list of vehicles where maintenance_due < today",
+            "Each entry includes license_plate and days_overdue",
+            "Report can be exported as CSV via query param format=csv"
+          ]
+        },
+        {
+          "role": "Driver",
+          "want": "update the fuel level after refueling",
+          "acceptance_criteria": [
+            "PATCH /vehicles/{id} with fuel_level field updates the record",
+            "Response returns updated fuel_level and last_fuel_update timestamp",
+            "If driver not assigned to vehicle, API returns 403"
+          ]
+        }
+      ],
+      "non_functional_requirements": {
+        "authentication": "required — JWT is used to protect all endpoints",
+        "authorization": "Managers can view and edit any vehicle; Drivers can only view and edit the vehicle assigned to them",
+        "pagination": "required on GET /vehicles and any filtered list endpoints",
+        "search": "vehicles can be searched by license_plate via query parameter q",
+        "file_uploads": "no",
+        "real_time": "yes — GPS streaming via WebSocket for individual vehicles"
+      },
+      "data_entities_detail": [
+        {
+          "name": "User",
+          "description": "Represents a system user, either a fleet manager or a driver",
+          "key_fields": [
+            "id",
+            "email"
+          ],
+          "relationships": [
+            "has many Vehicles as assigned driver"
+          ]
+        },
+        {
+          "name": "Vehicle",
+          "description": "Stores static vehicle data and dynamic telemetry such as location, fuel, and performance metrics",
+          "key_fields": [
+            "id",
+            "license_plate"
+          ],
+          "relationships": [
+            "belongs to User (assigned_driver)"
+          ]
+        }
+      ],
+      "out_of_scope": [
+        "Geofencing and alerts for entering/exiting zones",
+        "Integration with third‑party telematics hardware",
+        "Driver scheduling or shift management",
+        "Multi‑tenant organization support"
+      ]
+    },
+    "score": 98.64,
+    "success_count": 1,
+    "generation_id": "0f19e30a42f74392a3070931bf0d93f8",
+    "timestamp": "2026-07-16T18:22:48Z"
   }
 }

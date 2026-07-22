@@ -188,12 +188,35 @@ def _fill_from_v15(result: BenchmarkResult, out: dict):
     result.forge_score  = float(out.get("forge_score", 0))
     result.fix_count    = int(out.get("fix_attempts", 0) or 0)
 
-    # Success flags from timeline + deployment (V15's flat result shape)
-    stages = out.get("timeline", []) or []
-    stage_status = {s.get("stage"): s.get("status") for s in stages}
-    result.compile_success    = stage_status.get("compile", "skipped") == "passed"
-    result.runtime_success    = result.forge_score >= 60  # Runtime Startup is 20% weight; no raw flag exposed
-    result.browser_success    = result.forge_score >= 80
+    # V15 returns authoritative scoring dimensions.  Its timeline does not
+    # expose legacy ``compile`` stage names, so deriving outcomes from it (or
+    # the overall score) reported false 0% compile/CRUD rates and hid real
+    # regressions behind score thresholds.
+    dimensions = {
+        str(d.get("name")): d
+        for d in (out.get("dimensions") or [])
+        if isinstance(d, dict) and d.get("name")
+    }
+
+    def dimension_passed(name: str) -> bool | None:
+        dimension = dimensions.get(name)
+        if not dimension or dimension.get("na"):
+            return None
+        return bool(dimension.get("passed"))
+
+    result.compile_success = bool(dimension_passed("Compilation"))
+    result.runtime_success = bool(dimension_passed("Runtime Startup"))
+    result.browser_success = bool(dimension_passed("Browser UX"))
+    # CRUD journeys are scored as Integration; fall back to API Functionality
+    # when the integration journey is intentionally N/A for an app type.
+    integration = dimension_passed("Integration")
+    api = dimension_passed("API Functionality")
+    result.crud_success = bool(integration if integration is not None else api)
+    api_dimension = dimensions.get("API Functionality") or {}
+    try:
+        result.endpoint_pass_rate = max(0.0, min(1.0, float(api_dimension.get("score", 0)) / 100.0))
+    except (TypeError, ValueError):
+        result.endpoint_pass_rate = 0.0
     result.deployment_success = bool((out.get("deployment") or {}).get("success"))
 
     # Estimated cost from token usage

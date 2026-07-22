@@ -277,8 +277,21 @@ class V15Pipeline:
             })
 
         # ── Stage 5: Deploy (only if score ≥ 95) ─────────────────────────
+        # Repair passes defer the paid visual judge. When deterministic gates
+        # say the final files are deployable, perform one fresh visual review
+        # before any remote deployment instead of paying for a stale verdict
+        # after every repair attempt.
+        if ctx.is_deployment_ready and not ctx.llm_judge_evaluated:
+            print("[V15] Deterministic gates passed — running final visual review before deployment")
+            self._verify_and_score(ctx, attempt=len(ctx.fix_attempts))
+            self.bus.emit(Events.SCORE_UPDATE, {
+                "score": ctx.latest_score,
+                "grade": ctx.current_score.grade if ctx.current_score else "F",
+                "deployment_ready": ctx.is_deployment_ready,
+            })
+
         deploy_result: dict = {"skipped": True}
-        if ctx.is_deployment_ready and self.deploy:
+        if ctx.is_deployment_ready and ctx.llm_judge_evaluated and self.deploy:
             self.bus.emit(Events.DEPLOY_START, {
                 "score": ctx.latest_score,
                 "deploy_to": self.deploy_to,
@@ -290,6 +303,12 @@ class V15Pipeline:
                 "backend_url":  deploy_result.get("backend_url"),
                 "frontend_url": deploy_result.get("frontend_url"),
             })
+        elif ctx.is_deployment_ready and not ctx.llm_judge_evaluated:
+            print("[V15] Deployment skipped — final visual review did not complete")
+            deploy_result = {
+                "skipped": True,
+                "reason": "Deployment skipped: final visual review did not complete",
+            }
         elif not ctx.is_deployment_ready:
             best = rm.best_score()
             reason = ctx.deployment_block_reason or "not deployment-ready"
@@ -310,16 +329,17 @@ class V15Pipeline:
         # ctx.token_usage previously relied on v6_result["token_usage"], a key
         # the V6 orchestrator never returns — so the final report always said
         # "Total Tokens: 0" while the cost summary showed 100k+.
+        run_totals: dict[str, Any] = {}
         try:
             from app.utils.cost_tracker import get_run_totals
-            totals = get_run_totals()
-            spent = totals["total_tokens"] - ctx.token_usage.total_tokens
+            run_totals = get_run_totals()
+            spent = run_totals["total_tokens"] - ctx.token_usage.total_tokens
             if spent > 0:
                 ctx.token_usage.add(
                     "run",
-                    totals["prompt_tokens"] - ctx.token_usage.prompt_tokens,
-                    totals["completion_tokens"] - ctx.token_usage.completion_tokens,
-                    totals["cost_usd"] - ctx.token_usage.estimated_cost_usd,
+                    run_totals["prompt_tokens"] - ctx.token_usage.prompt_tokens,
+                    run_totals["completion_tokens"] - ctx.token_usage.completion_tokens,
+                    run_totals["cost_usd"] - ctx.token_usage.estimated_cost_usd,
                 )
         except Exception as exc:
             print(f"[V15] token/cost totals sync failed (non-fatal): {exc}")
@@ -401,6 +421,7 @@ class V15Pipeline:
             "project_path":    str(ctx.project_path),
             "status":          "done",
             "confidence":      confidence.__dict__ if confidence else None,
+            "cache_hits":      int(run_totals.get("cache_hits", 0)),
         }
 
     # ── Internal helpers ───────────────────────────────────────────────────────
@@ -471,7 +492,18 @@ class V15Pipeline:
             # verification/runtime. See reliability_metrics.py's
             # DETERMINISTIC_PREVENTION_CATEGORIES for how these roll up into
             # the reliability dashboard's "Deterministic Prevention Rate".
-            counts = dict(run_deterministic_patches(str(ctx.project_path)))
+            # Do not let the broad deterministic patcher's historical
+            # User-model heuristic inject auth into a business-user app.
+            # The narrow convergence guard below is the sole authority for
+            # protected auth templates in V15.
+            from app.repair.auth_completeness import (
+                ensure_auth_completeness_if_signaled,
+                project_signals_auth,
+            )
+            auth_signaled = project_signals_auth(ctx.project_path, ctx.architecture)
+            counts = dict(run_deterministic_patches(
+                str(ctx.project_path), skip_protected_injections=not auth_signaled,
+            ))
             counts["patch_database_py"] = int(bool(patch_database_py(str(ctx.project_path))))
             counts["patch_model_field_mismatches"] = patch_model_field_mismatches(str(ctx.project_path)) or 0
             counts["patch_add_missing_model_columns"] = patch_add_missing_model_columns(str(ctx.project_path)) or 0
@@ -485,6 +517,14 @@ class V15Pipeline:
             preflight_fired = preflight.run(ctx.project_path)
             for name, fired in (preflight_fired or {}).items():
                 counts[f"preflight.{name}"] = int(bool(fired))
+            # Auth injection is intentionally gated: only projects whose
+            # generated files or architecture explicitly signal auth are
+            # converged.  That preserves auth-free apps while restoring the
+            # known-good routes if an earlier generation pass omitted them.
+            auth_result = ensure_auth_completeness_if_signaled(
+                ctx.project_path, ctx.project_name, ctx.architecture,
+            )
+            counts["auth_completeness"] = int(auth_result.get("status") == "repaired")
             ctx.prevention_counts = counts
             ctx.end_stage(evt, StageStatus.PASSED)
         except Exception as exc:

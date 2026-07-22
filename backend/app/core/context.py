@@ -334,6 +334,10 @@ class GenerationContext:
         # weighted average that a already-high score can absorb.
         self.llm_judge_severity: Optional[ErrorSeverity] = None
         self.llm_judge_confidence: float = 0.0
+        # A repair pass can defer the paid visual review until deterministic
+        # checks make the project a deployment candidate. This is distinct
+        # from a clean verdict: an unrun judge must never score as 100/100.
+        self.llm_judge_evaluated: bool = False
 
         # ── Scoring ───────────────────────────────────────────────────────
         self.score_history:   list[QualityScore]        = []

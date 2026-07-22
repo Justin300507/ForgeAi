@@ -1,4 +1,4 @@
-from sqlalchemy import Column, String, Integer, ForeignKey, DateTime, Text
+from sqlalchemy import Column, String, Integer, Float, ForeignKey, DateTime, Text
 from sqlalchemy.sql import func
 from app.database import Base
 
@@ -20,5 +20,19 @@ class GenerationJob(Base):
     github_url = Column(String(512), nullable=True)
     zip_path = Column(String(512), nullable=True)
     error = Column(Text, nullable=True)
+    # Additive V15 supervisor state.  These fields deliberately contain only
+    # bounded identifiers/timestamps: never prompts, provider responses, JWTs,
+    # or raw exception messages.
+    progress_stage = Column(String(64), nullable=True)
+    progress_updated_at = Column(DateTime(timezone=True), nullable=True)
+    effective_provider = Column(String(32), nullable=True)
+    execution_token = Column(String(64), nullable=True, index=True)
+    lease_expires_at = Column(DateTime(timezone=True), nullable=True)
+    deadline_at = Column(DateTime(timezone=True), nullable=True)
+    # Persisted accounting lets the jobs dashboard report the actual
+    # generation estimate for this run without inferring it from a shared log.
+    total_tokens = Column(Integer, nullable=True)
+    estimated_cost_usd = Column(Float, nullable=True)
+    cache_hits = Column(Integer, nullable=True)
     created_at = Column(DateTime(timezone=True), server_default=func.now())
     completed_at = Column(DateTime(timezone=True), nullable=True)

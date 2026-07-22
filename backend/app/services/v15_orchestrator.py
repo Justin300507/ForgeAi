@@ -36,6 +36,7 @@ def generate_project_v15(
     style_override: Optional[str] = None,
     motion_intensity: Optional[str] = None,
     include_landing_page: bool = False,
+    event_bus: Optional[EventBus] = None,
 ) -> dict[str, Any]:
     """
     Run the full V15 autonomous generation pipeline.
@@ -87,7 +88,9 @@ def generate_project_v15(
     print(f"{'#'*70}")
 
     # ── Build event bus with optional WebSocket streaming ─────────────────
-    bus = EventBus()
+    # Queue workers inject an isolated bus so their parent process can persist
+    # safe stage identifiers without sharing provider output across processes.
+    bus = event_bus or EventBus()
 
     if log_fn:
         def _stream(payload: dict):

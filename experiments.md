@@ -7840,3 +7840,183 @@ Gemini remains credit-depleted (chain runs Cerebras→Groq+final-retry);
 consistency across NOVEL ideas is the next thing to prove — a
 ForgeBench v1.1 run is the right instrument now that the hang class
 and the top deterministic failure classes are closed.
+
+---
+
+## Experiment 134: Post-LLM Ownership Re-convergence
+
+(Renumbered from a working-tree draft that said "118" — commits 118-133
+were already used on this branch for unrelated fixes (JSX truncation,
+Cerebras retry, CRUD entity selection, etc.) without matching
+experiments.md entries, and this draft was written without that context.
+134 is the first number unused by either the commit log or this file.)
+
+2026-07-19. Failure-memory triage identified `JourneyCRUDFailure` as a
+recurring class. The initial deterministic patcher already restores a
+missing `model.user_id = current_user.id` assignment, but the two V6
+post-LLM-repair convergence batches omitted that safety net. A repair
+could therefore overwrite an otherwise-safe create route and leave the
+generated app unable to create an owned record.
+
+**Fix**: add `_patch_missing_ownership_assignment` immediately after
+attribute-access normalization in both V6 post-LLM-repair convergence
+batches (`generate_project_v6` and `repair_project`).
+
+**Local validation**: the focused reliability runner passes 13/13,
+including a regression case that simulates an LLM repair dropping the
+assignment, verifies restoration, and checks that the second pass is
+idempotent. `py_compile`, AST parsing, and `git diff --check` pass.
+
+**Live validation**: inconclusive. The fixed Todo/Blog CMS/CRM canary
+was started with `--no-deploy --provider cerebras`, but the first
+provider request stalled without writing generated-project output or
+history. The exact canary processes and stale lock were stopped to
+prevent unbounded fallback spend. No Forge Score or deployment claim is
+made from this attempt; re-run only after the provider timeout/fallback
+path is independently bounded.
+
+**Cost**: bounded attempt, deployment disabled; no intentional paid
+fallback run.
+
+---
+
+## Experiment 135: Visible Provider Budgets and Auth-Safe V15 Convergence
+
+2026-07-19. Two consecutive no-deploy canary attempts produced no
+generated-project output or history before their provider stages stalled.
+The first exposed compounded Cerebras compatibility attempts; the second
+showed that OpenAI SDK retries could turn one nominal 120-second request
+into several opaque attempts before ForgeAI reached its own fallback.
+
+**Provider fixes**: automatic routing is explicitly OpenAI mini →
+Cerebras → Gemini → Groq. OpenAI uses a 45-second client timeout with
+`max_retries=0`, so ForgeAI—not the SDK—owns the visible fallback. Large
+Cerebras GPT-OSS calls make exactly one documented
+`reasoning_effort="low"` request; unsupported thinking payloads and paid
+compatibility retries were removed. A higher-cost OpenAI escalation is
+explicit opt-in only.
+
+**V15 reliability fix**: auth-completeness convergence now runs after
+preflight only when the project has strong auth evidence. Both the initial
+and post-LLM deterministic passes suppress protected auth injections for
+auth-free applications before those patchers execute. `/author` does not
+match `/auth`, and a generic business `User` model does not trigger auth;
+credentialed User/Account models and declared auth routes do.
+
+**Local validation**: provider policy tests 8/8, auth-completeness tests
+24/24, and ownership convergence tests 13/13 pass, along with compilation,
+diff, graph, and security review checks. All tests mock providers and make
+no network request.
+
+**Live validation**: still inconclusive. The post-fix fixed three-app
+canary (`--no-deploy --provider auto`) was stopped after the first stage
+again failed to emit generated output or history. The process and exact
+lock were cleared to cap spend. This proves the remaining gap is an
+end-to-end provider-stage watchdog/telemetry boundary, not a reason to
+claim an 85+ Forge Score or deployment result.
+
+**Follow-up completed**: provider failure telemetry now records a safe,
+allowlisted classification (timeout, payment, rate limit, authentication,
+connection, unavailable, or generic provider error) with stage, model,
+provider, and elapsed time before fallback. It never stores prompts or raw
+exception text; a regression test covers an exception that echoes prompt
+content.
+
+**Next experiment**: enforce a hard deadline only at an owned worker-process
+boundary, with heartbeat/last-stage persistence. Do not use an in-process
+thread timeout: Python work would continue and could keep spending after the
+caller returned. Validate that worker watchdog with a simulated stall before
+rerunning the fixed canary.
+
+---
+
+## Experiment 136: Supervised V15 Jobs, Private Artifacts, and UTC Deadlines
+
+2026-07-19. The legacy asynchronous `/jobs` path was moved behind an owned
+Windows-spawn V15 supervisor. The parent is the only database writer; the
+child receives no prompt over IPC and emits only allowlisted stage/provider
+events plus a redacted result summary. Cancellation, deadline expiry, and
+final cleanup terminate only the owned process tree. Provider progress records
+the leg that actually succeeded, not merely the router's prediction.
+
+**Security boundary**: queue routes require JWT authentication and bind every
+job to its owner; global worker controls require a separately configured
+constant-time operator token. Job downloads, websocket logs, list/status,
+cancel/retry, and deployed-app checks all enforce job ownership. Downloads use
+an authenticated blob request and only serve conventional archives contained
+under `generated_projects`; websocket JWTs are sent in the first frame rather
+than URL query parameters.
+
+**UTC correction**: existing SQLite timestamps are naive UTC values. The job
+API now serializes all job timestamps with an explicit `Z`, preventing browser
+clients from interpreting a deadline as local time.
+
+**Local validation**: authenticated V15 smoke 2/2; supervisor process-tree
+and timeout regression suite 11/11; queue-auth 3/3; queue-ownership 6/6;
+download ownership/containment 7/7; websocket ownership 6/6; focused
+security/CORS/path/secret tests 20/20. These tests use fake child pipelines,
+make no provider or deployment calls, and include Windows child-tree cleanup.
+
+**One bounded live observation**: an authenticated, no-deploy Todo job entered
+the real V15 child and recorded an actual OpenAI response before package
+installation. It was deliberately stopped while diagnosing a timezone display
+mistake, so it correctly ended as a safe child-error rather than a scored
+success. This is not canary evidence and no Forge Score or deployment claim is
+made. Do not spend another live generation on it until a user explicitly asks
+for the next canary run.
+
+---
+
+## Experiment 137: Stabilization Pass — auth_router Prefix Bug, Stale Tests, Repo Cleanup
+
+2026-07-22. A large batch of uncommitted work (Exp134-136 plus Exp133's
+in-progress FixCache steps) had accumulated across the session with 25
+failing reliability tests. Root-caused rather than reverted:
+
+**Real bug found and fixed**: Exp135's auth-safe V15 convergence work left
+`auth_router = APIRouter(prefix="/auth")` in `deterministic_patcher.py`'s
+injected auth-route template while every `@auth_router.post(...)` decorator
+in that same template still used full `/auth/...` paths — doubling the
+prefix to `/auth/auth/signup` and making the deterministic auth repair
+silently produce an unreachable router. Reverted to `APIRouter()` (no
+prefix), matching every decorator's existing convention. 24/24
+`test_exp071_auth_completeness.py` and 12/12
+`test_exp085_cross_file_auth_validation.py` pass after the fix; both were
+failing before it.
+
+**Stale tests, not regressions**: `REQUIRED_AUTH_ENDPOINTS`'s anchor moved
+from `/auth/register` to `/auth/signup` in an earlier uncommitted step,
+matching the convention already established elsewhere (`shared_contract.py`,
+`deployed_checker.py`, committed in f4a03f9/bb3eb15). The Exp071/085 test
+fixtures still asserted the old path; updated them rather than the source.
+Separately, `_run_frontend_patches_detailed`'s sequence grew from 14 to 15
+calls with the addition of `_patch_vite_root_proxy_and_api_base`;
+`test_frontend_patch_isolation.py`'s hardcoded counts and expected-order
+list were stale, not the patcher registration.
+
+**Known non-issues, left alone**: two `test_semantic_write_validation.py`
+replay tests read gitignored `generated_projects/` fixtures that were
+regenerated today with the bug they were checking for already fixed
+(environment drift, not a code regression). `test_v15_jobs_api_smoke.py`'s
+two tests are an intentional standalone-subprocess smoke test, not
+pytest-collectable by design (confirmed passing when run directly).
+`test_engine_bundle_wiring.py` flakes under full-suite runs from a
+pre-existing module-level global (`forensic_bundle.BUNDLE_DIR`) shared
+across test files without teardown — passes in isolation every time; not
+touched today, filed as known test-isolation debt.
+
+**Repo hygiene**: found ~140 zero-byte junk files at the repo root and
+under `backend/` (names like `$(grep`, `0`, `NOT`, `OK)`,
+`` `req.username` ``) — fragments from a shell command that word-split on
+unquoted punctuation in some earlier session. Deleted (confirmed empty,
+not source). Left ~500 `failure_memory/bundles/*.json` forensic bundles and
+~30 ad-hoc `benchmark_results/` run logs untracked (telemetry, not source);
+added `.gitignore` rules so they stop showing as clutter. Exp134/135/136
+were also renumbered from a working-tree draft that had reused commit
+numbers 118-120, which this branch's commit log had already used for
+unrelated fixes (see the note on Exp134).
+
+**Validation**: full `pytest tests/reliability/` now passes (916-917/919,
+depending on the pre-existing bundle-wiring flake's isolation), down from
+25 failures at the start of this pass. `py_compile` clean on all touched
+files.

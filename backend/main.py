@@ -3,7 +3,7 @@ import sys
 import uuid
 import asyncio
 import threading
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 
 from fastapi import FastAPI, Depends, HTTPException, status, BackgroundTasks, WebSocket, WebSocketDisconnect
 from fastapi.responses import RedirectResponse, FileResponse
@@ -15,7 +15,13 @@ from sqlalchemy.orm import Session
 
 from app.database import Base, engine, get_db
 from app.services.user_service import create_user, get_user_by_email
-from app.dependencies.auth import authenticate_user, create_access_token, get_current_user, ACCESS_TOKEN_EXPIRE_MINUTES
+from app.dependencies.auth import (
+    authenticate_user,
+    create_access_token,
+    get_current_user,
+    get_user_from_access_token,
+    ACCESS_TOKEN_EXPIRE_MINUTES,
+)
 from app.services.architect_service import generate_architecture
 from app.services.backend_service import generate_backend
 from app.services.frontend_service import generate_frontend
@@ -27,10 +33,19 @@ from app.queue.api import router as queue_router
 from app.utils.safe_path import resolve_safe_path, PathTraversalError
 from app.middleware.rate_limit import rate_limit
 
+from sqlalchemy import text as _sql_text
+
+
+def _migrate_generation_job_supervisor_columns() -> None:
+    """Migration wrapper kept at startup before SQLAlchemy metadata creation."""
+    from app.jobs.v15_supervisor import ensure_generation_job_columns
+    ensure_generation_job_columns(engine)
+
+
+_migrate_generation_job_supervisor_columns()
 Base.metadata.create_all(bind=engine)
 
 # Add railway_token column if upgrading from a version that had render fields
-from sqlalchemy import text as _sql_text
 with engine.connect() as _conn:
     try:
         _conn.execute(_sql_text("ALTER TABLE user_credentials ADD COLUMN railway_token VARCHAR(512)"))
@@ -218,8 +233,12 @@ def _run_job(job_id: str, req: JobRequest):
     # Write the result back to DB in a new session
     from app.database import SessionLocal
 
-    # Look up per-user deployment credentials and temporarily apply them as env vars
+    # V14 historically uses ambient credentials.  V15 is Windows-spawned, so
+    # keep its request-specific credentials local and hand them to the
+    # supervisor for a lock-scoped child environment snapshot instead.
+    pipeline_version = os.environ.get("FORGE_PIPELINE_VERSION", "v14")
     _saved_env: dict = {}
+    _v15_credential_overrides: dict[str, str] = {}
     try:
         _c = _merged_creds()
         _env_map = {
@@ -228,28 +247,100 @@ def _run_job(job_id: str, req: JobRequest):
             "CLOUDFLARE_API_TOKEN": _c["cloudflare_api_token"],
             "CLOUDFLARE_ACCOUNT_ID": _c["cloudflare_account_id"],
         }
-        for _k, _v in _env_map.items():
-            if _v:
-                _saved_env[_k] = os.environ.get(_k)
-                os.environ[_k] = _v
+        if pipeline_version == "v15":
+            _v15_credential_overrides = {
+                _k: _v for _k, _v in _env_map.items() if _v
+            }
+        else:
+            for _k, _v in _env_map.items():
+                if _v:
+                    _saved_env[_k] = os.environ.get(_k)
+                    os.environ[_k] = _v
     except Exception as _ce:
         print(f"[credentials] lookup failed: {_ce}")
 
+    v15_execution_token: str | None = None
+    v15_last_stage = "queued"
     try:
-        pipeline_version = os.environ.get("FORGE_PIPELINE_VERSION", "v14")
         if pipeline_version == "v15":
-            from app.services.v15_orchestrator import generate_project_v15
-            result = generate_project_v15(
-                idea=req.idea,
-                provider=req.provider,
-                deploy=req.deploy_to != "none",
-                deploy_to=req.deploy_to if req.deploy_to != "none" else "vercel",
-                job_id=job_id,
-                style_override=req.style_override,
-                motion_intensity=req.motion_intensity,
-                include_landing_page=req.include_landing_page,
+            # V15 is isolated in an owned Windows-spawn child.  Prompt text is
+            # read from GenerationJob by that child; IPC contains only safe
+            # stage/provider identifiers and an allowlisted result summary.
+            from app.database import SessionLocal
+            from app.jobs.v15_supervisor import (
+                V15JobCancelled,
+                V15JobDeadlineExceeded,
+                run_v15_supervisor,
+                v15_job_deadline_s,
             )
-            result = _normalize_v15_result(result)
+
+            v15_execution_token = uuid.uuid4().hex
+            deadline_s = v15_job_deadline_s()
+            deadline_at = datetime.utcnow() + timedelta(seconds=deadline_s)
+            claim_db = SessionLocal()
+            try:
+                claimed = (
+                    claim_db.query(GenerationJob)
+                    .filter(GenerationJob.id == job_id, GenerationJob.status == "pending")
+                    .update({
+                        "status": "running",
+                        "execution_token": v15_execution_token,
+                        "progress_stage": "queued",
+                        "progress_updated_at": datetime.utcnow(),
+                        "lease_expires_at": datetime.utcnow() + timedelta(seconds=30),
+                        "deadline_at": deadline_at,
+                    }, synchronize_session=False)
+                )
+                claim_db.commit()
+            finally:
+                claim_db.close()
+            if not claimed or store["cancel_event"].is_set():
+                raise _JobCancelled("Job cancelled before V15 supervisor claim")
+
+            def _persist_v15_event(kind: str, value) -> None:
+                nonlocal v15_last_stage
+                now = datetime.utcnow()
+                updates = {"lease_expires_at": now + timedelta(seconds=30)}
+                if kind == "stage" and value:
+                    v15_last_stage = value
+                    updates.update(progress_stage=value, progress_updated_at=now)
+                elif kind == "provider_attempt" and isinstance(value, dict):
+                    # Persist only a provider that actually returned a
+                    # successful response.  Router selection and failed
+                    # fallback legs are not an effective provider.
+                    if value.get("status") == "succeeded" and value.get("provider"):
+                        updates["effective_provider"] = value["provider"]
+                event_db = SessionLocal()
+                try:
+                    updated = (
+                        event_db.query(GenerationJob)
+                        .filter(
+                            GenerationJob.id == job_id,
+                            GenerationJob.execution_token == v15_execution_token,
+                            GenerationJob.status == "running",
+                        )
+                        .update(updates, synchronize_session=False)
+                    )
+                    event_db.commit()
+                    if updated and kind == "stage" and value:
+                        store["stage"] = value
+                finally:
+                    event_db.close()
+
+            supervised = run_v15_supervisor(
+                job_id,
+                options={
+                    "style_override": req.style_override,
+                    "motion_intensity": req.motion_intensity,
+                    "include_landing_page": req.include_landing_page,
+                },
+                on_event=_persist_v15_event,
+                is_cancelled=store["cancel_event"].is_set,
+                deadline_s=deadline_s,
+                credential_overrides=_v15_credential_overrides,
+            )
+            v15_last_stage = supervised.last_stage
+            result = _normalize_v15_result(supervised.result)
         else:
             from app.services.v14_orchestrator import generate_project_v14
             result = generate_project_v14(
@@ -268,29 +359,55 @@ def _run_job(job_id: str, req: JobRequest):
             raise RuntimeError(result.get("error") or "V15 generation failed")
         # Only mark done if not already cancelled by user
         if not store["cancel_event"].is_set():
-            store["status"] = "done"
-            store["result"] = result
-
+            raw_score = report.get("forge_score")
+            forge_score = raw_score.get("score") if isinstance(raw_score, dict) else raw_score
+            frontend_url = report.get("frontend_url") or result.get("cloudflare", {}).get("url")
             db = SessionLocal()
             try:
-                job = db.query(GenerationJob).filter(GenerationJob.id == job_id).first()
-                if job and job.status != "cancelled":
-                    raw_score = report.get("forge_score")
-                    forge_score = raw_score.get("score") if isinstance(raw_score, dict) else raw_score
-                    # frontend_url: prefer report field, fall back to raw cloudflare result
-                    frontend_url = (
-                        report.get("frontend_url")
-                        or result.get("cloudflare", {}).get("url")
+                if v15_execution_token:
+                    # Cancellation changes status first, so this conditional
+                    # terminal write cannot resurrect a cancelled job when a
+                    # child result arrives at the same time.
+                    terminal_updates = {
+                        "status": "done", "project_name": report.get("project_name"),
+                        "forge_score": forge_score, "backend_url": report.get("backend_url"),
+                        "frontend_url": frontend_url, "github_url": report.get("github_url"),
+                        "zip_path": result.get("generation", {}).get("zip_path"),
+                        "completed_at": datetime.utcnow(), "lease_expires_at": None,
+                        "progress_stage": v15_last_stage,
+                        "total_tokens": result.get("total_tokens"),
+                        "estimated_cost_usd": result.get("estimated_cost"),
+                        "cache_hits": result.get("cache_hits"),
+                    }
+                    if pipeline_version == "v15" and supervised.effective_provider:
+                        terminal_updates["effective_provider"] = supervised.effective_provider
+                    updated = (
+                        db.query(GenerationJob)
+                        .filter(
+                            GenerationJob.id == job_id,
+                            GenerationJob.execution_token == v15_execution_token,
+                            GenerationJob.status == "running",
+                        )
+                        .update(terminal_updates, synchronize_session=False)
                     )
-                    job.status = "done"
-                    job.project_name = report.get("project_name")
-                    job.forge_score = forge_score
-                    job.backend_url = report.get("backend_url")
-                    job.frontend_url = frontend_url
-                    job.github_url = report.get("github_url")
-                    job.zip_path = result.get("generation", {}).get("zip_path")
-                    job.completed_at = datetime.utcnow()
                     db.commit()
+                    if updated:
+                        store["status"] = "done"
+                        store["result"] = result
+                else:
+                    job = db.query(GenerationJob).filter(GenerationJob.id == job_id).first()
+                    if job and job.status != "cancelled":
+                        store["status"] = "done"
+                        store["result"] = result
+                        job.status = "done"
+                        job.project_name = report.get("project_name")
+                        job.forge_score = forge_score
+                        job.backend_url = report.get("backend_url")
+                        job.frontend_url = frontend_url
+                        job.github_url = report.get("github_url")
+                        job.zip_path = result.get("generation", {}).get("zip_path")
+                        job.completed_at = datetime.utcnow()
+                        db.commit()
             finally:
                 db.close()
 
@@ -304,15 +421,34 @@ def _run_job(job_id: str, req: JobRequest):
             store["status"] = "cancelled"
         else:
             store["status"] = "error"
-            store["error"] = str(exc)
+            is_v15_deadline = v15_execution_token is not None and exc.__class__.__name__ == "V15JobDeadlineExceeded"
+            if is_v15_deadline:
+                safe_error = f"deadline_exceeded at stage {getattr(exc, 'stage', v15_last_stage)}"
+            elif v15_execution_token:
+                safe_error = f"pipeline_child_error:{type(exc).__name__}"
+            else:
+                safe_error = str(exc)
+            store["error"] = safe_error
             db = SessionLocal()
             try:
-                job = db.query(GenerationJob).filter(GenerationJob.id == job_id).first()
-                if job and job.status != "cancelled":
-                    job.status = "error"
-                    job.error = str(exc)
-                    job.completed_at = datetime.utcnow()
+                if v15_execution_token:
+                    db.query(GenerationJob).filter(
+                        GenerationJob.id == job_id,
+                        GenerationJob.execution_token == v15_execution_token,
+                        GenerationJob.status == "running",
+                    ).update({
+                        "status": "error", "error": safe_error,
+                        "completed_at": datetime.utcnow(), "lease_expires_at": None,
+                        "progress_stage": getattr(exc, "stage", v15_last_stage) if is_v15_deadline else v15_last_stage,
+                    }, synchronize_session=False)
                     db.commit()
+                else:
+                    job = db.query(GenerationJob).filter(GenerationJob.id == job_id).first()
+                    if job and job.status != "cancelled":
+                        job.status = "error"
+                        job.error = safe_error
+                        job.completed_at = datetime.utcnow()
+                        db.commit()
             finally:
                 db.close()
 
@@ -753,6 +889,22 @@ def get_job(job_id: str, db: Session = Depends(get_db), current_user=Depends(get
     return result
 
 
+def _utc_timestamp(value: datetime | None) -> str | None:
+    """Serialize database timestamps as explicit UTC for API consumers.
+
+    Existing job rows use ``datetime.utcnow()`` and SQLite returns them as
+    naive values.  Emitting a bare ISO string makes browsers interpret the
+    deadline in the viewer's local timezone, which can make a healthy V15 job
+    appear hours overdue.  Treat legacy naive values as UTC and make that
+    contract unambiguous on the wire.
+    """
+    if value is None:
+        return None
+    if value.tzinfo is None:
+        value = value.replace(tzinfo=timezone.utc)
+    return value.astimezone(timezone.utc).isoformat().replace("+00:00", "Z")
+
+
 def _job_to_dict(job: GenerationJob) -> dict:
     check = CHECK_STORE.get(job.id, {})
     return {
@@ -767,9 +919,17 @@ def _job_to_dict(job: GenerationJob) -> dict:
         "frontend_url": job.frontend_url,
         "github_url": job.github_url,
         "zip_path": job.zip_path,
+        "active_stage": job.progress_stage,
+        "stage_updated_at": _utc_timestamp(job.progress_updated_at),
+        "selected_provider": job.effective_provider,
+        "total_tokens": job.total_tokens,
+        "estimated_cost_usd": job.estimated_cost_usd,
+        "cache_hits": job.cache_hits,
+        "lease_expires_at": _utc_timestamp(job.lease_expires_at),
+        "deadline_at": _utc_timestamp(job.deadline_at),
         "error": job.error,
-        "created_at": job.created_at.isoformat() if job.created_at else None,
-        "completed_at": job.completed_at.isoformat() if job.completed_at else None,
+        "created_at": _utc_timestamp(job.created_at),
+        "completed_at": _utc_timestamp(job.completed_at),
         "check_status": check.get("status"),
         "check_result": check.get("result"),
     }
@@ -779,13 +939,52 @@ def _job_to_dict(job: GenerationJob) -> dict:
 
 @app.websocket("/ws/{job_id}")
 async def ws_job(websocket: WebSocket, job_id: str):
+    # Browser WebSocket constructors cannot set Authorization headers.  The
+    # client therefore sends its existing short-lived access token as the
+    # first WebSocket frame *after* connecting.  This deliberately avoids a
+    # query-string token, which is likely to be captured by access logs.
+    # Nothing about a job is read or sent until both authentication and
+    # ownership checks complete.
     await websocket.accept()
     sent = 0
     try:
+        try:
+            auth_message = await asyncio.wait_for(websocket.receive_json(), timeout=5)
+        except asyncio.TimeoutError:
+            await websocket.close(code=1008)
+            return
+        token = auth_message.get("token") if isinstance(auth_message, dict) else None
+        if not isinstance(auth_message, dict) or auth_message.get("type") != "auth":
+            await websocket.close(code=1008)
+            return
+        if not isinstance(token, str) or not token:
+            await websocket.close(code=1008)
+            return
+
+        db_session = get_db()
+        try:
+            db = next(db_session)
+            current_user = get_user_from_access_token(token, db)
+            # Scope the lookup in SQL so a foreign job is indistinguishable
+            # from a missing job and is never exposed through JOB_STORE.
+            job = db.query(GenerationJob).filter(
+                GenerationJob.id == job_id,
+                GenerationJob.user_id == current_user.id,
+            ).first()
+            if not job:
+                await websocket.close(code=1008)
+                return
+        except HTTPException:
+            await websocket.close(code=1008)
+            return
+        finally:
+            db_session.close()
+
         while True:
             store = JOB_STORE.get(job_id)
             if not store:
-                await websocket.send_json({"type": "error", "message": "Job not found"})
+                # Missing, deleted, and foreign jobs all get the same close.
+                await websocket.close(code=1008)
                 break
 
             logs: list[str] = store["logs"]
@@ -1552,42 +1751,94 @@ def health():
 
 
 @app.get("/api/download/{job_id}", tags=["jobs"])
-def download_zip(job_id: str, db: Session = Depends(get_db)):
-    """Serve the generated project's zip. The frontend links to this with a plain
-    <a href>, so no Authorization header is sent — auth is intentionally not
-    required here (it's the user's own generated source). Without this route the
-    request fell through to the SPA catch-all and just re-rendered the dashboard,
-    which is exactly what 'download zip goes to dashboard' was."""
+def download_zip(
+    job_id: str,
+    db: Session = Depends(get_db),
+    current_user=Depends(get_current_user),
+):
+    """Serve only the current user's generated project zip.
+
+    The dashboard fetches this endpoint through its authenticated Axios client;
+    a plain browser link would omit the bearer token and turn this endpoint into
+    an IDOR risk.
+    """
     import os as _os2
-    job = db.query(GenerationJob).filter(GenerationJob.id == job_id).first()
+    from pathlib import Path
+    job = db.query(GenerationJob).filter(
+        GenerationJob.id == job_id,
+        GenerationJob.user_id == current_user.id,
+    ).first()
     if not job:
         raise HTTPException(status_code=404, detail="Job not found")
 
     here = _os2.path.dirname(_os2.path.abspath(__file__))
-    proj = getattr(job, "project_name", None)
+    project_name = getattr(job, "project_name", None)
 
-    # Resolve an existing zip: stored path first, then the conventional locations.
-    candidates = []
-    if getattr(job, "zip_path", None):
-        candidates.append(job.zip_path)
-    if proj:
-        candidates.append(_os2.path.join("generated_projects", f"{proj}.zip"))
-        candidates.append(_os2.path.join(here, "generated_projects", f"{proj}.zip"))
-    zip_file = next((c for c in candidates if c and _os2.path.isfile(c)), None)
+    # ``project_name`` was produced by the generator and persisted with the
+    # job, so it is still untrusted at this file-serving boundary.  Reuse the
+    # existing traversal guard before using it to construct any path.
+    safe_project_dir = _safe_generated_project_dir(project_name)
+    if (
+        safe_project_dir is None
+        or not isinstance(project_name, str)
+        or Path(safe_project_dir).name != project_name
+    ):
+        project_name = None
+
+    # ForgeAI has historically supported both the process working directory
+    # and backend/ as the project root.  A persisted zip path is acceptable
+    # only when its resolved path remains in one of those generated-project
+    # roots and it has the exact conventional filename for this safe project.
+    generated_roots: list[Path] = []
+    for root in (Path("generated_projects"), Path(here) / "generated_projects"):
+        resolved_root = root.resolve()
+        if resolved_root not in generated_roots:
+            generated_roots.append(resolved_root)
+
+    expected_zip_name = f"{project_name}.zip" if project_name else None
+
+    def _contained_project_zip(candidate: str | os.PathLike[str] | None) -> str | None:
+        if not candidate or not expected_zip_name:
+            return None
+        try:
+            resolved_candidate = Path(candidate).resolve()
+            if resolved_candidate.name != expected_zip_name:
+                return None
+            for root in generated_roots:
+                try:
+                    resolved_candidate.relative_to(root)
+                except ValueError:
+                    continue
+                return str(resolved_candidate) if resolved_candidate.is_file() else None
+        except (OSError, ValueError):
+            return None
+        return None
+
+    # Resolve an existing zip: stored path first, then conventional locations.
+    candidates: list[str | os.PathLike[str] | None] = [getattr(job, "zip_path", None)]
+    if project_name:
+        candidates.extend(root / expected_zip_name for root in generated_roots)
+    zip_file = next(
+        (
+            resolved
+            for candidate in candidates
+            if (resolved := _contained_project_zip(candidate)) is not None
+        ),
+        None,
+    )
 
     # No zip on disk (common when the run scored < deploy threshold, since the
     # pipeline only zips on runtime success) — build it on demand from the
     # project directory so the user can still download the generated code.
-    if not zip_file and proj:
-        for proj_dir in (
-            _os2.path.join("generated_projects", proj),
-            _os2.path.join(here, "generated_projects", proj),
-        ):
-            if _os2.path.isdir(proj_dir):
+    if not zip_file and project_name:
+        for root in generated_roots:
+            proj_dir = root / project_name
+            if proj_dir.is_dir():
                 try:
                     from app.services.zip_service import create_zip
-                    zip_file = create_zip(proj_dir)
-                    break
+                    zip_file = _contained_project_zip(create_zip(str(proj_dir)))
+                    if zip_file:
+                        break
                 except Exception as exc:
                     raise HTTPException(status_code=500, detail=f"Could not build zip: {exc}")
 
@@ -1597,7 +1848,11 @@ def download_zip(job_id: str, db: Session = Depends(get_db)):
             detail="No generated code found for this job (it may have been overwritten by a later run).",
         )
 
-    return FileResponse(zip_file, media_type="application/zip", filename=f"{proj or 'project'}.zip")
+    return FileResponse(
+        zip_file,
+        media_type="application/zip",
+        filename=expected_zip_name or "project.zip",
+    )
 
 
 # ── Serve React frontend (production) ─────────────────────────────────────────

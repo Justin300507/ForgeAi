@@ -245,6 +245,7 @@ export default function ProjectDetail() {
   const [job, setJob] = useState(null);
   const [logs, setLogs] = useState([]);
   const [notFound, setNotFound] = useState(false);
+  const [downloading, setDownloading] = useState(false);
   const logsRef = useRef(null);
   const bottom = useRef(true);
   const sceneryBoost = useSceneryBoost();
@@ -260,11 +261,36 @@ export default function ProjectDetail() {
   const fetchJob = useCallback(() =>
     jobsAPI.get(id).then(r => { setJob(r.data); setLogs(r.data.logs || []); }).catch(() => setNotFound(true)), [id]);
 
+  const downloadZip = async () => {
+    if (!job || downloading) return;
+    setDownloading(true);
+    try {
+      const response = await jobsAPI.downloadZip(job.id);
+      const objectUrl = URL.createObjectURL(response.data);
+      const anchor = document.createElement("a");
+      anchor.href = objectUrl;
+      anchor.download = `${job.project_name || "project"}.zip`;
+      document.body.appendChild(anchor);
+      anchor.click();
+      anchor.remove();
+      URL.revokeObjectURL(objectUrl);
+    } finally {
+      setDownloading(false);
+    }
+  };
+
   useEffect(() => { fetchJob(); }, [fetchJob]);
 
   useEffect(() => {
     if (!job || (job.status !== "pending" && job.status !== "running")) return;
-    const proto = (import.meta.env.VITE_WS_URL ? import.meta.env.VITE_WS_URL.replace(/^http/, "ws") : (location.protocol === "https:" ? "wss" : "ws") + "://" + location.host); const ws = new WebSocket(`${proto}/ws/${id}`);
+    const token = localStorage.getItem("token");
+    if (!token) return;
+    const proto = (import.meta.env.VITE_WS_URL ? import.meta.env.VITE_WS_URL.replace(/^http/, "ws") : (location.protocol === "https:" ? "wss" : "ws") + "://" + location.host);
+    const ws = new WebSocket(`${proto}/ws/${id}`);
+    // JWTs never appear in the WebSocket URL (which browsers/proxies can log).
+    // The backend will not stream any job data until this first message passes
+    // JWT validation and an owner-scoped GenerationJob lookup.
+    ws.onopen = () => ws.send(JSON.stringify({ type: "auth", token }));
     ws.onmessage = (e) => {
       const msg = JSON.parse(e.data);
       if (msg.type === "log") setLogs(p => [...p, msg.message]);
@@ -368,10 +394,10 @@ export default function ProjectDetail() {
                   className="flex items-center gap-1.5 text-xs font-medium px-3 py-1.5 rounded-lg border border-white/8 text-gray-400 hover:text-white"
                   style={{background:"rgba(255,255,255,0.04)"}}>
                   <Github size={13} aria-hidden="true" /> GitHub</a>}
-                {job.zip_path && <a href={`/api/download/${job.id}`} target="_blank"
+                {job.zip_path && <button type="button" onClick={downloadZip} disabled={downloading}
                   className="flex items-center gap-1.5 text-xs font-medium px-3 py-1.5 rounded-lg border border-white/8 text-gray-400 hover:text-white"
                   style={{background:"rgba(255,255,255,0.04)"}}>
-                  <Download size={13} aria-hidden="true" /> Download zip</a>}
+                  <Download size={13} aria-hidden="true" /> {downloading ? "Preparing zip…" : "Download zip"}</button>}
               </div>
             )}
             {isDone && job.backend_url && (

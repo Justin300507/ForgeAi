@@ -1,8 +1,9 @@
 {
   "AttributeError": {
     "patch_file": {
+      "generation": 1,
       "successes": 0,
-      "tries": 2
+      "tries": 3
     },
     "regenerate_arch": {
       "generation": 1,
@@ -12,7 +13,7 @@
     "regenerate_module": {
       "generation": 2,
       "successes": 0,
-      "tries": 0
+      "tries": 1
     },
     "switch_model": {
       "generation": 1,
@@ -37,6 +38,18 @@
       "tries": 1
     }
   },
+  "IntegrityError": {
+    "patch_file": {
+      "generation": 1,
+      "successes": 0,
+      "tries": 3
+    },
+    "regenerate_module": {
+      "generation": 2,
+      "successes": 2,
+      "tries": 2
+    }
+  },
   "PydanticSerializationError": {
     "patch_file": {
       "generation": 1,
@@ -50,15 +63,20 @@
     }
   },
   "SQLAlchemyError": {
+    "patch_file": {
+      "generation": 1,
+      "successes": 0,
+      "tries": 3
+    },
     "regenerate_module": {
       "generation": 2,
       "successes": 0,
-      "tries": 1
+      "tries": 3
     },
     "switch_model": {
       "generation": 1,
       "successes": 0,
-      "tries": 1
+      "tries": 2
     }
   },
   "SyntaxError": {
@@ -84,6 +102,23 @@
       "tries": 1
     }
   },
+  "WinError": {
+    "patch_file": {
+      "generation": 1,
+      "successes": 1,
+      "tries": 2
+    },
+    "regenerate_module": {
+      "generation": 2,
+      "successes": 0,
+      "tries": 1
+    },
+    "switch_model": {
+      "generation": 1,
+      "successes": 0,
+      "tries": 1
+    }
+  },
   "api": {
     "patch_file": {
       "successes": 0,
@@ -91,8 +126,8 @@
     },
     "regenerate_arch": {
       "generation": 1,
-      "successes": 1,
-      "tries": 2
+      "successes": 2,
+      "tries": 12
     },
     "regenerate_module": {
       "generation": 2,
@@ -101,49 +136,80 @@
     },
     "switch_model": {
       "generation": 1,
-      "successes": 6,
-      "tries": 20
+      "successes": 31,
+      "tries": 238
     }
   },
   "browser": {
     "patch_file": {
+      "generation": 1,
       "successes": 1,
-      "tries": 3
+      "tries": 7
     },
     "regenerate_arch": {
       "generation": 1,
       "successes": 0,
-      "tries": 1
+      "tries": 2
     },
     "regenerate_module": {
       "generation": 2,
       "successes": 0,
-      "tries": 1
+      "tries": 3
     },
     "switch_model": {
       "generation": 1,
       "successes": 0,
-      "tries": 2
+      "tries": 3
     }
   },
   "contract": {
     "patch_file": {
       "generation": 1,
-      "successes": 76,
-      "tries": 159
+      "successes": 181,
+      "tries": 625
     },
     "regenerate_arch": {
-      "successes": 9,
-      "tries": 42
+      "generation": 1,
+      "successes": 27,
+      "tries": 136
     },
     "regenerate_module": {
       "generation": 2,
-      "successes": 3,
-      "tries": 7
+      "successes": 31,
+      "tries": 182
     },
     "switch_model": {
       "successes": 0,
       "tries": 3
+    }
+  },
+  "import": {
+    "patch_file": {
+      "generation": 1,
+      "successes": 31,
+      "tries": 54
+    },
+    "regenerate_arch": {
+      "generation": 1,
+      "successes": 0,
+      "tries": 1
+    },
+    "regenerate_module": {
+      "generation": 2,
+      "successes": 2,
+      "tries": 14
+    }
+  },
+  "runtime": {
+    "patch_file": {
+      "generation": 1,
+      "successes": 0,
+      "tries": 3
+    },
+    "regenerate_module": {
+      "generation": 2,
+      "successes": 2,
+      "tries": 11
     }
   }
 }

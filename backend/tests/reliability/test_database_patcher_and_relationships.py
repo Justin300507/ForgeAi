@@ -34,6 +34,7 @@ from app.services.deterministic_patcher import (
     _patch_dangling_foreign_keys,
     _patch_model_aliases,
     _patch_relationship_string_aliases,
+    _patch_models_without_primary_key,
 )
 
 
@@ -433,7 +434,7 @@ def test_patch_strip_relationships_removes_call_and_injects_property():
         assert n == 1
         out = (proj / "app" / "models" / "habit.py").read_text(encoding="utf-8")
         assert "relationship(" not in out
-        assert "@property" in out
+        assert "@builtins.property" in out
         assert "def completions(self)" in out
         # one-to-many direction (target holds the FK back) -> query + filter
         assert ".filter(" in out
@@ -473,6 +474,54 @@ def test_patch_strip_relationships_unresolvable_target_degrades_to_empty_list():
         _patch_strip_relationships(proj)
         out = (proj / "app" / "models" / "orphan.py").read_text(encoding="utf-8")
         assert "return []" in out  # documented fallback, never raises AttributeError
+
+
+def test_patch_strip_relationships_handles_property_named_relation_before_another_relation():
+    """A ``property`` relation must not shadow the decorator for the next one."""
+    lease = (
+        "from app.database import Base\n"
+        "from sqlalchemy import Column, Integer, ForeignKey, relationship\n\n"
+        "class Lease(Base):\n"
+        "    __tablename__ = 'leases'\n"
+        "    id = Column(Integer, primary_key=True)\n"
+        "    property_id = Column(Integer, ForeignKey('properties.id'))\n"
+        "    tenant_id = Column(Integer, ForeignKey('users.id'))\n"
+        "    property = relationship('Property')\n"
+        "    tenant = relationship('User')\n"
+    )
+    target = (
+        "from app.database import Base\n"
+        "from sqlalchemy import Column, Integer\n\n"
+        "class Property(Base):\n"
+        "    __tablename__ = 'properties'\n"
+        "    id = Column(Integer, primary_key=True)\n\n"
+        "class User(Base):\n"
+        "    __tablename__ = 'users'\n"
+        "    id = Column(Integer, primary_key=True)\n"
+    )
+    with tempfile.TemporaryDirectory() as td:
+        proj = _mk_project(td, models={"lease.py": lease, "targets.py": target})
+        assert _patch_strip_relationships(proj) == 1
+        out = (proj / "app" / "models" / "lease.py").read_text(encoding="utf-8")
+        assert "@builtins.property\n    def property" in out
+        compile(out, "lease.py", "exec")
+
+
+def test_models_without_primary_key_get_a_surrogate_id():
+    association = (
+        "from sqlalchemy import Column, Integer, ForeignKey\n"
+        "from app.database import Base\n\n"
+        "class OrderProduct(Base):\n"
+        "    __tablename__ = 'order_products'\n"
+        "    order_id = Column(Integer, ForeignKey('orders.id'))\n"
+        "    product_id = Column(Integer, ForeignKey('products.id'))\n"
+    )
+    with tempfile.TemporaryDirectory() as td:
+        proj = _mk_project(td, models={"order_product.py": association})
+        assert _patch_models_without_primary_key(proj) == 1
+        out = (proj / "app" / "models" / "order_product.py").read_text(encoding="utf-8")
+        assert "id = Column(Integer, primary_key=True, autoincrement=True)" in out
+        assert _patch_models_without_primary_key(proj) == 0
 
 
 # ─── _patch_dangling_foreign_keys ─────────────────────────────────────────

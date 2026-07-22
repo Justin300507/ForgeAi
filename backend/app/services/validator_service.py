@@ -605,8 +605,10 @@ def validate_frontend_nav_targets(project_path, errors):
 
     reported = set()
     for target in sorted(nav_targets - _SKIP_NAV_TARGETS - routed_paths):
-        if _path_matches_existing_page(target, existing_pages):
-            continue  # a page that plausibly serves this route already exists on disk
+        # A similarly named page does not make a navigation target reachable.
+        # For example, a ``ProgressViewPage`` routed only at ``/progress-view``
+        # cannot serve a sidebar link to ``/progress``. The previous fuzzy
+        # page-name exception hid exactly these dead controls from repair.
         page_name = _page_name_for_path(target)
         if page_name in reported:
             continue

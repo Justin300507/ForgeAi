@@ -42,10 +42,10 @@ import re
 from dataclasses import dataclass, field
 from datetime import datetime, timezone
 from pathlib import Path
-from typing import Optional
+from typing import Any, Mapping, Optional
 
 REQUIRED_AUTH_ENDPOINTS: tuple[tuple[str, str], ...] = (
-    ("POST", "/auth/register"),
+    ("POST", "/auth/signup"),
     ("POST", "/auth/login"),
 )
 # Not hard-required (Part 2: "if architecture requires it") -- reported
@@ -61,6 +61,104 @@ RECOMMENDED_AUTH_ENDPOINTS: tuple[tuple[str, str], ...] = (
 _TELEMETRY_LOG_PATH = (
     Path(__file__).parent.parent.parent / "failure_memory" / "auth_completeness_log.jsonl"
 )
+
+_AUTH_MODEL_STEMS = frozenset({"user", "users", "account", "accounts"})
+_AUTH_CREDENTIAL_FIELDS = frozenset({
+    "password", "password_hash", "hashed_password", "password_digest",
+    "access_token", "refresh_token", "token",
+})
+
+
+def _has_auth_credential(fields: Any) -> bool:
+    """Whether declared model fields are concrete authentication evidence."""
+    if not isinstance(fields, list):
+        return False
+    for field in fields:
+        name = field.get("name", "") if isinstance(field, Mapping) else field
+        if str(name).strip().lower() in _AUTH_CREDENTIAL_FIELDS:
+            return True
+    return False
+
+
+def _architecture_signals_auth(architecture: Any) -> bool:
+    """Return whether a generation plan explicitly includes auth intent.
+
+    This deliberately accepts only concrete architecture evidence: an API
+    endpoint under the ``/auth`` path segment, or a User/Account entity that
+    declares credential fields. Product-copy words and a generic business
+    User record are not enough to turn an auth-free application into an
+    authenticated one.
+    """
+    if not isinstance(architecture, Mapping):
+        return False
+
+    endpoints = architecture.get("api_endpoints", [])
+    if isinstance(endpoints, list):
+        for endpoint in endpoints:
+            if isinstance(endpoint, Mapping) and _is_auth_path(str(endpoint.get("path", ""))):
+                return True
+
+    for key in ("database_entities", "db_entities", "models", "entities", "data_entities_detail"):
+        entities = architecture.get(key, [])
+        if not isinstance(entities, list):
+            continue
+        for entity in entities:
+            name = entity.get("name", "") if isinstance(entity, Mapping) else entity
+            if (
+                isinstance(entity, Mapping)
+                and str(name).strip().lower() in _AUTH_MODEL_STEMS
+                and _has_auth_credential(entity.get("fields", []))
+            ):
+                return True
+    return False
+
+
+def _is_auth_path(path: str) -> bool:
+    """Match the /auth path segment, not unrelated paths such as /author."""
+    normalized = _normalize_path(path).lower()
+    return normalized == "/auth" or normalized.endswith("/auth") or "/auth/" in normalized
+
+
+def _model_declares_auth_credential(model_file: Path) -> bool:
+    """Inspect assigned field names without treating comments as evidence."""
+    try:
+        tree = ast.parse(model_file.read_text(encoding="utf-8", errors="replace"))
+    except (SyntaxError, OSError, UnicodeDecodeError):
+        return False
+    for node in ast.walk(tree):
+        targets = node.targets if isinstance(node, ast.Assign) else [node.target] if isinstance(node, ast.AnnAssign) else []
+        if any(isinstance(target, ast.Name) and target.id.lower() in _AUTH_CREDENTIAL_FIELDS for target in targets):
+            return True
+    return False
+
+
+def project_signals_auth(project_path: str | Path, architecture: Any = None) -> bool:
+    """Return whether generated files or their architecture require auth.
+
+    A generated ``User``/``Account`` model is a signal only when it declares
+    credentials. This preserves legitimate business-user records in auth-free
+    applications while still recovering when an LLM repair removes every auth
+    route.
+    """
+    if _architecture_signals_auth(architecture):
+        return True
+
+    root = Path(project_path)
+    for models_dir in (root / "app" / "models", root / "models"):
+        if not models_dir.is_dir():
+            continue
+        for stem in _AUTH_MODEL_STEMS:
+            model_file = models_dir / f"{stem}.py"
+            if model_file.is_file() and _model_declares_auth_credential(model_file):
+                return True
+
+    # Use the same route inventory as check_auth_completeness. In particular,
+    # do not infer auth from nested or otherwise unrecognized layouts that the
+    # completeness verifier cannot subsequently validate.
+    found, _errors = _scan_project_routes(root)
+    if any(_is_auth_path(path) for _method, path in found):
+        return True
+    return False
 
 
 @dataclass
@@ -254,11 +352,11 @@ def check_auth_completeness(project_path: str) -> AuthCompletenessResult:
         return result
 
     # All required endpoints exist somewhere -- now confirm the router
-    # that defines POST /auth/register (the anchor endpoint) is actually
+    # that defines POST /auth/signup (the anchor endpoint) is actually
     # wired into main.py, not just present as dead code in an unincluded file.
-    register_sites = found.get(("POST", "/auth/register"), [])
-    if not register_sites:
-        result.reason = "internal inconsistency: register site vanished after presence check"
+    signup_sites = found.get(("POST", "/auth/signup"), [])
+    if not signup_sites:
+        result.reason = "internal inconsistency: signup site vanished after presence check"
         return result
 
     # If multiple files define it, check wiring for EVERY one -- as long
@@ -267,7 +365,7 @@ def check_auth_completeness(project_path: str) -> AuthCompletenessResult:
     # own confirmed-live finding, a second unwired copy is not itself
     # fatal (docs/AUTH_COMPLETENESS.md discusses this tradeoff).
     any_wired = False
-    for rel_file, router_var in register_sites:
+    for rel_file, router_var in signup_sites:
         module = rel_file[:-3].replace("/", ".") if rel_file.endswith(".py") else None
         if module is None:
             continue
@@ -283,7 +381,7 @@ def check_auth_completeness(project_path: str) -> AuthCompletenessResult:
     if not any_wired:
         # Report the first candidate's wiring state for diagnostics even
         # though none are fully wired.
-        rel_file, router_var = register_sites[0]
+        rel_file, router_var = signup_sites[0]
         module = rel_file[:-3].replace("/", ".")
         has_import, has_include, _, _ = _check_main_wiring(root, module, router_var)
         result.router_import_present = has_import
@@ -419,3 +517,20 @@ def ensure_auth_completeness(project_path: str, project_name: str = "") -> dict:
     print(f"  [auth-completeness] deterministic repair could not restore completeness: {after.reason}")
     _log_auth_completeness_result(project_name, "failed", before, after)
     return {"status": "failed", "before": before, "after": after}
+
+
+def ensure_auth_completeness_if_signaled(
+    project_path: str | Path,
+    project_name: str = "",
+    architecture: Any = None,
+) -> dict:
+    """Run deterministic auth convergence only for apps that require auth.
+
+    V15 invokes this after its normal deterministic/preflight convergence and
+    after an LLM repair convergence.  Returning an explicit ``skipped``
+    status makes the gate observable without logging a misleading auth-repair
+    event for applications that never asked for authentication.
+    """
+    if not project_signals_auth(project_path, architecture):
+        return {"status": "skipped", "reason": "auth_not_signaled"}
+    return ensure_auth_completeness(str(project_path), project_name)

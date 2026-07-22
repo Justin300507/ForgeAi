@@ -103,57 +103,51 @@ _SIGNALS: dict[str, int] = {
     "lightweight":         -1,
 }
 
-# Stage-specific model preferences (stage → complexity_tier → provider)
-# Cerebras is primary as of 2026-07-14: routing every stage to "gemini" here
-# meant every single LLM call in the pipeline hit Gemini first even though
-# its prepayment credits are fully depleted (a permanent 429
-# RESOURCE_EXHAUSTED, not a transient rate limit) -- each call wasted a
-# failed round-trip before ai_provider's auto-chain fallback ever kicked in
-# and reached Cerebras. Cerebras is on its own separate quota (see
-# ai_provider._auto_chain's docstring) and is confirmed working, so routing
-# here directly rather than through a dead-then-fallback hop.
+# Stage-specific model preferences (stage → complexity_tier → provider).
+# OpenAI is the configured primary provider. ai_provider keeps the other
+# providers available as fallbacks when an OpenAI call fails.
 _STAGE_ROUTES: dict[str, dict[str, str]] = {
     "planning": {
-        "low":        "cerebras",
-        "medium":     "cerebras",
-        "high":       "cerebras",
-        "enterprise": "cerebras",
+        "low":        "openai",
+        "medium":     "openai",
+        "high":       "openai",
+        "enterprise": "openai",
     },
     "architecture": {
-        "low":        "cerebras",
-        "medium":     "cerebras",
-        "high":       "cerebras",
-        "enterprise": "cerebras",
+        "low":        "openai",
+        "medium":     "openai",
+        "high":       "openai",
+        "enterprise": "openai",
     },
     "backend": {
-        "low":        "cerebras",
-        "medium":     "cerebras",
-        "high":       "cerebras",
-        "enterprise": "cerebras",
+        "low":        "openai",
+        "medium":     "openai",
+        "high":       "openai",
+        "enterprise": "openai",
     },
     "frontend": {
-        "low":        "cerebras",
-        "medium":     "cerebras",
-        "high":       "cerebras",
-        "enterprise": "cerebras",
+        "low":        "openai",
+        "medium":     "openai",
+        "high":       "openai",
+        "enterprise": "openai",
     },
     "fix_simple": {
-        "low":        "cerebras",     # import errors, syntax: cheap model enough
-        "medium":     "cerebras",
-        "high":       "cerebras",
-        "enterprise": "cerebras",
+        "low":        "openai",       # import errors, syntax: cheap model enough
+        "medium":     "openai",
+        "high":       "openai",
+        "enterprise": "openai",
     },
     "fix_complex": {
-        "low":        "cerebras",     # logic bugs, auth, DB: need more capability
-        "medium":     "cerebras",
-        "high":       "cerebras",
-        "enterprise": "cerebras",
+        "low":        "openai",       # logic bugs, auth, DB: need more capability
+        "medium":     "openai",
+        "high":       "openai",
+        "enterprise": "openai",
     },
     "fix_nuclear": {
-        "low":        "cerebras",     # full regen
-        "medium":     "cerebras",
-        "high":       "cerebras",
-        "enterprise": "cerebras",
+        "low":        "openai",       # full regen
+        "medium":     "openai",
+        "high":       "openai",
+        "enterprise": "openai",
     },
 }
 

@@ -54,6 +54,7 @@ class Events:
     DEPLOY_START   = "deploy:start"
     DEPLOY_DONE    = "deploy:done"
     REGRESSION     = "regression:detected"
+    PROVIDER_ATTEMPT = "provider:attempt"
     PIPELINE_DONE  = "pipeline:done"
 
 

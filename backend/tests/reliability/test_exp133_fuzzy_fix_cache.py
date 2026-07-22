@@ -188,6 +188,34 @@ def test_lookup_fuzzy_ignores_ineligible_match():
         assert cache.lookup_fuzzy(diags) is None
 
 
+def test_diff_python_imports_best_effort():
+    old = "from fastapi import FastAPI\n"
+    new = "from fastapi import FastAPI\nfrom fastapi.security import OAuth2PasswordBearer, Depends\n"
+    mods, syms = fdb._diff_python_imports(old, new)
+    assert mods == ["fastapi.security"]
+    assert syms == ["Depends", "OAuth2PasswordBearer"]
+
+
+def test_diff_imports_invalid_python_yields_empty_lists():
+    mods, syms = fdb._diff_imports("not valid python (((", "also not valid )))", "app/utils/auth.py")
+    assert mods == [] and syms == []
+
+
+def test_store_populates_import_metadata_from_pre_fix_content():
+    with tempfile.TemporaryDirectory() as td:
+        _isolated_cache(td)
+        cache = fdb.FixCache()
+        diags = [Diagnostic(error_id="1", category=ErrorCategory.IMPORT, severity=ErrorSeverity.CRITICAL,
+                             source="static", message="No module named 'jwt'",
+                             file_path="app/utils/auth.py")]
+        new_content = "from fastapi.security import OAuth2PasswordBearer\n"
+        h = cache.store(diags, {"app/utils/auth.py": new_content}, idea="app",
+                         pre_fix_content={"app/utils/auth.py": ""})
+        entry = cache._data[h]
+        assert "fastapi.security" in entry["imports_added"]
+        assert "OAuth2PasswordBearer" in entry["symbols_added"]
+
+
 if __name__ == "__main__":
     import traceback
     tests = [obj for name, obj in list(globals().items()) if name.startswith("test_")]
