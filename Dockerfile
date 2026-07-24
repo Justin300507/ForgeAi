@@ -1,10 +1,7 @@
-FROM node:20-alpine AS frontend-builder
-WORKDIR /app/frontend
-COPY frontend/package*.json ./
-RUN npm install
-COPY frontend/ ./
-RUN npm run build
-
+# Backend-only image: the frontend is built and served separately on Vercel
+# (frontend/vercel.json), so this no longer bundles a frontend-builder stage
+# or copies frontend/dist in -- main.py's "serve React frontend" block
+# already no-ops safely when that directory doesn't exist.
 FROM python:3.11-slim
 RUN apt-get update && apt-get install -y --no-install-recommends git curl lsof psmisc \
     && curl -fsSL https://deb.nodesource.com/setup_20.x | bash - \
@@ -22,7 +19,6 @@ RUN pip install --no-cache-dir -r requirements.txt
 # guard (correctly) reverted every fix that got that far, in an endless loop.
 RUN playwright install --with-deps chromium
 COPY backend/ ./
-COPY --from=frontend-builder /app/frontend/dist /app/frontend/dist
 COPY start.sh /start.sh
 RUN chmod +x /start.sh
 
