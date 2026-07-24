@@ -4,7 +4,7 @@ __pycache__/
 generated_projects/
 backend/llm_cache/
 backend/failure_memory/dataset/
-backend/*.db
+backend/**/*.db
 backend/app.db
 backend/artifacts/
 frontend/dist/
