@@ -28,6 +28,37 @@ _MODEL_ATTR_RE = re.compile(r'\b([A-Z]\w*)\.(\w+)')
 _MODEL_IMPORT_RE = re.compile(r'from\s+app\.models\.\w+\s+import\s+([A-Z]\w*(?:\s*,\s*[A-Z]\w*)*)')
 
 
+def _is_safely_wrapped(tree: ast.AST, lineno: int) -> bool:
+    """True if `lineno` sits inside a try-block whose handler broadly
+    catches Exception -- the exact shape deterministic_patcher.py's
+    _patch_invalid_model_attribute_access produces (try: <original body> /
+    except Exception: return {}).
+
+    Reproduced live (habit_tracker, 2026-07-24): this validator kept
+    re-reporting the same "Invalid attribute access" error identically
+    across every fix-loop attempt in both a V6 pass and a full V7
+    regeneration, because the wrapper patch neutralizes the crash but never
+    removes the offending line of text -- so a purely textual/AST re-scan
+    finds it again every time. That's correct as a crash-prevention measure
+    but wrong as a fix-loop exit signal: the app can no longer 500 on this
+    line, so re-flagging it as blocking just burns LLM fix-attempt budget
+    that could go toward errors that are actually still fixable.
+    """
+    for node in ast.walk(tree):
+        if not isinstance(node, ast.Try) or not node.body:
+            continue
+        body_start = node.body[0].lineno
+        body_end = max(getattr(n, "end_lineno", n.lineno) or n.lineno for n in node.body)
+        if not (body_start <= lineno <= body_end):
+            continue
+        for handler in node.handlers:
+            if handler.type is None:
+                return True  # bare `except:`
+            if isinstance(handler.type, ast.Name) and handler.type.id == "Exception":
+                return True
+    return False
+
+
 def _collect_model_attrs(project_path):
     """AST-walk app/models/*.py -> {ModelClassName: set(valid attribute names)}.
     Column/mapped_column assignments, @property methods, and any other method
@@ -96,6 +127,11 @@ def validate_model_attribute_access(project_path, errors, diagnostics=None):
         for m in _MODEL_IMPORT_RE.finditer(content):
             imported_models.update(n.strip() for n in m.group(1).split(","))
 
+        try:
+            tree = ast.parse(content)
+        except SyntaxError:
+            tree = None  # can't verify safety -- fall back to reporting as before
+
         for m in _MODEL_ATTR_RE.finditer(content):
             model_name, attr = m.group(1), m.group(2)
             if model_name not in imported_models or model_name not in model_attrs:
@@ -104,6 +140,10 @@ def validate_model_attribute_access(project_path, errors, diagnostics=None):
                 continue
             if attr in model_attrs[model_name]:
                 continue
+            if tree is not None:
+                lineno = content.count("\n", 0, m.start()) + 1
+                if _is_safely_wrapped(tree, lineno):
+                    continue
 
             key = (file, model_name, attr)
             if key in reported:

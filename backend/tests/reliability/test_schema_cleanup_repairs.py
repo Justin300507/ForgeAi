@@ -226,6 +226,39 @@ def test_required_create_schema_makes_nullable_model_column_not_null():
     assert "notes = Column(String, nullable=False)" in content
 
 
+def test_required_create_schema_fixes_multiline_column_declaration():
+    # Regression test: a real generation run left `HabitCreate.name`/
+    # `.frequency` required against a nullable model column, unfixed, across
+    # every fix attempt in both the initial pass and a full V7 regeneration
+    # (2026-07-24). Root cause -- this patcher required the whole
+    # `Column(...)` call to be on one line before touching it, but the LLM
+    # commonly formats one kwarg per line, so the validator (a plain AST
+    # walk, no such restriction) kept reporting the mismatch while this
+    # patcher silently no-opped every time.
+    model = (
+        "from sqlalchemy import Column, Integer, String\n"
+        "from app.database import Base\n\n"
+        "class Habit(Base):\n"
+        "    __tablename__ = \"habits\"\n"
+        "    id = Column(Integer, primary_key=True)\n"
+        "    name = Column(\n"
+        "        String,\n"
+        "        nullable=True,\n"
+        "    )\n"
+    )
+    root = _make_project({
+        "app/models/habit.py": model,
+        "app/schemas/habit.py": "from pydantic import BaseModel\n\nclass HabitCreate(BaseModel):\n    name: str\n",
+    })
+    n = _patch_required_create_schema_model_nullability(root)
+    content = (root / "app/models/habit.py").read_text(encoding="utf-8")
+    _cleanup(root)
+    assert n == 1
+    ast.parse(content)
+    assert "nullable=False" in content
+    assert "nullable=True" not in content
+
+
 def test_bare_pydantic_from_attributes_is_repaired_but_config_is_preserved():
     root = _make_project({
         "app/schemas/task.py": (

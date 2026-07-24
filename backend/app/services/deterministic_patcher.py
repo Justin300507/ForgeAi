@@ -6210,7 +6210,6 @@ def _patch_required_create_schema_model_nullability(project_path: Path) -> int:
                     isinstance(child, _ast.Assign)
                     and isinstance(child.value, _ast.Call)
                     and getattr(child.value.func, "id", "") == "Column"
-                    and child.lineno == child.end_lineno
                 ):
                     continue
                 names = [target.id for target in child.targets if isinstance(target, _ast.Name)]
@@ -6223,7 +6222,17 @@ def _patch_required_create_schema_model_nullability(project_path: Path) -> int:
                     and nullable_kw.value.value is True
                 ):
                     continue
-                index = child.lineno - 1
+                # Rewrite only the literal `True` token's own line, not the
+                # whole Column(...) call's span. The call itself commonly
+                # spans multiple lines (one kwarg per line) -- the previous
+                # `child.lineno == child.end_lineno` guard skipped every such
+                # column entirely, silently, even though the validator that
+                # raises "required but model allows NULL" has no such
+                # restriction (a plain AST walk) and reported it every time.
+                # The boolean constant itself is always single-line, so
+                # rewriting just its line is safe regardless of how the
+                # surrounding call is formatted.
+                index = nullable_kw.value.lineno - 1
                 updated = re.sub(r"\bnullable\s*=\s*True\b", "nullable=False", lines[index], count=1)
                 if updated != lines[index]:
                     lines[index] = updated
