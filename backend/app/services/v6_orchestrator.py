@@ -662,12 +662,39 @@ def generate_project_v6(
             if m
         })
         if target_files:
+            from app.services.project_service import _collect_existing_symbols
             arch_fix = generate_architecture_fix(
                 architecture, architecture_errors, provider,
-                required_exports={}, required_endpoints={}, existing_symbols={}
+                required_exports={}, required_endpoints={},
+                existing_symbols=_collect_existing_symbols(project_path)
             )
             _llm["repairs"] += 1
             if arch_fix and isinstance(arch_fix, dict) and arch_fix.get("files"):
+                # Snapshot everything before writing arch_fix's output -- unlike
+                # the regular fix loop above, this LLM call has no per-file error
+                # scoping (it can rewrite any file, e.g. stats_routes.py, even
+                # ones not in target_files) and no grounding in the real
+                # request/response contract, so it has hallucinated entirely
+                # unrelated-domain code before (Transaction/Class models on a
+                # habit tracker). Without a revert path here, a bad response
+                # was silently accepted as final -- unlike every other repair
+                # step in this pipeline.
+                _prev_arch_err_count = len(validation["errors"])
+                _pre_arch_paths: set[str] = set()
+                _pre_arch_content: dict[str, str] = {}
+                _ARCH_EXCLUDE_DIRS = {"node_modules", ".git", "__pycache__", "venv", ".venv"}
+                for _root, _dirs, _fnames in os.walk(project_path):
+                    _dirs[:] = [d for d in _dirs if d not in _ARCH_EXCLUDE_DIRS]
+                    for _fn in _fnames:
+                        _p = os.path.normpath(os.path.join(_root, _fn))
+                        _pre_arch_paths.add(_p)
+                        if _fn.endswith((".py", ".jsx", ".js")):
+                            try:
+                                with open(_p, "r", encoding="utf-8") as _fh:
+                                    _pre_arch_content[_p] = _fh.read()
+                            except Exception:
+                                pass
+
                 for f in arch_fix["files"]:
                     f["path"] = _sanitize_path(f["path"])
                     write_fix(project_path, f)
@@ -687,7 +714,34 @@ def generate_project_v6(
                 # output is untouched; a broken one is deterministically healed.
                 ensure_auth_completeness(project_path, project_name=project_name)
                 validation = validate_project(project_path)
-                print(f"  Post-arch-repair: {'PASS' if validation['passed'] else 'FAIL'}")
+                _new_arch_err_count = len(validation["errors"])
+                print(f"  Post-arch-repair: {'PASS' if validation['passed'] else 'FAIL'} — {_new_arch_err_count} errors")
+
+                # No +1 tolerance here unlike the regular fix loop above --
+                # that loop makes small, per-file, per-error-scoped edits where
+                # a little noise is expected; this call can rewrite any file
+                # with no scoping and has produced whole-file, wrong-domain
+                # hallucinations, so any regression at all should be undone.
+                if _new_arch_err_count > _prev_arch_err_count:
+                    print(f"  [revert] Architecture repair made things worse ({_prev_arch_err_count}→{_new_arch_err_count}) — reverting")
+                    _post_arch_paths: set[str] = set()
+                    for _root, _dirs, _fnames in os.walk(project_path):
+                        _dirs[:] = [d for d in _dirs if d not in _ARCH_EXCLUDE_DIRS]
+                        for _fn in _fnames:
+                            _post_arch_paths.add(os.path.normpath(os.path.join(_root, _fn)))
+                    for _new_path in _post_arch_paths - _pre_arch_paths:
+                        try:
+                            os.remove(_new_path)
+                        except Exception:
+                            pass
+                    for _ap, _content in _pre_arch_content.items():
+                        try:
+                            with open(_ap, "w", encoding="utf-8") as _fh:
+                                _fh.write(_content)
+                        except Exception:
+                            pass
+                    validation = validate_project(project_path)
+                    print(f"  [revert] Restored: {len(validation['errors'])} errors")
 
     # ------------------------------------------------------------------
     # Stage 8-11: Review Agents — only run on validated code
@@ -1206,11 +1260,33 @@ def repair_project(
     ]
     if architecture_errors and not validation["passed"]:
         print("\n=== ARCHITECTURE REPAIR ===")
+        from app.services.project_service import _collect_existing_symbols
         arch_fix = generate_architecture_fix(
             architecture, architecture_errors, provider,
-            required_exports={}, required_endpoints={}, existing_symbols={}
+            required_exports={}, required_endpoints={},
+            existing_symbols=_collect_existing_symbols(project_path)
         )
         if arch_fix and isinstance(arch_fix, dict) and arch_fix.get("files"):
+            # See the matching comment in generate_project_v6()'s architecture
+            # repair block: this LLM call has no per-file scoping and has
+            # hallucinated unrelated-domain code before, with nothing to
+            # revert it -- snapshot everything so a worse outcome can be undone.
+            _prev_arch_err_count = len(validation["errors"])
+            _pre_arch_paths: set[str] = set()
+            _pre_arch_content: dict[str, str] = {}
+            _ARCH_EXCLUDE_DIRS = {"node_modules", ".git", "__pycache__", "venv", ".venv"}
+            for _root, _dirs, _fnames in os.walk(project_path):
+                _dirs[:] = [d for d in _dirs if d not in _ARCH_EXCLUDE_DIRS]
+                for _fn in _fnames:
+                    _p = os.path.normpath(os.path.join(_root, _fn))
+                    _pre_arch_paths.add(_p)
+                    if _fn.endswith((".py", ".jsx", ".js")):
+                        try:
+                            with open(_p, "r", encoding="utf-8") as _fh:
+                                _pre_arch_content[_p] = _fh.read()
+                        except Exception:
+                            pass
+
             for f in arch_fix["files"]:
                 f["path"] = _sanitize_path(f["path"])
                 write_fix(project_path, f)
@@ -1223,7 +1299,31 @@ def repair_project(
             # that trust turns out to be misplaced.
             ensure_auth_completeness(project_path, project_name=project_name)
             validation = validate_project(project_path)
-            print(f"  Post-arch-repair: {'PASS' if validation['passed'] else 'FAIL'}")
+            _new_arch_err_count = len(validation["errors"])
+            print(f"  Post-arch-repair: {'PASS' if validation['passed'] else 'FAIL'} — {_new_arch_err_count} errors")
+
+            # No +1 tolerance here -- see the matching comment in
+            # generate_project_v6()'s architecture repair block.
+            if _new_arch_err_count > _prev_arch_err_count:
+                print(f"  [revert] Architecture repair made things worse ({_prev_arch_err_count}→{_new_arch_err_count}) — reverting")
+                _post_arch_paths: set[str] = set()
+                for _root, _dirs, _fnames in os.walk(project_path):
+                    _dirs[:] = [d for d in _dirs if d not in _ARCH_EXCLUDE_DIRS]
+                    for _fn in _fnames:
+                        _post_arch_paths.add(os.path.normpath(os.path.join(_root, _fn)))
+                for _new_path in _post_arch_paths - _pre_arch_paths:
+                    try:
+                        os.remove(_new_path)
+                    except Exception:
+                        pass
+                for _ap, _content in _pre_arch_content.items():
+                    try:
+                        with open(_ap, "w", encoding="utf-8") as _fh:
+                            _fh.write(_content)
+                    except Exception:
+                        pass
+                validation = validate_project(project_path)
+                print(f"  [revert] Restored: {len(validation['errors'])} errors")
 
     # Runtime validation
     runtime_result = None

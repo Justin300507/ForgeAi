@@ -198,7 +198,7 @@ def _collect_required_endpoints(architecture, target_files):
 def _collect_existing_symbols(project_path):
     existing = {}
 
-    for subdir in ("schemas", "services"):
+    for subdir in ("models", "schemas", "services"):
         dir_path = os.path.join(project_path, "app", subdir)
 
         if not os.path.exists(dir_path):
