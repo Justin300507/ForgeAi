@@ -617,6 +617,18 @@ def write_files(project_name, files, frontend_target: str = "web", idea: str = "
             _counts["skipped_semantic"] += 1
             continue
 
+        # Same idea, for SQLAlchemy model attribute access rather than
+        # Pydantic schema fields. A no-op on the very first write_files()
+        # batch before any model file exists on disk yet (nothing to check
+        # against); real once models/ has been written earlier in this same
+        # loop, or on a later write_files() call for an existing project.
+        from app.services.model_attribute_validator import check_single_file_model_attribute_consistency
+        _model_consistent, _model_reason = check_single_file_model_attribute_consistency(path, content, base_dir)
+        if not _model_consistent:
+            print(f"  [file_writer] hallucinated model attribute, skipping: {path!r} -- {_model_reason}")
+            _counts["skipped_semantic"] += 1
+            continue
+
         os.makedirs(
             full_path.parent,
             exist_ok=True

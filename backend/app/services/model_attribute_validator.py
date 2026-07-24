@@ -99,6 +99,82 @@ def _collect_model_attrs(project_path):
     return model_attrs
 
 
+def check_single_file_model_attribute_consistency(path, content, project_path):
+    """Pre-write gate: does `content` (about to be written to `path`) reference
+    a SQLAlchemy model attribute that doesn't exist on that model, per the
+    real app/models/*.py already on disk? Mirrors write_fix's existing
+    _check_request_field_consistency gate (same (bool, reason) shape, same
+    refuse-and-let-the-caller-decide contract) but for model attributes
+    instead of Pydantic schema fields -- the exact gap that let
+    architecture-repair write a habit tracker's stats_routes.py referencing
+    Transaction/Class/User.last_active, none of which exist anywhere in the
+    project, straight to disk (2026-07-24). That content was only ever
+    caught afterward, by validate_model_attribute_access re-scanning the
+    whole project post-write.
+
+    Returns (True, None) when there's nothing to flag: not a .py file, no
+    app/models directory yet (nothing to check against -- true during the
+    very first write_files() batch, before any model file exists), the
+    content doesn't parse (not this check's job -- the syntax gate owns
+    that), or every access checks out. False negatives are fine here (same
+    stance as validate_model_attribute_access); a false positive would
+    block a legitimate write, which this deliberately avoids by only
+    checking models actually imported by name inside this same content.
+    """
+    if not path.endswith(".py"):
+        return True, None
+
+    model_attrs = _collect_model_attrs(project_path)
+    if not model_attrs:
+        return True, None
+
+    try:
+        ast.parse(content)
+    except SyntaxError:
+        return True, None
+
+    imported_models = set()
+    for m in _MODEL_IMPORT_RE.finditer(content):
+        imported_models.update(n.strip() for n in m.group(1).split(","))
+    if not imported_models:
+        return True, None
+
+    # A model imported from app.models.<submodule> that has no matching
+    # class anywhere in the real app/models/*.py is a fabricated model, not
+    # a wrong-attribute access on a real one -- the exact shape of the live
+    # incident this check exists for (Transaction/Class invented wholesale,
+    # not a typo'd field on Habit/User/ProgressLog). Checked before the
+    # per-attribute loop below, which only catches the narrower case of a
+    # real model with a wrong field.
+    for model_name in sorted(imported_models):
+        if model_name not in model_attrs:
+            reason = (
+                f"{path}: imports '{model_name}' from app.models, but no such "
+                f"model is defined anywhere in the project (real models: "
+                f"{', '.join(sorted(model_attrs)) or 'none'})"
+            )
+            return False, reason
+
+    for m in _MODEL_ATTR_RE.finditer(content):
+        model_name, attr = m.group(1), m.group(2)
+        if model_name not in imported_models or model_name not in model_attrs:
+            continue
+        if attr in _SQLA_SPECIAL_ATTRS or attr.startswith("__"):
+            continue
+        if attr in model_attrs[model_name]:
+            continue
+        lineno = content.count("\n", 0, m.start()) + 1
+        valid = ", ".join(sorted(model_attrs[model_name])[:12])
+        reason = (
+            f"{path}:{lineno}: '{model_name}.{attr}' referenced, but '{attr}' is not "
+            f"a column, property, or method on the {model_name} model "
+            f"(valid: {valid})"
+        )
+        return False, reason
+
+    return True, None
+
+
 def validate_model_attribute_access(project_path, errors, diagnostics=None):
     model_attrs = _collect_model_attrs(project_path)
     if not model_attrs:

@@ -22,7 +22,10 @@ from pathlib import Path
 
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), "..", ".."))
 
-from app.services.model_attribute_validator import validate_model_attribute_access
+from app.services.model_attribute_validator import (
+    validate_model_attribute_access,
+    check_single_file_model_attribute_consistency,
+)
 
 
 def _make_project(files: dict) -> Path:
@@ -136,6 +139,81 @@ def test_syntax_error_falls_back_to_reporting():
     validate_model_attribute_access(str(root), errors)
     _cleanup(root)
     assert len(errors) == 1
+
+
+_HALLUCINATED_STATS_ROUTE = '''\
+from fastapi import APIRouter, Depends
+from sqlalchemy.orm import Session
+from app.database import get_db
+from app.models.habit import Habit
+from app.models.transaction import Transaction
+
+stats_router = APIRouter()
+
+@stats_router.get("/stats/summary")
+def summary(db: Session = Depends(get_db)):
+    revenue = db.query(Transaction).filter(Transaction.date >= "2026-01-01").count()
+    return {"revenue": revenue}
+'''
+
+_CLEAN_STATS_ROUTE = '''\
+from fastapi import APIRouter, Depends
+from sqlalchemy.orm import Session
+from app.database import get_db
+from app.models.habit import Habit
+
+stats_router = APIRouter()
+
+@stats_router.get("/stats/summary")
+def summary(db: Session = Depends(get_db)):
+    total = db.query(Habit).count()
+    return {"total": total}
+'''
+
+
+def test_pre_write_gate_rejects_hallucinated_model_reference():
+    # Regression test for the exact live incident (habit_tracker,
+    # 2026-07-24): architecture-repair generated stats_routes.py content
+    # referencing a "Transaction" model that has no app/models/*.py
+    # definition anywhere in the project. This must be caught before the
+    # content ever reaches disk, not only by the post-write validator.
+    root = _make_project({"app/models/habit.py": _HABIT_MODEL})
+    ok, reason = check_single_file_model_attribute_consistency(
+        "app/routes/stats_routes.py", _HALLUCINATED_STATS_ROUTE, str(root)
+    )
+    _cleanup(root)
+    assert ok is False
+    assert "Transaction" in reason
+
+
+def test_pre_write_gate_allows_clean_content():
+    root = _make_project({"app/models/habit.py": _HABIT_MODEL})
+    ok, reason = check_single_file_model_attribute_consistency(
+        "app/routes/stats_routes.py", _CLEAN_STATS_ROUTE, str(root)
+    )
+    _cleanup(root)
+    assert ok is True
+    assert reason is None
+
+
+def test_pre_write_gate_noop_before_any_models_exist():
+    # The very first write_files() batch, before app/models has anything
+    # on disk yet -- nothing to check against, must not block the write.
+    root = Path(tempfile.mkdtemp(prefix="attrtest_"))
+    ok, reason = check_single_file_model_attribute_consistency(
+        "app/routes/stats_routes.py", _HALLUCINATED_STATS_ROUTE, str(root)
+    )
+    _cleanup(root)
+    assert ok is True
+
+
+def test_pre_write_gate_noop_on_non_python_file():
+    root = _make_project({"app/models/habit.py": _HABIT_MODEL})
+    ok, reason = check_single_file_model_attribute_consistency(
+        "src/pages/Stats.jsx", "const x = Transaction.date;", str(root)
+    )
+    _cleanup(root)
+    assert ok is True
 
 
 if __name__ == "__main__":

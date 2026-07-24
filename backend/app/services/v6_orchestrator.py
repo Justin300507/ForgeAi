@@ -452,7 +452,21 @@ def generate_project_v6(
             for _fn in _fnames:
                 _pre_attempt_paths.add(os.path.normpath(os.path.join(_root, _fn)))
 
-        for filepath, file_errors in errors_by_file.items():
+        # Fix models/schemas/services before routes -- same rationale as the
+        # architecture-repair batch ordering below: a route fixed in this
+        # same pass that references a model/schema also being fixed here
+        # shouldn't false-trip write_fix's model-attribute pre-write gate
+        # just because of dict iteration order.
+        def _fix_order(_kv):
+            _p = _kv[0]
+            if "/models/" in _p or "\\models\\" in _p:
+                return 0
+            if "/schemas/" in _p or "\\schemas\\" in _p:
+                return 1
+            if "/services/" in _p or "\\services\\" in _p:
+                return 2
+            return 3
+        for filepath, file_errors in sorted(errors_by_file.items(), key=_fix_order):
             try:
                 safe_path = _sanitize_path(filepath)
                 abs_path = os.path.join(project_path, safe_path)
@@ -695,7 +709,23 @@ def generate_project_v6(
                             except Exception:
                                 pass
 
-                for f in arch_fix["files"]:
+                # Write models/schemas/services before routes -- a route that
+                # imports a model defined in this SAME batch (both listed in
+                # one arch_fix response, e.g. landing_routes.py + models/landing.py)
+                # would otherwise risk write_fix's new model-attribute pre-write
+                # gate rejecting it as a fabricated-model reference, simply
+                # because the model file hadn't been written yet at that point
+                # in raw array order.
+                def _write_order(_f):
+                    _p = _f.get("path", "")
+                    if "/models/" in _p or "\\models\\" in _p:
+                        return 0
+                    if "/schemas/" in _p or "\\schemas\\" in _p:
+                        return 1
+                    if "/services/" in _p or "\\services\\" in _p:
+                        return 2
+                    return 3
+                for f in sorted(arch_fix["files"], key=_write_order):
                     f["path"] = _sanitize_path(f["path"])
                     write_fix(project_path, f)
                 # Re-run patchers after arch repair — but skip auth_routes/auth_utils
@@ -1181,7 +1211,17 @@ def repair_project(
                     else:
                         errors_by_file[f"src/{name}.jsx"].append(err)
 
-        for filepath, file_errors in errors_by_file.items():
+        # See the matching comment near generate_project_v6()'s fix loop.
+        def _fix_order(_kv):
+            _p = _kv[0]
+            if "/models/" in _p or "\\models\\" in _p:
+                return 0
+            if "/schemas/" in _p or "\\schemas\\" in _p:
+                return 1
+            if "/services/" in _p or "\\services\\" in _p:
+                return 2
+            return 3
+        for filepath, file_errors in sorted(errors_by_file.items(), key=_fix_order):
             try:
                 safe_path = _sanitize_path(filepath)
                 abs_path = os.path.join(project_path, safe_path)
@@ -1287,7 +1327,20 @@ def repair_project(
                         except Exception:
                             pass
 
-            for f in arch_fix["files"]:
+            # See the matching comment in generate_project_v6()'s architecture
+            # repair block: write models/schemas/services before routes so a
+            # route importing a model defined in this same batch doesn't
+            # false-trip write_fix's model-attribute pre-write gate.
+            def _write_order(_f):
+                _p = _f.get("path", "")
+                if "/models/" in _p or "\\models\\" in _p:
+                    return 0
+                if "/schemas/" in _p or "\\schemas\\" in _p:
+                    return 1
+                if "/services/" in _p or "\\services\\" in _p:
+                    return 2
+                return 3
+            for f in sorted(arch_fix["files"], key=_write_order):
                 f["path"] = _sanitize_path(f["path"])
                 write_fix(project_path, f)
             run_deterministic_patches(project_path, skip_protected_injections=True)

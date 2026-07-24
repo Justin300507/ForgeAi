@@ -416,6 +416,13 @@ def write_fix(project_path, fix):
         print(f"  {_reason}")
         return False
 
+    from app.services.model_attribute_validator import check_single_file_model_attribute_consistency
+    _model_consistent, _model_reason = check_single_file_model_attribute_consistency(path, content, project_path)
+    if not _model_consistent:
+        print(f"\n=== REFUSING WRITE — HALLUCINATED MODEL ATTRIBUTE: {path} ===")
+        print(f"  {_model_reason}")
+        return False
+
     parent_dir = full_path.parent
 
     # When writing a nested module like app/utils/auth.py, Python requires app/utils/
