@@ -73,6 +73,22 @@ app = FastAPI()
 app.mount("/api", _generated_app)
 '''
 
+def _patch_api_base_url(text: str) -> str:
+    """Rewrite src/api.js's axios baseURL to the relative '/api' path for a
+    same-origin Vercel deploy. Must match not just a bare string literal
+    (`baseURL: ''`) but also the `import.meta.env.VITE_API_URL || '<fallback>'`
+    expression the frontend generation prompt actually produces -- a plain
+    `['\"][^'\"]*['\"]` match right after the colon misses that case entirely,
+    leaving the fallback (often 'http://localhost:8000') baked into the
+    production bundle.
+    """
+    return re.sub(
+        r"baseURL\s*:\s*(?:import\.meta\.env\.\w+\s*\|\|\s*)?['\"][^'\"]*['\"]",
+        "baseURL: '/api'",
+        text,
+    )
+
+
 def _build_vercel_json(dist_dir: Path) -> dict:
     """
     Legacy `builds`+`routes` config (paired with the raw-file-upload
@@ -210,11 +226,7 @@ class VercelProvider(BaseDeploymentProvider):
             for api_file in list(build_dir.rglob("src/api.js")) + list(build_dir.rglob("src/api.jsx")):
                 try:
                     text = api_file.read_text(encoding="utf-8")
-                    patched = re.sub(
-                        r"baseURL\s*:\s*['\"][^'\"]*['\"]",
-                        "baseURL: '/api'",
-                        text,
-                    )
+                    patched = _patch_api_base_url(text)
                     if patched != text:
                         api_file.write_text(patched, encoding="utf-8")
                         print(f"  [Vercel] Patched {api_file.name}: baseURL → '/api'")
