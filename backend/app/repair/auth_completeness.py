@@ -167,6 +167,7 @@ class AuthCompletenessResult:
     found_endpoints: set = field(default_factory=set)
     missing_required: list = field(default_factory=list)
     missing_recommended: list = field(default_factory=list)
+    stub_required: list = field(default_factory=list)
     router_import_present: bool = False
     router_include_present: bool = False
     router_var: Optional[str] = None
@@ -314,7 +315,90 @@ def _check_main_wiring(project_path: Path, router_module: str, router_var: str) 
     return import_count > 0, include_count > 0, import_count, include_count
 
 
-def check_auth_completeness(project_path: str) -> AuthCompletenessResult:
+def _is_stub_function_body(node) -> bool:
+    """True if `node`'s body has no real logic -- just `pass`, `...`
+    (Ellipsis), a bare docstring/comment-like string expression, or
+    `raise NotImplementedError(...)`, in any combination.
+
+    Reproduced live (habit_tracker, 2026-07-25): Architecture Repair
+    regenerated auth_routes.py to add an unrelated PUT /auth/update
+    endpoint, and in the same response rewrote POST /auth/signup and
+    POST /auth/login down to bare `pass` bodies -- structurally still
+    "the right decorator at the right path", so the existing
+    presence/wiring checks below all passed, while the endpoints
+    themselves would 500 or silently return None for every real caller.
+    A stub is functionally identical to the endpoint not existing at all
+    from a user's perspective; this makes it count as such here too.
+    """
+    body = node.body
+    if body and isinstance(body[0], ast.Expr) and isinstance(body[0].value, ast.Constant)             and isinstance(body[0].value.value, str):
+        body = body[1:]  # leading docstring is never "real logic" either way
+    if not body:
+        return True
+    for stmt in body:
+        if isinstance(stmt, ast.Pass):
+            continue
+        if isinstance(stmt, ast.Expr) and isinstance(stmt.value, ast.Constant):
+            if stmt.value.value is Ellipsis or isinstance(stmt.value.value, str):
+                continue  # bare `...` or a comment-like string expression
+        if (
+            isinstance(stmt, ast.Raise)
+            and isinstance(stmt.exc, ast.Call)
+            and isinstance(stmt.exc.func, ast.Name)
+            and stmt.exc.func.id == "NotImplementedError"
+        ):
+            continue
+        return False
+    return True
+
+
+def _find_stub_required_endpoints(project_path: Path, found: dict) -> list[str]:
+    """For each REQUIRED_AUTH_ENDPOINTS entry already confirmed present in
+    `found`, check whether every site that registers it is a stub body.
+    A required endpoint registered in multiple files (duplicate
+    registration, already tracked separately) only counts as a stub here
+    if ALL of its sites are stubs -- a real implementation anywhere is
+    sufficient, mirroring the existing "any_wired" tolerance for wiring."""
+    stubs: list[str] = []
+    for method, path in REQUIRED_AUTH_ENDPOINTS:
+        sites = found.get((method, path), [])
+        if not sites:
+            continue  # already reported as missing_required
+        any_real_impl = False
+        for rel_file, router_var in sites:
+            full_path = project_path / rel_file
+            try:
+                content = full_path.read_text(encoding="utf-8", errors="replace")
+                tree = ast.parse(content)
+            except Exception:
+                any_real_impl = True  # can't confirm it's a stub -- don't false-flag
+                continue
+            prefixes = _router_prefixes(tree)
+            for node in ast.walk(tree):
+                if not isinstance(node, (ast.FunctionDef, ast.AsyncFunctionDef)):
+                    continue
+                for dec in node.decorator_list:
+                    if not isinstance(dec, ast.Call):
+                        continue
+                    dec_func = dec.func
+                    if not isinstance(dec_func, ast.Attribute) or dec_func.attr.upper() != method:
+                        continue
+                    if not (isinstance(dec_func.value, ast.Name) and dec_func.value.id == router_var):
+                        continue
+                    if not dec.args or not isinstance(dec.args[0], ast.Constant)                             or not isinstance(dec.args[0].value, str):
+                        continue
+                    raw_path = dec.args[0].value
+                    prefix = prefixes.get(router_var, "")
+                    if _normalize_path(prefix + raw_path) != path:
+                        continue
+                    if not _is_stub_function_body(node):
+                        any_real_impl = True
+        if not any_real_impl:
+            stubs.append(f"{method} {path}")
+    return stubs
+
+
+def check_auth_completeness(project_path: str) -> AuthCompletenessResult:
     """
     Part 2/3: the deterministic completeness check. Pure read-only --
     makes no changes. Verifies (in order): required endpoints exist
@@ -348,6 +432,12 @@ def check_auth_completeness(project_path: str) -> AuthCompletenessResult:
 
     if result.missing_required:
         result.reason = "missing required endpoint(s): " + ", ".join(result.missing_required)
+        result.complete = False
+        return result
+
+    result.stub_required = _find_stub_required_endpoints(root, found)
+    if result.stub_required:
+        result.reason = "required endpoint(s) present but stubbed (no real implementation): " + ", ".join(result.stub_required)
         result.complete = False
         return result
 
