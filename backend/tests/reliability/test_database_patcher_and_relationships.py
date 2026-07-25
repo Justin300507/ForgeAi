@@ -282,6 +282,120 @@ def test_patch_missing_required_constructor_kwargs_noop_when_already_present():
         assert n == 0
 
 
+# ─── patch_string_date_literals_in_constructors ───────────────────────────
+
+_PROGRESS_LOG_MODEL = (
+    "from sqlalchemy import Column, Integer, Date, Boolean, ForeignKey\n"
+    "from app.database import Base\n\n"
+    "class ProgressLog(Base):\n"
+    "    __tablename__ = 'progress_logs'\n"
+    "    id = Column(Integer, primary_key=True, nullable=False)\n"
+    "    date = Column(Date, nullable=False)\n"
+    "    habit_id = Column(Integer, ForeignKey('habits.id'), nullable=False)\n"
+    "    completed = Column(Boolean, nullable=False)\n"
+)
+
+_EVENT_MODEL = (
+    "from sqlalchemy import Column, Integer, DateTime, String\n"
+    "from app.database import Base\n\n"
+    "class Event(Base):\n"
+    "    __tablename__ = 'events'\n"
+    "    id = Column(Integer, primary_key=True)\n"
+    "    title = Column(String)\n"
+    "    created_at = Column(DateTime, nullable=False)\n"
+)
+
+
+def test_patch_string_date_literals_converts_iso_string_to_date_object():
+    # Exact live shape (habit_tracker, 2026-07-25): seed_routes.py did
+    # ProgressLog(date="2023-10-01", completed=True) against a
+    # Column(Date, nullable=False) -- SQLite's dialect raises a
+    # StatementError (not IntegrityError) on the raw string, an uncaught
+    # crash the constructor call's own try/except IntegrityError can't catch.
+    route = (
+        "from app.models.progress_logs import ProgressLog\n\n"
+        "progress_logs = [\n"
+        "    ProgressLog(date=\"2023-10-01\", completed=True),\n"
+        "    ProgressLog(date=\"2023-10-02\", completed=False),\n"
+        "]\n"
+    )
+    with tempfile.TemporaryDirectory() as td:
+        proj = _mk_project(td, models={"progress_logs.py": _PROGRESS_LOG_MODEL}, routes={"seed_routes.py": route})
+        n = dbp.patch_string_date_literals_in_constructors(str(proj))
+        out = (proj / "app" / "routes" / "seed_routes.py").read_text(encoding="utf-8")
+        assert n == 1
+        assert "date=date(2023, 10, 1)" in out
+        assert "date=date(2023, 10, 2)" in out
+        assert "from datetime import date" in out
+        import ast
+        ast.parse(out)
+
+
+def test_patch_string_date_literals_handles_datetime_with_time_component():
+    route = (
+        "from app.models.events import Event\n\n"
+        "events = [Event(title=\"x\", created_at=\"2023-10-01T14:30:00\")]\n"
+    )
+    with tempfile.TemporaryDirectory() as td:
+        proj = _mk_project(td, models={"events.py": _EVENT_MODEL}, routes={"seed_routes.py": route})
+        n = dbp.patch_string_date_literals_in_constructors(str(proj))
+        out = (proj / "app" / "routes" / "seed_routes.py").read_text(encoding="utf-8")
+        assert n == 1
+        assert "created_at=datetime(2023, 10, 1, 14, 30, 0)" in out
+        assert "from datetime import datetime" in out
+
+
+def test_patch_string_date_literals_noop_when_already_real_object():
+    route = (
+        "from datetime import datetime\n"
+        "from app.models.events import Event\n\n"
+        "events = [Event(title=\"x\", created_at=datetime(2023, 10, 1))]\n"
+    )
+    with tempfile.TemporaryDirectory() as td:
+        proj = _mk_project(td, models={"events.py": _EVENT_MODEL}, routes={"seed_routes.py": route})
+        n = dbp.patch_string_date_literals_in_constructors(str(proj))
+        out = (proj / "app" / "routes" / "seed_routes.py").read_text(encoding="utf-8")
+        assert n == 0
+        assert out == route
+
+
+def test_patch_string_date_literals_never_touches_unrelated_string_field():
+    # A date-shaped string in a plain String column (not the Date/DateTime
+    # column) must never be rewritten -- only known Date/DateTime columns
+    # are in scope.
+    route = (
+        "from app.models.events import Event\n\n"
+        "events = [Event(title=\"2023-10-01\", created_at=None)]\n"
+    )
+    with tempfile.TemporaryDirectory() as td:
+        proj = _mk_project(td, models={"events.py": _EVENT_MODEL}, routes={"seed_routes.py": route})
+        n = dbp.patch_string_date_literals_in_constructors(str(proj))
+        out = (proj / "app" / "routes" / "seed_routes.py").read_text(encoding="utf-8")
+        assert n == 0
+        assert out == route
+
+
+def test_patch_string_date_literals_no_op_without_models_or_routes_dir():
+    with tempfile.TemporaryDirectory() as td:
+        proj = Path(td)
+        assert dbp.patch_string_date_literals_in_constructors(str(proj)) == 0
+
+
+def test_patch_string_date_literals_idempotent():
+    route = (
+        "from app.models.progress_logs import ProgressLog\n\n"
+        "progress_logs = [ProgressLog(date=\"2023-10-01\", completed=True)]\n"
+    )
+    with tempfile.TemporaryDirectory() as td:
+        proj = _mk_project(td, models={"progress_logs.py": _PROGRESS_LOG_MODEL}, routes={"seed_routes.py": route})
+        dbp.patch_string_date_literals_in_constructors(str(proj))
+        first = (proj / "app" / "routes" / "seed_routes.py").read_text(encoding="utf-8")
+        n2 = dbp.patch_string_date_literals_in_constructors(str(proj))
+        second = (proj / "app" / "routes" / "seed_routes.py").read_text(encoding="utf-8")
+        assert n2 == 0
+        assert first == second
+
+
 # ─── patch_filter_dict_unpack_constructor_kwargs ──────────────────────────
 
 def test_patch_filter_dict_unpack_wraps_bare_star_unpack():

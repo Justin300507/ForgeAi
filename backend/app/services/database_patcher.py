@@ -7,6 +7,7 @@ Fixes:
   - pool_pre_ping=True for PostgreSQL (prevents dead connection errors)
   - Always exports get_db, Base, SessionLocal, engine (deterministic API)
 """
+import ast
 import re
 from pathlib import Path
 
@@ -1036,6 +1037,141 @@ def patch_missing_required_constructor_kwargs(project_path: str) -> int:
             rf.write_text(src, encoding="utf-8")
             patched_files += 1
             print(f"  [field_patcher] Added missing required constructor kwarg(s) in {rf.name}")
+
+    return patched_files
+
+
+_ISO_DATE_KWARG_RE = re.compile(
+    r'\b(\w+)\s*=\s*(["\'])(\d{4})-(\d{2})-(\d{2})(?:[ T](\d{2}):(\d{2})(?::(\d{2}))?)?\2'
+)
+
+
+def patch_string_date_literals_in_constructors(project_path: str) -> int:
+    """
+    A Date/DateTime-typed model column passed a quoted ISO string literal
+    (e.g. `date="2023-10-01"`) instead of a real `date(...)`/`datetime(...)`
+    object -- valid-looking Python that SQLAlchemy's SQLite dialect rejects
+    outright at insert time (`TypeError: SQLite Date type only accepts
+    Python date objects as input`), an uncaught StatementError distinct
+    from the IntegrityError family the constructor call's own try/except
+    is usually written to catch.
+
+    Confirmed live (habit_tracker, 2026-07-25): seed_routes.py's demo data
+    did `ProgressLog(date="2023-10-01", completed=True)` -- the column is
+    `Column(Date, nullable=False)`. Every generated app with a seed script
+    and any Date/DateTime column is exposed to this same shape, since
+    hardcoded "sample data" is exactly where a literal date string is most
+    likely to appear verbatim instead of being constructed properly.
+
+    Deliberately narrower than patch_missing_required_constructor_kwargs
+    above (that one fills in a MISSING kwarg with a safe default; this one
+    only rewrites an EXISTING kwarg whose literal value is unambiguously a
+    mistyped date/datetime -- never touches nullable status or FK columns).
+    """
+    project = Path(project_path)
+    models_dir = project / "app" / "models"
+    routes_dir = project / "app" / "routes"
+    if not models_dir.exists() or not routes_dir.exists():
+        return 0
+
+    class_re = re.compile(r"^class\s+(\w+)\s*\(", re.MULTILINE)
+    col_re = re.compile(
+        r"^\s{4}(\w+)\s*=\s*Column\(\s*([A-Za-z_][\w.]*)\s*(?:\([^)]*\))?\s*,?([^\n]*)\)\s*$",
+        re.MULTILINE,
+    )
+
+    # ClassName -> {field: "Date" | "DateTime"} for every Date/DateTime
+    # column, regardless of nullability -- a string literal is wrong for
+    # this column's type whether or not the column is required.
+    date_fields_by_class: dict[str, dict[str, str]] = {}
+    for mf in models_dir.glob("*.py"):
+        if mf.name == "__init__.py":
+            continue
+        try:
+            src = mf.read_text(encoding="utf-8", errors="replace")
+        except Exception:
+            continue
+        for cls_name in class_re.findall(src):
+            if cls_name in ("Base", "Config", "Meta"):
+                continue
+            start_m = re.search(rf"^class\s+{cls_name}\s*\(", src, re.MULTILINE)
+            if not start_m:
+                continue
+            next_class_m = re.search(r"^class\s+\w+\s*\(", src[start_m.end():], re.MULTILINE)
+            body = src[start_m.end():start_m.end() + next_class_m.start()] if next_class_m else src[start_m.end():]
+            for col_m in col_re.finditer(body):
+                field, sql_type, _rest = col_m.group(1), col_m.group(2), col_m.group(3)
+                if sql_type in ("Date", "DateTime"):
+                    date_fields_by_class.setdefault(cls_name, {})[field] = sql_type
+
+    if not date_fields_by_class:
+        return 0
+
+    patched_files = 0
+    for rf in routes_dir.glob("*.py"):
+        try:
+            src = rf.read_text(encoding="utf-8", errors="replace")
+        except Exception:
+            continue
+        original = src
+        needs_date = False
+        needs_datetime = False
+
+        for cls_name, fields in date_fields_by_class.items():
+            if cls_name not in src:
+                continue
+
+            def _fix_ctor(m: "re.Match") -> str:
+                nonlocal needs_date, needs_datetime
+                if m.group(1) != cls_name:
+                    return m.group(0)
+                args = m.group(2)
+
+                def _replace_kw(kw_m: "re.Match") -> str:
+                    nonlocal needs_date, needs_datetime
+                    field, _quote, y, mo, d, h, mi, s = kw_m.groups()
+                    sql_type = fields.get(field)
+                    if not sql_type:
+                        return kw_m.group(0)
+                    if sql_type == "DateTime" or h is not None:
+                        needs_datetime = True
+                        return f"{field}=datetime({int(y)}, {int(mo)}, {int(d)}, {int(h or 0)}, {int(mi or 0)}, {int(s or 0)})"
+                    needs_date = True
+                    return f"{field}=date({int(y)}, {int(mo)}, {int(d)})"
+
+                new_args = _ISO_DATE_KWARG_RE.sub(_replace_kw, args)
+                if new_args == args:
+                    return m.group(0)
+                return f"{m.group(1)}({new_args})"
+
+            src = _CTOR_CALL_RE.sub(_fix_ctor, src)
+
+        if src != original:
+            if needs_date and not re.search(r"^from datetime import[^\n]*\bdate\b(?!time)", src, re.MULTILINE):
+                if re.search(r"^from datetime import ([^\n]+)$", src, re.MULTILINE):
+                    src = re.sub(
+                        r"^from datetime import ([^\n]+)$",
+                        lambda m: m.group(0) if re.search(r"\bdate\b", m.group(1)) else f"from datetime import {m.group(1)}, date",
+                        src, count=1, flags=re.MULTILINE,
+                    )
+                else:
+                    src = "from datetime import date\n" + src
+            if needs_datetime and not re.search(r"^from datetime import[^\n]*\bdatetime\b", src, re.MULTILINE):
+                if re.search(r"^from datetime import ([^\n]+)$", src, re.MULTILINE):
+                    src = re.sub(
+                        r"^from datetime import ([^\n]+)$",
+                        lambda m: m.group(0) if re.search(r"\bdatetime\b", m.group(1)) else f"from datetime import {m.group(1)}, datetime",
+                        src, count=1, flags=re.MULTILINE,
+                    )
+                else:
+                    src = "from datetime import datetime\n" + src
+            try:
+                ast.parse(src)
+            except SyntaxError:
+                continue  # never write a syntactically broken file -- skip, fail soft
+            rf.write_text(src, encoding="utf-8")
+            patched_files += 1
+            print(f"  [field_patcher] Converted string date literal(s) to real date/datetime object(s) in {rf.name}")
 
     return patched_files
 
