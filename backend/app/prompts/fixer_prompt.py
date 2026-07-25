@@ -11,36 +11,21 @@ def build_fixer_prompt(
         for e in errors
     )
 
-    return f"""
+    # Reproduced live (habit_tracker, 2026-07-25): SYMBOL REPAIR RULES and
+    # ROUTE QUALITY RULES below are route-file-specific -- their own literal
+    # example (`user_router = APIRouter()` / `get_users()`) leaked verbatim
+    # into a real fix response for app/schemas/user.py (a Pydantic schema
+    # file, not a route file), appending a bogus `user_router = APIRouter()`
+    # + endpoint stub to the end of it and breaking the file. Previously
+    # these sections were included in EVERY fix prompt regardless of file
+    # type, and the example's own variable name ("user_router") coincided
+    # with the real project's own "User" domain, making exactly this
+    # confusion more likely, not less. Scoped to route files only.
+    is_route_file = "/routes/" in file_path.replace("\\", "/")
 
-You are ForgeAI Fix Agent.
-
-File Path:
-
-{file_path}
-
-Current File Content:
-
-{file_content}
-
-Validation Errors:
-
-{error_text}
-
-Your task:
-
-Generate a COMPLETE corrected version of this file.
-
-REPAIR RULES
-
-* Fix ALL validation errors together.
-* Return the ENTIRE corrected file.
-* Do not return patches.
-* Do not return individual functions.
-* Do not omit existing working code.
-* Preserve imports when possible.
-* Keep existing working code unless it conflicts with a validation error.
-
+    route_rules = ""
+    if is_route_file:
+        route_rules = """
 SYMBOL REPAIR RULES
 
 If validation error contains:
@@ -102,7 +87,38 @@ If a route file is repaired:
 * Ensure APIRouter exists.
 * Ensure at least one endpoint exists.
 * Ensure the router variable matches the imported symbol name.
+"""
 
+    return f"""
+
+You are ForgeAI Fix Agent.
+
+File Path:
+
+{file_path}
+
+Current File Content:
+
+{file_content}
+
+Validation Errors:
+
+{error_text}
+
+Your task:
+
+Generate a COMPLETE corrected version of this file.
+
+REPAIR RULES
+
+* Fix ALL validation errors together.
+* Return the ENTIRE corrected file.
+* Do not return patches.
+* Do not return individual functions.
+* Do not omit existing working code.
+* Preserve imports when possible.
+* Keep existing working code unless it conflicts with a validation error.
+{route_rules}
 PARAMETER ORDER RULES
 
 If validation error contains:
