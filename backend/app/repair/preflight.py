@@ -587,6 +587,8 @@ def _fix_model_schema_notnull_gap(project_path: Path, diagnostics: list) -> bool
     # a field with an `Optional[...]` annotation or any default value does
     # not guarantee the client supplies a real value, so it cannot be
     # trusted to satisfy a NOT NULL column.
+    from app.services.deterministic_patcher import _field_rhs_has_real_default
+
     create_schema_required_fields: dict[str, set[str]] = {}
     for f in schemas_dir.rglob("*.py"):
         try:
@@ -601,22 +603,24 @@ def _fix_model_schema_notnull_gap(project_path: Path, diagnostics: list) -> bool
             required = set()
             for fm in re.finditer(r'^\s{4}(\w+)\s*:\s*([^\n=]*)(=.*)?$', body, re.MULTILINE):
                 field_name, annotation, default = fm.group(1), fm.group(2), fm.group(3)
-                # Reproduced live (habit_tracker, 2026-07-25): `username: str
-                # = Field(..., min_length=1)` is Pydantic's idiom for a
-                # REQUIRED field with an extra validator -- the Ellipsis as
-                # Field's first positional arg means "no default". The old
-                # check only asked "is there an `=` at all", so it treated
-                # this identically to a genuine default like `= Field(default=
-                # None)` or `= "x"`, wrongly excluding it from `required` --
-                # which made this function relax the model column back to
-                # nullable=True immediately after a separate patcher
-                # (deterministic_patcher.py's _patch_required_create_schema_
-                # model_nullability) had correctly made it NOT NULL, silently
-                # undoing that fix on every run using this common idiom.
-                is_ellipsis_default = default is not None and re.match(
-                    r'=\s*(\.\.\.\s*$|Field\(\s*\.\.\.\s*[,)])', default.strip()
-                )
-                has_real_default = default is not None and not is_ellipsis_default
+                # Reproduced live (habit_tracker, 2026-07-25): the Ellipsis-only
+                # check below used to treat `name: str = Field(min_length=1)`
+                # (no leading `...,`) as "has a real default" and excluded it
+                # from `required` -- but Pydantic v2 makes a Field() call
+                # required whenever it has neither a bare positional default
+                # nor a default=/default_factory= kwarg, with or without the
+                # explicit Ellipsis. That misdetection made this function
+                # relax the model column back to nullable=True right after a
+                # separate patcher (deterministic_patcher.py's
+                # _patch_required_create_schema_model_nullability) had
+                # correctly made it NOT NULL, and the two kept flip-flopping
+                # across repair iterations since the LLM-authored idiom for
+                # this exact field alternated between the Ellipsis and
+                # no-Ellipsis forms. Reuse the same requiredness check
+                # deterministic_patcher.py already gets right instead of a
+                # second, incomplete regex.
+                rhs = default[1:].strip() if default else ""
+                has_real_default = bool(rhs) and rhs != "..." and _field_rhs_has_real_default(rhs)
                 if 'Optional[' in annotation or has_real_default:
                     continue  # has a real default or is Optional -- not required
                 required.add(field_name)

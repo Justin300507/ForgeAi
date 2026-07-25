@@ -597,6 +597,37 @@ def test_fix_model_schema_notnull_gap_field_ellipsis_still_counts_as_required(tm
     assert "password = Column(String, nullable=False)" in content
 
 
+def test_fix_model_schema_notnull_gap_field_no_ellipsis_still_counts_as_required(tmp_path):
+    # Regression test for the follow-up live incident (habit_tracker,
+    # 2026-07-25): the Ellipsis-only fix above only recognized
+    # `Field(..., min_length=1)`. It missed the equally valid Pydantic v2
+    # idiom `Field(min_length=1)` -- no leading `...,`, no `default=`
+    # kwarg -- which is STILL required (Field() has no default unless one
+    # is supplied positionally or via default=/default_factory=). The
+    # LLM's schema-fix pass flip-flopped this exact field between the
+    # Ellipsis and no-Ellipsis spellings across repair iterations, and on
+    # every no-Ellipsis iteration this function wrongly relaxed the
+    # already-correct model column back to nullable=True, reproducing
+    # "required but model allows NULL" forever.
+    root = _mkproject(tmp_path)
+    _write(root / "app" / "models" / "habit.py", (
+        "from app.database import Base\nfrom sqlalchemy import Column, String\n\n"
+        "class Habit(Base):\n"
+        "    name = Column(String, nullable=False)\n"
+        "    frequency = Column(String, nullable=False)\n"
+    ))
+    _write(root / "app" / "schemas" / "habit.py", (
+        "from pydantic import BaseModel, Field\n\n"
+        "class HabitCreate(BaseModel):\n"
+        "    name: str = Field(min_length=1)\n"
+        "    frequency: str = Field(min_length=1)\n"
+    ))
+    assert pf._fix_model_schema_notnull_gap(root, []) is False
+    content = (root / "app" / "models" / "habit.py").read_text()
+    assert "name = Column(String, nullable=False)" in content
+    assert "frequency = Column(String, nullable=False)" in content
+
+
 def test_fix_model_schema_notnull_gap_bare_ellipsis_still_counts_as_required(tmp_path):
     # Same idiom without the Field() wrapper: `name: str = ...` is also a
     # valid (if less common) explicit-required-field spelling.
