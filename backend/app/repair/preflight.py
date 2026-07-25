@@ -601,8 +601,24 @@ def _fix_model_schema_notnull_gap(project_path: Path, diagnostics: list) -> bool
             required = set()
             for fm in re.finditer(r'^\s{4}(\w+)\s*:\s*([^\n=]*)(=.*)?$', body, re.MULTILINE):
                 field_name, annotation, default = fm.group(1), fm.group(2), fm.group(3)
-                if 'Optional[' in annotation or default is not None:
-                    continue  # has a default or is Optional -- not required
+                # Reproduced live (habit_tracker, 2026-07-25): `username: str
+                # = Field(..., min_length=1)` is Pydantic's idiom for a
+                # REQUIRED field with an extra validator -- the Ellipsis as
+                # Field's first positional arg means "no default". The old
+                # check only asked "is there an `=` at all", so it treated
+                # this identically to a genuine default like `= Field(default=
+                # None)` or `= "x"`, wrongly excluding it from `required` --
+                # which made this function relax the model column back to
+                # nullable=True immediately after a separate patcher
+                # (deterministic_patcher.py's _patch_required_create_schema_
+                # model_nullability) had correctly made it NOT NULL, silently
+                # undoing that fix on every run using this common idiom.
+                is_ellipsis_default = default is not None and re.match(
+                    r'=\s*(\.\.\.\s*$|Field\(\s*\.\.\.\s*[,)])', default.strip()
+                )
+                has_real_default = default is not None and not is_ellipsis_default
+                if 'Optional[' in annotation or has_real_default:
+                    continue  # has a real default or is Optional -- not required
                 required.add(field_name)
             create_schema_required_fields.setdefault(model_name, set()).update(required)
 

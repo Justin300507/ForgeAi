@@ -567,6 +567,70 @@ def test_fix_model_schema_notnull_gap_idempotent(tmp_path):
     assert (root / "app" / "models" / "contact.py").read_text() == snap
 
 
+def test_fix_model_schema_notnull_gap_field_ellipsis_still_counts_as_required(tmp_path):
+    # Regression test for a real live incident (habit_tracker, 2026-07-25):
+    # `username: str = Field(..., min_length=1)` is Pydantic's idiom for a
+    # REQUIRED field with an extra validator (Ellipsis as Field's first
+    # positional arg means "no default"). The old check only asked "is
+    # there an `=` at all" and treated this identically to a genuine
+    # default, wrongly relaxing the model column back to nullable=True
+    # immediately after deterministic_patcher.py's
+    # _patch_required_create_schema_model_nullability had correctly made
+    # it NOT NULL -- silently undoing that fix on every run using this
+    # extremely common idiom.
+    root = _mkproject(tmp_path)
+    _write(root / "app" / "models" / "user.py", (
+        "from app.database import Base\nfrom sqlalchemy import Column, String\n\n"
+        "class User(Base):\n"
+        "    username = Column(String, nullable=False)\n"
+        "    password = Column(String, nullable=False)\n"
+    ))
+    _write(root / "app" / "schemas" / "user.py", (
+        "from pydantic import BaseModel, Field\n\n"
+        "class UserCreate(BaseModel):\n"
+        "    username: str = Field(..., min_length=1)\n"
+        "    password: str = Field(..., min_length=1)\n"
+    ))
+    assert pf._fix_model_schema_notnull_gap(root, []) is False
+    content = (root / "app" / "models" / "user.py").read_text()
+    assert "username = Column(String, nullable=False)" in content
+    assert "password = Column(String, nullable=False)" in content
+
+
+def test_fix_model_schema_notnull_gap_bare_ellipsis_still_counts_as_required(tmp_path):
+    # Same idiom without the Field() wrapper: `name: str = ...` is also a
+    # valid (if less common) explicit-required-field spelling.
+    root = _mkproject(tmp_path)
+    _write(root / "app" / "models" / "habit.py", (
+        "from app.database import Base\nfrom sqlalchemy import Column, String\n\n"
+        "class Habit(Base):\n    name = Column(String, nullable=False)\n"
+    ))
+    _write(root / "app" / "schemas" / "habit.py", (
+        "from pydantic import BaseModel\n\nclass HabitCreate(BaseModel):\n    name: str = ...\n"
+    ))
+    assert pf._fix_model_schema_notnull_gap(root, []) is False
+    assert "nullable=False" in (root / "app" / "models" / "habit.py").read_text()
+
+
+def test_fix_model_schema_notnull_gap_field_with_real_default_still_relaxed(tmp_path):
+    # Negative control: Field() with an ACTUAL default (or any non-Ellipsis
+    # default) must still be treated as optional -- the fix must not
+    # over-correct into never relaxing anything.
+    root = _mkproject(tmp_path)
+    _write(root / "app" / "models" / "task.py", (
+        "from app.database import Base\nfrom sqlalchemy import Column, String\n\n"
+        "class Task(Base):\n    status = Column(String, nullable=False)\n"
+    ))
+    _write(root / "app" / "schemas" / "task.py", (
+        "from pydantic import BaseModel, Field\n\n"
+        "class TaskCreate(BaseModel):\n"
+        "    status: str = Field(default=\"pending\")\n"
+    ))
+    assert pf._fix_model_schema_notnull_gap(root, []) is True
+    content = (root / "app" / "models" / "task.py").read_text()
+    assert "status = Column(String, nullable=True)" in content
+
+
 # ── fix_router_names / fix_param_order (priority 25/26) — delegation only ─
 # Both wrap deterministic_patcher functions tested directly elsewhere; here
 # we only confirm the delegation itself works and fails soft.
