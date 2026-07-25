@@ -331,7 +331,10 @@ def _is_stub_function_body(node) -> bool:
     from a user's perspective; this makes it count as such here too.
     """
     body = node.body
-    if body and isinstance(body[0], ast.Expr) and isinstance(body[0].value, ast.Constant)             and isinstance(body[0].value.value, str):
+    if (
+        body and isinstance(body[0], ast.Expr) and isinstance(body[0].value, ast.Constant)
+        and isinstance(body[0].value.value, str)
+    ):
         body = body[1:]  # leading docstring is never "real logic" either way
     if not body:
         return True
@@ -385,7 +388,10 @@ def _find_stub_required_endpoints(project_path: Path, found: dict) -> list[str]:
                         continue
                     if not (isinstance(dec_func.value, ast.Name) and dec_func.value.id == router_var):
                         continue
-                    if not dec.args or not isinstance(dec.args[0], ast.Constant)                             or not isinstance(dec.args[0].value, str):
+                    if (
+                        not dec.args or not isinstance(dec.args[0], ast.Constant)
+                        or not isinstance(dec.args[0].value, str)
+                    ):
                         continue
                     raw_path = dec.args[0].value
                     prefix = prefixes.get(router_var, "")
@@ -398,7 +404,7 @@ def _find_stub_required_endpoints(project_path: Path, found: dict) -> list[str]:
     return stubs
 
 
-def check_auth_completeness(project_path: str) -> AuthCompletenessResult:
+def check_auth_completeness(project_path: str) -> AuthCompletenessResult:
     """
     Part 2/3: the deterministic completeness check. Pure read-only --
     makes no changes. Verifies (in order): required endpoints exist
