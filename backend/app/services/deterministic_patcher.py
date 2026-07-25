@@ -3267,6 +3267,96 @@ def _field_rhs_has_real_default(rhs: str) -> bool:
     return True
 
 
+_UPDATE_CLASS_DECL_RE = re.compile(r'^class\s+(\w+Update)\s*\(\s*BaseModel\s*\)\s*:', re.MULTILINE)
+
+
+# Confirmed live (habit_tracker, 2026-07-25): HabitUpdate declared
+# `name: Optional[str] = Field(min_length=1)` -- Optional-typed, but the
+# Field() call has no positional default and no default=/default_factory=
+# kwarg, so Pydantic v2 still treats it as REQUIRED (Optional[...] only
+# widens the accepted *type* to include None; it does not, by itself,
+# supply a default). The CRUD journey's partial-update PATCH omits
+# untouched fields exactly as a real client would, and Pydantic 422's
+# with "field required" on every Edit step -- an Update schema where
+# every field is unusable for a partial update. Same root defect as
+# _fix_model_schema_notnull_gap's fix (preflight.py): the LLM's
+# `Field(min_length=1)` idiom drops the leading `None,`/`...,` positional
+# arg often enough that any check assuming Optional implies "has a
+# default" misses it.
+def _patch_update_schema_optional_field_missing_default(project_path: Path) -> int:
+    """
+    For every `*Update(BaseModel)` schema class, gives each Optional-typed
+    field an explicit `None` default when it doesn't already have a real
+    one (reuses _field_rhs_has_real_default, the same requiredness check
+    already trusted elsewhere in this file) -- `Optional[str]` (bare, no
+    `=` at all), `Optional[str] = Field(min_length=1)`, and
+    `Optional[str] = ...` all become `Optional[str] = Field(None, ...)` /
+    `Optional[str] = None`. Scoped to *Update classes only: an Update
+    schema exists specifically to support partial updates, so a field
+    that's Optional-typed but still Pydantic-required is never
+    intentional there the way it might arguably be on a Create/Base
+    schema, which this function never touches.
+    """
+    schemas_dir = project_path / "app" / "schemas"
+    if not schemas_dir.exists():
+        return 0
+
+    patched = 0
+    for sf in schemas_dir.rglob("*.py"):
+        try:
+            content = sf.read_text(encoding="utf-8", errors="replace")
+        except Exception:
+            continue
+
+        class_matches = list(_UPDATE_CLASS_DECL_RE.finditer(content))
+        if not class_matches:
+            continue
+
+        text = content
+        changed = False
+        for cm in reversed(class_matches):
+            class_start = cm.end()
+            next_class = _CLASS_DECL_RE.search(text, class_start)
+            class_end = next_class.start() if next_class else len(text)
+            body = text[class_start:class_end]
+
+            def _fix_field(m: re.Match) -> str:
+                nonlocal changed
+                indent, field_name, annotation, default = m.group(1), m.group(2), m.group(3), m.group(4)
+                if "Optional[" not in annotation:
+                    return m.group(0)
+                rhs = default[1:].strip() if default else ""
+                has_real_default = bool(rhs) and rhs != "..." and _field_rhs_has_real_default(rhs)
+                if has_real_default:
+                    return m.group(0)
+                changed = True
+                ann = annotation.strip()
+                if not rhs or rhs == "...":
+                    return f"{indent}{field_name}: {ann} = None"
+                # Only remaining shape _field_rhs_has_real_default can say
+                # "not a real default" for: a Field(...) call with no
+                # positional value and no default=/default_factory= kwarg.
+                inner = rhs[len("Field("):].rstrip(")").strip()
+                if inner.startswith("..."):
+                    inner = "None" + inner[3:]
+                elif inner:
+                    inner = f"None, {inner}"
+                else:
+                    inner = "None"
+                return f"{indent}{field_name}: {ann} = Field({inner})"
+
+            new_body = _CLASS_FIELD_LINE_RE.sub(_fix_field, body)
+            if new_body != body:
+                text = text[:class_start] + new_body + text[class_end:]
+
+        if changed and text != content:
+            sf.write_text(text, encoding="utf-8")
+            patched += 1
+            print(f"  [patcher] Gave Update-schema Optional field(s) an explicit None default in {sf.name}")
+
+    return patched
+
+
 # Same name vocabulary as _RESPONSE_CLASS_RE, but matchable against a bare
 # class NAME (no trailing "(bases):") -- _RESPONSE_CLASS_RE itself requires
 # a full "class X(...)" declaration to match at all, which a bare name
@@ -4357,6 +4447,180 @@ def _patch_missing_ownership_assignment(project_path: Path) -> int:
                 rf.write_text(new_content, encoding="utf-8")
                 patched += 1
                 print(f"  [patcher] Injected missing ownership assignment in {rf.name}")
+
+    return patched
+
+
+def _last_param_end_position(func: "ast.FunctionDef | ast.AsyncFunctionDef"):
+    """(end_lineno, end_col_offset) of the last token in the function's
+    parameter list -- the default value if a parameter has one, else its
+    annotation, else the bare parameter name. Used as the splice point for
+    appending a new trailing parameter; the ast module never exposes the
+    closing paren's own position, so this is the only unambiguous anchor
+    that works for both a single-line and a one-kwarg-per-line signature."""
+    args = func.args
+    candidates = []
+    positional = list(args.posonlyargs) + list(args.args)
+    defaults = [None] * (len(positional) - len(args.defaults)) + list(args.defaults)
+    for arg, default in zip(positional, defaults):
+        candidates.append(default or arg.annotation or arg)
+    if args.vararg:
+        candidates.append(args.vararg)
+    for arg, default in zip(args.kwonlyargs, args.kw_defaults):
+        candidates.append(default or arg.annotation or arg)
+    if args.kwarg:
+        candidates.append(args.kwarg)
+    if not candidates:
+        return None
+    last = max(candidates, key=lambda n: (n.end_lineno, n.end_col_offset))
+    return last.end_lineno, last.end_col_offset
+
+
+# Companion to _patch_missing_ownership_assignment (Exp092) above: that
+# function only injects the ownership assignment when a POST handler
+# ALREADY accepts a `current_user: ... = Depends(get_current_user)`
+# parameter, deliberately -- adding a brand-new dependency parameter to a
+# function signature is a different, riskier class of edit than inserting
+# a body statement.
+#
+# Confirmed live (habit_tracker, 2026-07-25): an "ARCHITECTURE REPAIR" LLM
+# rewrite of habit_routes.py dropped Depends(get_current_user) from
+# create_habit() entirely -- even though the Tech Lead's own review had
+# flagged "Missing JWT authentication on endpoints that modify... user
+# data" as CRITICAL -- while Habit.user_id is a NOT NULL FK. The handler
+# built Habit(**{...}) with no user_id anywhere, db.add()/db.commit()
+# raised an IntegrityError, and the "Create entity" journey step 500'd on
+# every run. With no current_user parameter present at all,
+# _patch_missing_ownership_assignment's own precondition silently no-ops,
+# so the existing patcher could never reach this shape.
+def _patch_missing_current_user_dependency_for_ownership_insert(project_path: Path) -> int:
+    """
+    For each POST handler with NO existing current_user/Depends(get_current_user)
+    parameter that constructs an ownership-FK model via a bare
+    `ClassName(...)` assignment feeding a same-function `db.add(...)` call
+    (the exact shape _patch_missing_ownership_assignment already trusts),
+    adds an untyped `current_user=Depends(get_current_user)` parameter --
+    FastAPI resolves the dependency from the default alone, so no type
+    annotation is needed and the User model's class/module name never has
+    to be resolved or imported -- plus the same ownership assignment the
+    companion function injects, and imports get_current_user from
+    app.utils.auth (the "known-good" auth module every generated project
+    already receives) if not already imported.
+
+    Skips (does nothing) if the literal name `current_user` already
+    appears anywhere in the function for any other reason -- adding a
+    same-named parameter could collide with existing, unrelated logic,
+    and this function's job is only to cover the one confirmed-safe gap.
+    """
+    routes_dir = project_path / "app" / "routes"
+    models_dir = project_path / "app" / "models"
+    if not routes_dir.exists() or not models_dir.exists():
+        return 0
+
+    fk_cols = _model_fk_columns(models_dir)
+    if not fk_cols:
+        return 0
+
+    ownership_fk_by_class: dict[str, str] = {}
+    for cls_name, cols in fk_cols.items():
+        for col in sorted(cols):
+            if col in _OWNERSHIP_FK_SYNONYMS:
+                ownership_fk_by_class[cls_name] = col
+                break
+    if not ownership_fk_by_class:
+        return 0
+
+    patched = 0
+    for rf in routes_dir.glob("*.py"):
+        try:
+            content = rf.read_text(encoding="utf-8", errors="replace")
+            tree = ast.parse(content)
+        except Exception:
+            continue
+
+        lines = content.split("\n")
+        body_insertions: list[tuple[int, str]] = []
+        param_insertions: list[tuple[int, int, str]] = []  # (end_lineno, end_col, text)
+        touched = False
+
+        for func in ast.walk(tree):
+            if not isinstance(func, (ast.FunctionDef, ast.AsyncFunctionDef)):
+                continue
+            if not _has_post_decorator(func):
+                continue
+            if _current_user_param_name(func):
+                continue  # already has the dependency -- the companion patcher owns this case
+            if any(isinstance(n, ast.Name) and n.id == "current_user" for n in ast.walk(func)):
+                continue  # name already means something else in this handler -- too risky
+
+            for stmt in ast.walk(func):
+                if not isinstance(stmt, ast.Assign) or not isinstance(stmt.value, ast.Call):
+                    continue
+                call = stmt.value
+                if not isinstance(call.func, ast.Name) or call.func.id not in ownership_fk_by_class:
+                    continue
+                if len(stmt.targets) != 1 or not isinstance(stmt.targets[0], ast.Name):
+                    continue
+                var_name = stmt.targets[0].id
+                fk_col = ownership_fk_by_class[call.func.id]
+
+                if any(kw.arg == fk_col for kw in call.keywords):
+                    continue
+                if _assigns_attribute(func, var_name, fk_col):
+                    continue
+                if _assigns_via_dict_unpack(func, call, fk_col):
+                    continue
+
+                add_lineno = _find_db_add_lineno(func, var_name)
+                if add_lineno is None:
+                    continue
+
+                anchor = _last_param_end_position(func)
+                if anchor is None:
+                    continue
+
+                idx = add_lineno - 1  # ast linenos are 1-based
+                indent = re.match(r"(\s*)", lines[idx]).group(1)
+                new_line = f"{indent}{var_name}.{fk_col} = current_user.id"
+                body_insertions.append((idx, new_line))
+                param_insertions.append((anchor[0], anchor[1], ", current_user=Depends(get_current_user)"))
+                touched = True
+
+        if not touched:
+            continue
+
+        # Parameter splices are same-line column edits, so they never shift
+        # any line index -- safe to apply before the body-line insertions
+        # below (which do shift every later index) regardless of order,
+        # but doing them first keeps `lines` consistent for the indent
+        # lookup above, which already ran against the pre-splice text.
+        for lineno, col, text in sorted(param_insertions, key=lambda t: (-t[0], -t[1])):
+            row = lineno - 1
+            lines[row] = lines[row][:col] + text + lines[row][col:]
+
+        out = list(lines)
+        for idx, text in sorted(body_insertions, key=lambda t: -t[0]):
+            out.insert(idx, text)
+
+        needs_import = not re.search(
+            r'^\s*from\s+\S+\s+import\s+.*\bget_current_user\b', content, re.MULTILINE
+        ) and not re.search(r'^\s*import\s+.*\bget_current_user\b', content, re.MULTILINE)
+        if needs_import:
+            import_line_idxs = [i for i, l in enumerate(out) if re.match(r'^\s*(from|import)\s+', l)]
+            insert_at = (import_line_idxs[-1] + 1) if import_line_idxs else 0
+            out.insert(insert_at, "from app.utils.auth import get_current_user")
+
+        new_content = "\n".join(out)
+        if new_content == content:
+            continue
+        try:
+            ast.parse(new_content)
+        except SyntaxError:
+            continue  # never write a syntactically broken file -- skip this one, fail soft
+
+        rf.write_text(new_content, encoding="utf-8")
+        patched += 1
+        print(f"  [patcher] Injected missing current_user dependency + ownership assignment in {rf.name}")
 
     return patched
 
@@ -8368,12 +8632,37 @@ def run_deterministic_patches(project_path: str, skip_protected_injections: bool
     # (insert-time omission, not query/filter attribute-name drift).
     _run_patch_isolated(counts, "_patch_missing_ownership_assignment", _patch_missing_ownership_assignment, root)
 
+    # Companion to the fix above: covers the case where current_user is
+    # missing from the handler signature entirely (not just the
+    # assignment), confirmed live on habit_tracker (2026-07-25) after an
+    # architecture-repair LLM pass dropped the dependency from a POST
+    # handler outright despite the Tech Lead having flagged missing auth
+    # as CRITICAL.
+    _run_patch_isolated(
+        counts,
+        "_patch_missing_current_user_dependency_for_ownership_insert",
+        _patch_missing_current_user_dependency_for_ownership_insert,
+        root,
+    )
+
     # Add a field to a Create/Update schema when a route handler reads it
     # off that schema but it was never declared there, even though a
     # sibling schema for the same entity (Response/Base) already has it --
     # e.g. WorkoutCreate missing `date` while WorkoutResponse has it,
     # crashing every Create request with AttributeError.
     _run_patch_isolated(counts, "_patch_missing_create_update_fields", _patch_missing_create_update_fields, root)
+
+    # An Optional-typed Update-schema field with no real default is still
+    # Pydantic-required -- Optional[...] widens the accepted type, it
+    # doesn't supply a default -- so a partial-update PATCH omitting that
+    # field 422s. Confirmed live (habit_tracker, 2026-07-25):
+    # HabitUpdate.name/.frequency as `Optional[str] = Field(min_length=1)`.
+    _run_patch_isolated(
+        counts,
+        "_patch_update_schema_optional_field_missing_default",
+        _patch_update_schema_optional_field_missing_default,
+        root,
+    )
 
     # Fix SQLAlchemy ORM models used as Pydantic field types in route files
     # (e.g. labels: List[Label] where Label is a SQLAlchemy model → List[Any])
