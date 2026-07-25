@@ -223,13 +223,17 @@ class VercelProvider(BaseDeploymentProvider):
 
             # Same-origin deploy — the frontend calls its own backend at /api,
             # not a separate domain like the Render+Cloudflare split does.
-            for api_file in list(build_dir.rglob("src/api.js")) + list(build_dir.rglob("src/api.jsx")):
+            _api_candidates = list(build_dir.rglob("src/api.js")) + list(build_dir.rglob("src/api.jsx"))
+            print(f"  [Vercel] api client search found {len(_api_candidates)} file(s): {[str(p.relative_to(build_dir)) for p in _api_candidates]}")
+            for api_file in _api_candidates:
                 try:
                     text = api_file.read_text(encoding="utf-8")
                     patched = _patch_api_base_url(text)
                     if patched != text:
                         api_file.write_text(patched, encoding="utf-8")
                         print(f"  [Vercel] Patched {api_file.name}: baseURL → '/api'")
+                    else:
+                        print(f"  [Vercel] {api_file.name} did not need patching (no baseURL match, or already '/api')")
                 except Exception as patch_err:
                     print(f"  [Vercel] Warning: could not patch {api_file}: {patch_err}")
 
