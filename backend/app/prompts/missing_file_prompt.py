@@ -1,7 +1,9 @@
+import ast
 import os
 import re
 
 from app.prompts.shared_contract import FASTAPI_CONTRACT
+from app.services.model_attribute_validator import _SQLA_SPECIAL_ATTRS
 
 _REFERENCE_MAX_CHARS = 4000
 
@@ -148,6 +150,79 @@ def _find_reference_sibling(project_path, filepath):
     return None
 
 
+def _find_resource_model_and_schema(project_path, filepath):
+    """
+    For a missing app/routes/<resource>_routes.py file, find the REAL
+    model/schema classes for that resource already on disk (if any) and
+    return their actual field names as a grounding block.
+
+    Root cause this closes: MissingEndpoint is the single most common real
+    failure category by a wide margin (356 occurrences in failure_memory as
+    of 2026-07-24 -- more than the next two categories combined). Unlike
+    _find_reference_sibling (a DIFFERENT resource's route file, useful only
+    for style/conventions), nothing previously told this prompt what fields
+    THIS resource's own model/schema actually declare -- the missing-file
+    agent had to guess field names from the resource name and error text
+    alone. Same root cause already found and fixed for architecture-repair's
+    existing_symbols={} gap: a real anti-hallucination signal exists
+    elsewhere in the project and simply wasn't being read here.
+    """
+    if not project_path:
+        return None
+    target = os.path.normpath(filepath).replace("\\", "/")
+    if not (target.startswith("app/routes/") and target.endswith("_routes.py")):
+        return None
+    stem = os.path.basename(target)[: -len("_routes.py")]
+    resource_name = "".join(w.capitalize() for w in re.split(r"[_-]", stem) if w)
+    if not resource_name:
+        return None
+    candidates = {resource_name}
+    if resource_name.endswith("es") and len(resource_name) > 2:
+        candidates.add(resource_name[:-2])  # Classes -> Class, Boxes -> Box
+    if resource_name.endswith("s") and len(resource_name) > 1:
+        candidates.add(resource_name[:-1])  # Habits -> Habit
+
+    blocks = []
+    for subdir in ("models", "schemas"):
+        dir_path = os.path.join(project_path, "app", subdir)
+        if not os.path.isdir(dir_path):
+            continue
+        for fname in sorted(os.listdir(dir_path)):
+            if not fname.endswith(".py"):
+                continue
+            try:
+                with open(os.path.join(dir_path, fname), "r", encoding="utf-8") as fh:
+                    tree = ast.parse(fh.read())
+            except Exception:
+                continue
+            for node in ast.walk(tree):
+                if not isinstance(node, ast.ClassDef):
+                    continue
+                # Match the resource itself or a *-suffixed variant
+                # (Class, ClassCreate, ClassUpdate, ClassResponse, ...) --
+                # a bare substring match would also catch an unrelated class
+                # that merely contains the resource name.
+                if not any(node.name == c or node.name.startswith(c) for c in candidates):
+                    continue
+                fields = []
+                for item in node.body:
+                    if isinstance(item, ast.AnnAssign) and isinstance(item.target, ast.Name):
+                        name = item.target.id
+                    elif isinstance(item, ast.Assign) and len(item.targets) == 1 and isinstance(item.targets[0], ast.Name):
+                        name = item.targets[0].id
+                    else:
+                        continue
+                    if name in _SQLA_SPECIAL_ATTRS or name.startswith("__"):
+                        continue
+                    fields.append(name)
+                if fields:
+                    blocks.append(f"- {node.name} (app/{subdir}/{fname}): {', '.join(fields)}")
+
+    if not blocks:
+        return None
+    return "\n".join(blocks)
+
+
 _NON_ENTITY_ROUTE_FILES = {"auth_routes.py", "seed_routes.py", "stats_routes.py"}
 
 
@@ -264,6 +339,23 @@ filler content ("New Page" / "This is a brand new page!" / "You can
 start adding content here.") -- that is a placeholder and is never
 acceptable.{reuse_line}
 """
+
+    resource_grounding = _find_resource_model_and_schema(project_path, filepath)
+    resource_block = ""
+    if resource_grounding:
+        resource_block = f"""
+========================================
+REAL MODEL/SCHEMA FOR THIS RESOURCE — USE THESE EXACT FIELD NAMES
+========================================
+
+These already exist in the project. Every field you reference on them
+(request bodies, response fields, filters, .attr access) MUST come from
+this list. Do NOT invent a field name that sounds plausible but isn't
+here, and do NOT invent an unrelated model/table for this resource.
+
+{resource_grounding}
+"""
+
     return f"""
 You are ForgeAI Missing File Agent.
 
@@ -274,7 +366,7 @@ MISSING FILE
 ========================================
 
 {filepath}
-{intent_block}{app_root_block}
+{intent_block}{app_root_block}{resource_block}
 ========================================
 VALIDATION ERROR
 ========================================
