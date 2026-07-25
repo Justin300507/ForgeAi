@@ -598,6 +598,99 @@ def _patch_missing_model_imports_in_routes(project_path: Path) -> int:
     return patched
 
 
+def _uses_session_as_bare_annotation(tree: ast.AST) -> bool:
+    """True if any function parameter is annotated with the bare name
+    `Session` (e.g. `db: Session = Depends(get_db)`) -- the confirmed live
+    shape, deliberately narrower than "the name Session appears anywhere,"
+    which could false-positive on an unrelated same-named local or a
+    different Session class (e.g. requests.Session)."""
+    for node in ast.walk(tree):
+        if not isinstance(node, (ast.FunctionDef, ast.AsyncFunctionDef)):
+            continue
+        for arg in list(node.args.args) + list(node.args.kwonlyargs) + list(node.args.posonlyargs):
+            if isinstance(arg.annotation, ast.Name) and arg.annotation.id == "Session":
+                return True
+    return False
+
+
+# Confirmed live (habit_tracker, 2026-07-25): an "ARCHITECTURE REPAIR" LLM
+# response for some-endpoint_routes.py wrote `def some_endpoint(db: Session
+# = Depends(get_db))` while importing only `from fastapi import APIRouter,
+# Depends, Query, HTTPException` and `from app.database import get_db` --
+# no `from sqlalchemy.orm import Session` anywhere. FastAPI's own symbols
+# (APIRouter/Depends/Query) get imported reliably since the decorator and
+# dependency injection need them to even write the handler; `Session` is
+# "just a type hint" and evaluates only when Python parses the `def`
+# statement itself, so the omission doesn't surface until the whole app
+# fails to import at startup -- a hard crash on every request, not a
+# single endpoint's worth of damage.
+def _patch_missing_session_import_in_routes(project_path: Path) -> int:
+    """
+    Injects `from sqlalchemy.orm import Session` into any app/routes/*.py
+    file that uses the bare `Session` type annotation without already
+    importing it under that name (from any module, in case a project
+    genuinely imports a differently-sourced Session and this would be a
+    false positive).
+    """
+    routes_dir = project_path / "app" / "routes"
+    if not routes_dir.exists():
+        return 0
+
+    patched = 0
+    for rf in sorted(routes_dir.glob("*.py")):
+        try:
+            text = rf.read_text(encoding="utf-8", errors="replace")
+            tree = ast.parse(text)
+        except Exception:
+            continue
+
+        if not _uses_session_as_bare_annotation(tree):
+            continue
+
+        already_imported = False
+        for node in ast.walk(tree):
+            if isinstance(node, ast.ImportFrom) and any(
+                (a.asname or a.name) == "Session" for a in node.names
+            ):
+                already_imported = True
+                break
+            if isinstance(node, ast.Import) and any(
+                (a.asname or a.name) == "Session" for a in node.names
+            ):
+                already_imported = True
+                break
+        if already_imported:
+            continue
+
+        lines = text.split("\n")
+        insert_at = 0
+        paren_depth = 0
+        for i, line in enumerate(lines):
+            if paren_depth > 0:
+                paren_depth += line.count("(") - line.count(")")
+                if paren_depth <= 0:
+                    insert_at = i + 1
+                continue
+            if line.startswith(("from ", "import ")):
+                depth_delta = line.count("(") - line.count(")")
+                if depth_delta > 0:
+                    paren_depth += depth_delta
+                else:
+                    insert_at = i + 1
+        lines.insert(insert_at, "from sqlalchemy.orm import Session")
+        new_text = "\n".join(lines)
+        try:
+            ast.parse(new_text)
+        except SyntaxError:
+            continue  # never write a syntactically broken file -- skip, fail soft
+
+        rf.write_text(new_text, encoding="utf-8")
+        patched += 1
+        print(f"  [patcher] Injected missing 'from sqlalchemy.orm import Session' in {rf.name}")
+
+    return patched
+
+
 def _patch_invalid_model_attribute_access(project_path: Path) -> int:
     """Wrap route handlers that reference a nonexistent model attribute
     (ModelName.attr where attr isn't a real column/property/method) in a
@@ -8451,6 +8544,17 @@ def run_deterministic_patches(project_path: str, skip_protected_injections: bool
     # routes are the repeat offender) -- must run after alias/dedup so class
     # names and modules are final.
     _run_patch_isolated(counts, "_patch_missing_model_imports_in_routes", _patch_missing_model_imports_in_routes, root)
+
+    # `db: Session = Depends(get_db)` used as a type annotation without
+    # `from sqlalchemy.orm import Session` -- confirmed live (habit_tracker,
+    # 2026-07-25) on an architecture-repair LLM response, a hard NameError
+    # crash at import time (the whole app fails to start, not just one route).
+    _run_patch_isolated(
+        counts,
+        "_patch_missing_session_import_in_routes",
+        _patch_missing_session_import_in_routes,
+        root,
+    )
 
     # Route handlers referencing a model attribute that doesn't actually
     # exist (created_at/last_active/status guessed without seeing the real
