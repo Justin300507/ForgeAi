@@ -223,6 +223,36 @@ def _find_resource_model_and_schema(project_path, filepath):
     return "\n".join(blocks)
 
 
+def _find_app_name(project_path):
+    """
+    Read the real app name out of index.html's <title> (always set correctly
+    by the static template/theme builder, unlike anything the missing-file
+    agent would otherwise have to guess).
+
+    Root cause this closes: a scaffolded src/components/Layout.jsx (nothing
+    in _find_page_intent/_find_resource_model_and_schema covers plain
+    wrapper components) had zero signal for what to call the app, so the
+    LLM fell back to the generic placeholder brand name "My Application" in
+    the header/footer of every single page in the project -- reproduced
+    live on a real habit tracker deploy, 2026-07-27.
+    """
+    if not project_path:
+        return None
+    index_html = os.path.join(project_path, "index.html")
+    if not os.path.isfile(index_html):
+        return None
+    try:
+        with open(index_html, "r", encoding="utf-8", errors="replace") as fh:
+            content = fh.read()
+    except Exception:
+        return None
+    m = re.search(r"<title>([^<]+)</title>", content)
+    if not m:
+        return None
+    name = m.group(1).strip()
+    return name or None
+
+
 _NON_ENTITY_ROUTE_FILES = {"auth_routes.py", "seed_routes.py", "stats_routes.py"}
 
 
@@ -340,6 +370,19 @@ start adding content here.") -- that is a placeholder and is never
 acceptable.{reuse_line}
 """
 
+    app_name = _find_app_name(project_path)
+    app_name_block = ""
+    if app_name:
+        app_name_block = f"""
+========================================
+REAL APP NAME — USE THIS FOR ANY BRANDING TEXT
+========================================
+
+This project's actual name is "{app_name}". If this file displays a title,
+header, footer, or any other branding text, use "{app_name}" — never a
+generic placeholder like "My Application" or "My App".
+"""
+
     resource_grounding = _find_resource_model_and_schema(project_path, filepath)
     resource_block = ""
     if resource_grounding:
@@ -366,7 +409,7 @@ MISSING FILE
 ========================================
 
 {filepath}
-{intent_block}{app_root_block}{resource_block}
+{intent_block}{app_root_block}{resource_block}{app_name_block}
 ========================================
 VALIDATION ERROR
 ========================================
@@ -494,6 +537,12 @@ Generate:
 - Layout/wrapper components (Navbar, Layout, Sidebar) that pages are nested
   inside as <Navbar><Page/></Navbar> MUST accept and render {{children}} —
   otherwise every page renders blank.
+- A pure layout/wrapper component has no reason to fetch anything itself —
+  do NOT invent a placeholder API call to a made-up endpoint (e.g. a fake
+  "/your-endpoint" GET on mount) just to give the component something to
+  do. Only add a data fetch here if the validation error or existing project
+  context actually requires one; otherwise render {{children}} directly with
+  no loading/error state of its own.
 
 ========================================
 CONSISTENCY RULES
