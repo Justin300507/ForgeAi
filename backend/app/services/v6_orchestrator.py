@@ -69,6 +69,27 @@ def _sanitize_path(path: str) -> str:
     return safe
 
 
+def _required_endpoints_from_errors(architecture_errors: list[str]) -> dict[str, list[str]]:
+    """Parse endpoint_validator.py's "Missing endpoint {METHOD} {path} (expected
+    in {file})" messages (both the plain and "-- called from ..." variants)
+    into the required_endpoints shape generate_architecture_fix()'s prompt
+    uses to pin down exactly which endpoint is missing. Left empty at the
+    call sites, this was the strongest anti-hallucination lever in that
+    prompt going unused -- with only free-form validation_errors text to go
+    on, gpt-4o-mini invented an entire wrong-domain schema (Class/Member/
+    Transaction) instead of the one specific endpoint actually missing.
+    """
+    required: dict[str, list[str]] = defaultdict(list)
+    for e in architecture_errors:
+        m = re.search(r"Missing endpoint (\S+) (\S+) \(expected in ([^)]+)\)", e)
+        if m:
+            method, path, target_file = m.groups()
+            endpoint = f"{method} {path}"
+            if endpoint not in required[target_file]:
+                required[target_file].append(endpoint)
+    return dict(required)
+
+
 def _sanitize_architecture_paths(architecture: dict) -> None:
     for ep in architecture.get("api_endpoints", []):
         if "file" in ep:
@@ -680,7 +701,8 @@ def generate_project_v6(
             from app.services.project_service import _collect_existing_symbols
             arch_fix = generate_architecture_fix(
                 architecture, architecture_errors, provider,
-                required_exports={}, required_endpoints={},
+                required_exports={},
+                required_endpoints=_required_endpoints_from_errors(architecture_errors),
                 existing_symbols=_collect_existing_symbols(project_path)
             )
             _llm["repairs"] += 1
@@ -1305,7 +1327,8 @@ def repair_project(
         from app.services.project_service import _collect_existing_symbols
         arch_fix = generate_architecture_fix(
             architecture, architecture_errors, provider,
-            required_exports={}, required_endpoints={},
+            required_exports={},
+            required_endpoints=_required_endpoints_from_errors(architecture_errors),
             existing_symbols=_collect_existing_symbols(project_path)
         )
         if arch_fix and isinstance(arch_fix, dict) and arch_fix.get("files"):
