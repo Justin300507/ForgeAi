@@ -18,6 +18,8 @@ import re
 import time
 from dataclasses import dataclass
 from pathlib import Path
+
+from app.utils.brace_matching import find_matching_brace
 from typing import Optional
 
 
@@ -6360,36 +6362,56 @@ def _patch_wire_orphan_frontend_routes(project_path: Path) -> None:
     # Clone an existing authenticated route's wrapper (PrivateRoute/Layout/...)
     # so the new route matches this project's own auth-guarding convention
     # instead of guessing at one.
-    template_m = None
+    #
+    # A naive non-greedy `element=\{(.*?)\}\s*/>` regex stops at the FIRST
+    # "} />" it finds -- which for the extremely common prop-spread shape
+    # `<DashboardPage {...pageProps} />` is the closing brace of
+    # `{...pageProps}` itself, not the outer element={...} attribute's real
+    # end. That truncates the captured template mid-attribute (no closing
+    # `/>` left in it at all), so the later self-closing-tag-clone regex can
+    # never match -- every orphan page silently failed to wire in with
+    # "couldn't find the anchor's page tag inside its own template to
+    # clone" (reproduced live, habit_tracker, 2026-07-27). find_matching_brace
+    # does real depth-tracking instead of a bounded regex, so nested braces
+    # inside the element don't fool it.
+    indent = template_element = None
     for anchor_path in ("/dashboard", "/habits"):
-        template_m = re.search(
-            rf'(\s*)<Route\s+path="{re.escape(anchor_path)}"\s+element=\{{(.*?)\}}\s*/>',
-            content, re.DOTALL,
+        open_m = re.search(
+            rf'(\s*)<Route\s+path="{re.escape(anchor_path)}"\s+element=(\{{)',
+            content,
         )
-        if template_m:
-            break
-    if template_m:
-        indent, template_element = template_m.groups()
-    elif "PrivateRoute" in content:
-        # No existing authenticated route to clone a wrapper from -- this
-        # happens whenever App.jsx was scaffolded (ensure_app_jsx) before
-        # every page file existed on disk, since the missing-file fix loop
-        # creates pages like Dashboard/Habits/Badges *afterward* in response
-        # to validation errors. That scaffold then has zero private routes
-        # to use as an anchor, so bailing out here (the old behavior) left
-        # every one of those later-created pages permanently unrouted --
-        # imported into App.jsx, but with nothing to navigate to after
-        # login except the "*" -> /login catch-all, which looks exactly
-        # like "login doesn't work" from the user's side even though auth
-        # succeeded and a valid token was stored. PrivateRoute itself is
-        # part of the standard App.jsx template (see ensure_app_jsx /
-        # frontend_prompt.py) and doesn't depend on any route existing, so
-        # wrap directly in it instead of requiring something to clone.
-        indent, template_element = "        ", "<PrivateRoute><Placeholder /></PrivateRoute>"
-    else:
-        if content != original:
-            app_jsx.write_text(content, encoding="utf-8")
-        return
+        if not open_m:
+            continue
+        close_pos = find_matching_brace(content, open_m.start(2), quote_chars="'\"`")
+        if close_pos == -1:
+            continue
+        tail_m = re.match(r"\s*/>", content[close_pos + 1:])
+        if not tail_m:
+            continue
+        indent = open_m.group(1)
+        template_element = content[open_m.start(2) + 1:close_pos]
+        break
+    if template_element is None:
+        if "PrivateRoute" in content:
+            # No existing authenticated route to clone a wrapper from -- this
+            # happens whenever App.jsx was scaffolded (ensure_app_jsx) before
+            # every page file existed on disk, since the missing-file fix loop
+            # creates pages like Dashboard/Habits/Badges *afterward* in response
+            # to validation errors. That scaffold then has zero private routes
+            # to use as an anchor, so bailing out here (the old behavior) left
+            # every one of those later-created pages permanently unrouted --
+            # imported into App.jsx, but with nothing to navigate to after
+            # login except the "*" -> /login catch-all, which looks exactly
+            # like "login doesn't work" from the user's side even though auth
+            # succeeded and a valid token was stored. PrivateRoute itself is
+            # part of the standard App.jsx template (see ensure_app_jsx /
+            # frontend_prompt.py) and doesn't depend on any route existing, so
+            # wrap directly in it instead of requiring something to clone.
+            indent, template_element = "        ", "<PrivateRoute><Placeholder /></PrivateRoute>"
+        else:
+            if content != original:
+                app_jsx.write_text(content, encoding="utf-8")
+            return
 
     def _kebab_path(name: str) -> str:
         s = re.sub(r"(?<!^)(?=[A-Z])", "-", name).lower().replace("-page", "")
