@@ -41873,5 +41873,293 @@
     "forge_score": 57,
     "wall_time_s": 31.04,
     "timestamp": "2026-07-29T02:04:24"
+  },
+  {
+    "total_calls": 40,
+    "total_tokens": 189695,
+    "total_cost_usd": 0.113817,
+    "total_llm_time_s": 46.24,
+    "by_stage": {
+      "backend_generation": {
+        "calls": 22,
+        "tokens": 99632,
+        "cost_usd": 0.05978,
+        "time_s": 25.160000000000004
+      },
+      "fix": {
+        "calls": 9,
+        "tokens": 23044,
+        "cost_usd": 0.013825,
+        "time_s": 7.830000000000001
+      },
+      "architecture_fix": {
+        "calls": 1,
+        "tokens": 5894,
+        "cost_usd": 0.003536,
+        "time_s": 0.62
+      },
+      "qa_review": {
+        "calls": 1,
+        "tokens": 4870,
+        "cost_usd": 0.002922,
+        "time_s": 1.84
+      },
+      "security_review": {
+        "calls": 1,
+        "tokens": 10036,
+        "cost_usd": 0.006022,
+        "time_s": 1.75
+      },
+      "code_review": {
+        "calls": 1,
+        "tokens": 7333,
+        "cost_usd": 0.0044,
+        "time_s": 2.29
+      },
+      "performance_review": {
+        "calls": 1,
+        "tokens": 6683,
+        "cost_usd": 0.00401,
+        "time_s": 1.37
+      },
+      "frontend_critic": {
+        "calls": 1,
+        "tokens": 5518,
+        "cost_usd": 0.003311,
+        "time_s": 1.72
+      },
+      "runtime_fix": {
+        "calls": 3,
+        "tokens": 26685,
+        "cost_usd": 0.016011,
+        "time_s": 3.66
+      }
+    },
+    "failed_calls": 0,
+    "failures": [],
+    "project_name": "university_course_management",
+    "forge_score": 38,
+    "wall_time_s": 55.92,
+    "timestamp": "2026-07-29T02:34:01"
+  },
+  {
+    "total_calls": 24,
+    "total_tokens": 106282,
+    "total_cost_usd": 0.063768,
+    "total_llm_time_s": 38.52,
+    "by_stage": {
+      "backend_generation": {
+        "calls": 19,
+        "tokens": 85861,
+        "cost_usd": 0.051516,
+        "time_s": 32.660000000000004
+      },
+      "missing_file": {
+        "calls": 1,
+        "tokens": 6632,
+        "cost_usd": 0.003979,
+        "time_s": 2.44
+      },
+      "fix": {
+        "calls": 4,
+        "tokens": 13789,
+        "cost_usd": 0.008272999999999999,
+        "time_s": 3.42
+      }
+    },
+    "failed_calls": 0,
+    "failures": [],
+    "project_name": "fleet_manager",
+    "forge_score": 61,
+    "wall_time_s": 27.55,
+    "timestamp": "2026-07-29T02:36:53"
+  },
+  {
+    "total_calls": 26,
+    "total_tokens": 129197,
+    "total_cost_usd": 0.077517,
+    "total_llm_time_s": 109.38,
+    "by_stage": {
+      "backend_generation": {
+        "calls": 17,
+        "tokens": 76179,
+        "cost_usd": 0.045707000000000005,
+        "time_s": 96.88000000000001
+      },
+      "fix": {
+        "calls": 3,
+        "tokens": 9779,
+        "cost_usd": 0.005868,
+        "time_s": 2.39
+      },
+      "missing_file": {
+        "calls": 1,
+        "tokens": 6634,
+        "cost_usd": 0.00398,
+        "time_s": 1.02
+      },
+      "qa_review": {
+        "calls": 1,
+        "tokens": 4852,
+        "cost_usd": 0.002911,
+        "time_s": 1.9
+      },
+      "security_review": {
+        "calls": 1,
+        "tokens": 9328,
+        "cost_usd": 0.005597,
+        "time_s": 2.27
+      },
+      "code_review": {
+        "calls": 1,
+        "tokens": 7257,
+        "cost_usd": 0.004354,
+        "time_s": 2.15
+      },
+      "performance_review": {
+        "calls": 1,
+        "tokens": 6309,
+        "cost_usd": 0.003785,
+        "time_s": 1.6
+      },
+      "runtime_fix": {
+        "calls": 1,
+        "tokens": 8859,
+        "cost_usd": 0.005315,
+        "time_s": 1.17
+      }
+    },
+    "failed_calls": 0,
+    "failures": [],
+    "project_name": "donation_tracker",
+    "forge_score": 48,
+    "wall_time_s": 109.06,
+    "timestamp": "2026-07-29T02:42:05"
+  },
+  {
+    "total_calls": 36,
+    "total_tokens": 151665,
+    "total_cost_usd": 0.090997,
+    "total_llm_time_s": 109.54,
+    "by_stage": {
+      "backend_generation": {
+        "calls": 22,
+        "tokens": 100184,
+        "cost_usd": 0.060108,
+        "time_s": 95.13000000000001
+      },
+      "fix": {
+        "calls": 10,
+        "tokens": 26923,
+        "cost_usd": 0.016154,
+        "time_s": 9.9
+      },
+      "missing_file": {
+        "calls": 3,
+        "tokens": 17590,
+        "cost_usd": 0.010554,
+        "time_s": 2.73
+      },
+      "architecture_fix": {
+        "calls": 1,
+        "tokens": 6968,
+        "cost_usd": 0.004181,
+        "time_s": 1.78
+      }
+    },
+    "failed_calls": 0,
+    "failures": [],
+    "project_name": "hospital_management_system",
+    "forge_score": 61,
+    "wall_time_s": 98.48,
+    "timestamp": "2026-07-29T02:46:30"
+  },
+  {
+    "total_calls": 26,
+    "total_tokens": 115542,
+    "total_cost_usd": 0.069326,
+    "total_llm_time_s": 26.03,
+    "by_stage": {
+      "backend_generation": {
+        "calls": 19,
+        "tokens": 87266,
+        "cost_usd": 0.052361,
+        "time_s": 20.2
+      },
+      "fix": {
+        "calls": 5,
+        "tokens": 15259,
+        "cost_usd": 0.009155,
+        "time_s": 3.4799999999999995
+      },
+      "missing_file": {
+        "calls": 1,
+        "tokens": 7020,
+        "cost_usd": 0.004212,
+        "time_s": 1.39
+      },
+      "architecture_fix": {
+        "calls": 1,
+        "tokens": 5997,
+        "cost_usd": 0.003598,
+        "time_s": 0.96
+      }
+    },
+    "failed_calls": 0,
+    "failures": [],
+    "project_name": "real_estate_marketplace",
+    "forge_score": 58,
+    "wall_time_s": 20.38,
+    "timestamp": "2026-07-29T02:50:17"
+  },
+  {
+    "total_calls": 28,
+    "total_tokens": 132462,
+    "total_cost_usd": 0.079476,
+    "total_llm_time_s": 43.67,
+    "by_stage": {
+      "backend_generation": {
+        "calls": 19,
+        "tokens": 86056,
+        "cost_usd": 0.05163199999999999,
+        "time_s": 32.05
+      },
+      "fix": {
+        "calls": 5,
+        "tokens": 16326,
+        "cost_usd": 0.009796,
+        "time_s": 4.29
+      },
+      "qa_review": {
+        "calls": 1,
+        "tokens": 5076,
+        "cost_usd": 0.003046,
+        "time_s": 1.89
+      },
+      "security_review": {
+        "calls": 1,
+        "tokens": 9987,
+        "cost_usd": 0.005992,
+        "time_s": 1.89
+      },
+      "code_review": {
+        "calls": 1,
+        "tokens": 7710,
+        "cost_usd": 0.004626,
+        "time_s": 1.89
+      },
+      "performance_review": {
+        "calls": 1,
+        "tokens": 7307,
+        "cost_usd": 0.004384,
+        "time_s": 1.66
+      }
+    },
+    "failed_calls": 0,
+    "failures": [],
+    "project_name": "student_management_system",
+    "forge_score": 62,
+    "wall_time_s": 34.65,
+    "timestamp": "2026-07-29T02:53:16"
   }
 ]

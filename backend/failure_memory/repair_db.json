@@ -3755,5 +3755,62 @@
     ],
     "imports_added": [],
     "symbols_added": []
+  },
+  "eaf4611d6a5a6f1c": {
+    "fix_hash": "eaf4611d6a5a6f1c",
+    "fix_content": {
+      "src/components/Layout.jsx": "import React from 'react';\n\n// Layout component that wraps page content and renders children.\n// It can be extended with navigation bars, footers, etc.\nexport const Layout = ({ children }) => {\n  return (\n    <div className=\"layout-container\">\n      {children}\n    </div>\n  );\n};\n"
+    },
+    "success_count": 1,
+    "first_seen": "2026-07-28T21:09:16Z",
+    "last_seen": "2026-07-28T21:09:16Z",
+    "source_idea": "A vehicle fleet management system with fleet-manager and driver roles. Fleet managers register vehic",
+    "composite_hash": "883b72115623717e",
+    "category": "browser",
+    "file_basename": "",
+    "normalized_signature": "error during build: src/pages/MaintenanceList.jsx (<N>:<N>): \"Layout\" is not exported by \"src/components/Layout.jsx\", imported by \"src/pages/MaintenanceList.jsx\". | file: C:/Users/jerry/OneDrive/Desktop/forgeAi/generated_projects/fleet_manager/src/pages/MaintenanceList.jsx:<N>:<N> | <N>: import React, { useEffect, useState } from 'react'; | <N>: import API from '../api'; | <N>: import { Layout } from '../components/Layout'; | ^ | <N>: | <N>: const MaintenanceList = ({ dark, setDark, onLogout }) => { | at getRollupError (file:///C:/Users/jerry/OneDrive/Desktop/forgeAi/generated_projects/fleet_manager/node_modules/rollup/dist/es/shared/parseAst.js:<N>:<N>) | at error (file:///C:/Users/jerry/OneDrive/Desktop/forgeAi/generated_projects/fleet_manager/node_modules/rollup/dist/es/shared/parseAst.js:<N>:<N>) | at Module.error (file:///C:/Users/jerry/OneDrive/Desktop/forgeAi/generated_projects/fleet_manager/node_modules/rollup/dist/es/shared/node-entry.js:<N>:<N>) | at Module.traceVariable (file:///C:/Users/jerry/OneDrive/Desktop/forgeAi/generated_projects/fleet_manager/node_modules/rollup/dist/es/shared/node-entry.js:<N>:<N>) | at ModuleScope.findVariable (file:///C:/Users/jerry/OneDrive/Desktop/forgeAi/generated_projects/fleet_manager/node_modules/rollup/dist/es/shared/node-entry.js:<N>:<N>)",
+    "files_changed": [
+      "src/components/Layout.jsx"
+    ],
+    "imports_added": [],
+    "symbols_added": []
+  },
+  "b74314a0b1a66ec7": {
+    "fix_hash": "b74314a0b1a66ec7",
+    "fix_content": {
+      "src/pages/MaintenanceList.jsx": "import React, { useEffect, useState } from 'react';\nimport API from '../api';\nimport Layout from '../components/Layout';\n\nconst MaintenanceList = ({ dark, setDark, onLogout }) => {\n  const [maintenanceRecords, setMaintenanceRecords] = useState([]);\n  const [loading, setLoading] = useState(true);\n  const [error, setError] = useState(null);\n\n  const fetchMaintenanceRecords = async () => {\n    try {\n      setLoading(true);\n      const res = await API.get('/maintenance');\n      setMaintenanceRecords(res.data);\n      setLoading(false);\n    } catch (err) {\n      setError('Failed to fetch maintenance records.');\n      setLoading(false);\n    }\n  };\n\n  useEffect(() => {\n    fetchMaintenanceRecords();\n  }, []);\n\n  return (\n    <Layout dark={dark} setDark={setDark} onLogout={onLogout}>\n      <div className=\"animate-fade-in-up\">\n        <h1 className=\"text-2xl font-bold text-slate-900 dark:text-white mb-4\">Maintenance List</h1>\n        {loading ? (\n          <div className=\"space-y-3\">\n            {[...Array(4)].map((_, i) => (\n              <div key={i} className=\"skeleton h-16\" />\n            ))}\n          </div>\n        ) : error ? (\n          <div className=\"text-red-500\">{error}</div>\n        ) : (\n          <table className=\"min-w-full bg-white dark:bg-slate-800\">\n            <thead>\n              <tr>\n                <th className=\"py-2 px-4 border-b\">Vehicle ID</th>\n                <th className=\"py-2 px-4 border-b\">Description</th>\n                <th className=\"py-2 px-4 border-b\">Date</th>\n                <th className=\"py-2 px-4 border-b\">Status</th>\n              </tr>\n            </thead>\n            <tbody>\n              {maintenanceRecords.map(record => (\n                <tr key={record.id} className=\"hover:bg-gray-100 dark:hover:bg-slate-700\">\n                  <td className=\"py-2 px-4 border-b\">{record.vehicleId}</td>\n                  <td className=\"py-2 px-4 border-b\">{record.description}</td>\n                  <td className=\"py-2 px-4 border-b\">{new Date(record.date).toLocaleDateString()}</td>\n                  <td className=\"py-2 px-4 border-b\">{record.status}</td>\n                </tr>\n              ))}\n            </tbody>\n          </table>\n        )}\n      </div>\n    </Layout>\n  );\n};\n\nexport default MaintenanceList;"
+    },
+    "success_count": 1,
+    "first_seen": "2026-07-28T21:09:16Z",
+    "last_seen": "2026-07-28T21:09:16Z",
+    "source_idea": "A vehicle fleet management system with fleet-manager and driver roles. Fleet managers register vehic",
+    "composite_hash": "7637b5a8523211dd",
+    "category": "syntax",
+    "file_basename": "MaintenanceList.jsx",
+    "normalized_signature": "Import style mismatch: ../components/Layout uses a default export but is imported with named-import syntax (curly braces) in src\\pages\\MaintenanceList.jsx",
+    "files_changed": [
+      "src/pages/MaintenanceList.jsx"
+    ],
+    "imports_added": [],
+    "symbols_added": []
+  },
+  "80c92ceeeb2a91bc": {
+    "fix_hash": "80c92ceeeb2a91bc",
+    "fix_content": {
+      "src/components/Layout.jsx": "import React from 'react';\n\nconst Layout = ({ children }) => {\n  return (\n    <div>\n      <header>\n        <h1>My Application</h1>\n      </header>\n      <main>{children}</main>\n      <footer>\n        <p>Footer content</p>\n      </footer>\n    </div>\n  );\n};\n\nexport default Layout;\n"
+    },
+    "success_count": 1,
+    "first_seen": "2026-07-28T21:09:45Z",
+    "last_seen": "2026-07-28T21:09:45Z",
+    "source_idea": "A vehicle fleet management system with fleet-manager and driver roles. Fleet managers register vehic",
+    "composite_hash": "8ff1cdb6af312479",
+    "category": "browser",
+    "file_basename": "",
+    "normalized_signature": "error during build: src/pages/MaintenanceList.jsx (<N>:<N>): \"default\" is not exported by \"src/components/Layout.jsx\", imported by \"src/pages/MaintenanceList.jsx\". | file: C:/Users/jerry/OneDrive/Desktop/forgeAi/generated_projects/fleet_manager/src/pages/MaintenanceList.jsx:<N>:<N> | <N>: import React, { useEffect, useState } from 'react'; | <N>: import API from '../api'; | <N>: import Layout from '../components/Layout'; | ^ | <N>: | <N>: const MaintenanceList = ({ dark, setDark, onLogout }) => { | at getRollupError (file:///C:/Users/jerry/OneDrive/Desktop/forgeAi/generated_projects/fleet_manager/node_modules/rollup/dist/es/shared/parseAst.js:<N>:<N>) | at error (file:///C:/Users/jerry/OneDrive/Desktop/forgeAi/generated_projects/fleet_manager/node_modules/rollup/dist/es/shared/parseAst.js:<N>:<N>) | at Module.error (file:///C:/Users/jerry/OneDrive/Desktop/forgeAi/generated_projects/fleet_manager/node_modules/rollup/dist/es/shared/node-entry.js:<N>:<N>) | at Module.traceVariable (file:///C:/Users/jerry/OneDrive/Desktop/forgeAi/generated_projects/fleet_manager/node_modules/rollup/dist/es/shared/node-entry.js:<N>:<N>) | at ModuleScope.findVariable (file:///C:/Users/jerry/OneDrive/Desktop/forgeAi/generated_projects/fleet_manager/node_modules/rollup/dist/es/shared/node-entry.js:<N>:<N>)",
+    "files_changed": [
+      "src/components/Layout.jsx"
+    ],
+    "imports_added": [],
+    "symbols_added": []
   }
 }

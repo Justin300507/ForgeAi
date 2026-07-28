@@ -6095,13 +6095,133 @@
   },
   "lms": {
     "category": "lms",
-    "idea": "A university course management system with registrar and student roles. Registrars create courses (code, title, credits, instructor name, capacity, semester). Students browse the course catalog and en",
+    "idea": "A student management system for a school with admin and teacher roles. Admins register students (name, grade, enrollment date) and manage classes (name, teacher, subject). Teachers record attendance p",
     "architecture": {
       "api_endpoints": [
         {
+          "method": "POST",
+          "path": "/seed",
+          "description": "Populate the database with demo data for all tables",
+          "file": "app\\routes\\seed_routes.py"
+        },
+        {
+          "method": "GET",
+          "path": "/stats/summary",
+          "description": "Return aggregate counts and key metrics for the dashboard",
+          "file": "app\\routes\\stats_routes.py"
+        },
+        {
+          "method": "POST",
+          "path": "/auth/register",
+          "description": "Register a new user (admin or teacher) with email, password and role",
+          "file": "app\\routes\\auth_routes.py"
+        },
+        {
+          "method": "POST",
+          "path": "/auth/login",
+          "description": "Authenticate a user and return a JWT token",
+          "file": "app\\routes\\auth_routes.py"
+        },
+        {
+          "method": "GET",
+          "path": "/auth/me",
+          "description": "Get the currently authenticated user's profile",
+          "file": "app\\routes\\auth_routes.py"
+        },
+        {
+          "method": "GET",
+          "path": "/students",
+          "description": "List students with optional search by name or grade and pagination",
+          "file": "app\\routes\\student_routes.py"
+        },
+        {
+          "method": "GET",
+          "path": "/students/{id}",
+          "description": "Retrieve a single student by ID",
+          "file": "app\\routes\\student_routes.py"
+        },
+        {
+          "method": "POST",
+          "path": "/students",
+          "description": "Create a new student record",
+          "file": "app\\routes\\student_routes.py"
+        },
+        {
+          "method": "PUT",
+          "path": "/students/{id}",
+          "description": "Update an existing student record",
+          "file": "app\\routes\\student_routes.py"
+        },
+        {
+          "method": "DELETE",
+          "path": "/students/{id}",
+          "description": "Delete a student record",
+          "file": "app\\routes\\student_routes.py"
+        },
+        {
+          "method": "GET",
+          "path": "/classes",
+          "description": "List classes with optional search by name or subject and pagination",
+          "file": "app\\routes\\class_routes.py"
+        },
+        {
+          "method": "GET",
+          "path": "/classes/{id}",
+          "description": "Retrieve a single class by ID",
+          "file": "app\\routes\\class_routes.py"
+        },
+        {
+          "method": "POST",
+          "path": "/classes",
+          "description": "Create a new class and assign a teacher",
+          "file": "app\\routes\\class_routes.py"
+        },
+        {
+          "method": "PUT",
+          "path": "/classes/{id}",
+          "description": "Update class details (name, subject, teacher)",
+          "file": "app\\routes\\class_routes.py"
+        },
+        {
+          "method": "DELETE",
+          "path": "/classes/{id}",
+          "description": "Delete a class; optional force-delete flag to remove associated records",
+          "file": "app\\routes\\class_routes.py"
+        },
+        {
+          "method": "GET",
+          "path": "/records",
+          "description": "List attendance and grade records with filters, search, and pagination",
+          "file": "app\\routes\\record_routes.py"
+        },
+        {
+          "method": "GET",
+          "path": "/records/{id}",
+          "description": "Retrieve a single record by ID",
+          "file": "app\\routes\\record_routes.py"
+        },
+        {
+          "method": "POST",
+          "path": "/records",
+          "description": "Create a new attendance or grade record",
+          "file": "app\\routes\\record_routes.py"
+        },
+        {
+          "method": "PUT",
+          "path": "/records/{id}",
+          "description": "Update an existing record (e.g., correct a grade within allowed window)",
+          "file": "app\\routes\\record_routes.py"
+        },
+        {
+          "method": "DELETE",
+          "path": "/records/{id}",
+          "description": "Delete a record",
+          "file": "app\\routes\\record_routes.py"
+        },
+        {
           "method": "GET",
           "path": "/users",
-          "description": "List users with optional search by name or email, filter by role, and pagination",
+          "description": "List users with optional role filter and pagination",
           "file": "app\\routes\\user_routes.py"
         },
         {
@@ -6113,164 +6233,20 @@
         {
           "method": "POST",
           "path": "/users",
-          "description": "Create a new user (registrar or student)",
+          "description": "Create a new user (admin or teacher)",
           "file": "app\\routes\\user_routes.py"
         },
         {
           "method": "PUT",
           "path": "/users/{id}",
-          "description": "Update an existing user's information",
+          "description": "Update user details such as email or role",
           "file": "app\\routes\\user_routes.py"
         },
         {
           "method": "DELETE",
           "path": "/users/{id}",
-          "description": "Delete a user by ID",
+          "description": "Delete a user account",
           "file": "app\\routes\\user_routes.py"
-        },
-        {
-          "method": "GET",
-          "path": "/courses",
-          "description": "List courses with optional keyword search, filter by semester, and pagination",
-          "file": "app\\routes\\course_routes.py"
-        },
-        {
-          "method": "GET",
-          "path": "/courses/{id}",
-          "description": "Retrieve detailed information for a specific course, including enrolled count",
-          "file": "app\\routes\\course_routes.py"
-        },
-        {
-          "method": "POST",
-          "path": "/courses",
-          "description": "Create a new course with capacity and semester information",
-          "file": "app\\routes\\course_routes.py"
-        },
-        {
-          "method": "PUT",
-          "path": "/courses/{id}",
-          "description": "Update an existing course's details",
-          "file": "app\\routes\\course_routes.py"
-        },
-        {
-          "method": "DELETE",
-          "path": "/courses/{id}",
-          "description": "Delete a course by ID",
-          "file": "app\\routes\\course_routes.py"
-        },
-        {
-          "method": "GET",
-          "path": "/enrollments",
-          "description": "List enrollments with optional filters by student_id or course_id and pagination",
-          "file": "app\\routes\\enrollment_routes.py"
-        },
-        {
-          "method": "GET",
-          "path": "/enrollments/{id}",
-          "description": "Retrieve a specific enrollment record",
-          "file": "app\\routes\\enrollment_routes.py"
-        },
-        {
-          "method": "POST",
-          "path": "/enrollments",
-          "description": "Enroll a student in a course if capacity permits",
-          "file": "app\\routes\\enrollment_routes.py"
-        },
-        {
-          "method": "PUT",
-          "path": "/enrollments/{id}",
-          "description": "Update enrollment details (e.g., change course)",
-          "file": "app\\routes\\enrollment_routes.py"
-        },
-        {
-          "method": "DELETE",
-          "path": "/enrollments/{id}",
-          "description": "Drop a student from a course",
-          "file": "app\\routes\\enrollment_routes.py"
-        },
-        {
-          "method": "GET",
-          "path": "/semesters",
-          "description": "List semesters with optional search and pagination",
-          "file": "app\\routes\\semester_routes.py"
-        },
-        {
-          "method": "GET",
-          "path": "/semesters/{id}",
-          "description": "Retrieve a specific semester",
-          "file": "app\\routes\\semester_routes.py"
-        },
-        {
-          "method": "POST",
-          "path": "/semesters",
-          "description": "Create a new semester record",
-          "file": "app\\routes\\semester_routes.py"
-        },
-        {
-          "method": "PUT",
-          "path": "/semesters/{id}",
-          "description": "Update an existing semester",
-          "file": "app\\routes\\semester_routes.py"
-        },
-        {
-          "method": "DELETE",
-          "path": "/semesters/{id}",
-          "description": "Delete a semester by ID",
-          "file": "app\\routes\\semester_routes.py"
-        },
-        {
-          "method": "GET",
-          "path": "/instructors",
-          "description": "List instructors with optional search and pagination",
-          "file": "app\\routes\\instructor_routes.py"
-        },
-        {
-          "method": "GET",
-          "path": "/instructors/{id}",
-          "description": "Retrieve a specific instructor",
-          "file": "app\\routes\\instructor_routes.py"
-        },
-        {
-          "method": "POST",
-          "path": "/instructors",
-          "description": "Create a new instructor record",
-          "file": "app\\routes\\instructor_routes.py"
-        },
-        {
-          "method": "PUT",
-          "path": "/instructors/{id}",
-          "description": "Update an instructor's information",
-          "file": "app\\routes\\instructor_routes.py"
-        },
-        {
-          "method": "DELETE",
-          "path": "/instructors/{id}",
-          "description": "Delete an instructor by ID",
-          "file": "app\\routes\\instructor_routes.py"
-        },
-        {
-          "method": "POST",
-          "path": "/seed",
-          "description": "Populate the database with demo data for all tables",
-          "file": "app\\routes\\seed_routes.py"
-        },
-        {
-          "method": "GET",
-          "path": "/stats/summary",
-          "description": "Return aggregate counts and key metrics for dashboard (total users, courses, enrollments, etc.)",
-          "file": "app\\routes\\stats_routes.py"
-        },
-        {
-          "method": "POST",
-          "path": "/auth/register",
-          "description": "Register a new user and issue JWT",
-          "file": "app\\routes\\auth_routes.py"
-        },
-        {
-          "method": "POST",
-          "path": "/auth/login",
-          "description": "Authenticate user credentials and return JWT",
-          "file": "app\\routes\\auth_routes.py"
         }
       ],
       "database_schema": [
@@ -6296,118 +6272,95 @@
               "is_nullable": false
             },
             {
-              "name": "full_name",
-              "type": "VARCHAR(255)",
-              "is_primary_key": false,
-              "is_nullable": true
-            },
-            {
               "name": "role",
-              "type": "VARCHAR(50)",
-              "is_primary_key": false,
-              "is_nullable": false
-            },
-            {
-              "name": "created_at",
-              "type": "DATETIME",
-              "is_primary_key": false,
-              "is_nullable": false
-            }
-          ]
-        },
-        {
-          "table_name": "instructors",
-          "columns": [
-            {
-              "name": "id",
-              "type": "INTEGER",
-              "is_primary_key": true,
-              "is_nullable": false
-            },
-            {
-              "name": "name",
-              "type": "VARCHAR(255)",
-              "is_primary_key": false,
-              "is_nullable": false
-            },
-            {
-              "name": "email",
-              "type": "VARCHAR(255)",
-              "is_primary_key": false,
-              "is_nullable": false
-            }
-          ]
-        },
-        {
-          "table_name": "semesters",
-          "columns": [
-            {
-              "name": "id",
-              "type": "INTEGER",
-              "is_primary_key": true,
-              "is_nullable": false
-            },
-            {
-              "name": "name",
-              "type": "VARCHAR(100)",
-              "is_primary_key": false,
-              "is_nullable": false
-            },
-            {
-              "name": "start_date",
-              "type": "DATE",
-              "is_primary_key": false,
-              "is_nullable": false
-            },
-            {
-              "name": "end_date",
-              "type": "DATE",
-              "is_primary_key": false,
-              "is_nullable": false
-            }
-          ]
-        },
-        {
-          "table_name": "courses",
-          "columns": [
-            {
-              "name": "id",
-              "type": "INTEGER",
-              "is_primary_key": true,
-              "is_nullable": false
-            },
-            {
-              "name": "code",
               "type": "VARCHAR(20)",
               "is_primary_key": false,
               "is_nullable": false
             },
             {
-              "name": "title",
+              "name": "created_at",
+              "type": "DATETIME",
+              "is_primary_key": false,
+              "is_nullable": false
+            },
+            {
+              "name": "updated_at",
+              "type": "DATETIME",
+              "is_primary_key": false,
+              "is_nullable": false
+            }
+          ]
+        },
+        {
+          "table_name": "students",
+          "columns": [
+            {
+              "name": "id",
+              "type": "INTEGER",
+              "is_primary_key": true,
+              "is_nullable": false
+            },
+            {
+              "name": "name",
               "type": "VARCHAR(255)",
               "is_primary_key": false,
               "is_nullable": false
             },
             {
-              "name": "credits",
-              "type": "INTEGER",
+              "name": "grade",
+              "type": "VARCHAR(10)",
               "is_primary_key": false,
               "is_nullable": false
             },
             {
-              "name": "capacity",
-              "type": "INTEGER",
+              "name": "enrollment_date",
+              "type": "DATE",
               "is_primary_key": false,
               "is_nullable": false
             },
             {
-              "name": "instructor_id",
-              "type": "INTEGER",
+              "name": "created_at",
+              "type": "DATETIME",
               "is_primary_key": false,
               "is_nullable": false
             },
             {
-              "name": "semester_id",
+              "name": "updated_at",
+              "type": "DATETIME",
+              "is_primary_key": false,
+              "is_nullable": false
+            },
+            {
+              "name": "updated_by",
+              "type": "INTEGER",
+              "is_primary_key": false,
+              "is_nullable": true
+            }
+          ]
+        },
+        {
+          "table_name": "classes",
+          "columns": [
+            {
+              "name": "id",
+              "type": "INTEGER",
+              "is_primary_key": true,
+              "is_nullable": false
+            },
+            {
+              "name": "name",
+              "type": "VARCHAR(255)",
+              "is_primary_key": false,
+              "is_nullable": false
+            },
+            {
+              "name": "subject",
+              "type": "VARCHAR(255)",
+              "is_primary_key": false,
+              "is_nullable": false
+            },
+            {
+              "name": "teacher_id",
               "type": "INTEGER",
               "is_primary_key": false,
               "is_nullable": false
@@ -6417,16 +6370,28 @@
               "type": "DATETIME",
               "is_primary_key": false,
               "is_nullable": false
+            },
+            {
+              "name": "updated_at",
+              "type": "DATETIME",
+              "is_primary_key": false,
+              "is_nullable": false
             }
           ]
         },
         {
-          "table_name": "enrollments",
+          "table_name": "records",
           "columns": [
             {
               "name": "id",
               "type": "INTEGER",
               "is_primary_key": true,
+              "is_nullable": false
+            },
+            {
+              "name": "class_id",
+              "type": "INTEGER",
+              "is_primary_key": false,
               "is_nullable": false
             },
             {
@@ -6436,13 +6401,49 @@
               "is_nullable": false
             },
             {
-              "name": "course_id",
-              "type": "INTEGER",
+              "name": "date",
+              "type": "DATE",
               "is_primary_key": false,
               "is_nullable": false
             },
             {
-              "name": "enrolled_at",
+              "name": "type",
+              "type": "VARCHAR(20)",
+              "is_primary_key": false,
+              "is_nullable": false
+            },
+            {
+              "name": "status",
+              "type": "VARCHAR(10)",
+              "is_primary_key": false,
+              "is_nullable": true
+            },
+            {
+              "name": "assignment_name",
+              "type": "VARCHAR(255)",
+              "is_primary_key": false,
+              "is_nullable": true
+            },
+            {
+              "name": "score",
+              "type": "FLOAT",
+              "is_primary_key": false,
+              "is_nullable": true
+            },
+            {
+              "name": "max_score",
+              "type": "FLOAT",
+              "is_primary_key": false,
+              "is_nullable": true
+            },
+            {
+              "name": "created_at",
+              "type": "DATETIME",
+              "is_primary_key": false,
+              "is_nullable": false
+            },
+            {
+              "name": "updated_at",
               "type": "DATETIME",
               "is_primary_key": false,
               "is_nullable": false
@@ -6452,7 +6453,6 @@
       ],
       "folder_structure": {
         "backend": [
-          "app",
           "app/models",
           "app/schemas",
           "app/routes",
@@ -6465,37 +6465,40 @@
       },
       "frontend_structure": {
         "pages": [
-          "LoginPage",
-          "RegisterPage",
-          "CourseCatalogPage",
-          "CourseDetailPage",
-          "StudentEnrollmentsPage",
-          "RegistrarDashboardPage",
-          "CourseFormPage",
-          "EnrollmentManagementPage"
+          "Dashboard",
+          "StudentList",
+          "StudentDetail",
+          "ClassList",
+          "ClassDetail",
+          "AttendanceEntry",
+          "GradeEntry",
+          "Roster",
+          "SearchResults",
+          "StatsSummary"
         ],
         "components": [
           "Navbar",
-          "Footer",
-          "CourseCard",
-          "EnrollmentList",
+          "StudentCard",
+          "ClassCard",
+          "AttendanceForm",
+          "GradeForm",
           "Pagination",
           "SearchBar",
-          "CourseForm",
-          "EnrollmentForm",
-          "StatsSummary",
-          "ProtectedRoute"
+          "Table",
+          "Modal",
+          "Breadcrumbs"
         ]
       }
     },
     "plan": {
-      "project_name": "university_course_management",
-      "display_name": "University Course Management System",
+      "project_name": "student_management_system",
+      "display_name": "Student Management System",
       "features": [
-        "Create, read, update, and delete courses with capacity and semester information",
-        "Allow students to enroll in courses while enforcing capacity limits",
-        "Show enrollment counts per course and enable dropping a student",
-        "List a student's current enrollments and compute total semester credits"
+        "Create, read, update, and delete student records with name, grade, and enrollment date",
+        "Admins can create, edit, and delete classes, assigning a teacher and subject to each",
+        "Teachers log present/absent status for each student per class session",
+        "Teachers enter assignment scores for students, storing assignment name, score, and max score",
+        "Admins and teachers have distinct permissions for data access and mutation"
       ],
       "tech_stack": {
         "backend": "FastAPI",
@@ -6505,128 +6508,173 @@
       },
       "db_entities": [
         "User",
-        "Course",
-        "Enrollment"
+        "Student",
+        "Class",
+        "Record"
       ],
       "api_modules": [
         "auth",
-        "users",
-        "courses",
-        "enrollments"
+        "students",
+        "classes",
+        "records"
       ],
       "user_stories": [
         {
-          "role": "Registrar",
-          "want": "to create a new course with code, title, credits, instructor, capacity, and semester",
+          "role": "admin",
+          "want": "to register a new student with name, grade, and enrollment date",
           "acceptance_criteria": [
-            "A POST /courses request with all required fields returns 201 Created and the course appears in GET /courses",
-            "If any required field is missing, the API returns 400 Bad Request with a descriptive error",
-            "The created course's capacity is stored and cannot be negative"
+            "When the admin submits a valid form, a student record is created and returned with a unique ID",
+            "The API returns a 400 error if any required field (name, grade, enrollment_date) is missing",
+            "The new student is searchable via the student search endpoint within 2 seconds"
           ]
         },
         {
-          "role": "Registrar",
-          "want": "to view enrollment counts for each of my courses",
+          "role": "admin",
+          "want": "to create and edit a class (name, subject, assigned teacher)",
           "acceptance_criteria": [
-            "GET /courses returns a list where each course object includes an \"enrolled_count\" field",
-            "The \"enrolled_count\" equals the number of Enrollment records linked to that course",
-            "Counts update in real‑time after any enrollment or drop operation"
+            "Creating a class returns a class object containing the assigned teacher's user ID",
+            "Updating a class changes only the supplied fields and leaves others unchanged",
+            "Deleting a class that has associated records returns a 400 error unless a force‑delete flag is used"
           ]
         },
         {
-          "role": "Registrar",
-          "want": "to drop a student from a specific course",
+          "role": "teacher",
+          "want": "to record attendance for a class session",
           "acceptance_criteria": [
-            "DELETE /enrollments/{enrollment_id} returns 204 No Content when the enrollment exists",
-            "After deletion, GET /courses/{course_id} shows a decremented \"enrolled_count\"",
-            "The dropped student no longer appears in GET /students/{student_id}/enrollments"
+            "The teacher can submit a list of student IDs with a status of present or absent for a given class and date",
+            "The system stores one attendance record per student per class per date and returns a 201 status",
+            "Attempting to record attendance for a future date returns a 400 validation error"
           ]
         },
         {
-          "role": "Student",
-          "want": "to browse the course catalog filtered by semester",
+          "role": "teacher",
+          "want": "to enter grades for an assignment",
           "acceptance_criteria": [
-            "GET /courses?semester=Fall2025 returns only courses with semester = \"Fall2025\"",
-            "Each course object includes code, title, credits, instructor, capacity, and current enrollment count",
-            "Pagination is applied when more than 20 courses match the filter"
+            "The teacher provides assignment name, max score, and each student's score; the API creates a grade record for each student",
+            "Scores greater than the max score are rejected with a 422 error",
+            "Grades are immutable after 24 hours unless the teacher has an admin override flag"
           ]
         },
         {
-          "role": "Student",
-          "want": "to enroll in a course that still has open seats",
+          "role": "admin",
+          "want": "to view a student's overall attendance rate across all classes",
           "acceptance_criteria": [
-            "POST /enrollments with valid student_id and course_id returns 201 Created when enrollment_count < capacity",
-            "The response includes the new enrollment record with a unique id",
-            "If the course is full, the API returns 409 Conflict with a message \"Course capacity reached\""
+            "The attendance summary endpoint returns a percentage (present days / total recorded days) rounded to two decimals",
+            "If a student has no attendance records, the rate is reported as 0% rather than an error",
+            "The response includes a breakdown by class for deeper insight"
           ]
         },
         {
-          "role": "Student",
-          "want": "to view all courses I am enrolled in and see my total credit load",
+          "role": "admin",
+          "want": "to view a student's grade summary across classes",
           "acceptance_criteria": [
-            "GET /students/{student_id}/enrollments returns a list of enrolled courses with their credit values",
-            "The response also includes a \"total_credits\" field that sums the credits of all returned courses",
-            "If the student has no enrollments, the list is empty and total_credits = 0"
+            "The grade summary endpoint returns the average score (weighted by max score) for each class and an overall average",
+            "Grades with missing scores are excluded from the average calculation",
+            "The endpoint supports an optional query parameter `as_of` to compute the summary up to a specific date"
+          ]
+        },
+        {
+          "role": "teacher",
+          "want": "to view the roster of students for a class they teach",
+          "acceptance_criteria": [
+            "The roster endpoint returns a list of student IDs, names, and current grade level",
+            "Only teachers assigned to the class can access its roster; others receive a 403 error",
+            "The list is paginated with a default page size of 25"
+          ]
+        },
+        {
+          "role": "admin",
+          "want": "to search for students by name or grade",
+          "acceptance_criteria": [
+            "The search endpoint supports partial, case‑insensitive matches on name and exact matches on grade",
+            "Results are returned within 1 second for a dataset of up to 10,000 students",
+            "Pagination parameters `page` and `page_size` are respected"
+          ]
+        },
+        {
+          "role": "admin",
+          "want": "to edit a student's basic information (name, grade, enrollment date)",
+          "acceptance_criteria": [
+            "Updating a student returns the modified student object with the new values",
+            "Changing the enrollment date to a future date is rejected with a 422 error",
+            "Audit fields `updated_at` and `updated_by` are populated on every edit"
           ]
         }
       ],
       "non_functional_requirements": {
-        "authentication": "required - protect all endpoints with JWT",
-        "authorization": "role‑based: Registrars can manage courses and enrollments; Students can only view catalog, enroll, and view their own enrollments",
-        "pagination": "required on GET /courses and GET /students/{id}/enrollments",
-        "search": "course catalog filtering by semester (and optional keyword search)",
+        "authentication": "required — all endpoints must be accessed by an authenticated user",
+        "authorization": "role‑based: admins can manage students, classes, and view dashboards; teachers can record attendance, enter grades, and view their class rosters",
+        "pagination": "required on list endpoints for students, classes, and attendance/grade records",
+        "search": "students and classes need search capability",
         "file_uploads": "no",
-        "real_time": "no - consistency is achieved via immediate DB writes"
+        "real_time": "no"
       },
       "data_entities_detail": [
         {
           "name": "User",
-          "description": "Represents both registrars and students; role determines permissions",
+          "description": "Represents system users; includes admins and teachers",
           "key_fields": [
             "id",
             "email",
             "role"
           ],
           "relationships": [
-            "has many Enrollments (as student)"
+            "has many Class (as teacher)"
           ]
         },
         {
-          "name": "Course",
-          "description": "Stores course metadata and capacity constraints",
+          "name": "Student",
+          "description": "Stores basic student information",
           "key_fields": [
             "id",
-            "code",
-            "semester"
+            "name",
+            "grade",
+            "enrollment_date"
           ],
           "relationships": [
-            "has many Enrollments"
+            "has many Record"
           ]
         },
         {
-          "name": "Enrollment",
-          "description": "Links a student to a course for a specific semester",
+          "name": "Class",
+          "description": "Defines a class with a subject and assigned teacher",
           "key_fields": [
             "id",
+            "name",
+            "subject",
+            "teacher_id"
+          ],
+          "relationships": [
+            "belongs to User (teacher)",
+            "has many Record"
+          ]
+        },
+        {
+          "name": "Record",
+          "description": "Unified table for attendance and grades",
+          "key_fields": [
+            "id",
+            "class_id",
             "student_id",
-            "course_id"
+            "date",
+            "type"
           ],
           "relationships": [
-            "belongs to User (student)",
-            "belongs to Course"
+            "belongs to Class",
+            "belongs to Student"
           ]
         }
       ],
       "out_of_scope": [
-        "Prerequisite checking or degree audit functionality",
-        "Waitlist management for full courses",
-        "Bulk import/export of course data"
+        "Parent portal or student self‑service features",
+        "Bulk import/export of data",
+        "Integration with external LMS or SIS platforms"
       ]
     },
-    "score": 97.11,
+    "score": 98.0,
     "success_count": 1,
-    "generation_id": "f1f1b694f6a6478b9780eac3c04624ca",
-    "timestamp": "2026-07-27T23:30:50Z"
+    "generation_id": "4de89897c07e4c38ba69672ff6839259",
+    "timestamp": "2026-07-28T21:25:38Z"
   },
   "real_estate": {
     "category": "real_estate",
@@ -7182,10 +7230,10 @@
         "Advanced analytics dashboards"
       ]
     },
-    "score": 96.75,
+    "score": 97.25,
     "success_count": 1,
-    "generation_id": "ee6002c3622444598ec3a589afbf06c3",
-    "timestamp": "2026-07-27T23:57:58Z"
+    "generation_id": "a06803b8d5e34868864481583f6e00e2",
+    "timestamp": "2026-07-28T21:22:38Z"
   },
   "hr_payroll": {
     "category": "hr_payroll",

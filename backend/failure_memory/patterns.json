@@ -1,7 +1,7 @@
 {
   "patterns": {
     "RouterExportMismatch": {
-      "count": 40,
+      "count": 41,
       "examples": [
         {
           "project": "test_app",
@@ -25,7 +25,7 @@
         }
       ],
       "first_seen": "2026-06-21T20:43:34.977754",
-      "last_seen": "2026-07-28T05:24:12.479472",
+      "last_seen": "2026-07-28T21:16:30.536660",
       "stage": "build"
     },
     "NoReferencedTableError": {
@@ -217,7 +217,7 @@
       "stage": "generation"
     },
     "MissingEndpoint": {
-      "count": 382,
+      "count": 383,
       "examples": [
         {
           "project": "bug_tracker",
@@ -241,7 +241,7 @@
         }
       ],
       "first_seen": "2026-06-22T07:49:29.613937",
-      "last_seen": "2026-07-28T06:18:37.458658",
+      "last_seen": "2026-07-28T21:20:17.422937",
       "stage": "generation"
     },
     "FastAPIError": {
@@ -289,7 +289,7 @@
       "stage": "runtime"
     },
     "UserIdNotInjectedError": {
-      "count": 4,
+      "count": 5,
       "examples": [
         {
           "project": "TaskFlow Pro",
@@ -306,10 +306,14 @@
         {
           "project": "university_course_management",
           "error": "UserIdNotInjectedError"
+        },
+        {
+          "project": "university_course_management",
+          "error": "UserIdNotInjectedError"
         }
       ],
       "first_seen": "2026-06-28T21:05:09.324006",
-      "last_seen": "2026-07-13T13:53:43.055805",
+      "last_seen": "2026-07-28T21:04:01.075533",
       "stage": "runtime"
     },
     "PydanticSerializationError": {
@@ -341,7 +345,7 @@
       "stage": "runtime"
     },
     "JourneyCRUDFailure": {
-      "count": 47,
+      "count": 48,
       "examples": [
         {
           "project": "BlogSphere",
@@ -365,7 +369,7 @@
         }
       ],
       "first_seen": "2026-06-29T23:47:06.584012",
-      "last_seen": "2026-07-28T05:29:52.658556",
+      "last_seen": "2026-07-28T21:12:05.905429",
       "stage": "integration"
     },
     "InvalidDependsType": {
@@ -537,6 +541,6 @@
       "last_seen": "2026-07-21T00:54:41.523672"
     }
   },
-  "total_runs": 884,
-  "last_updated": "2026-07-28T20:34:24.229802"
+  "total_runs": 890,
+  "last_updated": "2026-07-28T21:23:16.107403"
 }

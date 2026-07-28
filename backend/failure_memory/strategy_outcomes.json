@@ -95,7 +95,7 @@
     "patch_file": {
       "generation": 1,
       "successes": 2,
-      "tries": 8
+      "tries": 10
     },
     "regenerate_module": {
       "generation": 2,
@@ -150,14 +150,14 @@
     "switch_model": {
       "generation": 1,
       "successes": 39,
-      "tries": 254
+      "tries": 256
     }
   },
   "browser": {
     "patch_file": {
       "generation": 1,
-      "successes": 7,
-      "tries": 17
+      "successes": 8,
+      "tries": 18
     },
     "regenerate_arch": {
       "generation": 1,
@@ -228,8 +228,8 @@
   "syntax": {
     "patch_file": {
       "generation": 1,
-      "successes": 4,
-      "tries": 4
+      "successes": 5,
+      "tries": 5
     }
   }
 }

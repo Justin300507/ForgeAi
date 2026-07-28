@@ -8345,3 +8345,36 @@ confirms the added print statement itself is inert.
 `[DIAGNOSTIC] _run_v15_child real exception:` traceback the next time a
 live job hits this. Revert the print once root-caused, per its own
 comment.
+
+## Full ForgeBench v1.0 Re-run (25/25 apps)
+
+2026-07-29, same session. Resumed the existing partial
+`forgebench_v1_results.json` (19 apps already recorded from an earlier,
+separate run) and completed the remaining 6 to close out the full
+25-app suite. **Average score 79.3, 14/25 (56%) succeeded, 0 crashed.**
+This is a large jump from the Exp100 baseline (31.8% -> 47.5% success,
+2026-07-13) -- consistent with the volume of fixes landed on `main`
+since then (auth routing, router export-mismatch, kwarg-collision
+patcher, main.py generation grounding, orphan-route anchor extraction,
+missing-file component generation, among others), though this run
+alone doesn't isolate which fix contributed what.
+
+Lowest scorers, for the next reliability cycle to triage:
+- `14_gym_tracker` (17.2, F) and `25_medical_clinic_manager` (19.5, F):
+  both `NEW_UNCLASSIFIED`, both a "Syntax error in app/main.py" --
+  same untagged failure signature appearing twice is worth a look as
+  a possible new #1 candidate.
+- `09_recipe_manager` / `10_library_management` (43.1, F each):
+  `NEW_UNCLASSIFIED (Unknown)` -- no specific signature captured.
+- `17_appointment_booking` / `01_todo_list` (67.9 / 74.8):
+  `NEW_UNCLASSIFIED (UserIdNotInjectedError)`.
+- `15_event_management`, `18_sports_league_manager`,
+  `24_donation_tracker` (72.8 / 76.9 / 78.2): `JourneyCRUDFailure`,
+  the same class already tracked as fixed/closed in Exp091-093 for
+  other apps -- may indicate a regression or an unhandled variant.
+
+Not yet root-caused or fixed -- this run's purpose was just to get a
+current, complete baseline. Next reliability cycle should pick the
+highest-prevalence one of these (the two `main.py` syntax-error F's
+look like the strongest candidate) per the usual root-cause -> fix ->
+canary -> compare loop.

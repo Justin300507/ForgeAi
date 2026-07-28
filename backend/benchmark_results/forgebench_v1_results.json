@@ -1,6 +1,6 @@
 {
   "benchmark": "ForgeBench v1.0",
-  "updated_at": "2026-07-28T06:22:43.123387+00:00",
+  "updated_at": "2026-07-28T21:25:38.545447+00:00",
   "total_apps": 25,
   "results": [
     {
@@ -2063,6 +2063,661 @@
           "score": 100,
           "passed": true,
           "na": false
+        }
+      ]
+    },
+    {
+      "app": "22_course_management",
+      "crashed": false,
+      "project_name": "university_course_management",
+      "forge_score": 81.23,
+      "grade": "B",
+      "succeeded": true,
+      "first_pass_success": true,
+      "repair_success": false,
+      "build_ok": true,
+      "runtime_ok": false,
+      "crud_ok": true,
+      "browser_ok": true,
+      "endpoint_inventory": "n/a",
+      "deployed": false,
+      "fix_attempts": 0,
+      "elapsed_s": 200.4,
+      "total_tokens": 189695,
+      "estimated_cost": 0.11381699999999999,
+      "score_history": [
+        {
+          "attempt": 0,
+          "score": 81.23,
+          "grade": "B"
+        },
+        {
+          "attempt": 0,
+          "score": 81.23,
+          "grade": "B"
+        }
+      ],
+      "final_dominant_errors": [
+        "[UserIdNotInjectedError] sqlalchemy.exc.IntegrityError: (sqlite3.IntegrityError)"
+      ],
+      "failure_class": null,
+      "dimensions": [
+        {
+          "name": "Compilation",
+          "score": 100.0,
+          "passed": true,
+          "na": false
+        },
+        {
+          "name": "Runtime Startup",
+          "score": 20.0,
+          "passed": false,
+          "na": false
+        },
+        {
+          "name": "API Functionality",
+          "score": 100.0,
+          "passed": true,
+          "na": false
+        },
+        {
+          "name": "Frontend Load",
+          "score": 100.0,
+          "passed": true,
+          "na": false
+        },
+        {
+          "name": "Browser UX",
+          "score": 88.0,
+          "passed": true,
+          "na": false
+        },
+        {
+          "name": "Integration",
+          "score": 92.3076923076923,
+          "passed": true,
+          "na": false
+        },
+        {
+          "name": "Code Quality",
+          "score": 100.0,
+          "passed": true,
+          "na": false
+        },
+        {
+          "name": "Security",
+          "score": 100.0,
+          "passed": true,
+          "na": false
+        },
+        {
+          "name": "Completeness",
+          "score": 100.0,
+          "passed": true,
+          "na": false
+        },
+        {
+          "name": "Performance",
+          "score": 90,
+          "passed": true,
+          "na": false
+        },
+        {
+          "name": "Visual Judge",
+          "score": null,
+          "passed": false,
+          "na": true
+        }
+      ]
+    },
+    {
+      "app": "23_vehicle_fleet_manager",
+      "crashed": false,
+      "project_name": "fleet_manager",
+      "forge_score": 98.1,
+      "grade": "A+",
+      "succeeded": true,
+      "first_pass_success": false,
+      "repair_success": true,
+      "build_ok": true,
+      "runtime_ok": true,
+      "crud_ok": true,
+      "browser_ok": true,
+      "endpoint_inventory": "n/a",
+      "deployed": false,
+      "fix_attempts": 2,
+      "elapsed_s": 230.4,
+      "total_tokens": 109840,
+      "estimated_cost": 0.0651849,
+      "score_history": [
+        {
+          "attempt": 0,
+          "score": 96.23,
+          "grade": "A+"
+        },
+        {
+          "attempt": 1,
+          "score": 97.38,
+          "grade": "A+"
+        },
+        {
+          "attempt": 2,
+          "score": 98.0,
+          "grade": "A+"
+        },
+        {
+          "attempt": 2,
+          "score": 98.1,
+          "grade": "A+"
+        }
+      ],
+      "final_dominant_errors": [],
+      "failure_class": null,
+      "dimensions": [
+        {
+          "name": "Compilation",
+          "score": 100.0,
+          "passed": true,
+          "na": false
+        },
+        {
+          "name": "Runtime Startup",
+          "score": 100.0,
+          "passed": true,
+          "na": false
+        },
+        {
+          "name": "API Functionality",
+          "score": 100.0,
+          "passed": true,
+          "na": false
+        },
+        {
+          "name": "Frontend Load",
+          "score": 100.0,
+          "passed": true,
+          "na": false
+        },
+        {
+          "name": "Browser UX",
+          "score": 88.0,
+          "passed": true,
+          "na": false
+        },
+        {
+          "name": "Integration",
+          "score": 100.0,
+          "passed": true,
+          "na": false
+        },
+        {
+          "name": "Code Quality",
+          "score": 100.0,
+          "passed": true,
+          "na": false
+        },
+        {
+          "name": "Security",
+          "score": 100.0,
+          "passed": true,
+          "na": false
+        },
+        {
+          "name": "Completeness",
+          "score": 100.0,
+          "passed": true,
+          "na": false
+        },
+        {
+          "name": "Performance",
+          "score": 90,
+          "passed": true,
+          "na": false
+        },
+        {
+          "name": "Visual Judge",
+          "score": 100,
+          "passed": true,
+          "na": false
+        }
+      ]
+    },
+    {
+      "app": "24_donation_tracker",
+      "crashed": false,
+      "project_name": "donation_tracker",
+      "forge_score": 78.15,
+      "grade": "C",
+      "succeeded": false,
+      "first_pass_success": false,
+      "repair_success": false,
+      "build_ok": true,
+      "runtime_ok": false,
+      "crud_ok": false,
+      "browser_ok": true,
+      "endpoint_inventory": "n/a",
+      "deployed": false,
+      "fix_attempts": 2,
+      "elapsed_s": 275.5,
+      "total_tokens": 129197,
+      "estimated_cost": 0.0775182,
+      "score_history": [
+        {
+          "attempt": 0,
+          "score": 78.15,
+          "grade": "C"
+        },
+        {
+          "attempt": 4,
+          "score": 78.15,
+          "grade": "C"
+        },
+        {
+          "attempt": 4,
+          "score": 78.15,
+          "grade": "C"
+        }
+      ],
+      "final_dominant_errors": [
+        "[JourneyCRUDFailure] Backend healthy but CRUD journey failed — Create entity: 40"
+      ],
+      "failure_class": "JourneyCRUDFailure",
+      "dimensions": [
+        {
+          "name": "Compilation",
+          "score": 100.0,
+          "passed": true,
+          "na": false
+        },
+        {
+          "name": "Runtime Startup",
+          "score": 20.0,
+          "passed": false,
+          "na": false
+        },
+        {
+          "name": "API Functionality",
+          "score": 100.0,
+          "passed": true,
+          "na": false
+        },
+        {
+          "name": "Frontend Load",
+          "score": 100.0,
+          "passed": true,
+          "na": false
+        },
+        {
+          "name": "Browser UX",
+          "score": 88.0,
+          "passed": true,
+          "na": false
+        },
+        {
+          "name": "Integration",
+          "score": 61.53846153846154,
+          "passed": false,
+          "na": false
+        },
+        {
+          "name": "Code Quality",
+          "score": 100.0,
+          "passed": true,
+          "na": false
+        },
+        {
+          "name": "Security",
+          "score": 100.0,
+          "passed": true,
+          "na": false
+        },
+        {
+          "name": "Completeness",
+          "score": 100.0,
+          "passed": true,
+          "na": false
+        },
+        {
+          "name": "Performance",
+          "score": 90,
+          "passed": true,
+          "na": false
+        },
+        {
+          "name": "Visual Judge",
+          "score": null,
+          "passed": false,
+          "na": true
+        }
+      ]
+    },
+    {
+      "app": "25_medical_clinic_manager",
+      "crashed": false,
+      "project_name": "hospital_management_system",
+      "forge_score": 19.54,
+      "grade": "F",
+      "succeeded": false,
+      "first_pass_success": false,
+      "repair_success": false,
+      "build_ok": false,
+      "runtime_ok": false,
+      "crud_ok": null,
+      "browser_ok": null,
+      "endpoint_inventory": "n/a",
+      "deployed": false,
+      "fix_attempts": 2,
+      "elapsed_s": 304.4,
+      "total_tokens": 169911,
+      "estimated_cost": 0.09589500000000001,
+      "score_history": [
+        {
+          "attempt": 0,
+          "score": 19.54,
+          "grade": "F"
+        },
+        {
+          "attempt": 1,
+          "score": 19.54,
+          "grade": "F"
+        },
+        {
+          "attempt": 1,
+          "score": 19.54,
+          "grade": "F"
+        },
+        {
+          "attempt": 2,
+          "score": 19.54,
+          "grade": "F"
+        },
+        {
+          "attempt": 2,
+          "score": 19.54,
+          "grade": "F"
+        }
+      ],
+      "final_dominant_errors": [
+        "Syntax error in app\\main.py:   File \"C:\\Users\\jerry\\OneDrive\\Desktop\\forgeAi\\gen",
+        "Syntax error in app\\routes\\consultation-note_routes.py:   File \"C:\\Users\\jerry\\O",
+        "  File \"C:\\Users\\jerry\\OneDrive\\Desktop\\forgeAi\\generated_projects\\hospital_mana",
+        "  File \"C:\\Users\\jerry\\OneDrive\\Desktop\\forgeAi\\generated_projects\\hospital_mana"
+      ],
+      "failure_class": "NEW_UNCLASSIFIED (untagged: Syntax error in app\\main.py:   File \"C:\\Users\\jerry\\OneDrive)",
+      "dimensions": [
+        {
+          "name": "Compilation",
+          "score": 0.0,
+          "passed": false,
+          "na": false
+        },
+        {
+          "name": "Runtime Startup",
+          "score": 0,
+          "passed": false,
+          "na": false
+        },
+        {
+          "name": "API Functionality",
+          "score": 0,
+          "passed": false,
+          "na": false
+        },
+        {
+          "name": "Frontend Load",
+          "score": null,
+          "passed": false,
+          "na": true
+        },
+        {
+          "name": "Browser UX",
+          "score": null,
+          "passed": false,
+          "na": true
+        },
+        {
+          "name": "Integration",
+          "score": null,
+          "passed": false,
+          "na": true
+        },
+        {
+          "name": "Code Quality",
+          "score": 94.0,
+          "passed": false,
+          "na": false
+        },
+        {
+          "name": "Security",
+          "score": 80.0,
+          "passed": true,
+          "na": false
+        },
+        {
+          "name": "Completeness",
+          "score": 100.0,
+          "passed": true,
+          "na": false
+        },
+        {
+          "name": "Performance",
+          "score": 50,
+          "passed": false,
+          "na": false
+        },
+        {
+          "name": "Visual Judge",
+          "score": null,
+          "passed": false,
+          "na": true
+        }
+      ]
+    },
+    {
+      "app": "20_real_estate_listings",
+      "crashed": false,
+      "project_name": "real_estate_marketplace",
+      "forge_score": 97.25,
+      "grade": "A+",
+      "succeeded": true,
+      "first_pass_success": true,
+      "repair_success": false,
+      "build_ok": true,
+      "runtime_ok": true,
+      "crud_ok": true,
+      "browser_ok": true,
+      "endpoint_inventory": "n/a",
+      "deployed": false,
+      "fix_attempts": 0,
+      "elapsed_s": 163.9,
+      "total_tokens": 115542,
+      "estimated_cost": 0.06932519999999998,
+      "score_history": [
+        {
+          "attempt": 0,
+          "score": 97.25,
+          "grade": "A+"
+        },
+        {
+          "attempt": 0,
+          "score": 97.25,
+          "grade": "A+"
+        }
+      ],
+      "final_dominant_errors": [
+        "POST /seed returned 500"
+      ],
+      "failure_class": null,
+      "dimensions": [
+        {
+          "name": "Compilation",
+          "score": 95.0,
+          "passed": true,
+          "na": false
+        },
+        {
+          "name": "Runtime Startup",
+          "score": 100.0,
+          "passed": true,
+          "na": false
+        },
+        {
+          "name": "API Functionality",
+          "score": 100.0,
+          "passed": true,
+          "na": false
+        },
+        {
+          "name": "Frontend Load",
+          "score": 100.0,
+          "passed": true,
+          "na": false
+        },
+        {
+          "name": "Browser UX",
+          "score": 88.0,
+          "passed": true,
+          "na": false
+        },
+        {
+          "name": "Integration",
+          "score": 100.0,
+          "passed": true,
+          "na": false
+        },
+        {
+          "name": "Code Quality",
+          "score": 100.0,
+          "passed": true,
+          "na": false
+        },
+        {
+          "name": "Security",
+          "score": 100.0,
+          "passed": true,
+          "na": false
+        },
+        {
+          "name": "Completeness",
+          "score": 100.0,
+          "passed": true,
+          "na": false
+        },
+        {
+          "name": "Performance",
+          "score": 90,
+          "passed": true,
+          "na": false
+        },
+        {
+          "name": "Visual Judge",
+          "score": null,
+          "passed": false,
+          "na": true
+        }
+      ]
+    },
+    {
+      "app": "11_student_management",
+      "crashed": false,
+      "project_name": "student_management_system",
+      "forge_score": 98.0,
+      "grade": "A+",
+      "succeeded": true,
+      "first_pass_success": true,
+      "repair_success": false,
+      "build_ok": true,
+      "runtime_ok": true,
+      "crud_ok": true,
+      "browser_ok": true,
+      "endpoint_inventory": "n/a",
+      "deployed": false,
+      "fix_attempts": 0,
+      "elapsed_s": 179.6,
+      "total_tokens": 132462,
+      "estimated_cost": 0.07947720000000001,
+      "score_history": [
+        {
+          "attempt": 0,
+          "score": 98.0,
+          "grade": "A+"
+        },
+        {
+          "attempt": 0,
+          "score": 98.0,
+          "grade": "A+"
+        }
+      ],
+      "final_dominant_errors": [
+        "POST /seed returned 500"
+      ],
+      "failure_class": null,
+      "dimensions": [
+        {
+          "name": "Compilation",
+          "score": 100.0,
+          "passed": true,
+          "na": false
+        },
+        {
+          "name": "Runtime Startup",
+          "score": 100.0,
+          "passed": true,
+          "na": false
+        },
+        {
+          "name": "API Functionality",
+          "score": 100.0,
+          "passed": true,
+          "na": false
+        },
+        {
+          "name": "Frontend Load",
+          "score": 100.0,
+          "passed": true,
+          "na": false
+        },
+        {
+          "name": "Browser UX",
+          "score": 88.0,
+          "passed": true,
+          "na": false
+        },
+        {
+          "name": "Integration",
+          "score": 100.0,
+          "passed": true,
+          "na": false
+        },
+        {
+          "name": "Code Quality",
+          "score": 100.0,
+          "passed": true,
+          "na": false
+        },
+        {
+          "name": "Security",
+          "score": 100.0,
+          "passed": true,
+          "na": false
+        },
+        {
+          "name": "Completeness",
+          "score": 100.0,
+          "passed": true,
+          "na": false
+        },
+        {
+          "name": "Performance",
+          "score": 90,
+          "passed": true,
+          "na": false
+        },
+        {
+          "name": "Visual Judge",
+          "score": null,
+          "passed": false,
+          "na": true
         }
       ]
     }
