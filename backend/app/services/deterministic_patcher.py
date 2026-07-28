@@ -5864,6 +5864,19 @@ def _patch_router_export_mismatch(project_path: Path) -> int:
     Skips (falls through to the existing LLM fix, never worse than today)
     when the file has zero or more than one APIRouter() assignment, since
     either case makes "the actual router" ambiguous.
+
+    A hyphenated resource/filename (app/routes/consultation-note_routes.py,
+    from a resource named "consultation note") produced expected_router =
+    "consultation-note_router" -- a hyphen is never valid inside a Python
+    identifier, so the alias line this patcher writes
+    ("consultation-note_router = consultation_note_router") is itself a
+    SyntaxError ("cannot assign to expression here"), on top of the
+    original hyphenated-import SyntaxError _patch_hyphenated_router_
+    identifiers already exists to fix. Reproduced live (ForgeBench v1.0,
+    hospital_management_system, 2026-07-28) -- confirmed the SAME app/
+    resource name that motivated that other patcher back on 2026-07-13,
+    recurring here because this one never sanitized the filename-derived
+    identifier at all.
     """
     routes_dir = project_path / "app" / "routes"
     if not routes_dir.exists():
@@ -5878,7 +5891,7 @@ def _patch_router_export_mismatch(project_path: Path) -> int:
         except Exception:
             continue
 
-        expected_router = route_file.name.replace("_routes.py", "") + "_router"
+        expected_router = route_file.name.replace("_routes.py", "").replace("-", "_") + "_router"
 
         # Module-level only, matching router_export_validator.py's own check.
         already_exported = re.search(
