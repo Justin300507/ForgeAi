@@ -46,8 +46,8 @@
     },
     "regenerate_module": {
       "generation": 2,
-      "successes": 3,
-      "tries": 10
+      "successes": 4,
+      "tries": 11
     },
     "switch_model": {
       "generation": 1,
@@ -65,6 +65,13 @@
       "generation": 2,
       "successes": 0,
       "tries": 1
+    }
+  },
+  "ResponseValidationError": {
+    "patch_file": {
+      "generation": 1,
+      "successes": 0,
+      "tries": 2
     }
   },
   "SQLAlchemyError": {
@@ -86,8 +93,9 @@
   },
   "SyntaxError": {
     "patch_file": {
+      "generation": 1,
       "successes": 2,
-      "tries": 6
+      "tries": 8
     },
     "regenerate_module": {
       "generation": 2,
@@ -132,7 +140,7 @@
     "regenerate_arch": {
       "generation": 1,
       "successes": 2,
-      "tries": 12
+      "tries": 14
     },
     "regenerate_module": {
       "generation": 2,
@@ -141,15 +149,15 @@
     },
     "switch_model": {
       "generation": 1,
-      "successes": 32,
-      "tries": 239
+      "successes": 39,
+      "tries": 254
     }
   },
   "browser": {
     "patch_file": {
       "generation": 1,
-      "successes": 1,
-      "tries": 7
+      "successes": 7,
+      "tries": 17
     },
     "regenerate_arch": {
       "generation": 1,
@@ -170,8 +178,8 @@
   "contract": {
     "patch_file": {
       "generation": 1,
-      "successes": 187,
-      "tries": 631
+      "successes": 188,
+      "tries": 643
     },
     "regenerate_arch": {
       "generation": 1,
@@ -181,7 +189,7 @@
     "regenerate_module": {
       "generation": 2,
       "successes": 31,
-      "tries": 183
+      "tries": 184
     },
     "switch_model": {
       "successes": 0,
@@ -191,8 +199,8 @@
   "import": {
     "patch_file": {
       "generation": 1,
-      "successes": 31,
-      "tries": 54
+      "successes": 32,
+      "tries": 57
     },
     "regenerate_arch": {
       "generation": 1,
@@ -214,7 +222,14 @@
     "regenerate_module": {
       "generation": 2,
       "successes": 2,
-      "tries": 11
+      "tries": 15
+    }
+  },
+  "syntax": {
+    "patch_file": {
+      "generation": 1,
+      "successes": 4,
+      "tries": 4
     }
   }
 }

@@ -8309,3 +8309,39 @@ reductions with diminishing returns. Flagged to the user directly rather
 than silently declared fixed. Watch Render's event log for further
 `oomKilled` events after this deploy; if they continue, do not keep
 adding flags -- escalate to a plan upgrade instead.
+
+## Experiment 141: Diagnostic Instrumentation for Post-Completion RuntimeError
+
+2026-07-29. A `RuntimeError` has been observed surfacing on `/jobs` V15
+runs *after* `generate_project_v15` already returned successfully --
+matching one of two candidate sites in `app/jobs/v15_supervisor.py`:
+either an unlogged exception inside `_run_v15_child`'s tail (between a
+successful pipeline result and `_send_terminal` actually delivering it,
+surfaced to the parent as `pipeline_child_error:<type>`), or the
+parent's own `queue.Empty` + `not process.is_alive()` branch
+(`"pipeline child exited without a result"`), a known
+`multiprocessing.Queue` hazard where `put()` hands data to a background
+feeder thread that can race process teardown, more exposed under
+`fork()` (Linux prod) than `spawn()` (this Windows dev box, where the
+`fork()` path cannot be executed at all to test directly).
+
+**No fix shipped yet.** Per the reliability-loop's evidence-first rule,
+committed and fast-forward-pushed only a diagnostic (`traceback.print_exc()`
+in `_run_v15_child`'s except block, server-stdout only, never crosses the
+child->parent IPC boundary) directly to `main` -- `origin/main` already
+contained the 7 commits this session's branch had accumulated
+(`fix/vercel-baseurl-patch`), so this was a clean fast-forward, not a
+merge of unvalidated work.
+
+**Validation**: local 3-app canary (`--no-deploy`, label
+`post-diagnostic-fork-fix-sanity`) run post-push as a sanity check that
+the diagnostic-only change didn't regress anything: todo 96.5 (A+),
+crm 93.1 (A), blog_cms 37.5 (F, matches its known-hard baseline
+pattern, not attributable to this change). `CANARY PASSED`. This does
+NOT exercise the actual bug -- Windows can't run `fork()`, so this only
+confirms the added print statement itself is inert.
+
+**Next**: waiting on Render's log stream to capture the real
+`[DIAGNOSTIC] _run_v15_child real exception:` traceback the next time a
+live job hits this. Revert the print once root-caused, per its own
+comment.

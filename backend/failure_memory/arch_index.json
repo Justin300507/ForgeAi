@@ -3197,139 +3197,97 @@
   },
   "inventory": {
     "category": "inventory",
-    "idea": "Build a multi-warehouse inventory management SaaS for small retailers: secure user registration and login; products with SKU, reorder threshold, supplier, cost and selling price; warehouse stock level",
+    "idea": "An inventory management system with user login. Users manage products (SKU, name, category, unit cost, selling price, current stock, reorder threshold). Add stock via purchase orders (supplier name, q",
     "architecture": {
       "api_endpoints": [
         {
-          "method": "GET",
-          "path": "/users?search=&limit=&offset=",
-          "description": "Retrieve a list of users with optional search and pagination.",
-          "file": "app\\routes\\user_routes.py"
-        },
-        {
-          "method": "GET",
-          "path": "/users/{id}",
-          "description": "Retrieve a specific user by ID.",
-          "file": "app\\routes\\user_routes.py"
+          "method": "POST",
+          "path": "/auth/register",
+          "description": "Register a new user with email and password",
+          "file": "app\\routes\\auth_routes.py"
         },
         {
           "method": "POST",
-          "path": "/users",
-          "description": "Create a new user account.",
-          "file": "app\\routes\\user_routes.py"
-        },
-        {
-          "method": "PUT",
-          "path": "/users/{id}",
-          "description": "Update an existing user account.",
-          "file": "app\\routes\\user_routes.py"
-        },
-        {
-          "method": "DELETE",
-          "path": "/users/{id}",
-          "description": "Delete a user account.",
-          "file": "app\\routes\\user_routes.py"
+          "path": "/auth/login",
+          "description": "Authenticate user and return JWT token",
+          "file": "app\\routes\\auth_routes.py"
         },
         {
           "method": "GET",
-          "path": "/products?search=&limit=&offset=",
-          "description": "Retrieve a list of products with optional search and pagination.",
+          "path": "/auth/me",
+          "description": "Get current authenticated user profile",
+          "file": "app\\routes\\auth_routes.py"
+        },
+        {
+          "method": "GET",
+          "path": "/products",
+          "description": "Retrieve paginated list of products with optional search by name or SKU and filter by category",
           "file": "app\\routes\\product_routes.py"
         },
         {
           "method": "GET",
           "path": "/products/{id}",
-          "description": "Retrieve a specific product by ID.",
+          "description": "Get details of a single product by its ID",
           "file": "app\\routes\\product_routes.py"
         },
         {
           "method": "POST",
           "path": "/products",
-          "description": "Add a new product to the inventory.",
+          "description": "Create a new product; current_stock is initialized to 0",
           "file": "app\\routes\\product_routes.py"
         },
         {
           "method": "PUT",
           "path": "/products/{id}",
-          "description": "Update an existing product in the inventory.",
+          "description": "Replace an existing product with new data; validates unique SKU",
           "file": "app\\routes\\product_routes.py"
         },
         {
           "method": "DELETE",
           "path": "/products/{id}",
-          "description": "Remove a product from the inventory.",
+          "description": "Delete a product by its ID",
           "file": "app\\routes\\product_routes.py"
         },
         {
           "method": "GET",
-          "path": "/transactions?search=&limit=&offset=",
-          "description": "Retrieve a list of transactions with optional search and pagination.",
+          "path": "/transactions",
+          "description": "Retrieve paginated list of transactions with optional filter by type and date range",
           "file": "app\\routes\\transaction_routes.py"
         },
         {
           "method": "GET",
           "path": "/transactions/{id}",
-          "description": "Retrieve a specific transaction by ID.",
+          "description": "Get details of a single transaction by its ID",
           "file": "app\\routes\\transaction_routes.py"
         },
         {
           "method": "POST",
           "path": "/transactions",
-          "description": "Record a new stock transaction.",
+          "description": "Create a purchase or sale transaction; updates product stock accordingly",
           "file": "app\\routes\\transaction_routes.py"
         },
         {
           "method": "PUT",
           "path": "/transactions/{id}",
-          "description": "Update an existing transaction.",
+          "description": "Update an existing transaction; stock adjustments are re‑applied",
           "file": "app\\routes\\transaction_routes.py"
         },
         {
           "method": "DELETE",
           "path": "/transactions/{id}",
-          "description": "Delete a transaction record.",
+          "description": "Delete a transaction and revert its stock effect",
           "file": "app\\routes\\transaction_routes.py"
-        },
-        {
-          "method": "GET",
-          "path": "/suppliers?search=&limit=&offset=",
-          "description": "Retrieve a list of suppliers with optional search and pagination.",
-          "file": "app\\routes\\supplier_routes.py"
-        },
-        {
-          "method": "GET",
-          "path": "/suppliers/{id}",
-          "description": "Retrieve a specific supplier by ID.",
-          "file": "app\\routes\\supplier_routes.py"
-        },
-        {
-          "method": "POST",
-          "path": "/suppliers",
-          "description": "Add a new supplier.",
-          "file": "app\\routes\\supplier_routes.py"
-        },
-        {
-          "method": "PUT",
-          "path": "/suppliers/{id}",
-          "description": "Update an existing supplier.",
-          "file": "app\\routes\\supplier_routes.py"
-        },
-        {
-          "method": "DELETE",
-          "path": "/suppliers/{id}",
-          "description": "Remove a supplier.",
-          "file": "app\\routes\\supplier_routes.py"
         },
         {
           "method": "POST",
           "path": "/seed",
-          "description": "Populates database with realistic demo data.",
+          "description": "Populate the database with demo data for users, categories, products, and transactions",
           "file": "app\\routes\\seed_routes.py"
         },
         {
           "method": "GET",
-          "path": "/stats/summary",
-          "description": "Returns aggregate counts and key metrics for the dashboard.",
+          "path": "/dashboard/summary",
+          "description": "Return low‑stock alerts, total inventory value, and recent transactions for dashboard display",
           "file": "app\\routes\\stats_routes.py"
         }
       ],
@@ -3345,13 +3303,36 @@
             },
             {
               "name": "email",
-              "type": "TEXT",
+              "type": "VARCHAR(255)",
               "is_primary_key": false,
               "is_nullable": false
             },
             {
-              "name": "password_hash",
-              "type": "TEXT",
+              "name": "hashed_password",
+              "type": "VARCHAR(255)",
+              "is_primary_key": false,
+              "is_nullable": false
+            },
+            {
+              "name": "created_at",
+              "type": "DATETIME",
+              "is_primary_key": false,
+              "is_nullable": false
+            }
+          ]
+        },
+        {
+          "table_name": "categories",
+          "columns": [
+            {
+              "name": "id",
+              "type": "INTEGER",
+              "is_primary_key": true,
+              "is_nullable": false
+            },
+            {
+              "name": "name",
+              "type": "VARCHAR(100)",
               "is_primary_key": false,
               "is_nullable": false
             }
@@ -3367,26 +3348,44 @@
               "is_nullable": false
             },
             {
-              "name": "SKU",
-              "type": "TEXT",
+              "name": "sku",
+              "type": "VARCHAR(50)",
               "is_primary_key": false,
               "is_nullable": false
             },
             {
-              "name": "supplier_id",
+              "name": "name",
+              "type": "VARCHAR(200)",
+              "is_primary_key": false,
+              "is_nullable": false
+            },
+            {
+              "name": "category_id",
               "type": "INTEGER",
               "is_primary_key": false,
               "is_nullable": false
             },
             {
-              "name": "cost",
-              "type": "REAL",
+              "name": "unit_cost",
+              "type": "FLOAT",
               "is_primary_key": false,
               "is_nullable": false
             },
             {
-              "name": "selling_price",
-              "type": "REAL",
+              "name": "current_stock",
+              "type": "INTEGER",
+              "is_primary_key": false,
+              "is_nullable": false
+            },
+            {
+              "name": "reorder_threshold",
+              "type": "INTEGER",
+              "is_primary_key": false,
+              "is_nullable": false
+            },
+            {
+              "name": "created_at",
+              "type": "DATETIME",
               "is_primary_key": false,
               "is_nullable": false
             }
@@ -3408,25 +3407,38 @@
               "is_nullable": false
             },
             {
-              "name": "transaction_type",
-              "type": "TEXT",
+              "name": "type",
+              "type": "VARCHAR(20)",
               "is_primary_key": false,
-              "is_nullable": false
-            }
-          ]
-        },
-        {
-          "table_name": "suppliers",
-          "columns": [
-            {
-              "name": "id",
-              "type": "INTEGER",
-              "is_primary_key": true,
               "is_nullable": false
             },
             {
-              "name": "name",
-              "type": "TEXT",
+              "name": "quantity",
+              "type": "INTEGER",
+              "is_primary_key": false,
+              "is_nullable": false
+            },
+            {
+              "name": "unit_price",
+              "type": "FLOAT",
+              "is_primary_key": false,
+              "is_nullable": false
+            },
+            {
+              "name": "partner_name",
+              "type": "VARCHAR(200)",
+              "is_primary_key": false,
+              "is_nullable": true
+            },
+            {
+              "name": "transaction_date",
+              "type": "DATETIME",
+              "is_primary_key": false,
+              "is_nullable": false
+            },
+            {
+              "name": "created_at",
+              "type": "DATETIME",
               "is_primary_key": false,
               "is_nullable": false
             }
@@ -3435,43 +3447,48 @@
       ],
       "folder_structure": {
         "backend": [
-          "app/routes",
           "app/models",
           "app/schemas",
+          "app/routes",
           "app/services",
-          "app/utils"
+          "app/utils",
+          "app/config",
+          "app/dependencies",
+          "app/auth"
         ]
       },
       "frontend_structure": {
         "pages": [
-          "Dashboard",
-          "UserRegistration",
-          "UserLogin",
-          "ProductList",
-          "ProductDetail",
-          "TransactionList",
-          "SupplierList",
-          "LowStockDashboard"
+          "LoginPage",
+          "DashboardPage",
+          "ProductsPage",
+          "ProductFormPage",
+          "TransactionsPage",
+          "TransactionFormPage",
+          "SettingsPage"
         ],
         "components": [
           "Navbar",
-          "Footer",
           "ProductCard",
-          "UserForm",
-          "TransactionForm",
-          "SupplierForm",
+          "TransactionItem",
           "SearchBar",
-          "Notification"
+          "Pagination",
+          "ProductForm",
+          "TransactionForm",
+          "DashboardStats",
+          "LowStockAlert",
+          "CategoryFilter"
         ]
       }
     },
     "plan": {
-      "project_name": "multi_warehouse_inventory_management",
-      "display_name": "Multi-Warehouse Inventory Management",
+      "project_name": "inventory_manager",
+      "display_name": "Inventory Management System",
       "features": [
-        "Secure user registration and login functionality.",
-        "Add, edit, and manage products with SKU, supplier, cost, and selling price.",
-        "Track stock levels, receipts, transfers, and adjustments."
+        "Secure login using email/password and JWT tokens for API protection",
+        "CRUD endpoints for products with fields like SKU, name, category, costs, stock, and reorder threshold",
+        "Create purchase and sale transactions that automatically adjust product stock levels",
+        "Shows low‑stock alerts, total inventory value, and recent stock movements"
       ],
       "tech_stack": {
         "backend": "FastAPI",
@@ -3482,150 +3499,131 @@
       "db_entities": [
         "User",
         "Product",
-        "Transaction",
-        "Supplier"
+        "Transaction"
       ],
       "api_modules": [
         "auth",
-        "users",
         "products",
-        "transactions",
-        "suppliers"
+        "transactions"
       ],
       "user_stories": [
         {
-          "role": "small retailer",
-          "want": "to register and log in securely",
+          "role": "Business owner",
+          "want": "to log in to the system",
           "acceptance_criteria": [
-            "User can create an account with a unique email and password.",
-            "User can log in with valid credentials and is redirected to the dashboard."
+            "Valid email and password return a JWT token with 200 status",
+            "The token must be required for all subsequent API calls (401 if missing/invalid)",
+            "Invalid credentials return a 401 error with an appropriate error message"
           ]
         },
         {
-          "role": "small retailer",
-          "want": "to add products with SKU, supplier, cost, and selling price",
+          "role": "Business owner",
+          "want": "to add a new product",
           "acceptance_criteria": [
-            "User can input product details including SKU, supplier, cost, and selling price.",
-            "Product is saved and displayed in the inventory list."
+            "POST /products with all required fields creates a product and returns 201",
+            "The newly created product appears in the GET /products list",
+            "current_stock is initialized to 0 and cannot be negative"
           ]
         },
         {
-          "role": "warehouse manager",
-          "want": "to view current stock levels for each warehouse",
+          "role": "Business owner",
+          "want": "to record a purchase order",
           "acceptance_criteria": [
-            "User can see a dashboard displaying stock levels for all warehouses.",
-            "Stock levels are updated in real-time as adjustments are made."
+            "POST /transactions with type='purchase' updates product.current_stock = previous + quantity",
+            "The transaction is persisted with correct product_id, quantity, unit_cost, date, and partner_name",
+            "Response includes the updated product stock value"
           ]
         },
         {
-          "role": "small retailer",
-          "want": "to set reorder thresholds for products",
+          "role": "Business owner",
+          "want": "to record a sale",
           "acceptance_criteria": [
-            "User can set and save reorder thresholds for each product.",
-            "User receives a notification when stock falls below the threshold."
+            "POST /transactions with type='sale' reduces product.current_stock by quantity",
+            "If quantity exceeds current_stock, the API returns 400 with an error message",
+            "The sale transaction is stored with all supplied fields"
           ]
         },
         {
-          "role": "warehouse manager",
-          "want": "to record stock receipts, transfers, and adjustments",
+          "role": "Business owner",
+          "want": "to view a dashboard",
           "acceptance_criteria": [
-            "User can input stock receipts, transfers, and adjustments through a form.",
-            "All transactions are logged in the audit trail."
+            "GET /dashboard returns a list of products where current_stock < reorder_threshold",
+            "Response includes total_inventory_value = sum(product.current_stock * product.unit_cost)",
+            "Response includes the 5 most recent transactions sorted by date descending"
           ]
         },
         {
-          "role": "small retailer",
-          "want": "to view a low-stock dashboard",
+          "role": "Business owner",
+          "want": "to search products by category",
           "acceptance_criteria": [
-            "Dashboard displays products below the reorder threshold.",
-            "User can click on a product to view its details."
+            "GET /products?category=Electronics returns only products in the Electronics category",
+            "Search is case‑insensitive and trims whitespace",
+            "Pagination parameters (page, limit) work and default to page=1, limit=20"
           ]
         },
         {
-          "role": "small retailer",
-          "want": "to search and filter products",
+          "role": "Business owner",
+          "want": "to edit product details",
           "acceptance_criteria": [
-            "User can enter search terms and see relevant products.",
-            "User can filter products by supplier or stock level."
-          ]
-        },
-        {
-          "role": "small retailer",
-          "want": "to view inventory valuation",
-          "acceptance_criteria": [
-            "User can view a report showing total inventory value based on cost prices.",
-            "User can export the valuation report as a CSV file."
+            "PATCH /products/{id} updates allowed fields and returns 200 with the updated product",
+            "Changing SKU to a value that already exists on another product returns 400",
+            "Updated fields are reflected in subsequent GET /products calls"
           ]
         }
       ],
       "non_functional_requirements": {
-        "authentication": "required — to ensure secure access to user data.",
-        "authorization": "Role-based access where small retailers can manage their inventory and warehouse managers can oversee stock levels.",
-        "pagination": "required on product listing endpoints.",
-        "search": "Products need search functionality.",
-        "file_uploads": "no — no file uploads are required.",
-        "real_time": "yes — for stock level updates and notifications."
+        "authentication": "required — protects all data endpoints",
+        "authorization": "any authenticated user can perform CRUD; no role hierarchy needed",
+        "pagination": "required on GET /products and GET /transactions endpoints",
+        "search": "products endpoint supports category filter and name/SKU search",
+        "file_uploads": "no",
+        "real_time": "no"
       },
       "data_entities_detail": [
         {
           "name": "User",
-          "description": "Stores user information and credentials.",
+          "description": "Stores login credentials and basic profile information",
           "key_fields": [
             "id",
-            "email",
-            "password_hash"
+            "email"
           ],
-          "relationships": [
-            "has many Products",
-            "has many Transactions"
-          ]
+          "relationships": []
         },
         {
           "name": "Product",
-          "description": "Stores product details including SKU, pricing, and supplier.",
+          "description": "Represents an inventory item with pricing and stock thresholds",
           "key_fields": [
             "id",
-            "SKU",
-            "supplier_id"
+            "sku"
           ],
           "relationships": [
-            "belongs to User",
-            "has many Transactions"
+            "has many Transaction"
           ]
         },
         {
           "name": "Transaction",
-          "description": "Stores records of stock receipts, transfers, and adjustments.",
+          "description": "Records a purchase or sale that modifies product stock",
           "key_fields": [
             "id",
             "product_id",
-            "transaction_type"
+            "type"
           ],
           "relationships": [
             "belongs to Product"
           ]
-        },
-        {
-          "name": "Supplier",
-          "description": "Stores supplier information for products.",
-          "key_fields": [
-            "id",
-            "name"
-          ],
-          "relationships": [
-            "has many Products"
-          ]
         }
       ],
       "out_of_scope": [
-        "Integration with external accounting software",
-        "Advanced analytics and reporting features"
+        "Role‑based permissions beyond simple authentication",
+        "Supplier or customer management beyond name fields in transactions",
+        "Advanced reporting, export/import, or email notifications",
+        "Multi‑tenant or organization support"
       ]
     },
-    "score": 95.52,
+    "score": 98.1,
     "success_count": 1,
-    "generation_id": "a5d39ba9-3e29-4d6d-b673-96aad771ac95",
-    "timestamp": "2026-07-19T19:08:17Z"
+    "generation_id": "3d70f089fa9548cfaf985514983869ce",
+    "timestamp": "2026-07-27T21:59:34Z"
   },
   "game": {
     "category": "game",
@@ -5203,5 +5201,2333 @@
     "success_count": 1,
     "generation_id": "0f19e30a42f74392a3070931bf0d93f8",
     "timestamp": "2026-07-16T18:22:48Z"
+  },
+  "ecommerce": {
+    "category": "ecommerce",
+    "idea": "A restaurant point-of-sale system with staff and manager roles. Managers create the menu: categories (starters/mains/desserts/drinks) and items (name, price, available toggle). Staff open tables, add ",
+    "architecture": {
+      "api_endpoints": [
+        {
+          "method": "GET",
+          "path": "/users",
+          "description": "List users with optional search, pagination",
+          "file": "app\\routes\\user_routes.py"
+        },
+        {
+          "method": "GET",
+          "path": "/users/{id}",
+          "description": "Retrieve a user by ID",
+          "file": "app\\routes\\user_routes.py"
+        },
+        {
+          "method": "POST",
+          "path": "/users",
+          "description": "Create a new user (manager or staff)",
+          "file": "app\\routes\\user_routes.py"
+        },
+        {
+          "method": "PUT",
+          "path": "/users/{id}",
+          "description": "Update an existing user",
+          "file": "app\\routes\\user_routes.py"
+        },
+        {
+          "method": "DELETE",
+          "path": "/users/{id}",
+          "description": "Delete a user",
+          "file": "app\\routes\\user_routes.py"
+        },
+        {
+          "method": "GET",
+          "path": "/categories",
+          "description": "List categories with optional search and pagination",
+          "file": "app\\routes\\category_routes.py"
+        },
+        {
+          "method": "GET",
+          "path": "/categories/{id}",
+          "description": "Retrieve a category by ID",
+          "file": "app\\routes\\category_routes.py"
+        },
+        {
+          "method": "POST",
+          "path": "/categories",
+          "description": "Create a new menu category",
+          "file": "app\\routes\\category_routes.py"
+        },
+        {
+          "method": "PUT",
+          "path": "/categories/{id}",
+          "description": "Update an existing category",
+          "file": "app\\routes\\category_routes.py"
+        },
+        {
+          "method": "DELETE",
+          "path": "/categories/{id}",
+          "description": "Delete a category",
+          "file": "app\\routes\\category_routes.py"
+        },
+        {
+          "method": "GET",
+          "path": "/menu_items",
+          "description": "List menu items with search, category filter, and pagination",
+          "file": "app\\routes\\menu_item_routes.py"
+        },
+        {
+          "method": "GET",
+          "path": "/menu_items/{id}",
+          "description": "Retrieve a menu item by ID",
+          "file": "app\\routes\\menu_item_routes.py"
+        },
+        {
+          "method": "POST",
+          "path": "/menu_items",
+          "description": "Create a new menu item",
+          "file": "app\\routes\\menu_item_routes.py"
+        },
+        {
+          "method": "PUT",
+          "path": "/menu_items/{id}",
+          "description": "Update an existing menu item",
+          "file": "app\\routes\\menu_item_routes.py"
+        },
+        {
+          "method": "DELETE",
+          "path": "/menu_items/{id}",
+          "description": "Delete a menu item",
+          "file": "app\\routes\\menu_item_routes.py"
+        },
+        {
+          "method": "GET",
+          "path": "/orders",
+          "description": "List orders with optional status filter, search, and pagination",
+          "file": "app\\routes\\order_routes.py"
+        },
+        {
+          "method": "GET",
+          "path": "/orders/{id}",
+          "description": "Retrieve an order by ID",
+          "file": "app\\routes\\order_routes.py"
+        },
+        {
+          "method": "POST",
+          "path": "/orders",
+          "description": "Open a new table order",
+          "file": "app\\routes\\order_routes.py"
+        },
+        {
+          "method": "PUT",
+          "path": "/orders/{id}",
+          "description": "Update order details (e.g., status)",
+          "file": "app\\routes\\order_routes.py"
+        },
+        {
+          "method": "DELETE",
+          "path": "/orders/{id}",
+          "description": "Delete an order",
+          "file": "app\\routes\\order_routes.py"
+        },
+        {
+          "method": "GET",
+          "path": "/order_items",
+          "description": "List order items with optional served filter, search, and pagination",
+          "file": "app\\routes\\order_item_routes.py"
+        },
+        {
+          "method": "GET",
+          "path": "/order_items/{id}",
+          "description": "Retrieve an order item by ID",
+          "file": "app\\routes\\order_item_routes.py"
+        },
+        {
+          "method": "POST",
+          "path": "/order_items",
+          "description": "Add a menu item to an order",
+          "file": "app\\routes\\order_item_routes.py"
+        },
+        {
+          "method": "PUT",
+          "path": "/order_items/{id}",
+          "description": "Update an order item (e.g., mark served)",
+          "file": "app\\routes\\order_item_routes.py"
+        },
+        {
+          "method": "DELETE",
+          "path": "/order_items/{id}",
+          "description": "Remove an order item from an order",
+          "file": "app\\routes\\order_item_routes.py"
+        },
+        {
+          "method": "POST",
+          "path": "/seed",
+          "description": "Populate the database with demo data",
+          "file": "app\\routes\\seed_routes.py"
+        },
+        {
+          "method": "GET",
+          "path": "/stats/summary",
+          "description": "Return aggregate counts and key metrics for dashboard",
+          "file": "app\\routes\\stats_routes.py"
+        },
+        {
+          "method": "GET",
+          "path": "/reports/daily_sales",
+          "description": "Daily sales report with total revenue, order count, and top‑selling items; supports date filter and pagination",
+          "file": "app\\routes\\report_routes.py"
+        }
+      ],
+      "database_schema": [
+        {
+          "table_name": "users",
+          "columns": [
+            {
+              "name": "id",
+              "type": "INTEGER",
+              "is_primary_key": true,
+              "is_nullable": false
+            },
+            {
+              "name": "email",
+              "type": "VARCHAR(255)",
+              "is_primary_key": false,
+              "is_nullable": false
+            },
+            {
+              "name": "hashed_password",
+              "type": "VARCHAR(255)",
+              "is_primary_key": false,
+              "is_nullable": false
+            },
+            {
+              "name": "role",
+              "type": "VARCHAR(50)",
+              "is_primary_key": false,
+              "is_nullable": false
+            },
+            {
+              "name": "created_at",
+              "type": "DATETIME",
+              "is_primary_key": false,
+              "is_nullable": false
+            }
+          ]
+        },
+        {
+          "table_name": "categories",
+          "columns": [
+            {
+              "name": "id",
+              "type": "INTEGER",
+              "is_primary_key": true,
+              "is_nullable": false
+            },
+            {
+              "name": "name",
+              "type": "VARCHAR(100)",
+              "is_primary_key": false,
+              "is_nullable": false
+            },
+            {
+              "name": "description",
+              "type": "TEXT",
+              "is_primary_key": false,
+              "is_nullable": true
+            }
+          ]
+        },
+        {
+          "table_name": "menu_items",
+          "columns": [
+            {
+              "name": "id",
+              "type": "INTEGER",
+              "is_primary_key": true,
+              "is_nullable": false
+            },
+            {
+              "name": "name",
+              "type": "VARCHAR(150)",
+              "is_primary_key": false,
+              "is_nullable": false
+            },
+            {
+              "name": "price",
+              "type": "REAL",
+              "is_primary_key": false,
+              "is_nullable": false
+            },
+            {
+              "name": "category_id",
+              "type": "INTEGER",
+              "is_primary_key": false,
+              "is_nullable": false
+            },
+            {
+              "name": "available",
+              "type": "BOOLEAN",
+              "is_primary_key": false,
+              "is_nullable": false
+            },
+            {
+              "name": "created_at",
+              "type": "DATETIME",
+              "is_primary_key": false,
+              "is_nullable": false
+            }
+          ]
+        },
+        {
+          "table_name": "orders",
+          "columns": [
+            {
+              "name": "id",
+              "type": "INTEGER",
+              "is_primary_key": true,
+              "is_nullable": false
+            },
+            {
+              "name": "table_number",
+              "type": "INTEGER",
+              "is_primary_key": false,
+              "is_nullable": false
+            },
+            {
+              "name": "status",
+              "type": "VARCHAR(20)",
+              "is_primary_key": false,
+              "is_nullable": false
+            },
+            {
+              "name": "created_at",
+              "type": "DATETIME",
+              "is_primary_key": false,
+              "is_nullable": false
+            },
+            {
+              "name": "closed_at",
+              "type": "DATETIME",
+              "is_primary_key": false,
+              "is_nullable": true
+            },
+            {
+              "name": "user_id",
+              "type": "INTEGER",
+              "is_primary_key": false,
+              "is_nullable": false
+            }
+          ]
+        },
+        {
+          "table_name": "order_items",
+          "columns": [
+            {
+              "name": "id",
+              "type": "INTEGER",
+              "is_primary_key": true,
+              "is_nullable": false
+            },
+            {
+              "name": "order_id",
+              "type": "INTEGER",
+              "is_primary_key": false,
+              "is_nullable": false
+            },
+            {
+              "name": "menu_item_id",
+              "type": "INTEGER",
+              "is_primary_key": false,
+              "is_nullable": false
+            },
+            {
+              "name": "quantity",
+              "type": "INTEGER",
+              "is_primary_key": false,
+              "is_nullable": false
+            },
+            {
+              "name": "served",
+              "type": "BOOLEAN",
+              "is_primary_key": false,
+              "is_nullable": false
+            },
+            {
+              "name": "created_at",
+              "type": "DATETIME",
+              "is_primary_key": false,
+              "is_nullable": false
+            }
+          ]
+        }
+      ],
+      "folder_structure": {
+        "backend": [
+          "app/models",
+          "app/schemas",
+          "app/routes",
+          "app/services",
+          "app/dependencies",
+          "app/auth",
+          "app/utils",
+          "app/config"
+        ]
+      },
+      "frontend_structure": {
+        "pages": [
+          "LoginPage",
+          "DashboardPage",
+          "MenuManagementPage",
+          "OrderEntryPage",
+          "OrderDetailPage",
+          "SalesReportPage",
+          "TableManagementPage"
+        ],
+        "components": [
+          "Header",
+          "Sidebar",
+          "SearchBar",
+          "Pagination",
+          "MenuItemCard",
+          "OrderItemRow",
+          "OrderSummary",
+          "BillModal",
+          "CategoryToggle",
+          "ReceiptPrint"
+        ]
+      }
+    },
+    "plan": {
+      "project_name": "restaurant_pos_system",
+      "display_name": "Restaurant POS System",
+      "features": [
+        "Create, edit, and toggle availability of categories and items",
+        "Open tables, add items, mark served, generate bills, and clear tables",
+        "Calculate itemized totals with 10% tax and produce printable receipts",
+        "Restrict menu editing and reporting to managers; order functions to staff"
+      ],
+      "tech_stack": {
+        "backend": "FastAPI",
+        "database": "SQLite",
+        "auth": "JWT",
+        "frontend": "React + Vite"
+      },
+      "db_entities": [
+        "User",
+        "MenuItem",
+        "Order",
+        "OrderItem"
+      ],
+      "api_modules": [
+        "auth",
+        "users",
+        "menu",
+        "orders",
+        "reports"
+      ],
+      "user_stories": [
+        {
+          "role": "manager",
+          "want": "to create, edit, and deactivate menu categories and items",
+          "acceptance_criteria": [
+            "Manager can add a new category with a unique name",
+            "Manager can add a menu item with name, price, category, and an 'available' toggle",
+            "When 'available' is set to false, the item does not appear in staff order screens"
+          ]
+        },
+        {
+          "role": "staff",
+          "want": "to open a new table session",
+          "acceptance_criteria": [
+            "Staff can input a table number and start a new order",
+            "System generates a unique order ID linked to that table",
+            "The order status is set to 'open' after creation"
+          ]
+        },
+        {
+          "role": "staff",
+          "want": "to add multiple menu items to an open order in one action",
+          "acceptance_criteria": [
+            "Staff can select a menu item, specify quantity, and click 'Add' repeatedly",
+            "All selected items appear in the order summary with correct quantities and line totals",
+            "The order subtotal updates instantly after each addition"
+          ]
+        },
+        {
+          "role": "staff",
+          "want": "to mark individual items as served",
+          "acceptance_criteria": [
+            "Each line item in an order has a 'Mark Served' button",
+            "When clicked, the item status changes to 'served' and is visually distinguished",
+            "Served items cannot be edited or removed from the order"
+          ]
+        },
+        {
+          "role": "staff",
+          "want": "to generate a bill for a table",
+          "acceptance_criteria": [
+            "Staff can click 'Generate Bill' on an order with at least one served item",
+            "The bill shows each item, quantity, price, line total, subtotal, 10% tax, and grand total",
+            "The order status changes to 'billed' and further modifications are blocked"
+          ]
+        },
+        {
+          "role": "staff",
+          "want": "to clear a table after payment",
+          "acceptance_criteria": [
+            "After a bill is generated, a 'Clear Table' button appears",
+            "Clicking 'Clear Table' sets the order status to 'closed' and removes the association with the table number",
+            "The table number becomes selectable again for a new order"
+          ]
+        },
+        {
+          "role": "manager",
+          "want": "to view a daily sales report",
+          "acceptance_criteria": [
+            "Manager can select a date and request the sales report",
+            "Report displays total revenue, total number of orders, and a list of top‑selling items with quantities sold",
+            "All monetary values are rounded to two decimal places"
+          ]
+        }
+      ],
+      "non_functional_requirements": {
+        "authentication": "required — to protect sensitive sales data and prevent unauthorized order changes",
+        "authorization": "role‑based: managers have full CRUD on menu and access to reports; staff can create/modify orders and generate bills",
+        "pagination": "required on daily sales report endpoint when listing top‑selling items",
+        "search": "menu items can be searched by name in the order entry screen",
+        "file_uploads": "no — all data entered via forms",
+        "real_time": "yes — for serving status updates via WebSocket or SSE"
+      },
+      "data_entities_detail": [
+        {
+          "name": "User",
+          "description": "Stores authentication credentials and role information",
+          "key_fields": [
+            "id",
+            "email",
+            "hashed_password",
+            "role"
+          ],
+          "relationships": [
+            "has many Orders"
+          ]
+        },
+        {
+          "name": "MenuItem",
+          "description": "Represents a dish or drink on the menu",
+          "key_fields": [
+            "id",
+            "name",
+            "price",
+            "category",
+            "available"
+          ],
+          "relationships": [
+            "belongs to none",
+            "has many OrderItems"
+          ]
+        },
+        {
+          "name": "Order",
+          "description": "Aggregates items for a specific table session",
+          "key_fields": [
+            "id",
+            "table_number",
+            "status",
+            "created_at",
+            "closed_at",
+            "user_id"
+          ],
+          "relationships": [
+            "belongs to User",
+            "has many OrderItems"
+          ]
+        },
+        {
+          "name": "OrderItem",
+          "description": "Line item linking a MenuItem to an Order with quantity and serve status",
+          "key_fields": [
+            "id",
+            "order_id",
+            "menu_item_id",
+            "quantity",
+            "served"
+          ],
+          "relationships": [
+            "belongs to Order",
+            "belongs to MenuItem"
+          ]
+        }
+      ],
+      "out_of_scope": [
+        "Table reservation system",
+        "Inventory or stock management",
+        "Customer loyalty or rewards program",
+        "Integration with external payment gateways"
+      ]
+    },
+    "score": 87.5,
+    "success_count": 1,
+    "generation_id": "7d1de0fa8e6c406199caf5c703905808",
+    "timestamp": "2026-07-27T22:59:22Z"
+  },
+  "booking": {
+    "category": "booking",
+    "idea": "A hotel booking system with hotel-staff and guest roles. Staff manage rooms (room number, type: single/double/suite, nightly rate, status: available/occupied/maintenance). Guests search available room",
+    "architecture": {
+      "api_endpoints": [
+        {
+          "method": "POST",
+          "path": "/seed",
+          "description": "Populate the database with demo data for all tables.",
+          "file": "app\\routes\\seed_routes.py"
+        },
+        {
+          "method": "GET",
+          "path": "/stats/summary",
+          "description": "Return aggregate counts and key metrics for dashboard overview.",
+          "file": "app\\routes\\stats_routes.py"
+        },
+        {
+          "method": "POST",
+          "path": "/register",
+          "description": "Create a new user account (guest or staff).",
+          "file": "app\\routes\\auth_routes.py"
+        },
+        {
+          "method": "POST",
+          "path": "/login",
+          "description": "Authenticate a user and return an access token.",
+          "file": "app\\routes\\auth_routes.py"
+        },
+        {
+          "method": "GET",
+          "path": "/users",
+          "description": "Search and list users with optional role filter, pagination.",
+          "file": "app\\routes\\user_routes.py"
+        },
+        {
+          "method": "GET",
+          "path": "/users/{id}",
+          "description": "Retrieve a single user by ID.",
+          "file": "app\\routes\\user_routes.py"
+        },
+        {
+          "method": "POST",
+          "path": "/users",
+          "description": "Create a new user (admin use).",
+          "file": "app\\routes\\user_routes.py"
+        },
+        {
+          "method": "PUT",
+          "path": "/users/{id}",
+          "description": "Update an existing user's details.",
+          "file": "app\\routes\\user_routes.py"
+        },
+        {
+          "method": "DELETE",
+          "path": "/users/{id}",
+          "description": "Delete a user by ID.",
+          "file": "app\\routes\\user_routes.py"
+        },
+        {
+          "method": "GET",
+          "path": "/rooms",
+          "description": "Search available rooms with filters (type, status) and pagination.",
+          "file": "app\\routes\\room_routes.py"
+        },
+        {
+          "method": "GET",
+          "path": "/rooms/{id}",
+          "description": "Get details of a specific room.",
+          "file": "app\\routes\\room_routes.py"
+        },
+        {
+          "method": "POST",
+          "path": "/rooms",
+          "description": "Create a new room record.",
+          "file": "app\\routes\\room_routes.py"
+        },
+        {
+          "method": "PUT",
+          "path": "/rooms/{id}",
+          "description": "Update room information (type, rate, status).",
+          "file": "app\\routes\\room_routes.py"
+        },
+        {
+          "method": "DELETE",
+          "path": "/rooms/{id}",
+          "description": "Remove a room from the system.",
+          "file": "app\\routes\\room_routes.py"
+        },
+        {
+          "method": "GET",
+          "path": "/bookings",
+          "description": "List bookings with optional status and date range filters, pagination.",
+          "file": "app\\routes\\booking_routes.py"
+        },
+        {
+          "method": "GET",
+          "path": "/bookings/{id}",
+          "description": "Retrieve a single booking by ID.",
+          "file": "app\\routes\\booking_routes.py"
+        },
+        {
+          "method": "POST",
+          "path": "/bookings",
+          "description": "Create a new booking for a guest.",
+          "file": "app\\routes\\booking_routes.py"
+        },
+        {
+          "method": "PUT",
+          "path": "/bookings/{id}",
+          "description": "Update booking details (dates, status).",
+          "file": "app\\routes\\booking_routes.py"
+        },
+        {
+          "method": "DELETE",
+          "path": "/bookings/{id}",
+          "description": "Cancel a booking.",
+          "file": "app\\routes\\booking_routes.py"
+        },
+        {
+          "method": "POST",
+          "path": "/bookings/{id}/checkin",
+          "description": "Mark a booking as checked‑in and set room status to occupied.",
+          "file": "app\\routes\\booking_routes.py"
+        },
+        {
+          "method": "POST",
+          "path": "/bookings/{id}/checkout",
+          "description": "Mark a booking as checked‑out and set room status to available.",
+          "file": "app\\routes\\booking_routes.py"
+        }
+      ],
+      "database_schema": [
+        {
+          "table_name": "users",
+          "columns": [
+            {
+              "name": "id",
+              "type": "INTEGER",
+              "is_primary_key": true,
+              "is_nullable": false
+            },
+            {
+              "name": "email",
+              "type": "VARCHAR(255)",
+              "is_primary_key": false,
+              "is_nullable": false
+            },
+            {
+              "name": "hashed_password",
+              "type": "VARCHAR(255)",
+              "is_primary_key": false,
+              "is_nullable": false
+            },
+            {
+              "name": "full_name",
+              "type": "VARCHAR(255)",
+              "is_primary_key": false,
+              "is_nullable": false
+            },
+            {
+              "name": "role",
+              "type": "VARCHAR(20)",
+              "is_primary_key": false,
+              "is_nullable": false
+            },
+            {
+              "name": "created_at",
+              "type": "DATETIME",
+              "is_primary_key": false,
+              "is_nullable": false
+            }
+          ]
+        },
+        {
+          "table_name": "rooms",
+          "columns": [
+            {
+              "name": "id",
+              "type": "INTEGER",
+              "is_primary_key": true,
+              "is_nullable": false
+            },
+            {
+              "name": "room_number",
+              "type": "VARCHAR(10)",
+              "is_primary_key": false,
+              "is_nullable": false
+            },
+            {
+              "name": "room_type",
+              "type": "VARCHAR(20)",
+              "is_primary_key": false,
+              "is_nullable": false
+            },
+            {
+              "name": "nightly_rate",
+              "type": "FLOAT",
+              "is_primary_key": false,
+              "is_nullable": false
+            },
+            {
+              "name": "status",
+              "type": "VARCHAR(20)",
+              "is_primary_key": false,
+              "is_nullable": false
+            },
+            {
+              "name": "created_at",
+              "type": "DATETIME",
+              "is_primary_key": false,
+              "is_nullable": false
+            }
+          ]
+        },
+        {
+          "table_name": "bookings",
+          "columns": [
+            {
+              "name": "id",
+              "type": "INTEGER",
+              "is_primary_key": true,
+              "is_nullable": false
+            },
+            {
+              "name": "user_id",
+              "type": "INTEGER",
+              "is_primary_key": false,
+              "is_nullable": false
+            },
+            {
+              "name": "room_id",
+              "type": "INTEGER",
+              "is_primary_key": false,
+              "is_nullable": false
+            },
+            {
+              "name": "start_date",
+              "type": "DATE",
+              "is_primary_key": false,
+              "is_nullable": false
+            },
+            {
+              "name": "end_date",
+              "type": "DATE",
+              "is_primary_key": false,
+              "is_nullable": false
+            },
+            {
+              "name": "status",
+              "type": "VARCHAR(20)",
+              "is_primary_key": false,
+              "is_nullable": false
+            },
+            {
+              "name": "created_at",
+              "type": "DATETIME",
+              "is_primary_key": false,
+              "is_nullable": false
+            }
+          ]
+        }
+      ],
+      "folder_structure": {
+        "backend": [
+          "app/models",
+          "app/schemas",
+          "app/routes",
+          "app/services",
+          "app/dependencies",
+          "app/config",
+          "app/utils"
+        ]
+      },
+      "frontend_structure": {
+        "pages": [
+          "HomePage",
+          "LoginPage",
+          "RegisterPage",
+          "RoomSearchPage",
+          "BookingListPage",
+          "BookingDetailPage",
+          "StaffDashboardPage",
+          "NotFoundPage"
+        ],
+        "components": [
+          "Navbar",
+          "RoomCard",
+          "RoomFilter",
+          "DatePicker",
+          "BookingForm",
+          "BookingItem",
+          "CheckInButton",
+          "CheckOutButton",
+          "Footer",
+          "LoadingSpinner"
+        ]
+      }
+    },
+    "plan": {
+      "project_name": "a_hotel_booking_system_with_ho",
+      "display_name": "A hotel booking system with hotel-staff and guest ",
+      "features": [
+        "A hotel booking system with hotel-staff and guest roles. Staff manage rooms (room number, type: single/double/suite, nightly rate, status: available/occupied/maintenance). Guests search available rooms by date range and room type, and book a room for a date range; overlapping bookings for the same room are rejected. Guests view their upcoming and past bookings. Staff can check guests in and out, which updates room status, and see today's arrivals and departures."
+      ],
+      "tech_stack": {
+        "backend": "FastAPI",
+        "database": "SQLite",
+        "frontend": "React + Vite"
+      },
+      "db_entities": [],
+      "api_modules": [],
+      "user_stories": [],
+      "non_functional_requirements": {
+        "authentication": "required"
+      },
+      "data_entities_detail": [],
+      "out_of_scope": []
+    },
+    "score": 95.93,
+    "success_count": 1,
+    "generation_id": "3655b9291caa4a54bd13a358ce08dde5",
+    "timestamp": "2026-07-28T06:22:42Z"
+  },
+  "lms": {
+    "category": "lms",
+    "idea": "A university course management system with registrar and student roles. Registrars create courses (code, title, credits, instructor name, capacity, semester). Students browse the course catalog and en",
+    "architecture": {
+      "api_endpoints": [
+        {
+          "method": "GET",
+          "path": "/users",
+          "description": "List users with optional search by name or email, filter by role, and pagination",
+          "file": "app\\routes\\user_routes.py"
+        },
+        {
+          "method": "GET",
+          "path": "/users/{id}",
+          "description": "Retrieve a single user by ID",
+          "file": "app\\routes\\user_routes.py"
+        },
+        {
+          "method": "POST",
+          "path": "/users",
+          "description": "Create a new user (registrar or student)",
+          "file": "app\\routes\\user_routes.py"
+        },
+        {
+          "method": "PUT",
+          "path": "/users/{id}",
+          "description": "Update an existing user's information",
+          "file": "app\\routes\\user_routes.py"
+        },
+        {
+          "method": "DELETE",
+          "path": "/users/{id}",
+          "description": "Delete a user by ID",
+          "file": "app\\routes\\user_routes.py"
+        },
+        {
+          "method": "GET",
+          "path": "/courses",
+          "description": "List courses with optional keyword search, filter by semester, and pagination",
+          "file": "app\\routes\\course_routes.py"
+        },
+        {
+          "method": "GET",
+          "path": "/courses/{id}",
+          "description": "Retrieve detailed information for a specific course, including enrolled count",
+          "file": "app\\routes\\course_routes.py"
+        },
+        {
+          "method": "POST",
+          "path": "/courses",
+          "description": "Create a new course with capacity and semester information",
+          "file": "app\\routes\\course_routes.py"
+        },
+        {
+          "method": "PUT",
+          "path": "/courses/{id}",
+          "description": "Update an existing course's details",
+          "file": "app\\routes\\course_routes.py"
+        },
+        {
+          "method": "DELETE",
+          "path": "/courses/{id}",
+          "description": "Delete a course by ID",
+          "file": "app\\routes\\course_routes.py"
+        },
+        {
+          "method": "GET",
+          "path": "/enrollments",
+          "description": "List enrollments with optional filters by student_id or course_id and pagination",
+          "file": "app\\routes\\enrollment_routes.py"
+        },
+        {
+          "method": "GET",
+          "path": "/enrollments/{id}",
+          "description": "Retrieve a specific enrollment record",
+          "file": "app\\routes\\enrollment_routes.py"
+        },
+        {
+          "method": "POST",
+          "path": "/enrollments",
+          "description": "Enroll a student in a course if capacity permits",
+          "file": "app\\routes\\enrollment_routes.py"
+        },
+        {
+          "method": "PUT",
+          "path": "/enrollments/{id}",
+          "description": "Update enrollment details (e.g., change course)",
+          "file": "app\\routes\\enrollment_routes.py"
+        },
+        {
+          "method": "DELETE",
+          "path": "/enrollments/{id}",
+          "description": "Drop a student from a course",
+          "file": "app\\routes\\enrollment_routes.py"
+        },
+        {
+          "method": "GET",
+          "path": "/semesters",
+          "description": "List semesters with optional search and pagination",
+          "file": "app\\routes\\semester_routes.py"
+        },
+        {
+          "method": "GET",
+          "path": "/semesters/{id}",
+          "description": "Retrieve a specific semester",
+          "file": "app\\routes\\semester_routes.py"
+        },
+        {
+          "method": "POST",
+          "path": "/semesters",
+          "description": "Create a new semester record",
+          "file": "app\\routes\\semester_routes.py"
+        },
+        {
+          "method": "PUT",
+          "path": "/semesters/{id}",
+          "description": "Update an existing semester",
+          "file": "app\\routes\\semester_routes.py"
+        },
+        {
+          "method": "DELETE",
+          "path": "/semesters/{id}",
+          "description": "Delete a semester by ID",
+          "file": "app\\routes\\semester_routes.py"
+        },
+        {
+          "method": "GET",
+          "path": "/instructors",
+          "description": "List instructors with optional search and pagination",
+          "file": "app\\routes\\instructor_routes.py"
+        },
+        {
+          "method": "GET",
+          "path": "/instructors/{id}",
+          "description": "Retrieve a specific instructor",
+          "file": "app\\routes\\instructor_routes.py"
+        },
+        {
+          "method": "POST",
+          "path": "/instructors",
+          "description": "Create a new instructor record",
+          "file": "app\\routes\\instructor_routes.py"
+        },
+        {
+          "method": "PUT",
+          "path": "/instructors/{id}",
+          "description": "Update an instructor's information",
+          "file": "app\\routes\\instructor_routes.py"
+        },
+        {
+          "method": "DELETE",
+          "path": "/instructors/{id}",
+          "description": "Delete an instructor by ID",
+          "file": "app\\routes\\instructor_routes.py"
+        },
+        {
+          "method": "POST",
+          "path": "/seed",
+          "description": "Populate the database with demo data for all tables",
+          "file": "app\\routes\\seed_routes.py"
+        },
+        {
+          "method": "GET",
+          "path": "/stats/summary",
+          "description": "Return aggregate counts and key metrics for dashboard (total users, courses, enrollments, etc.)",
+          "file": "app\\routes\\stats_routes.py"
+        },
+        {
+          "method": "POST",
+          "path": "/auth/register",
+          "description": "Register a new user and issue JWT",
+          "file": "app\\routes\\auth_routes.py"
+        },
+        {
+          "method": "POST",
+          "path": "/auth/login",
+          "description": "Authenticate user credentials and return JWT",
+          "file": "app\\routes\\auth_routes.py"
+        }
+      ],
+      "database_schema": [
+        {
+          "table_name": "users",
+          "columns": [
+            {
+              "name": "id",
+              "type": "INTEGER",
+              "is_primary_key": true,
+              "is_nullable": false
+            },
+            {
+              "name": "email",
+              "type": "VARCHAR(255)",
+              "is_primary_key": false,
+              "is_nullable": false
+            },
+            {
+              "name": "hashed_password",
+              "type": "VARCHAR(255)",
+              "is_primary_key": false,
+              "is_nullable": false
+            },
+            {
+              "name": "full_name",
+              "type": "VARCHAR(255)",
+              "is_primary_key": false,
+              "is_nullable": true
+            },
+            {
+              "name": "role",
+              "type": "VARCHAR(50)",
+              "is_primary_key": false,
+              "is_nullable": false
+            },
+            {
+              "name": "created_at",
+              "type": "DATETIME",
+              "is_primary_key": false,
+              "is_nullable": false
+            }
+          ]
+        },
+        {
+          "table_name": "instructors",
+          "columns": [
+            {
+              "name": "id",
+              "type": "INTEGER",
+              "is_primary_key": true,
+              "is_nullable": false
+            },
+            {
+              "name": "name",
+              "type": "VARCHAR(255)",
+              "is_primary_key": false,
+              "is_nullable": false
+            },
+            {
+              "name": "email",
+              "type": "VARCHAR(255)",
+              "is_primary_key": false,
+              "is_nullable": false
+            }
+          ]
+        },
+        {
+          "table_name": "semesters",
+          "columns": [
+            {
+              "name": "id",
+              "type": "INTEGER",
+              "is_primary_key": true,
+              "is_nullable": false
+            },
+            {
+              "name": "name",
+              "type": "VARCHAR(100)",
+              "is_primary_key": false,
+              "is_nullable": false
+            },
+            {
+              "name": "start_date",
+              "type": "DATE",
+              "is_primary_key": false,
+              "is_nullable": false
+            },
+            {
+              "name": "end_date",
+              "type": "DATE",
+              "is_primary_key": false,
+              "is_nullable": false
+            }
+          ]
+        },
+        {
+          "table_name": "courses",
+          "columns": [
+            {
+              "name": "id",
+              "type": "INTEGER",
+              "is_primary_key": true,
+              "is_nullable": false
+            },
+            {
+              "name": "code",
+              "type": "VARCHAR(20)",
+              "is_primary_key": false,
+              "is_nullable": false
+            },
+            {
+              "name": "title",
+              "type": "VARCHAR(255)",
+              "is_primary_key": false,
+              "is_nullable": false
+            },
+            {
+              "name": "credits",
+              "type": "INTEGER",
+              "is_primary_key": false,
+              "is_nullable": false
+            },
+            {
+              "name": "capacity",
+              "type": "INTEGER",
+              "is_primary_key": false,
+              "is_nullable": false
+            },
+            {
+              "name": "instructor_id",
+              "type": "INTEGER",
+              "is_primary_key": false,
+              "is_nullable": false
+            },
+            {
+              "name": "semester_id",
+              "type": "INTEGER",
+              "is_primary_key": false,
+              "is_nullable": false
+            },
+            {
+              "name": "created_at",
+              "type": "DATETIME",
+              "is_primary_key": false,
+              "is_nullable": false
+            }
+          ]
+        },
+        {
+          "table_name": "enrollments",
+          "columns": [
+            {
+              "name": "id",
+              "type": "INTEGER",
+              "is_primary_key": true,
+              "is_nullable": false
+            },
+            {
+              "name": "student_id",
+              "type": "INTEGER",
+              "is_primary_key": false,
+              "is_nullable": false
+            },
+            {
+              "name": "course_id",
+              "type": "INTEGER",
+              "is_primary_key": false,
+              "is_nullable": false
+            },
+            {
+              "name": "enrolled_at",
+              "type": "DATETIME",
+              "is_primary_key": false,
+              "is_nullable": false
+            }
+          ]
+        }
+      ],
+      "folder_structure": {
+        "backend": [
+          "app",
+          "app/models",
+          "app/schemas",
+          "app/routes",
+          "app/services",
+          "app/utils",
+          "app/dependencies",
+          "app/config",
+          "app/main.py"
+        ]
+      },
+      "frontend_structure": {
+        "pages": [
+          "LoginPage",
+          "RegisterPage",
+          "CourseCatalogPage",
+          "CourseDetailPage",
+          "StudentEnrollmentsPage",
+          "RegistrarDashboardPage",
+          "CourseFormPage",
+          "EnrollmentManagementPage"
+        ],
+        "components": [
+          "Navbar",
+          "Footer",
+          "CourseCard",
+          "EnrollmentList",
+          "Pagination",
+          "SearchBar",
+          "CourseForm",
+          "EnrollmentForm",
+          "StatsSummary",
+          "ProtectedRoute"
+        ]
+      }
+    },
+    "plan": {
+      "project_name": "university_course_management",
+      "display_name": "University Course Management System",
+      "features": [
+        "Create, read, update, and delete courses with capacity and semester information",
+        "Allow students to enroll in courses while enforcing capacity limits",
+        "Show enrollment counts per course and enable dropping a student",
+        "List a student's current enrollments and compute total semester credits"
+      ],
+      "tech_stack": {
+        "backend": "FastAPI",
+        "database": "SQLite",
+        "auth": "JWT",
+        "frontend": "React + Vite"
+      },
+      "db_entities": [
+        "User",
+        "Course",
+        "Enrollment"
+      ],
+      "api_modules": [
+        "auth",
+        "users",
+        "courses",
+        "enrollments"
+      ],
+      "user_stories": [
+        {
+          "role": "Registrar",
+          "want": "to create a new course with code, title, credits, instructor, capacity, and semester",
+          "acceptance_criteria": [
+            "A POST /courses request with all required fields returns 201 Created and the course appears in GET /courses",
+            "If any required field is missing, the API returns 400 Bad Request with a descriptive error",
+            "The created course's capacity is stored and cannot be negative"
+          ]
+        },
+        {
+          "role": "Registrar",
+          "want": "to view enrollment counts for each of my courses",
+          "acceptance_criteria": [
+            "GET /courses returns a list where each course object includes an \"enrolled_count\" field",
+            "The \"enrolled_count\" equals the number of Enrollment records linked to that course",
+            "Counts update in real‑time after any enrollment or drop operation"
+          ]
+        },
+        {
+          "role": "Registrar",
+          "want": "to drop a student from a specific course",
+          "acceptance_criteria": [
+            "DELETE /enrollments/{enrollment_id} returns 204 No Content when the enrollment exists",
+            "After deletion, GET /courses/{course_id} shows a decremented \"enrolled_count\"",
+            "The dropped student no longer appears in GET /students/{student_id}/enrollments"
+          ]
+        },
+        {
+          "role": "Student",
+          "want": "to browse the course catalog filtered by semester",
+          "acceptance_criteria": [
+            "GET /courses?semester=Fall2025 returns only courses with semester = \"Fall2025\"",
+            "Each course object includes code, title, credits, instructor, capacity, and current enrollment count",
+            "Pagination is applied when more than 20 courses match the filter"
+          ]
+        },
+        {
+          "role": "Student",
+          "want": "to enroll in a course that still has open seats",
+          "acceptance_criteria": [
+            "POST /enrollments with valid student_id and course_id returns 201 Created when enrollment_count < capacity",
+            "The response includes the new enrollment record with a unique id",
+            "If the course is full, the API returns 409 Conflict with a message \"Course capacity reached\""
+          ]
+        },
+        {
+          "role": "Student",
+          "want": "to view all courses I am enrolled in and see my total credit load",
+          "acceptance_criteria": [
+            "GET /students/{student_id}/enrollments returns a list of enrolled courses with their credit values",
+            "The response also includes a \"total_credits\" field that sums the credits of all returned courses",
+            "If the student has no enrollments, the list is empty and total_credits = 0"
+          ]
+        }
+      ],
+      "non_functional_requirements": {
+        "authentication": "required - protect all endpoints with JWT",
+        "authorization": "role‑based: Registrars can manage courses and enrollments; Students can only view catalog, enroll, and view their own enrollments",
+        "pagination": "required on GET /courses and GET /students/{id}/enrollments",
+        "search": "course catalog filtering by semester (and optional keyword search)",
+        "file_uploads": "no",
+        "real_time": "no - consistency is achieved via immediate DB writes"
+      },
+      "data_entities_detail": [
+        {
+          "name": "User",
+          "description": "Represents both registrars and students; role determines permissions",
+          "key_fields": [
+            "id",
+            "email",
+            "role"
+          ],
+          "relationships": [
+            "has many Enrollments (as student)"
+          ]
+        },
+        {
+          "name": "Course",
+          "description": "Stores course metadata and capacity constraints",
+          "key_fields": [
+            "id",
+            "code",
+            "semester"
+          ],
+          "relationships": [
+            "has many Enrollments"
+          ]
+        },
+        {
+          "name": "Enrollment",
+          "description": "Links a student to a course for a specific semester",
+          "key_fields": [
+            "id",
+            "student_id",
+            "course_id"
+          ],
+          "relationships": [
+            "belongs to User (student)",
+            "belongs to Course"
+          ]
+        }
+      ],
+      "out_of_scope": [
+        "Prerequisite checking or degree audit functionality",
+        "Waitlist management for full courses",
+        "Bulk import/export of course data"
+      ]
+    },
+    "score": 97.11,
+    "success_count": 1,
+    "generation_id": "f1f1b694f6a6478b9780eac3c04624ca",
+    "timestamp": "2026-07-27T23:30:50Z"
+  },
+  "real_estate": {
+    "category": "real_estate",
+    "idea": "A real estate listings platform with agent and buyer roles. Agents create property listings (address, price, bedrooms, bathrooms, square footage, description, status: available/pending/sold). Buyers b",
+    "architecture": {
+      "api_endpoints": [
+        {
+          "method": "POST",
+          "path": "/seed",
+          "description": "Populate the database with demo data for all tables",
+          "file": "app\\routes\\seed_routes.py"
+        },
+        {
+          "method": "GET",
+          "path": "/stats/summary",
+          "description": "Return aggregate counts and key metrics for dashboard overview",
+          "file": "app\\routes\\stats_routes.py"
+        },
+        {
+          "method": "POST",
+          "path": "/auth/register",
+          "description": "Create a new user account (agent or buyer) and return authentication token",
+          "file": "app\\routes\\auth_routes.py"
+        },
+        {
+          "method": "POST",
+          "path": "/auth/login",
+          "description": "Authenticate user credentials and return JWT token",
+          "file": "app\\routes\\auth_routes.py"
+        },
+        {
+          "method": "GET",
+          "path": "/users",
+          "description": "List users with pagination and optional search by email or role",
+          "file": "app\\routes\\user_routes.py"
+        },
+        {
+          "method": "GET",
+          "path": "/users/{id}",
+          "description": "Retrieve a single user by ID",
+          "file": "app\\routes\\user_routes.py"
+        },
+        {
+          "method": "POST",
+          "path": "/users",
+          "description": "Create a new user (admin use) and return the created user object",
+          "file": "app\\routes\\user_routes.py"
+        },
+        {
+          "method": "PUT",
+          "path": "/users/{id}",
+          "description": "Update an existing user's details",
+          "file": "app\\routes\\user_routes.py"
+        },
+        {
+          "method": "DELETE",
+          "path": "/users/{id}",
+          "description": "Delete a user by ID",
+          "file": "app\\routes\\user_routes.py"
+        },
+        {
+          "method": "GET",
+          "path": "/listings",
+          "description": "Search and list property listings with filters (price_min, price_max, bedrooms, city) and pagination",
+          "file": "app\\routes\\listing_routes.py"
+        },
+        {
+          "method": "GET",
+          "path": "/listings/{id}",
+          "description": "Retrieve details of a specific listing by ID",
+          "file": "app\\routes\\listing_routes.py"
+        },
+        {
+          "method": "POST",
+          "path": "/listings",
+          "description": "Create a new property listing (agent only)",
+          "file": "app\\routes\\listing_routes.py"
+        },
+        {
+          "method": "PUT",
+          "path": "/listings/{id}",
+          "description": "Update an existing listing (owner agent only)",
+          "file": "app\\routes\\listing_routes.py"
+        },
+        {
+          "method": "DELETE",
+          "path": "/listings/{id}",
+          "description": "Delete a listing (owner agent only)",
+          "file": "app\\routes\\listing_routes.py"
+        },
+        {
+          "method": "GET",
+          "path": "/favorites",
+          "description": "List the authenticated buyer's favorite listings with pagination",
+          "file": "app\\routes\\favorite_routes.py"
+        },
+        {
+          "method": "GET",
+          "path": "/favorites/{id}",
+          "description": "Retrieve a specific favorite record by ID (buyer only)",
+          "file": "app\\routes\\favorite_routes.py"
+        },
+        {
+          "method": "POST",
+          "path": "/favorites",
+          "description": "Add a listing to the buyer's favorites; returns 201 or 409 on duplicate",
+          "file": "app\\routes\\favorite_routes.py"
+        },
+        {
+          "method": "PUT",
+          "path": "/favorites/{id}",
+          "description": "Update a favorite record (e.g., change notes) for the buyer",
+          "file": "app\\routes\\favorite_routes.py"
+        },
+        {
+          "method": "DELETE",
+          "path": "/favorites/{id}",
+          "description": "Remove a favorite record",
+          "file": "app\\routes\\favorite_routes.py"
+        },
+        {
+          "method": "GET",
+          "path": "/viewing_requests",
+          "description": "List viewing requests; buyers see their own, agents see requests for their listings, supports status filter and pagination",
+          "file": "app\\routes\\viewingrequest_routes.py"
+        },
+        {
+          "method": "GET",
+          "path": "/viewing_requests/{id}",
+          "description": "Retrieve a specific viewing request by ID with buyer and listing details",
+          "file": "app\\routes\\viewingrequest_routes.py"
+        },
+        {
+          "method": "POST",
+          "path": "/viewing_requests",
+          "description": "Create a new viewing request for a listing (buyer only)",
+          "file": "app\\routes\\viewingrequest_routes.py"
+        },
+        {
+          "method": "PUT",
+          "path": "/viewing_requests/{id}",
+          "description": "Update status of a viewing request (agent only) to confirmed or declined",
+          "file": "app\\routes\\viewingrequest_routes.py"
+        },
+        {
+          "method": "DELETE",
+          "path": "/viewing_requests/{id}",
+          "description": "Cancel a viewing request (buyer only) before it is confirmed",
+          "file": "app\\routes\\viewingrequest_routes.py"
+        }
+      ],
+      "database_schema": [
+        {
+          "table_name": "users",
+          "columns": [
+            {
+              "name": "id",
+              "type": "INTEGER",
+              "is_primary_key": true,
+              "is_nullable": false
+            },
+            {
+              "name": "email",
+              "type": "VARCHAR(255)",
+              "is_primary_key": false,
+              "is_nullable": false
+            },
+            {
+              "name": "hashed_password",
+              "type": "VARCHAR(255)",
+              "is_primary_key": false,
+              "is_nullable": false
+            },
+            {
+              "name": "role",
+              "type": "VARCHAR(20)",
+              "is_primary_key": false,
+              "is_nullable": false
+            },
+            {
+              "name": "created_at",
+              "type": "DATETIME",
+              "is_primary_key": false,
+              "is_nullable": false
+            }
+          ]
+        },
+        {
+          "table_name": "listings",
+          "columns": [
+            {
+              "name": "id",
+              "type": "INTEGER",
+              "is_primary_key": true,
+              "is_nullable": false
+            },
+            {
+              "name": "agent_id",
+              "type": "INTEGER",
+              "is_primary_key": false,
+              "is_nullable": false
+            },
+            {
+              "name": "address",
+              "type": "VARCHAR(255)",
+              "is_primary_key": false,
+              "is_nullable": false
+            },
+            {
+              "name": "city",
+              "type": "VARCHAR(100)",
+              "is_primary_key": false,
+              "is_nullable": false
+            },
+            {
+              "name": "price",
+              "type": "INTEGER",
+              "is_primary_key": false,
+              "is_nullable": false
+            },
+            {
+              "name": "bedrooms",
+              "type": "INTEGER",
+              "is_primary_key": false,
+              "is_nullable": false
+            },
+            {
+              "name": "bathrooms",
+              "type": "INTEGER",
+              "is_primary_key": false,
+              "is_nullable": false
+            },
+            {
+              "name": "square_footage",
+              "type": "INTEGER",
+              "is_primary_key": false,
+              "is_nullable": false
+            },
+            {
+              "name": "description",
+              "type": "TEXT",
+              "is_primary_key": false,
+              "is_nullable": true
+            },
+            {
+              "name": "status",
+              "type": "VARCHAR(20)",
+              "is_primary_key": false,
+              "is_nullable": false
+            },
+            {
+              "name": "created_at",
+              "type": "DATETIME",
+              "is_primary_key": false,
+              "is_nullable": false
+            }
+          ]
+        },
+        {
+          "table_name": "favorites",
+          "columns": [
+            {
+              "name": "id",
+              "type": "INTEGER",
+              "is_primary_key": true,
+              "is_nullable": false
+            },
+            {
+              "name": "buyer_id",
+              "type": "INTEGER",
+              "is_primary_key": false,
+              "is_nullable": false
+            },
+            {
+              "name": "listing_id",
+              "type": "INTEGER",
+              "is_primary_key": false,
+              "is_nullable": false
+            },
+            {
+              "name": "created_at",
+              "type": "DATETIME",
+              "is_primary_key": false,
+              "is_nullable": false
+            }
+          ]
+        },
+        {
+          "table_name": "viewing_requests",
+          "columns": [
+            {
+              "name": "id",
+              "type": "INTEGER",
+              "is_primary_key": true,
+              "is_nullable": false
+            },
+            {
+              "name": "buyer_id",
+              "type": "INTEGER",
+              "is_primary_key": false,
+              "is_nullable": false
+            },
+            {
+              "name": "listing_id",
+              "type": "INTEGER",
+              "is_primary_key": false,
+              "is_nullable": false
+            },
+            {
+              "name": "requested_datetime",
+              "type": "DATETIME",
+              "is_primary_key": false,
+              "is_nullable": false
+            },
+            {
+              "name": "status",
+              "type": "VARCHAR(20)",
+              "is_primary_key": false,
+              "is_nullable": false
+            },
+            {
+              "name": "created_at",
+              "type": "DATETIME",
+              "is_primary_key": false,
+              "is_nullable": false
+            }
+          ]
+        }
+      ],
+      "folder_structure": {
+        "backend": [
+          "app/models",
+          "app/schemas",
+          "app/routes",
+          "app/services",
+          "app/dependencies",
+          "app/config",
+          "app/utils"
+        ]
+      },
+      "frontend_structure": {
+        "pages": [
+          "HomePage",
+          "LoginPage",
+          "RegisterPage",
+          "ListingsPage",
+          "ListingDetailPage",
+          "FavoritesPage",
+          "ViewingRequestsPage",
+          "AgentDashboardPage",
+          "NotFoundPage"
+        ],
+        "components": [
+          "Header",
+          "Footer",
+          "ListingCard",
+          "ListingSearchBar",
+          "FavoriteButton",
+          "ViewingRequestForm",
+          "Pagination",
+          "ProtectedRoute",
+          "NotificationToast",
+          "ListingStatusBadge"
+        ]
+      }
+    },
+    "plan": {
+      "project_name": "real_estate_marketplace",
+      "display_name": "Real Estate Listings Platform",
+      "features": [
+        "Agents can create, edit, and change the status of property listings",
+        "Buyers can search listings by price range, bedrooms, and location with pagination",
+        "Buyers request viewings; agents view, confirm, or decline those requests",
+        "Secure login with role‑based access control for agents and buyers"
+      ],
+      "tech_stack": {
+        "backend": "FastAPI",
+        "database": "SQLite",
+        "auth": "JWT",
+        "frontend": "React + Vite"
+      },
+      "db_entities": [
+        "User",
+        "Listing",
+        "Favorite",
+        "ViewingRequest"
+      ],
+      "api_modules": [
+        "auth",
+        "users",
+        "listings",
+        "favorites",
+        "viewing_requests"
+      ],
+      "user_stories": [
+        {
+          "role": "Agent",
+          "want": "to create a new property listing",
+          "acceptance_criteria": [
+            "When an agent submits a listing with all required fields, the API returns 201 Created and the listing appears in the database",
+            "The created listing is searchable by price, bedrooms, and location immediately after creation",
+            "Only users with the Agent role can access the create‑listing endpoint"
+          ]
+        },
+        {
+          "role": "Agent",
+          "want": "to update the status of a listing (available, pending, sold)",
+          "acceptance_criteria": [
+            "A PATCH request with a valid status changes the listing's status field and returns 200 OK",
+            "The updated status is reflected in subsequent search results",
+            "Agents cannot change the status of listings they do not own"
+          ]
+        },
+        {
+          "role": "Buyer",
+          "want": "to search listings by price range, number of bedrooms, and location",
+          "acceptance_criteria": [
+            "GET /listings with query parameters price_min, price_max, bedrooms, city returns only listings that satisfy all filters",
+            "Results are paginated with a default page size of 20 and include total count",
+            "Search endpoint returns 200 OK even when no listings match, with an empty array"
+          ]
+        },
+        {
+          "role": "Buyer",
+          "want": "to save a listing as a favorite",
+          "acceptance_criteria": [
+            "POST /favorites with a valid listing_id creates a favorite record and returns 201 Created",
+            "The same buyer cannot create duplicate favorite records for the same listing (returns 409 Conflict)",
+            "Favorites are only visible to the buyer who created them"
+          ]
+        },
+        {
+          "role": "Buyer",
+          "want": "to request a viewing for a specific listing",
+          "acceptance_criteria": [
+            "POST /viewing_requests with listing_id and desired datetime creates a request with status 'pending' and returns 201 Created",
+            "The request is linked to both the buyer and the listing in the database",
+            "Buyers cannot request a viewing for listings whose status is 'sold'"
+          ]
+        },
+        {
+          "role": "Agent",
+          "want": "to view all pending viewing requests for my listings",
+          "acceptance_criteria": [
+            "GET /viewing_requests?status=pending returns only requests for listings owned by the authenticated agent",
+            "Each returned request includes buyer info, requested datetime, and listing summary",
+            "If the agent has no pending requests, the endpoint returns an empty array with 200 OK"
+          ]
+        },
+        {
+          "role": "Agent",
+          "want": "to confirm or decline a viewing request",
+          "acceptance_criteria": [
+            "PATCH /viewing_requests/{id} with status 'confirmed' or 'declined' updates the request and returns 200 OK",
+            "The buyer receives a notification flag (e.g., status field) reflecting the new state",
+            "Agents cannot modify requests that belong to listings they do not own"
+          ]
+        },
+        {
+          "role": "Buyer",
+          "want": "to see a list of my saved favorite listings",
+          "acceptance_criteria": [
+            "GET /favorites returns all favorite records belonging to the authenticated buyer",
+            "Each favorite includes the full listing details (address, price, etc.)",
+            "Pagination is applied with a default page size of 10"
+          ]
+        },
+        {
+          "role": "Buyer",
+          "want": "to view the status of my viewing requests",
+          "acceptance_criteria": [
+            "GET /viewing_requests returns only requests made by the authenticated buyer",
+            "Each request includes its current status and the scheduled datetime if confirmed",
+            "The endpoint respects pagination and returns 200 OK"
+          ]
+        }
+      ],
+      "non_functional_requirements": {
+        "authentication": "required - to protect user data and enforce role permissions",
+        "authorization": "role‑based: Agents can manage their own listings and view requests; Buyers can browse, favorite, and request viewings",
+        "pagination": "required on listings, favorites, and viewing_requests endpoints",
+        "search": "required on listings entity",
+        "file_uploads": "no - images are out of scope for this MVP",
+        "real_time": "no - updates are fetched via standard API calls"
+      },
+      "data_entities_detail": [
+        {
+          "name": "User",
+          "description": "Stores account information and role (agent or buyer)",
+          "key_fields": [
+            "id",
+            "email",
+            "role"
+          ],
+          "relationships": [
+            "has many Listings (if agent)",
+            "has many Favorites",
+            "has many ViewingRequests (as buyer)"
+          ]
+        },
+        {
+          "name": "Listing",
+          "description": "Represents a property listed by an agent",
+          "key_fields": [
+            "id",
+            "agent_id",
+            "address",
+            "price",
+            "bedrooms",
+            "bathrooms",
+            "square_footage",
+            "description",
+            "status"
+          ],
+          "relationships": [
+            "belongs to User (agent)",
+            "has many Favorites",
+            "has many ViewingRequests"
+          ]
+        },
+        {
+          "name": "Favorite",
+          "description": "Links a buyer to a listing they saved",
+          "key_fields": [
+            "id",
+            "buyer_id",
+            "listing_id"
+          ],
+          "relationships": [
+            "belongs to User (buyer)",
+            "belongs to Listing"
+          ]
+        },
+        {
+          "name": "ViewingRequest",
+          "description": "Tracks a buyer's request to view a listing and its current status",
+          "key_fields": [
+            "id",
+            "buyer_id",
+            "listing_id",
+            "requested_datetime",
+            "status"
+          ],
+          "relationships": [
+            "belongs to User (buyer)",
+            "belongs to Listing"
+          ]
+        }
+      ],
+      "out_of_scope": [
+        "Image upload and storage for listings",
+        "Messaging or chat between agents and buyers",
+        "Advanced analytics dashboards"
+      ]
+    },
+    "score": 96.75,
+    "success_count": 1,
+    "generation_id": "ee6002c3622444598ec3a589afbf06c3",
+    "timestamp": "2026-07-27T23:57:58Z"
+  },
+  "hr_payroll": {
+    "category": "hr_payroll",
+    "idea": "An employee directory with HR admin and employee roles. HR admins add employees (name, email, department, job title, hire date, manager). Employees can view the directory, search by name or department",
+    "architecture": {
+      "api_endpoints": [
+        {
+          "method": "POST",
+          "path": "/seed",
+          "description": "Populate the database with demo data for all tables.",
+          "file": "app\\routes\\seed_routes.py"
+        },
+        {
+          "method": "GET",
+          "path": "/stats/summary",
+          "description": "Return aggregate counts and key metrics for the dashboard (e.g., total employees, active employees, departments).",
+          "file": "app\\routes\\stats_routes.py"
+        },
+        {
+          "method": "POST",
+          "path": "/auth/register",
+          "description": "Create a new user account with email, password and role.",
+          "file": "app\\routes\\auth_routes.py"
+        },
+        {
+          "method": "POST",
+          "path": "/auth/login",
+          "description": "Authenticate a user and return a JWT access token.",
+          "file": "app\\routes\\auth_routes.py"
+        },
+        {
+          "method": "GET",
+          "path": "/auth/me",
+          "description": "Retrieve the currently authenticated user's profile.",
+          "file": "app\\routes\\auth_routes.py"
+        },
+        {
+          "method": "GET",
+          "path": "/employees",
+          "description": "List employees with optional search by name, filter by department, pagination (limit/offset), and optional inclusion of inactive records.",
+          "file": "app\\routes\\employee_routes.py"
+        },
+        {
+          "method": "GET",
+          "path": "/employees/{id}",
+          "description": "Get detailed information for a single employee by ID.",
+          "file": "app\\routes\\employee_routes.py"
+        },
+        {
+          "method": "POST",
+          "path": "/employees",
+          "description": "Create a new employee record (HR admin only).",
+          "file": "app\\routes\\employee_routes.py"
+        },
+        {
+          "method": "PUT",
+          "path": "/employees/{id}",
+          "description": "Fully update an existing employee's details (HR admin only).",
+          "file": "app\\routes\\employee_routes.py"
+        },
+        {
+          "method": "PATCH",
+          "path": "/employees/{id}/deactivate",
+          "description": "Mark an employee as inactive (HR admin only).",
+          "file": "app\\routes\\employee_routes.py"
+        },
+        {
+          "method": "DELETE",
+          "path": "/employees/{id}",
+          "description": "Permanently delete an employee record (HR admin only).",
+          "file": "app\\routes\\employee_routes.py"
+        },
+        {
+          "method": "GET",
+          "path": "/employees/{id}/org-chart",
+          "description": "Return a hierarchical JSON tree of the employee's manager chain and direct reports.",
+          "file": "app\\routes\\employee_routes.py"
+        }
+      ],
+      "database_schema": [
+        {
+          "table_name": "roles",
+          "columns": [
+            {
+              "name": "id",
+              "type": "INTEGER",
+              "is_primary_key": true,
+              "is_nullable": false
+            },
+            {
+              "name": "name",
+              "type": "VARCHAR(50)",
+              "is_primary_key": false,
+              "is_nullable": false
+            }
+          ]
+        },
+        {
+          "table_name": "users",
+          "columns": [
+            {
+              "name": "id",
+              "type": "INTEGER",
+              "is_primary_key": true,
+              "is_nullable": false
+            },
+            {
+              "name": "email",
+              "type": "VARCHAR(255)",
+              "is_primary_key": false,
+              "is_nullable": false
+            },
+            {
+              "name": "hashed_password",
+              "type": "VARCHAR(255)",
+              "is_primary_key": false,
+              "is_nullable": false
+            },
+            {
+              "name": "role_id",
+              "type": "INTEGER",
+              "is_primary_key": false,
+              "is_nullable": false
+            }
+          ]
+        },
+        {
+          "table_name": "departments",
+          "columns": [
+            {
+              "name": "id",
+              "type": "INTEGER",
+              "is_primary_key": true,
+              "is_nullable": false
+            },
+            {
+              "name": "name",
+              "type": "VARCHAR(100)",
+              "is_primary_key": false,
+              "is_nullable": false
+            }
+          ]
+        },
+        {
+          "table_name": "employees",
+          "columns": [
+            {
+              "name": "id",
+              "type": "INTEGER",
+              "is_primary_key": true,
+              "is_nullable": false
+            },
+            {
+              "name": "name",
+              "type": "VARCHAR(150)",
+              "is_primary_key": false,
+              "is_nullable": false
+            },
+            {
+              "name": "email",
+              "type": "VARCHAR(255)",
+              "is_primary_key": false,
+              "is_nullable": false
+            },
+            {
+              "name": "department_id",
+              "type": "INTEGER",
+              "is_primary_key": false,
+              "is_nullable": false
+            },
+            {
+              "name": "job_title",
+              "type": "VARCHAR(100)",
+              "is_primary_key": false,
+              "is_nullable": false
+            },
+            {
+              "name": "hire_date",
+              "type": "DATE",
+              "is_primary_key": false,
+              "is_nullable": false
+            },
+            {
+              "name": "manager_id",
+              "type": "INTEGER",
+              "is_primary_key": false,
+              "is_nullable": true
+            },
+            {
+              "name": "active",
+              "type": "BOOLEAN",
+              "is_primary_key": false,
+              "is_nullable": false
+            }
+          ]
+        }
+      ],
+      "folder_structure": {
+        "backend": [
+          "app",
+          "app/models",
+          "app/schemas",
+          "app/routes",
+          "app/services",
+          "app/utils",
+          "app/dependencies",
+          "app/config",
+          "app/main.py"
+        ]
+      },
+      "frontend_structure": {
+        "pages": [
+          "LoginPage",
+          "DashboardPage",
+          "EmployeeListPage",
+          "EmployeeDetailPage",
+          "EmployeeEditPage",
+          "OrgChartPage",
+          "NotFoundPage"
+        ],
+        "components": [
+          "Header",
+          "Footer",
+          "SearchBar",
+          "PaginationControls",
+          "EmployeeTable",
+          "EmployeeCard",
+          "EmployeeForm",
+          "OrgChartNode",
+          "RoleBasedRoute",
+          "LoadingSpinner"
+        ]
+      }
+    },
+    "plan": {
+      "project_name": "employee_directory",
+      "display_name": "Employee Directory",
+      "features": [
+        "HR admins can create, read, update, and deactivate employee records",
+        "Employees can search by name and filter by department with pagination",
+        "Provides hierarchical manager‑report relationships for any employee",
+        "Restricts write operations to HR admins while allowing read‑only access to all employees"
+      ],
+      "tech_stack": {
+        "backend": "FastAPI",
+        "database": "SQLite",
+        "auth": "JWT",
+        "frontend": "React + Vite"
+      },
+      "db_entities": [
+        "Employee"
+      ],
+      "api_modules": [
+        "auth",
+        "employees"
+      ],
+      "user_stories": [
+        {
+          "role": "HR administrator",
+          "want": "to add a new employee with all required fields",
+          "acceptance_criteria": [
+            "POST /api/employees returns 201 and the created employee JSON with a generated id",
+            "All required fields (name, email, department, job title, hire date, manager) are persisted",
+            "The new employee appears in subsequent GET /api/employees list calls"
+          ]
+        },
+        {
+          "role": "HR administrator",
+          "want": "to edit an existing employee’s details",
+          "acceptance_criteria": [
+            "PUT /api/employees/{id} with valid fields returns 200 and the updated employee JSON",
+            "Changes are reflected in a following GET /api/employees/{id}",
+            "Attempting to update a non‑existent employee returns 404"
+          ]
+        },
+        {
+          "role": "HR administrator",
+          "want": "to mark an employee as inactive when they leave",
+          "acceptance_criteria": [
+            "PATCH /api/employees/{id}/deactivate returns 200 and sets active = false",
+            "Inactive employees are excluded from the default GET /api/employees list unless a query param include_inactive=true is supplied",
+            "Deactivating an already inactive employee returns 400 with an appropriate error message"
+          ]
+        },
+        {
+          "role": "Employee",
+          "want": "to search the directory by employee name",
+          "acceptance_criteria": [
+            "GET /api/employees?search=John returns a 200 list containing only employees whose name contains 'John' (case‑insensitive)",
+            "Results are paginated with a default page size of 20",
+            "Only active employees are returned unless include_inactive=true is specified"
+          ]
+        },
+        {
+          "role": "Employee",
+          "want": "to filter the directory by department",
+          "acceptance_criteria": [
+            "GET /api/employees?department=Engineering returns 200 with employees whose department field equals 'Engineering'",
+            "The filter works together with name search (both query params can be combined)",
+            "Pagination applies to filtered results as well"
+          ]
+        },
+        {
+          "role": "Employee",
+          "want": "to view an org chart for any employee",
+          "acceptance_criteria": [
+            "GET /api/employees/{id}/org-chart returns 200 with a JSON tree of manager → direct reports recursively",
+            "The root node matches the requested employee id",
+            "If the employee has no manager, the manager field is null; if no reports, the reports array is empty"
+          ]
+        }
+      ],
+      "non_functional_requirements": {
+        "authentication": "required — all endpoints must be accessed by an authenticated user",
+        "authorization": "HR admin role can POST/PUT/PATCH; employee role can only GET",
+        "pagination": "required on GET /api/employees list and any filtered/search results",
+        "search": "required on Employee entity for name and department fields",
+        "file_uploads": "no",
+        "real_time": "no"
+      },
+      "data_entities_detail": [
+        {
+          "name": "Employee",
+          "description": "Stores core employee profile and reporting information",
+          "key_fields": [
+            "id",
+            "email"
+          ],
+          "relationships": [
+            "manager_id references Employee.id (self‑referential)"
+          ]
+        }
+      ],
+      "out_of_scope": [
+        "Bulk import/export of employee data",
+        "Integration with external payroll or HRIS systems",
+        "Mobile native applications"
+      ]
+    },
+    "score": 98.1,
+    "success_count": 1,
+    "generation_id": "84bef3df2ed845a3845e10f54c81c80c",
+    "timestamp": "2026-07-28T05:15:32Z"
   }
 }

@@ -1,7 +1,7 @@
 {
   "patterns": {
     "RouterExportMismatch": {
-      "count": 39,
+      "count": 40,
       "examples": [
         {
           "project": "test_app",
@@ -25,7 +25,7 @@
         }
       ],
       "first_seen": "2026-06-21T20:43:34.977754",
-      "last_seen": "2026-07-22T04:31:43.532541",
+      "last_seen": "2026-07-28T05:24:12.479472",
       "stage": "build"
     },
     "NoReferencedTableError": {
@@ -113,7 +113,7 @@
       "stage": "runtime"
     },
     "SQLAlchemyError": {
-      "count": 15,
+      "count": 17,
       "examples": [
         {
           "project": "HR Onboarding System",
@@ -137,7 +137,7 @@
         }
       ],
       "first_seen": "2026-06-21T21:30:53.208370",
-      "last_seen": "2026-07-21T21:37:49.022810",
+      "last_seen": "2026-07-28T05:24:12.479541",
       "stage": "runtime"
     },
     "ValidationError": {
@@ -217,7 +217,7 @@
       "stage": "generation"
     },
     "MissingEndpoint": {
-      "count": 356,
+      "count": 382,
       "examples": [
         {
           "project": "bug_tracker",
@@ -241,7 +241,7 @@
         }
       ],
       "first_seen": "2026-06-22T07:49:29.613937",
-      "last_seen": "2026-07-22T10:39:39.601411",
+      "last_seen": "2026-07-28T06:18:37.458658",
       "stage": "generation"
     },
     "FastAPIError": {
@@ -341,7 +341,7 @@
       "stage": "runtime"
     },
     "JourneyCRUDFailure": {
-      "count": 41,
+      "count": 47,
       "examples": [
         {
           "project": "BlogSphere",
@@ -365,7 +365,7 @@
         }
       ],
       "first_seen": "2026-06-29T23:47:06.584012",
-      "last_seen": "2026-07-16T18:41:14.355587",
+      "last_seen": "2026-07-28T05:29:52.658556",
       "stage": "integration"
     },
     "InvalidDependsType": {
@@ -393,7 +393,7 @@
       "stage": "runtime"
     },
     "NotNullViolationError": {
-      "count": 41,
+      "count": 46,
       "examples": [
         {
           "project": "todo_list_app",
@@ -417,11 +417,11 @@
         }
       ],
       "first_seen": "2026-07-01T19:37:49.712563",
-      "last_seen": "2026-07-22T08:35:26.395515",
+      "last_seen": "2026-07-28T20:34:24.229845",
       "stage": "runtime"
     },
     "AttributeError": {
-      "count": 27,
+      "count": 28,
       "examples": [
         {
           "project": "gym_tracker",
@@ -445,7 +445,7 @@
         }
       ],
       "first_seen": "2026-07-01T22:56:38.596264",
-      "last_seen": "2026-07-16T09:53:13.235642",
+      "last_seen": "2026-07-27T22:27:00.756877",
       "stage": "runtime"
     },
     "ConfigAttributeError": {
@@ -477,7 +477,7 @@
       "stage": "runtime"
     },
     "ResponseValidationError": {
-      "count": 2,
+      "count": 3,
       "examples": [
         {
           "project": "recipe_forge",
@@ -486,14 +486,18 @@
         {
           "project": "simple_crm",
           "error": "ResponseValidationError"
+        },
+        {
+          "project": "employee_directory",
+          "error": "ResponseValidationError"
         }
       ],
       "first_seen": "2026-07-05T09:59:06.675979",
-      "last_seen": "2026-07-06T10:36:16.185918",
+      "last_seen": "2026-07-27T22:34:36.186302",
       "stage": "runtime"
     },
     "SyntaxError": {
-      "count": 27,
+      "count": 29,
       "examples": [
         {
           "project": "forge_blog_cms",
@@ -517,7 +521,7 @@
         }
       ],
       "first_seen": "2026-07-06T01:13:44.604581",
-      "last_seen": "2026-07-21T00:40:04.560768",
+      "last_seen": "2026-07-27T23:48:51.612737",
       "stage": "build"
     },
     "StubHandler": {
@@ -533,6 +537,6 @@
       "last_seen": "2026-07-21T00:54:41.523672"
     }
   },
-  "total_runs": 830,
-  "last_updated": "2026-07-22T10:59:39.173881"
+  "total_runs": 884,
+  "last_updated": "2026-07-28T20:34:24.229802"
 }

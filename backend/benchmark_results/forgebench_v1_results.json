@@ -1,77 +1,102 @@
 {
   "benchmark": "ForgeBench v1.0",
-  "updated_at": "2026-07-13T14:59:26.883770+00:00",
+  "updated_at": "2026-07-28T06:22:43.123387+00:00",
   "total_apps": 25,
   "results": [
     {
       "app": "01_todo_list",
       "crashed": false,
       "project_name": "todo_list_app",
-      "forge_score": 98.0,
-      "grade": "A+",
-      "succeeded": true,
-      "first_pass_success": true,
+      "forge_score": 74.83,
+      "grade": "C",
+      "succeeded": false,
+      "first_pass_success": false,
       "repair_success": false,
-      "build_ok": true,
-      "runtime_ok": true,
-      "crud_ok": null,
-      "browser_ok": null,
+      "build_ok": false,
+      "runtime_ok": false,
+      "crud_ok": false,
+      "browser_ok": true,
       "endpoint_inventory": "n/a",
       "deployed": false,
-      "fix_attempts": 0,
-      "elapsed_s": 86.3,
-      "total_tokens": 60628,
-      "estimated_cost": 0.0363768,
+      "fix_attempts": 2,
+      "elapsed_s": 321.7,
+      "total_tokens": 72016,
+      "estimated_cost": 0.020309999999999998,
       "score_history": [
         {
           "attempt": 0,
-          "score": 98.0,
-          "grade": "A+"
+          "score": 74.83,
+          "grade": "C"
+        },
+        {
+          "attempt": 1,
+          "score": 39.62,
+          "grade": "F"
+        },
+        {
+          "attempt": 1,
+          "score": 74.83,
+          "grade": "C"
+        },
+        {
+          "attempt": 2,
+          "score": 39.62,
+          "grade": "F"
+        },
+        {
+          "attempt": 2,
+          "score": 74.83,
+          "grade": "C"
         }
       ],
-      "final_dominant_errors": [],
-      "failure_class": null,
+      "final_dominant_errors": [
+        "Undefined symbol 'func' in app\\routes\\stats_routes.py",
+        "[UserIdNotInjectedError] NameError: name 'func' is not defined  [CRUD journey fa",
+        "POST /seed returned 500",
+        "GET /stats/summary returned 500"
+      ],
+      "failure_class": "NEW_UNCLASSIFIED (UserIdNotInjectedError)",
       "dimensions": [
         {
           "name": "Compilation",
-          "score": 94.0,
-          "passed": true,
+          "score": 85.0,
+          "passed": false,
           "na": false
         },
         {
           "name": "Runtime Startup",
-          "score": 100.0,
-          "passed": true,
+          "score": 20.0,
+          "passed": false,
           "na": false
         },
         {
           "name": "API Functionality",
-          "score": 100.0,
+          "score": 92.85714285714286,
           "passed": true,
           "na": false
         },
         {
           "name": "Frontend Load",
-          "score": null,
-          "passed": false,
-          "na": true
+          "score": 100.0,
+          "passed": true,
+          "na": false
         },
         {
           "name": "Browser UX",
-          "score": null,
-          "passed": false,
-          "na": true
+          "score": 88.0,
+          "passed": true,
+          "na": false
         },
         {
           "name": "Integration",
-          "score": null,
+          "score": 61.53846153846154,
           "passed": false,
-          "na": true
+          "na": false
         },
         {
           "name": "Code Quality",
-          "score": 94.0,
-          "passed": false,
+          "score": 100.0,
+          "passed": true,
           "na": false
         },
         {
@@ -94,9 +119,9 @@
         },
         {
           "name": "Visual Judge",
-          "score": 100,
-          "passed": true,
-          "na": false
+          "score": null,
+          "passed": false,
+          "na": true
         }
       ]
     },
@@ -104,77 +129,35 @@
       "app": "02_notes_app",
       "crashed": false,
       "project_name": "personal_note_app",
-      "forge_score": 97.57,
+      "forge_score": 98.1,
       "grade": "A+",
-      "succeeded": false,
-      "first_pass_success": false,
+      "succeeded": true,
+      "first_pass_success": true,
       "repair_success": false,
-      "build_ok": false,
+      "build_ok": true,
       "runtime_ok": true,
-      "crud_ok": null,
-      "browser_ok": null,
+      "crud_ok": true,
+      "browser_ok": true,
       "endpoint_inventory": "n/a",
       "deployed": false,
-      "fix_attempts": 5,
-      "elapsed_s": 355.5,
-      "total_tokens": 134687,
-      "estimated_cost": 0.08081220000000001,
+      "fix_attempts": 0,
+      "elapsed_s": 148.1,
+      "total_tokens": 54202,
+      "estimated_cost": 0.0106737,
       "score_history": [
         {
           "attempt": 0,
-          "score": 92.86,
-          "grade": "A"
-        },
-        {
-          "attempt": 1,
-          "score": 97.14,
-          "grade": "A+"
-        },
-        {
-          "attempt": 2,
-          "score": 97.14,
-          "grade": "A+"
-        },
-        {
-          "attempt": 2,
-          "score": 97.14,
-          "grade": "A+"
-        },
-        {
-          "attempt": 3,
-          "score": 97.57,
-          "grade": "A+"
-        },
-        {
-          "attempt": 4,
-          "score": 97.57,
-          "grade": "A+"
-        },
-        {
-          "attempt": 4,
-          "score": 97.57,
-          "grade": "A+"
-        },
-        {
-          "attempt": 5,
-          "score": 94.14,
-          "grade": "A"
-        },
-        {
-          "attempt": 5,
-          "score": 97.57,
+          "score": 98.1,
           "grade": "A+"
         }
       ],
-      "final_dominant_errors": [
-        "error during build: [vite:esbuild] Transform failed with 6 errors: | C:/Users/je"
-      ],
-      "failure_class": "NEW_UNCLASSIFIED (untagged: error during build: [vite:esbuild] Transform failed with 6 e)",
+      "final_dominant_errors": [],
+      "failure_class": null,
       "dimensions": [
         {
           "name": "Compilation",
-          "score": 90.0,
-          "passed": false,
+          "score": 100.0,
+          "passed": true,
           "na": false
         },
         {
@@ -191,21 +174,21 @@
         },
         {
           "name": "Frontend Load",
-          "score": null,
-          "passed": false,
-          "na": true
+          "score": 100.0,
+          "passed": true,
+          "na": false
         },
         {
           "name": "Browser UX",
-          "score": null,
-          "passed": false,
-          "na": true
+          "score": 88.0,
+          "passed": true,
+          "na": false
         },
         {
           "name": "Integration",
-          "score": null,
-          "passed": false,
-          "na": true
+          "score": 100.0,
+          "passed": true,
+          "na": false
         },
         {
           "name": "Code Quality",
@@ -243,78 +226,41 @@
       "app": "03_blog_cms",
       "crashed": false,
       "project_name": "forge_blog_cms",
-      "forge_score": 56.36,
-      "grade": "F",
-      "succeeded": false,
-      "first_pass_success": false,
+      "forge_score": 94.38,
+      "grade": "A",
+      "succeeded": true,
+      "first_pass_success": true,
       "repair_success": false,
       "build_ok": true,
-      "runtime_ok": false,
-      "crud_ok": null,
-      "browser_ok": null,
+      "runtime_ok": true,
+      "crud_ok": true,
+      "browser_ok": true,
       "endpoint_inventory": "n/a",
       "deployed": false,
-      "fix_attempts": 4,
-      "elapsed_s": 238.6,
-      "total_tokens": 92977,
-      "estimated_cost": 0.055786199999999994,
+      "fix_attempts": 0,
+      "elapsed_s": 182.0,
+      "total_tokens": 137381,
+      "estimated_cost": 0.024887099999999992,
       "score_history": [
         {
           "attempt": 0,
-          "score": 55.57,
-          "grade": "F"
-        },
-        {
-          "attempt": 1,
-          "score": 55.93,
-          "grade": "F"
-        },
-        {
-          "attempt": 2,
-          "score": 54.21,
-          "grade": "F"
-        },
-        {
-          "attempt": 2,
-          "score": 56.36,
-          "grade": "F"
-        },
-        {
-          "attempt": 3,
-          "score": 18.5,
-          "grade": "F"
-        },
-        {
-          "attempt": 3,
-          "score": 56.36,
-          "grade": "F"
-        },
-        {
-          "attempt": 4,
-          "score": 18.5,
-          "grade": "F"
-        },
-        {
-          "attempt": 4,
-          "score": 56.36,
-          "grade": "F"
+          "score": 94.38,
+          "grade": "A"
         }
       ],
-      "final_dominant_errors": [
-        "[JourneyCRUDFailure] Backend healthy but CRUD journey failed — Edit entity: 405;"
-      ],
-      "failure_class": "JourneyCRUDFailure",
+      "final_dominant_errors": [],
+      "failure_class": null,
       "dimensions": [
         {
           "name": "Compilation",
-          "score": 45.0,
+          "score": 83.0,
           "passed": true,
           "na": false
         },
         {
           "name": "Runtime Startup",
-          "score": 20.0,
-          "passed": false,
+          "score": 100.0,
+          "passed": true,
           "na": false
         },
         {
@@ -325,25 +271,25 @@
         },
         {
           "name": "Frontend Load",
-          "score": null,
-          "passed": false,
-          "na": true
+          "score": 100.0,
+          "passed": true,
+          "na": false
         },
         {
           "name": "Browser UX",
-          "score": null,
-          "passed": false,
-          "na": true
+          "score": 88.0,
+          "passed": true,
+          "na": false
         },
         {
           "name": "Integration",
-          "score": null,
-          "passed": false,
-          "na": true
+          "score": 100.0,
+          "passed": true,
+          "na": false
         },
         {
           "name": "Code Quality",
-          "score": 70.0,
+          "score": 73.0,
           "passed": false,
           "na": false
         },
@@ -367,8 +313,8 @@
         },
         {
           "name": "Visual Judge",
-          "score": 7.9999999999999964,
-          "passed": false,
+          "score": 100,
+          "passed": true,
           "na": false
         }
       ]
@@ -377,67 +323,30 @@
       "app": "04_inventory_manager",
       "crashed": false,
       "project_name": "inventory_manager",
-      "forge_score": 76.86,
-      "grade": "C",
-      "succeeded": false,
-      "first_pass_success": false,
+      "forge_score": 98.1,
+      "grade": "A+",
+      "succeeded": true,
+      "first_pass_success": true,
       "repair_success": false,
       "build_ok": true,
-      "runtime_ok": false,
-      "crud_ok": null,
-      "browser_ok": null,
+      "runtime_ok": true,
+      "crud_ok": true,
+      "browser_ok": true,
       "endpoint_inventory": "n/a",
       "deployed": false,
-      "fix_attempts": 5,
-      "elapsed_s": 355.0,
-      "total_tokens": 133303,
-      "estimated_cost": 0.07998179999999999,
+      "fix_attempts": 0,
+      "elapsed_s": 171.9,
+      "total_tokens": 96885,
+      "estimated_cost": 0.018170999999999996,
       "score_history": [
         {
           "attempt": 0,
-          "score": 75.57,
-          "grade": "C"
-        },
-        {
-          "attempt": 1,
-          "score": 40.29,
-          "grade": "F"
-        },
-        {
-          "attempt": 1,
-          "score": 76.43,
-          "grade": "C"
-        },
-        {
-          "attempt": 2,
-          "score": 76.43,
-          "grade": "C"
-        },
-        {
-          "attempt": 3,
-          "score": 76.86,
-          "grade": "C"
-        },
-        {
-          "attempt": 4,
-          "score": 76.86,
-          "grade": "C"
-        },
-        {
-          "attempt": 5,
-          "score": 25.5,
-          "grade": "F"
-        },
-        {
-          "attempt": 5,
-          "score": 76.86,
-          "grade": "C"
+          "score": 98.1,
+          "grade": "A+"
         }
       ],
-      "final_dominant_errors": [
-        "[JourneyCRUDFailure] Backend healthy but CRUD journey failed — Create entity: 40"
-      ],
-      "failure_class": "JourneyCRUDFailure",
+      "final_dominant_errors": [],
+      "failure_class": null,
       "dimensions": [
         {
           "name": "Compilation",
@@ -447,8 +356,8 @@
         },
         {
           "name": "Runtime Startup",
-          "score": 20.0,
-          "passed": false,
+          "score": 100.0,
+          "passed": true,
           "na": false
         },
         {
@@ -459,21 +368,21 @@
         },
         {
           "name": "Frontend Load",
-          "score": null,
-          "passed": false,
-          "na": true
+          "score": 100.0,
+          "passed": true,
+          "na": false
         },
         {
           "name": "Browser UX",
-          "score": null,
-          "passed": false,
-          "na": true
+          "score": 88.0,
+          "passed": true,
+          "na": false
         },
         {
           "name": "Integration",
-          "score": null,
-          "passed": false,
-          "na": true
+          "score": 100.0,
+          "passed": true,
+          "na": false
         },
         {
           "name": "Code Quality",
@@ -511,51 +420,26 @@
       "app": "05_crm",
       "crashed": false,
       "project_name": "simple_crm",
-      "forge_score": 86.93,
-      "grade": "B",
-      "succeeded": false,
-      "first_pass_success": false,
+      "forge_score": 92.52,
+      "grade": "A",
+      "succeeded": true,
+      "first_pass_success": true,
       "repair_success": false,
       "build_ok": true,
       "runtime_ok": true,
-      "crud_ok": null,
-      "browser_ok": null,
+      "crud_ok": true,
+      "browser_ok": true,
       "endpoint_inventory": "n/a",
       "deployed": false,
-      "fix_attempts": 3,
-      "elapsed_s": 259.3,
-      "total_tokens": 119363,
-      "estimated_cost": 0.07161780000000001,
+      "fix_attempts": 0,
+      "elapsed_s": 130.3,
+      "total_tokens": 87395,
+      "estimated_cost": 0.026255550000000002,
       "score_history": [
         {
           "attempt": 0,
-          "score": 83.07,
-          "grade": "B"
-        },
-        {
-          "attempt": 1,
-          "score": 86.93,
-          "grade": "B"
-        },
-        {
-          "attempt": 2,
-          "score": 54.86,
-          "grade": "F"
-        },
-        {
-          "attempt": 2,
-          "score": 86.93,
-          "grade": "B"
-        },
-        {
-          "attempt": 3,
-          "score": 18.29,
-          "grade": "F"
-        },
-        {
-          "attempt": 3,
-          "score": 86.93,
-          "grade": "B"
+          "score": 92.52,
+          "grade": "A"
         }
       ],
       "final_dominant_errors": [],
@@ -563,7 +447,7 @@
       "dimensions": [
         {
           "name": "Compilation",
-          "score": 82.0,
+          "score": 74.0,
           "passed": true,
           "na": false
         },
@@ -581,25 +465,25 @@
         },
         {
           "name": "Frontend Load",
-          "score": null,
-          "passed": false,
-          "na": true
+          "score": 100.0,
+          "passed": true,
+          "na": false
         },
         {
           "name": "Browser UX",
-          "score": null,
-          "passed": false,
-          "na": true
+          "score": 88.0,
+          "passed": true,
+          "na": false
         },
         {
           "name": "Integration",
-          "score": null,
-          "passed": false,
-          "na": true
+          "score": 100.0,
+          "passed": true,
+          "na": false
         },
         {
           "name": "Code Quality",
-          "score": 70.0,
+          "score": 61.0,
           "passed": false,
           "na": false
         },
@@ -623,8 +507,8 @@
         },
         {
           "name": "Visual Judge",
-          "score": 5.000000000000004,
-          "passed": false,
+          "score": 100,
+          "passed": true,
           "na": false
         }
       ]
@@ -633,58 +517,51 @@
       "app": "06_expense_tracker",
       "crashed": false,
       "project_name": "personal_expense_tracker",
-      "forge_score": 69.57,
-      "grade": "D",
+      "forge_score": 86.19,
+      "grade": "B",
       "succeeded": false,
       "first_pass_success": false,
       "repair_success": false,
       "build_ok": true,
-      "runtime_ok": false,
-      "crud_ok": null,
-      "browser_ok": null,
+      "runtime_ok": true,
+      "crud_ok": true,
+      "browser_ok": false,
       "endpoint_inventory": "n/a",
       "deployed": false,
-      "fix_attempts": 3,
-      "elapsed_s": 211.5,
-      "total_tokens": 169903,
-      "estimated_cost": 0.1019418,
+      "fix_attempts": 1,
+      "elapsed_s": 285.0,
+      "total_tokens": 125673,
+      "estimated_cost": 0.023161949999999997,
       "score_history": [
         {
           "attempt": 0,
-          "score": 64.1,
-          "grade": "D"
+          "score": 86.19,
+          "grade": "B"
         },
         {
           "attempt": 1,
-          "score": 69.57,
-          "grade": "D"
+          "score": 90.5,
+          "grade": "A"
         },
         {
-          "attempt": 3,
-          "score": 69.57,
-          "grade": "D"
-        },
-        {
-          "attempt": 3,
-          "score": 69.57,
-          "grade": "D"
+          "attempt": 1,
+          "score": 86.19,
+          "grade": "B"
         }
       ],
-      "final_dominant_errors": [
-        "[UserIdNotInjectedError] sqlalchemy.exc.IntegrityError: (sqlite3.IntegrityError)"
-      ],
-      "failure_class": "NEW_UNCLASSIFIED (UserIdNotInjectedError)",
+      "final_dominant_errors": [],
+      "failure_class": null,
       "dimensions": [
         {
           "name": "Compilation",
-          "score": 95.0,
+          "score": 100.0,
           "passed": true,
           "na": false
         },
         {
           "name": "Runtime Startup",
-          "score": 20.0,
-          "passed": false,
+          "score": 100.0,
+          "passed": true,
           "na": false
         },
         {
@@ -695,21 +572,21 @@
         },
         {
           "name": "Frontend Load",
-          "score": null,
-          "passed": false,
-          "na": true
+          "score": 100.0,
+          "passed": true,
+          "na": false
         },
         {
           "name": "Browser UX",
-          "score": null,
+          "score": 38.0,
           "passed": false,
-          "na": true
+          "na": false
         },
         {
           "name": "Integration",
-          "score": null,
-          "passed": false,
-          "na": true
+          "score": 100.0,
+          "passed": true,
+          "na": false
         },
         {
           "name": "Code Quality",
@@ -737,7 +614,7 @@
         },
         {
           "name": "Visual Judge",
-          "score": 13.0,
+          "score": 0.0,
           "passed": false,
           "na": false
         }
@@ -747,26 +624,26 @@
       "app": "07_project_management",
       "crashed": false,
       "project_name": "secure_project_manager",
-      "forge_score": 88.43,
-      "grade": "B",
+      "forge_score": 96.43,
+      "grade": "A+",
       "succeeded": true,
       "first_pass_success": true,
       "repair_success": false,
       "build_ok": true,
       "runtime_ok": true,
-      "crud_ok": null,
-      "browser_ok": null,
+      "crud_ok": true,
+      "browser_ok": true,
       "endpoint_inventory": "n/a",
       "deployed": false,
       "fix_attempts": 0,
-      "elapsed_s": 126.0,
-      "total_tokens": 147486,
-      "estimated_cost": 0.08849159999999999,
+      "elapsed_s": 145.1,
+      "total_tokens": 109227,
+      "estimated_cost": 0.020826,
       "score_history": [
         {
           "attempt": 0,
-          "score": 88.43,
-          "grade": "B"
+          "score": 96.43,
+          "grade": "A+"
         }
       ],
       "final_dominant_errors": [],
@@ -774,7 +651,7 @@
       "dimensions": [
         {
           "name": "Compilation",
-          "score": 63.0,
+          "score": 95.0,
           "passed": true,
           "na": false
         },
@@ -792,26 +669,26 @@
         },
         {
           "name": "Frontend Load",
-          "score": null,
-          "passed": false,
-          "na": true
+          "score": 100.0,
+          "passed": true,
+          "na": false
         },
         {
           "name": "Browser UX",
-          "score": null,
-          "passed": false,
-          "na": true
+          "score": 88.0,
+          "passed": true,
+          "na": false
         },
         {
           "name": "Integration",
-          "score": null,
-          "passed": false,
-          "na": true
+          "score": 100.0,
+          "passed": true,
+          "na": false
         },
         {
           "name": "Code Quality",
-          "score": 73.0,
-          "passed": false,
+          "score": 100.0,
+          "passed": true,
           "na": false
         },
         {
@@ -844,89 +721,41 @@
       "app": "08_task_manager",
       "crashed": false,
       "project_name": "team_task_manager",
-      "forge_score": 71.29,
-      "grade": "C",
-      "succeeded": false,
-      "first_pass_success": false,
+      "forge_score": 97.81,
+      "grade": "A+",
+      "succeeded": true,
+      "first_pass_success": true,
       "repair_success": false,
       "build_ok": true,
-      "runtime_ok": false,
-      "crud_ok": null,
-      "browser_ok": null,
+      "runtime_ok": true,
+      "crud_ok": true,
+      "browser_ok": true,
       "endpoint_inventory": "n/a",
       "deployed": false,
-      "fix_attempts": 5,
-      "elapsed_s": 570.9,
-      "total_tokens": 192419,
-      "estimated_cost": 0.1154514,
+      "fix_attempts": 0,
+      "elapsed_s": 212.4,
+      "total_tokens": 102658,
+      "estimated_cost": 0.019386149999999998,
       "score_history": [
         {
           "attempt": 0,
-          "score": 64.86,
-          "grade": "D"
-        },
-        {
-          "attempt": 1,
-          "score": 27.64,
-          "grade": "F"
-        },
-        {
-          "attempt": 1,
-          "score": 65.71,
-          "grade": "D"
-        },
-        {
-          "attempt": 2,
-          "score": 33.0,
-          "grade": "F"
-        },
-        {
-          "attempt": 2,
-          "score": 65.71,
-          "grade": "D"
-        },
-        {
-          "attempt": 3,
-          "score": 71.29,
-          "grade": "C"
-        },
-        {
-          "attempt": 4,
-          "score": 33.0,
-          "grade": "F"
-        },
-        {
-          "attempt": 4,
-          "score": 71.29,
-          "grade": "C"
-        },
-        {
-          "attempt": 5,
-          "score": 64.86,
-          "grade": "D"
-        },
-        {
-          "attempt": 5,
-          "score": 71.29,
-          "grade": "C"
+          "score": 97.81,
+          "grade": "A+"
         }
       ],
-      "final_dominant_errors": [
-        "[AttributeError] pydantic_core._pydantic_core.ValidationError: 1 validation erro",
-        "POST /seed returned 500"
-      ],
-      "failure_class": "AttributeError",
+      "final_dominant_errors": [],
+      "failure_class": null,
       "dimensions": [
         {
           "name": "Compilation",
-          "score": 100.0,
+          "score": 99.0,
           "passed": true,
           "na": false
         },
         {
           "name": "Runtime Startup",
-          "score": 20.0,
-          "passed": false,
+          "score": 100.0,
+          "passed": true,
           "na": false
         },
         {
@@ -937,26 +766,26 @@
         },
         {
           "name": "Frontend Load",
-          "score": null,
-          "passed": false,
-          "na": true
+          "score": 100.0,
+          "passed": true,
+          "na": false
         },
         {
           "name": "Browser UX",
-          "score": null,
-          "passed": false,
-          "na": true
+          "score": 88.0,
+          "passed": true,
+          "na": false
         },
         {
           "name": "Integration",
-          "score": null,
-          "passed": false,
-          "na": true
+          "score": 100.0,
+          "passed": true,
+          "na": false
         },
         {
           "name": "Code Quality",
-          "score": 100.0,
-          "passed": true,
+          "score": 97.0,
+          "passed": false,
           "na": false
         },
         {
@@ -979,8 +808,8 @@
         },
         {
           "name": "Visual Judge",
-          "score": 21.999999999999996,
-          "passed": false,
+          "score": 100,
+          "passed": true,
           "na": false
         }
       ]
@@ -989,85 +818,64 @@
       "app": "09_recipe_manager",
       "crashed": false,
       "project_name": "recipe_manager",
-      "forge_score": 70.11,
-      "grade": "C",
+      "forge_score": 43.08,
+      "grade": "F",
       "succeeded": false,
       "first_pass_success": false,
       "repair_success": false,
-      "build_ok": false,
+      "build_ok": true,
       "runtime_ok": false,
       "crud_ok": null,
       "browser_ok": null,
       "endpoint_inventory": "n/a",
       "deployed": false,
-      "fix_attempts": 4,
-      "elapsed_s": 306.7,
-      "total_tokens": 195051,
-      "estimated_cost": 0.11703060000000001,
+      "fix_attempts": 3,
+      "elapsed_s": 296.2,
+      "total_tokens": 159588,
+      "estimated_cost": 0.029702700000000002,
       "score_history": [
         {
           "attempt": 0,
-          "score": 66.26,
-          "grade": "D"
+          "score": 40.77,
+          "grade": "F"
         },
         {
           "attempt": 1,
-          "score": 69.69,
-          "grade": "D"
-        },
-        {
-          "attempt": 2,
-          "score": 69.04,
-          "grade": "D"
-        },
-        {
-          "attempt": 2,
-          "score": 70.11,
-          "grade": "C"
+          "score": 43.08,
+          "grade": "F"
         },
         {
           "attempt": 3,
-          "score": 70.11,
-          "grade": "C"
+          "score": 43.08,
+          "grade": "F"
         },
         {
           "attempt": 3,
-          "score": 70.11,
-          "grade": "C"
-        },
-        {
-          "attempt": 4,
-          "score": 69.04,
-          "grade": "D"
-        },
-        {
-          "attempt": 4,
-          "score": 70.11,
-          "grade": "C"
+          "score": 43.08,
+          "grade": "F"
         }
       ],
       "final_dominant_errors": [
-        "error during build: [vite:esbuild] Transform failed with 1 error: | C:/Users/jer",
-        "[NotNullViolationError] sqlalchemy.exc.IntegrityError: (sqlite3.IntegrityError) "
+        "[Unknown] Traceback (most recent call last):\n  File \"<frozen runpy>\", line 203, "
       ],
-      "failure_class": "NotNullViolationError",
+      "failure_class": "NEW_UNCLASSIFIED (Unknown)",
       "dimensions": [
         {
           "name": "Compilation",
-          "score": 90.0,
-          "passed": false,
+          "score": 100.0,
+          "passed": true,
           "na": false
         },
         {
           "name": "Runtime Startup",
-          "score": 20.0,
+          "score": 0.0,
           "passed": false,
           "na": false
         },
         {
           "name": "API Functionality",
-          "score": 100.0,
-          "passed": true,
+          "score": 0,
+          "passed": false,
           "na": false
         },
         {
@@ -1096,7 +904,7 @@
         },
         {
           "name": "Security",
-          "score": 100.0,
+          "score": 80.0,
           "passed": true,
           "na": false
         },
@@ -1108,15 +916,15 @@
         },
         {
           "name": "Performance",
-          "score": 90,
-          "passed": true,
+          "score": 50,
+          "passed": false,
           "na": false
         },
         {
           "name": "Visual Judge",
-          "score": 35.599999999999994,
+          "score": null,
           "passed": false,
-          "na": false
+          "na": true
         }
       ]
     },
@@ -1124,8 +932,8 @@
       "app": "10_library_management",
       "crashed": false,
       "project_name": "library_management_system",
-      "forge_score": 76.86,
-      "grade": "C",
+      "forge_score": 43.08,
+      "grade": "F",
       "succeeded": false,
       "first_pass_success": false,
       "repair_success": false,
@@ -1135,51 +943,36 @@
       "browser_ok": null,
       "endpoint_inventory": "n/a",
       "deployed": false,
-      "fix_attempts": 4,
-      "elapsed_s": 355.0,
-      "total_tokens": 196566,
-      "estimated_cost": 0.11793960000000003,
+      "fix_attempts": 3,
+      "elapsed_s": 277.7,
+      "total_tokens": 104735,
+      "estimated_cost": 0.019392600000000003,
       "score_history": [
         {
           "attempt": 0,
-          "score": 34.71,
+          "score": 40.77,
           "grade": "F"
         },
         {
           "attempt": 1,
-          "score": 71.71,
-          "grade": "C"
+          "score": 43.08,
+          "grade": "F"
         },
         {
-          "attempt": 2,
-          "score": 76.86,
-          "grade": "C"
+          "attempt": 3,
+          "score": 43.08,
+          "grade": "F"
         },
         {
-          "attempt": 4,
-          "score": 76.86,
-          "grade": "C"
-        },
-        {
-          "attempt": 4,
-          "score": 76.86,
-          "grade": "C"
-        },
-        {
-          "attempt": 4,
-          "score": 76.86,
-          "grade": "C"
-        },
-        {
-          "attempt": 4,
-          "score": 76.86,
-          "grade": "C"
+          "attempt": 3,
+          "score": 43.08,
+          "grade": "F"
         }
       ],
       "final_dominant_errors": [
-        "[JourneyCRUDFailure] Backend healthy but CRUD journey failed — Create entity: 40"
+        "[Unknown] Traceback (most recent call last):\n  File \"<frozen runpy>\", line 203, "
       ],
-      "failure_class": "JourneyCRUDFailure",
+      "failure_class": "NEW_UNCLASSIFIED (Unknown)",
       "dimensions": [
         {
           "name": "Compilation",
@@ -1189,14 +982,14 @@
         },
         {
           "name": "Runtime Startup",
-          "score": 20.0,
+          "score": 0.0,
           "passed": false,
           "na": false
         },
         {
           "name": "API Functionality",
-          "score": 100.0,
-          "passed": true,
+          "score": 0,
+          "passed": false,
           "na": false
         },
         {
@@ -1225,7 +1018,7 @@
         },
         {
           "name": "Security",
-          "score": 100.0,
+          "score": 80.0,
           "passed": true,
           "na": false
         },
@@ -1237,749 +1030,224 @@
         },
         {
           "name": "Performance",
-          "score": 90,
-          "passed": true,
+          "score": 50,
+          "passed": false,
           "na": false
         },
         {
           "name": "Visual Judge",
-          "score": 100,
-          "passed": true,
-          "na": false
+          "score": null,
+          "passed": false,
+          "na": true
         }
       ]
     },
     {
       "app": "12_employee_directory",
-      "crashed": true,
-      "error": "TIMEOUT after 900s (hung subprocess, killed)",
-      "elapsed_s": 900.5
+      "crashed": false,
+      "project_name": "employee_directory",
+      "forge_score": 98.1,
+      "grade": "A+",
+      "succeeded": true,
+      "first_pass_success": true,
+      "repair_success": false,
+      "build_ok": true,
+      "runtime_ok": true,
+      "crud_ok": true,
+      "browser_ok": true,
+      "endpoint_inventory": "n/a",
+      "deployed": false,
+      "fix_attempts": 0,
+      "elapsed_s": 145.8,
+      "total_tokens": 79675,
+      "estimated_cost": 0.01494285,
+      "score_history": [
+        {
+          "attempt": 0,
+          "score": 98.1,
+          "grade": "A+"
+        }
+      ],
+      "final_dominant_errors": [],
+      "failure_class": null,
+      "dimensions": [
+        {
+          "name": "Compilation",
+          "score": 100.0,
+          "passed": true,
+          "na": false
+        },
+        {
+          "name": "Runtime Startup",
+          "score": 100.0,
+          "passed": true,
+          "na": false
+        },
+        {
+          "name": "API Functionality",
+          "score": 100.0,
+          "passed": true,
+          "na": false
+        },
+        {
+          "name": "Frontend Load",
+          "score": 100.0,
+          "passed": true,
+          "na": false
+        },
+        {
+          "name": "Browser UX",
+          "score": 88.0,
+          "passed": true,
+          "na": false
+        },
+        {
+          "name": "Integration",
+          "score": 100.0,
+          "passed": true,
+          "na": false
+        },
+        {
+          "name": "Code Quality",
+          "score": 100.0,
+          "passed": true,
+          "na": false
+        },
+        {
+          "name": "Security",
+          "score": 100.0,
+          "passed": true,
+          "na": false
+        },
+        {
+          "name": "Completeness",
+          "score": 100.0,
+          "passed": true,
+          "na": false
+        },
+        {
+          "name": "Performance",
+          "score": 90,
+          "passed": true,
+          "na": false
+        },
+        {
+          "name": "Visual Judge",
+          "score": 100,
+          "passed": true,
+          "na": false
+        }
+      ]
     },
     {
       "app": "13_help_desk",
-      "crashed": true,
-      "error": "TIMEOUT after 900s (hung subprocess, killed)",
-      "elapsed_s": 900.5
+      "crashed": false,
+      "project_name": "helpdesk_ticketing",
+      "forge_score": 80.93,
+      "grade": "B",
+      "succeeded": true,
+      "first_pass_success": true,
+      "repair_success": false,
+      "build_ok": true,
+      "runtime_ok": false,
+      "crud_ok": true,
+      "browser_ok": true,
+      "endpoint_inventory": "n/a",
+      "deployed": false,
+      "fix_attempts": 0,
+      "elapsed_s": 338.5,
+      "total_tokens": 149618,
+      "estimated_cost": 0.027891749999999993,
+      "score_history": [
+        {
+          "attempt": 0,
+          "score": 80.93,
+          "grade": "B"
+        },
+        {
+          "attempt": 0,
+          "score": 80.93,
+          "grade": "B"
+        }
+      ],
+      "final_dominant_errors": [
+        "[JourneyCRUDFailure] Backend healthy but CRUD journey failed — Edit entity: 422"
+      ],
+      "failure_class": null,
+      "dimensions": [
+        {
+          "name": "Compilation",
+          "score": 99.0,
+          "passed": true,
+          "na": false
+        },
+        {
+          "name": "Runtime Startup",
+          "score": 20.0,
+          "passed": false,
+          "na": false
+        },
+        {
+          "name": "API Functionality",
+          "score": 100.0,
+          "passed": true,
+          "na": false
+        },
+        {
+          "name": "Frontend Load",
+          "score": 100.0,
+          "passed": true,
+          "na": false
+        },
+        {
+          "name": "Browser UX",
+          "score": 88.0,
+          "passed": true,
+          "na": false
+        },
+        {
+          "name": "Integration",
+          "score": 92.3076923076923,
+          "passed": true,
+          "na": false
+        },
+        {
+          "name": "Code Quality",
+          "score": 97.0,
+          "passed": false,
+          "na": false
+        },
+        {
+          "name": "Security",
+          "score": 100.0,
+          "passed": true,
+          "na": false
+        },
+        {
+          "name": "Completeness",
+          "score": 100.0,
+          "passed": true,
+          "na": false
+        },
+        {
+          "name": "Performance",
+          "score": 90,
+          "passed": true,
+          "na": false
+        },
+        {
+          "name": "Visual Judge",
+          "score": null,
+          "passed": false,
+          "na": true
+        }
+      ]
     },
     {
       "app": "14_gym_tracker",
       "crashed": false,
       "project_name": "gym_workout_tracker",
-      "forge_score": 86.39,
-      "grade": "B",
-      "succeeded": true,
-      "first_pass_success": true,
-      "repair_success": false,
-      "build_ok": true,
-      "runtime_ok": true,
-      "crud_ok": null,
-      "browser_ok": null,
-      "endpoint_inventory": "n/a",
-      "deployed": false,
-      "fix_attempts": 0,
-      "elapsed_s": 152.0,
-      "total_tokens": 134863,
-      "estimated_cost": 0.0809178,
-      "score_history": [
-        {
-          "attempt": 0,
-          "score": 86.39,
-          "grade": "B"
-        }
-      ],
-      "final_dominant_errors": [
-        "GET /progress returned 500"
-      ],
-      "failure_class": null,
-      "dimensions": [
-        {
-          "name": "Compilation",
-          "score": 75.0,
-          "passed": true,
-          "na": false
-        },
-        {
-          "name": "Runtime Startup",
-          "score": 100.0,
-          "passed": true,
-          "na": false
-        },
-        {
-          "name": "API Functionality",
-          "score": 94.11764705882352,
-          "passed": true,
-          "na": false
-        },
-        {
-          "name": "Frontend Load",
-          "score": null,
-          "passed": false,
-          "na": true
-        },
-        {
-          "name": "Browser UX",
-          "score": null,
-          "passed": false,
-          "na": true
-        },
-        {
-          "name": "Integration",
-          "score": null,
-          "passed": false,
-          "na": true
-        },
-        {
-          "name": "Code Quality",
-          "score": 67.0,
-          "passed": false,
-          "na": false
-        },
-        {
-          "name": "Security",
-          "score": 100.0,
-          "passed": true,
-          "na": false
-        },
-        {
-          "name": "Completeness",
-          "score": 100.0,
-          "passed": true,
-          "na": false
-        },
-        {
-          "name": "Performance",
-          "score": 90,
-          "passed": true,
-          "na": false
-        },
-        {
-          "name": "Visual Judge",
-          "score": 39.1,
-          "passed": false,
-          "na": false
-        }
-      ]
-    },
-    {
-      "app": "15_event_management",
-      "crashed": false,
-      "project_name": "event_manager_platform",
-      "forge_score": 67.86,
-      "grade": "D",
-      "succeeded": false,
-      "first_pass_success": false,
-      "repair_success": false,
-      "build_ok": false,
-      "runtime_ok": false,
-      "crud_ok": null,
-      "browser_ok": null,
-      "endpoint_inventory": "n/a",
-      "deployed": false,
-      "fix_attempts": 4,
-      "elapsed_s": 339.3,
-      "total_tokens": 163266,
-      "estimated_cost": 0.09795959999999997,
-      "score_history": [
-        {
-          "attempt": 0,
-          "score": 64.43,
-          "grade": "D"
-        },
-        {
-          "attempt": 1,
-          "score": 67.43,
-          "grade": "D"
-        },
-        {
-          "attempt": 4,
-          "score": 67.86,
-          "grade": "D"
-        },
-        {
-          "attempt": 4,
-          "score": 67.86,
-          "grade": "D"
-        },
-        {
-          "attempt": 4,
-          "score": 67.86,
-          "grade": "D"
-        },
-        {
-          "attempt": 4,
-          "score": 67.86,
-          "grade": "D"
-        },
-        {
-          "attempt": 4,
-          "score": 67.86,
-          "grade": "D"
-        }
-      ],
-      "final_dominant_errors": [
-        "error during build: [vite:esbuild] Transform failed with 1 error: | C:/Users/jer",
-        "[JourneyCRUDFailure] Backend healthy but CRUD journey failed — Create entity: 40"
-      ],
-      "failure_class": "JourneyCRUDFailure",
-      "dimensions": [
-        {
-          "name": "Compilation",
-          "score": 85.0,
-          "passed": false,
-          "na": false
-        },
-        {
-          "name": "Runtime Startup",
-          "score": 20.0,
-          "passed": false,
-          "na": false
-        },
-        {
-          "name": "API Functionality",
-          "score": 100.0,
-          "passed": true,
-          "na": false
-        },
-        {
-          "name": "Frontend Load",
-          "score": null,
-          "passed": false,
-          "na": true
-        },
-        {
-          "name": "Browser UX",
-          "score": null,
-          "passed": false,
-          "na": true
-        },
-        {
-          "name": "Integration",
-          "score": null,
-          "passed": false,
-          "na": true
-        },
-        {
-          "name": "Code Quality",
-          "score": 100.0,
-          "passed": true,
-          "na": false
-        },
-        {
-          "name": "Security",
-          "score": 100.0,
-          "passed": true,
-          "na": false
-        },
-        {
-          "name": "Completeness",
-          "score": 100.0,
-          "passed": true,
-          "na": false
-        },
-        {
-          "name": "Performance",
-          "score": 90,
-          "passed": true,
-          "na": false
-        },
-        {
-          "name": "Visual Judge",
-          "score": 18.999999999999993,
-          "passed": false,
-          "na": false
-        }
-      ]
-    },
-    {
-      "app": "16_restaurant_ordering",
-      "crashed": true,
-      "error": "TIMEOUT after 900s (hung subprocess, killed)",
-      "elapsed_s": 900.4
-    },
-    {
-      "app": "17_appointment_booking",
-      "crashed": true,
-      "error": "TIMEOUT after 900s (hung subprocess, killed)",
-      "elapsed_s": 900.4
-    },
-    {
-      "app": "18_sports_league_manager",
-      "crashed": true,
-      "error": "TIMEOUT after 900s (hung subprocess, killed)",
-      "elapsed_s": 900.5
-    },
-    {
-      "app": "19_volunteer_management",
-      "crashed": true,
-      "error": "TIMEOUT after 900s (hung subprocess, killed)",
-      "elapsed_s": 900.4
-    },
-    {
-      "app": "21_hotel_booking",
-      "crashed": false,
-      "project_name": "a_hotel_booking_system_with_ho",
-      "forge_score": 96.55,
-      "grade": "A+",
-      "succeeded": false,
-      "first_pass_success": false,
-      "repair_success": false,
-      "build_ok": false,
-      "runtime_ok": true,
-      "crud_ok": null,
-      "browser_ok": null,
-      "endpoint_inventory": "n/a",
-      "deployed": false,
-      "fix_attempts": 3,
-      "elapsed_s": 376.4,
-      "total_tokens": 270728,
-      "estimated_cost": 0.1624368,
-      "score_history": [
-        {
-          "attempt": 0,
-          "score": 86.69,
-          "grade": "B"
-        },
-        {
-          "attempt": 1,
-          "score": 96.55,
-          "grade": "A+"
-        },
-        {
-          "attempt": 2,
-          "score": 96.55,
-          "grade": "A+"
-        },
-        {
-          "attempt": 2,
-          "score": 96.55,
-          "grade": "A+"
-        },
-        {
-          "attempt": 3,
-          "score": 96.55,
-          "grade": "A+"
-        },
-        {
-          "attempt": 3,
-          "score": 96.55,
-          "grade": "A+"
-        }
-      ],
-      "final_dominant_errors": [
-        "error during build: [vite:esbuild] Transform failed with 6 errors: | C:/Users/je"
-      ],
-      "failure_class": "NEW_UNCLASSIFIED (untagged: error during build: [vite:esbuild] Transform failed with 6 e)",
-      "dimensions": [
-        {
-          "name": "Compilation",
-          "score": 90.0,
-          "passed": false,
-          "na": false
-        },
-        {
-          "name": "Runtime Startup",
-          "score": 100.0,
-          "passed": true,
-          "na": false
-        },
-        {
-          "name": "API Functionality",
-          "score": 95.23809523809523,
-          "passed": true,
-          "na": false
-        },
-        {
-          "name": "Frontend Load",
-          "score": null,
-          "passed": false,
-          "na": true
-        },
-        {
-          "name": "Browser UX",
-          "score": null,
-          "passed": false,
-          "na": true
-        },
-        {
-          "name": "Integration",
-          "score": null,
-          "passed": false,
-          "na": true
-        },
-        {
-          "name": "Code Quality",
-          "score": 100.0,
-          "passed": true,
-          "na": false
-        },
-        {
-          "name": "Security",
-          "score": 100.0,
-          "passed": true,
-          "na": false
-        },
-        {
-          "name": "Completeness",
-          "score": 100.0,
-          "passed": true,
-          "na": false
-        },
-        {
-          "name": "Performance",
-          "score": 90,
-          "passed": true,
-          "na": false
-        },
-        {
-          "name": "Visual Judge",
-          "score": 100,
-          "passed": true,
-          "na": false
-        }
-      ]
-    },
-    {
-      "app": "22_course_management",
-      "crashed": false,
-      "project_name": "university_course_management",
-      "forge_score": 76.86,
-      "grade": "C",
-      "succeeded": false,
-      "first_pass_success": false,
-      "repair_success": false,
-      "build_ok": true,
-      "runtime_ok": false,
-      "crud_ok": null,
-      "browser_ok": null,
-      "endpoint_inventory": "n/a",
-      "deployed": false,
-      "fix_attempts": 4,
-      "elapsed_s": 401.6,
-      "total_tokens": 203647,
-      "estimated_cost": 0.12218819999999997,
-      "score_history": [
-        {
-          "attempt": 0,
-          "score": 65.71,
-          "grade": "D"
-        },
-        {
-          "attempt": 1,
-          "score": 75.36,
-          "grade": "C"
-        },
-        {
-          "attempt": 4,
-          "score": 76.86,
-          "grade": "C"
-        },
-        {
-          "attempt": 3,
-          "score": 76.86,
-          "grade": "C"
-        },
-        {
-          "attempt": 4,
-          "score": 75.79,
-          "grade": "C"
-        },
-        {
-          "attempt": 4,
-          "score": 76.86,
-          "grade": "C"
-        }
-      ],
-      "final_dominant_errors": [
-        "[UserIdNotInjectedError] sqlalchemy.exc.IntegrityError: (sqlite3.IntegrityError)"
-      ],
-      "failure_class": "NEW_UNCLASSIFIED (UserIdNotInjectedError)",
-      "dimensions": [
-        {
-          "name": "Compilation",
-          "score": 100.0,
-          "passed": true,
-          "na": false
-        },
-        {
-          "name": "Runtime Startup",
-          "score": 20.0,
-          "passed": false,
-          "na": false
-        },
-        {
-          "name": "API Functionality",
-          "score": 100.0,
-          "passed": true,
-          "na": false
-        },
-        {
-          "name": "Frontend Load",
-          "score": null,
-          "passed": false,
-          "na": true
-        },
-        {
-          "name": "Browser UX",
-          "score": null,
-          "passed": false,
-          "na": true
-        },
-        {
-          "name": "Integration",
-          "score": null,
-          "passed": false,
-          "na": true
-        },
-        {
-          "name": "Code Quality",
-          "score": 100.0,
-          "passed": true,
-          "na": false
-        },
-        {
-          "name": "Security",
-          "score": 100.0,
-          "passed": true,
-          "na": false
-        },
-        {
-          "name": "Completeness",
-          "score": 100.0,
-          "passed": true,
-          "na": false
-        },
-        {
-          "name": "Performance",
-          "score": 90,
-          "passed": true,
-          "na": false
-        },
-        {
-          "name": "Visual Judge",
-          "score": 100,
-          "passed": true,
-          "na": false
-        }
-      ]
-    },
-    {
-      "app": "23_vehicle_fleet_manager",
-      "crashed": false,
-      "project_name": "fleet_manager",
-      "forge_score": 85.46,
-      "grade": "B",
-      "succeeded": true,
-      "first_pass_success": true,
-      "repair_success": false,
-      "build_ok": true,
-      "runtime_ok": true,
-      "crud_ok": null,
-      "browser_ok": null,
-      "endpoint_inventory": "n/a",
-      "deployed": false,
-      "fix_attempts": 0,
-      "elapsed_s": 245.9,
-      "total_tokens": 182260,
-      "estimated_cost": 0.109356,
-      "score_history": [
-        {
-          "attempt": 0,
-          "score": 85.46,
-          "grade": "B"
-        }
-      ],
-      "final_dominant_errors": [
-        "POST /seed returned 500"
-      ],
-      "failure_class": null,
-      "dimensions": [
-        {
-          "name": "Compilation",
-          "score": 63.0,
-          "passed": true,
-          "na": false
-        },
-        {
-          "name": "Runtime Startup",
-          "score": 100.0,
-          "passed": true,
-          "na": false
-        },
-        {
-          "name": "API Functionality",
-          "score": 100.0,
-          "passed": true,
-          "na": false
-        },
-        {
-          "name": "Frontend Load",
-          "score": null,
-          "passed": false,
-          "na": true
-        },
-        {
-          "name": "Browser UX",
-          "score": null,
-          "passed": false,
-          "na": true
-        },
-        {
-          "name": "Integration",
-          "score": null,
-          "passed": false,
-          "na": true
-        },
-        {
-          "name": "Code Quality",
-          "score": 73.0,
-          "passed": false,
-          "na": false
-        },
-        {
-          "name": "Security",
-          "score": 100.0,
-          "passed": true,
-          "na": false
-        },
-        {
-          "name": "Completeness",
-          "score": 100.0,
-          "passed": true,
-          "na": false
-        },
-        {
-          "name": "Performance",
-          "score": 90,
-          "passed": true,
-          "na": false
-        },
-        {
-          "name": "Visual Judge",
-          "score": 38.4,
-          "passed": false,
-          "na": false
-        }
-      ]
-    },
-    {
-      "app": "24_donation_tracker",
-      "crashed": false,
-      "project_name": "donation_tracker",
-      "forge_score": 76.86,
-      "grade": "C",
-      "succeeded": false,
-      "first_pass_success": false,
-      "repair_success": false,
-      "build_ok": true,
-      "runtime_ok": false,
-      "crud_ok": null,
-      "browser_ok": null,
-      "endpoint_inventory": "n/a",
-      "deployed": false,
-      "fix_attempts": 3,
-      "elapsed_s": 262.9,
-      "total_tokens": 177797,
-      "estimated_cost": 0.1066782,
-      "score_history": [
-        {
-          "attempt": 0,
-          "score": 76.0,
-          "grade": "C"
-        },
-        {
-          "attempt": 1,
-          "score": 76.86,
-          "grade": "C"
-        },
-        {
-          "attempt": 4,
-          "score": 76.86,
-          "grade": "C"
-        },
-        {
-          "attempt": 4,
-          "score": 76.86,
-          "grade": "C"
-        }
-      ],
-      "final_dominant_errors": [
-        "[JourneyCRUDFailure] Backend healthy but CRUD journey failed — Create entity: 40"
-      ],
-      "failure_class": "JourneyCRUDFailure",
-      "dimensions": [
-        {
-          "name": "Compilation",
-          "score": 100.0,
-          "passed": true,
-          "na": false
-        },
-        {
-          "name": "Runtime Startup",
-          "score": 20.0,
-          "passed": false,
-          "na": false
-        },
-        {
-          "name": "API Functionality",
-          "score": 100.0,
-          "passed": true,
-          "na": false
-        },
-        {
-          "name": "Frontend Load",
-          "score": null,
-          "passed": false,
-          "na": true
-        },
-        {
-          "name": "Browser UX",
-          "score": null,
-          "passed": false,
-          "na": true
-        },
-        {
-          "name": "Integration",
-          "score": null,
-          "passed": false,
-          "na": true
-        },
-        {
-          "name": "Code Quality",
-          "score": 100.0,
-          "passed": true,
-          "na": false
-        },
-        {
-          "name": "Security",
-          "score": 100.0,
-          "passed": true,
-          "na": false
-        },
-        {
-          "name": "Completeness",
-          "score": 100.0,
-          "passed": true,
-          "na": false
-        },
-        {
-          "name": "Performance",
-          "score": 90,
-          "passed": true,
-          "na": false
-        },
-        {
-          "name": "Visual Judge",
-          "score": 100,
-          "passed": true,
-          "na": false
-        }
-      ]
-    },
-    {
-      "app": "25_medical_clinic_manager",
-      "crashed": false,
-      "project_name": "hospital_management_system",
-      "forge_score": 24.86,
+      "forge_score": 17.23,
       "grade": "F",
       "succeeded": false,
       "first_pass_success": false,
@@ -1991,47 +1259,41 @@
       "endpoint_inventory": "n/a",
       "deployed": false,
       "fix_attempts": 3,
-      "elapsed_s": 270.5,
-      "total_tokens": 227778,
-      "estimated_cost": 0.1366668,
+      "elapsed_s": 311.6,
+      "total_tokens": 192728,
+      "estimated_cost": 0.0373251,
       "score_history": [
         {
           "attempt": 0,
-          "score": 23.57,
+          "score": 17.0,
           "grade": "F"
         },
         {
           "attempt": 1,
-          "score": 24.86,
+          "score": 17.23,
           "grade": "F"
         },
         {
-          "attempt": 4,
-          "score": 24.86,
+          "attempt": 2,
+          "score": 17.23,
           "grade": "F"
         },
         {
-          "attempt": 4,
-          "score": 24.86,
+          "attempt": 3,
+          "score": 17.23,
           "grade": "F"
         },
         {
-          "attempt": 4,
-          "score": 24.86,
-          "grade": "F"
-        },
-        {
-          "attempt": 4,
-          "score": 24.86,
+          "attempt": 3,
+          "score": 17.23,
           "grade": "F"
         }
       ],
       "final_dominant_errors": [
         "Syntax error in app\\main.py:   File \"C:\\Users\\jerry\\OneDrive\\Desktop\\forgeAi\\gen",
-        "Syntax error in app\\routes\\consultation-note_routes.py:   File \"C:\\Users\\jerry\\O",
-        "  File \"C:\\Users\\jerry\\OneDrive\\Desktop\\forgeAi\\generated_projects\\hospital_mana",
-        "  File \"C:\\Users\\jerry\\OneDrive\\Desktop\\forgeAi\\generated_projects\\hospital_mana",
-        "error during build: [vite:esbuild] Transform failed with 1 error: | C:/Users/jer"
+        "Syntax error in app\\routes\\workout-plan_routes.py:   File \"C:\\Users\\jerry\\OneDri",
+        "  File \"C:\\Users\\jerry\\OneDrive\\Desktop\\forgeAi\\generated_projects\\gym_workout_t",
+        "  File \"C:\\Users\\jerry\\OneDrive\\Desktop\\forgeAi\\generated_projects\\gym_workout_t"
       ],
       "failure_class": "NEW_UNCLASSIFIED (untagged: Syntax error in app\\main.py:   File \"C:\\Users\\jerry\\OneDrive)",
       "dimensions": [
@@ -2073,7 +1335,7 @@
         },
         {
           "name": "Code Quality",
-          "score": 88.0,
+          "score": 64.0,
           "passed": false,
           "na": false
         },
@@ -2097,18 +1359,18 @@
         },
         {
           "name": "Visual Judge",
-          "score": 100,
-          "passed": true,
-          "na": false
+          "score": null,
+          "passed": false,
+          "na": true
         }
       ]
     },
     {
-      "app": "20_real_estate_listings",
+      "app": "15_event_management",
       "crashed": false,
-      "project_name": "real_estate_marketplace",
-      "forge_score": 24.21,
-      "grade": "F",
+      "project_name": "event_manager_platform",
+      "forge_score": 72.77,
+      "grade": "C",
       "succeeded": false,
       "first_pass_success": false,
       "repair_success": false,
@@ -2118,173 +1380,53 @@
       "browser_ok": null,
       "endpoint_inventory": "n/a",
       "deployed": false,
-      "fix_attempts": 3,
-      "elapsed_s": 315.7,
-      "total_tokens": 164728,
-      "estimated_cost": 0.0988368,
+      "fix_attempts": 2,
+      "elapsed_s": 1719.8,
+      "total_tokens": 117011,
+      "estimated_cost": 0.025943699999999997,
       "score_history": [
         {
           "attempt": 0,
-          "score": 23.57,
-          "grade": "F"
+          "score": 72.77,
+          "grade": "C"
         },
         {
           "attempt": 1,
-          "score": 24.21,
-          "grade": "F"
+          "score": 71.62,
+          "grade": "C"
+        },
+        {
+          "attempt": 1,
+          "score": 72.77,
+          "grade": "C"
         },
         {
           "attempt": 2,
-          "score": 24.0,
-          "grade": "F"
+          "score": 71.62,
+          "grade": "C"
         },
         {
           "attempt": 2,
-          "score": 24.0,
-          "grade": "F"
-        },
-        {
-          "attempt": 3,
-          "score": 24.0,
-          "grade": "F"
-        },
-        {
-          "attempt": 3,
-          "score": 24.0,
-          "grade": "F"
-        },
-        {
-          "attempt": 3,
-          "score": 24.21,
-          "grade": "F"
+          "score": 72.77,
+          "grade": "C"
         }
       ],
       "final_dominant_errors": [
-        "Missing route file: app/routes/agent_dashboard_routes.py",
-        "Syntax error in app\\main.py:   File \"C:\\Users\\jerry\\OneDrive\\Desktop\\forgeAi\\gen",
-        "Syntax error in app\\routes\\agent-dashboard_routes.py:   File \"C:\\Users\\jerry\\One",
-        "Syntax error in app\\routes\\viewing-request_routes.py:   File \"C:\\Users\\jerry\\One",
-        "  File \"C:\\Users\\jerry\\OneDrive\\Desktop\\forgeAi\\generated_projects\\real_estate_m"
+        "error during build: [vite:esbuild] Transform failed with 6 errors: | C:/Users/je",
+        "[JourneyCRUDFailure] Backend healthy but CRUD journey failed — Create entity: 50"
       ],
-      "failure_class": "NEW_UNCLASSIFIED (untagged: Missing route file: app/routes/agent_dashboard_routes.py)",
+      "failure_class": "JourneyCRUDFailure",
       "dimensions": [
         {
           "name": "Compilation",
-          "score": 0.0,
+          "score": 90.0,
           "passed": false,
           "na": false
         },
         {
           "name": "Runtime Startup",
-          "score": 0,
+          "score": 20.0,
           "passed": false,
-          "na": false
-        },
-        {
-          "name": "API Functionality",
-          "score": 0,
-          "passed": false,
-          "na": false
-        },
-        {
-          "name": "Frontend Load",
-          "score": null,
-          "passed": false,
-          "na": true
-        },
-        {
-          "name": "Browser UX",
-          "score": null,
-          "passed": false,
-          "na": true
-        },
-        {
-          "name": "Integration",
-          "score": null,
-          "passed": false,
-          "na": true
-        },
-        {
-          "name": "Code Quality",
-          "score": 79.0,
-          "passed": false,
-          "na": false
-        },
-        {
-          "name": "Security",
-          "score": 80.0,
-          "passed": true,
-          "na": false
-        },
-        {
-          "name": "Completeness",
-          "score": 100.0,
-          "passed": true,
-          "na": false
-        },
-        {
-          "name": "Performance",
-          "score": 50,
-          "passed": false,
-          "na": false
-        },
-        {
-          "name": "Visual Judge",
-          "score": 100,
-          "passed": true,
-          "na": false
-        }
-      ]
-    },
-    {
-      "app": "11_student_management",
-      "crashed": false,
-      "project_name": "student_management_system",
-      "forge_score": 93.5,
-      "grade": "A",
-      "succeeded": false,
-      "first_pass_success": false,
-      "repair_success": false,
-      "build_ok": true,
-      "runtime_ok": true,
-      "crud_ok": null,
-      "browser_ok": null,
-      "endpoint_inventory": "n/a",
-      "deployed": false,
-      "fix_attempts": 2,
-      "elapsed_s": 312.7,
-      "total_tokens": 188180,
-      "estimated_cost": 0.11290799999999998,
-      "score_history": [
-        {
-          "attempt": 0,
-          "score": 62.07,
-          "grade": "D"
-        },
-        {
-          "attempt": 1,
-          "score": 91.79,
-          "grade": "A"
-        },
-        {
-          "attempt": 2,
-          "score": 93.5,
-          "grade": "A"
-        }
-      ],
-      "final_dominant_errors": [],
-      "failure_class": null,
-      "dimensions": [
-        {
-          "name": "Compilation",
-          "score": 100.0,
-          "passed": true,
-          "na": false
-        },
-        {
-          "name": "Runtime Startup",
-          "score": 100.0,
-          "passed": true,
           "na": false
         },
         {
@@ -2337,8 +1479,589 @@
         },
         {
           "name": "Visual Judge",
-          "score": 13.0,
+          "score": null,
           "passed": false,
+          "na": true
+        }
+      ]
+    },
+    {
+      "app": "16_restaurant_ordering",
+      "crashed": false,
+      "project_name": "restaurant_pos_system",
+      "forge_score": 85.95,
+      "grade": "B",
+      "succeeded": false,
+      "first_pass_success": false,
+      "repair_success": false,
+      "build_ok": true,
+      "runtime_ok": true,
+      "crud_ok": true,
+      "browser_ok": false,
+      "endpoint_inventory": "n/a",
+      "deployed": false,
+      "fix_attempts": 1,
+      "elapsed_s": 289.4,
+      "total_tokens": 123256,
+      "estimated_cost": 0.022702649999999998,
+      "score_history": [
+        {
+          "attempt": 0,
+          "score": 85.95,
+          "grade": "B"
+        },
+        {
+          "attempt": 1,
+          "score": 39.62,
+          "grade": "F"
+        },
+        {
+          "attempt": 1,
+          "score": 89.75,
+          "grade": "B"
+        },
+        {
+          "attempt": 1,
+          "score": 85.95,
+          "grade": "B"
+        }
+      ],
+      "final_dominant_errors": [],
+      "failure_class": null,
+      "dimensions": [
+        {
+          "name": "Compilation",
+          "score": 95.0,
+          "passed": true,
+          "na": false
+        },
+        {
+          "name": "Runtime Startup",
+          "score": 100.0,
+          "passed": true,
+          "na": false
+        },
+        {
+          "name": "API Functionality",
+          "score": 100.0,
+          "passed": true,
+          "na": false
+        },
+        {
+          "name": "Frontend Load",
+          "score": 100.0,
+          "passed": true,
+          "na": false
+        },
+        {
+          "name": "Browser UX",
+          "score": 38.0,
+          "passed": false,
+          "na": false
+        },
+        {
+          "name": "Integration",
+          "score": 100.0,
+          "passed": true,
+          "na": false
+        },
+        {
+          "name": "Code Quality",
+          "score": 100.0,
+          "passed": true,
+          "na": false
+        },
+        {
+          "name": "Security",
+          "score": 100.0,
+          "passed": true,
+          "na": false
+        },
+        {
+          "name": "Completeness",
+          "score": 100.0,
+          "passed": true,
+          "na": false
+        },
+        {
+          "name": "Performance",
+          "score": 90,
+          "passed": true,
+          "na": false
+        },
+        {
+          "name": "Visual Judge",
+          "score": 9.999999999999998,
+          "passed": false,
+          "na": false
+        }
+      ]
+    },
+    {
+      "app": "17_appointment_booking",
+      "crashed": false,
+      "project_name": "forgeai_booking_platform",
+      "forge_score": 67.92,
+      "grade": "D",
+      "succeeded": false,
+      "first_pass_success": false,
+      "repair_success": false,
+      "build_ok": false,
+      "runtime_ok": false,
+      "crud_ok": null,
+      "browser_ok": null,
+      "endpoint_inventory": "n/a",
+      "deployed": false,
+      "fix_attempts": 2,
+      "elapsed_s": 252.6,
+      "total_tokens": 104597,
+      "estimated_cost": 0.0201837,
+      "score_history": [
+        {
+          "attempt": 0,
+          "score": 67.92,
+          "grade": "D"
+        },
+        {
+          "attempt": 1,
+          "score": 23.0,
+          "grade": "F"
+        },
+        {
+          "attempt": 1,
+          "score": 67.92,
+          "grade": "D"
+        },
+        {
+          "attempt": 2,
+          "score": 23.0,
+          "grade": "F"
+        },
+        {
+          "attempt": 2,
+          "score": 67.92,
+          "grade": "D"
+        }
+      ],
+      "final_dominant_errors": [
+        "error during build: src/components/PrivateRoute.jsx (3:9): \"useAuth\" is not expo",
+        "[UserIdNotInjectedError] sqlalchemy.exc.IntegrityError: (sqlite3.IntegrityError)",
+        "POST /seed returned 500"
+      ],
+      "failure_class": "NEW_UNCLASSIFIED (UserIdNotInjectedError)",
+      "dimensions": [
+        {
+          "name": "Compilation",
+          "score": 77.0,
+          "passed": false,
+          "na": false
+        },
+        {
+          "name": "Runtime Startup",
+          "score": 20.0,
+          "passed": false,
+          "na": false
+        },
+        {
+          "name": "API Functionality",
+          "score": 100.0,
+          "passed": true,
+          "na": false
+        },
+        {
+          "name": "Frontend Load",
+          "score": null,
+          "passed": false,
+          "na": true
+        },
+        {
+          "name": "Browser UX",
+          "score": null,
+          "passed": false,
+          "na": true
+        },
+        {
+          "name": "Integration",
+          "score": null,
+          "passed": false,
+          "na": true
+        },
+        {
+          "name": "Code Quality",
+          "score": 76.0,
+          "passed": false,
+          "na": false
+        },
+        {
+          "name": "Security",
+          "score": 100.0,
+          "passed": true,
+          "na": false
+        },
+        {
+          "name": "Completeness",
+          "score": 100.0,
+          "passed": true,
+          "na": false
+        },
+        {
+          "name": "Performance",
+          "score": 90,
+          "passed": true,
+          "na": false
+        },
+        {
+          "name": "Visual Judge",
+          "score": null,
+          "passed": false,
+          "na": true
+        }
+      ]
+    },
+    {
+      "app": "18_sports_league_manager",
+      "crashed": false,
+      "project_name": "sports_league_manager",
+      "forge_score": 76.9,
+      "grade": "C",
+      "succeeded": false,
+      "first_pass_success": false,
+      "repair_success": false,
+      "build_ok": true,
+      "runtime_ok": false,
+      "crud_ok": false,
+      "browser_ok": true,
+      "endpoint_inventory": "n/a",
+      "deployed": false,
+      "fix_attempts": 5,
+      "elapsed_s": 468.3,
+      "total_tokens": 66212,
+      "estimated_cost": 0.01277535,
+      "score_history": [
+        {
+          "attempt": 0,
+          "score": 68.73,
+          "grade": "D"
+        },
+        {
+          "attempt": 1,
+          "score": 69.69,
+          "grade": "D"
+        },
+        {
+          "attempt": 2,
+          "score": 71.6,
+          "grade": "C"
+        },
+        {
+          "attempt": 4,
+          "score": 76.9,
+          "grade": "C"
+        },
+        {
+          "attempt": 4,
+          "score": 76.9,
+          "grade": "C"
+        },
+        {
+          "attempt": 5,
+          "score": 74.74,
+          "grade": "C"
+        },
+        {
+          "attempt": 5,
+          "score": 76.9,
+          "grade": "C"
+        }
+      ],
+      "final_dominant_errors": [
+        "[JourneyCRUDFailure] Backend healthy but CRUD journey failed — Create entity: 50"
+      ],
+      "failure_class": "JourneyCRUDFailure",
+      "dimensions": [
+        {
+          "name": "Compilation",
+          "score": 100.0,
+          "passed": true,
+          "na": false
+        },
+        {
+          "name": "Runtime Startup",
+          "score": 20.0,
+          "passed": false,
+          "na": false
+        },
+        {
+          "name": "API Functionality",
+          "score": 91.66666666666666,
+          "passed": true,
+          "na": false
+        },
+        {
+          "name": "Frontend Load",
+          "score": 100.0,
+          "passed": true,
+          "na": false
+        },
+        {
+          "name": "Browser UX",
+          "score": 88.0,
+          "passed": true,
+          "na": false
+        },
+        {
+          "name": "Integration",
+          "score": 61.53846153846154,
+          "passed": false,
+          "na": false
+        },
+        {
+          "name": "Code Quality",
+          "score": 100.0,
+          "passed": true,
+          "na": false
+        },
+        {
+          "name": "Security",
+          "score": 100.0,
+          "passed": true,
+          "na": false
+        },
+        {
+          "name": "Completeness",
+          "score": 100.0,
+          "passed": true,
+          "na": false
+        },
+        {
+          "name": "Performance",
+          "score": 90,
+          "passed": true,
+          "na": false
+        },
+        {
+          "name": "Visual Judge",
+          "score": null,
+          "passed": false,
+          "na": true
+        }
+      ]
+    },
+    {
+      "app": "19_volunteer_management",
+      "crashed": false,
+      "project_name": "volunteer_manager",
+      "forge_score": 90.93,
+      "grade": "A",
+      "succeeded": true,
+      "first_pass_success": false,
+      "repair_success": true,
+      "build_ok": true,
+      "runtime_ok": true,
+      "crud_ok": true,
+      "browser_ok": true,
+      "endpoint_inventory": "n/a",
+      "deployed": false,
+      "fix_attempts": 1,
+      "elapsed_s": 219.3,
+      "total_tokens": 98986,
+      "estimated_cost": 0.018592349999999997,
+      "score_history": [
+        {
+          "attempt": 0,
+          "score": 68.15,
+          "grade": "D"
+        },
+        {
+          "attempt": 4,
+          "score": 90.48,
+          "grade": "A"
+        },
+        {
+          "attempt": 1,
+          "score": 90.93,
+          "grade": "A"
+        }
+      ],
+      "final_dominant_errors": [],
+      "failure_class": null,
+      "dimensions": [
+        {
+          "name": "Compilation",
+          "score": 55.0,
+          "passed": true,
+          "na": false
+        },
+        {
+          "name": "Runtime Startup",
+          "score": 100.0,
+          "passed": true,
+          "na": false
+        },
+        {
+          "name": "API Functionality",
+          "score": 100.0,
+          "passed": true,
+          "na": false
+        },
+        {
+          "name": "Frontend Load",
+          "score": 100.0,
+          "passed": true,
+          "na": false
+        },
+        {
+          "name": "Browser UX",
+          "score": 88.0,
+          "passed": true,
+          "na": false
+        },
+        {
+          "name": "Integration",
+          "score": 92.3076923076923,
+          "passed": true,
+          "na": false
+        },
+        {
+          "name": "Code Quality",
+          "score": 100.0,
+          "passed": true,
+          "na": false
+        },
+        {
+          "name": "Security",
+          "score": 100.0,
+          "passed": true,
+          "na": false
+        },
+        {
+          "name": "Completeness",
+          "score": 100.0,
+          "passed": true,
+          "na": false
+        },
+        {
+          "name": "Performance",
+          "score": 90,
+          "passed": true,
+          "na": false
+        },
+        {
+          "name": "Visual Judge",
+          "score": 100,
+          "passed": true,
+          "na": false
+        }
+      ]
+    },
+    {
+      "app": "21_hotel_booking",
+      "crashed": false,
+      "project_name": "a_hotel_booking_system_with_ho",
+      "forge_score": 95.93,
+      "grade": "A+",
+      "succeeded": true,
+      "first_pass_success": false,
+      "repair_success": true,
+      "build_ok": true,
+      "runtime_ok": true,
+      "crud_ok": true,
+      "browser_ok": true,
+      "endpoint_inventory": "n/a",
+      "deployed": false,
+      "fix_attempts": 2,
+      "elapsed_s": 326.3,
+      "total_tokens": 76561,
+      "estimated_cost": 0.014335349999999997,
+      "score_history": [
+        {
+          "attempt": 0,
+          "score": 35.0,
+          "grade": "F"
+        },
+        {
+          "attempt": 4,
+          "score": 93.92,
+          "grade": "A"
+        },
+        {
+          "attempt": 4,
+          "score": 95.73,
+          "grade": "A+"
+        },
+        {
+          "attempt": 2,
+          "score": 95.93,
+          "grade": "A+"
+        }
+      ],
+      "final_dominant_errors": [],
+      "failure_class": null,
+      "dimensions": [
+        {
+          "name": "Compilation",
+          "score": 90.0,
+          "passed": true,
+          "na": false
+        },
+        {
+          "name": "Runtime Startup",
+          "score": 100.0,
+          "passed": true,
+          "na": false
+        },
+        {
+          "name": "API Functionality",
+          "score": 100.0,
+          "passed": true,
+          "na": false
+        },
+        {
+          "name": "Frontend Load",
+          "score": 100.0,
+          "passed": true,
+          "na": false
+        },
+        {
+          "name": "Browser UX",
+          "score": 88.0,
+          "passed": true,
+          "na": false
+        },
+        {
+          "name": "Integration",
+          "score": 92.3076923076923,
+          "passed": true,
+          "na": false
+        },
+        {
+          "name": "Code Quality",
+          "score": 100.0,
+          "passed": true,
+          "na": false
+        },
+        {
+          "name": "Security",
+          "score": 100.0,
+          "passed": true,
+          "na": false
+        },
+        {
+          "name": "Completeness",
+          "score": 100.0,
+          "passed": true,
+          "na": false
+        },
+        {
+          "name": "Performance",
+          "score": 90,
+          "passed": true,
+          "na": false
+        },
+        {
+          "name": "Visual Judge",
+          "score": 100,
+          "passed": true,
           "na": false
         }
       ]
