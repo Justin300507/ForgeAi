@@ -175,6 +175,46 @@ def test_filtered_ctor_kwarg_collision_idempotent(tmp_path):
     assert route.read_text(encoding="utf-8") == once
 
 
+# ForgeBench v1.0, employee_directory, 2026-07-28: a trailing kwarg whose
+# value is itself a call with its own parens (`date.today()`) made the old
+# `((?:[^)]*)?)\)`-style tail match stop at the FIRST close-paren it saw --
+# `active=False` (after `date.today()`) was silently never reached, so
+# `active` never got added to the exclusion set and POST /employees 500'd
+# on every request with "got multiple values for keyword argument 'active'".
+NESTED_PAREN_KWARG_COLLISION = '''\
+@router.post("/employees")
+def create_employee(employee_in: EmployeeCreate, db: Session = Depends(get_db)):
+    employee = Employee(**{k: v for k, v in employee_in.dict().items() if k in Employee.__table__.columns.keys() and k not in {'hire_date'}}, hire_date=date.today(), active=False)
+    db.add(employee)
+    db.commit()
+    return employee
+'''
+
+
+def test_filtered_ctor_kwarg_collision_handles_trailing_kwarg_with_nested_parens(tmp_path):
+    p = _proj(tmp_path)
+    route = p / "app" / "routes" / "employee_routes.py"
+    route.write_text(NESTED_PAREN_KWARG_COLLISION, encoding="utf-8")
+    n = _patch_filtered_ctor_kwarg_collision(p)
+    assert n == 1
+    out = route.read_text(encoding="utf-8")
+    assert "'active'" in out and "'hire_date'" in out
+    assert "date.today()" in out  # the nested call itself must survive intact
+    ctor_line = next(l for l in out.splitlines() if l.strip().startswith("employee = Employee("))
+    assert ctor_line.rstrip().endswith("active=False)")  # trailing kwargs preserved verbatim, call properly closed
+
+
+def test_filtered_ctor_kwarg_collision_nested_parens_idempotent(tmp_path):
+    p = _proj(tmp_path)
+    route = p / "app" / "routes" / "employee_routes.py"
+    route.write_text(NESTED_PAREN_KWARG_COLLISION, encoding="utf-8")
+    _patch_filtered_ctor_kwarg_collision(p)
+    once = route.read_text(encoding="utf-8")
+    n2 = _patch_filtered_ctor_kwarg_collision(p)
+    assert n2 == 0
+    assert route.read_text(encoding="utf-8") == once
+
+
 # ── _patch_unsafe_model_hasattr_filter ──────────────────────────────────────
 
 UNSAFE_HASATTR_ROUTE = '''\

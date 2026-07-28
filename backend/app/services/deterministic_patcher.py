@@ -3859,10 +3859,10 @@ def _patch_star_dict_extra_fields(project_path: Path) -> int:
     return patched
 
 
-_FILTERED_CTOR_KWARG_COLLISION_RE = re.compile(
+_FILTERED_CTOR_KWARG_COLLISION_HEAD_RE = re.compile(
     r'\b([A-Z]\w+)\(\*\*\{k: v for k, v in (\w+)\.(?:dict|model_dump)\(\)\.items\(\)'
     r' if k in \1\.__table__\.columns\.keys\(\)'
-    r'(?: and k not in \{(?P<existing>[^}]*)\})?\}((?:[^)]*)?)\)',
+    r'(?: and k not in \{(?P<existing>[^}]*)\})?\}',
 )
 
 
@@ -3892,6 +3892,20 @@ def _patch_filtered_ctor_kwarg_collision(project_path: Path) -> int:
     all and silently skipped this already-partially-fixed shape; it now
     captures an existing exclusion set and unions it with every trailing
     kwarg rather than requiring a clean slate.
+
+    A third reproduction (ForgeBench v1.0, employee_directory, 2026-07-28):
+    `Employee(**{...} and k not in {'hire_date'}}, hire_date=date.today(),
+    active=False)` still 500'd on every POST /employees -- `active` was
+    never added to the exclusion set because the regex used to find the
+    trailing extra_args (everything up to the call's closing paren) was
+    "((?:[^)]*)?)" followed by a literal close-paren, which stops at the
+    FIRST close-paren it finds. With a computed
+    default like `date.today()` in the trailing kwargs, that's the closing
+    paren of `date.today(`, not the real end of the Employee(...) call --
+    the match silently truncated before ever reaching `active=False`, so
+    the collision was never even detected. Now uses find_matching_brace
+    (open_char='(', close_char=')') to find the call's REAL closing paren,
+    correctly walking past any nested parens in the trailing kwargs.
     """
     routes_dir = project_path / "app" / "routes"
     if not routes_dir.exists():
@@ -3906,24 +3920,43 @@ def _patch_filtered_ctor_kwarg_collision(project_path: Path) -> int:
         if "__table__.columns.keys()" not in content:
             continue
 
-        def _fix(m: re.Match) -> str:
-            cls_name, schema_var, existing, extra_args = (
-                m.group(1), m.group(2), m.group("existing"), m.group(4)
+        new_content = content
+        offset = 0
+        changed = False
+        while True:
+            m = _FILTERED_CTOR_KWARG_COLLISION_HEAD_RE.search(new_content, offset)
+            if not m:
+                break
+            cls_name, schema_var, existing = m.group(1), m.group(2), m.group("existing")
+            call_open_paren = m.start() + len(cls_name)
+            if new_content[call_open_paren] != "(":
+                offset = m.end()
+                continue
+            call_close_paren = find_matching_brace(
+                new_content, call_open_paren, quote_chars="'\"",
+                open_char="(", close_char=")",
             )
+            if call_close_paren == -1:
+                offset = m.end()
+                continue
+            extra_args = new_content[m.end():call_close_paren]
             explicit_kwargs = set(re.findall(r'(?:^|,)\s*(\w+)\s*=', extra_args))
             existing_kwargs = set(re.findall(r"'([^']*)'", existing or ""))
             all_excludes = sorted(explicit_kwargs | existing_kwargs)
             if not all_excludes or all_excludes == sorted(existing_kwargs):
-                return m.group(0)  # nothing new to exclude -- leave untouched
+                offset = call_close_paren + 1
+                continue
             exclude_set = "{" + ", ".join(f"'{k}'" for k in all_excludes) + "}"
             filtered = (
-                f"{{k: v for k, v in {schema_var}.dict().items() "
+                f"{cls_name}(**{{k: v for k, v in {schema_var}.dict().items() "
                 f"if k in {cls_name}.__table__.columns.keys() and k not in {exclude_set}}}"
+                f"{extra_args})"
             )
-            return f"{cls_name}(**{filtered}{extra_args})"
+            new_content = new_content[:m.start()] + filtered + new_content[call_close_paren + 1:]
+            changed = True
+            offset = m.start() + len(filtered)
 
-        new_content = _FILTERED_CTOR_KWARG_COLLISION_RE.sub(_fix, content)
-        if new_content != content:
+        if changed:
             rf.write_text(new_content, encoding="utf-8")
             patched += 1
             print(f"  [patcher] Fixed constructor kwarg collision in {rf.name}")

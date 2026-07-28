@@ -18,19 +18,32 @@ break JS parsing (rejecting single-quoted strings).
 from __future__ import annotations
 
 
-def find_matching_brace(text: str, open_pos: int, quote_chars: str = '"') -> int:
+def find_matching_brace(
+    text: str,
+    open_pos: int,
+    quote_chars: str = '"',
+    open_char: str = "{",
+    close_char: str = "}",
+) -> int:
     """
-    Given the index of a '{' in text, walk forward tracking string/escape
-    state to find the index of its MATCHING '}' -- correctly skipping
-    braces inside string literals, and stopping at the actual end of the
-    object rather than grabbing a LATER '}' that happens to appear in
-    trailing text after a complete object. Returns -1 if unmatched
-    (truncated input).
+    Given the index of an open_char in text, walk forward tracking
+    string/escape state to find the index of its MATCHING close_char --
+    correctly skipping delimiters inside string literals, and stopping at
+    the actual end of the object rather than grabbing a LATER close_char
+    that happens to appear in trailing text after a complete object.
+    Returns -1 if unmatched (truncated input).
 
     quote_chars: which characters open/close a string literal in this
     text's language. Default '"' matches JSON (the only valid string
     delimiter there). Pass e.g. "'\"`" for JS/JSX source, where any of
     single quote, double quote, or backtick can delimit a string.
+
+    open_char/close_char: the delimiter pair to match. Defaults to '{'/'}'
+    (the original brace-only behavior); pass '('/')' to match parens
+    instead -- e.g. finding a Python call's real closing paren when the
+    call's own arguments contain nested calls with their own parens
+    (`f(a, b=g())`), which a naive `[^)]*`-style regex can't do since it
+    stops at the FIRST close_char it sees.
     """
     depth = 0
     in_string = None  # None, or the specific quote char that opened the current string
@@ -50,9 +63,9 @@ def find_matching_brace(text: str, open_pos: int, quote_chars: str = '"') -> int
         if ch in quote_chars:
             in_string = ch
             continue
-        if ch == "{":
+        if ch == open_char:
             depth += 1
-        elif ch == "}":
+        elif ch == close_char:
             depth -= 1
             if depth == 0:
                 return i
