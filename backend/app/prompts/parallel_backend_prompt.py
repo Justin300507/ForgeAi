@@ -214,12 +214,18 @@ REQUIRED ROUTER IMPORTS (use exactly these):
 REQUIRED MODEL IMPORTS (use exactly these — critical for FK resolution):
 {model_imports or '  # no models'}
 
+REQUIRED DATABASE IMPORT (use exactly this — Base and engine live in app/database.py,
+NOT in app/models/. Never write "from app.models import Base" — no model file
+defines Base, only imports it):
+from app.database import Base, engine
+
 REQUIRED ROUTER REGISTRATIONS:
 {includes}
 
 RULES:
 - Import ALL models listed above — every single one (prevents NoReferencedTableError on FK relationships)
 - Import ALL routers listed above — every single one
+- Import Base and engine from app.database (shown above) — never from app.models
 - Call Base.metadata.create_all(bind=engine) AFTER model imports, BEFORE including routers
 - No extra routers. No missing routers.
 
