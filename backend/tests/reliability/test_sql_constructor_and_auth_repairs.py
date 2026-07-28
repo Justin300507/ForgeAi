@@ -431,6 +431,45 @@ def test_auth_routes_idempotent(tmp_path):
     assert (p / "app" / "routes" / "auth_routes.py").read_text(encoding="utf-8") == once
 
 
+# Reproduced live (ForgeBench v1.0, library_management_system, 2026-07-28):
+# a User model whose primary key is named 'user_id' instead of 'id' (a
+# valid, if unusual, LLM choice) crashed every signup/login/me request with
+# AttributeError: 'User' object has no attribute 'id', because the injected
+# "known-good" auth_routes.py template hardcoded `user.id` / `current_user.id`
+# in three places instead of resolving the model's real primary-key column.
+MODEL_USER_CUSTOM_PK = '''\
+from app.database import Base
+from sqlalchemy import Column, Integer, String
+
+class User(Base):
+    __tablename__ = "users"
+    user_id = Column(Integer, primary_key=True)
+    email = Column(String)
+    hashed_password = Column(String)
+'''
+
+
+def test_auth_utils_injects_user_pk_helper(tmp_path):
+    p = _proj(tmp_path)
+    _patch_auth_utils(p)
+    content = (p / "app" / "utils" / "auth.py").read_text(encoding="utf-8")
+    assert "_user_pk" in content
+
+
+def test_auth_routes_never_hardcodes_dot_id_on_user(tmp_path):
+    p = _proj(tmp_path)
+    (p / "app" / "main.py").write_text("app = FastAPI()\n", encoding="utf-8")
+    (p / "app" / "models" / "user.py").write_text(MODEL_USER_CUSTOM_PK, encoding="utf-8")
+    _patch_auth_routes(p)
+    out = (p / "app" / "routes" / "auth_routes.py").read_text(encoding="utf-8")
+    # Must import and use the dynamic PK resolver -- never a bare `.id`
+    # access on a user/current_user object, which breaks for any model
+    # whose primary key isn't literally named 'id'.
+    assert "_user_pk" in out
+    assert "user.id" not in out
+    assert "current_user.id" not in out
+
+
 # ── patch_ensure_auth_pages ──────────────────────────────────────────────────
 
 APP_JSX_WITH_LOGIN_NO_PAGES = '''\

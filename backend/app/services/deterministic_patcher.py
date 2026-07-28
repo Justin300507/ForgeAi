@@ -2001,6 +2001,21 @@ def _login_field(User) -> str:
     return "email" if "email" in cols else "username"
 
 
+def _user_pk(User) -> str:
+    """The User model's actual primary-key column name -- not always 'id'.
+    Reproduced live (ForgeBench v1.0, library_management_system, 2026-07-28):
+    the LLM named the User model's primary key 'user_id' instead of 'id'
+    (a valid, if unusual, choice). Signup/login/me all read the just-
+    created or authenticated user's primary key to return in the response;
+    hardcoding '.id' raised AttributeError: 'User' object has no attribute
+    'id' on every single signup/login request, a total auth outage.
+    """
+    for col in User.__table__.columns:
+        if col.primary_key:
+            return col.name
+    return "id"
+
+
 def get_current_user(token: str = Depends(oauth2_scheme), db: Session = Depends(get_db)):
     User = _get_user_model()
     credentials_exception = HTTPException(
@@ -2498,7 +2513,7 @@ from sqlalchemy.orm import Session
 from app.database import get_db
 from app.utils.auth import (
     get_password_hash, verify_password, create_access_token, get_current_user,
-    _get_user_model, _login_field,
+    _get_user_model, _login_field, _user_pk,
 )
 
 auth_router = APIRouter()
@@ -2591,7 +2606,7 @@ def signup(req: SignupRequest, db: Session = Depends(get_db)):
     return {
         "access_token": token,
         "token_type": "bearer",
-        "user_id": user.id,
+        "user_id": getattr(user, _user_pk(User)),
         "email": req.email,
         "display_name": getattr(user, "display_name", req.email.split("@")[0]),
     }
@@ -2610,7 +2625,7 @@ def login(req: LoginRequest, db: Session = Depends(get_db)):
     return {
         "access_token": token,
         "token_type": "bearer",
-        "user_id": user.id,
+        "user_id": getattr(user, _user_pk(User)),
         "email": getattr(user, "email", req.email),
         "display_name": getattr(user, "display_name", identifier),
     }
@@ -2619,7 +2634,7 @@ def login(req: LoginRequest, db: Session = Depends(get_db)):
 @auth_router.get("/auth/me")
 def me(current_user=Depends(get_current_user)):
     return {
-        "id": current_user.id,
+        "id": getattr(current_user, _user_pk(type(current_user))),
         "email": getattr(current_user, "email", getattr(current_user, "username", None)),
         "display_name": getattr(current_user, "display_name", None),
         "role": getattr(current_user, "role", None),
