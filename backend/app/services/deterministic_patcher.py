@@ -7732,6 +7732,73 @@ def _patch_hyphenated_router_identifiers(project_path: Path) -> int:
     return patched
 
 
+_GET_CURRENT_USER_DEF_RE = re.compile(r"^def get_current_user\(", re.MULTILINE)
+
+
+def _patch_get_current_user_name_collision(project_path: Path) -> int:
+    """A route handler literally named `get_current_user` (almost always a
+    "/me"-style endpoint) shadows the real auth dependency of the exact same
+    name -- and since Python evaluates a function's default-argument
+    expressions at DEFINITION time, `def get_current_user(current_user =
+    Depends(get_current_user)):` tries to reference itself before its own
+    assignment completes, raising NameError: name 'get_current_user' is not
+    defined the instant this module is imported (the whole app fails to
+    even start, not just this one endpoint).
+
+    Reproduced live (ForgeBench v1.0, recipe_manager, 2026-07-28):
+    user_routes.py defined `def get_current_user(current_user: Any =
+    Depends(get_current_user))` for GET /users/me, with no import of the
+    real app.utils.auth.get_current_user at all -- every other endpoint in
+    the same file that also depends on the real one (defined AFTER this
+    redefinition in module execution order) would have been broken too,
+    even if the import had been present.
+
+    Renames the locally-defined handler out of the way and ensures the
+    real get_current_user is actually imported from app.utils.auth, so
+    every Depends(get_current_user) call site in the file -- including
+    ones textually before the renamed def -- resolves to the real one.
+    """
+    routes_dir = project_path / "app" / "routes"
+    if not routes_dir.exists():
+        return 0
+
+    patched = 0
+    for rf in routes_dir.glob("*.py"):
+        try:
+            content = rf.read_text(encoding="utf-8", errors="replace")
+        except Exception:
+            continue
+        if not _GET_CURRENT_USER_DEF_RE.search(content):
+            continue
+
+        new_content = _GET_CURRENT_USER_DEF_RE.sub(
+            "def _route_get_current_user(", content, count=1
+        )
+
+        auth_import_re = re.compile(r"^from app\.utils\.auth import ([^\n]+)$", re.MULTILINE)
+        import_m = auth_import_re.search(new_content)
+        if import_m:
+            names = [n.strip() for n in import_m.group(1).split(",")]
+            if "get_current_user" not in names:
+                names.append("get_current_user")
+                new_content = (
+                    new_content[:import_m.start()]
+                    + f"from app.utils.auth import {', '.join(names)}"
+                    + new_content[import_m.end():]
+                )
+        else:
+            new_content = "from app.utils.auth import get_current_user\n" + new_content
+
+        if new_content != content:
+            rf.write_text(new_content, encoding="utf-8")
+            patched += 1
+            print(
+                f"  [patcher] Renamed colliding get_current_user handler to "
+                f"_route_get_current_user in {rf.name}"
+            )
+    return patched
+
+
 def _patch_quoted_route_annotations(project_path: Path) -> int:
     """Unquote string annotations in route files that name a real
     schema/model class, hoisting the import to module level.
@@ -8651,6 +8718,12 @@ def run_deterministic_patches(project_path: str, skip_protected_injections: bool
     # Hyphenated router identifiers (`consultation-note_router`) are a
     # SyntaxError that kills main.py outright — sanitize + dedupe (Exp107)
     _run_patch_isolated(counts, "_patch_hyphenated_router_identifiers", _patch_hyphenated_router_identifiers, root)
+
+    # A route handler literally named get_current_user shadows (and
+    # self-references before assignment) the real auth dependency of the
+    # same name — a NameError that kills the whole module's import, hence
+    # every endpoint in the file, not just the offending one.
+    _run_patch_isolated(counts, "_patch_get_current_user_name_collision", _patch_get_current_user_name_collision, root)
 
     # SQLAlchemy cannot map an association model with no primary key.
     _run_patch_isolated(counts, "_patch_models_without_primary_key", _patch_models_without_primary_key, root)
