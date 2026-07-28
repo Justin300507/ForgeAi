@@ -380,6 +380,14 @@ def _run_v15_child(job_id: str, options: dict[str, Any], messages, pipeline_runn
     except BaseException as exc:
         # Exception bodies can echo prompts, credentials, or JWTs.  Only the
         # exception class crosses the process boundary.
+        # TEMPORARY DIAGNOSTIC (2026-07-23): print the real traceback to this
+        # child's own stdout (server-side log only, never crosses the IPC
+        # boundary above) to root-cause a RuntimeError appearing after
+        # successful pipeline completion under fork() on Railway. Revert once
+        # root-caused.
+        import traceback
+        print("[DIAGNOSTIC] _run_v15_child real exception:", flush=True)
+        traceback.print_exc()
         _send_terminal(messages, {"type": "error", "error_type": _safe_identifier(type(exc).__name__)})
 
 
