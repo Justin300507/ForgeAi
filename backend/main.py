@@ -1761,6 +1761,29 @@ def health():
     return {"status": "ok", "version": app.version}
 
 
+@app.get("/admin/data-dir", tags=["admin"])
+def admin_data_dir(current_user=Depends(get_current_user)):
+    """
+    Temporary read-only diagnostic (2026-07-30): deleting generation_jobs
+    rows didn't free real disk bytes (main forgeai.db is only 64KB, and
+    disk_free_bytes stayed 0) -- something else under /data is consuming
+    the ~423MB actually in use. Pure filesystem reads, no SQLite writes,
+    so this works regardless of the disk-full state.
+    """
+    root = "/data" if os.path.isdir("/data") else "."
+    entries = []
+    for dirpath, dirnames, filenames in os.walk(root):
+        for fname in filenames:
+            full = os.path.join(dirpath, fname)
+            try:
+                size = os.path.getsize(full)
+            except OSError:
+                size = None
+            entries.append({"path": full, "size_bytes": size})
+    entries.sort(key=lambda e: e["size_bytes"] or 0, reverse=True)
+    return {"root": root, "entries": entries[:50]}
+
+
 @app.post("/admin/vacuum-db", tags=["admin"])
 def admin_vacuum_db(current_user=Depends(get_current_user)):
     """
