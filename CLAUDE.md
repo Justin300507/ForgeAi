@@ -41,6 +41,35 @@ kept only as historical fallback, not under active development. Other
 live endpoints: `/jobs` (async job queue, V19), `/queue` (worker-queue
 REST API), `/deploy/{github,railway,cloudflare}`, `/health`.
 
+## Production Deployment
+
+**Real production traffic runs on Railway (backend) + Vercel (frontend),
+not Render.** Confirmed 2026-07-29:
+
+- Backend: Railway project `forgeai`, service `forgeai-backend`
+  (`https://forgeai-backend-production-93c3.up.railway.app`), Docker
+  build (`railway.toml` -> `Dockerfile` -> `/start.sh`), SQLite on a
+  persistent Railway volume (`/data`, no `DATABASE_URL` set).
+- Frontend: Vercel project `forgeai4123/forgeai-frontend`
+  (`https://forgeai-frontend-wine.vercel.app`), `VITE_API_URL`/
+  `VITE_WS_URL` point at the Railway backend; `CORS_ORIGINS` on Railway
+  is set to match.
+- A separate Render+Neon deployment also exists
+  (`https://forgeai-5nw7.onrender.com`, service `srv-d9c5siflk1mc7398jrig`)
+  from an earlier migration session (2026-07-16) -- it is NOT what real
+  users hit. Left running, not decommissioned, but treat Railway+Vercel
+  as canonical for any "what does production actually do" question.
+
+**Gotcha that cost real debugging time**: `main.py`'s `_run_job`
+(the handler behind `/jobs`, i.e. what the dashboard's "New App" button
+calls) reads `FORGE_PIPELINE_VERSION` and **defaults to `"v14"` if
+unset** -- silently running the old V7/V6-based pipeline instead of
+V15, with no error or warning. Always verify this env var is explicitly
+set to `v15` on whichever service is actually live before trusting that
+V15-era reliability work (ForgeBench scores, canary results, repair-loop
+fixes) reflects what users experience. Set on both Railway and Render as
+of 2026-07-29.
+
 ## Required Environment Variables
 
 Create `backend/.env`:
