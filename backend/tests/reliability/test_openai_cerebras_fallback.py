@@ -37,21 +37,22 @@ def test_openai_client_has_one_bounded_attempt_before_provider_fallback() -> Non
         openai_provider._client = previous_client
 
 
-def test_explicit_openai_failure_goes_directly_to_cerebras() -> None:
+def test_explicit_openai_failure_retries_openai_itself() -> None:
+    """Cerebras/Gemini/Groq were removed as fallbacks (2026-07-30, no usable
+    credits/keys on Railway for any of them) -- a transient OpenAI failure
+    now retries OpenAI directly instead of cascading to dead providers."""
     calls: list[str] = []
 
-    def fail_openai(*_args, **_kwargs):
+    def flaky_openai(*_args, **_kwargs):
         calls.append("openai")
-        raise RuntimeError("temporary OpenAI failure")
-
-    def succeed_cerebras(*_args, **_kwargs):
-        calls.append("cerebras")
-        return "cerebras response"
+        if len(calls) < 2:
+            raise RuntimeError("temporary OpenAI failure")
+        return "openai response"
 
     ai_provider._provider_cooldown_until.clear()
     with (
-        patch.object(ai_provider, "openai_generate", fail_openai),
-        patch.object(ai_provider, "cerebras_generate", succeed_cerebras),
+        patch.object(ai_provider, "openai_generate", flaky_openai),
+        patch.object(ai_provider.time, "sleep", lambda *_a, **_k: None),
     ):
         result = ai_provider._generate_uncached(
             "test prompt",
@@ -59,37 +60,59 @@ def test_explicit_openai_failure_goes_directly_to_cerebras() -> None:
             stage="test",
         )
 
-    assert result == "cerebras response"
-    assert calls == ["openai", "cerebras"]
+    assert result == "openai response"
+    assert calls == ["openai", "openai"]
 
 
-def test_auto_chain_uses_openai_before_cerebras() -> None:
+def test_auto_chain_retries_openai_and_raises_if_all_attempts_fail() -> None:
     calls: list[str] = []
 
     def fail_openai(*_args, **_kwargs):
         calls.append("openai")
         raise RuntimeError("temporary OpenAI failure")
 
-    def succeed_cerebras(*_args, **_kwargs):
-        calls.append("cerebras")
-        return "cerebras response"
-
     ai_provider._provider_cooldown_until.clear()
     with (
         patch.object(ai_provider, "openai_generate", fail_openai),
-        patch.object(ai_provider, "cerebras_generate", succeed_cerebras),
+        patch.object(ai_provider.time, "sleep", lambda *_a, **_k: None),
     ):
-        result = ai_provider._auto_chain("test prompt", "test", 4000, 0)
+        try:
+            ai_provider._auto_chain("test prompt", "test", 4000, 0)
+            assert False, "expected RuntimeError"
+        except RuntimeError as e:
+            assert "OpenAI failed after" in str(e)
 
-    assert result == "cerebras response"
-    assert calls == ["openai", "cerebras"]
+    assert calls == ["openai"] * ai_provider._OPENAI_RETRY_ATTEMPTS
+
+
+def test_explicit_cerebras_request_uses_openai_instead() -> None:
+    """No credits configured for Cerebras -- an explicit request for it
+    should go straight to OpenAI rather than attempting it at all."""
+    calls: list[str] = []
+
+    def succeed_openai(*_args, **_kwargs):
+        calls.append("openai")
+        return "openai response"
+
+    def fail_if_called(*_args, **_kwargs):
+        raise AssertionError("cerebras must never be attempted")
+
+    ai_provider._provider_cooldown_until.clear()
+    with (
+        patch.object(ai_provider, "openai_generate", succeed_openai),
+    ):
+        result = ai_provider._generate_uncached("test prompt", provider="cerebras", stage="test")
+
+    assert result == "openai response"
+    assert calls == ["openai"]
 
 
 if __name__ == "__main__":
     tests = [
         test_openai_client_has_one_bounded_attempt_before_provider_fallback,
-        test_explicit_openai_failure_goes_directly_to_cerebras,
-        test_auto_chain_uses_openai_before_cerebras,
+        test_explicit_openai_failure_retries_openai_itself,
+        test_auto_chain_retries_openai_and_raises_if_all_attempts_fail,
+        test_explicit_cerebras_request_uses_openai_instead,
     ]
     for test in tests:
         test()

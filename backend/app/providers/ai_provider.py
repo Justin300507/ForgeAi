@@ -4,12 +4,6 @@ from contextlib import contextmanager
 from contextvars import ContextVar
 from typing import Callable, Iterator
 
-from app.providers.deepseek_provider import generate as deepseek_generate
-from app.providers.cerebras_provider import generate as cerebras_generate
-from app.providers.gemini_provider import generate as gemini_generate
-from app.providers.gemini_provider import current_model as gemini_current_model
-from app.providers.openrouter_provider import generate as openrouter_generate
-from app.providers.groq_provider import generate as groq_generate
 from app.providers.ollama_provider import generate as ollama_generate
 from app.providers.openai_provider import DEFAULT_MODEL as openai_default_model
 from app.providers.openai_provider import generate as openai_generate
@@ -140,87 +134,46 @@ def _tracked(provider_name: str, model: str, prompt: str, fn, stage: str = "unkn
     return result
 
 
-_GEMINI_RETRY_ATTEMPTS = 3
-_GEMINI_RETRY_BACKOFF_SECONDS = 5
-_CEREBRAS_FINAL_RETRY_BACKOFF_SECONDS = 15
+_OPENAI_RETRY_ATTEMPTS = 3
+_OPENAI_RETRY_BACKOFF_SECONDS = 5
 
 
-def _auto_chain(prompt, stage, max_tokens, thinking_budget, skip: frozenset = frozenset(),
-                 _cerebras_already_tried: bool = False):
+def _auto_chain(prompt, stage, max_tokens, thinking_budget):
     """
-    OpenAI → Cerebras → Gemini (with retries) → Groq. OpenAI is the primary
-    provider; the others are independent fallbacks for transient errors,
-    rate limits, and billing outages.
+    OpenAI only, with retries on transient errors.
 
-    _cerebras_already_tried: set by generate_content's explicit
-    provider=="cerebras" branch when ITS OWN try already failed with a
-    transient error (not a 402 cooldown) before calling in here with
-    skip={"cerebras"} to avoid an instant, pointless re-attempt of the
-    identical call. Only suppresses the FIRST Cerebras leg below --
-    the final-retry leg (after Gemini+Groq both also fail) still runs
-    regardless, since that's the exact safety net Exp109 was built for
-    (a transient Cerebras timeout, Gemini credit-depleted, Groq 413 on
-    TPM) and skip={"cerebras"} used to wall it off entirely, silently
-    disabling it for the single most common call path (model router
-    defaults to explicit provider="cerebras", not "auto").
+    Cerebras/Gemini/Groq were removed as fallback legs at the user's
+    explicit request (2026-07-30): none had usable credits/keys on
+    Railway (Cerebras 402 payment-required, Gemini key unset, Groq key
+    invalid), so every call that hit this chain paid the full latency of
+    three guaranteed-dead providers (Gemini's own 3x-retry backoff alone
+    added 10-15s) before ultimately failing anyway -- turning a single
+    transient OpenAI timeout into a total generation failure. This was
+    the actual root cause behind the "RuntimeError after successful
+    pipeline completion" investigated at length elsewhere in
+    experiments.md: there was no process/fork() bug, just every fallback
+    leg being dead and the resulting total failure surfacing as an
+    opaque, generically-labeled RuntimeError. Retrying OpenAI directly
+    is both faster and strictly more likely to succeed than that dead
+    chain ever was.
     """
-    if "openai" not in skip and not _on_cooldown("openai"):
+    last_exc: Exception | None = None
+    for attempt in range(1, _OPENAI_RETRY_ATTEMPTS + 1):
+        if _on_cooldown("openai"):
+            break
         try:
-            print("Using OpenAI (main)")
+            print(f"Using OpenAI{' (main)' if attempt == 1 else f' (retry {attempt}/{_OPENAI_RETRY_ATTEMPTS})'}")
             return _tracked("openai", openai_default_model, prompt, openai_generate, stage, max_tokens=max_tokens)
         except Exception as e:
+            last_exc = e
             print(f"OpenAI failed: {e}")
             _note_provider_result("openai", e)
+            if _on_cooldown("openai"):
+                break  # 402 — retrying can't help, stop immediately
+            if attempt < _OPENAI_RETRY_ATTEMPTS:
+                time.sleep(_OPENAI_RETRY_BACKOFF_SECONDS)
 
-    if "cerebras" not in skip and not _cerebras_already_tried and not _on_cooldown("cerebras"):
-        try:
-            print("Using Cerebras (main)")
-            return _tracked("cerebras", "gpt-oss-120b", prompt, cerebras_generate, stage, max_tokens=max_tokens)
-        except Exception as e:
-            print(f"Cerebras failed: {e}")
-            _note_provider_result("cerebras", e)
-
-    if "gemini" not in skip and not _on_cooldown("gemini"):
-        last_exc: Exception | None = None
-        for attempt in range(1, _GEMINI_RETRY_ATTEMPTS + 1):
-            try:
-                print(f"Using Gemini{'' if attempt == 1 else f' (retry {attempt}/{_GEMINI_RETRY_ATTEMPTS})'}")
-                return _tracked("gemini", gemini_current_model(), prompt, gemini_generate, stage,
-                                max_tokens=max_tokens, thinking_budget=thinking_budget)
-            except Exception as e:
-                last_exc = e
-                print(f"Gemini failed: {e}")
-                _note_provider_result("gemini", e)
-                if _on_cooldown("gemini"):
-                    break  # 402 — retrying can't help, stop immediately
-                if attempt < _GEMINI_RETRY_ATTEMPTS:
-                    time.sleep(_GEMINI_RETRY_BACKOFF_SECONDS)
-
-    if "groq" not in skip and not _on_cooldown("groq"):
-        try:
-            print("Using Groq (fallback)")
-            return _tracked("groq", "llama-3.3-70b", prompt, groq_generate, stage, max_tokens=max_tokens)
-        except Exception as e:
-            print(f"Groq failed: {e}")
-            _note_provider_result("groq", e)
-
-    # Final leg: ONE Cerebras retry after a short backoff. Confirmed live
-    # (Exp109, exp109-milestone-r1): Cerebras failed with a transient
-    # "Request timed out" while Gemini was credit-depleted and Groq 413'd
-    # deterministically (12k TPM cap vs a ~14k-token fix prompt) — the
-    # chain abandoned a call that Cerebras itself served fine seconds
-    # later. Skipped when Cerebras is on cooldown (402) — retrying can't
-    # help there — so genuinely-all-dead cases only pay one extra pause.
-    if "cerebras" not in skip and not _on_cooldown("cerebras"):
-        try:
-            time.sleep(_CEREBRAS_FINAL_RETRY_BACKOFF_SECONDS)
-            print("Using Cerebras (final retry — fallback legs failed)")
-            return _tracked("cerebras", "gpt-oss-120b", prompt, cerebras_generate, stage, max_tokens=max_tokens)
-        except Exception as e:
-            print(f"Cerebras final retry failed: {e}")
-            _note_provider_result("cerebras", e)
-
-    raise RuntimeError("OpenAI, Cerebras, Gemini (after retries), and Groq all failed")
+    raise RuntimeError(f"OpenAI failed after {_OPENAI_RETRY_ATTEMPTS} attempts: {last_exc}")
 
 
 def generate_content(
@@ -271,90 +224,18 @@ def _generate_uncached(
     stage: str = "unknown",
     thinking_budget: int = 0,
 ):
-    # Specific-provider requests (e.g. the model router picking "gemini" for a
-    # whole pipeline run) used to have NO fallback: a single transient error
-    # (rate limit, 503 high-demand, etc.) on that one provider would abort the
-    # entire generation, discarding every stage that already succeeded. Now
-    # each specific request falls back through the auto chain (skipping the
-    # provider that just failed) instead of raising straight through.
-
-    if provider == "deepseek":
-        try:
-            print("Using DeepSeek")
-            return _tracked("deepseek", "deepseek-chat", prompt, deepseek_generate, stage, max_tokens=max_tokens)
-        except Exception as e:
-            print(f"DeepSeek failed ({e}) — falling back to auto chain")
-            return _auto_chain(prompt, stage, max_tokens, thinking_budget)
-
-    if provider == "cerebras":
-        if _on_cooldown("cerebras"):
-            print("Cerebras on cooldown from a recent 402 — going straight to auto chain")
-            return _auto_chain(prompt, stage, max_tokens, thinking_budget, skip=frozenset({"cerebras"}))
-        try:
-            print("Using Cerebras")
-            return _tracked("cerebras", "gpt-oss-120b", prompt, cerebras_generate, stage, max_tokens=max_tokens)
-        except Exception as e:
-            print(f"Cerebras failed ({e}) — falling back to auto chain")
-            _note_provider_result("cerebras", e)
-            # Don't skip cerebras outright -- a transient failure here (timeout,
-            # brief 5xx) still leaves it eligible for _auto_chain's deliberate
-            # final-retry leg once Gemini+Groq also fail. Only _cerebras_already_tried
-            # suppresses the redundant immediate re-attempt; a real 402 cooldown
-            # (handled above) is the only case that should skip cerebras entirely.
-            return _auto_chain(prompt, stage, max_tokens, thinking_budget, _cerebras_already_tried=True)
-
-    if provider == "groq":
-        if _on_cooldown("groq"):
-            print("Groq on cooldown from a recent 402 — going straight to auto chain")
-            return _auto_chain(prompt, stage, max_tokens, thinking_budget, skip=frozenset({"groq"}))
-        try:
-            print("Using Groq")
-            return _tracked("groq", "llama-3.3-70b", prompt, groq_generate, stage, max_tokens=max_tokens)
-        except Exception as e:
-            print(f"Groq failed ({e}) — falling back to auto chain")
-            _note_provider_result("groq", e)
-            return _auto_chain(prompt, stage, max_tokens, thinking_budget, skip=frozenset({"groq"}))
-
-    if provider == "openrouter":
-        try:
-            print("Using OpenRouter")
-            return _tracked("openrouter", "auto", prompt, openrouter_generate, stage, max_tokens=max_tokens)
-        except Exception as e:
-            print(f"OpenRouter failed ({e}) — falling back to auto chain")
-            return _auto_chain(prompt, stage, max_tokens, thinking_budget)
-
-    if provider == "gemini":
-        if _on_cooldown("gemini"):
-            print("Gemini on cooldown from a recent 402 — going straight to auto chain")
-            return _auto_chain(prompt, stage, max_tokens, thinking_budget, skip=frozenset({"gemini"}))
-        try:
-            print("Using Gemini")
-            return _tracked("gemini", gemini_current_model(), prompt, gemini_generate, stage,
-                            max_tokens=max_tokens, thinking_budget=thinking_budget)
-        except Exception as e:
-            print(f"Gemini failed ({e}) — falling back to auto chain")
-            _note_provider_result("gemini", e)
-            return _auto_chain(prompt, stage, max_tokens, thinking_budget, skip=frozenset({"gemini"}))
+    # Cerebras/Gemini/Groq/DeepSeek/OpenRouter have no usable credits or
+    # keys configured (see _auto_chain's docstring) -- an explicit request
+    # for any of them goes straight to the OpenAI-only chain instead of
+    # paying for a guaranteed-failing attempt first.
+    if provider in ("deepseek", "cerebras", "groq", "openrouter", "gemini"):
+        print(f"{provider} has no configured credits — using OpenAI instead")
+        return _auto_chain(prompt, stage, max_tokens, thinking_budget)
 
     if provider == "openai":
-        if _on_cooldown("openai"):
-            return _auto_chain(prompt, stage, max_tokens, thinking_budget, skip=frozenset({"openai"}))
-        try:
-            print("Using OpenAI")
-            return _tracked("openai", openai_default_model, prompt, openai_generate, stage, max_tokens=max_tokens)
-        except Exception as e:
-            print(f"OpenAI failed ({e}) — falling back to Cerebras chain")
-            _note_provider_result("openai", e)
-            # OpenAI was already attempted for this request. Skip its first
-            # auto-chain leg so the next provider is Cerebras rather than
-            # spending a second OpenAI attempt on the same failing call.
-            return _auto_chain(
-                prompt,
-                stage,
-                max_tokens,
-                thinking_budget,
-                skip=frozenset({"openai"}),
-            )
+        # _auto_chain IS the OpenAI-with-retries policy now -- no separate
+        # single-attempt path needed here.
+        return _auto_chain(prompt, stage, max_tokens, thinking_budget)
 
     if provider == "ollama":
         print("Using Ollama")

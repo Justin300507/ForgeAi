@@ -8341,10 +8341,24 @@ pattern, not attributable to this change). `CANARY PASSED`. This does
 NOT exercise the actual bug -- Windows can't run `fork()`, so this only
 confirms the added print statement itself is inert.
 
-**Next**: waiting on Render's log stream to capture the real
-`[DIAGNOSTIC] _run_v15_child real exception:` traceback the next time a
-live job hits this. Revert the print once root-caused, per its own
-comment.
+**RESOLVED, 2026-07-30**: the log-relay fix (below) caught a live
+occurrence of this exact error on the real production Railway backend
+with full context for the first time. There was no fork()/process-
+boundary bug at all: `_auto_chain`'s fallback order (OpenAI -> Cerebras
+-> Gemini -> Groq) had every non-OpenAI leg dead in production
+(Cerebras 402 payment-required, Gemini key never set on Railway, Groq
+key invalid) -- a transient OpenAI timeout cascaded through three
+guaranteed failures before raising a generically-labeled
+`RuntimeError`, which is exactly what `pipeline_child_error:RuntimeError`
+collapses ANY total-failure cause into. The original diagnostic (added
+here) could only ever have caught this if the exception originated
+inside the child's own try block -- it did, but the label gave zero
+information about *why*, which is what made it look mysterious. Fixed
+by removing Cerebras/Gemini/Groq as fallbacks entirely per explicit user
+request (no credits for any of them) and retrying OpenAI directly
+instead (`_auto_chain` rewritten, see the V15 log-relay entry below).
+Diagnostic print reverted, as its own comment said to do once
+root-caused.
 
 ## Full ForgeBench v1.0 Re-run (25/25 apps)
 
@@ -8378,6 +8392,44 @@ current, complete baseline. Next reliability cycle should pick the
 highest-prevalence one of these (the two `main.py` syntax-error F's
 look like the strongest candidate) per the usual root-cause -> fix ->
 canary -> compare loop.
+
+## OpenAI-Only Provider Chain (Cerebras/Gemini/Groq Removed)
+
+2026-07-30. User has no billing credits for Cerebras, Gemini, or Groq
+(confirmed live: Cerebras 402 payment-required, Gemini API key never
+configured on Railway, Groq API key invalid/401) and explicitly asked
+to drop them entirely and use OpenAI only. This also happened to be the
+actual root cause of the session-spanning "RuntimeError after
+successful pipeline completion" investigation (see above) -- every
+fallback leg being dead meant a single transient OpenAI hiccup always
+cascaded to total failure.
+
+`app/providers/ai_provider.py`'s `_auto_chain` rewritten from OpenAI ->
+Cerebras -> Gemini (3x retry) -> Groq -> Cerebras (final retry) down to
+OpenAI with its own 3-attempt retry (5s backoff) and nothing else. The
+explicit-provider branches in `_generate_uncached` for
+deepseek/cerebras/groq/openrouter/gemini now redirect straight to the
+OpenAI chain instead of attempting a guaranteed-dead provider first;
+the explicit `"openai"` branch now just delegates to `_auto_chain`
+directly (it already contains the same retry policy, so the old
+single-attempt-then-fallback special case was redundant). Removed the
+now-dead `cerebras_generate`/`gemini_generate`/`gemini_current_model`/
+`groq_generate`/`deepseek_generate`/`openrouter_generate` imports
+(`ollama_generate` kept -- local/free, unrelated to billing).
+
+Updated the 4 existing test files that asserted the old fallback
+behavior (`test_cerebras_large_generation_bound.py`,
+`test_openai_cerebras_fallback.py`, `test_provider_attempt_progress.py`,
+`test_provider_failure_telemetry.py`) to assert the new OpenAI-only
+retry policy instead -- rewriting failing tests to match an
+intentional behavior change, not restoring the old behavior. All 15
+provider tests pass; confirmed the other 6 failures in a full
+1044-test reliability suite run are pre-existing/environmental (stale
+`generated_projects/` fixtures from today's canary runs, known
+test-isolation flakes already documented in Exp140) via a stash-based
+before/after comparison, not caused by this change.
+
+Deployed to Render (auto) and Railway (`railway up`).
 
 ## Found: V15 Jobs Never Populate the Frontend Generation-Log Panel
 

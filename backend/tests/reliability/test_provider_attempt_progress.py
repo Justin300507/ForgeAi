@@ -35,30 +35,41 @@ def test_tracked_attempt_has_only_allowed_metadata() -> None:
     assert "PROMPT_SECRET" not in repr(events) and "OUTPUT_SECRET" not in repr(events)
 
 
-def test_openai_failure_then_cerebras_success_reports_actual_truth() -> None:
+def test_openai_failure_then_retry_success_reports_actual_truth() -> None:
+    """Cerebras/Gemini/Groq were removed as fallbacks (2026-07-30, no usable
+    credits/keys on Railway) -- a failed OpenAI attempt now retries OpenAI
+    itself, reported as a second 'openai' attempt rather than a different
+    provider."""
     import app.providers.ai_provider as provider
 
     events, collect = _event_collector()
     original_cooldowns = dict(provider._provider_cooldown_until)
     provider._provider_cooldown_until.clear()
+    openai_calls = [RuntimeError("unavailable"), "openai retry response"]
+
+    def flaky_openai(*_args, **_kwargs):
+        result = openai_calls.pop(0)
+        if isinstance(result, Exception):
+            raise result
+        return result
+
     try:
         with (
-            patch.object(provider, "openai_generate", side_effect=RuntimeError("unavailable")),
-            patch.object(provider, "cerebras_generate", return_value="cerebras response"),
+            patch.object(provider, "openai_generate", side_effect=flaky_openai),
             patch.object(provider, "_note_provider_result", return_value=None),
             patch.object(provider, "time") as mock_time,
             provider.observe_provider_attempts(collect),
         ):
             mock_time.time.return_value = 1.0
-            assert provider._generate_uncached("PROMPT_SECRET", provider="openai", stage="planning") == "cerebras response"
+            assert provider._generate_uncached("PROMPT_SECRET", provider="openai", stage="planning") == "openai retry response"
     finally:
         provider._provider_cooldown_until.clear()
         provider._provider_cooldown_until.update(original_cooldowns)
     assert events == [
         {"stage": "planning", "provider": "openai", "attempt": 1, "status": "started"},
         {"stage": "planning", "provider": "openai", "attempt": 1, "status": "failed"},
-        {"stage": "planning", "provider": "cerebras", "attempt": 2, "status": "started"},
-        {"stage": "planning", "provider": "cerebras", "attempt": 2, "status": "succeeded"},
+        {"stage": "planning", "provider": "openai", "attempt": 2, "status": "started"},
+        {"stage": "planning", "provider": "openai", "attempt": 2, "status": "succeeded"},
     ]
     assert "PROMPT_SECRET" not in repr(events)
 

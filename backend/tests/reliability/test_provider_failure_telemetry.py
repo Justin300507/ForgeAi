@@ -30,24 +30,27 @@ def _assert_failure(
     assert "sk-test-secret" not in json.dumps(failure)
 
 
-def test_openai_failure_records_one_redacted_entry_then_falls_back_to_cerebras() -> None:
+def test_openai_failure_records_one_redacted_entry_then_retries_openai() -> None:
+    """Cerebras/Gemini/Groq were removed as fallbacks (2026-07-30, no usable
+    credits/keys on Railway) -- a failed OpenAI attempt retries OpenAI
+    itself rather than falling through to another provider."""
     calls: list[str] = []
+    responses = [TimeoutError("request timed out authorization=sk-test-secret"), "openai retry response"]
 
-    def fail_openai(*_args, **_kwargs):
+    def flaky_openai(*_args, **_kwargs):
         calls.append("openai")
-        raise TimeoutError("request timed out authorization=sk-test-secret")
-
-    def succeed_cerebras(*_args, **_kwargs):
-        calls.append("cerebras")
-        return "cerebras response"
+        result = responses.pop(0)
+        if isinstance(result, Exception):
+            raise result
+        return result
 
     cost_tracker.reset_session()
     ai_provider._provider_cooldown_until.clear()
     try:
         with (
             patch.dict(os.environ, {"FORGE_LLM_CACHE": "0"}, clear=False),
-            patch.object(ai_provider, "openai_generate", fail_openai),
-            patch.object(ai_provider, "cerebras_generate", succeed_cerebras),
+            patch.object(ai_provider, "openai_generate", flaky_openai),
+            patch.object(ai_provider.time, "sleep", lambda *_a, **_k: None),
         ):
             result = ai_provider.generate_content(
                 "private prompt that must not reach telemetry",
@@ -55,8 +58,8 @@ def test_openai_failure_records_one_redacted_entry_then_falls_back_to_cerebras()
                 stage="architect",
             )
 
-        assert result == "cerebras response"
-        assert calls == ["openai", "cerebras"]
+        assert result == "openai retry response"
+        assert calls == ["openai", "openai"]
         failures = cost_tracker.get_session_failures()
         assert len(failures) == 1
         _assert_failure(
@@ -71,15 +74,11 @@ def test_openai_failure_records_one_redacted_entry_then_falls_back_to_cerebras()
         cost_tracker.reset_session()
 
 
-def test_cerebras_failure_records_one_entry_then_preserves_openai_first_fallback() -> None:
-    calls: list[str] = []
-
-    def fail_cerebras(*_args, **_kwargs):
-        calls.append("cerebras")
-        raise RuntimeError("upstream unavailable")
-
+def test_explicit_cerebras_request_never_attempts_cerebras_or_records_a_failure() -> None:
+    """No credits configured for Cerebras -- an explicit request for it
+    must go straight to OpenAI without attempting Cerebras, so no failure
+    telemetry is recorded for it at all."""
     def succeed_openai(*_args, **_kwargs):
-        calls.append("openai")
         return "openai response"
 
     cost_tracker.reset_session()
@@ -87,7 +86,6 @@ def test_cerebras_failure_records_one_entry_then_preserves_openai_first_fallback
     try:
         with (
             patch.dict(os.environ, {"FORGE_LLM_CACHE": "0"}, clear=False),
-            patch.object(ai_provider, "cerebras_generate", fail_cerebras),
             patch.object(ai_provider, "openai_generate", succeed_openai),
         ):
             result = ai_provider.generate_content(
@@ -97,17 +95,7 @@ def test_cerebras_failure_records_one_entry_then_preserves_openai_first_fallback
             )
 
         assert result == "openai response"
-        assert calls == ["cerebras", "openai"]
-        failures = cost_tracker.get_session_failures()
-        assert len(failures) == 1
-        _assert_failure(
-            failures[0],
-            provider="cerebras",
-            model="gpt-oss-120b",
-            stage="repair",
-            error_class="provider_error",
-            timeout=False,
-        )
+        assert cost_tracker.get_session_failures() == []
     finally:
         cost_tracker.reset_session()
 
@@ -135,8 +123,8 @@ def test_exception_text_that_echoes_prompt_is_never_persisted() -> None:
 
 if __name__ == "__main__":
     tests = [
-        test_openai_failure_records_one_redacted_entry_then_falls_back_to_cerebras,
-        test_cerebras_failure_records_one_entry_then_preserves_openai_first_fallback,
+        test_openai_failure_records_one_redacted_entry_then_retries_openai,
+        test_explicit_cerebras_request_never_attempts_cerebras_or_records_a_failure,
         test_exception_text_that_echoes_prompt_is_never_persisted,
     ]
     for test in tests:

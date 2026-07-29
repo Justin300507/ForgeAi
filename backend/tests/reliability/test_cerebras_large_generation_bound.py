@@ -54,28 +54,25 @@ def test_large_generation_failure_stops_after_the_single_documented_attempt() ->
     assert create.call_count == cerebras_provider._MAX_LARGE_GENERATION_ATTEMPTS
 
 
-def test_auto_policy_uses_one_openai_mini_attempt_before_cerebras() -> None:
-    openai_create = Mock(side_effect=RuntimeError("OpenAI mini unavailable"))
+def test_auto_policy_retries_openai_mini_when_the_first_attempt_fails() -> None:
+    """Cerebras/Gemini/Groq were removed as auto-chain fallbacks (2026-07-30,
+    no usable credits/keys on Railway) -- a failed OpenAI attempt now
+    retries OpenAI itself instead of falling through to Cerebras."""
+    openai_create = Mock(side_effect=[RuntimeError("OpenAI mini unavailable"), _response("mini response")])
     fake_openai_client = SimpleNamespace(
         chat=SimpleNamespace(completions=SimpleNamespace(create=openai_create))
     )
-    calls: list[str] = []
-
-    def succeed_cerebras(*_args, **_kwargs):
-        calls.append("cerebras")
-        return "cerebras response"
 
     ai_provider._provider_cooldown_until.clear()
     with (
         patch.object(openai_provider, "_get_client", return_value=fake_openai_client),
         patch.object(ai_provider, "openai_generate", openai_provider.generate),
-        patch.object(ai_provider, "cerebras_generate", succeed_cerebras),
+        patch.object(ai_provider.time, "sleep", lambda *_a, **_k: None),
     ):
         result = ai_provider._auto_chain("test prompt", "test", 4_000, 0)
 
-    assert result == "cerebras response"
-    assert calls == ["cerebras"]
-    assert openai_create.call_count == 1
+    assert result == "mini response"
+    assert openai_create.call_count == 2
     assert openai_create.call_args.kwargs["model"] == openai_provider.DEFAULT_MODEL
 
 
@@ -95,22 +92,14 @@ def test_openai_high_quality_escalation_is_explicitly_opt_in() -> None:
     ]
 
 
-def test_cerebras_failure_enters_openai_first_fallback_chain() -> None:
-    calls: list[str] = []
-
-    def fail_cerebras(*_args, **_kwargs):
-        calls.append("cerebras")
-        raise RuntimeError("Cerebras timed out")
-
+def test_explicit_cerebras_request_never_attempts_cerebras() -> None:
+    """No credits configured for Cerebras -- an explicit request for it must
+    go straight to OpenAI without attempting Cerebras at all."""
     def succeed_openai(*_args, **_kwargs):
-        calls.append("openai")
         return "openai response"
 
     ai_provider._provider_cooldown_until.clear()
-    with (
-        patch.object(ai_provider, "cerebras_generate", fail_cerebras),
-        patch.object(ai_provider, "openai_generate", succeed_openai),
-    ):
+    with patch.object(ai_provider, "openai_generate", succeed_openai):
         result = ai_provider._generate_uncached(
             "test prompt",
             provider="cerebras",
@@ -119,16 +108,15 @@ def test_cerebras_failure_enters_openai_first_fallback_chain() -> None:
         )
 
     assert result == "openai response"
-    assert calls == ["cerebras", "openai"]
 
 
 if __name__ == "__main__":
     tests = [
         test_large_generation_uses_one_documented_low_reasoning_request,
         test_large_generation_failure_stops_after_the_single_documented_attempt,
-        test_auto_policy_uses_one_openai_mini_attempt_before_cerebras,
+        test_auto_policy_retries_openai_mini_when_the_first_attempt_fails,
         test_openai_high_quality_escalation_is_explicitly_opt_in,
-        test_cerebras_failure_enters_openai_first_fallback_chain,
+        test_explicit_cerebras_request_never_attempts_cerebras,
     ]
     for test in tests:
         test()
