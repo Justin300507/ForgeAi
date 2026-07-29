@@ -655,6 +655,35 @@ _IMPORT_STYLE_MISMATCH_RE = re.compile(
     r"with named-import syntax \(curly braces\) in (.+)$"
 )
 
+_EXPORT_DEFAULT_RE = re.compile(r"\bexport\s+default\b")
+
+
+def _resolve_js_import_target(project_path: Path, importer_rel: str, module_path: str) -> Optional[Path]:
+    """Resolve a relative JS/TS import specifier to an on-disk file.
+
+    Tries the bare path, common extensions, and index-file fallbacks, in
+    that order -- mirrors how bundlers actually resolve these specifiers.
+    Returns None if nothing on disk matches.
+    """
+    importer_dir = Path(importer_rel).parent
+    base = os.path.normpath(str(importer_dir / module_path))
+    candidates = [base]
+    candidates += [base + ext for ext in (".jsx", ".js", ".tsx", ".ts")]
+    candidates += [os.path.join(base, "index" + ext) for ext in (".jsx", ".js", ".tsx", ".ts")]
+    for cand in candidates:
+        target = _safe_patch_target(project_path, cand)
+        if target is not None and target.is_file():
+            return target
+    return None
+
+
+def _js_module_has_named_export(content: str, name: str) -> bool:
+    escaped = re.escape(name)
+    return bool(
+        re.search(rf"\bexport\s+(?:const|function|class)\s+{escaped}\b", content)
+        or re.search(rf"\bexport\s*\{{[^}}]*\b{escaped}\b[^}}]*\}}", content)
+    )
+
 
 def _is_import_style_mismatch_group(group: DiagnosticGroup) -> bool:
     """
@@ -680,13 +709,23 @@ def _fix_import_style_mismatch_group(
 ) -> tuple[list[str], dict[str, str]]:
     """Rewrite each importer's named-import statement to a default import.
 
-    This is the only direction that can ever be correct: the validator
-    already confirmed the target module has a default export and no
-    matching named export, so the importer's `{ name }` syntax is what's
-    wrong, not the target. Skips (falls through to the LLM) any import
-    statement pulling more than one name from the same module -- which
-    named binding maps to the single default export is ambiguous, and
-    guessing wrong there is exactly the failure mode this exists to avoid.
+    This is the only direction that can ever be correct IF the diagnostic is
+    still accurate: the validator confirmed, at diagnosis time, that the
+    target module has a default export and no matching named export. But
+    diagnostics for a whole fix attempt are computed once up front, and
+    another group in the *same* attempt can rewrite the target module
+    in between -- confirmed live (habit_tracker, 2026-07-30): an LLM group
+    rewrote hooks/useAuth.jsx to a named export, then this group ran right
+    after on the now-stale "default export" diagnostic and flipped the
+    importer to `import useAuth from ...`, producing a different-but-still-
+    broken build error every attempt forever. So re-read the target module's
+    *current* on-disk content and re-confirm the premise before touching the
+    importer -- if it no longer holds, skip (falls through to the LLM/cache
+    path with fresh diagnostics next verify pass) instead of guessing.
+    Skips (falls through to the LLM) any import statement pulling more than
+    one name from the same module -- which named binding maps to the single
+    default export is ambiguous, and guessing wrong there is exactly the
+    failure mode this exists to avoid.
     """
     modified: list[str] = []
     written: dict[str, str] = {}
@@ -712,6 +751,22 @@ def _fix_import_style_mismatch_group(
         if len(names) != 1:
             continue
         local_name = names[0].split(" as ")[-1].strip()
+
+        module_target = _resolve_js_import_target(project_path, rel_file, module_path)
+        if module_target is not None:
+            try:
+                module_content = module_target.read_text(encoding="utf-8")
+            except Exception:
+                module_content = None
+            if module_content is not None and (
+                _js_module_has_named_export(module_content, local_name)
+                or not _EXPORT_DEFAULT_RE.search(module_content)
+            ):
+                print(f"    [fix] Skipping stale import-style-mismatch diagnostic for "
+                      f"{rel_file}: {module_path!r} no longer has a default export "
+                      f"(rewritten by an earlier group this attempt) — not guessing")
+                continue
+
         quote = match.group(2)
         new_import = f"import {local_name} from {quote}{module_path}{quote}"
         new_content = content[:match.start()] + new_import + content[match.end():]

@@ -7,11 +7,15 @@ load_dotenv()
 DEFAULT_MODEL = "gpt-4o-mini"
 FALLBACK_MODEL = "gpt-4o"
 
-# Auto mode has an independent Cerebras fallback.  Keep the inexpensive
-# OpenAI-mini attempt long enough for a normal generation, but bounded below
-# Cerebras's 60-second request window so an unavailable OpenAI leg cannot
-# stall the whole generation before the fallback gets a chance to run.
-_REQUEST_TIMEOUT_SECONDS = 45.0
+# OpenAI is the sole provider as of 2026-07-30 (Cerebras/Gemini/Groq removed,
+# see ai_provider.py's _auto_chain docstring) -- there is no other leg to
+# hand off to, so this timeout only needs to bound a genuinely hung request,
+# not race a fallback. It must comfortably cover the largest single call in
+# the pipeline: frontend_service.py requests up to max_tokens=14000 in one
+# call (vs. the small per-file backend waves), which can legitimately take
+# well over a minute on gpt-4o-mini. 45s was cutting that off mid-generation
+# and burning all 3 retries on the same too-short ceiling.
+_REQUEST_TIMEOUT_SECONDS = 120.0
 _SDK_MAX_RETRIES = 0
 
 _client = None

@@ -8482,3 +8482,75 @@ flakiness combined with the repo's 22GB `generated_projects/` bloating
 the CLI's indexing step -- added a `.railwayignore` mirroring
 `.gitignore`, which got uploads past the indexing stage; the 10th
 attempt succeeded).
+
+## Experiment 142: OpenAI Timeout Too Short Post-Cerebras-Removal + Stale Import-Style-Mismatch Diagnostic (Fixed)
+
+**Trigger**: Live failure on `forgeai-backend` production (habit_tracker
+idea, job `73e24c34`): `pipeline_child_error:RuntimeError`. Generation
+log showed backend generation succeeding (24-26 files, all small
+parallel per-file calls, 2-11s each), then frontend generation --
+`frontend_service.py`'s single `max_tokens=14000` call -- failing
+`OpenAI failed: Request timed out.` three times in a row, killing the
+whole pipeline (Forge Score 0.0/F).
+
+**Root cause 1**: `openai_provider.py`'s client `timeout=45.0` was set
+deliberately short by design, per its own comment, to leave room for a
+Cerebras fallback leg if OpenAI hung. Commit `6a08848` (2026-07-30,
+"Use OpenAI only; remove Cerebras/Gemini/Groq") removed that fallback
+entirely -- `_auto_chain` now only retries OpenAI itself -- but left the
+45s ceiling in place. With no fallback left to protect, the timeout
+only served to kill legitimately-slow-but-successful calls, and
+frontend generation's single 14k-max-token completion is exactly the
+kind of call that needs more than 45s on `gpt-4o-mini`. All 3 retries
+died on the same too-short ceiling every time.
+
+**Fix 1**: `_REQUEST_TIMEOUT_SECONDS` 45.0 -> 120.0 in
+`openai_provider.py`, comment rewritten to reflect the OpenAI-only
+reality (Cerebras at 60s, DeepSeek at 120s for comparison -- 45s was
+the shortest of any provider in the codebase despite now being the
+*only* leg).
+
+**Deployed immediately via `railway up`** (direct CLI deploy, matching
+how this service has been deployed before -- `railway status` showed
+the prior active deployment's `cliCaller: "claude_code"`). Re-ran the
+same habit-tracker idea end-to-end against production: frontend
+generation succeeded this time (101s, no timeout), Forge Score 96.2
+(A+) -- confirming fix 1 -- but deploy was skipped by a *different*,
+newly-surfaced blocker (root cause 2 below), previously masked by fix
+1's failure happening earlier in the pipeline.
+
+**Root cause 2**: `orchestrator.py`'s `_fix_import_style_mismatch_group`
+(itself shipped in the immediately-prior commit, `24b9e5a`, to fix an
+earlier version of this same oscillation) trusts a diagnostic's message
+text -- "target module uses a default export" -- without re-checking the
+target file's *current* on-disk content. Within one outer V15 repair
+attempt, Group 1 (an LLM call) rewrote `src/hooks/useAuth.jsx` from a
+default export to a named `useAuth` export; Group 2 ran immediately
+after in the same attempt on the now-stale diagnostic and converted
+`PrivateRoute.jsx`'s import to default-style, which was now wrong.
+Since a failed attempt reverts to its pre-attempt snapshot and the next
+attempt recomputes the *same* diagnostics from the same unmodified
+starting state, all 3 stalled-fix-attempts (`FORGE_MAX_STALLED_FIX_ATTEMPTS`)
+repeated the identical Group1-then-Group2 sequence and produced the
+identical regression every time (`96.2 -> 96.2 -> 96.2`, `Δ=+0.0`x3),
+burning the whole fix budget without ever converging. Deploy was
+skipped with the frontend build still broken.
+
+**Fix 2**: `_fix_import_style_mismatch_group` now resolves the real
+on-disk import target (`_resolve_js_import_target`, extension/index-file
+aware) and re-checks whether it still has a default export and no
+named export matching the imported binding (`_js_module_has_named_export`,
+`_EXPORT_DEFAULT_RE`) immediately before rewriting the importer. If an
+earlier group in the same attempt already changed the target's export
+style, this group now skips instead of guessing -- falls through to
+fresh diagnostics on the next verify pass instead of writing a
+confidently-wrong "fix". Sanity-checked the two helpers directly against
+representative named-export and default-export file contents, and
+against a real relative-path resolution (`../hooks/useAuth` from
+`src/components/PrivateRoute.jsx`) -- all matched expectations.
+
+**Validated via the 3-app canary** (`--no-deploy`, label
+`import_style_mismatch_stale_fix_2026-07-30`): all three passed clean,
+zero fix attempts needed on any of them (no oscillation resurfaced) --
+todo 97.4, blog_cms 96.1, crm 92.5, all `build=True runtime=True
+crud=True browser=True`. `CANARY PASSED -- safe to continue`.
