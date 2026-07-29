@@ -8401,7 +8401,32 @@ own comments (prompts/secrets must never cross the process boundary).
 Net effect: every V15 job's log panel is permanently empty, success or
 failure -- a structural certainty, not an intermittent bug. This is a
 real UX regression from V14 (stage checkmarks still work fine, since
-those events are relayed). Not fixed this session -- needs a real
-design decision about what's safe to relay through that boundary
-without reintroducing the leak risk the minimal protocol exists to
-prevent. Logged for the next reliability/UX cycle to scope properly.
+those events are relayed).
+
+**Fixed, same session**: `_ChildLogTee` (v15_supervisor.py) relays the
+child's stdout through the existing best-effort `_send` IPC channel as
+a new `"log"` message type, restored to real stdout before any
+exception/traceback printing so the original secret-safety boundary is
+preserved untouched. The parent (`main.py`'s `_persist_v15_event`)
+appends relayed lines straight into the job's in-memory `logs` list
+(never persisted to DB, matching V14's own behavior), bounded to the
+last 2000 lines, with a redaction net for any line containing a live
+provider/deployment credential value. 2 new unit tests
+(`test_log_lines_relay_through_supervisor_and_are_length_bounded`,
+`test_child_log_tee_redacts_known_secrets_and_relays_others`).
+
+**Verified end-to-end twice**: once locally (registered a throwaway
+user, ran a real V15 job -- logs grew from 0 to 114 lines live, and
+immediately surfaced the true cause of a `pipeline_child_error:
+RuntimeError` failure that would previously have been an opaque crash:
+all 4 LLM providers out of quota on this dev machine, not a code bug).
+Once again directly against the real production Railway backend after
+deploying the fix there -- a throwaway test job's log count grew live
+from 21 to 833 lines over the run, finishing with a real Forge Score
+(75.94) and full log history intact. Deployed to both Render (auto-
+deploy on push) and Railway (`railway up`, after 9 failed CLI-upload
+attempts due to what looked like Railway-side upload/build-queue
+flakiness combined with the repo's 22GB `generated_projects/` bloating
+the CLI's indexing step -- added a `.railwayignore` mirroring
+`.gitignore`, which got uploads past the indexing stage; the 10th
+attempt succeeded).
