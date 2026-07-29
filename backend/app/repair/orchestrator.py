@@ -650,6 +650,81 @@ def _is_seed_related_group(group: DiagnosticGroup) -> bool:
     return True
 
 
+_IMPORT_STYLE_MISMATCH_RE = re.compile(
+    r"^Import style mismatch: (.+?) uses a default export but is imported "
+    r"with named-import syntax \(curly braces\) in (.+)$"
+)
+
+
+def _is_import_style_mismatch_group(group: DiagnosticGroup) -> bool:
+    """
+    True only if EVERY diagnostic in the group is this exact, fully-
+    mechanical validator finding: the target file has ``export default``
+    but the importer uses ``import { name } from '...'``. The validator
+    (validator_service.py) already computed both sides of the mismatch --
+    there is nothing left to infer, so routing this to an LLM is pure
+    waste and, worse, a real repair-loop bug: confirmed live
+    (habit_tracker, 2026-07-30), the LLM fix kept "fixing" the wrong side
+    (rewriting the target's export style instead of the importer's import
+    style, or vice versa) each round, producing a different-but-equally-
+    broken build error every time and burning all 3 stalled-fix-attempt
+    retries without ever converging on a single self-consistent state.
+    """
+    if not group.diagnostics:
+        return False
+    return all(_IMPORT_STYLE_MISMATCH_RE.match(d.message or "") for d in group.diagnostics)
+
+
+def _fix_import_style_mismatch_group(
+    project_path: Path, group: DiagnosticGroup,
+) -> tuple[list[str], dict[str, str]]:
+    """Rewrite each importer's named-import statement to a default import.
+
+    This is the only direction that can ever be correct: the validator
+    already confirmed the target module has a default export and no
+    matching named export, so the importer's `{ name }` syntax is what's
+    wrong, not the target. Skips (falls through to the LLM) any import
+    statement pulling more than one name from the same module -- which
+    named binding maps to the single default export is ambiguous, and
+    guessing wrong there is exactly the failure mode this exists to avoid.
+    """
+    modified: list[str] = []
+    written: dict[str, str] = {}
+    for d in group.diagnostics:
+        m = _IMPORT_STYLE_MISMATCH_RE.match(d.message or "")
+        if not m:
+            continue
+        module_path, rel_file = m.group(1).strip(), m.group(2).strip()
+        target = _safe_patch_target(project_path, rel_file)
+        if target is None or not target.exists():
+            continue
+        try:
+            content = target.read_text(encoding="utf-8")
+        except Exception:
+            continue
+        import_re = re.compile(
+            r'import\s*\{\s*([^}]*?)\s*\}\s*from\s*([\'"])' + re.escape(module_path) + r'\2'
+        )
+        match = import_re.search(content)
+        if not match:
+            continue
+        names = [n.strip() for n in match.group(1).split(",") if n.strip()]
+        if len(names) != 1:
+            continue
+        local_name = names[0].split(" as ")[-1].strip()
+        quote = match.group(2)
+        new_import = f"import {local_name} from {quote}{module_path}{quote}"
+        new_content = content[:match.start()] + new_import + content[match.end():]
+        try:
+            atomic_write_text(target, new_content)
+        except Exception:
+            continue
+        modified.append(rel_file)
+        written[rel_file] = new_content
+        print(f"    [fix] Converted named import of {module_path!r} to a default import in {rel_file}")
+    return modified, written
+
+
 def _apply_fix_group(
     group: DiagnosticGroup,
     ctx: GenerationContext,
@@ -717,6 +792,13 @@ def _apply_fix_group(
         print(f"    [fix] Group {group.group_id} touches protected auth file(s) — "
               f"re-injecting known-good templates instead of calling the LLM")
         return (["app/routes/auth_routes.py", "app/utils/auth.py"], {})
+
+    if _is_import_style_mismatch_group(group):
+        modified, written = _fix_import_style_mismatch_group(Path(ctx.project_path), group)
+        if modified:
+            print(f"    [fix] Group {group.group_id} is a mechanical default/named import "
+                  f"mismatch — rewriting the importer directly instead of calling the LLM")
+            return modified, written
 
     # ── Fix cache lookup ──────────────────────────────────────────────────────
     try:
