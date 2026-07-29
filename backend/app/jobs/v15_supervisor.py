@@ -13,6 +13,7 @@ import os
 import queue
 import re
 import subprocess
+import sys
 import threading
 import time
 from contextlib import contextmanager
@@ -308,8 +309,53 @@ def _child_event(messages, payload: dict[str, Any]) -> None:
         })
 
 
+class _ChildLogTee:
+    """Relays this child's stdout to the parent as best-effort progress text.
+
+    V14's ``_TeeStdout`` (main.py) captures prints via a thread-local list
+    because it runs generation in-thread.  V15 runs generation in this
+    separate child process, so its prints never reached the parent at all
+    -- the frontend's "Generation log" panel stayed at 0 lines for every
+    V15 job, success or failure, not just intermittently.  This still
+    writes through to the child's own real stdout unchanged (container
+    logs, and this file's temporary diagnostic print below, are
+    unaffected); it additionally best-effort relays each line through the
+    same non-blocking ``_send`` used for stage/provider_attempt events, so
+    a full queue or IPC hiccup drops a progress line rather than the
+    generation itself.
+    """
+
+    def __init__(self, real_stdout, messages, secrets: frozenset[str]):
+        self._real_stdout = real_stdout
+        self._messages = messages
+        self._secrets = secrets
+
+    def write(self, text: str) -> None:
+        self._real_stdout.write(text)
+        line = text.rstrip("\n") if text else ""
+        if not line.strip():
+            return
+        if any(secret and secret in line for secret in self._secrets):
+            return
+        _send(self._messages, {"type": "log", "line": line[:2000]})
+
+    def flush(self) -> None:
+        self._real_stdout.flush()
+
+
+def _child_log_secrets() -> frozenset[str]:
+    """Values that must never be relayed verbatim, even accidentally."""
+    keys = (
+        "OPENAI_API_KEY", "GEMINI_API_KEY", "GROQ_API_KEY", "CEREBRAS_API_KEY",
+        "OPENROUTER_API_KEY", "DEEPSEEK_API_KEY", "SECRET_KEY",
+        *_V15_CREDENTIAL_ENV_KEYS,
+    )
+    return frozenset(v for k in keys if (v := os.environ.get(k)))
+
+
 def _run_v15_child(job_id: str, options: dict[str, Any], messages, pipeline_runner=None) -> None:
     """Spawn/fork target.  It does no terminal job-state writing."""
+    real_stdout = sys.stdout
     try:
         if pipeline_runner is not None:
             result = pipeline_runner(job_id, options, messages)
@@ -363,23 +409,35 @@ def _run_v15_child(job_id: str, options: dict[str, Any], messages, pipeline_runn
         # Binding occurs only inside this spawned V15 child.  The callback is
         # synchronous but _child_event uses put_nowait, so progress cannot
         # hold up provider fallback or generation.
-        with observe_provider_attempts(
-            lambda attempt: bus.emit(Events.PROVIDER_ATTEMPT, attempt)
-        ):
-            result = generate_project_v15(
-                idea=idea, provider=selected_provider,
-                deploy=deploy_to != "none",
-                deploy_to=deploy_to if deploy_to != "none" else "vercel",
-                job_id=job_id,
-                style_override=options.get("style_override"),
-                motion_intensity=options.get("motion_intensity"),
-                include_landing_page=bool(options.get("include_landing_page", False)),
-                event_bus=bus,
-            )
+        # Relay this child's own generation prints as best-effort progress
+        # text (see _ChildLogTee) -- restored before the except block below
+        # ever prints anything, so exception bodies/tracebacks are never
+        # candidates for relay, matching the original IPC-minimalism intent.
+        sys.stdout = _ChildLogTee(real_stdout, messages, _child_log_secrets())
+        try:
+            with observe_provider_attempts(
+                lambda attempt: bus.emit(Events.PROVIDER_ATTEMPT, attempt)
+            ):
+                result = generate_project_v15(
+                    idea=idea, provider=selected_provider,
+                    deploy=deploy_to != "none",
+                    deploy_to=deploy_to if deploy_to != "none" else "vercel",
+                    job_id=job_id,
+                    style_override=options.get("style_override"),
+                    motion_intensity=options.get("motion_intensity"),
+                    include_landing_page=bool(options.get("include_landing_page", False)),
+                    event_bus=bus,
+                )
+        finally:
+            sys.stdout = real_stdout
         _send_terminal(messages, {"type": "result", "result": _safe_child_result(result)})
     except BaseException as exc:
         # Exception bodies can echo prompts, credentials, or JWTs.  Only the
-        # exception class crosses the process boundary.
+        # exception class crosses the process boundary.  Restore real stdout
+        # first (redundant if the try above's finally already ran, but this
+        # is the safety net for exceptions raised before that point) so
+        # nothing printed from here on is a candidate for relay.
+        sys.stdout = real_stdout
         # TEMPORARY DIAGNOSTIC (2026-07-23): print the real traceback to this
         # child's own stdout (server-side log only, never crosses the IPC
         # boundary above) to root-cause a RuntimeError appearing after
@@ -389,6 +447,8 @@ def _run_v15_child(job_id: str, options: dict[str, Any], messages, pipeline_runn
         print("[DIAGNOSTIC] _run_v15_child real exception:", flush=True)
         traceback.print_exc()
         _send_terminal(messages, {"type": "error", "error_type": _safe_identifier(type(exc).__name__)})
+    finally:
+        sys.stdout = real_stdout
 
 
 def run_v15_supervisor(
@@ -459,6 +519,10 @@ def run_v15_supervisor(
             elif kind == "selected_provider":
                 selected_provider = _safe_identifier(message.get("provider"))
                 on_event("selected_provider", selected_provider)
+            elif kind == "log":
+                line = message.get("line")
+                if isinstance(line, str) and line:
+                    on_event("log", line[:2000])
             elif kind == "provider_attempt":
                 attempt = message.get("attempt")
                 status = message.get("status")

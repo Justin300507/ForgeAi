@@ -299,6 +299,17 @@ def _run_job(job_id: str, req: JobRequest):
 
             def _persist_v15_event(kind: str, value) -> None:
                 nonlocal v15_last_stage
+                if kind == "log":
+                    # Progress text only -- never persisted to the DB (V14
+                    # never persisted it either, only kept it in-memory).
+                    # Bounded so one very verbose job can't grow this
+                    # unboundedly for the life of the process.
+                    if isinstance(value, str) and value:
+                        logs = store["logs"]
+                        logs.append(value)
+                        if len(logs) > 2000:
+                            del logs[: len(logs) - 2000]
+                    return
                 now = datetime.utcnow()
                 updates = {"lease_expires_at": now + timedelta(seconds=30)}
                 if kind == "stage" and value:

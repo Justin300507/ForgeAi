@@ -282,6 +282,60 @@ def test_windows_deadline_kills_spawned_grandchild_tree() -> None:
                 os.environ[name] = previous
 
 
+def child_with_log_lines(_job_id, _options, messages):
+    messages.put({"type": "log", "line": "=== PRODUCT MANAGER (V6) ==="})
+    messages.put({"type": "log", "line": "x" * 5000})  # oversized, must be bounded
+    messages.put({"type": "log", "line": ""})  # blank, must be dropped
+    return {"status": "done", "project_name": "safe_project", "forge_score": 91}
+
+
+def test_log_lines_relay_through_supervisor_and_are_length_bounded() -> None:
+    """V15 jobs previously left the frontend's log panel at 0 lines forever
+    (the child's prints never crossed the IPC boundary). This is the
+    parent-side half of the fix: a 'log' message becomes an on_event('log', ...)
+    call, bounded so one giant line can't bloat the in-memory job store."""
+    from app.jobs.v15_supervisor import run_v15_supervisor
+    events, on_event = _events()
+    run_v15_supervisor(
+        "job-log-relay", options={}, on_event=on_event,
+        pipeline_runner=child_with_log_lines, deadline_s=5,
+    )
+    log_events = [value for kind, value in events if kind == "log"]
+    assert log_events == ["=== PRODUCT MANAGER (V6) ===", "x" * 2000]
+
+
+def test_child_log_tee_redacts_known_secrets_and_relays_others() -> None:
+    """Unit test for the child-side half: _ChildLogTee must relay ordinary
+    progress text but never a line containing a live secret value, even
+    though that same text is still written through to the real stdout
+    (container logs) unchanged."""
+    import io
+    import queue as _queue
+    from app.jobs.v15_supervisor import _ChildLogTee
+
+    real_stdout = io.StringIO()
+    messages: _queue.Queue = _queue.Queue()
+    tee = _ChildLogTee(real_stdout, messages, frozenset({"sk-live-secret-123"}))
+
+    tee.write("=== ARCHITECT (V6) ===\n")
+    tee.write("token=sk-live-secret-123 leaked into a debug line\n")
+    tee.write("   \n")  # whitespace-only, must be dropped
+
+    assert real_stdout.getvalue() == (
+        "=== ARCHITECT (V6) ===\n"
+        "token=sk-live-secret-123 leaked into a debug line\n"
+        "   \n"
+    ), "the real stdout stream must be unaffected by relay/redaction"
+
+    relayed = []
+    while True:
+        try:
+            relayed.append(messages.get_nowait())
+        except _queue.Empty:
+            break
+    assert relayed == [{"type": "log", "line": "=== ARCHITECT (V6) ==="}]
+
+
 def test_additive_model_migration() -> None:
     from sqlalchemy import create_engine
     from app.jobs.v15_supervisor import ensure_generation_job_columns
@@ -321,6 +375,8 @@ def main() -> None:
         test_spawn_environment_is_restored_and_snapshots_do_not_cross,
         test_v15_credential_snapshot_allows_only_deployment_keys,
         test_windows_deadline_kills_spawned_grandchild_tree,
+        test_log_lines_relay_through_supervisor_and_are_length_bounded,
+        test_child_log_tee_redacts_known_secrets_and_relays_others,
         test_additive_model_migration,
     ]
     for test in tests:
