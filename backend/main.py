@@ -1768,26 +1768,52 @@ def admin_vacuum_db(current_user=Depends(get_current_user)):
     (/data, 500MB cap) started rejecting writes with `sqlite3.OperationalError:
     database or disk is full` while Railway's own volume-usage metric still
     reported well under the cap (315/500MB) -- i.e. the SQLite file itself,
-    not raw volume bytes, is the actual constraint (likely page
-    fragmentation from this dev database's long history of inserts/deletes
-    inflating the file well past its live row count). VACUUM rebuilds the
-    file with no free/fragmented pages and is safe -- it changes nothing
-    about the data, only the file's on-disk layout. Any authenticated user
-    can call this (matches every other endpoint's auth bar on this
-    single-operator dev/test deployment); it is read-safe to leave in place
-    afterward as a normal maintenance utility, not something that needs
-    removing once the immediate emergency is resolved.
+    not raw volume bytes, is the actual constraint. VACUUM itself then also
+    failed with the same disk-full error: it needs temp space roughly equal
+    to the current DB size to rebuild into, which isn't available either.
+    So this first DELETEs old *finished* generation_jobs rows (running/
+    pending jobs are left untouched) -- SQLite reclaims deleted rows as
+    free pages *within* the existing file rather than shrinking it, which
+    is exactly what unblocks new INSERTs without requiring the file to
+    grow at all. VACUUM is then attempted best-effort on top (to actually
+    shrink the file), but the delete alone is what unblocks writes even if
+    VACUUM still can't run. Any authenticated user can call this (matches
+    every other endpoint's auth bar on this single-operator dev/test
+    deployment); safe to leave in place afterward as a normal maintenance
+    utility.
     """
     import shutil
     db_path = "/data/forgeai.db" if os.path.isdir("/data") else "./forgeai.db"
     before = os.path.getsize(db_path) if os.path.exists(db_path) else None
+
+    deleted = 0
     with engine.connect() as conn:
-        conn.execute(_sql_text("VACUUM"))
+        # Keep the 50 most recently created rows (any status) plus every
+        # row still in a non-terminal state -- delete the rest.
+        result = conn.execute(_sql_text("""
+            DELETE FROM generation_jobs
+            WHERE status NOT IN ('pending', 'running')
+              AND id NOT IN (
+                  SELECT id FROM generation_jobs ORDER BY created_at DESC LIMIT 50
+              )
+        """))
+        deleted = result.rowcount
         conn.commit()
+
+    vacuum_error = None
+    try:
+        with engine.connect() as conn:
+            conn.execute(_sql_text("VACUUM"))
+            conn.commit()
+    except Exception as exc:
+        vacuum_error = str(exc)
+
     after = os.path.getsize(db_path) if os.path.exists(db_path) else None
     disk = shutil.disk_usage(os.path.dirname(db_path) or ".")
     return {
         "db_path": db_path,
+        "rows_deleted": deleted,
+        "vacuum_error": vacuum_error,
         "size_before_bytes": before,
         "size_after_bytes": after,
         "reclaimed_bytes": (before - after) if (before is not None and after is not None) else None,
