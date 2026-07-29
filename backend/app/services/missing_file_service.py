@@ -13,13 +13,19 @@ def generate_missing_file(
     filepath,
     error,
     provider="auto",
-    project_path=None
+    project_path=None,
+    idea="",
+    style_override=None,
+    motion_intensity=None,
 ):
 
     prompt = build_missing_file_prompt(
         filepath,
         error,
-        project_path=project_path
+        project_path=project_path,
+        idea=idea,
+        style_override=style_override,
+        motion_intensity=motion_intensity,
     )
 
     text = generate_content(

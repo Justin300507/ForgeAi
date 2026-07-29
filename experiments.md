@@ -8554,3 +8554,84 @@ against a real relative-path resolution (`../hooks/useAuth` from
 zero fix attempts needed on any of them (no oscillation resurfaced) --
 todo 97.4, blog_cms 96.1, crm 92.5, all `build=True runtime=True
 crud=True browser=True`. `CANARY PASSED -- safe to continue`.
+
+## Experiment 143: Missing-File Agent Shipped Unstyled Placeholder Pages to Production
+
+**Trigger**: Re-ran the same habit-tracker idea end-to-end after Exp142's
+fix (98.1/A+, deployed=YES this time). User-supplied screenshot of the
+live deployed frontend showed a completely broken layout: raw
+"SidebarNavbar" text with zero styling above a bare unstyled login form
+(no CSS at all on any element).
+
+**Root cause 1**: `create_missing_stubs()` (`frontend_fix_service.py`),
+wired into the live preflight stage in a prior session to stop
+unresolved imports (`./Navbar`, `./Sidebar`, etc.) from crashing the
+Vite build, wrote a stub that renders its own component name as visible
+text: `const Navbar = () => <div>Navbar</div>;`. Navbar/Sidebar are
+layout chrome rendered on every page, so this shipped straight to
+production as literal unstyled "NavbarSidebar" text.
+
+**Fix 1**: stub now renders `null` -- it only needs to exist to satisfy
+the import and keep the build green, not to look like anything.
+
+**Root cause 2 (bigger)**: `app/prompts/missing_file_prompt.py` -- the
+prompt used whenever the main frontend generator skips a
+page/component and it has to be regenerated after the fact (a routine
+occurrence per this session's own logs, not an edge case) -- has *zero*
+design-system or Tailwind-styling instruction, unlike the main
+generator (`frontend_prompt.py`), which injects an elaborate mandatory
+design system. Confirmed live: `Login.jsx`, `Register.jsx`,
+`HabitListPage.jsx`, `UserProfilePage.jsx` all shipped with 0
+`className` occurrences each -- bare unstyled `h1`/`form`/`input`
+elements -- while `Dashboard.jsx` (touched by the later UI-polish pass)
+had styling. This is a systemic gap, not a one-off.
+
+**Fix 2**: `build_missing_file_prompt()` now accepts `idea`,
+`style_override`, `motion_intensity` and, for `src/pages/`/
+`src/components/` files, injects `design_system.build_design_system_injection`
+plus an explicit "styling is mandatory" block, threaded through
+`missing_file_service.generate_missing_file()` into the live call site
+in `v6_orchestrator.py`'s `generate_project_v6` inner validation loop
+(the repair-only `repair_project()` call site is v14/inactive-pipeline
+code, left unchanged).
+
+**Root cause 3 (found while live-patching the deployed app)**:
+`_find_resource_model_and_schema()` -- the existing anti-hallucination
+grounding that gives route files real model/schema field names -- only
+triggered for `app/routes/*_routes.py`, never for frontend files.
+Confirmed live: a regenerated `HabitListPage.jsx` read `habit.title`
+when the real `Habit` model column is `name`, silently rendering blank
+habit names for every row. **Fix 3**: extended to also infer a resource
+name from `src/pages/`/`src/components/` filenames (stripping
+List/Detail/Create/Edit/Form/Page suffixes) and ground those the same
+way.
+
+All three fixes sanity-checked directly (stub null-render; design-system
+block appears only for frontend files with a non-empty `idea`, absent
+otherwise -- backward compatible; frontend field-grounding resolves
+`HabitListPage.jsx` -> `Habit` -> real columns). Existing preflight +
+missing-file test suites (80 tests) still pass.
+
+**Live-patched the already-deployed habit-tracker app** using the fixed
+`generate_missing_file()` directly against a clone of its GitHub repo,
+to avoid leaving a real user-visible broken deploy live: regenerated
+all 6 affected files, caught two issues the LLM introduced that the
+automated checks wouldn't (Sidebar using `fixed` positioning against a
+flexbox-composed `Layout.jsx`, `habit.title` vs the real `habit.name`),
+fixed both by hand. **Deploy mistake, caught and reverted**: pushed the
+fix via a raw `vercel --prod` CLI deploy from the full-stack repo root,
+which mis-detected the project (built a Python function, not the Vite
+static site) and took production down (500
+`FUNCTION_INVOCATION_FAILED`). Immediately rolled back
+(`vercel rollback`) to the last-known-good deployment -- confirmed
+restored (200, real HTML) -- rather than leaving it broken. The correct
+deploy path is ForgeAI's own `VercelProvider`
+(`app/deployments/vercel_provider.py`), which builds the frontend
+itself and wraps the backend as `api/index.py`; a follow-up attempt via
+that provider hit this local machine's own broken npm registry access
+(TLS interception, then a 403 on `rollup` -- environment-level, not a
+code issue) and could not complete. The pipeline fixes above still ship
+to production (Railway) either way and apply to every future
+generation; this one specific already-generated app's visual bug is a
+known, tracked gap (fix committed to the app's own repo, not yet
+successfully redeployed) rather than something silently left broken.

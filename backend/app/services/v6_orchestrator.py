@@ -571,7 +571,10 @@ def generate_project_v6(
                                 f"(ADR-002 fallback: {_telemetry['fallback_reason']})"
                             )
                         continue
-                    fix = generate_missing_file(filepath, "\n".join(file_errors), provider, project_path=project_path)
+                    fix = generate_missing_file(
+                        filepath, "\n".join(file_errors), provider, project_path=project_path,
+                        idea=idea, style_override=style_override, motion_intensity=motion_intensity,
+                    )
                     _llm["repairs"] += 1
                     if fix and fix.get("content"):
                         fix["path"] = _sanitize_path(fix["path"])

@@ -166,13 +166,32 @@ def _find_resource_model_and_schema(project_path, filepath):
     alone. Same root cause already found and fixed for architecture-repair's
     existing_symbols={} gap: a real anti-hallucination signal exists
     elsewhere in the project and simply wasn't being read here.
+
+    Also applies to frontend pages/components (src/pages/, src/components/),
+    not just route files -- confirmed live (habit_tracker, 2026-07-30): a
+    regenerated HabitListPage.jsx guessed `habit.title` when the real Habit
+    model column is `name`, silently rendering blank habit names for every
+    row. The resource name is inferred from the component's own filename
+    (HabitListPage -> Habit) by stripping common page/list suffixes.
     """
     if not project_path:
         return None
     target = os.path.normpath(filepath).replace("\\", "/")
-    if not (target.startswith("app/routes/") and target.endswith("_routes.py")):
+    is_route_file = target.startswith("app/routes/") and target.endswith("_routes.py")
+    is_frontend_file = target.startswith(("src/pages/", "src/components/"))
+    if not (is_route_file or is_frontend_file):
         return None
-    stem = os.path.basename(target)[: -len("_routes.py")]
+
+    if is_route_file:
+        stem = os.path.basename(target)[: -len("_routes.py")]
+    else:
+        stem = os.path.splitext(os.path.basename(target))[0]
+        for suffix in ("ListPage", "DetailPage", "CreatePage", "EditPage",
+                       "FormPage", "Page", "List", "Detail", "Form", "Card"):
+            if stem.endswith(suffix) and len(stem) > len(suffix):
+                stem = stem[: -len(suffix)]
+                break
+
     resource_name = "".join(w.capitalize() for w in re.split(r"[_-]", stem) if w)
     if not resource_name:
         return None
@@ -289,7 +308,10 @@ def _find_app_root_resources(project_path):
 def build_missing_file_prompt(
     filepath,
     error,
-    project_path=None
+    project_path=None,
+    idea: str = "",
+    style_override: str | None = None,
+    motion_intensity: str | None = None,
 ):
     reference = _find_reference_sibling(project_path, filepath)
     reference_block = ""
@@ -399,6 +421,35 @@ here, and do NOT invent an unrelated model/table for this resource.
 {resource_grounding}
 """
 
+    normalized_path = os.path.normpath(filepath).replace("\\", "/")
+    is_frontend_ui_file = normalized_path.startswith(("src/pages/", "src/components/"))
+    design_system_block = ""
+    if is_frontend_ui_file and idea:
+        # The main frontend generator (frontend_prompt.py) injects this same
+        # design system and treats Tailwind styling as mandatory -- this
+        # agent regenerates any page/component the main pass skipped
+        # (a routine occurrence, not an edge case) and had NO design-system
+        # or styling instruction of its own. Confirmed live (habit_tracker,
+        # 2026-07-30): Login.jsx, regenerated here after the main pass
+        # dropped it, shipped to production with zero Tailwind classes on
+        # any element -- a bare unstyled <h1>/<form>/<input>/<button> -- next
+        # to every other page's fully-styled UI.
+        from app.prompts.design_system import build_design_system_injection
+        design_system_block = f"""
+{build_design_system_injection(idea, style_override, motion_intensity)}
+========================================
+STYLING IS MANDATORY — NOT OPTIONAL
+========================================
+
+This is a real, user-facing page/component in a production app, not a
+scaffold to fill in later. Use Tailwind CSS utility classes for ALL
+styling (spacing, color, typography, layout, states) — the same design
+system above that every other page in this project already uses. A bare
+unstyled `<h1>`/`<form>`/`<input>`/`<button>` with no className is never
+acceptable output here, exactly as it would never be acceptable from the
+main frontend generator.
+"""
+
     return f"""
 You are ForgeAI Missing File Agent.
 
@@ -409,7 +460,7 @@ MISSING FILE
 ========================================
 
 {filepath}
-{intent_block}{app_root_block}{resource_block}{app_name_block}
+{intent_block}{app_root_block}{resource_block}{app_name_block}{design_system_block}
 ========================================
 VALIDATION ERROR
 ========================================

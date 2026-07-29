@@ -139,13 +139,19 @@ def create_missing_stubs(project_path: str) -> int:
                 if not stub_path.exists():
                     component_name = stub_path.stem
                     stub_path.parent.mkdir(parents=True, exist_ok=True)
+                    # Renders nothing: this stub exists only to satisfy an
+                    # unresolved import so the build doesn't crash, not to
+                    # look like a real component. Confirmed live
+                    # (habit_tracker, 2026-07-30): Navbar/Sidebar stubs are
+                    # layout chrome rendered on every page, so visible
+                    # placeholder text here shipped straight to production
+                    # as raw unstyled "NavbarSidebar" text above every page.
                     stub_path.write_text(
-                        f"import React from 'react';\n"
-                        f"const {component_name} = () => <div>{component_name}</div>;\n"
+                        f"const {component_name} = () => null;\n"
                         f"export default {component_name};\n",
                         encoding="utf-8",
                     )
-                    print(f"  Stub created: {stub_path.relative_to(project_path)}")
+                    print(f"  Stub created (renders nothing): {stub_path.relative_to(project_path)}")
                     stubs += 1
 
     return stubs
