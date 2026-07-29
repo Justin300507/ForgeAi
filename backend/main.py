@@ -1771,7 +1771,7 @@ def admin_vacuum_db(current_user=Depends(get_current_user)):
     not raw volume bytes, is the actual constraint. VACUUM itself then also
     failed with the same disk-full error: it needs temp space roughly equal
     to the current DB size to rebuild into, which isn't available either.
-    So this first DELETEs old *finished* generation_jobs rows (running/
+    So this first DELETEs every *finished* generation_jobs row (running/
     pending jobs are left untouched) -- SQLite reclaims deleted rows as
     free pages *within* the existing file rather than shrinking it, which
     is exactly what unblocks new INSERTs without requiring the file to
@@ -1787,18 +1787,33 @@ def admin_vacuum_db(current_user=Depends(get_current_user)):
     before = os.path.getsize(db_path) if os.path.exists(db_path) else None
 
     deleted = 0
+    delete_error = None
     with engine.connect() as conn:
-        # Keep the 50 most recently created rows (any status) plus every
-        # row still in a non-terminal state -- delete the rest.
-        result = conn.execute(_sql_text("""
-            DELETE FROM generation_jobs
-            WHERE status NOT IN ('pending', 'running')
-              AND id NOT IN (
-                  SELECT id FROM generation_jobs ORDER BY created_at DESC LIMIT 50
-              )
-        """))
-        deleted = result.rowcount
-        conn.commit()
+        try:
+            # Even a small DELETE failed with disk-full -- true zero
+            # headroom, not just "low": the default rollback-journal mode
+            # needs to write a journal file before touching any page, and
+            # apparently even that couldn't be created. journal_mode=OFF
+            # keeps the journal in memory instead of on disk for this one
+            # emergency write (temporarily drops crash-safety for this
+            # connection only -- acceptable for a single maintenance
+            # statement under these circumstances). No ORDER BY/subquery
+            # sorting either, since that needs its own temp b-tree space --
+            # plain equality scan only.
+            conn.execute(_sql_text("PRAGMA journal_mode=OFF"))
+            result = conn.execute(_sql_text(
+                "DELETE FROM generation_jobs WHERE status NOT IN ('pending', 'running')"
+            ))
+            deleted = result.rowcount
+            conn.commit()
+        except Exception as exc:
+            delete_error = str(exc)
+        finally:
+            try:
+                conn.execute(_sql_text("PRAGMA journal_mode=DELETE"))
+                conn.commit()
+            except Exception:
+                pass
 
     vacuum_error = None
     try:
@@ -1813,6 +1828,7 @@ def admin_vacuum_db(current_user=Depends(get_current_user)):
     return {
         "db_path": db_path,
         "rows_deleted": deleted,
+        "delete_error": delete_error,
         "vacuum_error": vacuum_error,
         "size_before_bytes": before,
         "size_after_bytes": after,
