@@ -8378,3 +8378,30 @@ current, complete baseline. Next reliability cycle should pick the
 highest-prevalence one of these (the two `main.py` syntax-error F's
 look like the strongest candidate) per the usual root-cause -> fix ->
 canary -> compare loop.
+
+## Found: V15 Jobs Never Populate the Frontend Generation-Log Panel
+
+2026-07-29, same session. User shared a screenshot of a fully successful
+V15 job (all stages checked, Forge Score 96.23/A, status "done") whose
+"Generation log" panel was stuck at "0 lines / Waiting for pipeline
+output...". Root-caused directly from the code, no live repro needed:
+
+V14's `main._TeeStdout` (main.py:65) captures every `print()` into
+`_thread_local.job_logs` -- this only works because V14 runs generation
+synchronously in the same thread that set that thread-local. V15
+(`v15_supervisor.py`) runs generation in a forked/spawned **child
+process**; its prints go straight to the child's own stdout (visible in
+Railway/Render's container logs, which is how the diagnostic prints in
+Exp141 are readable at all) but never cross back through the
+`messages` IPC queue. `_child_event`/`_send` deliberately relay only
+`stage`, `provider_attempt`, `result`, `error` -- never raw text, by the
+same intentional minimal-IPC security design noted in `_run_v15_child`'s
+own comments (prompts/secrets must never cross the process boundary).
+
+Net effect: every V15 job's log panel is permanently empty, success or
+failure -- a structural certainty, not an intermittent bug. This is a
+real UX regression from V14 (stage checkmarks still work fine, since
+those events are relayed). Not fixed this session -- needs a real
+design decision about what's safe to relay through that boundary
+without reintroducing the leak risk the minimal protocol exists to
+prevent. Logged for the next reliability/UX cycle to scope properly.
