@@ -8904,3 +8904,17 @@ fixed -- flagged for a dedicated session: apps whose domain doesn't
 naturally suggest a User entity (event/vendor-centric apps) can end up
 with zero auth scaffold. Only 1 occurrence in this batch so far; watching
 for recurrence before deciding whether it's worth a fix.
+
+**Operational note, not a pipeline bug**: `railway up` to ship Exp147
+mid-batch killed whatever job was mid-generation at that moment
+(recipe_sharing_community, idx 11) -- its DB row is stuck at
+`status=running, active_stage=generation, 0 log lines` indefinitely; the
+Docker restart never gave the in-flight worker a chance to mark itself
+failed. The batch script's own client-side timeout correctly moved past
+it after ~14 min and the rest of the batch was unaffected, but the
+orphaned `running` row itself will sit forever with no automatic cleanup.
+Real gap worth a small fix eventually (a startup reconciliation pass that
+marks any job still `running` from before the process's own boot time as
+`failed`), not urgent tonight -- avoid `railway up` mid-batch when
+avoidable, or accept one sacrificial job when a same-night fix is worth
+shipping immediately.
