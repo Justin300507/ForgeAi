@@ -9095,3 +9095,63 @@ potentially the highest-value lead for a future reliability session --
 if expected-endpoint contamination is systemic rather than a one-off,
 it could explain wasted repair attempts across many more apps than the
 one caught here.
+
+## Experiment 151: Auth-Signaled Apps With No User Entity At All -- Fixed
+
+**Trigger**: wedding_planner (idx 0, the 40-app batch) scored 19.5/F.
+Root cause confirmed at the time: the architecture only declared
+`Guest`, `SeatingChart`, `Vendor` -- no `User`/`Account` entity anywhere
+-- but the Tech Lead review still flagged "Missing JWT authentication"
+(product-copy/generic-endpoint auth signal), so `project_signals_auth()`
+correctly said "this app needs auth" while nothing in the architecture
+gave auth anything to attach to. `[auth-completeness] deterministic
+repair could not restore completeness: missing required endpoint(s):
+POST /auth/signup, POST /auth/login` -- auth-completeness gates before
+Compilation/Runtime are even scored, so the whole app failed on this
+alone. Documented at the time, not fixed (only 1 occurrence in that
+batch); picked up in this follow-up session.
+
+**Root cause, precisely**: `deterministic_patcher.py::_patch_auth_routes()`
+has always required an existing `app/models/user.py` or `users.py` file
+(`has_user_model` gate) before injecting anything -- when neither
+exists, it silently returns. This is called from two places, both of
+which already gate on `project_signals_auth()`/auth being established
+as required before calling in: `run_deterministic_patches()` (via
+`skip_protected_injections=not auth_signaled`) and
+`auth_completeness.py::ensure_auth_completeness()` (unconditionally, by
+design, to close the `skip_protected_injections=True` gap -- see that
+module's own docstring). So by the time `_patch_auth_routes()` runs,
+auth is already known to be needed; giving up because no User model
+happens to exist is the wrong default in that context.
+
+**Fix**: new `_ensure_synthetic_user_model()` in `deterministic_patcher.py`
+-- when `has_user_model` is False, writes a minimal, standard
+`app/models/user.py` (`class User(Base)`, `__tablename__ = 'users'`,
+columns: id/email/hashed_password/display_name/is_active/created_at)
+and wires `from app.models.user import *  # noqa: F401` into `main.py`
+so `Base.metadata.create_all` actually creates the table. No changes
+needed to the auth_routes.py template itself -- `_build_auth_routes_
+template()` was already fully dynamic re: column names (reads
+`User.__table__.columns` at runtime, fills in whatever it finds), so it
+just works against the synthesized model unmodified. Only fires when
+NEITHER `user.py` nor `users.py` exists -- an app with its own
+differently-shaped User model is never touched (verified with a
+dedicated test).
+
+**Validated**: reproduced wedding_planner's exact fixture (Guest-only
+model dir, `main.py` importing only the Guest model, no auth anywhere)
+end to end -- `check_auth_completeness()` before: `False, "missing
+required endpoint(s): POST /auth/signup, POST /auth/login"` (byte-for-
+byte the real failure reason); after calling `ensure_auth_completeness()`:
+`True, "complete"`. All three generated/modified files (`user.py`,
+`main.py`, `auth_routes.py`) re-parse as valid Python. Updated two
+pre-existing tests that asserted the old give-up behavior
+(`test_auth_routes_skips_when_no_user_model` ->
+`test_auth_routes_synthesizes_user_model_when_none_exists`,
+`test_ensure_auth_completeness_reports_failed_when_no_user_model` ->
+`..._repairs_via_synthesized_user_when_no_user_model`), added a new
+does-not-touch-an-existing-model test, and reran every auth-adjacent
+reliability suite: 95/95 passing (`test_sql_constructor_and_auth_
+repairs` 35, `test_auth_stub_body_detection` 11, `test_exp071_auth_
+completeness` 24, `test_exp085_cross_file_auth_validation` 12, plus the
+Exp107/148/149 suites unaffected).

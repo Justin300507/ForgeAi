@@ -2802,6 +2802,80 @@ def _ensure_user_password_column(project_path: Path) -> None:
         return
 
 
+# Exp151 (wedding_planner, 2026-07-30): some architectures (event/vendor-
+# centric domains -- Guest/SeatingChart/Vendor, no natural "User" concept)
+# never generate a User/Account model at all, but still get auth-signaled
+# (an explicit /auth endpoint in the architecture, or the Tech Lead review
+# flagging "add JWT authentication"). `_patch_auth_routes()`'s
+# has_user_model gate then silently declined to inject anything --
+# `[auth-completeness] deterministic repair could not restore
+# completeness: missing required endpoint(s): POST /auth/signup, POST
+# /auth/login` -- and since nothing else in the pipeline can attach auth
+# to a nonexistent entity, the app failed at Forge Score ~19.5
+# (auth-completeness gates before Compilation/Runtime are even scored).
+_SYNTHETIC_USER_MODEL_TEMPLATE = '''\
+from sqlalchemy import Column, Integer, String, Boolean, DateTime
+from sqlalchemy.sql import func
+from app.database import Base
+
+
+class User(Base):
+    __tablename__ = 'users'
+    __table_args__ = {"extend_existing": True}
+
+    id = Column(Integer, primary_key=True, autoincrement=True)
+    email = Column(String, unique=True, nullable=False)
+    hashed_password = Column(String, nullable=False)
+    display_name = Column(String, nullable=True)
+    is_active = Column(Boolean, default=True, nullable=False)
+    created_at = Column(DateTime(timezone=True), server_default=func.now())
+'''
+
+
+def _ensure_synthetic_user_model(project_path: Path) -> bool:
+    """
+    Synthesizes a minimal, standard User model at app/models/user.py when
+    auth is signaled but no User-like model file exists, so
+    `_patch_auth_routes()`'s template (already fully dynamic re: column
+    names -- see `_build_auth_routes_template`, which reads
+    `User.__table__.columns` at runtime) has something real to attach to.
+    Only called from `_patch_auth_routes()`'s own gate, which already
+    confirmed neither user.py nor users.py exists -- never touches an app
+    that already has its own User model, however named or shaped.
+    """
+    main_py = project_path / "app" / "main.py"
+    if not main_py.exists():
+        return False
+
+    models_dir = project_path / "app" / "models"
+    models_dir.mkdir(parents=True, exist_ok=True)
+    (models_dir / "user.py").write_text(_SYNTHETIC_USER_MODEL_TEMPLATE, encoding="utf-8")
+
+    try:
+        main_content = main_py.read_text(encoding="utf-8", errors="replace")
+    except Exception:
+        return False
+
+    if "from app.models.user import" not in main_content:
+        import_line = "from app.models.user import *  # noqa: F401"
+        last_model_import = None
+        for m in re.finditer(r"^from app\.models\.\w+ import .*\n", main_content, re.MULTILINE):
+            last_model_import = m
+        create_all_m = re.search(r"Base\.metadata\.create_all", main_content)
+        if last_model_import:
+            pos = last_model_import.end()
+            main_content = main_content[:pos] + import_line + "\n" + main_content[pos:]
+        elif create_all_m:
+            pos = create_all_m.start()
+            main_content = main_content[:pos] + import_line + "\n\n" + main_content[pos:]
+        else:
+            main_content = import_line + "\n" + main_content
+        main_py.write_text(main_content, encoding="utf-8")
+
+    print("  [patcher] Synthesized app/models/user.py (auth signaled but no User model existed)")
+    return True
+
+
 def _patch_auth_routes(project_path: Path) -> None:
     """
     Inject a known-good auth_routes.py if the project has a User model but
@@ -2812,11 +2886,14 @@ def _patch_auth_routes(project_path: Path) -> None:
     if not routes_dir.exists() or not main_py.exists():
         return
 
-    # Only inject when a User-like model exists
+    # Only inject when a User-like model exists (synthesizing one first if
+    # auth is signaled -- see _ensure_synthetic_user_model, Exp151).
     models_dir = project_path / "app" / "models"
     has_user_model = any(
         (models_dir / name).exists() for name in ("user.py", "users.py")
     ) if models_dir.exists() else False
+    if not has_user_model:
+        has_user_model = _ensure_synthetic_user_model(project_path)
     if not has_user_model:
         return
 

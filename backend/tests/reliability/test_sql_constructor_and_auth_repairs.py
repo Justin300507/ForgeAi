@@ -391,12 +391,47 @@ def test_auth_utils_noop_when_already_good(tmp_path):
 
 # ── _patch_auth_routes ────────────────────────────────────────────────────────
 
-def test_auth_routes_skips_when_no_user_model(tmp_path):
+def test_auth_routes_synthesizes_user_model_when_none_exists(tmp_path):
+    """Exp151 (wedding_planner, 2026-07-30): an architecture with no
+    natural "User" concept (Guest/SeatingChart/Vendor) never generated a
+    User model at all, but was still auth-signaled -- the old
+    has_user_model gate silently declined to inject anything, and the
+    app failed auth-completeness permanently (Forge Score ~19.5). Called
+    from a context where auth is already known to be signaled (this
+    function's own callers all gate on that), so synthesizing a minimal
+    User model here is the correct default rather than giving up."""
     p = _proj(tmp_path)
     main_py = p / "app" / "main.py"
-    main_py.write_text("app = FastAPI()\n", encoding="utf-8")
+    main_py.write_text(
+        "from fastapi import FastAPI\napp = FastAPI()\nBase.metadata.create_all(bind=engine)\n",
+        encoding="utf-8",
+    )
     _patch_auth_routes(p)
-    assert not (p / "app" / "routes" / "auth_routes.py").exists()
+    user_model = p / "app" / "models" / "user.py"
+    assert user_model.exists()
+    assert "class User(Base)" in user_model.read_text(encoding="utf-8")
+    assert "from app.models.user import" in main_py.read_text(encoding="utf-8")
+    auth_routes = p / "app" / "routes" / "auth_routes.py"
+    assert auth_routes.exists()
+    assert "_read_password" in auth_routes.read_text(encoding="utf-8")
+
+
+def test_auth_routes_does_not_synthesize_when_user_model_already_exists(tmp_path):
+    """Never overwrites an app that already has its own User model, however
+    it's shaped -- synthesis only fires when neither user.py nor users.py
+    exists at all. (_ensure_user_password_column legitimately adds a
+    password column to this pre-existing email-only model regardless --
+    that's separate, correct, existing behavior; the point here is that
+    the synthetic template's own fields, e.g. display_name/is_active,
+    never get introduced since the real model's own shape is preserved.)"""
+    p = _proj(tmp_path)
+    (p / "app" / "main.py").write_text("app = FastAPI()\n", encoding="utf-8")
+    (p / "app" / "models" / "user.py").write_text(MODEL_USER_EMAIL_ONLY, encoding="utf-8")
+    _patch_auth_routes(p)
+    out = (p / "app" / "models" / "user.py").read_text(encoding="utf-8")
+    assert '__tablename__ = "users"' in out  # original double-quoted style preserved
+    assert "display_name" not in out  # synthetic template's own field never introduced
+    assert "is_active" not in out
 
 
 def test_auth_routes_injects_when_user_model_present_and_missing(tmp_path):

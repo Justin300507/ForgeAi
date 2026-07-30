@@ -404,7 +404,12 @@ def test_ensure_auth_completeness_repairs_missing_router():
         assert records[-1]["project_name"] == "exp071_repair_test"
 
 
-def test_ensure_auth_completeness_reports_failed_when_no_user_model():
+def test_ensure_auth_completeness_repairs_via_synthesized_user_when_no_user_model():
+    """Exp151 (wedding_planner, 2026-07-30): apps whose architecture has no
+    natural "User" concept (event/vendor-centric domains) used to get
+    reported as unfixable here -- `_patch_auth_routes()` synthesizes a
+    minimal User model now instead of giving up, since by the time this
+    function runs auth has already been established as required."""
     with _tmp_project() as td, _isolated_telemetry_log() as log_path:
         # Override the fixture's user.py to simulate no user model at all
         os.remove(os.path.join(td, "app", "models", "user.py"))
@@ -412,11 +417,12 @@ def test_ensure_auth_completeness_reports_failed_when_no_user_model():
         _write(td, "app/routes/task_routes.py", _TASK_ROUTES)
 
         result = ensure_auth_completeness(td, "exp071_no_model_test")
-        assert result["status"] == "failed"
-        assert not result["after"].complete
+        assert result["status"] == "repaired"
+        assert result["after"].complete
+        assert os.path.isfile(os.path.join(td, "app", "models", "user.py"))
 
         records = [json.loads(l) for l in log_path.read_text(encoding="utf-8").splitlines()]
-        assert records[-1]["status"] == "failed"
+        assert records[-1]["status"] == "repaired"
 
 
 def test_ensure_auth_completeness_is_noop_on_already_complete_project():
