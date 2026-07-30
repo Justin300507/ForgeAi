@@ -717,6 +717,93 @@ def validate_frontend_placeholder_routes(project_path, errors):
         errors.append(f"Missing frontend import target: ./pages/{page_name}")
 
 
+# Route files that are infrastructure, not a user-facing resource -- a
+# backend having auth/seed/stats endpoints doesn't mean a dedicated page for
+# each is expected (mirrors missing_file_prompt.py's _NON_ENTITY_ROUTE_FILES,
+# kept in sync so this validator's notion of "a real resource" matches what
+# the missing-file agent already treats specially).
+_NON_ENTITY_ROUTE_FILES = {"auth_routes.py", "seed_routes.py", "stats_routes.py", "stat_routes.py"}
+
+
+def _resource_page_name(route_filename: str) -> str | None:
+    if not route_filename.endswith("_routes.py") or route_filename in _NON_ENTITY_ROUTE_FILES:
+        return None
+    stem = route_filename[: -len("_routes.py")]
+    words = [w for w in re.split(r"[_-]", stem) if w]
+    if not words:
+        return None
+    return "".join(w.capitalize() for w in words) + "Page"
+
+
+def validate_frontend_resource_pages(project_path, errors):
+    """
+    Every non-infrastructure app/routes/*_routes.py file is a resource the
+    product plan committed to (habits, invoices, whatever the app is
+    about) -- but nothing previously checked that a real page actually
+    exists and is routed for it. A resource with full backend CRUD and
+    zero frontend page produces no validation error at all as long as
+    nothing else happens to reference the missing page: no broken import
+    (validate_frontend_imports), no dead nav link (validate_frontend_nav_
+    targets, since no link was ever written either), no placeholder route
+    text (validate_frontend_placeholder_routes, since there's no route at
+    all, not a placeholder one). Confirmed live (habit_tracker,
+    2026-07-30, scored 94.9/A and would have deployed): full habit CRUD
+    on the backend, zero way to create/view/edit/delete a habit from the
+    UI -- "login works, then there's nothing to do" from the user's side,
+    invisible to every automated check because none of them require every
+    backend resource to have a reachable page, only that whatever pages
+    DO exist are internally consistent.
+
+    Emits the same "Missing frontend import target: ./pages/X" format
+    every other frontend completeness check in this module uses, so this
+    flows through the existing missing-file fix dispatch with no new
+    wiring -- generate_missing_file() already grounds the page in this
+    resource's real model/schema fields (see missing_file_prompt.py's
+    _find_resource_model_and_schema), and deterministic_patcher.py's
+    orphan-route wirer already picks up and routes any page file that
+    exists on disk but isn't wired into App.jsx yet.
+    """
+    routes_dir = os.path.join(project_path, "app", "routes")
+    src_path = os.path.join(project_path, "src")
+    if not os.path.isdir(routes_dir) or not os.path.isdir(src_path):
+        return
+
+    app_jsx = os.path.join(src_path, "App.jsx")
+    if not os.path.exists(app_jsx):
+        return  # validate_frontend_placeholder_routes already reports a missing/routeless App.jsx
+    try:
+        with open(app_jsx, "r", encoding="utf-8") as f:
+            content = f.read()
+    except Exception:
+        return
+    if "<Route" not in content:
+        return  # validate_frontend_placeholder_routes already reports this
+
+    # A resource "has a page" only if some <Route>'s element actually
+    # renders a real (non-wrapper) component -- same signal
+    # validate_frontend_placeholder_routes trusts, reused here so a
+    # resource wired only to inline placeholder JSX still counts as missing.
+    routed_components = set()
+    for m in re.finditer(r'<Route\s+path="[^"]*"', content):
+        elem_m = re.search(r"element=\{", content[m.end():m.end() + 4000])
+        if not elem_m:
+            continue
+        elem_start = m.end() + elem_m.end()
+        close_pos = find_matching_brace(content, elem_start - 1, quote_chars="'\"`")
+        if close_pos == -1:
+            continue
+        element_body = content[elem_start:close_pos]
+        routed_components |= set(_JSX_COMPONENT_TAG_RE.findall(element_body)) - _ROUTE_WRAPPER_COMPONENTS
+
+    reported = set()
+    for fname in sorted(os.listdir(routes_dir)):
+        page_name = _resource_page_name(fname)
+        if not page_name or page_name in reported or page_name in routed_components:
+            continue
+        reported.add(page_name)
+        errors.append(f"Missing frontend import target: ./pages/{page_name}")
+
+
 def validate_frontend_api_client(project_path, errors):
     """
     Flag raw fetch() calls with relative URLs in src/ files.
@@ -1287,6 +1374,10 @@ def validate_project(project_path):
         errors
     )
     validate_frontend_placeholder_routes(
+        project_path,
+        errors
+    )
+    validate_frontend_resource_pages(
         project_path,
         errors
     )
