@@ -3696,6 +3696,82 @@ def _patch_update_schema_optional_field_missing_default(project_path: Path) -> i
     return patched
 
 
+def _patch_update_route_missing_exclude_unset(project_path: Path) -> int:
+    """
+    Exp151 follow-up (habit_tracker, 2026-07-31): once an *Update schema's
+    fields are all Optional (see _patch_update_schema_optional_field_
+    missing_default, immediately above), a route handler that does
+    `for key, value in x.dict().items(): setattr(obj, key, value)` --
+    without `exclude_unset=True` -- gets every OMITTED field back as its
+    `None` default, not "not present". A real partial update (`PUT
+    /habits/{id}` with just `{"streak": 5}`) then nulls out every column
+    the client never touched; if any of those columns is NOT NULL,
+    `db.commit()` raises IntegrityError, a bare 500. Confirmed live: this
+    was masked until the schema-requiredness fix above landed, since the
+    old all-required Update schema rejected the same partial body with a
+    422 before the handler body ever ran at all -- fixing the schema
+    made this second, previously-unreachable bug newly reachable.
+
+    Scoped via ast to the specific parameter that's actually typed as a
+    `*Update` class in that specific function's signature, and only
+    rewrites a bare `.dict()` call on that exact variable name -- never
+    touches `.dict()` on a Create-schema variable (which legitimately
+    wants every field) or a call that already has `exclude_unset=True`.
+    """
+    routes_dir = project_path / "app" / "routes"
+    if not routes_dir.exists():
+        return 0
+
+    patched = 0
+    for rf in routes_dir.glob("*.py"):
+        try:
+            src = rf.read_text(encoding="utf-8", errors="replace")
+        except Exception:
+            continue
+        if ".dict()" not in src:
+            continue
+        try:
+            tree = ast.parse(src)
+        except SyntaxError:
+            continue
+
+        lines = src.splitlines(keepends=True)
+        edits: list[tuple[int, int, str]] = []  # (start_line0, end_line0, new_var_name) per function
+        for node in ast.walk(tree):
+            if not isinstance(node, (ast.FunctionDef, ast.AsyncFunctionDef)):
+                continue
+            update_params = [
+                a.arg for a in node.args.args
+                if isinstance(a.annotation, ast.Name) and a.annotation.id.endswith("Update")
+            ]
+            if not update_params:
+                continue
+            end_lineno = getattr(node, "end_lineno", None)
+            if end_lineno is None:
+                continue
+            for var_name in update_params:
+                edits.append((node.lineno - 1, end_lineno, var_name))
+
+        if not edits:
+            continue
+
+        changed = False
+        for start0, end0, var_name in edits:
+            call_re = re.compile(rf"\b{re.escape(var_name)}\.dict\(\)")
+            for i in range(start0, min(end0, len(lines))):
+                new_line, n = call_re.subn(f"{var_name}.dict(exclude_unset=True)", lines[i])
+                if n:
+                    lines[i] = new_line
+                    changed = True
+
+        if changed:
+            rf.write_text("".join(lines), encoding="utf-8")
+            patched += 1
+            print(f"  [patcher] Added exclude_unset=True to Update-schema .dict() call(s) in {rf.name}")
+
+    return patched
+
+
 # Same name vocabulary as _RESPONSE_CLASS_RE, but matchable against a bare
 # class NAME (no trailing "(bases):") -- _RESPONSE_CLASS_RE itself requires
 # a full "class X(...)" declaration to match at all, which a bare name
@@ -9312,6 +9388,18 @@ def run_deterministic_patches(project_path: str, skip_protected_injections: bool
         counts,
         "_patch_update_schema_optional_field_missing_default",
         _patch_update_schema_optional_field_missing_default,
+        root,
+    )
+
+    # Now that Update-schema fields are all Optional, a route handler
+    # applying `.dict()` (without exclude_unset=True) to that schema nulls
+    # out every field the client didn't touch -- IntegrityError on the
+    # first NOT NULL column, a 500 that was masked until the schema fix
+    # above made partial-update requests reach the handler body at all.
+    _run_patch_isolated(
+        counts,
+        "_patch_update_route_missing_exclude_unset",
+        _patch_update_route_missing_exclude_unset,
         root,
     )
 

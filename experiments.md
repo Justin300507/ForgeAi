@@ -9216,3 +9216,27 @@ the earlier same-session Cerebras removal, one unrelated corruption-
 rejection test that fails identically with this change stashed out).
 No changes needed to the `minimal_editorial`/`subtle` visual-polish
 system itself -- it was never the actual cause.
+
+**Re-verified live after deploying the schema fix**: re-ran the exact
+same generation (job 5d112741). `HabitUpdate` now correctly all-
+Optional (confirmed by reading the live file) -- `Edit entity` no longer
+422s. But it now 500s instead: `update_habit`'s handler does `for key,
+value in habit_in.dict().items(): setattr(habit, key, value)` with no
+`exclude_unset=True`, so once every field defaults to `None`, an
+omitted field (e.g. the journey's partial `{"streak": 5}` body) nulls
+out `name`/`frequency` too -- NOT NULL columns -- `IntegrityError` on
+`db.commit()`, a 500. This bug was always latent in the generated route
+handler; it was simply unreachable before, since the old all-required
+Update schema rejected the same partial body with a 422 at the
+validation layer, before the handler body ever ran.
+
+**Fix**: new patcher, `_patch_update_route_missing_exclude_unset`,
+immediately after the schema fix in `run_deterministic_patches` --
+ast-parses each route file, finds functions with a parameter annotated
+as a `*Update` class, and rewrites a bare `.dict()` call on that exact
+variable name (only, never a same-named Create-schema variable, and
+never a call that already has `exclude_unset=True`) to
+`.dict(exclude_unset=True)`. 5/5 in a new dedicated test file
+(`test_update_route_exclude_unset.py`); reran every adjacent suite
+(update-schema, auth-repairs, database-patcher, inline-chain-repairs,
+response-schema-inheritance) -- 158/158 combined, no regressions.
