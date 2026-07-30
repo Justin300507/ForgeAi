@@ -1761,6 +1761,30 @@ def health():
     return {"status": "ok", "version": app.version}
 
 
+@app.get("/admin/read-file", tags=["admin"])
+def admin_read_file(path: str, current_user=Depends(get_current_user)):
+    """
+    Temporary read-only diagnostic (2026-07-30): investigating the
+    recurring `Expected ">" but found "\\"` frontend_build failure --
+    need to see the actual malformed generated file content, not just
+    the error message, and the DB row this would normally resolve
+    zip_path through was deleted by the disk-full cleanup. Reads any
+    file under /data by absolute path -- fine for a single-operator
+    dev/test deployment, temporary, remove once the investigation
+    is done.
+    """
+    from pathlib import Path
+    root = Path("/data").resolve()
+    target = Path(path).resolve()
+    try:
+        target.relative_to(root)
+    except ValueError:
+        raise HTTPException(status_code=400, detail="path must be inside /data")
+    if not target.is_file():
+        raise HTTPException(status_code=404, detail="not found")
+    return {"path": str(target), "content": target.read_text(encoding="utf-8", errors="replace")}
+
+
 class RedeployGithubRequest(BaseModel):
     github_url: str
     project_name: str
