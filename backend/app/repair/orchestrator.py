@@ -854,6 +854,22 @@ def _apply_fix_group(
             print(f"    [fix] Group {group.group_id} is a mechanical default/named import "
                   f"mismatch — rewriting the importer directly instead of calling the LLM")
             return modified, written
+        # _fix_import_style_mismatch_group found every diagnostic in this
+        # group stale (an earlier group this same attempt already changed
+        # the target's export style) and skipped rather than guess. Falling
+        # through to the LLM here is exactly as unsafe as the mechanical
+        # path would have been: confirmed live (habit_tracker, 2026-07-30)
+        # -- the LLM fix prompt still quotes the same stale "uses a default
+        # export" diagnostic text, has no more information than the
+        # mechanical fixer did, and made the identical wrong guess,
+        # producing the same regression-revert-repeat loop this group was
+        # supposed to prevent. Skip the whole group; the next verify pass
+        # re-diagnoses against the file's actual current state instead of
+        # a snapshot from before this attempt's other edits.
+        print(f"    [fix] Group {group.group_id}: every import-style-mismatch diagnostic "
+              f"was stale — skipping the group entirely instead of asking the LLM to guess "
+              f"from the same stale diagnostic text")
+        return [], {}
 
     # ── Fix cache lookup ──────────────────────────────────────────────────────
     try:

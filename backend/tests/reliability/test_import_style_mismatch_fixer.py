@@ -156,6 +156,46 @@ def test_apply_fix_group_uses_the_deterministic_fixer_before_the_llm():
         shutil.rmtree(root, ignore_errors=True)
 
 
+def test_apply_fix_group_skips_entirely_when_stale_instead_of_asking_the_llm():
+    """
+    Reproduces the live incident (habit_tracker, 2026-07-30, second
+    occurrence): the mechanical fixer correctly detects a stale diagnostic
+    (an earlier group this same attempt already rewrote the target to a
+    named export) and skips -- but _apply_fix_group used to then fall
+    through to the LLM path for the SAME group, handing it the SAME stale
+    "uses a default export" diagnostic text. The LLM has no more
+    information than the mechanical fixer did and made the identical
+    wrong guess, producing the exact regression-revert-repeat loop this
+    group exists to prevent. _apply_fix_group must skip the whole group
+    (return empty) instead of ever reaching the LLM call.
+    """
+    root = _tmp_project_with_mismatch()
+    try:
+        # Simulate the target already having been rewritten to a named
+        # export by an earlier group in this same attempt -- the
+        # diagnostic (still claiming "default export") is now stale.
+        (root / "src" / "hooks" / "useAuth.jsx").write_text(
+            "export function useAuth() {\n"
+            "  return { user: null };\n"
+            "}\n",
+            encoding="utf-8",
+        )
+        ctx = GenerationContext("exp-import-style-stale", "test", root, "exp_import_style_stale_app")
+        cfg = StrategyConfig(1, FixStrategy.PATCH_FILE, "test", "test")
+        group = _mismatch_group("../hooks/useAuth", "src/components/PrivateRoute.jsx")
+
+        modified, written = _apply_fix_group(group, ctx, cfg)
+
+        assert modified == []
+        assert written == {}
+        # Importer must be left exactly as-is -- neither the mechanical
+        # fixer nor an LLM call should have touched it.
+        on_disk = (root / "src" / "components" / "PrivateRoute.jsx").read_text(encoding="utf-8")
+        assert "import { useAuth } from '../hooks/useAuth';" in on_disk
+    finally:
+        shutil.rmtree(root, ignore_errors=True)
+
+
 if __name__ == "__main__":
     import traceback
     tests = [obj for name, obj in list(globals().items()) if name.startswith("test_")]
