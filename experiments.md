@@ -9033,3 +9033,17 @@ different ways it can go wrong, might be the more durable fix -- not
 attempted tonight since each individual case needed its own real-file
 evidence to get right, and three targeted patches shipped and validated
 beats one broader untested one at 2am.
+
+**Inconclusive, not investigated further**: study_group_scheduler (idx
+28) scored 41.9/F. Unlike Exp147-149, the job's `/jobs/{id}` logs were
+already empty (0 lines) by the time this was checked, and static
+inspection of main.py/models/routes/schemas found nothing obviously
+broken (all files parse, all imports resolve on paper, no hyphen/type/
+cross-module issues). One real oddity noted but NOT confirmed as the
+cause: `session_routes.py` imports `Session` from both
+`sqlalchemy.orm` and `app.models.sessions` (the domain model is also
+named `Session`), silently shadowing the former -- this file's own
+handlers avoid the collision by typing `db: Any` instead of `db:
+Session`, so it likely isn't a hard crash, but the pattern (a resource
+whose name collides with a common SQLAlchemy/FastAPI symbol) is worth
+watching for elsewhere. Not fixed -- no confirmed root cause to fix.
