@@ -8775,3 +8775,65 @@ high-scoring (95+) -- meaningful, not negligible, but not the top
 priority either given the disk-full incident and habit-tracker redeploy
 were live-blocking issues and this is "some fraction of otherwise-good
 apps don't deploy," not "the platform is down."
+
+## Experiment 146: useAuth/PrivateRoute Oscillation Persists Despite Exp142's Fix -- Deeper Root Cause Found, Not Fixed
+
+**Trigger**: 40-app batch, freelance_time_tracker (idx 2), scored 95.1/A+
+[DEPLOY READY] on every one of 5 fix attempts and never deployed --
+`[V15] Deployment skipped -- critical stage 'frontend_build' failed
+(score 95.1)`. Same `PrivateRoute.jsx`/`useAuth.jsx` default/named
+export class of bug already fixed twice tonight (Exp142: mechanical
+fixer stopped guessing on stale diagnostics; a same-night follow-up:
+`_apply_fix_group` stopped falling through to the LLM on the same stale
+diagnostic). Both fixes confirmed *working correctly* in this run's own
+log -- `Group ...: every import-style-mismatch diagnostic was stale --
+skipping the group entirely instead of asking the LLM to guess from the
+same stale diagnostic text` fired exactly as designed, every attempt.
+The app still never converged.
+
+**Why skipping isn't enough**: attempt 1 and attempt 2's diagnosed
+groups are byte-identical in the log. Every attempt: (1) reverts back
+to the same pre-attempt baseline (nothing from the previous attempt
+survives, since it regressed), (2) Group 1 -- classified as "Frontend/
+browser failure: error during build: PrivateRoute.jsx..." -- calls an
+LLM that scaffolds `AuthContext.jsx` and rewrites `hooks/useAuth.jsx`,
+(3) Group 2 -- the *separate*, already-fixed "Import style mismatch"
+diagnostic for the exact same file pair -- correctly detects staleness
+(Group 1 just changed the target) and skips rather than guess. Group 2
+skipping is *correct*, but nothing ever takes its place: no group
+re-diagnoses PrivateRoute.jsx's import against useAuth.jsx's NEW actual
+export shape within the same attempt, so the import statement never
+gets corrected either. The attempt fails the same way, reverts, and the
+next attempt repeats identically -- not an infinite wrong-guess loop
+anymore (that part is fixed), but a "stall in place" loop.
+
+**The real root cause, one layer up**: `error during build: "X" is not
+exported by "Y", imported by "Z"` (the raw Vite error) and `Import
+style mismatch: Y uses a default export but is imported with
+named-import syntax in Z` (validator_service.py's static pre-build
+check) are the *same underlying fact* observed by two different stages,
+but land in two separate DiagnosticGroups handled by two different
+mechanisms: the Vite error goes to an LLM ("Frontend/browser failure"),
+the static one goes to the mechanical fixer. The LLM group runs FIRST
+and has no reason to believe useAuth.jsx is already fine (nothing
+tells it "PrivateRoute.jsx's import is the actual bug, not this file")
+-- so it rewrites the file that likely didn't need touching, while the
+group that WOULD correctly fix the real bug (the mechanical one) can no
+longer safely act once the LLM group has changed the ground under it.
+
+**Not fixed tonight**: the correct fix is upstream of anything in
+orchestrator.py's group-application layer -- either (a) merge a Vite
+"is not exported by" error with a co-occurring static import-style-
+mismatch diagnostic for the same importer/target pair into ONE group
+routed exclusively to the mechanical fixer (skip the LLM rewrite
+entirely for this shape), or (b) have the LLM's "Frontend/browser
+failure" prompt itself check the target's real current export style
+before deciding which file to rewrite. Both require touching the
+diagnostic grouping/classification path, which is shared by every
+frontend build failure this pipeline handles -- meaningfully higher
+blast radius than tonight's earlier two fixes to this same file, and
+not something to rush mid-batch. Documented for a dedicated session,
+same call as Exp145's JSX-escape bug.
+
+**Prevalence this run**: 1/3 apps checked so far in the 40-app batch
+(freelance_time_tracker) -- small sample, batch still running.
