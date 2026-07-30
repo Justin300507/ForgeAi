@@ -8837,3 +8837,70 @@ same call as Exp145's JSX-escape bug.
 
 **Prevalence this run**: 1/3 apps checked so far in the 40-app batch
 (freelance_time_tracker) -- small sample, batch still running.
+
+## Experiment 147: Orphan Hyphenated Route File Survives As A Landmine -- Fixed
+
+**Trigger**: 40-app batch, two apps (wedding_planner idx 0, meal_prep_planner
+idx 3) both scored the same unusual 19.54/F. wedding_planner's cause was
+unrelated (see below); meal_prep_planner had Compilation 0.0 / Runtime
+Startup 0.0 with "2 syntax errors" recurring identically across 5+ verify
+attempts -- classic "loop isn't converging" shape, same family as Exp146.
+
+**Root cause**: `main.py` imported `meal-plan_router` (literal hyphen --
+`x - y = z` is a SyntaxError as an assignment target, and a hyphen in a
+dotted import module segment is invalid syntax too) from the *correctly*
+named module `app.routes.meal_plan_routes`. That module's real file
+defines `meal_plan_router` (underscore, correct) -- confirmed by reading
+both files directly off the Railway `/data` volume via the `/admin/
+read-file` endpoint. A SECOND, orphan file also existed on disk:
+`app/routes/meal-plan_routes.py` (hyphenated filename too), containing an
+unpatched `meal-plan_router = APIRouter()`.
+
+`_patch_hyphenated_router_identifiers`'s file-renamer (Exp107) already
+handles the hyphenated-filename case -- but only when no correctly-named
+twin exists yet. Here one already did (both apparently got generated in
+the initial V6 parallel generation, a router-naming inconsistency on the
+LLM's part), so the renamer's `if target.exists(): continue` branch left
+the orphan in place, as designed. The job log shows the *content*-level
+hyphen fix firing on that orphan file at least 6 separate times across
+the run (`Fixed hyphenated router identifier(s) in meal-plan_routes.py:
+['meal-plan_router']` at 6 different points) -- it was being correctly
+re-patched every single attempt and never converging, because a later
+regen/wiring pass kept re-copying the orphan's still-hyphenated identifier
+into main.py next to the module path of the *correct* file (`from
+app.routes.meal_plan_routes import meal-plan_router` -- underscore
+module, hyphen identifier, a shape neither half of the existing patcher
+alone can produce, which is why it kept slipping through). The orphan
+file being *content-patchable-but-never-deleted* was the actual bug:
+"leave both, fix the content" is not a stable fixed point when something
+else reads the file's raw content before that attempt's patch pass runs.
+
+**Fix**: `deterministic_patcher.py`'s `_patch_hyphenated_router_identifiers`
+-- when a correctly-named twin already exists, `pf.unlink()` the orphan
+hyphenated-named file instead of leaving it in place. The correctly-named
+twin is confirmed to exist and is authoritative; the duplicate is dead
+weight that can only ever be copied from by mistake, never legitimately
+imported (its own filename isn't a valid Python module name). Updated
+`test_exp107_hyphenated_routers.py`'s
+`test_rename_skipped_when_correct_twin_exists` (renamed to
+`test_orphan_hyphenated_twin_deleted_when_correct_twin_exists`) to assert
+deletion instead of the old leave-both behavior; all 4 tests in that file
+and all 3 in `test_router_export_mismatch_hyphen_sanitization.py` pass.
+
+**Not investigated further tonight**: which exact upstream step (V6
+initial parallel generation vs. a specific repair regen/wiring pass) is
+the one reading the orphan's raw content and copying the bad identifier
+into main.py -- the delete-on-sight fix removes the only source that copy
+could ever come from, so it closes the bug regardless of which call site
+was doing the copying, without needing to trace that call site under
+time pressure mid-batch.
+
+**wedding_planner's 19.54 was a separate, still-open issue**: its
+architecture never created a `User`/auth entity at all (only `Guest`,
+`SeatingChart`, `Vendor`), so auth injection has nothing to attach to --
+`[auth-completeness] deterministic repair could not restore completeness:
+missing required endpoint(s): POST /auth/signup, POST /auth/login`. Not
+fixed -- flagged for a dedicated session: apps whose domain doesn't
+naturally suggest a User entity (event/vendor-centric apps) can end up
+with zero auth scaffold. Only 1 occurrence in this batch so far; watching
+for recurrence before deciding whether it's worth a fix.

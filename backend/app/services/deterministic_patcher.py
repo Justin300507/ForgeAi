@@ -7774,7 +7774,26 @@ def _patch_hyphenated_router_identifiers(project_path: Path) -> int:
         for pf in list(d.glob("*-*.py")):
             target = pf.with_name(pf.name.replace("-", "_"))
             if target.exists():
-                continue  # a correctly-named twin already exists; leave both
+                # Exp147 (meal_prep_planner, 2026-07-30): leaving the orphan
+                # twin in place, as this used to do, is not neutral -- it's
+                # a live landmine. The router-name-hyphen-fix below patches
+                # its CONTENT every attempt (log showed this firing 6x in
+                # one job), but nothing stops a later regen/wiring pass from
+                # reading the orphan's raw (unfixed-at-generation-time)
+                # `<name>-router` identifier and copying it into main.py's
+                # import next to the *correct* module path -- producing
+                # `from app.routes.meal_plan_routes import meal-plan_router`,
+                # a NameError even after every hyphen in the identifier and
+                # module segments is individually well-formed. Deleting the
+                # dead duplicate outright removes the source of that copy
+                # instead of re-fixing its content forever without ever
+                # converging. Safe: `target` (the correctly-named twin) is
+                # confirmed to exist and is authoritative.
+                pf.unlink()
+                patched += 1
+                print(f"  [patcher] Deleted orphan hyphenated route module {pf.name} "
+                      f"(correctly-named twin {target.name} already exists)")
+                continue
             pf.rename(target)
             patched += 1
             print(f"  [patcher] Renamed un-importable route module {pf.name} -> {target.name}")

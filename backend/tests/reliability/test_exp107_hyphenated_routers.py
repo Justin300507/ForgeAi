@@ -103,18 +103,22 @@ def test_clean_project_untouched():
         shutil.rmtree(root, ignore_errors=True)
 
 
-def test_rename_skipped_when_correct_twin_exists():
+def test_orphan_hyphenated_twin_deleted_when_correct_twin_exists():
+    """Exp147 (meal_prep_planner, 2026-07-30): leaving the orphan hyphenated
+    twin in place (old behavior) let later regen/wiring passes read its raw
+    `<name>-router` identifier and copy it into main.py next to the
+    *correct* module path -- `from app.routes.meal_plan_routes import
+    meal-plan_router` -- a NameError even though every individual hyphen
+    elsewhere was already fixed. The dead duplicate must be deleted, not
+    content-patched-in-place, so there is no stale identifier left to copy."""
     root = _project({
         "app/routes/tag-extra_routes.py": "from fastapi import APIRouter\ntag-extra_router = APIRouter()\n",
         "app/routes/tag_extra_routes.py": "from fastapi import APIRouter\ntag_extra_router = APIRouter()\n",
     })
     try:
         _patch_hyphenated_router_identifiers(root)
-        # twin kept, hyphenated file left in place but its content sanitized
         assert (root / "app/routes/tag_extra_routes.py").exists()
-        assert (root / "app/routes/tag-extra_routes.py").exists()
-        out = (root / "app/routes/tag-extra_routes.py").read_text(encoding="utf-8")
-        assert "tag_extra_router = APIRouter()" in out
+        assert not (root / "app/routes/tag-extra_routes.py").exists()
     finally:
         shutil.rmtree(root, ignore_errors=True)
 
