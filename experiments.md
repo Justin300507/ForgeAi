@@ -8969,3 +8969,67 @@ no-op that just replayed forever instead of converging -- a one-word,
 zero-ambiguity substitution is exactly the shape a $0 mechanical patch
 should own outright rather than depend on an LLM call (and its cache) to
 eventually get right.
+
+## Experiment 149: Broken Cross-Module Router Import (Plural/Singular Split) -- Fixed
+
+**Trigger**: 40-app batch, community_recycling_tracker (idx 25) scored
+31.5/F, Runtime Startup 0.0 unchanged across all 5 attempts -- identical
+"stuck at the same score forever" shape as Exp147/148.
+`[verify] 2a Symbol closure check... failed -- 1 undefined symbols`
+never cleared. Confirmed Exp147's fix is live in production on this same
+job's own log: `[patcher] Deleted orphan hyphenated route module
+recycling-location_routes.py (correctly-named twin
+recycling_location_routes.py already exists)` fired correctly early in
+the run -- that part of this app's problems really was fixed. The
+Runtime Startup failure was a separate, new bug.
+
+**Root cause**: this app legitimately generated TWO real, non-duplicate
+route files for closely-related resource names -- `recycling_location_
+routes.py` (singular, defines `recycling_location_router`, has the
+create endpoint) and `recycling_locations_routes.py` (plural, defines
+`recycling_locations_router`, has the search endpoint) -- unlike
+Exp147's orphan, both have distinct real content. `main.py` ended up
+with three router-import lines for this resource, one of which cross-
+wired the wrong pair: `from app.routes.recycling_location_routes import
+recycling_locations_router` -- the SINGULAR module doesn't define the
+PLURAL symbol. `ImportError` crashes the whole app at import, before any
+endpoint runs. Confirmed by reading both real files directly off
+Railway's `/data` volume: the plural symbol IS correctly defined in
+`recycling_locations_routes.py` and IS correctly imported from there via
+a separate, valid line earlier in `main.py` -- so the broken line is
+pure dead weight, not a case where anything needs to be regenerated or
+merged.
+
+**Fix**: new `deterministic_patcher.py` patcher,
+`_patch_broken_cross_module_router_import` -- parses every `from
+app.routes.X import Y_router` line in `main.py`, checks whether module X
+actually defines `Y_router` (`^Y_router\s*=\s*APIRouter\(` in that
+file), and if not AND `Y_router` is validly imported from its real
+module by some OTHER line in the same file, deletes the broken line.
+Deliberately narrow: it never removes the *only* surviving import of a
+symbol (that would trade an ImportError for a NameError with nothing
+gained -- covered by `test_does_not_remove_the_only_import_of_a_symbol`),
+and it never guesses which of two real route files is "correct" or
+merges/deletes either one -- it only removes a provably-redundant broken
+import when a working equivalent already exists. Wired into
+`run_deterministic_patches` right after the hyphenated-router-identifier
+convergence pass. Validated against the literal main.py content pulled
+from the live broken job (3 unrelated valid imports + the one broken
+line survive/get-removed correctly, output re-parses as valid Python).
+New test file `test_exp149_broken_cross_module_router_import.py`, 3
+tests, all pass; hyphen-router and Exp148 suites unaffected.
+
+**Fourth distinct new bug found and shipped tonight from this one 40-app
+batch** (Exp147, 148, 149 plus wedding_planner's still-open auth-entity
+gap) -- all four independently traced back to the same underlying shape:
+main.py accumulates a stale/wrong router-wiring artifact from an earlier
+generation or repair pass that a later pass never cleans up, and the fix
+loop's LLM+cache mechanism can't converge on it because nothing in that
+path ever asks "does this import actually resolve." Worth flagging as a
+pattern for a future session: a single upstream invariant check ("every
+router import in main.py must resolve to a real definition") run right
+before scoring, rather than three separate narrow patchers for three
+different ways it can go wrong, might be the more durable fix -- not
+attempted tonight since each individual case needed its own real-file
+evidence to get right, and three targeted patches shipped and validated
+beats one broader untested one at 2am.

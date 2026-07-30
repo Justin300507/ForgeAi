@@ -7742,6 +7742,76 @@ def _patch_hallucinated_sqlalchemy_types(project_path: Path) -> int:
     return patched
 
 
+# Exp149 (community_recycling_tracker, 2026-07-30): main.py contained
+# `from app.routes.recycling_location_routes import recycling_locations_router`
+# -- the (singular) module recycling_location_routes.py exists but only
+# defines `recycling_location_router` (singular); the plural symbol is a
+# real router, correctly defined and correctly imported ELSEWHERE in the
+# same main.py from the actual plural-named module
+# (recycling_locations_routes.py, a distinct file with distinct
+# endpoints -- not a duplicate/orphan like Exp147's case). The broken
+# line is pure dead weight: Python raises ImportError on it before any
+# endpoint can run, and since the correct import of the same symbol
+# already exists elsewhere, deleting the broken line loses nothing.
+# `[verify] 2a Symbol closure check... failed -- 1 undefined symbols`
+# persisted unchanged across all 5 repair attempts (same
+# non-convergence shape as Exp147/148).
+_MAIN_ROUTER_IMPORT_RE = re.compile(
+    r"^from app\.routes\.(\w+) import (\w+_router)\s*$", re.MULTILINE
+)
+
+
+def _patch_broken_cross_module_router_import(project_path: Path) -> int:
+    main_py = project_path / "app" / "main.py"
+    routes_dir = project_path / "app" / "routes"
+    if not main_py.exists() or not routes_dir.exists():
+        return 0
+    try:
+        content = main_py.read_text(encoding="utf-8", errors="replace")
+    except Exception:
+        return 0
+
+    matches = list(_MAIN_ROUTER_IMPORT_RE.finditer(content))
+    if not matches:
+        return 0
+
+    module_src_cache: dict[str, str | None] = {}
+
+    def _defines(module: str, router_name: str) -> bool:
+        if module not in module_src_cache:
+            rf = routes_dir / f"{module}.py"
+            try:
+                module_src_cache[module] = rf.read_text(encoding="utf-8", errors="replace") if rf.exists() else None
+            except Exception:
+                module_src_cache[module] = None
+        src = module_src_cache[module]
+        if src is None:
+            return False
+        return bool(re.search(rf"^\s*{re.escape(router_name)}\s*=\s*APIRouter\(", src, re.MULTILINE))
+
+    valid_router_names = {
+        router_name for module, router_name in
+        (m.groups() for m in matches) if _defines(module, router_name)
+    }
+
+    removed: list[str] = []
+    new_lines = []
+    for line in content.splitlines(keepends=True):
+        m = _MAIN_ROUTER_IMPORT_RE.match(line.rstrip("\n"))
+        if m:
+            module, router_name = m.groups()
+            if not _defines(module, router_name) and router_name in valid_router_names:
+                removed.append(line.strip())
+                continue
+        new_lines.append(line)
+
+    if not removed:
+        return 0
+    main_py.write_text("".join(new_lines), encoding="utf-8")
+    print(f"  [patcher] Removed broken cross-module router import(s) in main.py: {removed}")
+    return 1
+
+
 _HYPHEN_ROUTER_RE = re.compile(r"\b([A-Za-z_]\w*(?:-\w+)+_router)\b")
 
 
@@ -8942,6 +9012,16 @@ def run_deterministic_patches(project_path: str, skip_protected_injections: bool
     # Router wiring can synthesize a new import from a hyphenated filename.
     # Re-converge the syntax invariant after that mutating pass.
     _run_patch_isolated(counts, "_patch_hyphenated_router_identifiers_final", _patch_hyphenated_router_identifiers, root)
+
+    # A router-name import that references a module which doesn't define
+    # it (e.g. a plural/singular naming split across two real route
+    # files for the same resource) is dead weight once the correct
+    # import already exists elsewhere in main.py -- ImportError before
+    # any endpoint can run (Exp149).
+    _run_patch_isolated(
+        counts, "_patch_broken_cross_module_router_import",
+        _patch_broken_cross_module_router_import, root,
+    )
 
     # Synthesize LoginPage/RegisterPage if App.jsx redirects to /login but
     # the LLM never generated them -- must run BEFORE the generic orphan
