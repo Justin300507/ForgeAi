@@ -7684,6 +7684,64 @@ def _patch_unbound_conditional_db_ops(project_path: Path) -> int:
     return patched
 
 
+# Exp148 (rental_property_management_app, 2026-07-30): the LLM generated
+# `from sqlalchemy import Column, Integer, Real, Date, Text, ForeignKey`
+# and `amount = Column(Real, nullable=False)` -- `Real` is a SQL/SQLite
+# column-type NAME (as in `CREATE TABLE ... amount REAL`), not a real
+# `sqlalchemy` class; the actual SQLAlchemy equivalent is `Float`.
+# `ImportError: cannot import name 'Real' from 'sqlalchemy'` crashes the
+# whole app at import time (Runtime Startup 0.0 for every attempt). The
+# fix loop's own cached "fix" for this exact diagnostic never actually
+# removed the bad import -- the same broken content replayed via
+# `[LLM cache] HIT` on every subsequent attempt, so it never converged
+# across 5 attempts. Deterministic + $0 rather than depending on the
+# LLM/cache to eventually get a one-word substitution right.
+_HALLUCINATED_SA_TYPES = {"Real": "Float"}
+
+
+def _patch_hallucinated_sqlalchemy_types(project_path: Path) -> int:
+    models_dir = project_path / "app" / "models"
+    if not models_dir.exists():
+        return 0
+    import_re = re.compile(r"^(from\s+sqlalchemy\s+import\s+)(.+)$", re.MULTILINE)
+    patched = 0
+    for mf in sorted(models_dir.glob("*.py")):
+        try:
+            content = mf.read_text(encoding="utf-8", errors="replace")
+        except Exception:
+            continue
+        m = import_re.search(content)
+        if not m:
+            continue
+        bad_present = [b for b in _HALLUCINATED_SA_TYPES if re.search(rf"\b{b}\b", m.group(2))]
+        if not bad_present:
+            continue
+
+        new_content = content
+        for bad in bad_present:
+            good = _HALLUCINATED_SA_TYPES[bad]
+            new_content = re.sub(rf"\b{bad}\b", good, new_content)
+
+        # Dedupe the sqlalchemy import line in case `good` was already
+        # imported separately (harmless either way, just tidy).
+        m2 = import_re.search(new_content)
+        if m2:
+            names = [n.strip() for n in m2.group(2).split(",")]
+            seen: list[str] = []
+            for n in names:
+                if n and n not in seen:
+                    seen.append(n)
+            new_line = m2.group(1) + ", ".join(seen)
+            new_content = new_content[:m2.start()] + new_line + new_content[m2.end():]
+
+        if new_content != content:
+            mf.write_text(new_content, encoding="utf-8")
+            patched += 1
+            print(f"  [patcher] Replaced hallucinated SQLAlchemy type(s) {bad_present} "
+                  f"with real type(s) in {mf.name}")
+    return patched
+
+
 _HYPHEN_ROUTER_RE = re.compile(r"\b([A-Za-z_]\w*(?:-\w+)+_router)\b")
 
 
@@ -8836,6 +8894,11 @@ def run_deterministic_patches(project_path: str, skip_protected_injections: bool
 
     # SQLAlchemy cannot map an association model with no primary key.
     _run_patch_isolated(counts, "_patch_models_without_primary_key", _patch_models_without_primary_key, root)
+
+    # `Real`/etc as a Column type is a SQL type NAME, not a real
+    # `sqlalchemy` class -- ImportError kills the whole app at import
+    # time (Exp148).
+    _run_patch_isolated(counts, "_patch_hallucinated_sqlalchemy_types", _patch_hallucinated_sqlalchemy_types, root)
 
     # db.refresh/add/delete on a name bound only inside a nested block →
     # UnboundLocalError 500 on empty input (Exp110, forge_blog_cms)

@@ -8918,3 +8918,54 @@ marks any job still `running` from before the process's own boot time as
 `failed`), not urgent tonight -- avoid `railway up` mid-batch when
 avoidable, or accept one sacrificial job when a same-night fix is worth
 shipping immediately.
+
+## Experiment 148: Hallucinated `Real` SQLAlchemy Type Crashes App At Import -- Fixed
+
+**Trigger**: 40-app batch, rental_property_management_app (idx 19) scored
+38.5/F with Compilation 80.0 (only medium-severity static issues, no
+critical) but Runtime Startup 0.0 -- the backend never started at all, so
+http/browser/journey checks were all SKIPPED. Same "stuck at an identical
+score across every attempt" shape as Exp147: FORGE SCORE 38.5 repeated
+identically 4 times across the run.
+
+**Root cause**: `app/models/payment.py` contained `from sqlalchemy
+import Column, Integer, Real, Date, Text, ForeignKey` and `amount =
+Column(Real, nullable=False)`. `Real` is a SQL/SQLite column-type NAME
+(as in `CREATE TABLE ... amount REAL`), not an actual `sqlalchemy`
+Python class -- the real equivalent is `Float`. `ImportError: cannot
+import name 'Real' from 'sqlalchemy'` crashes the whole app at import
+time, before any endpoint can run. The diagnostic recurred identically
+across all 5 fix attempts (`[fix] Group [1] Import/module error:
+[ImportError] ImportError: cannot import name 'Real' from '...'`); the
+first attempt's LLM call produced a "fix" that didn't actually work
+(confirmed by reading the live file off Railway's `/data` volume after
+the job finished -- `Real` was still there, unpatched), and every
+subsequent attempt got a `[LLM cache] HIT (fix) — 0 tokens billed` that
+replayed the same non-working content, so it could never converge no
+matter how many attempts ran. Notably: unlike Exp147, the two FK
+references in `lease.py`/`tenant.py` that DID need fixing for this app's
+non-standard `tenant_id`/`lease_id` primary-key naming (surfaced in the
+tech-lead review as "Broken foreign key: ForeignKey(\"tenants.id\")...")
+were already correctly patched by the time of inspection -- only the
+`Real` import was the unresolved blocker.
+
+**Fix**: new `deterministic_patcher.py` patcher,
+`_patch_hallucinated_sqlalchemy_types` -- scans `app/models/*.py` for a
+small table of known-hallucinated SQL-type-name-as-Python-class mistakes
+(`Real` -> `Float` is the only confirmed entry so far), gated on the name
+actually appearing in that file's `from sqlalchemy import ...` line (not
+a blind global replace, to avoid touching an unrelated identifier that
+happens to share the name), rewrites both the import and every usage,
+and dedupes the import line in case the correct type was also already
+imported separately. Wired into `run_deterministic_patches` next to the
+other model-shape patchers (after `_patch_models_without_primary_key`).
+New test file `test_exp148_hallucinated_sqlalchemy_types.py`, 3 tests,
+all pass; existing hyphen-router and prevention-rate suites unaffected.
+
+**Why deterministic over relying on the LLM/cache**: this is the third
+tonight (with Exp133 and the fix-cache poisoning half of Exp147) where a
+cached "fix" for a repeatedly-identical diagnostic turned out to be a
+no-op that just replayed forever instead of converging -- a one-word,
+zero-ambiguity substitution is exactly the shape a $0 mechanical patch
+should own outright rather than depend on an LLM call (and its cache) to
+eventually get right.
