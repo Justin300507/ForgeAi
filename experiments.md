@@ -9047,3 +9047,51 @@ handlers avoid the collision by typing `db: Any` instead of `db:
 Session`, so it likely isn't a hard crash, but the pattern (a resource
 whose name collides with a common SQLAlchemy/FastAPI symbol) is worth
 watching for elsewhere. Not fixed -- no confirmed root cause to fix.
+
+## Experiment 150: Cross-Project Endpoint-Expectation Contamination -- Found, Not Fixed (last job of the batch)
+
+**Trigger**: volunteer_hours_logging (idx 39, the batch's final job) scored
+37.3/F, Runtime Startup 0.0 unchanged across all 5 attempts -- same
+non-convergence shape as every other F this batch.
+
+**Real finding, distinct from Exp147-149**: the Product Manager/Architect
+stage correctly scoped this app to `volunteers, organizations, shifts,
+shift_logs` (visible in this job's own log: "4 entities", Tech Lead
+review references `/volunteers, /organizations, /shifts, /shift_logs`).
+But the repair loop's diagnostics for this job included, verbatim:
+`Missing endpoint GET /goals (expected in app/routes/goal_...)`,
+`Missing endpoint GET /tasks (expected in app/routes/task_...)` --
+`goals` and `tasks` are not part of this app's architecture anywhere.
+Two of the five repair-loop fix groups (out of five total this attempt)
+were spent having the LLM patch `app/routes/goal_routes.py` and
+`app/routes/task_routes.py` -- endpoints that don't belong to this app
+at all -- while the group actually carrying the real crash (`[fix]
+Group [1] Runtime crash: [Unknown] Traceback...`, truncated in the
+condensed log format before the actual exception text) never got a
+second look. This reads as an "expected endpoints" source somewhere in
+the fix loop (not the FixCache diagnostic-message cache Exp133/Exp147
+already hardened -- this is a different signal, endpoint EXPECTATIONS,
+not a diagnostic TEXT match) being contaminated across job/project
+boundaries, most likely from a different app in this same batch that
+did legitimately have goal/task tracking (an earlier idea in the 40-app
+list, not yet identified) whose expected-endpoints got attributed to
+this unrelated job.
+
+**Not fixed tonight**: found in the very last job of the batch, with no
+more runway left to validate a fix against remaining apps, and the
+mechanism (which component derives "expected endpoints" and how it
+could leak across jobs) isn't yet identified -- unlike Exp147-149, this
+wasn't traced to a specific file/function with certainty, only observed
+as a symptom in one job's log. The real underlying crash traceback for
+THIS job was also never actually seen (truncated in the condensed log
+format at "Traceback (most recent call last):\n  File \"<frozen runp"),
+so even the app's own actual bug remains unknown. Needs a dedicated
+session: (1) find what "Missing endpoint" diagnostics for a given job
+actually key/scope on, (2) grep the codebase for anywhere expected-
+endpoints state could be shared/cached across concurrent or sequential
+jobs instead of being derived strictly from that job's own architecture,
+(3) get an untruncated traceback for the real crash. Flagging this as
+potentially the highest-value lead for a future reliability session --
+if expected-endpoint contamination is systemic rather than a one-off,
+it could explain wasted repair attempts across many more apps than the
+one caught here.
