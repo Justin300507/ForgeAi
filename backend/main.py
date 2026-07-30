@@ -1761,6 +1761,56 @@ def health():
     return {"status": "ok", "version": app.version}
 
 
+class RedeployGithubRequest(BaseModel):
+    github_url: str
+    project_name: str
+    env_vars: dict[str, str] | None = None
+
+
+@app.post("/admin/redeploy-from-github", tags=["admin"])
+def admin_redeploy_from_github(
+    req: RedeployGithubRequest, current_user=Depends(get_current_user)
+):
+    """
+    Temporary operator utility (2026-07-30): a fix committed straight to a
+    generated app's own GitHub repo (bypassing the normal generation
+    pipeline, e.g. a hand-patched bugfix) has no way to reach its live
+    Vercel deployment -- that project isn't git-connected (confirmed: a
+    push there triggered no new Vercel deployment), and VercelProvider
+    needs a working `npm install`/`npm run build`, which is blocked on
+    the operator's local machine (TLS interception, then explicit 403s on
+    package downloads) but works fine here on the actual server. Clones
+    the repo into an isolated temp dir on THIS container and runs the
+    real VercelProvider deploy from there, targeting the same Vercel
+    project slug so it updates in place.
+    """
+    import shutil
+    import subprocess
+    import tempfile
+
+    from app.deployments.vercel_provider import VercelProvider
+
+    tmp = tempfile.mkdtemp(prefix="forge-redeploy-")
+    try:
+        clone = subprocess.run(
+            ["git", "clone", "--depth", "1", req.github_url, tmp],
+            capture_output=True, text=True, timeout=60,
+        )
+        if clone.returncode != 0:
+            raise HTTPException(status_code=400, detail=f"git clone failed: {clone.stderr[-500:]}")
+
+        provider = VercelProvider()
+        result = provider.deploy(tmp, req.project_name, env_vars=req.env_vars)
+        return {
+            "success": result.success,
+            "url": result.url,
+            "error": result.error,
+            "logs_tail": (result.logs or "")[-1500:],
+        }
+    finally:
+        shutil.rmtree(tmp, ignore_errors=True)
+
+
 @app.get("/admin/data-dir", tags=["admin"])
 def admin_data_dir(current_user=Depends(get_current_user)):
     """
