@@ -3562,17 +3562,36 @@ _UPDATE_CLASS_DECL_RE = re.compile(r'^class\s+(\w+Update)\s*\(\s*BaseModel\s*\)\
 # default" misses it.
 def _patch_update_schema_optional_field_missing_default(project_path: Path) -> int:
     """
-    For every `*Update(BaseModel)` schema class, gives each Optional-typed
-    field an explicit `None` default when it doesn't already have a real
-    one (reuses _field_rhs_has_real_default, the same requiredness check
-    already trusted elsewhere in this file) -- `Optional[str]` (bare, no
-    `=` at all), `Optional[str] = Field(min_length=1)`, and
-    `Optional[str] = ...` all become `Optional[str] = Field(None, ...)` /
+    For every `*Update(BaseModel)` schema class, makes every field usable
+    in a partial update: Optional-typed fields missing a real default get
+    an explicit `None` default (reuses _field_rhs_has_real_default, the
+    same requiredness check already trusted elsewhere in this file) --
+    `Optional[str]` (bare, no `=` at all), `Optional[str] = Field(min_length=1)`,
+    and `Optional[str] = ...` all become `Optional[str] = Field(None, ...)` /
     `Optional[str] = None`. Scoped to *Update classes only: an Update
     schema exists specifically to support partial updates, so a field
-    that's Optional-typed but still Pydantic-required is never
-    intentional there the way it might arguably be on a Create/Base
-    schema, which this function never touches.
+    that's still Pydantic-required there is never intentional the way it
+    might arguably be on a Create/Base schema, which this function never
+    touches.
+
+    Exp151 follow-up (habit_tracker, 2026-07-31): the far more common
+    real shape wasn't an Optional field missing a default -- it was a
+    field never made Optional at all, e.g. `streak: int` (or
+    `name: str = Field(min_length=1)`) verbatim-copied from the sibling
+    *Create schema into *Update. Every one of these makes the WHOLE
+    update request all-or-nothing: the journey runner's (and any real
+    client's) natural partial-update body -- `{"streak": 5}` alone --
+    422s because Pydantic still requires the other fields be present.
+    `PUT /habits/{id}` failing this way was confirmed live (Journey FAIL,
+    Edit entity: 422) with a style/motion-intensity override active, but
+    the model/schema shape has nothing to do with either setting -- this
+    is a generic Create/Update field-requiredness bug, unrelated to the
+    visual-polish system, that any *Update schema with a non-Optional
+    field can hit. Now also wraps a non-Optional field's annotation in
+    `Optional[...] = None` (preserving any Field(...) validators, which
+    Pydantic only enforces when a value is actually supplied -- never
+    against an omitted field's None default), and ensures `Optional` is
+    importable from `typing` in the file if this introduces its first use.
     """
     schemas_dir = project_path / "app" / "schemas"
     if not schemas_dir.exists():
@@ -3591,6 +3610,7 @@ def _patch_update_schema_optional_field_missing_default(project_path: Path) -> i
 
         text = content
         changed = False
+        introduced_optional = False
         for cm in reversed(class_matches):
             class_start = cm.end()
             next_class = _CLASS_DECL_RE.search(text, class_start)
@@ -3598,18 +3618,50 @@ def _patch_update_schema_optional_field_missing_default(project_path: Path) -> i
             body = text[class_start:class_end]
 
             def _fix_field(m: re.Match) -> str:
-                nonlocal changed
+                nonlocal changed, introduced_optional
                 indent, field_name, annotation, default = m.group(1), m.group(2), m.group(3), m.group(4)
-                if "Optional[" not in annotation:
-                    return m.group(0)
+                # _CLASS_FIELD_LINE_RE's trailing `\s*(=.*)?$` can swallow
+                # blank lines after a field with no `=` at all (`\s` matches
+                # `\n`) when it's the last field before the next class --
+                # confirmed live (habit.py, Exp151 follow-up): `streak: int`
+                # as the final field ate the blank line separating it from
+                # `class HabitResponse`, concatenating the two on rewrite.
+                # Re-derive and reattach whatever got swallowed so every
+                # branch below is safe regardless of which one fires.
+                full = m.group(0)
+                trailing_ws = full[len(full.rstrip()):]
+
+                ann = annotation.strip()
                 rhs = default[1:].strip() if default else ""
+                if "Optional[" not in ann:
+                    # A non-Optional field on an Update schema makes the
+                    # whole PATCH-style request all-or-nothing -- wrap it,
+                    # dropping any bare "..." (Pydantic-required) marker
+                    # but preserving real Field(...) validators.
+                    changed = True
+                    introduced_optional = True
+                    new_ann = f"Optional[{ann}]"
+                    if not rhs or rhs == "...":
+                        return f"{indent}{field_name}: {new_ann} = None{trailing_ws}"
+                    if rhs.startswith("Field("):
+                        inner = rhs[len("Field("):].rstrip(")").strip()
+                        if inner.startswith("..."):
+                            inner = "None" + inner[3:]
+                        elif inner:
+                            inner = f"None, {inner}"
+                        else:
+                            inner = "None"
+                        return f"{indent}{field_name}: {new_ann} = Field({inner}){trailing_ws}"
+                    # A concrete literal default already present (e.g. `= 0`)
+                    # is real and fine to keep as-is under Optional too.
+                    return f"{indent}{field_name}: {new_ann} = {rhs}{trailing_ws}"
+
                 has_real_default = bool(rhs) and rhs != "..." and _field_rhs_has_real_default(rhs)
                 if has_real_default:
-                    return m.group(0)
+                    return full
                 changed = True
-                ann = annotation.strip()
                 if not rhs or rhs == "...":
-                    return f"{indent}{field_name}: {ann} = None"
+                    return f"{indent}{field_name}: {ann} = None{trailing_ws}"
                 # Only remaining shape _field_rhs_has_real_default can say
                 # "not a real default" for: a Field(...) call with no
                 # positional value and no default=/default_factory= kwarg.
@@ -3620,16 +3672,26 @@ def _patch_update_schema_optional_field_missing_default(project_path: Path) -> i
                     inner = f"None, {inner}"
                 else:
                     inner = "None"
-                return f"{indent}{field_name}: {ann} = Field({inner})"
+                return f"{indent}{field_name}: {ann} = Field({inner}){trailing_ws}"
 
             new_body = _CLASS_FIELD_LINE_RE.sub(_fix_field, body)
             if new_body != body:
                 text = text[:class_start] + new_body + text[class_end:]
 
+        if introduced_optional and not re.search(r"^\s*from typing import[^\n]*\bOptional\b", text, re.MULTILINE):
+            if re.search(r"^\s*from typing import ", text, re.MULTILINE):
+                text = re.sub(
+                    r"^(\s*from typing import )(.+)$",
+                    lambda m: m.group(0) if "Optional" in m.group(2) else f"{m.group(1)}{m.group(2)}, Optional",
+                    text, count=1, flags=re.MULTILINE,
+                )
+            else:
+                text = "from typing import Optional\n" + text
+
         if changed and text != content:
             sf.write_text(text, encoding="utf-8")
             patched += 1
-            print(f"  [patcher] Gave Update-schema Optional field(s) an explicit None default in {sf.name}")
+            print(f"  [patcher] Made Update-schema field(s) Optional (partial-update support) in {sf.name}")
 
     return patched
 

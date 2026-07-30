@@ -9155,3 +9155,64 @@ reliability suite: 95/95 passing (`test_sql_constructor_and_auth_
 repairs` 35, `test_auth_stub_body_detection` 11, `test_exp071_auth_
 completeness` 24, `test_exp085_cross_file_auth_validation` 12, plus the
 Exp107/148/149 suites unaffected).
+
+## Exp151 Follow-Up: Update-Schema Non-Optional Fields Break Every Partial Update -- Fixed
+
+**Trigger**: user asked to verify the "minimal + smooth" landing-page
+generation preset (style_override=`minimal_editorial`, motion_intensity=
+`subtle`) is error-free. Ran a real generation with that exact combo
+(habit_tracker, job 06693c31) end to end: scored 81.2/B, stuck
+identically across 4 attempts. Root cause had nothing to do with style
+or motion -- `PUT /habits/{id}` 422'd on every partial-update journey
+step (`✗ Edit entity: 422`), a generic Create/Update schema bug any app
+can hit regardless of visual-polish settings.
+
+**Root cause**: `app/schemas/habit.py`'s `HabitUpdate` declared `name:
+str = Field(min_length=1)`, `frequency: str = Field(min_length=1)`,
+`streak: int` -- none `Optional`, i.e. copied verbatim from the sibling
+`HabitCreate`. An existing patcher,
+`_patch_update_schema_optional_field_missing_default` (deterministic_
+patcher.py), already handled the case of a field that's `Optional[...]`
+-typed but missing a real default -- but explicitly skipped (`if
+"Optional[" not in annotation: return m.group(0)`) any field that isn't
+Optional-typed at all, which turned out to be the dominant real shape,
+not the edge case. A required field on an *Update schema makes the
+whole PATCH-style request all-or-nothing: any real partial-update body
+(or the journey runner's, which naturally omits untouched fields) 422s.
+
+**Fix**: extended the same function to also wrap non-Optional fields in
+`Optional[...] = None` (preserving `Field(...)` validators -- Pydantic
+only enforces those against a value that's actually supplied, never
+against an omitted field's `None` default), and to inject `from typing
+import Optional` when this introduces the file's first use. Updated
+`test_non_optional_fields_never_touched` (renamed
+`..._now_wrapped_optional`), which had asserted the old skip-non-
+Optional behavior on the theory a required field "might be intentional
+(e.g. an id you must always supply)" -- doesn't match how these apps are
+actually generated (the id always comes from the URL path parameter,
+never the Update body).
+
+**A second, independent bug found and fixed in the same patcher while
+validating**: `_CLASS_FIELD_LINE_RE`'s trailing `\s*(=.*)?$` can match
+`\n` (it's inside `\s`), so a field with no `=` at all as the LAST field
+in a class had its match silently swallow the blank line separating it
+from the next class declaration. The ORIGINAL code's no-op branch
+(`return m.group(0)`) was accidentally safe against this since it
+returned the swallowed text unchanged; my new branch constructing fresh
+replacement text was not, and produced `streak: Optional[int] =
+Noneclass HabitResponse(BaseModel):` -- a SyntaxError -- caught by
+`ast.parse()` during validation, not left for a live app to hit. Fixed
+by capturing and reattaching any accidentally-swallowed trailing
+whitespace in every constructed-replacement branch (not just the new
+one, since the same latent risk existed for the pre-existing "Optional
+but missing default" branch too, just never triggered by an existing
+test fixture). New regression test asserts the blank line survives.
+
+**Validated**: 13/13 in `test_update_schema_optional_default.py`
+(4 new tests), full reliability suite swept (105 files) -- 14 failing
+files, all confirmed pre-existing/environmental and unrelated to this
+change (missing `jose` package in this environment, stale tests from
+the earlier same-session Cerebras removal, one unrelated corruption-
+rejection test that fails identically with this change stashed out).
+No changes needed to the `minimal_editorial`/`subtle` visual-polish
+system itself -- it was never the actual cause.
