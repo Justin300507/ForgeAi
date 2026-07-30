@@ -2714,6 +2714,75 @@ def _patch_forward_role_to_duplicate_registrars(project_path: Path) -> int:
     return patched
 
 
+_PASSWORD_FIELD_NAMES = ("hashed_password", "password_hash", "password")
+
+
+def _ensure_user_password_column(project_path: Path) -> None:
+    """
+    Add a password-storage column to the User model if the LLM's generated
+    model has none at all.
+
+    The known-good auth_routes.py template this patcher injects looks for
+    any of hashed_password/password_hash/password on the User model, tries
+    each in order for both writing (signup) and reading (login) -- but if
+    the model has NONE of them, that fallback chain has nothing to fall
+    back TO. Confirmed live (habit_tracker, 2026-07-30): the LLM generated
+    a User model with only id/username/email, no password field at all.
+    Signup silently dropped the password (nothing to write it to) and
+    returned 200 with a valid token -- looking completely successful. Every
+    subsequent login attempt then failed with a generic 401 "Incorrect
+    email or password" (stored password is None, so verify_password never
+    even runs) -- permanently locking out every single user, for every
+    account, forever. This is worse than a crash: it passes signup,
+    LLM-Judge doesn't see a broken login form since the page navigates away
+    on the "successful" signup, and the CRUD journey runner's own re-login
+    check catching it doesn't gate deployment (a known soft-fail signal,
+    not a hard block) -- so a 97+ A+ score shipped to production with
+    login completely non-functional.
+    """
+    models_dir = project_path / "app" / "models"
+    if not models_dir.exists():
+        return
+    for name in ("user.py", "users.py"):
+        model_file = models_dir / name
+        if not model_file.exists():
+            continue
+        try:
+            content = model_file.read_text(encoding="utf-8", errors="replace")
+        except Exception:
+            continue
+        if any(re.search(rf"^\s*{f}\s*=\s*Column\(", content, re.MULTILINE) for f in _PASSWORD_FIELD_NAMES):
+            return  # already has one -- nothing to do
+        # Insert a new column line right after the last top-level
+        # `name = Column(...)` assignment found in the file (keeps the
+        # same indentation, lands before any @property/methods that
+        # commonly follow the plain column declarations).
+        matches = list(re.finditer(r"^([ \t]+)\w+\s*=\s*Column\([^\n]*\)\s*$", content, re.MULTILINE))
+        if not matches:
+            return  # not a recognizable SQLAlchemy model shape -- don't guess
+        last = matches[-1]
+        indent = last.group(1)
+        insertion = f"\n{indent}hashed_password = Column(String, nullable=True)"
+        new_content = content[: last.end()] + insertion + content[last.end():]
+
+        # Column/String must both be importable -- every model this patcher
+        # targets already has at least one other Column(String, ...) field
+        # (username/email), so String is virtually always already imported;
+        # this only fires for the rare model that somehow doesn't.
+        import_m = re.search(r"^from sqlalchemy import ([^\n]+)$", new_content, re.MULTILINE)
+        if import_m:
+            names = {n.strip() for n in import_m.group(1).split(",")}
+            missing = {"Column", "String"} - names
+            if missing:
+                fixed_line = f"from sqlalchemy import {import_m.group(1)}, {', '.join(sorted(missing))}"
+                new_content = new_content[: import_m.start()] + fixed_line + new_content[import_m.end():]
+
+        model_file.write_text(new_content, encoding="utf-8")
+        print(f"  [patcher] Added missing password column to app/models/{name} "
+              f"(User model had no password field at all)")
+        return
+
+
 def _patch_auth_routes(project_path: Path) -> None:
     """
     Inject a known-good auth_routes.py if the project has a User model but
@@ -2731,6 +2800,8 @@ def _patch_auth_routes(project_path: Path) -> None:
     ) if models_dir.exists() else False
     if not has_user_model:
         return
+
+    _ensure_user_password_column(project_path)
 
     auth_routes_file = routes_dir / "auth_routes.py"
     needs_inject = False
