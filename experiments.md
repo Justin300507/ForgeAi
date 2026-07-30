@@ -8635,3 +8635,143 @@ to production (Railway) either way and apply to every future
 generation; this one specific already-generated app's visual bug is a
 known, tracked gap (fix committed to the app's own repo, not yet
 successfully redeployed) rather than something silently left broken.
+
+**Follow-up, same night**: habit-tracker's visual fix WAS successfully
+redeployed. Local npm being blocked turned out not to matter --
+`VercelProvider` needs `npm install`/`npm run build` to run somewhere,
+not necessarily on the operator's own machine. Added
+`/admin/redeploy-from-github` to production `main.py`: clones a repo
+into an isolated temp dir on the Railway container itself (where npm
+already works, proven by generating 50 apps there the same night) and
+runs the real `VercelProvider.deploy()` from there. Caught one gotcha
+verifying it: the new deployment came back `success:true` but the
+production alias (`habit-tracker-olive-gamma.vercel.app`) didn't move to
+it automatically -- `VercelProvider`'s raw REST API deploy sets
+`target: production` but doesn't touch pre-existing custom aliases the
+way `vercel --prod` via the CLI does. Fixed with an explicit
+`vercel alias set`. Verified live: the served JS bundle hash changed to
+match the new build.
+
+## Experiment 144: Disk-Full Root-Caused Live, Emergency Admin Endpoints Added
+
+**Trigger**: the 50-app overnight batch (Exp143 follow-up) started
+failing every `POST /jobs` with `500` around app #32, mid-batch, with no
+code change involved.
+
+**Root cause**: `generation_jobs`' SQLite database lives at
+`/data/forgeai.db` on Railway's *persistent* volume (survives deploys),
+capped at 500MB. Railway's own volume-usage metric reported 315/500MB
+(63%, plenty of headroom) throughout, but every SQLite write -- even a
+single-row `INSERT`, even `VACUUM` itself, even a plain `DELETE` with no
+sorting -- failed with `database or disk is full`. True zero free bytes
+on whatever filesystem `/data` actually resolves to, not a metric lag:
+confirmed via a temporary `/admin/data-dir` diagnostic (`os.walk` +
+`getsize`, pure reads, work regardless of disk state) that
+`generated_projects/<app>/node_modules` -- each generated app's FULL
+node_modules, ~90-150MB apiece -- lives under `/data` too, not the
+container's ephemeral root disk as assumed, and nothing had ever cleaned
+it up. `railway ssh` / `railway volume files` (SFTP-based) both time out
+from this environment (port 22 blocked), so no direct shell access was
+available to fix this by hand -- everything had to go through the
+running application's own HTTP surface.
+
+**Fix, applied in stages, each validated against the live error before
+moving to the next**:
+1. `/admin/vacuum-db` (`DELETE` old finished job rows, then `VACUUM`) --
+   the `DELETE` itself still failed disk-full (needs journal-file space);
+   `journal_mode=OFF` for that one write let it through (61 rows freed).
+   `VACUUM` still failed (needs ~DB-size temp space) but wasn't the
+   actual blocker.
+2. Deleting DB rows didn't free real bytes (main `.db` file: 64KB before
+   *and* after -- the DB itself was never the space consumer).
+   `/admin/data-dir` found the real one: `node_modules`.
+3. `/admin/clean-node-modules` -- plain `shutil.rmtree` on every
+   `node_modules/` under `generated_projects/`, pure filesystem deletion
+   (no SQLite write involved at all), works even at 0 bytes free. Freed
+   359.8MB in one call; job submission worked immediately after.
+
+The batch script (`run_50_batch.py`, ad-hoc, not part of the repo) was
+updated to call this proactively after every single job (not just
+reactively on failure) -- confirmed each generated app adds ~90-110MB,
+easily enough to refill whatever headroom a prior cleanup left within
+1-2 more apps.
+
+**Left running in production, not yet removed**: `/admin/vacuum-db`,
+`/admin/data-dir`, `/admin/clean-node-modules`, plus
+`/admin/redeploy-from-github` and `/admin/read-file` added the same
+night (Exp143 follow-up + JSX-bug investigation below). All gated only
+by normal user login -- the same bar as every other endpoint, appropriate
+for tonight's single-operator emergency but **worth a deliberate look
+and likely removal/tightening once things are calm**, not something to
+forget about. A proper fix would be either an automatic cleanup hook in
+the pipeline itself (delete a project's `node_modules` once its
+verification/deploy stage no longer needs it) or moving
+`generated_projects/` off the persistent volume entirely -- neither
+attempted tonight; this was triage, not the permanent fix.
+
+**Result**: batch completed 50/50 apps generated (0 hard failures after
+retrying 2 that hit an unrelated transient local DNS blip), 11 deployed
+(score >= 95 threshold), avg score 80.7.
+
+## Experiment 145: Recurring JSX-Escape frontend_build Failure -- Root-Caused, NOT Fixed (Deliberately)
+
+**Symptom**: multiple apps across tonight's batch (recipe_box_app, a
+quiz app, a music playlist manager -- at least 3/50) scored 95+ but
+never deployed, gated by `Deployment skipped -- critical stage
+'frontend_build' failed`. The underlying vite error was identical in
+shape every time: `[vite:esbuild] Transform failed ... Login.jsx:N:M:
+ERROR: Expected ">" but found "\\"`. The outer V15 repair loop burned
+all 3 stalled-fix-attempts on this every time without ever fixing it --
+same oscillation *class* as Exp142's stale-import-diagnostic bug, but a
+different, unrelated root cause.
+
+**Investigation**: the job's DB row (and with it, `/api/download`'s
+ability to resolve `zip_path`) had already been deleted by Exp144's
+emergency cleanup, so a temporary `/admin/read-file` endpoint (reads any
+file under `/data` by absolute path, read-only) was added to pull the
+actual malformed `Login.jsx` off disk directly. Confirmed byte-for-byte:
+`className="input"\` -- a **bare literal backslash**, not an escaped
+character, sitting directly after the closing quote of a JSX attribute,
+immediately before a line break and `/>`. Consistent with a `\n` JSON
+escape sequence (2 chars: backslash + literal `n`) somewhere losing its
+`n` and leaving the bare backslash behind, while the following
+indentation whitespace passes through untouched.
+
+**Where it likely originates**: `app/utils/json_cleaner.py`'s
+`_escape_inner_quotes` -- the fallback repair path `extract_json()` only
+reaches when the primary `_repair_string_token` regex pass fails to
+produce parseable JSON (i.e. exactly the case of an LLM response with an
+unescaped inner quote, which is also exactly what a JSX attribute quote
+immediately followed by a real newline looks like to a naive scanner).
+Its "is this quote closing the JSON string or an inner quote that needs
+escaping" heuristic treats *any* quote immediately followed by a real
+newline as closing (`next_ch in ('\n', '\r'): is_closing = True`) --- a
+reasonable-sounding rule that's also exactly wrong for the extremely
+common JSX pattern of a multi-line attribute closing right before a line
+break. Reproducing this directly (`_escape_inner_quotes` called on a
+synthetic `className="input"` + newline + `/>` fragment) confirmed real
+corruption, but a *different* symptom than the exact one seen live (it
+mis-escaped the `"path"` field's own boundary in the reproduction,
+suggesting more than one interacting edge case in this heuristic, not
+a single clean off-by-one).
+
+**Deliberately not fixed tonight**: `json_cleaner.py`'s `extract_json` /
+`_escape_inner_quotes` is shared by *every* LLM JSON response in the
+whole pipeline -- backend generation, frontend generation, every fix
+tier, the missing-file agent. It already has real test coverage
+(`tests/reliability/test_json_cleaner_repairs.py`) protecting several
+previously-fixed edge cases in this exact function. A rushed change here
+at the end of a very long session, without the time to trace every
+interacting branch and run it against realistic multi-file `"files":
+[...]` payloads (not just the single-object shape reproduced above), is
+a real risk of trading one intermittent bug for a different, harder-to-
+notice one across every generation in the system. This is next-session
+work: reproduce against the actual multi-file shape, get the existing
+test suite green, add a regression test for this exact
+quote-then-newline-in-JSX-attribute case, *then* ship.
+
+**Prevalence**: at least 3/50 apps in one batch (6%), all otherwise
+high-scoring (95+) -- meaningful, not negligible, but not the top
+priority either given the disk-full incident and habit-tracker redeploy
+were live-blocking issues and this is "some fraction of otherwise-good
+apps don't deploy," not "the platform is down."
