@@ -216,6 +216,81 @@ def test_store_populates_import_metadata_from_pre_fix_content():
         assert "OAuth2PasswordBearer" in entry["symbols_added"]
 
 
+# ── JourneyCRUDFailure cross-project cache poisoning (2026-07-30) ──────────
+
+def test_journey_crud_failure_with_step_detail_is_not_cached():
+    """
+    Reproduces the live incident (habit_tracker, 2026-07-30): FixCache
+    replayed a cached fix that created app/routes/product_routes.py / a
+    ProductPage / a schemas/product.py stub into a habit tracker -- a
+    completely unrelated resource from whatever earlier project actually
+    had a Product model. engine.py appends the failing step name to the
+    JourneyCRUDFailure message ("... -- Edit entity: 422"), which no
+    longer matches _GENERIC_MESSAGES' bare exact string, but "Edit
+    entity: 422" alone says nothing about which field/schema actually
+    caused it -- any two unrelated apps whose edit step fails the same
+    way hash to the identical cache entry. Storing under one app's
+    diagnostic must not produce a hit for a different app's
+    same-shaped-but-unrelated failure.
+    """
+    with tempfile.TemporaryDirectory() as td:
+        _isolated_cache(td)
+        cache = fdb.FixCache()
+
+        habit_diag = [Diagnostic(
+            error_id="1", category=ErrorCategory.API, severity=ErrorSeverity.HIGH,
+            source="runtime",
+            message="[JourneyCRUDFailure] Backend healthy but CRUD journey failed — Edit entity: 422",
+            file_path=None,
+        )]
+        cache.store(habit_diag, {"app/routes/product_routes.py": "bogus fix from an unrelated app"},
+                    idea="A habit tracker with streaks, badges, dark mode, and weekly reports")
+
+        # A different app, same shaped message (same failing step, same
+        # status code) -- must NOT hit the habit tracker's stored fix.
+        product_app_diag = [Diagnostic(
+            error_id="2", category=ErrorCategory.API, severity=ErrorSeverity.HIGH,
+            source="runtime",
+            message="[JourneyCRUDFailure] Backend healthy but CRUD journey failed — Edit entity: 422",
+            file_path=None,
+        )]
+        assert cache.lookup(product_app_diag) is None
+
+
+def test_journey_crud_failure_bare_message_still_not_cached():
+    with tempfile.TemporaryDirectory() as td:
+        _isolated_cache(td)
+        cache = fdb.FixCache()
+        diags = [Diagnostic(
+            error_id="1", category=ErrorCategory.API, severity=ErrorSeverity.HIGH,
+            source="runtime",
+            message="[JourneyCRUDFailure] Backend healthy but CRUD journey failed",
+            file_path=None,
+        )]
+        assert cache.store(diags, {"app/routes/x.py": "fix"}, idea="app") == ""
+        assert cache.lookup(diags) is None
+
+
+def test_unrelated_specific_diagnostics_are_still_cacheable():
+    """The broadened generic-message check must not swallow real,
+    project-specific diagnostics -- only the known collision-prone
+    JourneyCRUDFailure family."""
+    with tempfile.TemporaryDirectory() as td:
+        _isolated_cache(td)
+        cache = fdb.FixCache()
+        diags = [Diagnostic(
+            error_id="1", category=ErrorCategory.SYNTAX, severity=ErrorSeverity.HIGH,
+            source="static",
+            message=("Import style mismatch: ../hooks/useAuth uses a default export but "
+                      "is imported with named-import syntax (curly braces) in "
+                      "src/components/PrivateRoute.jsx"),
+            file_path="src/components/PrivateRoute.jsx",
+        )]
+        h = cache.store(diags, {"src/components/PrivateRoute.jsx": "fixed content"}, idea="app")
+        assert h != ""
+        assert cache.lookup(diags) is not None
+
+
 if __name__ == "__main__":
     import traceback
     tests = [obj for name, obj in list(globals().items()) if name.startswith("test_")]

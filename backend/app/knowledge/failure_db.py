@@ -198,13 +198,36 @@ _GENERIC_MESSAGES = {
     "[JourneyCRUDFailure] Backend healthy but CRUD journey failed",
 }
 
+# Same intent as _GENERIC_MESSAGES, but for message FAMILIES where even the
+# "detailed" variant still carries no project-specific signal. engine.py
+# appends the failing step name to a JourneyCRUDFailure message (e.g.
+# "... — Edit entity: 422"), which defeats the exact-string check above (it
+# no longer matches _GENERIC_MESSAGES verbatim) while remaining just as
+# collision-prone: "Edit entity: 422" says nothing about WHICH field/schema
+# actually caused the 422, so any two unrelated apps whose edit step happens
+# to fail the same way hash to the identical hit. Confirmed live
+# (habit_tracker, 2026-07-30): FixCache replayed a cached fix that created
+# app/routes/product_routes.py / a ProductPage / a schemas/product.py stub
+# into a habit tracker -- a completely unrelated resource from whatever
+# earlier project actually had a Product model -- burning 2 of 5 fix
+# attempts on a guaranteed-wrong fix before the loop finally gave up on the
+# cache and diagnosed the real problem itself.
+_GENERIC_MESSAGE_PREFIXES = (
+    "[JourneyCRUDFailure] Backend healthy but CRUD journey failed",
+)
+
 
 def _is_cacheable(diagnostics: list) -> bool:
-    """False if every diagnostic in the set carries a known contentless message."""
+    """False if every diagnostic in the set carries a known contentless message
+    (exact match) or belongs to a known-collision-prone message family
+    (prefix match)."""
     for d in diagnostics:
         msg = d.get("message", str(d)) if isinstance(d, dict) else getattr(d, "message", str(d))
-        if msg not in _GENERIC_MESSAGES:
-            return True
+        if msg in _GENERIC_MESSAGES:
+            continue
+        if msg.startswith(_GENERIC_MESSAGE_PREFIXES):
+            continue
+        return True
     return False
 
 
