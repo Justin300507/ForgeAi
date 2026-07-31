@@ -780,6 +780,98 @@ def _fix_import_style_mismatch_group(
     return modified, written
 
 
+_JS_NAMED_IMPORT_RE = re.compile(
+    r'import\s*\{\s*([^}]*?)\s*\}\s*from\s*([\'"])(\.\.?/[^\'"]*)\2'
+)
+
+
+def _reconcile_frontend_import_export_styles(project_path: Path) -> int:
+    """
+    Exp146 (habit_tracker, 2026-07-15 and again 2026-07-31): the Vite
+    build error ("X is not exported by Y") and the static import-style-
+    mismatch diagnostic are the same underlying fact, but land in two
+    separate DiagnosticGroups computed ONCE at the start of an attempt
+    -- an LLM group fixing the Vite error rewrites Y's export shape (or
+    scaffolds a NEW file Y imports from, with its own default/named
+    shape), and the mechanical group correctly detects its own
+    diagnostic is now stale against the NEW shape and skips rather than
+    guess (`_fix_import_style_mismatch_group`'s own re-check, already
+    fixed once -- see that function's docstring). But nothing ever
+    re-diagnoses the NEW mismatch within the same attempt, so the
+    build stays broken and the loop just repeats identically: confirmed
+    live twice, both times ending in "3 consecutive fix attempts with
+    no score improvement -- stopping fix loop", Forge Score stuck at
+    ~42/F every time.
+
+    Rather than threading a fresh diagnostic through the group-fixing
+    machinery, this is a direct $0 blanket sweep: scan every JS/JSX/TS/
+    TSX file's named imports of a relative module, resolve the module,
+    and fix any REAL current mismatch on the spot. Run after the group-
+    application loop (step 4, alongside the other converge-invariants
+    calls) so it sees whatever state the LLM/mechanical groups just
+    produced, every single attempt -- not just once at diagnosis time.
+    """
+    src_dir = project_path / "src"
+    if not src_dir.exists():
+        return 0
+
+    fixed = 0
+    for jf in src_dir.rglob("*"):
+        if jf.suffix not in (".js", ".jsx", ".ts", ".tsx") or not jf.is_file():
+            continue
+        try:
+            content = jf.read_text(encoding="utf-8", errors="replace")
+        except Exception:
+            continue
+        importer_rel = str(jf.relative_to(project_path)).replace("\\", "/")
+
+        new_content = content
+        changed = False
+        # Loop to convergence: a fix shifts every later match's offset, so
+        # re-scan from scratch after each one rather than trying to walk
+        # a single finditer() pass over text that's changing underneath it.
+        while True:
+            fixed_one = False
+            for m in _JS_NAMED_IMPORT_RE.finditer(new_content):
+                names = [n.strip() for n in m.group(1).split(",") if n.strip()]
+                if len(names) != 1:
+                    continue
+                local_name = names[0].split(" as ")[-1].strip()
+                module_path = m.group(3)
+
+                module_target = _resolve_js_import_target(project_path, importer_rel, module_path)
+                if module_target is None:
+                    continue
+                try:
+                    module_content = module_target.read_text(encoding="utf-8")
+                except Exception:
+                    continue
+                if not _EXPORT_DEFAULT_RE.search(module_content):
+                    continue
+                if _js_module_has_named_export(module_content, local_name):
+                    continue
+
+                quote = m.group(2)
+                new_import = f"import {local_name} from {quote}{module_path}{quote}"
+                new_content = new_content[:m.start()] + new_import + new_content[m.end():]
+                changed = True
+                fixed_one = True
+                print(f"    [fix] Reconciled stale import style: {importer_rel} now imports "
+                      f"{local_name!r} from {module_path!r} as a default import")
+                break  # offsets shifted -- restart the scan on the new text
+            if not fixed_one:
+                break
+
+        if changed:
+            try:
+                atomic_write_text(jf, new_content)
+                fixed += 1
+            except Exception:
+                continue
+
+    return fixed
+
+
 def _apply_fix_group(
     group: DiagnosticGroup,
     ctx: GenerationContext,
@@ -1409,6 +1501,14 @@ class FixOrchestrator:
                 ensure_auth_completeness_if_signaled(
                     ctx.project_path, ctx.project_name, ctx.architecture,
                 )
+                # Exp146: an LLM group above can rewrite a JS module's
+                # export shape (or scaffold a new one) after this
+                # attempt's diagnostics were already computed -- reconcile
+                # any import/export mismatch that exists RIGHT NOW, every
+                # attempt, instead of relying on next attempt's diagnostics
+                # (which the mechanical group correctly refuses to guess
+                # from once stale, leaving nothing to actually fix it).
+                _reconcile_frontend_import_export_styles(Path(ctx.project_path))
             except Exception as exc:
                 print(f"    [fix] Deterministic patch warning: {exc}")
 

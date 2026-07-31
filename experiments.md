@@ -9523,3 +9523,71 @@ to the default 95 afterward. Even at 70, most apps still didn't clear
 it, and one app that scored 94.7 was independently blocked by a
 separate "final visual review did not complete" gate -- not
 investigated further tonight (see the batch summary for detail).
+
+## Experiment 146, Resolved: Blanket Import/Export Reconciliation Pass
+
+**Trigger**: user pasted a fresh, unprompted `habit_tracker` generation
+log (2026-07-31, post-Exp153/154/155) that scored 41.9/F -- the exact
+same shape Exp146 documented on 2026-07-15 and left unfixed as
+"needs a dedicated session." Seeing the identical oscillation recur on
+the very next fresh generation, unprompted, confirmed it's prevalent
+enough to fix now rather than continue deferring it.
+
+**The log made the mechanism fully traceable this time** (Exp146's
+original writeup inferred it from partial evidence; this one shows it
+end to end):
+- Fix attempt 1: an LLM group fixes the Vite error `"useAuth" is not
+  exported by "src/hooks/useAuth.jsx"` by scaffolding a NEW file
+  (`src/context/AuthContext.jsx`) and rewriting `useAuth.jsx` to import
+  from it. The mechanical import-style-mismatch group, evaluating its
+  own (now-stale) diagnostic against `useAuth.jsx`'s new shape,
+  correctly detects staleness and skips ("no longer has a default
+  export... not guessing") -- exactly as Exp142's fix designed it to.
+  Score improves 39.6 -> 41.9, kept.
+- Fix attempt 2: the diagnostic recomputed for this attempt is now
+  about a DIFFERENT pair -- `useAuth.jsx`'s own new import of
+  `AuthContext` is mismatched against `AuthContext.jsx`'s real export
+  shape. Same correct-but-insufficient skip. Score unchanged.
+- Fix attempt 3 (regenerate_module): full architecture-fix regeneration
+  introduces an unrelated regression, gets reverted entirely. Same
+  stale-diagnostic skip on the AuthContext pair persists underneath.
+  Score unchanged.
+- Fix attempt 4 (switch_model): cache hit replays an unrelated cached
+  patch (a no-op at this point). Same skip. Score unchanged.
+- "3 consecutive fix attempts with no score improvement -- stopping."
+  Final: 41.9/F, Runtime Startup 0, never deployed.
+
+**Root cause, confirmed**: diagnostics for an attempt are computed ONCE
+at the start. An LLM group can rewrite a JS module's export shape (or
+scaffold an entirely new one) partway through the SAME attempt, and the
+mechanical fixer's own staleness check -- while individually correct --
+means nothing ever takes ownership of re-diagnosing the NEW mismatch it
+just revealed. Every attempt repeats the identical shape because the
+loop has no mechanism to re-observe reality mid-attempt, only to
+compare against stale diagnostics from before it started.
+
+**Fix**: `_reconcile_frontend_import_export_styles` (orchestrator.py) --
+a direct $0 blanket sweep, not diagnostic-driven at all. Scans every
+`.js/.jsx/.ts/.tsx` file under `src/` for a single-name relative import
+(`import { X } from './Y'`), resolves `Y` on disk, and rewrites the
+import to a default import if `Y` currently has a default export and no
+matching named export `X` -- using the exact same resolution/export-
+detection helpers (`_resolve_js_import_target`, `_js_module_has_named_
+export`, `_EXPORT_DEFAULT_RE`) the diagnostic-driven fixer already
+trusts, just applied without needing a pre-computed diagnostic to
+trigger on. Loops to convergence within a single file (so a cascading
+two-hop mismatch like PrivateRoute->useAuth->AuthContext gets both hops
+fixed in ONE call, not one per attempt) and is naturally non-looping
+across calls (a fixed import can never re-match the named-import regex).
+Wired into `run_attempt`'s step 4, alongside the other converge-
+invariants calls, so it runs after every attempt's group-application
+loop and sees whatever the LLM/mechanical groups just produced.
+
+**Validated**: reproduced the exact two-hop cascading shape from the
+live log in a fixture -- both hops fixed in a single call. New `test_
+exp146_frontend_import_export_reconciliation.py`, 7/7 passing (cascade
+fix, idempotency, never touches a genuine named export, never guesses
+on multiple named imports from one module, never touches a bare
+package import, never touches an unresolvable path, no-src-dir no-op).
+Reran all adjacent orchestrator-touching suites -- 79/79 combined, no
+regressions.
