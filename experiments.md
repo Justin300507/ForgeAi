@@ -9470,3 +9470,56 @@ composition hazard between "a patcher that injects a new kwarg" and
 Boolean/Date/DateTime/password-hash column a Create schema doesn't
 supply, across every future generation -- not just the two `availability`-shaped
 instances caught tonight.
+
+## Exp150 Follow-Up: Third Occurrence of Phantom "task" Content, Refined Hypothesis
+
+**Trigger**: `neighborhood_carpool` (12-app batch resubmission) scored
+41.9/F, same non-convergence shape. `main.py` wired a full `task_router`
+(`app/routes/task_routes.py`, `app/models/task.py`, `app/schemas/task.py`
+all genuinely present on disk) into an app whose real architecture is
+Ride/Carpool/User/RideRequest -- no "Task" concept anywhere. Third
+occurrence of this exact "task"/"goals" phantom-content shape tonight
+(volunteer_hours_logging's `/goals` `/tasks` diagnostics, subscription_
+tracker's reverted `app.models.task` crash-then-revert, now this).
+
+**Refines the Exp150 hypothesis**: all three files here parse and
+import cleanly (`ast.parse` clean, `TaskResponse(BaseModel): pass` is
+syntactically valid even if a strange shape) -- this occurrence is NOT
+itself what crashed the app (unlike the other two, where a `Task`
+reference caused an actual ModuleNotFoundError). That weakens the
+original "cross-job endpoint-expectation contamination" theory (a
+contaminated CACHE entry being replayed wouldn't produce syntactically
+clean, fully-formed, self-consistent files) and instead points toward
+a simpler explanation: **the LLM defaults to generating "task"-shaped
+boilerplate when a missing-file/architecture-repair prompt is
+under-specified** -- "task" being plausibly the single most common
+example entity in whatever training/few-shot distribution backs these
+prompts (todo-app is the canonical toy example everywhere), so an
+uncertain generation regresses to it rather than actually leaking data
+from a different job. Both explanations remain possible; not
+distinguished with certainty tonight.
+
+**Still not fixed, still the top lead for a dedicated session**: this
+job's own actual runtime crash cause was never identified -- its logs
+had already expired (0 lines) by the time this was investigated, and
+every file checked statically (all routes, all models, main.py) parses
+and imports cleanly, so the real Runtime Startup 0.0 cause is unknown.
+Recommend for next session: (1) capture a job's logs immediately after
+completion rather than relying on retrieving them later (they appear to
+have a short retention window server-side), (2) if the "task" phantom
+content theory is right, grep `missing_file_prompt.py` / `architecture_
+fix_service.py` for how they handle an under-specified regeneration
+target and whether a stronger schema/architecture-grounding constraint
+would suppress the boilerplate-regression behavior, (3) a simple $0
+mechanical guard is also worth considering regardless of root cause: a
+deterministic patcher that flags (or removes) any wired router whose
+model class name doesn't appear anywhere in the project's own
+architecture-derived entity list -- would catch this shape even without
+knowing why it happens.
+
+**Deploy-threshold note**: FORGE_DEPLOY_THRESHOLD was temporarily
+lowered to 70 for this batch's live-app browser testing, then restored
+to the default 95 afterward. Even at 70, most apps still didn't clear
+it, and one app that scored 94.7 was independently blocked by a
+separate "final visual review did not complete" gate -- not
+investigated further tonight (see the batch summary for detail).
