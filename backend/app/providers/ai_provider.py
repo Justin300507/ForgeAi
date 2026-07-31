@@ -176,6 +176,31 @@ def _auto_chain(prompt, stage, max_tokens, thinking_budget):
     raise RuntimeError(f"OpenAI failed after {_OPENAI_RETRY_ATTEMPTS} attempts: {last_exc}")
 
 
+# Exp157 (habit_tracker, 2026-07-31): this cache's own rationale --
+# "identical prompt == identical inputs, so serving the cached response
+# is safe" -- holds for the INITIAL generation stages (planner,
+# architect, backend/frontend generation: same idea always should
+# produce the same output) but not for the repair loop. A "fix"/
+# "architecture_fix"/"runtime_fix" prompt is sent specifically BECAUSE a
+# previous attempt failed, and the retry/escalation strategies
+# (patch_file -> enriched patch -> regenerate_module -> switch_model)
+# exist on the premise that a later attempt gets a genuinely fresh shot
+# -- switch_model's own cache key doesn't even include which model was
+# selected. Confirmed live: a "Frontend/browser failure" fix prompt
+# produced a broken useAuth.jsx/AuthContext.jsx pair (neither exported a
+# usable `useAuth`), got cached unconditionally by this function before
+# the regression it caused was even detected, and was replayed via
+# `[LLM cache] HIT` on a LATER attempt even after Exp156's FixCache
+# eviction correctly cleared the separate, higher-level diagnostic-hash
+# cache for the exact same group -- confirming this is a genuinely
+# distinct caching layer, not just FixCache under another name. Repair-
+# loop stages are exempted entirely rather than added to Exp156's
+# regression-triggered eviction, since eviction there would need the
+# exact prompt threaded back up through several call layers that
+# currently only return file content, not what prompt produced it.
+_NEVER_CACHE_STAGES = frozenset({"fix", "architecture_fix", "runtime_fix"})
+
+
 def generate_content(
     prompt,
     provider="auto",
@@ -188,9 +213,13 @@ def generate_content(
     # cached architect output, the backend/frontend/fix prompts for a repeated
     # idea are byte-identical too — so a re-run of "todo app" costs $0 in
     # provider tokens instead of re-billing Gemini for ~40 calls. Identical
-    # prompt == identical inputs, so serving the cached response is safe.
+    # prompt == identical inputs, so serving the cached response is safe --
+    # EXCEPT for repair-loop stages, see _NEVER_CACHE_STAGES above.
     # Disable with FORGE_LLM_CACHE=0.
-    cache_enabled = os.environ.get("FORGE_LLM_CACHE", "1") != "0"
+    cache_enabled = (
+        os.environ.get("FORGE_LLM_CACHE", "1") != "0"
+        and stage not in _NEVER_CACHE_STAGES
+    )
     if cache_enabled:
         try:
             from app.utils.llm_cache import get_cached, set_cached

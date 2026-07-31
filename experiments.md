@@ -9658,3 +9658,72 @@ this), but worth a future session: either add `PUT /auth/me` to the
 known-good template, or stop the missing-file/orphan-page-wiring path
 from creating a profile-edit page when the backend has no matching
 capacity to support it.
+
+## Experiment 157: A Second, Deeper Poisoned-Response Cache -- Exempted Repair Stages
+
+**Trigger**: user pasted a THIRD fresh `habit_tracker` generation
+(2026-07-31, post-Exp156 deploy) -- scored 96.2/A+ but never deployed
+("critical stage 'frontend_build' failed"), stuck oscillating 96.2 <->
+89.8 across 3 stalled fix attempts. Exp156's eviction fired correctly
+on attempt 1 (`[fix] Evicted stale cached fix for group 60ee1fb5`),
+proving that fix worked -- but the frontend build kept failing with the
+identical `"useAuth" is not exported by "src/hooks/useAuth.jsx"` error
+anyway, meaning something ELSE was replaying the same broken content.
+
+**Root cause**: `ai_provider.py`'s `generate_content()` has a SEPARATE,
+lower-level cache from `FixCache` -- every LLM call is cached
+unconditionally by `{prompt, max_tokens}` hash, with no success/failure
+awareness at all, and Exp156's eviction only touches `FixCache`
+(diagnostic-hash-keyed), never this one (prompt-hash-keyed). Traced the
+exact sequence: attempt 1's FixCache-cached fix got evicted correctly
+after its regression; attempt 2 made a genuinely fresh OpenAI call
+(confirmed: no cache-hit message, an actual `[OPENAI] model=...` line)
+which ALSO produced a broken useAuth.jsx/AuthContext.jsx pair and ALSO
+regressed -- but `generate_content()` had already unconditionally
+cached that (bad) response the moment it was returned, before the
+regression check downstream even ran. Attempt 3 then replayed THAT
+cached response (`[LLM cache] HIT (fix) — 0 tokens billed`),
+reproducing the identical failure a third time.
+
+**Why exemption, not eviction (unlike Exp156)**: evicting this cache on
+regression would need the exact prompt text threaded back from deep
+inside `_apply_fix_group`/`_regenerate_module` up to `run_attempt`'s
+regression handler -- several call layers currently only return file
+content, not what prompt produced it. Simpler and more robust: this
+cache's own justification ("identical prompt == identical inputs, so
+serving cached response is safe") only actually holds for the initial
+generation stages (planner/architect/backend/frontend/missing_file --
+same idea should produce the same output). It never held for the
+repair loop: a "fix"/"architecture_fix"/"runtime_fix" prompt exists
+specifically BECAUSE a previous attempt failed, and the escalation
+strategy chain (patch_file -> enriched patch -> regenerate_module ->
+switch_model) is built on the premise each later attempt gets a
+genuinely fresh shot -- `switch_model`'s own cache key doesn't even
+include which model got selected, so a cache hit could silently defeat
+the whole point of escalating.
+
+**Fix**: `_NEVER_CACHE_STAGES = {"fix", "architecture_fix",
+"runtime_fix"}` in `ai_provider.py` -- `generate_content()` skips both
+cache lookup and cache write entirely for these three stages, while
+every other stage (product_manager, architecture, backend_generation,
+frontend_generation, missing_file, ...) keeps caching exactly as
+before.
+
+**Validated**: new `test_exp157_no_cache_for_repair_stages.py`, 4/4
+passing (fix/architecture_fix/runtime_fix always call fresh even for
+byte-identical prompts; initial-generation stages still cache
+correctly; `FORGE_LLM_CACHE=0` still disables everything globally).
+Directly reproduced the exact mechanism in isolation before writing the
+test (2 distinct responses for repeated `stage="fix"` calls vs. 1 cache
+hit for repeated `stage="backend_generation"` calls). Swept all four
+adjacent provider test files -- two pre-existing failures confirmed
+unrelated (a stale `_REQUEST_TIMEOUT_SECONDS == 45.0` assertion
+predating Exp142's 45->120 change, and a stale Cerebras-era test name
+predating this session's provider-removal commit), both reproduced
+identically with this change stashed out.
+
+**Together, Exp156 + Exp157 close the full loop**: a bad fix can no
+longer survive being proven bad twice in a row -- FixCache forgets it
+immediately on the first regression, and the underlying LLM call that
+would have produced the identical bad content again on retry now
+always gets a fresh shot instead of replaying itself.
