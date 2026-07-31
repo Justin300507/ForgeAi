@@ -9304,3 +9304,50 @@ non-auth page); reran every adjacent frontend-patcher suite (wirer-
 extension-blindness, patch-isolation, frontend-rewrite-repairs, orphan-
 route brace-matching, sql/auth-repairs) -- 99/99 combined, no
 regressions. Live re-verification pending next deploy.
+
+## Experiment 153: Ready-Made-Product Hardening -- Admin Lockdown + Daily Generation Cap
+
+**Trigger**: user decided to turn ForgeAI into an actual product other
+people can sign up and use (free, invite-only among people they know,
+no billing). Before inviting anyone, audited what currently assumes
+"only I use this."
+
+**Finding 1 (real security hole)**: the five `/admin/*` diagnostic
+routes added earlier tonight (`read-file` -- read any file under
+`/data` by absolute path, `redeploy-from-github` -- deploy an arbitrary
+repo with arbitrary env vars, `data-dir`, `clean-node-modules`,
+`vacuum-db`) were gated by nothing but `Depends(get_current_user)` --
+ANY authenticated user, not just the operator. The moment a second real
+person signs up, they could read another user's generated project
+source/`.env` files off the shared volume, or wipe the shared database.
+
+**Finding 2**: `GENERATION_RATE_LIMIT` (10/60s per IP) only bounds
+burst rate -- nothing capped sustained per-account usage, and every
+generation costs real LLM tokens (~$0.03-0.05 per tonight's own cost
+summaries) plus several minutes of pipeline compute.
+
+**Fix**:
+- `app/dependencies/auth.py`: new `require_admin` dependency, gated by
+  `ADMIN_EMAILS` (comma-separated env var allowlist). Deliberately
+  fails CLOSED when unset -- an empty/missing allowlist denies
+  everyone, never silently grants admin to every authenticated user the
+  way the old code did. Wired onto all five `/admin/*` routes in
+  `main.py`, replacing their `get_current_user` dependency. Set
+  `ADMIN_EMAILS=booombam530@gmail.com` on Railway before deploying, so
+  the operator isn't locked out of their own diagnostic endpoints.
+- `main.py`: new `_enforce_daily_generation_limit`, called from
+  `POST /jobs` before creating a job. `DAILY_GENERATION_LIMIT` (env
+  var, default 15) counts `GenerationJob` rows for that user in the
+  trailing 24h; admin accounts are exempt (already trusted by
+  definition). No billing/payment infrastructure needed for this --
+  the goal is bounding accidental/runaway cost for a free invite-only
+  tool, not monetizing usage.
+
+**Validated**: new `test_exp153_admin_lockdown_and_daily_limit.py`, 6/6
+passing (fails-closed on empty allowlist, case-insensitive email match,
+blocks at threshold, allows under threshold, admin exemption
+regardless of count). `python-jose` was missing from this local dev
+environment (same pre-existing gap that blocked several other test
+files tonight, unrelated to this change) -- installed it to actually
+run these rather than trust an untested diff. No regressions in the
+adjacent queue-auth test suite.

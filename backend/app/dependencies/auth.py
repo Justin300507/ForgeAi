@@ -107,6 +107,30 @@ async def get_current_user(token: str = Depends(oauth2_scheme), db: Session = De
     return get_user_from_access_token(token, db)
 
 
+# Exp153 (2026-07-31): the /admin/* diagnostic routes (read any file under
+# /data, vacuum the shared DB, wipe node_modules, trigger a redeploy with
+# arbitrary env vars) were gated by nothing but get_current_user -- fine
+# for a single-operator dev deployment, a real cross-tenant hole the
+# moment a second real person signs up (any invited user could read
+# another user's generated source/.env files, or wipe the shared
+# database). ADMIN_EMAILS is a comma-separated allowlist read at import
+# time; deliberately fails CLOSED when unset (nobody passes) rather than
+# open, so a missing env var can never silently grant admin to every
+# authenticated user the way the old code did.
+_ADMIN_EMAILS = {
+    e.strip().lower() for e in os.environ.get("ADMIN_EMAILS", "").split(",") if e.strip()
+}
+
+
+async def require_admin(current_user: User = Depends(get_current_user)) -> User:
+    if not _ADMIN_EMAILS or current_user.email.lower() not in _ADMIN_EMAILS:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Admin access required",
+        )
+    return current_user
+
+
 def get_user_from_access_token(token: str, db: Session) -> User:
     """Resolve an already-extracted bearer token without logging its value.
 

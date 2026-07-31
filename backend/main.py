@@ -20,6 +20,7 @@ from app.dependencies.auth import (
     create_access_token,
     get_current_user,
     get_user_from_access_token,
+    require_admin,
     ACCESS_TOKEN_EXPIRE_MINUTES,
 )
 from app.services.architect_service import generate_architecture
@@ -774,12 +775,46 @@ def get_check_status(
     return CHECK_STORE.get(job_id, {"status": "not_started", "result": None})
 
 
+# Exp153 (2026-07-31): GENERATION_RATE_LIMIT above only bounds burst rate
+# (10/60s per IP) -- nothing stops a single account from running that at
+# a steady pace all day, and every generation costs real LLM tokens
+# (~$0.03-0.05, confirmed from tonight's own cost summaries) plus several
+# minutes of pipeline compute. Fine for a single operator; a real risk
+# once other people can sign in and generate. DAILY_GENERATION_LIMIT
+# (env var, default 15) caps real per-account usage without needing any
+# billing/payment infrastructure -- ADMIN_EMAILS accounts are exempt
+# since they're already trusted by definition (see require_admin).
+_DAILY_GENERATION_LIMIT = int(os.environ.get("DAILY_GENERATION_LIMIT", "15"))
+
+
+def _enforce_daily_generation_limit(db: Session, current_user) -> None:
+    from app.dependencies.auth import _ADMIN_EMAILS
+    if current_user.email.lower() in _ADMIN_EMAILS:
+        return
+    cutoff = datetime.now(timezone.utc) - timedelta(hours=24)
+    count = (
+        db.query(GenerationJob)
+        .filter(GenerationJob.user_id == current_user.id, GenerationJob.created_at >= cutoff)
+        .count()
+    )
+    if count >= _DAILY_GENERATION_LIMIT:
+        raise HTTPException(
+            status_code=status.HTTP_429_TOO_MANY_REQUESTS,
+            detail=(
+                f"Daily generation limit reached ({_DAILY_GENERATION_LIMIT} apps/24h). "
+                "Please try again later."
+            ),
+        )
+
+
 @app.post("/jobs", tags=["jobs"], dependencies=[GENERATION_RATE_LIMIT])
 def create_job(
     req: JobRequest,
     db: Session = Depends(get_db),
     current_user=Depends(get_current_user),
 ):
+    _enforce_daily_generation_limit(db, current_user)
+
     job_id = str(uuid.uuid4())
     JOB_STORE[job_id] = {"status": "pending", "logs": [], "result": None, "error": None, "cancel_event": threading.Event()}
 
@@ -1762,7 +1797,7 @@ def health():
 
 
 @app.get("/admin/read-file", tags=["admin"])
-def admin_read_file(path: str, current_user=Depends(get_current_user)):
+def admin_read_file(path: str, current_user=Depends(require_admin)):
     """
     Temporary read-only diagnostic (2026-07-30): investigating the
     recurring `Expected ">" but found "\\"` frontend_build failure --
@@ -1793,7 +1828,7 @@ class RedeployGithubRequest(BaseModel):
 
 @app.post("/admin/redeploy-from-github", tags=["admin"])
 def admin_redeploy_from_github(
-    req: RedeployGithubRequest, current_user=Depends(get_current_user)
+    req: RedeployGithubRequest, current_user=Depends(require_admin)
 ):
     """
     Temporary operator utility (2026-07-30): a fix committed straight to a
@@ -1836,7 +1871,7 @@ def admin_redeploy_from_github(
 
 
 @app.get("/admin/data-dir", tags=["admin"])
-def admin_data_dir(current_user=Depends(get_current_user)):
+def admin_data_dir(current_user=Depends(require_admin)):
     """
     Temporary read-only diagnostic (2026-07-30): deleting generation_jobs
     rows didn't free real disk bytes (main forgeai.db is only 64KB, and
@@ -1859,7 +1894,7 @@ def admin_data_dir(current_user=Depends(get_current_user)):
 
 
 @app.post("/admin/clean-node-modules", tags=["admin"])
-def admin_clean_node_modules(current_user=Depends(get_current_user)):
+def admin_clean_node_modules(current_user=Depends(require_admin)):
     """
     Temporary emergency utility (2026-07-30): /admin/data-dir found the
     real cause of the /data disk-full storm -- generated_projects/ (each
@@ -1905,7 +1940,7 @@ def admin_clean_node_modules(current_user=Depends(get_current_user)):
 
 
 @app.post("/admin/vacuum-db", tags=["admin"])
-def admin_vacuum_db(current_user=Depends(get_current_user)):
+def admin_vacuum_db(current_user=Depends(require_admin)):
     """
     Temporary operator utility (2026-07-30): the Railway persistent volume
     (/data, 500MB cap) started rejecting writes with `sqlite3.OperationalError:
