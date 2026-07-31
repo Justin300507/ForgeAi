@@ -1656,12 +1656,12 @@ class CredentialsRequest(BaseModel):
 
 
 @app.get("/credentials", tags=["credentials"])
-def get_credentials():
+def get_credentials(current_user=Depends(require_admin)):
     return _merged_creds()
 
 
 @app.post("/credentials", tags=["credentials"])
-def save_credentials(req: CredentialsRequest):
+def save_credentials(req: CredentialsRequest, current_user=Depends(require_admin)):
     existing = _load_creds()
     existing.update({
         "github_token": req.github_token or existing.get("github_token", ""),
@@ -1676,7 +1676,7 @@ def save_credentials(req: CredentialsRequest):
 
 
 @app.get("/credentials/status", tags=["credentials"])
-def credentials_status():
+def credentials_status(current_user=Depends(require_admin)):
     """Validate stored tokens against each service's API and return account info."""
     import urllib.request as _urlreq
     import json as _json
