@@ -6899,6 +6899,124 @@ def _patch_login_redirect_target(project_path: Path) -> int:
     return patched
 
 
+_AUTH_ENDPOINT_CALL_RE = re.compile(r"""API\.post\(\s*['"]/auth/(?:signup|register|login)['"]""")
+_TOKEN_STORE_RE = re.compile(r"""localStorage\.setItem\(\s*['"]token['"]""")
+_NAVIGATE_CALL_RE = re.compile(r"\bnavigate\s*\(")
+_TOP_LEVEL_COMPONENT_DEF_RE = re.compile(
+    r"^const\s+\w+\s*=\s*(?:\([^)]*\)|\w+)\s*=>\s*\{"
+    r"|^function\s+\w+\s*\([^)]*\)\s*\{",
+    re.MULTILINE,
+)
+
+
+def _patch_auth_page_missing_post_success_navigate(project_path: Path) -> int:
+    """
+    Exp152 (habit_tracker, 2026-07-31): a signup/register/login page's
+    success handler can store a token via `localStorage.setItem('token',
+    ...)` and then simply never navigate anywhere. Confirmed live: an
+    LLM-generated `SignupPage.jsx` -- created by the missing-file agent
+    in response to a "Missing frontend import target: ./pages/SignupPage"
+    validation error, NOT `patch_ensure_auth_pages`'s own deterministic
+    template (whose RegisterPage.jsx correctly calls
+    `navigate('/dashboard')`) -- left only a comment where the redirect
+    should be: `// Redirect or perform further actions after successful
+    signup`. From the user's side, clicking "Sign Up" does absolutely
+    nothing visible: the request succeeds, a valid token is stored, the
+    loading spinner clears, and the same empty form is still on screen --
+    indistinguishable from "the button doesn't work" even though auth
+    worked perfectly. Invisible to every other automated check the same
+    way a missing LoginPage/RegisterPage was (see
+    `patch_ensure_auth_pages`'s own docstring): the CRUD journey obtains
+    its token directly from the API, never by clicking through the UI.
+
+    Injects a naive `navigate('/dashboard')` right after the token gets
+    stored (adding the `useNavigate` import/hook if missing). Correct
+    even when the app's real authenticated route isn't literally
+    "/dashboard": `_patch_login_redirect_target` (immediately above,
+    runs first in `run_deterministic_patches`) already exists
+    specifically to rewrite this exact hardcoded '/dashboard' shape to
+    whatever route the app actually has.
+    """
+    pages_dir = project_path / "src" / "pages"
+    if not pages_dir.exists():
+        return 0
+
+    patched = 0
+    for jf in pages_dir.glob("*.jsx"):
+        try:
+            content = jf.read_text(encoding="utf-8", errors="replace")
+        except Exception:
+            continue
+        if "localStorage.setItem(" not in content or not _AUTH_ENDPOINT_CALL_RE.search(content):
+            continue
+
+        comp_matches = list(_TOP_LEVEL_COMPONENT_DEF_RE.finditer(content))
+        if not comp_matches:
+            continue
+
+        text = content
+        changed = False
+        for m in reversed(comp_matches):
+            open_brace_pos = m.end() - 1
+            close_pos = find_matching_brace(text, open_brace_pos, quote_chars="'\"`")
+            if close_pos == -1:
+                continue
+            body = text[open_brace_pos + 1:close_pos]
+            if not _AUTH_ENDPOINT_CALL_RE.search(body) or not _TOKEN_STORE_RE.search(body):
+                continue
+            if _NAVIGATE_CALL_RE.search(body):
+                continue  # already navigates somewhere -- not this bug
+
+            store_m = _TOKEN_STORE_RE.search(body)
+            call_open_paren = body.index("(", store_m.start())
+            call_close = find_matching_brace(
+                body, call_open_paren, quote_chars="'\"`", open_char="(", close_char=")",
+            )
+            if call_close == -1:
+                continue
+            stmt_end = call_close + 1
+            if body[stmt_end:stmt_end + 1] == ";":
+                stmt_end += 1
+
+            line_start = body.rfind("\n", 0, store_m.start()) + 1
+            indent = body[line_start:store_m.start()]
+            if indent.strip() != "":
+                indent = "      "
+
+            new_body = body[:stmt_end] + f"\n{indent}navigate('/dashboard');" + body[stmt_end:]
+            text = text[:open_brace_pos + 1] + new_body + text[close_pos:]
+            changed = True
+
+        if not changed:
+            continue
+
+        if "useNavigate" not in text:
+            rrd_import_m = re.search(
+                r"^import\s*\{([^}]*)\}\s*from\s*['\"]react-router-dom['\"]", text, re.MULTILINE,
+            )
+            if rrd_import_m:
+                names = [n.strip() for n in rrd_import_m.group(1).split(",") if n.strip()]
+                if "useNavigate" not in names:
+                    names.append("useNavigate")
+                    new_import = "import { " + ", ".join(names) + " } from 'react-router-dom'"
+                    text = text[:rrd_import_m.start()] + new_import + text[rrd_import_m.end():]
+            else:
+                text = "import { useNavigate } from 'react-router-dom';\n" + text
+
+        if not re.search(r"const\s+navigate\s*=\s*useNavigate\(\)", text):
+            first = _TOP_LEVEL_COMPONENT_DEF_RE.search(text)
+            if first:
+                insert_pos = first.end()
+                text = text[:insert_pos] + "\n  const navigate = useNavigate();" + text[insert_pos:]
+
+        if text != content:
+            jf.write_text(text, encoding="utf-8")
+            patched += 1
+            print(f"  [patcher] Injected missing post-auth navigate() call in {jf.name}")
+
+    return patched
+
+
 # ── Main entry point ──────────────────────────────────────────────────────────
 
 def _patch_required_create_schema_model_nullability(project_path: Path) -> int:
@@ -9256,6 +9374,17 @@ def run_deterministic_patches(project_path: str, skip_protected_injections: bool
     # duplicate identifier imports AFTER the first dedupe pass — esbuild
     # treats those as a hard error (Exp112).
     _run_patch_isolated(counts, "_patch_dedupe_frontend_imports_post_wire", _patch_dedupe_frontend_imports, root)
+
+    # A signup/register/login handler that stores a token but never
+    # navigates anywhere leaves the user staring at the same form with no
+    # visible feedback -- indistinguishable from "the button doesn't
+    # work" (Exp152). Must run BEFORE the line below: injects a naive
+    # navigate('/dashboard'), which that patcher then retargets to the
+    # app's real authenticated route if "/dashboard" isn't it.
+    _run_patch_isolated(
+        counts, "_patch_auth_page_missing_post_success_navigate",
+        _patch_auth_page_missing_post_success_navigate, root,
+    )
 
     # Must run after the line above: if the app's main authenticated page
     # isn't literally named "Dashboard", login/register's hardcoded
