@@ -898,7 +898,7 @@ def _fix_missing_env(project_path: Path, diagnostics: list) -> bool:
         "ACCESS_TOKEN_EXPIRE_MINUTES": "10080",
         "DEBUG":         "true",
     }
-    lines = ["# Auto-generated .env skeleton by ForgeAI preflight"]
+    lines = ["# Auto-generated .env skeleton"]
     seen: set[str] = set()
     for var in dict.fromkeys(used_vars):  # deduplicate, preserve order
         if var in seen:
