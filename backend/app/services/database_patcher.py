@@ -628,12 +628,46 @@ def patch_add_missing_model_columns(project_path: str) -> int:
 
         response_model_schemas = _collect_response_model_schemas(str(project))
 
+        def _unwrap_optional(annotation):
+            # Mirrors _is_optional_annotation's shape matching (Optional[X],
+            # Union[X, None], X | None) but returns the inner X instead of a
+            # bool, so a caller can inspect what's actually being wrapped.
+            if isinstance(annotation, _ast.Subscript):
+                base = annotation.value
+                if isinstance(base, _ast.Name) and base.id == "Optional":
+                    return annotation.slice
+                if isinstance(base, _ast.Attribute) and base.attr == "Optional":
+                    return annotation.slice
+                is_union = (
+                    (isinstance(base, _ast.Name) and base.id == "Union")
+                    or (isinstance(base, _ast.Attribute) and base.attr == "Union")
+                )
+                if is_union:
+                    sl = annotation.slice
+                    elts = sl.elts if isinstance(sl, _ast.Tuple) else [sl]
+                    non_none = [
+                        e for e in elts
+                        if not (isinstance(e, _ast.Constant) and e.value is None)
+                    ]
+                    if len(non_none) == 1:
+                        return non_none[0]
+            if isinstance(annotation, _ast.BinOp) and isinstance(annotation.op, _ast.BitOr):
+                for side in (annotation.left, annotation.right):
+                    if not (isinstance(side, _ast.Constant) and side.value is None):
+                        return side
+            return annotation
+
         def _is_list_annotation(annotation) -> bool:
             # List[...]-shaped fields (e.g. completions: List[HabitCompletionRead])
             # represent a relationship, not a scalar column — a synthesized
             # scalar default (e.g. "") fails Pydantic's list validation just
             # as badly as the missing field did. Leave these for the LLM fix
             # loop, which can add a real relationship() or hybrid property.
+            # Unwrap Optional[List[...]]/Union[List[...], None]/List[...] | None
+            # first -- an Optional wrapper doesn't change the fact that a
+            # present value must be an iterable of nested models, not a bare
+            # scalar synthesized by this patcher.
+            annotation = _unwrap_optional(annotation)
             base = annotation.value if isinstance(annotation, _ast.Subscript) else None
             if isinstance(base, _ast.Name) and base.id in ("List", "list"):
                 return True
@@ -674,10 +708,17 @@ def patch_add_missing_model_columns(project_path: str) -> int:
                     field = child.target.id
                     if field in valid_cols:
                         continue
-                    if _is_optional_annotation(child.annotation):
-                        continue
+                    # Check list-shape BEFORE optional-shape: an
+                    # Optional[List[...]] field is still fundamentally a
+                    # relationship, not a scalar column, and must not fall
+                    # through the optional check below un-recorded (that
+                    # would let a same-named field flagged by the
+                    # constructor-call scan slip past the purge and still
+                    # get fabricated as a scalar column).
                     if _is_list_annotation(child.annotation):
                         list_shaped_by_class.setdefault(cls_name, set()).add(field)
+                        continue
+                    if _is_optional_annotation(child.annotation):
                         continue
                     missing_by_class.setdefault(cls_name, set()).add(field)
 

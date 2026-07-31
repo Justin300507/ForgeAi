@@ -319,6 +319,51 @@ def test_patch_add_missing_model_columns_skips_list_shaped_response_fields():
         assert "username='alice'" in seed_out  # other kwargs untouched
 
 
+_USER_RESPONSE_SCHEMA_WITH_OPTIONAL_LIST_FIELDS = (
+    "from pydantic import BaseModel\n"
+    "from typing import List, Optional\n\n"
+    "class UserResponse(BaseModel):\n"
+    "    id: int\n"
+    "    username: str\n"
+    "    email: str\n"
+    "    badges: Optional[List[str]] = None\n"
+    "    habits: Optional[List[str]] = None\n\n"
+    "    class Config:\n"
+    "        from_attributes = True\n"
+)
+
+
+def test_patch_add_missing_model_columns_skips_optional_list_shaped_fields():
+    """A second, live occurrence of the same production bug (2026-07-31,
+    same day as the fix above): an earlier patcher pass ("Made Response
+    schema fields Optional in user.py") had already wrapped the field as
+    `Optional[List[str]]` by the time this patcher ran, and the original
+    fix's `_is_list_annotation` didn't unwrap Optional/Union/`X | None`
+    before checking -- so `_is_optional_annotation` short-circuited first,
+    the field was never recorded into `list_shaped_by_class`, and the
+    constructor-call scan fabricated the exact same bogus scalar column as
+    before. `_is_list_annotation` must see through the Optional wrapper."""
+    with tempfile.TemporaryDirectory() as td:
+        proj = _mk_project(
+            td,
+            models={"users.py": _USER_MODEL_NO_RELATIONSHIPS},
+            routes={
+                "seed_routes.py": _SEED_ROUTE_CONSTRUCTS_WITH_RELATIONSHIP_KWARGS,
+                "user_routes.py": _USER_ROUTES_RESPONSE_MODEL_WIRING,
+            },
+            schemas={"user.py": _USER_RESPONSE_SCHEMA_WITH_OPTIONAL_LIST_FIELDS},
+        )
+        dbp.patch_add_missing_model_columns(str(proj))
+
+        model_out = (proj / "app" / "models" / "users.py").read_text(encoding="utf-8")
+        assert "badges = Column" not in model_out
+        assert "habits = Column" not in model_out
+
+        seed_out = (proj / "app" / "routes" / "seed_routes.py").read_text(encoding="utf-8")
+        assert "badges=" not in seed_out
+        assert "habits=" not in seed_out
+
+
 # ─── patch_missing_required_constructor_kwargs ────────────────────────────
 
 _HABIT_MODEL = (
