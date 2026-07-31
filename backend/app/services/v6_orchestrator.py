@@ -45,7 +45,11 @@ from app.memory.failure_memory import record_run, build_prompt_injection
 from app.repair.auth_completeness import ensure_auth_completeness
 from app.utils.cost_tracker import reset_session, flush_to_log, print_session_cost
 from app.services.runtime_validator_service import validate_runtime
-from app.services.deterministic_patcher import run_deterministic_patches
+from app.services.deterministic_patcher import (
+    run_deterministic_patches,
+    _patch_filtered_ctor_kwarg_collision,
+    _patch_star_dict_extra_fields,
+)
 
 
 ARCHITECTURE_ERROR_MARKERS = (
@@ -133,6 +137,19 @@ def _run_initial_deterministic_patches(project_path: str) -> int:
     patch_missing_required_constructor_kwargs(project_path)
     patch_string_date_literals_in_constructors(project_path)
     patch_filter_dict_unpack_constructor_kwargs(project_path)
+    # Exp155: patch_missing_required_constructor_kwargs (immediately above)
+    # appends a new trailing kwarg (e.g. `availability=False`) to a
+    # Model(**{k: v for k, v in x.dict().items() if k in Model.__table__.
+    # columns.keys()}, ...) call that run_deterministic_patches already
+    # scanned for this exact collision BEFORE this new kwarg existed --
+    # `TypeError: got multiple values for keyword argument` crashed every
+    # POST request (confirmed live, community_tool_library +
+    # freelance_job_board, 2026-07-31: 500 on Create entity in both,
+    # neither has a `and k not in {...}` exclusion despite the collision-
+    # fixer running earlier in this same function). Re-run it now that
+    # the new kwarg actually exists to catch.
+    _patch_filtered_ctor_kwarg_collision(Path(project_path))
+    _patch_star_dict_extra_fields(Path(project_path))
     if ensure_app_jsx(project_path):
         print("  [scaffold] Synthesized missing src/App.jsx from existing pages")
     return n_field_fixes or 0
@@ -977,6 +994,10 @@ def generate_project_v6(
                 patch_missing_required_constructor_kwargs(project_path)
                 patch_string_date_literals_in_constructors(project_path)
                 patch_filter_dict_unpack_constructor_kwargs(project_path)
+                # Exp155: re-converge the same collision invariant here too --
+                # see the other call site's comment for the full story.
+                _patch_filtered_ctor_kwarg_collision(Path(project_path))
+                _patch_star_dict_extra_fields(Path(project_path))
                 # Re-inject database.py — the LLM fix may have overwritten it
                 patch_database_py(project_path)
                 # Delete stale SQLite db + WAL files so the next uvicorn process

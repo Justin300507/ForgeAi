@@ -9408,3 +9408,65 @@ that scored 94.7 (above the lowered threshold). Not investigated
 further tonight; deliberately not relaxed further to avoid bypassing a
 quality gate that may exist for good reason without understanding it
 first.
+
+## Experiment 155: Constructor Kwarg Collision Introduced AFTER The Collision-Fixer Already Ran -- Fixed
+
+**Trigger**: reading the CRUD-journey result directly out of each job's
+log for the 12-app batch (since almost none deployed, live browser
+testing wasn't available -- the journey block is the same signal,
+already computed by the pipeline). Two apps, `community_tool_library`
+and `freelance_job_board`, both showed `✗ Create entity: 500 (server
+error)` -- signup/login/list all fine, only the create path broken.
+
+**Root cause**: `Tool(**{k: v for k, v in tool_in.dict().items() if k
+in Tool.__table__.columns.keys()}, availability=False)` --
+`ToolCreate`'s schema doesn't supply `availability` (a NOT NULL
+Boolean column), so `patch_missing_required_constructor_kwargs`
+(database_patcher.py) correctly appends `availability=False` as an
+explicit trailing kwarg. But `_patch_filtered_ctor_kwarg_collision`
+(deterministic_patcher.py) -- the function that adds `and k not in
+{...}` to a dict-comprehension unpack specifically to prevent this
+exact collision -- runs INSIDE `run_deterministic_patches`, which
+`v6_orchestrator.py` calls BEFORE `patch_missing_required_constructor_
+kwargs` at both of its call sites (the initial post-generation patch
+pass, and the runtime-fix retry loop). The collision detector finds
+nothing wrong (the colliding kwarg doesn't exist yet), then the field-
+injector adds it, and nothing re-checks. `TypeError: got multiple
+values for keyword argument 'availability'` crashes POST /tools on
+every single request. Confirmed the collision-fixer itself is correct
+in isolation -- ran it directly against the byte-for-byte live file
+content and it fixed the pattern perfectly; the bug is purely the
+sequencing between two functions in two different modules, not either
+function's own logic. The prior job log confirmed this same collision-
+fixer DID successfully fire earlier in the SAME run, on a sibling file
+(`borrowing_record_routes.py`) -- ruling out any environment/deploy
+staleness explanation.
+
+**Fix**: rather than reordering `run_deterministic_patches` relative to
+`patch_missing_required_constructor_kwargs` (large blast radius --
+dozens of other patchers live inside that call, any of which might
+depend on the current ordering for unrelated reasons), added a second,
+narrow call to `_patch_filtered_ctor_kwarg_collision` and its sibling
+`_patch_star_dict_extra_fields` immediately after `patch_missing_
+required_constructor_kwargs` at both of `v6_orchestrator.py`'s call
+sites. Mirrors the same "_final re-convergence pass" pattern already
+used for `_patch_hyphenated_router_identifiers_final` (Exp107) --
+a later patcher can reintroduce an earlier invariant, so re-run the
+earlier check once more after the pass that can break it.
+
+**Validated**: new `test_exp155_ctor_kwarg_collision_after_field_
+injection.py` reproduces the real bug end-to-end using the two actual
+patcher functions in the (fixed) call order and confirms the collision
+self-heals, plus an idempotency check; 2/2 passing. `v6_orchestrator.py`
+smoke-imports cleanly with the new imports. No regressions in `test_
+sql_constructor_and_auth_repairs` (35), `test_exp154_broken_model_
+import_module` (5), `test_database_patcher_and_relationships` (45), or
+`test_inline_chain_repairs` (58).
+
+**Why this is higher-value than Exp147-154**: those were each scoped
+to a specific naming-mismatch shape; this one fixes the general
+composition hazard between "a patcher that injects a new kwarg" and
+"the patcher that guards against kwarg collisions" for EVERY NOT NULL
+Boolean/Date/DateTime/password-hash column a Create schema doesn't
+supply, across every future generation -- not just the two `availability`-shaped
+instances caught tonight.
