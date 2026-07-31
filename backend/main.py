@@ -231,6 +231,12 @@ def _run_job(job_id: str, req: JobRequest):
     _thread_local.cancel_event = store["cancel_event"]
     store["status"] = "running"
 
+    # Proactive disk-space guard (Exp161): sweeps stale node_modules from
+    # past projects before this one runs, but only once the volume is
+    # actually getting tight -- see app/services/storage_cleanup.py.
+    from app.services.storage_cleanup import clean_stale_node_modules_if_needed
+    clean_stale_node_modules_if_needed()
+
     # Write the result back to DB in a new session
     from app.database import SessionLocal
 
@@ -1896,47 +1902,15 @@ def admin_data_dir(current_user=Depends(require_admin)):
 @app.post("/admin/clean-node-modules", tags=["admin"])
 def admin_clean_node_modules(current_user=Depends(require_admin)):
     """
-    Temporary emergency utility (2026-07-30): /admin/data-dir found the
-    real cause of the /data disk-full storm -- generated_projects/ (each
-    generated app's FULL node_modules, ~50-150MB apiece) lives under
-    /data, the *persistent* volume, not the container's ephemeral root
-    disk, and nothing ever cleans it up. Plain filesystem deletion (no
-    SQLite write involved) works even at 0 bytes free, unlike every DB
-    write attempted so far. node_modules is always regenerable via a
-    fresh `npm install`; the already-built .zip files this walk never
-    touches (it only removes node_modules/ directories) are unaffected
-    either way since a zip is a separate static artifact created once,
-    not a live reference into node_modules -- safe to delete
-    unconditionally.
+    Manual trigger for the same sweep app/services/storage_cleanup.py now
+    also runs automatically at the start of every job once the volume
+    crosses 80% used (Exp161) -- kept as an on-demand escape hatch. Plain
+    filesystem deletion (no SQLite write involved) works even at 0 bytes
+    free, unlike every DB write attempted during the disk-full incidents
+    that motivated this (2026-07-30, 2026-08-01).
     """
-    import shutil
-    root = "/data/generated_projects" if os.path.isdir("/data/generated_projects") else "generated_projects"
-    freed = 0
-    removed = []
-    if os.path.isdir(root):
-        for dirpath, dirnames, _filenames in os.walk(root):
-            if "node_modules" in dirnames:
-                target = os.path.join(dirpath, "node_modules")
-                try:
-                    size = sum(
-                        os.path.getsize(os.path.join(dp, f))
-                        for dp, _dn, fn in os.walk(target) for f in fn
-                        if os.path.exists(os.path.join(dp, f))
-                    )
-                    shutil.rmtree(target)
-                    freed += size
-                    removed.append(target)
-                except Exception as exc:
-                    removed.append(f"{target} (failed: {exc})")
-                dirnames.remove("node_modules")
-    disk = shutil.disk_usage("/data" if os.path.isdir("/data") else ".")
-    return {
-        "root": root,
-        "removed_count": len(removed),
-        "removed": removed[:50],
-        "bytes_freed": freed,
-        "disk_free_bytes_after": disk.free,
-    }
+    from app.services.storage_cleanup import clean_stale_node_modules
+    return clean_stale_node_modules()
 
 
 @app.post("/admin/vacuum-db", tags=["admin"])

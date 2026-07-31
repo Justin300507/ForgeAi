@@ -92,6 +92,11 @@ def _process_job(job: Job, worker_id: str, *, pipeline_runner=None,
     print(f"\n[Worker {worker_id}] ─── Job {job.id[:8]} (attempt {job.attempts}/{job.max_attempts})")
     print(f"[Worker {worker_id}]     Provider: {job.provider}")
 
+    # Proactive disk-space guard (Exp161): see app/services/storage_cleanup.py
+    # and main.py::_run_job's identical hook for the full incident history.
+    from app.services.storage_cleanup import clean_stale_node_modules_if_needed
+    clean_stale_node_modules_if_needed()
+
     # Start heartbeat thread so the dispatcher knows this worker is alive
     hb_stop = threading.Event()
     hb_thread = threading.Thread(target=_heartbeat_loop, args=(job.id, hb_stop), daemon=True)

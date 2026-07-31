@@ -11,7 +11,7 @@ def write_debug_report(project_path, validation=None, runtime_result=None):
     they ship inside the export zip — a failed run can be inspected from the
     downloaded zip alone, without re-running the pipeline or digging through
     server logs."""
-    lines = ["# ForgeAI Build Report", ""]
+    lines = ["# Build Report", ""]
 
     if validation is not None:
         lines.append(f"## Validation: {'PASSED' if validation.get('passed') else 'FAILED'}")
