@@ -5933,6 +5933,91 @@ def _patch_vite_root_proxy_and_api_base(project_path: Path) -> int:
     return changed
 
 
+_AUTH_HEADER_LINE_RE = re.compile(
+    r"^\s*Authorization\s*:\s*`Bearer\s*\$\{\s*localStorage\.getItem\(\s*['\"]token['\"]\s*\)\s*\}`\s*,?\s*$"
+)
+_AXIOS_CREATE_VAR_RE = re.compile(r"\b(?:const|let|var)\s+(\w+)\s*=\s*axios\.create\s*\(")
+_HAS_REQUEST_INTERCEPTOR_RE = re.compile(r"\.interceptors\.request\.use\s*\(")
+
+
+def _patch_static_auth_header_to_interceptor(project_path: Path) -> int:
+    """
+    Reproduced live (habit_tracker, 2026-08-01): the frontend prompt's own
+    api.jsx template (frontend_prompt.py) correctly attaches the auth token
+    via a request interceptor -- read fresh from localStorage on every call
+    -- but this generation instead baked it into axios.create()'s static
+    ``headers`` object:
+
+        const API = axios.create({
+          headers: { Authorization: `Bearer ${localStorage.getItem('token')}` }
+        });
+
+    That expression evaluates exactly once, when the module is first
+    imported (page load) -- typically before the user has logged in, so it
+    captures "Bearer null" (or a stale token from a previous session)
+    permanently into the axios instance's default headers. Logging in
+    afterwards updates localStorage but never re-evaluates this expression
+    (no full page reload happens in a client-routed SPA), so every
+    subsequent request -- including any authenticated POST/PUT/DELETE --
+    keeps sending the stale header. The backend correctly 401s, and the
+    generated global response interceptor's 401 handler then hard-redirects
+    to /login, which is exactly what a real user sees ("add task" instantly
+    bounces to the login page) despite the automated CRUD journey test
+    passing 100%: that test hits the API directly with an explicit
+    Authorization header per call and never replays real browser
+    localStorage/module-load timing, so this class of bug is invisible to
+    it. Rewrites to the same request-interceptor pattern the prompt already
+    specifies, so the token is read fresh on every request.
+    """
+    changed = 0
+    for api_file in (*project_path.glob("src/api.js"), *project_path.glob("src/api.jsx")):
+        try:
+            text = api_file.read_text(encoding="utf-8", errors="replace")
+        except OSError:
+            continue
+
+        var_match = _AXIOS_CREATE_VAR_RE.search(text)
+        if not var_match:
+            continue
+        var_name = var_match.group(1)
+
+        lines = text.split("\n")
+        auth_line_idx = next(
+            (i for i, line in enumerate(lines) if _AUTH_HEADER_LINE_RE.match(line)), None
+        )
+        if auth_line_idx is None:
+            continue
+
+        del lines[auth_line_idx]
+        text = "\n".join(lines)
+
+        if not _HAS_REQUEST_INTERCEPTOR_RE.search(text):
+            create_marker = var_name + " = axios.create("
+            create_start = text.find(create_marker)
+            close_idx = text.find("});", create_start) if create_start != -1 else -1
+            if close_idx != -1:
+                insert_at = close_idx + len("});")
+                interceptor_block = (
+                    "\n\n" + var_name + ".interceptors.request.use(cfg => {\n"
+                    "  const token = localStorage.getItem('token');\n"
+                    "  if (token) cfg.headers.Authorization = `Bearer ${token}`;\n"
+                    "  return cfg;\n"
+                    "});"
+                )
+                text = text[:insert_at] + interceptor_block + text[insert_at:]
+
+        api_file.write_text(text, encoding="utf-8")
+        changed += 1
+        print(
+            f"  [patcher] Replaced static Authorization header with a request "
+            f"interceptor in {api_file.name} (static header only captured "
+            f"localStorage's token at import time -- every authenticated "
+            f"request after a no-reload login kept sending a stale/missing "
+            f"token, 401ing and bouncing straight back to /login)"
+        )
+    return changed
+
+
 # ── Fix: missing app/services/ stubs ─────────────────────────────────────────
 # LLMs sometimes generate route files that delegate to a service layer
 # (from app.services.team_service import create_team, ...) but don't generate
@@ -9169,6 +9254,9 @@ def _run_frontend_patches_detailed(project_path: Path) -> tuple[int, list[Fronte
         results, "_patch_frontend_package_json", _patch_frontend_package_json, project_path, as_bool=True)
     patched += _run_frontend_patch_isolated(
         results, "_patch_vite_root_proxy_and_api_base", _patch_vite_root_proxy_and_api_base, project_path)
+    patched += _run_frontend_patch_isolated(
+        results, "_patch_static_auth_header_to_interceptor",
+        _patch_static_auth_header_to_interceptor, project_path)
     patched += _run_frontend_patch_isolated(
         results, "_patch_disallowed_icon_packages", _patch_disallowed_icon_packages, project_path)
     patched += _run_frontend_patch_isolated(

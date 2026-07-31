@@ -34,6 +34,7 @@ from app.services.deterministic_patcher import (
 _EXPECTED_ORDER = [
     "_patch_frontend_package_json",
     "_patch_vite_root_proxy_and_api_base",
+    "_patch_static_auth_header_to_interceptor",
     "_patch_disallowed_icon_packages",
     "_patch_invalid_lucide_icons",
     "_patch_missing_icon_imports",
@@ -117,15 +118,15 @@ def test_isolated_call_does_not_raise():
     _run_frontend_patch_isolated(results, "fake_boom", lambda p: 1 / 0, Path("."))  # no raise
 
 
-# ── _run_frontend_patches_detailed (the real 15-call sequence) ───────────────
+# ── _run_frontend_patches_detailed (the real 16-call sequence) ───────────────
 
-def test_detailed_runs_all_15_in_documented_order_on_clean_project():
+def test_detailed_runs_all_16_in_documented_order_on_clean_project():
     with tempfile.TemporaryDirectory() as td:
         project = _empty_project(td)
         n, results = _run_frontend_patches_detailed(project)
-        assert len(results) == 15
+        assert len(results) == 16
         assert [r.name for r in results] == _EXPECTED_ORDER
-        assert all(r.success for r in results), "all 15 must succeed cleanly on a near-empty project"
+        assert all(r.success for r in results), "all 16 must succeed cleanly on a near-empty project"
         assert n == sum(r.count for r in results)
 
 
@@ -146,14 +147,14 @@ def test_one_raising_patcher_does_not_stop_the_rest():
         with tempfile.TemporaryDirectory() as td:
             project = _empty_project(td)
             n, results = dp._run_frontend_patches_detailed(project)
-        assert len(results) == 15, "all 15 must still run despite one raising"
+        assert len(results) == 16, "all 16 must still run despite one raising"
         assert [r.name for r in results] == _EXPECTED_ORDER, "ordering must be preserved exactly"
         failed = [r for r in results if not r.success]
         assert len(failed) == 1
         assert failed[0].name == "_patch_frontend_auth_field_names"
         assert "RuntimeError" in failed[0].exception
         succeeded = [r for r in results if r.success]
-        assert len(succeeded) == 14, "the other 14 must still have run and succeeded"
+        assert len(succeeded) == 15, "the other 15 must still have run and succeeded"
     finally:
         dp._patch_frontend_auth_field_names = original
 
@@ -188,7 +189,7 @@ def test_multiple_failures_all_isolated_independently():
         with tempfile.TemporaryDirectory() as td:
             project = _empty_project(td)
             n, results = dp._run_frontend_patches_detailed(project)
-        assert len(results) == 15, "all 15 must still be attempted"
+        assert len(results) == 16, "all 16 must still be attempted"
         assert [r.name for r in results] == _EXPECTED_ORDER
         failed_names = {r.name for r in results if not r.success}
         assert failed_names == {
@@ -197,7 +198,7 @@ def test_multiple_failures_all_isolated_independently():
             "patch_ensure_auth_pages",
         }
         succeeded = [r for r in results if r.success]
-        assert len(succeeded) == 12
+        assert len(succeeded) == 13
     finally:
         for name, fn in originals.items():
             setattr(dp, name, fn)
