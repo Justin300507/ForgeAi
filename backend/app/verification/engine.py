@@ -670,6 +670,19 @@ def _write_journey_bundle(ctx, journey: dict) -> dict | None:
     )
 
 
+def _tail_error_line(stderr: str) -> str:
+    """The actual exception is at the TAIL of a captured traceback, not the
+    head -- the head is uvicorn/click/asyncio's own bootstrap frames, which
+    for a startup crash routed through several layers can easily run past
+    400-1000 characters on their own before ever reaching generated-app code.
+    Scans backward for the first line that looks like an exception."""
+    for line in reversed((stderr or "").splitlines()):
+        s = line.strip()
+        if s and ("Error" in s or "Exception" in s or "constraint failed" in s):
+            return s
+    return ""
+
+
 def _run_runtime_validation(ctx: GenerationContext) -> VerificationResult:
     t0 = time.time()
     try:
@@ -697,7 +710,20 @@ def _run_runtime_validation(ctx: GenerationContext) -> VerificationResult:
         stderr = result.get("stderr", "")
         parsed = result.get("parsed_error", {})
         err_type = parsed.get("type", "RuntimeError")
-        message = parsed.get("message") or (stderr[:400] if stderr else "Backend failed to start")
+        # An "Unknown"/"RuntimeError" parse (no specific pattern matched) used
+        # to fall straight to stderr[:400] here -- the HEAD of the traceback,
+        # which for any crash routed through uvicorn's startup chain is just
+        # bootstrap noise, never the actual exception. That message (and the
+        # FixCache hash built from it) was then too generic for the fix LLM
+        # to ever target the real cause, so unrecognized startup crashes
+        # could stall the whole repair loop reproducing themselves
+        # identically across every attempt. Try the tail first, same as the
+        # has_specific branch below.
+        message = (
+            parsed.get("message")
+            or _tail_error_line(stderr)
+            or (stderr[:400] if stderr else "Backend failed to start")
+        )
         # A CRUD-journey failure on a HEALTHY backend used to fall through to
         # the "Backend failed to start" fallback (its parsed_error has no
         # "message" key and stderr is just uvicorn INFO noise) — the fix LLM
@@ -733,14 +759,7 @@ def _run_runtime_validation(ctx: GenerationContext) -> VerificationResult:
         has_specific = bool(parsed) and parsed.get("type") not in (None, "Unknown", "RuntimeError")
         bundle_ref = None
         if has_specific:
-            # The actual exception is at the TAIL of the traceback, not the head.
-            tail = ""
-            for line in reversed((stderr or "").splitlines()):
-                s = line.strip()
-                if s and ("Error" in s or "Exception" in s or "constraint failed" in s):
-                    tail = s
-                    break
-            message = tail or parsed.get("hint") or parsed.get("type")
+            message = _tail_error_line(stderr) or parsed.get("hint") or parsed.get("type")
             if steps_txt:
                 message = f"{message}  [CRUD journey failed — {steps_txt}]"
         elif err_type == "JourneyCRUDFailure" or journey_failed:
