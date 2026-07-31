@@ -600,6 +600,78 @@ def _patch_missing_model_imports_in_routes(project_path: Path) -> int:
     return patched
 
 
+_ROUTE_MODEL_IMPORT_RE = re.compile(r"^from app\.models\.(\w+) import (\w+)$", re.MULTILINE)
+
+
+def _patch_broken_model_import_module_in_routes(project_path: Path) -> int:
+    """
+    Exp154 (subscription_tracker, 2026-07-31): `user_routes.py` had `from
+    app.models.user import User` -- singular -- while the real model file
+    is `app/models/users.py` (plural; `auth_routes.py` in the SAME
+    project correctly used the plural path). `ModuleNotFoundError: No
+    module named 'app.models.user'` crashes the whole app at import,
+    before any endpoint can run.
+    `_patch_missing_model_imports_in_routes` (immediately above) only
+    handles a model used but never imported at all -- its own
+    `imported_names` check treats ANY `from app.models.*  import X` line
+    as satisfying X's import, regardless of whether that module path
+    actually defines X, so an already-present but WRONG import is
+    invisible to it. This is the model-import analogue of Exp149's
+    broken cross-module router import: same shape (an import that
+    resolves to the wrong sibling module), different file family.
+
+    Uses `_build_model_index` (unambiguous by class name -- the same
+    index `_patch_missing_model_imports_in_routes` already trusts) to
+    find the class's real module, and rewrites the import in place only
+    when the current module path provably does NOT define that class.
+    Never touches an import that's already correct, and never guesses
+    when a class name isn't in the index at all.
+    """
+    models_dir = project_path / "app" / "models"
+    routes_dir = project_path / "app" / "routes"
+    if not models_dir.exists() or not routes_dir.exists():
+        return 0
+
+    model_index = _build_model_index(models_dir)
+    if not model_index:
+        return 0
+
+    patched = 0
+    for rf in sorted(routes_dir.glob("*.py")):
+        try:
+            content = rf.read_text(encoding="utf-8", errors="replace")
+        except Exception:
+            continue
+
+        matches = list(_ROUTE_MODEL_IMPORT_RE.finditer(content))
+        if not matches:
+            continue
+
+        fixed: list[str] = []
+        new_content = content
+        for m in matches:
+            module, cls = m.groups()
+            meta = model_index.get(cls)
+            if not meta or not meta.get("module") or meta["module"] == module:
+                continue
+            old_line = m.group(0)
+            new_line = f"from app.models.{meta['module']} import {cls}"
+            if new_line in new_content:
+                # Already imported correctly elsewhere -- drop the broken
+                # duplicate instead of creating two imports of the same name.
+                new_content = new_content.replace(old_line + "\n", "", 1)
+            else:
+                new_content = new_content.replace(old_line, new_line, 1)
+            fixed.append(f"{old_line} -> {new_line}")
+
+        if fixed:
+            rf.write_text(new_content, encoding="utf-8")
+            patched += 1
+            print(f"  [patcher] Fixed broken model import module path(s) in {rf.name}: {fixed}")
+
+    return patched
+
+
 def _uses_session_as_bare_annotation(tree: ast.AST) -> bool:
     """True if any function parameter is annotated with the bare name
     `Session` (e.g. `db: Session = Depends(get_db)`) -- the confirmed live
@@ -9264,6 +9336,17 @@ def run_deterministic_patches(project_path: str, skip_protected_injections: bool
     # routes are the repeat offender) -- must run after alias/dedup so class
     # names and modules are final.
     _run_patch_isolated(counts, "_patch_missing_model_imports_in_routes", _patch_missing_model_imports_in_routes, root)
+
+    # A model import that's PRESENT but points at the wrong sibling module
+    # (e.g. `from app.models.user import User` when the real file is
+    # app/models/users.py) is invisible to the missing-import patcher
+    # above, which only checks whether some import of that class name
+    # exists anywhere -- ModuleNotFoundError crashes the app at import
+    # (Exp154).
+    _run_patch_isolated(
+        counts, "_patch_broken_model_import_module_in_routes",
+        _patch_broken_model_import_module_in_routes, root,
+    )
 
     # `db: Session = Depends(get_db)` used as a type annotation without
     # `from sqlalchemy.orm import Session` -- confirmed live (habit_tracker,

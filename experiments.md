@@ -9351,3 +9351,60 @@ environment (same pre-existing gap that blocked several other test
 files tonight, unrelated to this change) -- installed it to actually
 run these rather than trust an untested diff. No regressions in the
 adjacent queue-auth test suite.
+
+## Experiment 154: Broken `app.models.user` Import (Singular) When Real File Is Plural -- Fixed
+
+**Trigger**: 12-app browser-testing batch (post-Exp153), running with
+FORGE_DEPLOY_THRESHOLD temporarily lowered to 70 so more apps would
+actually deploy for live browser testing. subscription_tracker (idx 3)
+and medication_tracker (idx 6) both scored exactly 41.9/F, Runtime
+Startup 0.0, unchanged across all 5 attempts -- the same repeated-
+identical-score signal that found Exp147 and Exp148 earlier tonight.
+
+**Root cause, confirmed in BOTH apps independently**: `user_routes.py`
+contained `from app.models.user import User` (singular) while the real
+model file is `app/models/users.py` (plural) -- confirmed by reading
+both files directly off Railway's `/data` volume for both projects.
+Each project's `auth_routes.py`, generated separately, correctly used
+the plural `app.models.users` for the exact same class, so this isn't
+an app-wide naming convention drift, specifically `user_routes.py`
+guessing wrong. `ModuleNotFoundError: No module named 'app.models.user'`
+crashes the whole app at import, before any endpoint can run. Tonight's
+V6 pipeline already has a mitigation for exactly this shape (seen live
+in an earlier job's log: `[V6] Wave 2.5 -- created shim app/models/
+user.py -> User`) but it didn't fire for either of these two apps --
+worth noting as a gap in that shim-creation trigger condition, though
+not chased further tonight since the fix below is robust regardless of
+whether a shim exists.
+
+**Why the existing `_patch_missing_model_imports_in_routes` didn't
+catch this**: that patcher only injects an import when a model class is
+used but NO import of that name exists anywhere in the file -- it
+treats any `from app.models.*  import X` line as satisfying X,
+regardless of whether that specific module actually defines X. An
+already-present but wrong import is invisible to it. Same shape as
+Exp149's broken cross-module router import, one file family over.
+
+**Fix**: new patcher, `_patch_broken_model_import_module_in_routes` --
+for every `from app.models.X import Y` line in a route file, looks up
+Y's real module via the existing `_build_model_index` helper (already
+trusted elsewhere in this file), and rewrites the import to the correct
+module when X doesn't match. Drops the broken line entirely instead of
+creating a duplicate import if the correct one is already present
+elsewhere in the same file. Never touches an already-correct import or
+a class name absent from the index. Wired into `run_deterministic_
+patches` immediately after `_patch_missing_model_imports_in_routes`.
+
+**Validated**: reproduced both live projects' exact shape in a fixture
+and confirmed the rewrite; 5/5 in new `test_exp154_broken_model_import_
+module.py`; reran Exp149's suite plus `test_database_patcher_and_
+relationships` (45) and `test_inline_chain_repairs` (58) -- no
+regressions.
+
+**Batch-testing infrastructure note**: FORGE_DEPLOY_THRESHOLD alone
+doesn't force a deploy -- a separate "final visual review did not
+complete" gate independently skipped deployment for at least one app
+that scored 94.7 (above the lowered threshold). Not investigated
+further tonight; deliberately not relaxed further to avoid bypassing a
+quality gate that may exist for good reason without understanding it
+first.
