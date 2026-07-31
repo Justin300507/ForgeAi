@@ -1564,6 +1564,20 @@ class FixOrchestrator:
             regression_detected = True
 
         if regression_detected:
+            # Exp156: evict any cached fix for a group in this attempt --
+            # a replayed cache entry that just caused a regression is now
+            # proven bad in this context; leaving it cached would replay
+            # the identical broken content on every future attempt/app
+            # that hits the same diagnostic hash. Revert first so eviction
+            # never affects the snapshot restore itself.
+            try:
+                from app.knowledge.failure_db import fix_cache
+                for g in groups:
+                    if fix_cache.evict(g.diagnostics):
+                        print(f"    [fix] Evicted stale cached fix for group {g.group_id} "
+                              f"(its replay just caused this regression)")
+            except Exception as exc:
+                print(f"    [fix] Cache eviction warning: {exc}")
             snapshot.revert()
             ve.run(ctx, run_llm_judge=False)
             score_after_obj = se.score(ctx, attempt_number=cfg.attempt)

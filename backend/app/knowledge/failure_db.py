@@ -306,6 +306,39 @@ class FixCache:
         except Exception:
             return None
 
+    def evict(self, diagnostics: list) -> bool:
+        """
+        Exp156 (habit_tracker, 2026-07-31): a cached fix stored before the
+        "only cache on confirmed success" gate existed (or one whose
+        context-dependent content happens to regress in a DIFFERENT
+        project than it was proven in) gets replayed verbatim forever --
+        `lookup()` has no expiry and `store()` only ever overwrites with a
+        newer fix, never removes a bad one. Confirmed live: `app/schemas/
+        stats.py`'s cached fix contained `Field(None, min_length=1,
+        default=None)` -- `default` supplied both positionally and by
+        keyword, a hard TypeError at import time -- and every single
+        repair attempt replayed it via cache HIT, regressed, reverted,
+        then replayed the identical broken content again next attempt.
+        Same "stuck forever, 3 attempts, no improvement" shape as
+        Exp146's oscillation, different mechanism: no LLM re-guessing, a
+        cache that never forgets a mistake.
+
+        Call when a group's cached fix is confirmed to have caused (or
+        coincided with) a reverted regression, so the NEXT occurrence of
+        this exact diagnostic pattern goes to a fresh LLM call instead of
+        replaying the same proven-bad content. Returns True if an entry
+        was actually removed.
+        """
+        if not diagnostics or not _is_cacheable(diagnostics):
+            return False
+        h = _diagnostic_hash(diagnostics)
+        if h not in self._data:
+            return False
+        del self._data[h]
+        self._rebuild_normalized_index()
+        self._save()
+        return True
+
     def lookup_fuzzy(self, diagnostics: list) -> Optional[CachedFix]:
         """
         Second-tier lookup, meant to be consulted only after an exact

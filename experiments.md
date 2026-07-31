@@ -9591,3 +9591,70 @@ on multiple named imports from one module, never touches a bare
 package import, never touches an unresolvable path, no-src-dir no-op).
 Reran all adjacent orchestrator-touching suites -- 79/79 combined, no
 regressions.
+
+## Experiment 156: Poisoned FixCache Entry Never Evicted -- Fixed
+
+**Trigger**: user pasted ANOTHER fresh `habit_tracker` generation
+(2026-07-31, post-Exp146 deploy) that ALSO scored 41.9/F -- but this
+one was NOT the useAuth/PrivateRoute oscillation. A different bug, same
+"stuck forever" symptom.
+
+**Root cause, confirmed by reading the live file directly off the
+`/data` volume**: `app/schemas/stats.py`'s `StatsUpdate` class contained
+`title: Optional[str] = Field(None, min_length=1, default=None)` --
+`default` supplied BOTH positionally (`None`) AND as the keyword
+`default=None`. Pydantic v2's `Field()` takes `default` as its first
+positional parameter, so this is `TypeError: __init__() got multiple
+values for argument 'default'` -- a hard crash at class-definition time
+(the moment the schema module is imported), before any endpoint can
+run. Every one of this job's repair attempts logged `[fix] Group [1]
+Runtime crash... [LLM cache] HIT (fix) -- 0 tokens billed... [fix]
+Patched: app/schemas/stats.py`, then `REGRESSION: 1 new error(s) with
+no score improvement... Reverted to pre-fix snapshot` -- the SAME
+broken content was being replayed from the fix cache, causing the SAME
+regression, getting reverted, then replayed again next attempt.
+Identical to Exp146's "stuck, 3 attempts, zero improvement" shape, but
+via a completely different mechanism: not an LLM re-guessing wrong, a
+cache that never forgets a mistake it made once.
+
+**Why this could happen**: `orchestrator.py` already gates NEW cache
+writes on confirmed success (`if success and group_fix_contents: ...
+fix_cache.store(...)`, added in an earlier experiment specifically to
+stop caching failed fixes) -- but that gate only prevents adding BAD
+entries going forward. It does nothing about an entry that was ALREADY
+in the cache from before that gate existed, or one whose content is
+only broken in THIS project's specific context even though it worked
+elsewhere. `FixCache.lookup()`/`store()` had no expiry or removal path
+at all -- a bad entry, once written, replays forever.
+
+**Fix**: new `FixCache.evict(diagnostics)` (failure_db.py) -- removes
+the cache entry for a diagnostic hash and persists immediately. Wired
+into `run_attempt`'s regression-handling block (`orchestrator.py`):
+when a regression is detected and the snapshot gets reverted, evict the
+cache entry for every group in the attempt that currently has one.
+Deliberately broad (evicts for every group present, not just a
+precisely-attributed culprit) -- the cost of evicting an innocent
+entry is a few cents on its next occurrence (fresh LLM call instead of
+a cache hit); the cost of NOT evicting a guilty one is an infinite
+stall, so the asymmetry favors erring toward eviction.
+
+**Validated**: new `test_exp156_fix_cache_eviction.py`, 4/4 passing
+(removes an entry, eviction persists across a fresh `FixCache()`
+reload from disk -- the part that actually matters, since the next job
+is a new process --, safe no-op on a diagnostic never cached, doesn't
+disturb unrelated entries). No regressions in the adjacent `test_
+exp133_fuzzy_fix_cache.py` (19) or `test_exp146_frontend_import_
+export_reconciliation.py` (7).
+
+**Also found, not fixed tonight**: the same job's frontend generated an
+`EditProfilePage.jsx` calling `PUT /auth/me`, an endpoint the
+deterministic "known-good" `auth_routes.py` template has never defined
+(only `GET /auth/me`) -- architecture-repair's own one-off attempt to
+add it was itself broken (referenced an undefined `db` with no
+`Depends(get_db)` parameter) and got overwritten by the good template
+moments later, permanently losing the endpoint. Lower urgency than the
+cache-eviction fix (this app's real blocker was the poisoned cache, not
+this), but worth a future session: either add `PUT /auth/me` to the
+known-good template, or stop the missing-file/orphan-page-wiring path
+from creating a profile-edit page when the backend has no matching
+capacity to support it.
