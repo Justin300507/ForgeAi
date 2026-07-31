@@ -9727,3 +9727,69 @@ longer survive being proven bad twice in a row -- FixCache forgets it
 immediately on the first regression, and the underlying LLM call that
 would have produced the identical bad content again on retry now
 always gets a fresh shot instead of replaying itself.
+
+## Experiment 158: Constructor-Call Scan Fabricating Scalar Columns for Relationship Fields
+
+**Trigger**: user pasted a live `habit_tracker` generation log
+(2026-07-31) stuck oscillating 74.7 <-> 68/70 across all 4 fix
+attempts (patch_file, regenerate_module x2, switch_model), never
+escaping "needs repair". `POST /users`, `PUT /users/{id}`, and
+`PUT /habits/{id}` 500'd identically on every attempt with
+`ResponseValidationError` / `pydantic_core._pydantic_core.PydanticSerializationError`.
+
+**Root cause**: `patch_add_missing_model_columns()` in
+`database_patcher.py` has two independent scans feeding one
+`missing_by_class` dict -- a response-schema scan (already guarded:
+skips fields typed `List[...]`, since those are relationships, not
+scalar columns -- left for the LLM to add a real `relationship()`) and
+a route-constructor-call scan with *no* such guard. Wave 2.5 strips any
+`relationship()` lacking FK backing straight off the model, but
+generated route code (typically seed data) still constructs the model
+with those now-nonexistent kwargs, e.g. `User(..., badges=[],
+habits=[])`. The constructor-call scan saw `badges`/`habits` as
+"missing" with zero type information and fabricated
+`badges = Column(String, server_default='', nullable=False)`. The
+response schema still expected `List[BadgeResponse]`, so every
+response serializing a `User`/`Habit` crashed trying to serialize a
+bare string as a list -- worse than the `TypeError` it would have
+raised unpatched, and a stable failure signature the fix loop could
+never clear because the deterministic preflight patcher re-poisoned
+the model on every single repair pass.
+
+**Fix**: the schema scan now records which fields are List-shaped per
+class instead of silently discarding that information. That set purges
+the same fields from `missing_by_class` regardless of which scan found
+them (so the constructor-call scan can no longer fabricate a column
+for a relationship field), and a new pass strips the dangling
+relationship kwargs directly out of the constructor calls -- safe,
+since a freshly-constructed row correctly starts with no related rows.
+
+**Validated**: new
+`test_patch_add_missing_model_columns_skips_list_shaped_response_fields`
+reproduces the exact `habit_tracker` shape (model with relationships
+already stripped, seed route still passing `badges=[]`/`habits=[]`,
+response schema still typing them `List[str]`) -- confirms no bogus
+column is added and the dangling kwargs are cleanly removed. Full
+suite: 46/46 passing (was 45; the 3 pre-existing
+`_patch_filtered_ctor_kwarg_collision` NameError failures in
+`test_runtime_fix_loop_scope.py` reproduce identically on `main` with
+this change stashed out -- confirmed unrelated).
+
+**Canary** (`--no-deploy`, local Windows): all three apps regressed
+(todo 97.4->41.9, blog_cms 96.1->37.5, crm 92.5->80.7) but all three
+are confirmed unrelated to this change -- grepped the full canary log
+and this fix's code paths (`Added missing column(s)` /
+`Stripped relationship-shaped constructor kwarg(s)`) never fired for
+any of the three apps. Root-caused each regression directly by
+importing the generated app: todo crashed on
+`app/schemas/stats.py`'s `Field(None, min_length=1, default=None)`
+(positional value colliding with the `default=` kwarg -- a distinct,
+pre-existing bug in a different patcher); blog_cms crashed on
+`tag_routes.py`'s FastAPI route-parameter handling
+(`assert field_info_in == params.ParamTypes.cookie` -- also
+pre-existing and unrelated); crm's browser/blank-page regression has
+no code path this change could have touched at all. Textbook case of
+the "regression turns out to be unrelated LLM generation variance, not
+the change under test" scenario -- logged honestly per the experiment
+workflow rather than reverting a fix with no plausible mechanism to
+have caused what was observed.

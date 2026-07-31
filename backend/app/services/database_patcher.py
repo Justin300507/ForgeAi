@@ -586,6 +586,11 @@ def patch_add_missing_model_columns(project_path: str) -> int:
 
     # ClassName -> {missing field names}
     missing_by_class: dict[str, set] = {}
+    # ClassName -> {field names the response schema types as List[...]} --
+    # these are relationships, not scalar columns; populated below once the
+    # schemas are scanned, then used to purge any same-named field that the
+    # constructor-call scan (loop below) picked up with no type information.
+    list_shaped_by_class: dict[str, set] = {}
     for rf in routes_dir.glob("*.py"):
         try:
             src = rf.read_text(encoding="utf-8", errors="replace")
@@ -672,6 +677,7 @@ def patch_add_missing_model_columns(project_path: str) -> int:
                     if _is_optional_annotation(child.annotation):
                         continue
                     if _is_list_annotation(child.annotation):
+                        list_shaped_by_class.setdefault(cls_name, set()).add(field)
                         continue
                     missing_by_class.setdefault(cls_name, set()).add(field)
 
@@ -829,6 +835,19 @@ def patch_add_missing_model_columns(project_path: str) -> int:
 
     missing_by_class = {c: f for c, f in missing_by_class.items() if f}
 
+    # Never synthesize a scalar column for a field the response schema types
+    # as List[...] -- it can only have reached missing_by_class via the
+    # constructor-call scan above, which has no type information and would
+    # otherwise fabricate e.g. `badges = Column(String, ...)` for a
+    # `badges: List[BadgeResponse]` field. That corrupts every response
+    # serializing the model (PydanticSerializationError / 500 on every
+    # request touching it) -- worse than the TypeError it would have raised
+    # unpatched. The dangling constructor kwarg itself is stripped below.
+    for cls_name, list_fields in list_shaped_by_class.items():
+        if cls_name in missing_by_class:
+            missing_by_class[cls_name] -= list_fields
+    missing_by_class = {c: f for c, f in missing_by_class.items() if f}
+
     for cls_name, fields in missing_by_class.items():
         mf, valid_cols = model_info[cls_name]
         try:
@@ -881,7 +900,58 @@ def patch_add_missing_model_columns(project_path: str) -> int:
             patched_files.add(mf.name)
             print(f"  [field_patcher] Added missing column(s) {sorted(fields)} to {cls_name} in {mf.name}")
 
-    return len(patched_files) + len(orphan_patched)
+    # Strip constructor kwargs that pass a relationship-shaped field directly
+    # (e.g. `User(..., badges=[], habits=[])`). These have no column and no
+    # relationship() left on the model (Wave 2.5 strips any relationship()
+    # lacking FK backing), so left in place they raise
+    # `TypeError: 'badges' is an invalid keyword argument for User` on the
+    # very first request that hits this constructor. Dropping the kwarg is
+    # safe: a freshly-constructed row simply starts with no related rows,
+    # which is the correct default.
+    route_patched_files = set()
+    if list_shaped_by_class:
+        kwarg_re_cache = {
+            cls_name: re.compile(rf"\b{cls_name}\(([^)]+)\)", re.DOTALL)
+            for cls_name in list_shaped_by_class
+        }
+        for rf in routes_dir.glob("*.py"):
+            try:
+                src = rf.read_text(encoding="utf-8", errors="replace")
+            except Exception:
+                continue
+            original = src
+            stripped_fields: set = set()
+
+            for cls_name, list_fields in list_shaped_by_class.items():
+                if not list_fields or cls_name not in src:
+                    continue
+
+                def _strip_kwargs(m, _fields=list_fields, _stripped=stripped_fields):
+                    parts = re.split(r",\s*\n?", m.group(1))
+                    kept = []
+                    for part in parts:
+                        kv = part.strip()
+                        field = kv.split("=", 1)[0].strip() if "=" in kv else None
+                        if field in _fields:
+                            _stripped.add(field)
+                            continue
+                        if kv:
+                            kept.append(kv)
+                    return f"{m.group(0).split('(', 1)[0]}({', '.join(kept)})"
+
+                src = kwarg_re_cache[cls_name].sub(_strip_kwargs, src)
+
+            if src != original:
+                rf.write_text(src, encoding="utf-8")
+                route_patched_files.add(rf.name)
+                print(
+                    f"  [field_patcher] Stripped relationship-shaped constructor "
+                    f"kwarg(s) {sorted(stripped_fields)} from {rf.name} "
+                    f"(no column, no relationship — response schema needs a "
+                    f"real fix, not a fabricated scalar)"
+                )
+
+    return len(patched_files) + len(orphan_patched) + len(route_patched_files)
 
 
 _CTOR_CALL_RE = re.compile(r"\b(\w+)\(([^()]*(?:\([^()]*\)[^()]*)*)\)")

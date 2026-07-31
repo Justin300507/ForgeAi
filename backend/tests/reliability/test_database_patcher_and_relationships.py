@@ -239,6 +239,86 @@ def test_patch_add_missing_model_columns_noop_missing_dirs():
         assert dbp.patch_add_missing_model_columns(td) == 0
 
 
+_USER_MODEL_NO_RELATIONSHIPS = (
+    "from sqlalchemy import Column, Integer, String\n"
+    "from app.database import Base\n\n"
+    "class User(Base):\n"
+    "    __tablename__ = 'users'\n"
+    "    id = Column(Integer, primary_key=True, index=True)\n"
+    "    username = Column(String, nullable=False)\n"
+    "    email = Column(String, nullable=False)\n"
+    "    password = Column(String, nullable=False)\n"
+)
+
+_USER_RESPONSE_SCHEMA_WITH_LIST_FIELDS = (
+    "from pydantic import BaseModel\n"
+    "from typing import List\n\n"
+    "class UserResponse(BaseModel):\n"
+    "    id: int\n"
+    "    username: str\n"
+    "    email: str\n"
+    "    badges: List[str]\n"
+    "    habits: List[str]\n\n"
+    "    class Config:\n"
+    "        from_attributes = True\n"
+)
+
+_USER_ROUTES_RESPONSE_MODEL_WIRING = (
+    "from fastapi import APIRouter\n"
+    "from app.schemas.user import UserResponse\n\n"
+    "router = APIRouter()\n\n"
+    "@router.get('/users/{id}', response_model=UserResponse)\n"
+    "def get_user(id: int):\n"
+    "    ...\n"
+)
+
+_SEED_ROUTE_CONSTRUCTS_WITH_RELATIONSHIP_KWARGS = (
+    "from fastapi import APIRouter\n"
+    "from app.models.users import User\n\n"
+    "router = APIRouter()\n\n"
+    "@router.post('/seed')\n"
+    "def seed(db):\n"
+    "    user1 = User(username='alice', email='alice@example.com', "
+    "password='x', badges=[], habits=[])\n"
+    "    db.add(user1)\n"
+)
+
+
+def test_patch_add_missing_model_columns_skips_list_shaped_response_fields():
+    """Regression test for the habit_tracker production bug (2026-07-31):
+    Wave 2.5 strips relationship() declarations lacking FK backing, but
+    generated route code (e.g. seed data) still constructs the model with
+    the now-nonexistent relationship kwargs (`User(..., badges=[], habits=[])`),
+    and the response schema still types them as `List[...]`. The
+    constructor-call scan (loop 1, no type info) used to fabricate a plain
+    scalar column (`badges = Column(String, ...)`) for these, which then
+    made every response serializing a User raise PydanticSerializationError
+    (500 on POST /users, PUT /users/{id}, etc.) because a bare string can't
+    satisfy a `List[BadgeResponse]` field -- worse than the TypeError it
+    would have raised unpatched. Fields the schema types as List[...] must
+    never get a synthesized column, regardless of which scan found them."""
+    with tempfile.TemporaryDirectory() as td:
+        proj = _mk_project(
+            td,
+            models={"users.py": _USER_MODEL_NO_RELATIONSHIPS},
+            routes={
+                "seed_routes.py": _SEED_ROUTE_CONSTRUCTS_WITH_RELATIONSHIP_KWARGS,
+                "user_routes.py": _USER_ROUTES_RESPONSE_MODEL_WIRING,
+            },
+            schemas={"user.py": _USER_RESPONSE_SCHEMA_WITH_LIST_FIELDS},
+        )
+        dbp.patch_add_missing_model_columns(str(proj))
+
+        model_out = (proj / "app" / "models" / "users.py").read_text(encoding="utf-8")
+        assert "badges = Column" not in model_out
+        assert "habits = Column" not in model_out
+
+        seed_out = (proj / "app" / "routes" / "seed_routes.py").read_text(encoding="utf-8")
+        assert "badges=" not in seed_out
+        assert "habits=" not in seed_out
+        assert "username='alice'" in seed_out  # other kwargs untouched
+
+
 # ─── patch_missing_required_constructor_kwargs ────────────────────────────
 
 _HABIT_MODEL = (
