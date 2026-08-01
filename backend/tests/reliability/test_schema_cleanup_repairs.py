@@ -294,6 +294,81 @@ def test_pydantic_date_field_type_collision_uses_module_alias():
     assert "date: _datetime.date" in content
 
 
+def test_pydantic_optional_date_field_type_collision_uses_module_alias():
+    """Regression test (freelance_portfolio_manager, 2026-08-01): the
+    bare-`date: date` check missed the far more common `Optional[date]`
+    shape (an ast.Subscript, not ast.Name) -- every *Update/*Response
+    schema wraps fields Optional for partial-update support, so a field
+    named `date` almost always appears as `Optional[date]` in practice,
+    and that shape crashed with PydanticSchemaGenerationError exactly
+    like the unwrapped one, just never got caught."""
+    root = _make_project({
+        "app/schemas/event.py": (
+            "from datetime import date\nfrom pydantic import BaseModel, Field\n"
+            "from typing import Optional\n\n"
+            "class EventUpdate(BaseModel):\n"
+            "    title: Optional[str] = None\n"
+            "    date: Optional[date] = Field(default=None)\n\n"
+            "class EventResponse(BaseModel):\n"
+            "    id: int\n"
+            "    date: Optional[date] = None\n"
+        ),
+    })
+    n = _patch_pydantic_field_type_name_collisions(root)
+    content = (root / "app/schemas/event.py").read_text(encoding="utf-8")
+    assert n == 1
+    assert "import datetime as _datetime" in content
+    assert content.count("date: Optional[_datetime.date]") == 2
+    # Untouched sibling field must survive verbatim.
+    assert "title: Optional[str] = None" in content
+
+    # Compile-execute for real -- this is a runtime PydanticSchemaGenerationError,
+    # not a SyntaxError, so a parse-only check wouldn't catch a regression.
+    import subprocess
+    import sys as _sys
+    schema_path = root / "app" / "schemas" / "event.py"
+    result = subprocess.run(
+        [_sys.executable, "-c", f"exec(compile(open(r'{schema_path}').read(), 'event.py', 'exec'))"],
+        capture_output=True, text=True,
+    )
+    _cleanup(root)
+    assert result.returncode == 0, f"patched schema still fails to import: {result.stderr}"
+
+
+def test_pydantic_time_field_type_collision_uses_module_alias():
+    """Same collision mechanism as the `date` case, confirmed live with a
+    different datetime-module name in the same 50-app batch (running_club,
+    classroom_attendance_tracker, 2026-08-01): `time: time = Field(...)`
+    raised PydanticUserError for the identical reason. The fix generalized
+    from a hardcoded `date`-only check to _DATETIME_COLLISION_NAMES."""
+    root = _make_project({
+        "app/schemas/session.py": (
+            "from datetime import time\nfrom pydantic import BaseModel, Field\n"
+            "from typing import Optional\n\n"
+            "class SessionCreate(BaseModel):\n"
+            "    time: time = Field(...)\n\n"
+            "class SessionUpdate(BaseModel):\n"
+            "    time: Optional[time] = None\n"
+        ),
+    })
+    n = _patch_pydantic_field_type_name_collisions(root)
+    content = (root / "app/schemas/session.py").read_text(encoding="utf-8")
+    assert n == 1
+    assert "import datetime as _datetime" in content
+    assert "time: _datetime.time = Field(...)" in content
+    assert "time: Optional[_datetime.time] = None" in content
+
+    import subprocess
+    import sys as _sys
+    schema_path = root / "app" / "schemas" / "session.py"
+    result = subprocess.run(
+        [_sys.executable, "-c", f"exec(compile(open(r'{schema_path}').read(), 'session.py', 'exec'))"],
+        capture_output=True, text=True,
+    )
+    _cleanup(root)
+    assert result.returncode == 0, f"patched schema still fails to import: {result.stderr}"
+
+
 def test_nullable_mismatch_noop_when_column_not_nullable():
     schema = "from pydantic import BaseModel\n\nclass HabitResponse(BaseModel):\n    id: int\n    name: str\n"
     root = _make_project({"app/models/habit.py": _HABIT_MODEL, "app/schemas/habit.py": schema})

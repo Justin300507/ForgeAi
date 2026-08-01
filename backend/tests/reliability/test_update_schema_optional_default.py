@@ -170,6 +170,43 @@ class ItemUpdate(BaseModel):
     assert "name: Optional[str] = Field(None, min_length=1)" in out
 
 
+def test_non_optional_field_with_existing_default_kwarg_not_duplicated():
+    """Regression test (2026-08-01, found via a 50-app batch run): the LLM
+    commonly emits a non-Optional field whose Field() call already supplies
+    `default=None` as a keyword arg (823 cached backend_generation
+    responses have exactly this shape) -- e.g.
+    `title: str = Field(min_length=1, default=None)`. The non-Optional
+    wrapping branch used to prepend a positional `None,` unconditionally,
+    producing `Field(None, min_length=1, default=None)`, which raises
+    `TypeError: Field() got multiple values for argument 'default'` at
+    import time -- confirmed live across 5 independently-generated apps in
+    one batch (all crashing identically on app/schemas/stats.py)."""
+    schema = '''\
+from pydantic import BaseModel, Field
+
+class StatsUpdate(BaseModel):
+    title: str = Field(min_length=1, default=None)
+    description: str = Field(min_length=1, default=None)
+'''
+    root = _make_project({"app/schemas/stats.py": schema})
+    n = _patch(root)
+    out = (root / "app" / "schemas" / "stats.py").read_text(encoding="utf-8")
+    assert n == 1
+    ast.parse(out)  # would raise if the double-default shape were reproduced (though that's only a runtime TypeError, not a SyntaxError -- the real check is below)
+    assert "Field(None, min_length=1, default=None)" not in out
+    assert "title: Optional[str] = Field(min_length=1, default=None)" in out
+    assert "description: Optional[str] = Field(min_length=1, default=None)" in out
+
+    # Compile-execute it for real -- this is a runtime TypeError, not a
+    # SyntaxError, so ast.parse alone wouldn't catch a regression.
+    import subprocess
+    result = subprocess.run(
+        [sys.executable, "-c", f"import ast; exec(compile(open(r'{root / 'app' / 'schemas' / 'stats.py'}').read(), 'stats.py', 'exec'))"],
+        capture_output=True, text=True,
+    )
+    assert result.returncode == 0, f"generated schema failed to import: {result.stderr}"
+
+
 def test_create_and_response_schemas_never_touched():
     # Only *Update classes are in scope -- Create schemas legitimately
     # require their fields, and Response schemas are a different concern.

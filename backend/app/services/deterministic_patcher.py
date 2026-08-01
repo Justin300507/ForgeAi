@@ -3717,7 +3717,18 @@ def _patch_update_schema_optional_field_missing_default(project_path: Path) -> i
                         return f"{indent}{field_name}: {new_ann} = None{trailing_ws}"
                     if rhs.startswith("Field("):
                         inner = rhs[len("Field("):].rstrip(")").strip()
-                        if inner.startswith("..."):
+                        if re.search(r'\bdefault(_factory)?\s*=', inner):
+                            # Field(...) already supplies a default via a
+                            # keyword arg (e.g. the LLM's own
+                            # `Field(min_length=1, default=None)`, confirmed
+                            # a common shape in cached responses) --
+                            # prepending a positional None too collides
+                            # with it ("Field() got multiple values for
+                            # argument 'default'"). Optional[...] alone
+                            # already widens the type; the kwarg default
+                            # makes it optional for construction.
+                            pass
+                        elif inner.startswith("..."):
                             inner = "None" + inner[3:]
                         elif inner:
                             inner = f"None, {inner}"
@@ -4112,8 +4123,28 @@ def _patch_bare_pydantic_from_attributes(project_path: Path) -> int:
     return patched
 
 
+_DATETIME_COLLISION_NAMES = ("date", "time", "datetime")
+
+
 def _patch_pydantic_field_type_name_collisions(project_path: Path) -> int:
-    """Avoid Pydantic v2 annotation evaluation collisions such as ``date: date``."""
+    """Avoid Pydantic v2 annotation evaluation collisions such as ``date: date``,
+    ``date: Optional[date]``, ``time: time``, or ``time: Optional[time]``.
+
+    A field literally named the same as an imported `datetime` module type
+    it's annotated with (`date`, `time`, `datetime`) assigns a FieldInfo to
+    that class-body name the moment its own line executes -- which shadows
+    the imported type by the time Pydantic v2 re-resolves annotations at
+    deferred model-construction time (not at class-body-exec time), raising
+    `PydanticSchemaGenerationError` / `PydanticUserError: ... field name
+    clashing with a type annotation`. Confirmed live twice in the same
+    50-app batch (2026-08-01): `date: date` / `Optional[date]`
+    (freelance_portfolio_manager, car_maintenance_log, ...) and the
+    identical mechanism with `time: time` (running_club,
+    classroom_attendance_tracker) -- originally only `date` was covered,
+    and only the bare (non-Optional) shape at that; both gaps are closed
+    here by covering the full `_DATETIME_COLLISION_NAMES` set in both the
+    bare and `Optional[...]`-wrapped shapes.
+    """
     import ast as _ast
 
     schemas_dir = project_path / "app" / "schemas"
@@ -4135,14 +4166,34 @@ def _patch_pydantic_field_type_name_collisions(project_path: Path) -> int:
                 if not (
                     isinstance(child, _ast.AnnAssign)
                     and isinstance(child.target, _ast.Name)
-                    and child.target.id == "date"
-                    and isinstance(child.annotation, _ast.Name)
-                    and child.annotation.id == "date"
+                    and child.target.id in _DATETIME_COLLISION_NAMES
                     and child.lineno == child.end_lineno
                 ):
                     continue
+                name = child.target.id
+                ann = child.annotation
+                is_bare = isinstance(ann, _ast.Name) and ann.id == name
+                is_optional = (
+                    isinstance(ann, _ast.Subscript)
+                    and isinstance(ann.value, _ast.Name)
+                    and ann.value.id == "Optional"
+                    and isinstance(ann.slice, _ast.Name)
+                    and ann.slice.id == name
+                )
+                if not (is_bare or is_optional):
+                    continue
                 index = child.lineno - 1
-                lines[index] = re.sub(r"\bdate\s*:\s*date\b", "date: _datetime.date", lines[index], count=1)
+                if is_bare:
+                    lines[index] = re.sub(
+                        rf"\b{name}\s*:\s*{name}\b", f"{name}: _datetime.{name}",
+                        lines[index], count=1,
+                    )
+                else:
+                    lines[index] = re.sub(
+                        rf"\b{name}\s*:\s*Optional\[\s*{name}\s*\]",
+                        f"{name}: Optional[_datetime.{name}]",
+                        lines[index], count=1,
+                    )
                 changed = True
         if not changed:
             continue
