@@ -162,7 +162,7 @@
     "regenerate_arch": {
       "generation": 1,
       "successes": 0,
-      "tries": 2
+      "tries": 3
     },
     "regenerate_module": {
       "generation": 2,

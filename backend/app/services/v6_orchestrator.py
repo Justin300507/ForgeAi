@@ -723,7 +723,8 @@ def generate_project_v6(
                 architecture, architecture_errors, provider,
                 required_exports={},
                 required_endpoints=_required_endpoints_from_errors(architecture_errors),
-                existing_symbols=_collect_existing_symbols(project_path)
+                existing_symbols=_collect_existing_symbols(project_path),
+                project_path=project_path
             )
             _llm["repairs"] += 1
             if arch_fix and isinstance(arch_fix, dict) and arch_fix.get("files"):

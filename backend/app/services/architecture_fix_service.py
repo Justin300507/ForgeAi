@@ -1,9 +1,68 @@
 import json
 import re
+import os
+import ast
+from pathlib import Path
+from typing import Optional
 
 from app.providers.ai_provider import generate_content
 from app.utils.json_cleaner import extract_json
 from app.prompts.shared_contract import FASTAPI_CONTRACT
+
+
+def _extract_model_context(project_path: Optional[str], max_files: int = 5) -> str:
+    """Extract model/schema definitions for LLM grounding."""
+    if not project_path or not os.path.exists(project_path):
+        return ""
+
+    context = "\n\nMODEL & SCHEMA CONTEXT:\n"
+    file_count = 0
+
+    for subdir in ("models", "schemas"):
+        dir_path = os.path.join(project_path, "app", subdir)
+        if not os.path.exists(dir_path):
+            continue
+
+        for file in sorted(os.listdir(dir_path)):
+            if not file.endswith(".py") or file == "__init__.py":
+                continue
+            if file_count >= max_files:
+                break
+
+            file_path = os.path.join(dir_path, file)
+            try:
+                with open(file_path, "r", encoding="utf-8") as f:
+                    lines = f.readlines()[:15]
+                    context += f"\n{subdir}/{file}:\n" + "".join(lines)
+                file_count += 1
+            except Exception:
+                continue
+
+    return context if file_count > 0 else ""
+
+
+def _extract_example_route(project_path: Optional[str]) -> str:
+    """Extract working route implementation as example."""
+    if not project_path or not os.path.exists(project_path):
+        return ""
+
+    routes_dir = os.path.join(project_path, "app", "routes")
+    if not os.path.exists(routes_dir):
+        return ""
+
+    for file in sorted(os.listdir(routes_dir)):
+        if file.endswith(".py") and file != "__init__.py":
+            try:
+                with open(os.path.join(routes_dir, file), "r", encoding="utf-8") as f:
+                    content = f.read()
+                    lines = content.split("\n")[:25]
+                    example = "\n".join(lines)
+                    if "def " in example and len(example) > 200:
+                        return f"\nEXAMPLE WORKING ROUTE ({file}):\n{example}"
+            except Exception:
+                continue
+
+    return ""
 
 
 def generate_architecture_fix(
@@ -12,7 +71,8 @@ def generate_architecture_fix(
     provider,
     required_exports=None,
     required_endpoints=None,
-    existing_symbols=None
+    existing_symbols=None,
+    project_path=None
 ):
 
     required_exports = required_exports or {}
@@ -41,6 +101,9 @@ def generate_architecture_fix(
         for file_path, names in existing_symbols.items():
             existing_block += f"{file_path} already defines: {', '.join(names)}\n"
 
+    model_context = _extract_model_context(project_path)
+    example_route = _extract_example_route(project_path)
+
     prompt = f"""
 You are ForgeAI Architecture Repair Agent.
 
@@ -50,7 +113,7 @@ You are ForgeAI Architecture Repair Agent.
 
 {endpoints_block}
 
-{existing_block}
+{existing_block}{model_context}{example_route}
 
 Architecture:
 
@@ -64,6 +127,10 @@ Your task:
 
 Regenerate ONLY the files necessary to fix the validation errors.
 
+CRITICAL: Every endpoint handler MUST have a real, complete implementation.
+NEVER create placeholder functions like "return []" or "pass". Use the model/schema
+definitions and example routes above to implement real database operations.
+
 Requirements:
 
 - Fix every validation error
@@ -74,12 +141,13 @@ Requirements:
 - Preserve services
 - Preserve every symbol listed under REQUIRED EXPORTS above, exactly as named
 - Implement every endpoint listed under REQUIRED ENDPOINTS above, exactly as listed,
-  including the exact path string with no missing prefixes
+  including the exact path string with no missing prefixes, with REAL implementations
 - Reuse every symbol listed under EXISTING SYMBOLS above — do not invent
   alternative names for things that already exist elsewhere in the project
 - NEVER reference a service, model, or schema class unless you also
   generate that exact file in this same response
 - Follow the PROJECT CONTRACT above exactly
+- Every route handler MUST query the database or return real data, never placeholders
 
 Return ONLY valid JSON.
 

@@ -1168,6 +1168,7 @@ def _regenerate_module(
                 [d.message for d in group.diagnostics],
                 cfg.provider,
                 required_endpoints=required_endpoints_map,
+                project_path=ctx.project_path,
             )
             for f in (fix_data or {}).get("files", []):
                 rel = f.get("path", "")

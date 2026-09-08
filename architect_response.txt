@@ -1,0 +1,234 @@
+{
+  "api_endpoints": [
+    {
+      "method": "GET",
+      "path": "/posts?search=&tag=&limit=&offset=",
+      "description": "Retrieve a list of published blog posts with optional search and filtering by tags.",
+      "file": "app/routes/post_routes.py"
+    },
+    {
+      "method": "GET",
+      "path": "/posts/{id}",
+      "description": "Retrieve a specific blog post by ID.",
+      "file": "app/routes/post_routes.py"
+    },
+    {
+      "method": "POST",
+      "path": "/posts",
+      "description": "Create a new blog post.",
+      "file": "app/routes/post_routes.py"
+    },
+    {
+      "method": "PUT",
+      "path": "/posts/{id}",
+      "description": "Update an existing blog post.",
+      "file": "app/routes/post_routes.py"
+    },
+    {
+      "method": "DELETE",
+      "path": "/posts/{id}",
+      "description": "Delete a blog post by ID.",
+      "file": "app/routes/post_routes.py"
+    },
+    {
+      "method": "GET",
+      "path": "/authors/{id}/posts?search=&status=&limit=&offset=",
+      "description": "Retrieve a list of posts by a specific author with optional search and filtering by status.",
+      "file": "app/routes/author_routes.py"
+    },
+    {
+      "method": "GET",
+      "path": "/authors/{id}",
+      "description": "Retrieve author details by ID.",
+      "file": "app/routes/author_routes.py"
+    },
+    {
+      "method": "POST",
+      "path": "/authors",
+      "description": "Create a new author.",
+      "file": "app/routes/author_routes.py"
+    },
+    {
+      "method": "PUT",
+      "path": "/authors/{id}",
+      "description": "Update an existing author.",
+      "file": "app/routes/author_routes.py"
+    },
+    {
+      "method": "DELETE",
+      "path": "/authors/{id}",
+      "description": "Delete an author by ID.",
+      "file": "app/routes/author_routes.py"
+    },
+    {
+      "method": "GET",
+      "path": "/tags?search=",
+      "description": "Retrieve a list of tags with optional search.",
+      "file": "app/routes/tag_routes.py"
+    },
+    {
+      "method": "GET",
+      "path": "/tags/{id}",
+      "description": "Retrieve a specific tag by ID.",
+      "file": "app/routes/tag_routes.py"
+    },
+    {
+      "method": "POST",
+      "path": "/tags",
+      "description": "Create a new tag.",
+      "file": "app/routes/tag_routes.py"
+    },
+    {
+      "method": "PUT",
+      "path": "/tags/{id}",
+      "description": "Update an existing tag.",
+      "file": "app/routes/tag_routes.py"
+    },
+    {
+      "method": "DELETE",
+      "path": "/tags/{id}",
+      "description": "Delete a tag by ID.",
+      "file": "app/routes/tag_routes.py"
+    },
+    {
+      "method": "POST",
+      "path": "/seed",
+      "description": "Populates database with realistic demo data.",
+      "file": "app/routes/seed_routes.py"
+    },
+    {
+      "method": "GET",
+      "path": "/stats/summary",
+      "description": "Returns aggregate counts and key metrics for the dashboard.",
+      "file": "app/routes/stats_routes.py"
+    }
+  ],
+  "database_schema": [
+    {
+      "table_name": "posts",
+      "columns": [
+        {
+          "name": "id",
+          "type": "INTEGER",
+          "is_primary_key": true,
+          "is_nullable": false
+        },
+        {
+          "name": "author_id",
+          "type": "INTEGER",
+          "is_primary_key": false,
+          "is_nullable": false
+        },
+        {
+          "name": "title",
+          "type": "TEXT",
+          "is_primary_key": false,
+          "is_nullable": false
+        },
+        {
+          "name": "content",
+          "type": "TEXT",
+          "is_primary_key": false,
+          "is_nullable": false
+        },
+        {
+          "name": "status",
+          "type": "TEXT",
+          "is_primary_key": false,
+          "is_nullable": false
+        },
+        {
+          "name": "cover_image",
+          "type": "TEXT",
+          "is_primary_key": false,
+          "is_nullable": true
+        }
+      ]
+    },
+    {
+      "table_name": "authors",
+      "columns": [
+        {
+          "name": "id",
+          "type": "INTEGER",
+          "is_primary_key": true,
+          "is_nullable": false
+        },
+        {
+          "name": "username",
+          "type": "TEXT",
+          "is_primary_key": false,
+          "is_nullable": false
+        },
+        {
+          "name": "password_hash",
+          "type": "TEXT",
+          "is_primary_key": false,
+          "is_nullable": false
+        }
+      ]
+    },
+    {
+      "table_name": "tags",
+      "columns": [
+        {
+          "name": "id",
+          "type": "INTEGER",
+          "is_primary_key": true,
+          "is_nullable": false
+        },
+        {
+          "name": "name",
+          "type": "TEXT",
+          "is_primary_key": false,
+          "is_nullable": false
+        }
+      ]
+    },
+    {
+      "table_name": "post_tags",
+      "columns": [
+        {
+          "name": "post_id",
+          "type": "INTEGER",
+          "is_primary_key": false,
+          "is_nullable": false
+        },
+        {
+          "name": "tag_id",
+          "type": "INTEGER",
+          "is_primary_key": false,
+          "is_nullable": false
+        }
+      ]
+    }
+  ],
+  "folder_structure": {
+    "backend": [
+      "app/routes",
+      "app/models",
+      "app/schemas",
+      "app/services",
+      "app/utils"
+    ]
+  },
+  "frontend_structure": {
+    "pages": [
+      "HomePage",
+      "PostListPage",
+      "PostDetailPage",
+      "AuthorPostsPage",
+      "LoginPage"
+    ],
+    "components": [
+      "PostCard",
+      "PostForm",
+      "TagFilter",
+      "AuthorCard",
+      "Pagination",
+      "MarkdownRenderer",
+      "Header",
+      "Footer"
+    ]
+  }
+}
