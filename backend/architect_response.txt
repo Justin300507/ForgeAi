@@ -2,8 +2,38 @@
   "api_endpoints": [
     {
       "method": "GET",
-      "path": "/users",
-      "description": "Retrieve a list of users.",
+      "path": "/test_records?search=&filter=&limit=&offset=",
+      "description": "Retrieve a list of test records with optional search and pagination.",
+      "file": "app/routes/test_record_routes.py"
+    },
+    {
+      "method": "GET",
+      "path": "/test_records/{id}",
+      "description": "Retrieve a specific test record by ID.",
+      "file": "app/routes/test_record_routes.py"
+    },
+    {
+      "method": "POST",
+      "path": "/test_records",
+      "description": "Create a new test record.",
+      "file": "app/routes/test_record_routes.py"
+    },
+    {
+      "method": "PUT",
+      "path": "/test_records/{id}",
+      "description": "Update an existing test record by ID.",
+      "file": "app/routes/test_record_routes.py"
+    },
+    {
+      "method": "DELETE",
+      "path": "/test_records/{id}",
+      "description": "Delete a specific test record by ID.",
+      "file": "app/routes/test_record_routes.py"
+    },
+    {
+      "method": "GET",
+      "path": "/users?search=&filter=&limit=&offset=",
+      "description": "Retrieve a list of users with optional search and pagination.",
       "file": "app/routes/user_routes.py"
     },
     {
@@ -14,86 +44,8 @@
     },
     {
       "method": "POST",
-      "path": "/users",
-      "description": "Create a new user.",
-      "file": "app/routes/user_routes.py"
-    },
-    {
-      "method": "PUT",
-      "path": "/users/{id}",
-      "description": "Update an existing user.",
-      "file": "app/routes/user_routes.py"
-    },
-    {
-      "method": "DELETE",
-      "path": "/users/{id}",
-      "description": "Delete a user.",
-      "file": "app/routes/user_routes.py"
-    },
-    {
-      "method": "GET",
-      "path": "/expenses",
-      "description": "Retrieve a list of expenses with optional filtering.",
-      "file": "app/routes/expense_routes.py"
-    },
-    {
-      "method": "GET",
-      "path": "/expenses/{id}",
-      "description": "Retrieve a specific expense by ID.",
-      "file": "app/routes/expense_routes.py"
-    },
-    {
-      "method": "POST",
-      "path": "/expenses",
-      "description": "Create a new expense.",
-      "file": "app/routes/expense_routes.py"
-    },
-    {
-      "method": "PUT",
-      "path": "/expenses/{id}",
-      "description": "Update an existing expense.",
-      "file": "app/routes/expense_routes.py"
-    },
-    {
-      "method": "DELETE",
-      "path": "/expenses/{id}",
-      "description": "Delete an expense.",
-      "file": "app/routes/expense_routes.py"
-    },
-    {
-      "method": "GET",
-      "path": "/categories",
-      "description": "Retrieve a list of categories.",
-      "file": "app/routes/category_routes.py"
-    },
-    {
-      "method": "GET",
-      "path": "/categories/{id}",
-      "description": "Retrieve a specific category by ID.",
-      "file": "app/routes/category_routes.py"
-    },
-    {
-      "method": "POST",
-      "path": "/categories",
-      "description": "Create a new category.",
-      "file": "app/routes/category_routes.py"
-    },
-    {
-      "method": "PUT",
-      "path": "/categories/{id}",
-      "description": "Update an existing category.",
-      "file": "app/routes/category_routes.py"
-    },
-    {
-      "method": "DELETE",
-      "path": "/categories/{id}",
-      "description": "Delete a category.",
-      "file": "app/routes/category_routes.py"
-    },
-    {
-      "method": "POST",
       "path": "/seed",
-      "description": "Populates database with realistic demo data.",
+      "description": "Populate database with realistic demo data.",
       "file": "app/routes/seed_routes.py"
     },
     {
@@ -104,12 +56,47 @@
     },
     {
       "method": "GET",
-      "path": "/expenses?search={q}&category={filter}",
-      "description": "Search expenses by description and filter by category.",
-      "file": "app/routes/expense_routes.py"
+      "path": "/test_records?search={query}&date_range={date_range}",
+      "description": "Search test records by title and filter by date range.",
+      "file": "app/routes/test_record_routes.py"
     }
   ],
   "database_schema": [
+    {
+      "table_name": "TestRecord",
+      "columns": [
+        {
+          "name": "id",
+          "type": "INTEGER",
+          "is_primary_key": true,
+          "is_nullable": false
+        },
+        {
+          "name": "title",
+          "type": "TEXT",
+          "is_primary_key": false,
+          "is_nullable": false
+        },
+        {
+          "name": "description",
+          "type": "TEXT",
+          "is_primary_key": false,
+          "is_nullable": true
+        },
+        {
+          "name": "date",
+          "type": "DATE",
+          "is_primary_key": false,
+          "is_nullable": false
+        },
+        {
+          "name": "user_id",
+          "type": "INTEGER",
+          "is_primary_key": false,
+          "is_nullable": false
+        }
+      ]
+    },
     {
       "table_name": "User",
       "columns": [
@@ -126,66 +113,8 @@
           "is_nullable": false
         },
         {
-          "name": "password",
+          "name": "role",
           "type": "TEXT",
-          "is_primary_key": false,
-          "is_nullable": false
-        }
-      ]
-    },
-    {
-      "table_name": "Expense",
-      "columns": [
-        {
-          "name": "id",
-          "type": "INTEGER",
-          "is_primary_key": true,
-          "is_nullable": false
-        },
-        {
-          "name": "amount",
-          "type": "REAL",
-          "is_primary_key": false,
-          "is_nullable": false
-        },
-        {
-          "name": "description",
-          "type": "TEXT",
-          "is_primary_key": false,
-          "is_nullable": true
-        },
-        {
-          "name": "category_id",
-          "type": "INTEGER",
-          "is_primary_key": false,
-          "is_nullable": false
-        },
-        {
-          "name": "user_id",
-          "type": "INTEGER",
-          "is_primary_key": false,
-          "is_nullable": false
-        }
-      ]
-    },
-    {
-      "table_name": "Category",
-      "columns": [
-        {
-          "name": "id",
-          "type": "INTEGER",
-          "is_primary_key": true,
-          "is_nullable": false
-        },
-        {
-          "name": "name",
-          "type": "TEXT",
-          "is_primary_key": false,
-          "is_nullable": false
-        },
-        {
-          "name": "user_id",
-          "type": "INTEGER",
           "is_primary_key": false,
           "is_nullable": false
         }
@@ -203,21 +132,21 @@
   },
   "frontend_structure": {
     "pages": [
-      "Home",
-      "Expenses",
-      "Categories",
-      "UserProfile",
-      "Dashboard"
+      "HomePage",
+      "TestRecordsPage",
+      "TestRecordDetailPage",
+      "AdminDashboardPage",
+      "UserProfilePage"
     ],
     "components": [
-      "ExpenseForm",
-      "ExpenseList",
-      "CategoryForm",
-      "CategoryList",
-      "UserForm",
+      "TestRecordList",
+      "TestRecordItem",
+      "TestRecordForm",
       "UserList",
-      "Summary",
-      "SearchBar"
+      "UserItem",
+      "SearchBar",
+      "Pagination",
+      "Notification"
     ]
   }
 }

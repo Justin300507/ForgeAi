@@ -217,7 +217,7 @@
       "stage": "generation"
     },
     "MissingEndpoint": {
-      "count": 416,
+      "count": 425,
       "examples": [
         {
           "project": "bug_tracker",
@@ -241,7 +241,7 @@
         }
       ],
       "first_seen": "2026-06-22T07:49:29.613937",
-      "last_seen": "2026-09-08T19:44:39.031483",
+      "last_seen": "2026-09-08T20:36:18.852674",
       "stage": "generation"
     },
     "FastAPIError": {
@@ -345,7 +345,7 @@
       "stage": "runtime"
     },
     "JourneyCRUDFailure": {
-      "count": 51,
+      "count": 52,
       "examples": [
         {
           "project": "BlogSphere",
@@ -369,7 +369,7 @@
         }
       ],
       "first_seen": "2026-06-29T23:47:06.584012",
-      "last_seen": "2026-09-08T19:09:46.698033",
+      "last_seen": "2026-09-08T20:07:46.754540",
       "stage": "integration"
     },
     "InvalidDependsType": {
@@ -397,7 +397,7 @@
       "stage": "runtime"
     },
     "NotNullViolationError": {
-      "count": 48,
+      "count": 49,
       "examples": [
         {
           "project": "todo_list_app",
@@ -421,7 +421,7 @@
         }
       ],
       "first_seen": "2026-07-01T19:37:49.712563",
-      "last_seen": "2026-07-29T20:39:52.928642",
+      "last_seen": "2026-09-08T19:57:16.626247",
       "stage": "runtime"
     },
     "AttributeError": {
@@ -541,6 +541,6 @@
       "last_seen": "2026-07-21T00:54:41.523672"
     }
   },
-  "total_runs": 970,
-  "last_updated": "2026-09-08T19:55:10.537556"
+  "total_runs": 992,
+  "last_updated": "2026-09-08T20:40:05.938470"
 }

@@ -3866,9 +3866,9 @@
       "src/context/AuthContext.jsx": "import React from 'react';\n// Auto-scaffolded stub so the build resolves. Passes children\n// through so wrapper components don't blank the page.\nconst Stub = ({ children }) => (children === undefined ? null : children);\nexport default Stub;\nexport const AuthContext = Stub;\n",
       "src/hooks/useAuth.jsx": "import { useContext } from 'react';\nimport { AuthContext } from '../context/AuthContext';\n\nexport const useAuth = () => {\n  return useContext(AuthContext);\n};"
     },
-    "success_count": 4,
+    "success_count": 5,
     "first_seen": "2026-09-08T18:29:13Z",
-    "last_seen": "2026-09-08T19:43:04Z",
+    "last_seen": "2026-09-08T20:17:34Z",
     "source_idea": "An expense tracker with categories",
     "composite_hash": "0e990403700fe185",
     "category": "browser",
@@ -3896,6 +3896,44 @@
     "normalized_signature": "GET /users returned <N>",
     "files_changed": [
       "app/routes/user_routes.py"
+    ],
+    "imports_added": [],
+    "symbols_added": []
+  },
+  "1d900d08e71a5d92": {
+    "fix_hash": "1d900d08e71a5d92",
+    "fix_content": {
+      "app/main.py": "from fastapi import FastAPI\nfrom app.routes.auth_routes import auth_router\nfrom app.routes.user_routes import user_router\nfrom app.routes.task_routes import task_router\nfrom app.routes.seed_routes import seed_router\nfrom app.routes.stats_routes import stats_router\n\napp = FastAPI()\n\napp.include_router(auth_router)\napp.include_router(user_router)\napp.include_router(task_router)\napp.include_router(seed_router)\napp.include_router(stats_router)\n"
+    },
+    "success_count": 1,
+    "first_seen": "2026-09-08T20:37:19Z",
+    "last_seen": "2026-09-08T20:37:19Z",
+    "source_idea": "A todo app with user login and task tracking",
+    "composite_hash": "3be3933c58e4cdd6",
+    "category": "runtime",
+    "file_basename": "",
+    "normalized_signature": "[ASGIAppError] ERROR: Error loading ASGI app. Could not import module \"app.main\".",
+    "files_changed": [
+      "app/main.py"
+    ],
+    "imports_added": [],
+    "symbols_added": []
+  },
+  "4cb8693b5d58c14a": {
+    "fix_hash": "4cb8693b5d58c14a",
+    "fix_content": {
+      "app/main.py": "from fastapi import FastAPI\nfrom app.routes.user_routes import user_router\nfrom app.routes.task_routes import task_router\n\napp = FastAPI()\n\napp.include_router(user_router)\napp.include_router(task_router)\n"
+    },
+    "success_count": 1,
+    "first_seen": "2026-09-08T20:37:19Z",
+    "last_seen": "2026-09-08T20:37:19Z",
+    "source_idea": "A todo app with user login and task tracking",
+    "composite_hash": "ad07c1f2ea6bcdc5",
+    "category": "browser",
+    "file_basename": "",
+    "normalized_signature": "vite build failed (exit <N>): 'vite' is not recognized as an internal or external command, | operable program or batch file.",
+    "files_changed": [
+      "app/main.py"
     ],
     "imports_added": [],
     "symbols_added": []

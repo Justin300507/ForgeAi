@@ -11,11 +11,14 @@ from datetime import datetime
 from pathlib import Path
 
 class DeploymentTester:
-    def __init__(self):
-        self.prod_url = "https://forgeai-backend-production-93c3.up.railway.app"
+    def __init__(self, load_existing=True):
+        self.prod_url = "http://127.0.0.1:8000"
         self.results = []
         self.working_count = 0
         self.start_time = datetime.now()
+
+        if load_existing:
+            self.load_existing_results()
 
     def verify_production(self):
         """Verify production server is live."""

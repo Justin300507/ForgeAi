@@ -1,5 +1,5 @@
 {
-  "total_deployments": 71,
+  "total_deployments": 85,
   "successful_deployments": 12,
   "avg_health_latency_ms": 4591.916666666667,
   "errors": {},
@@ -595,6 +595,132 @@
     },
     {
       "ts": "2026-09-08T19:56:13.688238",
+      "success": false,
+      "health_latency_ms": null,
+      "error_types": [
+        "github_push",
+        "render_backend"
+      ]
+    },
+    {
+      "ts": "2026-09-08T19:59:10.487991",
+      "success": false,
+      "health_latency_ms": null,
+      "error_types": [
+        "github_push",
+        "render_backend"
+      ]
+    },
+    {
+      "ts": "2026-09-08T20:00:25.946310",
+      "success": false,
+      "health_latency_ms": null,
+      "error_types": [
+        "github_push",
+        "render_backend"
+      ]
+    },
+    {
+      "ts": "2026-09-08T20:01:01.616403",
+      "success": false,
+      "health_latency_ms": null,
+      "error_types": [
+        "github_push",
+        "render_backend"
+      ]
+    },
+    {
+      "ts": "2026-09-08T20:01:28.011328",
+      "success": false,
+      "health_latency_ms": null,
+      "error_types": [
+        "github_push",
+        "render_backend"
+      ]
+    },
+    {
+      "ts": "2026-09-08T20:03:52.989218",
+      "success": false,
+      "health_latency_ms": null,
+      "error_types": [
+        "github_push",
+        "render_backend"
+      ]
+    },
+    {
+      "ts": "2026-09-08T20:05:06.198400",
+      "success": false,
+      "health_latency_ms": null,
+      "error_types": [
+        "github_push",
+        "render_backend"
+      ]
+    },
+    {
+      "ts": "2026-09-08T20:06:33.924183",
+      "success": false,
+      "health_latency_ms": null,
+      "error_types": [
+        "github_push",
+        "render_backend"
+      ]
+    },
+    {
+      "ts": "2026-09-08T20:13:18.922408",
+      "success": false,
+      "health_latency_ms": null,
+      "error_types": [
+        "github_push",
+        "render_backend"
+      ]
+    },
+    {
+      "ts": "2026-09-08T20:14:56.307691",
+      "success": false,
+      "health_latency_ms": null,
+      "error_types": [
+        "github_push",
+        "render_backend"
+      ]
+    },
+    {
+      "ts": "2026-09-08T20:21:42.332943",
+      "success": false,
+      "health_latency_ms": null,
+      "error_types": [
+        "github_push",
+        "render_backend"
+      ]
+    },
+    {
+      "ts": "2026-09-08T20:37:26.047514",
+      "success": false,
+      "health_latency_ms": null,
+      "error_types": [
+        "github_push",
+        "render_backend"
+      ]
+    },
+    {
+      "ts": "2026-09-08T20:39:14.360838",
+      "success": false,
+      "health_latency_ms": null,
+      "error_types": [
+        "github_push",
+        "render_backend"
+      ]
+    },
+    {
+      "ts": "2026-09-08T20:39:17.092823",
+      "success": false,
+      "health_latency_ms": null,
+      "error_types": [
+        "github_push",
+        "render_backend"
+      ]
+    },
+    {
+      "ts": "2026-09-08T20:40:42.685596",
       "success": false,
       "health_latency_ms": null,
       "error_types": [
