@@ -1,0 +1,375 @@
+[
+  {
+    "app_num": 1,
+    "idea": "A todo app with user login and task tracking",
+    "score": 95.93,
+    "grade": "A+",
+    "working": true,
+    "timestamp": "2026-09-08T23:30:04.025234"
+  },
+  {
+    "app_num": 2,
+    "idea": "A simple note-taking app with folders",
+    "score": 97.38,
+    "grade": "A+",
+    "working": true,
+    "timestamp": "2026-09-08T23:30:58.867559"
+  },
+  {
+    "app_num": 3,
+    "idea": "A task management system with priorities",
+    "score": 98.0,
+    "grade": "A+",
+    "working": true,
+    "timestamp": "2026-09-08T23:33:39.530766"
+  },
+  {
+    "app_num": 4,
+    "idea": "A blog platform with comments and likes",
+    "score": 98.1,
+    "grade": "A+",
+    "working": true,
+    "timestamp": "2026-09-08T23:36:31.061825"
+  },
+  {
+    "app_num": 5,
+    "idea": "A contact manager with groups",
+    "score": 98.1,
+    "grade": "A+",
+    "working": true,
+    "timestamp": "2026-09-08T23:38:32.742661"
+  },
+  {
+    "app_num": 6,
+    "idea": "A habit tracker with streaks",
+    "score": 98.1,
+    "grade": "A+",
+    "working": true,
+    "timestamp": "2026-09-08T23:40:45.458894"
+  },
+  {
+    "app_num": 7,
+    "idea": "A fitness log with workout history",
+    "score": 78.15,
+    "grade": "C",
+    "working": false,
+    "timestamp": "2026-09-08T23:45:40.377829"
+  },
+  {
+    "app_num": 8,
+    "idea": "A recipe collection app",
+    "score": 95.75,
+    "grade": "A+",
+    "working": true,
+    "timestamp": "2026-09-08T23:49:25.154252"
+  },
+  {
+    "app_num": 9,
+    "idea": "A movie watchlist with ratings",
+    "score": 0,
+    "grade": "F",
+    "working": false,
+    "error": "HTTPConnectionPool(host='localhost', port=8000): R",
+    "timestamp": "2026-09-08T23:54:27.179763"
+  },
+  {
+    "app_num": 10,
+    "idea": "An expense tracker with categories",
+    "score": 0,
+    "grade": "F",
+    "working": false,
+    "error": "HTTPConnectionPool(host='localhost', port=8000): R",
+    "timestamp": "2026-09-08T23:59:29.224728"
+  },
+  {
+    "app_num": 11,
+    "idea": "A todo app with user login and task tracking",
+    "score": 95.93,
+    "grade": "A+",
+    "working": true,
+    "timestamp": "2026-09-09T00:01:32.782660"
+  },
+  {
+    "app_num": 12,
+    "idea": "A simple note-taking app with folders",
+    "score": 97.38,
+    "grade": "A+",
+    "working": true,
+    "timestamp": "2026-09-09T00:03:26.914914"
+  },
+  {
+    "app_num": 13,
+    "idea": "A task management system with priorities",
+    "score": 98.1,
+    "grade": "A+",
+    "working": true,
+    "timestamp": "2026-09-09T00:05:38.152558"
+  },
+  {
+    "app_num": 14,
+    "idea": "A blog platform with comments and likes",
+    "score": 98.1,
+    "grade": "A+",
+    "working": true,
+    "timestamp": "2026-09-09T00:08:24.732210"
+  },
+  {
+    "app_num": 15,
+    "idea": "A contact manager with groups",
+    "score": 98.1,
+    "grade": "A+",
+    "working": true,
+    "timestamp": "2026-09-09T00:10:25.980334"
+  },
+  {
+    "app_num": 16,
+    "idea": "A habit tracker with streaks",
+    "score": 98.1,
+    "grade": "A+",
+    "working": true,
+    "timestamp": "2026-09-09T00:12:37.711695"
+  },
+  {
+    "app_num": 17,
+    "idea": "A fitness log with workout history",
+    "score": 0,
+    "grade": "F",
+    "working": false,
+    "error": "HTTPConnectionPool(host='localhost', port=8000): R",
+    "timestamp": "2026-09-09T00:17:39.793567"
+  },
+  {
+    "app_num": 18,
+    "idea": "A recipe collection app",
+    "score": 97.38,
+    "grade": "A+",
+    "working": true,
+    "timestamp": "2026-09-09T00:19:13.423223"
+  },
+  {
+    "app_num": 19,
+    "idea": "A movie watchlist with ratings",
+    "score": 95.24,
+    "grade": "A+",
+    "working": true,
+    "timestamp": "2026-09-09T00:21:13.838837"
+  },
+  {
+    "app_num": 20,
+    "idea": "An expense tracker with categories",
+    "score": 0,
+    "grade": "F",
+    "working": false,
+    "error": "HTTPConnectionPool(host='localhost', port=8000): R",
+    "timestamp": "2026-09-09T00:26:15.906392"
+  },
+  {
+    "app_num": 21,
+    "idea": "A todo app with user login and task tracking",
+    "score": 95.93,
+    "grade": "A+",
+    "working": true,
+    "timestamp": "2026-09-09T00:28:02.292820"
+  },
+  {
+    "app_num": 22,
+    "idea": "A simple note-taking app with folders",
+    "score": 97.38,
+    "grade": "A+",
+    "working": true,
+    "timestamp": "2026-09-09T00:29:53.325340"
+  },
+  {
+    "app_num": 23,
+    "idea": "A task management system with priorities",
+    "score": 98.0,
+    "grade": "A+",
+    "working": true,
+    "timestamp": "2026-09-09T00:32:35.475622"
+  },
+  {
+    "app_num": 24,
+    "idea": "A blog platform with comments and likes",
+    "score": 98.1,
+    "grade": "A+",
+    "working": true,
+    "timestamp": "2026-09-09T00:34:40.378982"
+  },
+  {
+    "app_num": 25,
+    "idea": "A contact manager with groups",
+    "score": 98.1,
+    "grade": "A+",
+    "working": true,
+    "timestamp": "2026-09-09T00:36:32.590988"
+  },
+  {
+    "app_num": 26,
+    "idea": "A habit tracker with streaks",
+    "score": 98.1,
+    "grade": "A+",
+    "working": true,
+    "timestamp": "2026-09-09T00:38:29.978162"
+  },
+  {
+    "app_num": 27,
+    "idea": "A fitness log with workout history",
+    "score": 78.15,
+    "grade": "C",
+    "working": false,
+    "timestamp": "2026-09-09T00:43:14.314156"
+  },
+  {
+    "app_num": 28,
+    "idea": "A recipe collection app",
+    "score": 95.75,
+    "grade": "A+",
+    "working": true,
+    "timestamp": "2026-09-09T00:45:34.876319"
+  },
+  {
+    "app_num": 29,
+    "idea": "A movie watchlist with ratings",
+    "score": 95.24,
+    "grade": "A+",
+    "working": true,
+    "timestamp": "2026-09-09T00:47:14.425657"
+  },
+  {
+    "app_num": 30,
+    "idea": "An expense tracker with categories",
+    "score": 96.59,
+    "grade": "A+",
+    "working": true,
+    "timestamp": "2026-09-09T00:50:56.897326"
+  },
+  {
+    "app_num": 31,
+    "idea": "A todo app with user login and task tracking",
+    "score": 95.93,
+    "grade": "A+",
+    "working": true,
+    "timestamp": "2026-09-09T00:52:43.657782"
+  },
+  {
+    "app_num": 32,
+    "idea": "A simple note-taking app with folders",
+    "score": 97.38,
+    "grade": "A+",
+    "working": true,
+    "timestamp": "2026-09-09T00:54:12.940690"
+  },
+  {
+    "app_num": 33,
+    "idea": "A task management system with priorities",
+    "score": 98.1,
+    "grade": "A+",
+    "working": true,
+    "timestamp": "2026-09-09T00:56:00.689583"
+  },
+  {
+    "app_num": 34,
+    "idea": "A blog platform with comments and likes",
+    "score": 98.1,
+    "grade": "A+",
+    "working": true,
+    "timestamp": "2026-09-09T00:58:20.283475"
+  },
+  {
+    "app_num": 35,
+    "idea": "A contact manager with groups",
+    "score": 98.1,
+    "grade": "A+",
+    "working": true,
+    "timestamp": "2026-09-09T01:00:04.144627"
+  },
+  {
+    "app_num": 36,
+    "idea": "A habit tracker with streaks",
+    "score": 98.1,
+    "grade": "A+",
+    "working": true,
+    "timestamp": "2026-09-09T01:01:57.689546"
+  },
+  {
+    "app_num": 37,
+    "idea": "A fitness log with workout history",
+    "score": 0,
+    "grade": "F",
+    "working": false,
+    "error": "HTTPConnectionPool(host='localhost', port=8000): R",
+    "timestamp": "2026-09-09T01:06:59.736004"
+  },
+  {
+    "app_num": 38,
+    "idea": "A recipe collection app",
+    "score": 97.38,
+    "grade": "A+",
+    "working": true,
+    "timestamp": "2026-09-09T01:08:30.079857"
+  },
+  {
+    "app_num": 39,
+    "idea": "A movie watchlist with ratings",
+    "score": 95.24,
+    "grade": "A+",
+    "working": true,
+    "timestamp": "2026-09-09T01:10:05.740860"
+  },
+  {
+    "app_num": 40,
+    "idea": "An expense tracker with categories",
+    "score": 97.38,
+    "grade": "A+",
+    "working": true,
+    "timestamp": "2026-09-09T01:14:06.996547"
+  },
+  {
+    "app_num": 41,
+    "idea": "A todo app with user login and task tracking",
+    "score": 95.93,
+    "grade": "A+",
+    "working": true,
+    "timestamp": "2026-09-09T01:15:47.516379"
+  },
+  {
+    "app_num": 42,
+    "idea": "A simple note-taking app with folders",
+    "score": 97.38,
+    "grade": "A+",
+    "working": true,
+    "timestamp": "2026-09-09T01:17:18.679998"
+  },
+  {
+    "app_num": 43,
+    "idea": "A task management system with priorities",
+    "score": 98.0,
+    "grade": "A+",
+    "working": true,
+    "timestamp": "2026-09-09T01:20:22.150124"
+  },
+  {
+    "app_num": 44,
+    "idea": "A blog platform with comments and likes",
+    "score": 98.1,
+    "grade": "A+",
+    "working": true,
+    "timestamp": "2026-09-09T01:22:41.790426"
+  },
+  {
+    "app_num": 45,
+    "idea": "A contact manager with groups",
+    "score": 98.1,
+    "grade": "A+",
+    "working": true,
+    "timestamp": "2026-09-09T01:24:22.414171"
+  },
+  {
+    "app_num": 46,
+    "idea": "A habit tracker with streaks",
+    "score": 98.1,
+    "grade": "A+",
+    "working": true,
+    "timestamp": "2026-09-09T01:26:13.762136"
+  }
+]

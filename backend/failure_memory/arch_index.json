@@ -2739,124 +2739,83 @@
   },
   "crm": {
     "category": "crm",
-    "idea": "A simple CRM for small businesses with user login. Users manage contacts (name, email, phone, company, status: lead/prospect/customer/churned). Add notes to any contact with timestamps. Log interactio",
+    "idea": "A contact manager with groups",
     "architecture": {
       "api_endpoints": [
+        {
+          "method": "GET",
+          "path": "/contacts?search=&group_id=&limit=&offset=",
+          "description": "Retrieve a list of contacts with optional search and pagination.",
+          "file": "app\\routes\\contact_routes.py"
+        },
+        {
+          "method": "GET",
+          "path": "/contacts/{id}",
+          "description": "Retrieve a specific contact by ID.",
+          "file": "app\\routes\\contact_routes.py"
+        },
+        {
+          "method": "POST",
+          "path": "/contacts",
+          "description": "Add a new contact.",
+          "file": "app\\routes\\contact_routes.py"
+        },
+        {
+          "method": "PUT",
+          "path": "/contacts/{id}",
+          "description": "Update an existing contact.",
+          "file": "app\\routes\\contact_routes.py"
+        },
+        {
+          "method": "DELETE",
+          "path": "/contacts/{id}",
+          "description": "Delete a contact.",
+          "file": "app\\routes\\contact_routes.py"
+        },
+        {
+          "method": "GET",
+          "path": "/groups?search=&limit=&offset=",
+          "description": "Retrieve a list of groups with optional search and pagination.",
+          "file": "app\\routes\\group_routes.py"
+        },
+        {
+          "method": "GET",
+          "path": "/groups/{id}",
+          "description": "Retrieve a specific group by ID.",
+          "file": "app\\routes\\group_routes.py"
+        },
+        {
+          "method": "POST",
+          "path": "/groups",
+          "description": "Create a new group.",
+          "file": "app\\routes\\group_routes.py"
+        },
+        {
+          "method": "DELETE",
+          "path": "/groups/{id}",
+          "description": "Delete a group.",
+          "file": "app\\routes\\group_routes.py"
+        },
+        {
+          "method": "POST",
+          "path": "/groups/{id}/contacts",
+          "description": "Add a contact to a group.",
+          "file": "app\\routes\\group_routes.py"
+        },
+        {
+          "method": "GET",
+          "path": "/stats/summary",
+          "description": "Returns aggregate counts and key metrics for the dashboard.",
+          "file": "app\\routes\\stats_routes.py"
+        },
         {
           "method": "POST",
           "path": "/seed",
           "description": "Populates database with realistic demo data.",
           "file": "app\\routes\\seed_routes.py"
-        },
-        {
-          "method": "POST",
-          "path": "/auth/register",
-          "description": "Registers a new user.",
-          "file": "app\\routes\\auth_routes.py"
-        },
-        {
-          "method": "POST",
-          "path": "/auth/login",
-          "description": "Logs in a user and returns an access token.",
-          "file": "app\\routes\\auth_routes.py"
-        },
-        {
-          "method": "GET",
-          "path": "/users/me",
-          "description": "Retrieves the currently authenticated user's details.",
-          "file": "app\\routes\\user_routes.py"
-        },
-        {
-          "method": "GET",
-          "path": "/contacts",
-          "description": "Retrieves a list of contacts for the authenticated user, with optional search and pagination.",
-          "file": "app\\routes\\contact_routes.py"
-        },
-        {
-          "method": "GET",
-          "path": "/contacts/{contact_id}",
-          "description": "Retrieves details for a specific contact.",
-          "file": "app\\routes\\contact_routes.py"
-        },
-        {
-          "method": "POST",
-          "path": "/contacts",
-          "description": "Creates a new contact for the authenticated user.",
-          "file": "app\\routes\\contact_routes.py"
-        },
-        {
-          "method": "PUT",
-          "path": "/contacts/{contact_id}",
-          "description": "Updates an existing contact's details.",
-          "file": "app\\routes\\contact_routes.py"
-        },
-        {
-          "method": "DELETE",
-          "path": "/contacts/{contact_id}",
-          "description": "Deletes a contact.",
-          "file": "app\\routes\\contact_routes.py"
-        },
-        {
-          "method": "POST",
-          "path": "/contacts/{contact_id}/notes",
-          "description": "Adds a new note to a specific contact.",
-          "file": "app\\routes\\contact_routes.py"
-        },
-        {
-          "method": "GET",
-          "path": "/contacts/{contact_id}/notes",
-          "description": "Retrieves all notes for a specific contact.",
-          "file": "app\\routes\\contact_routes.py"
-        },
-        {
-          "method": "POST",
-          "path": "/contacts/{contact_id}/interactions",
-          "description": "Logs a new interaction for a specific contact.",
-          "file": "app\\routes\\contact_routes.py"
-        },
-        {
-          "method": "GET",
-          "path": "/contacts/{contact_id}/interactions",
-          "description": "Retrieves all interactions for a specific contact.",
-          "file": "app\\routes\\contact_routes.py"
-        },
-        {
-          "method": "GET",
-          "path": "/stats/pipeline",
-          "description": "Retrieves counts of contacts grouped by their status (Lead, Prospect, Customer, Churned).",
-          "file": "app\\routes\\stats_routes.py"
-        },
-        {
-          "method": "GET",
-          "path": "/contacts/search",
-          "description": "Searches contacts by name or company name.",
-          "file": "app\\routes\\contact_routes.py"
         }
       ],
       "database_schema": [
-        {
-          "table_name": "users",
-          "columns": [
-            {
-              "name": "id",
-              "type": "INTEGER",
-              "is_primary_key": true,
-              "is_nullable": false
-            },
-            {
-              "name": "email",
-              "type": "VARCHAR(255)",
-              "is_primary_key": false,
-              "is_nullable": false
-            },
-            {
-              "name": "password_hash",
-              "type": "VARCHAR(255)",
-              "is_primary_key": false,
-              "is_nullable": false
-            }
-          ]
-        },
         {
           "table_name": "contacts",
           "columns": [
@@ -2868,44 +2827,26 @@
             },
             {
               "name": "name",
-              "type": "VARCHAR(255)",
+              "type": "TEXT",
               "is_primary_key": false,
               "is_nullable": false
             },
             {
-              "name": "email",
-              "type": "VARCHAR(255)",
-              "is_primary_key": false,
-              "is_nullable": true
-            },
-            {
-              "name": "phone",
-              "type": "VARCHAR(50)",
-              "is_primary_key": false,
-              "is_nullable": true
-            },
-            {
-              "name": "company",
-              "type": "VARCHAR(255)",
-              "is_primary_key": false,
-              "is_nullable": true
-            },
-            {
-              "name": "status",
-              "type": "VARCHAR(50)",
+              "name": "phone_number",
+              "type": "TEXT",
               "is_primary_key": false,
               "is_nullable": false
             },
             {
-              "name": "user_id",
+              "name": "group_id",
               "type": "INTEGER",
               "is_primary_key": false,
-              "is_nullable": false
+              "is_nullable": true
             }
           ]
         },
         {
-          "table_name": "notes",
+          "table_name": "groups",
           "columns": [
             {
               "name": "id",
@@ -2914,55 +2855,8 @@
               "is_nullable": false
             },
             {
-              "name": "content",
+              "name": "name",
               "type": "TEXT",
-              "is_primary_key": false,
-              "is_nullable": false
-            },
-            {
-              "name": "timestamp",
-              "type": "DATETIME",
-              "is_primary_key": false,
-              "is_nullable": false
-            },
-            {
-              "name": "contact_id",
-              "type": "INTEGER",
-              "is_primary_key": false,
-              "is_nullable": false
-            }
-          ]
-        },
-        {
-          "table_name": "interactions",
-          "columns": [
-            {
-              "name": "id",
-              "type": "INTEGER",
-              "is_primary_key": true,
-              "is_nullable": false
-            },
-            {
-              "name": "type",
-              "type": "VARCHAR(50)",
-              "is_primary_key": false,
-              "is_nullable": false
-            },
-            {
-              "name": "date",
-              "type": "DATE",
-              "is_primary_key": false,
-              "is_nullable": false
-            },
-            {
-              "name": "outcome",
-              "type": "TEXT",
-              "is_primary_key": false,
-              "is_nullable": true
-            },
-            {
-              "name": "contact_id",
-              "type": "INTEGER",
               "is_primary_key": false,
               "is_nullable": false
             }
@@ -2971,82 +2865,41 @@
       ],
       "folder_structure": {
         "backend": [
-          "app/",
-          "app/main.py",
-          "app/database.py",
-          "app/models/",
-          "app/models/user.py",
-          "app/models/contact.py",
-          "app/models/note.py",
-          "app/models/interaction.py",
-          "app/schemas/",
-          "app/schemas/user.py",
-          "app/schemas/contact.py",
-          "app/schemas/note.py",
-          "app/schemas/interaction.py",
-          "app/schemas/auth.py",
-          "app/schemas/stats.py",
-          "app/services/",
-          "app/services/auth_service.py",
-          "app/services/user_service.py",
-          "app/services/contact_service.py",
-          "app/services/note_service.py",
-          "app/services/interaction_service.py",
-          "app/services/stats_service.py",
-          "app/routes/",
-          "app/routes/auth_routes.py",
-          "app/routes/user_routes.py",
-          "app/routes/contact_routes.py",
-          "app/routes/stats_routes.py",
-          "app/routes/seed_routes.py",
-          "app/utils/",
-          "app/utils/auth.py",
-          "app/utils/dependencies.py",
-          "app/utils/password.py",
-          "app/config.py"
+          "app/routes",
+          "app/models",
+          "app/schemas",
+          "app/services",
+          "app/utils"
         ]
       },
       "frontend_structure": {
         "pages": [
-          "LoginPage.jsx",
-          "RegisterPage.jsx",
-          "DashboardPage.jsx",
-          "ContactsListPage.jsx",
-          "ContactDetailPage.jsx",
-          "AddContactPage.jsx",
-          "EditContactPage.jsx",
-          "PipelinePage.jsx"
+          "HomePage",
+          "ContactListPage",
+          "GroupListPage",
+          "ContactDetailPage",
+          "GroupDetailPage"
         ],
         "components": [
-          "Header.jsx",
-          "Footer.jsx",
-          "LoginForm.jsx",
-          "RegisterForm.jsx",
-          "ContactCard.jsx",
-          "ContactForm.jsx",
-          "NoteForm.jsx",
-          "NoteList.jsx",
-          "InteractionForm.jsx",
-          "InteractionList.jsx",
-          "SearchBar.jsx",
-          "Pagination.jsx",
-          "PipelineStatusColumn.jsx",
-          "ProtectedRoute.jsx",
-          "LoadingSpinner.jsx",
-          "ErrorMessage.jsx"
+          "ContactForm",
+          "GroupForm",
+          "ContactItem",
+          "GroupItem",
+          "SearchBar",
+          "Pagination",
+          "Header",
+          "Footer"
         ]
       }
     },
     "plan": {
-      "project_name": "simple_crm",
-      "display_name": "Simple CRM",
+      "project_name": "contact_manager",
+      "display_name": "Contact Manager",
       "features": [
-        "Secure user login and registration to access the CRM.",
-        "Create, view, update, and delete contacts with name, email, phone, company, and status (lead/prospect/customer/churned).",
-        "Add timestamped notes to any contact for internal context.",
-        "Log interactions (call/email/meeting) with a date and outcome for each contact.",
-        "Visualize contacts grouped by their status (Lead, Prospect, Customer, Churned) with counts for each group.",
-        "Search contacts by their name or company name."
+        "Allows users to add new contacts with essential information.",
+        "Enables users to create groups for organizing contacts.",
+        "Allows users to categorize contacts by adding them to groups.",
+        "Users can remove contacts from their list."
       ],
       "tech_stack": {
         "backend": "FastAPI",
@@ -3055,145 +2908,114 @@
         "frontend": "React + Vite"
       },
       "db_entities": [
-        "User",
         "Contact",
-        "Note",
-        "Interaction"
+        "Group"
       ],
       "api_modules": [
         "auth",
-        "users",
-        "contacts"
+        "contacts",
+        "groups"
       ],
       "user_stories": [
         {
-          "role": "Small Business User",
-          "want": "to log in securely to my CRM account",
+          "role": "user",
+          "want": "to add a new contact",
           "acceptance_criteria": [
-            "Given I am on the login page, when I enter valid credentials and click 'Login', then I am redirected to my contacts dashboard.",
-            "Given I am on the login page, when I enter invalid credentials and click 'Login', then I see an error message 'Invalid credentials'."
+            "The contact is saved with a name and phone number.",
+            "The contact appears in the contact list after being added."
           ]
         },
         {
-          "role": "Small Business User",
-          "want": "to add a new contact with their details",
+          "role": "user",
+          "want": "to create a new group",
           "acceptance_criteria": [
-            "Given I am on the contacts page, when I click 'Add Contact' and fill in name, email, phone, company, and select a status, then the new contact appears in my contact list.",
-            "Given I am adding a new contact, when I leave a required field (e.g., name) blank, then I see a validation error and the contact is not created."
+            "The group is saved with a unique name.",
+            "The group appears in the group list after being created."
           ]
         },
         {
-          "role": "Small Business User",
-          "want": "to add a note to a contact",
+          "role": "user",
+          "want": "to add a contact to a group",
           "acceptance_criteria": [
-            "Given I am viewing a contact's details, when I enter text into the 'Add Note' field and click 'Save Note', then the note appears in the contact's notes section with a timestamp.",
-            "Given a contact has multiple notes, when I view the contact's details, then the notes are displayed in chronological order (newest first)."
+            "The contact is successfully added to the selected group.",
+            "The contact appears under the correct group in the group view."
           ]
         },
         {
-          "role": "Small Business User",
-          "want": "to log an interaction (call, email, meeting) with a contact",
+          "role": "user",
+          "want": "to view all contacts in a group",
           "acceptance_criteria": [
-            "Given I am viewing a contact's details, when I select an interaction type (Call, Email, Meeting), a date, and an outcome, then the interaction is added to the contact's interaction log.",
-            "Given a contact has logged interactions, when I view the contact's details, then the interactions are displayed chronologically with type, date, and outcome."
+            "The app displays only the contacts that belong to the selected group.",
+            "The contact list updates correctly when switching between groups."
           ]
         },
         {
-          "role": "Small Business User",
-          "want": "to see my contacts grouped by their status in a pipeline view",
+          "role": "user",
+          "want": "to edit a contact's information",
           "acceptance_criteria": [
-            "Given I navigate to the 'Pipeline' view, then I see distinct sections for 'Lead', 'Prospect', 'Customer', and 'Churned' contacts.",
-            "Given I have contacts with different statuses, when I view the pipeline, then each status section displays the correct count of contacts assigned to that status."
+            "The contact's information is updated successfully.",
+            "The updated information is reflected in the contact list immediately."
           ]
         },
         {
-          "role": "Small Business User",
-          "want": "to search for contacts by name or company",
+          "role": "user",
+          "want": "to delete a contact",
           "acceptance_criteria": [
-            "Given I am on the contacts list, when I type 'John' into the search bar, then only contacts with 'John' in their name are displayed.",
-            "Given I am on the contacts list, when I type 'Acme Corp' into the search bar, then only contacts associated with 'Acme Corp' are displayed."
+            "The contact is removed from the contact list.",
+            "The contact cannot be found in any group after deletion."
+          ]
+        },
+        {
+          "role": "user",
+          "want": "to delete a group",
+          "acceptance_criteria": [
+            "The group is removed from the group list.",
+            "All contacts associated with the deleted group are not deleted but are removed from that group."
           ]
         }
       ],
       "non_functional_requirements": {
-        "authentication": "required — users need to log in to access their private contact data.",
-        "authorization": "Users can only access and manage their own contacts and associated data.",
-        "pagination": "required on contacts list if the number of contacts exceeds a reasonable display limit (e.g., 50).",
-        "search": "contacts (by name, company)",
+        "authentication": "required — to ensure that user data is secure and private.",
+        "authorization": "none — all authenticated users have the same access.",
+        "pagination": "required on the contacts endpoint to manage large lists.",
+        "search": "search functionality is needed for contacts.",
         "file_uploads": "no",
         "real_time": "no"
       },
       "data_entities_detail": [
         {
-          "name": "User",
-          "description": "Stores user authentication information.",
-          "key_fields": [
-            "id",
-            "email",
-            "password_hash"
-          ],
-          "relationships": [
-            "has many Contact"
-          ]
-        },
-        {
           "name": "Contact",
-          "description": "Stores details for each business contact.",
+          "description": "Stores contact information including name and phone number.",
           "key_fields": [
             "id",
             "name",
-            "email",
-            "phone",
-            "company",
-            "status",
-            "user_id"
+            "phone_number"
           ],
           "relationships": [
-            "belongs to User",
-            "has many Note",
-            "has many Interaction"
+            "belongs to Group"
           ]
         },
         {
-          "name": "Note",
-          "description": "Stores timestamped notes related to a contact.",
+          "name": "Group",
+          "description": "Stores groups for organizing contacts.",
           "key_fields": [
             "id",
-            "content",
-            "timestamp",
-            "contact_id"
+            "name"
           ],
           "relationships": [
-            "belongs to Contact"
-          ]
-        },
-        {
-          "name": "Interaction",
-          "description": "Stores logged interactions with a contact.",
-          "key_fields": [
-            "id",
-            "type",
-            "date",
-            "outcome",
-            "contact_id"
-          ],
-          "relationships": [
-            "belongs to Contact"
+            "has many Contacts"
           ]
         }
       ],
       "out_of_scope": [
-        "Reporting/Analytics beyond pipeline counts",
-        "Email/Calendar integrations",
-        "Customizable fields for contacts",
-        "Task management",
-        "Multi-user accounts or team features"
+        "import/export contacts",
+        "contact sharing features"
       ]
     },
-    "score": 95.0,
+    "score": 98.1,
     "success_count": 1,
-    "generation_id": "0ba82ca2efdb4b1c88ee407e23eedc5a",
-    "timestamp": "2026-07-16T14:13:45Z"
+    "generation_id": "fbe92ef19598457385932281bd85eff0",
+    "timestamp": "2026-09-08T17:20:18Z"
   },
   "inventory": {
     "category": "inventory",
@@ -7577,5 +7399,746 @@
     "success_count": 1,
     "generation_id": "84bef3df2ed845a3845e10f54c81c80c",
     "timestamp": "2026-07-28T05:15:32Z"
+  },
+  "social": {
+    "category": "social",
+    "idea": "A blog platform with comments and likes",
+    "architecture": {
+      "api_endpoints": [
+        {
+          "method": "GET",
+          "path": "/users",
+          "description": "Retrieve a list of users.",
+          "file": "app\\routes\\user_routes.py"
+        },
+        {
+          "method": "GET",
+          "path": "/users/{id}",
+          "description": "Retrieve a user by ID.",
+          "file": "app\\routes\\user_routes.py"
+        },
+        {
+          "method": "POST",
+          "path": "/users",
+          "description": "Create a new user.",
+          "file": "app\\routes\\user_routes.py"
+        },
+        {
+          "method": "PUT",
+          "path": "/users/{id}",
+          "description": "Update a user by ID.",
+          "file": "app\\routes\\user_routes.py"
+        },
+        {
+          "method": "DELETE",
+          "path": "/users/{id}",
+          "description": "Delete a user by ID.",
+          "file": "app\\routes\\user_routes.py"
+        },
+        {
+          "method": "GET",
+          "path": "/posts",
+          "description": "Retrieve a list of blog posts.",
+          "file": "app\\routes\\post_routes.py"
+        },
+        {
+          "method": "GET",
+          "path": "/posts/{id}",
+          "description": "Retrieve a blog post by ID.",
+          "file": "app\\routes\\post_routes.py"
+        },
+        {
+          "method": "POST",
+          "path": "/posts",
+          "description": "Create a new blog post.",
+          "file": "app\\routes\\post_routes.py"
+        },
+        {
+          "method": "PUT",
+          "path": "/posts/{id}",
+          "description": "Update a blog post by ID.",
+          "file": "app\\routes\\post_routes.py"
+        },
+        {
+          "method": "DELETE",
+          "path": "/posts/{id}",
+          "description": "Delete a blog post by ID.",
+          "file": "app\\routes\\post_routes.py"
+        },
+        {
+          "method": "GET",
+          "path": "/comments",
+          "description": "Retrieve a list of comments.",
+          "file": "app\\routes\\comment_routes.py"
+        },
+        {
+          "method": "GET",
+          "path": "/comments/{id}",
+          "description": "Retrieve a comment by ID.",
+          "file": "app\\routes\\comment_routes.py"
+        },
+        {
+          "method": "POST",
+          "path": "/comments",
+          "description": "Create a new comment.",
+          "file": "app\\routes\\comment_routes.py"
+        },
+        {
+          "method": "PUT",
+          "path": "/comments/{id}",
+          "description": "Update a comment by ID.",
+          "file": "app\\routes\\comment_routes.py"
+        },
+        {
+          "method": "DELETE",
+          "path": "/comments/{id}",
+          "description": "Delete a comment by ID.",
+          "file": "app\\routes\\comment_routes.py"
+        },
+        {
+          "method": "POST",
+          "path": "/seed",
+          "description": "Populates database with realistic demo data.",
+          "file": "app\\routes\\seed_routes.py"
+        },
+        {
+          "method": "GET",
+          "path": "/stats/summary",
+          "description": "Returns aggregate counts and key metrics for the dashboard.",
+          "file": "app\\routes\\stats_routes.py"
+        },
+        {
+          "method": "GET",
+          "path": "/posts?search=&author_id=",
+          "description": "Search for blog posts with optional filters.",
+          "file": "app\\routes\\post_routes.py"
+        }
+      ],
+      "database_schema": [
+        {
+          "table_name": "users",
+          "columns": [
+            {
+              "name": "id",
+              "type": "INTEGER",
+              "is_primary_key": true,
+              "is_nullable": false
+            },
+            {
+              "name": "username",
+              "type": "TEXT",
+              "is_primary_key": false,
+              "is_nullable": false
+            },
+            {
+              "name": "password",
+              "type": "TEXT",
+              "is_primary_key": false,
+              "is_nullable": false
+            }
+          ]
+        },
+        {
+          "table_name": "posts",
+          "columns": [
+            {
+              "name": "id",
+              "type": "INTEGER",
+              "is_primary_key": true,
+              "is_nullable": false
+            },
+            {
+              "name": "title",
+              "type": "TEXT",
+              "is_primary_key": false,
+              "is_nullable": false
+            },
+            {
+              "name": "content",
+              "type": "TEXT",
+              "is_primary_key": false,
+              "is_nullable": false
+            },
+            {
+              "name": "user_id",
+              "type": "INTEGER",
+              "is_primary_key": false,
+              "is_nullable": false
+            }
+          ]
+        },
+        {
+          "table_name": "comments",
+          "columns": [
+            {
+              "name": "id",
+              "type": "INTEGER",
+              "is_primary_key": true,
+              "is_nullable": false
+            },
+            {
+              "name": "content",
+              "type": "TEXT",
+              "is_primary_key": false,
+              "is_nullable": false
+            },
+            {
+              "name": "post_id",
+              "type": "INTEGER",
+              "is_primary_key": false,
+              "is_nullable": false
+            },
+            {
+              "name": "user_id",
+              "type": "INTEGER",
+              "is_primary_key": false,
+              "is_nullable": false
+            }
+          ]
+        }
+      ],
+      "folder_structure": {
+        "backend": [
+          "app/routes",
+          "app/models",
+          "app/schemas",
+          "app/services",
+          "app/utils"
+        ]
+      },
+      "frontend_structure": {
+        "pages": [
+          "HomePage",
+          "PostPage",
+          "CreatePostPage",
+          "EditPostPage",
+          "UserProfilePage"
+        ],
+        "components": [
+          "PostList",
+          "PostItem",
+          "CommentList",
+          "CommentItem",
+          "UserForm",
+          "LoginForm",
+          "Navbar",
+          "Pagination"
+        ]
+      }
+    },
+    "plan": {
+      "project_name": "blog_platform",
+      "display_name": "Blog Platform",
+      "features": [
+        "Allows bloggers to create and publish new posts.",
+        "Enables bloggers to update their existing posts.",
+        "Permits bloggers to remove their posts from the platform.",
+        "Allows readers to browse a list of available blog posts.",
+        "Allows readers to leave comments on posts for engagement."
+      ],
+      "tech_stack": {
+        "backend": "FastAPI",
+        "database": "SQLite",
+        "auth": "JWT",
+        "frontend": "React + Vite"
+      },
+      "db_entities": [
+        "User",
+        "Post",
+        "Comment"
+      ],
+      "api_modules": [
+        "auth",
+        "users",
+        "posts",
+        "comments"
+      ],
+      "user_stories": [
+        {
+          "role": "blogger",
+          "want": "to create a new blog post",
+          "acceptance_criteria": [
+            "The blogger can submit a post with a title and content",
+            "The post is saved in the database and is retrievable by its ID",
+            "The post is visible to all users on the platform"
+          ]
+        },
+        {
+          "role": "blogger",
+          "want": "to edit an existing blog post",
+          "acceptance_criteria": [
+            "The blogger can retrieve their post by ID",
+            "The blogger can submit changes to the post",
+            "The updated post reflects the changes when retrieved"
+          ]
+        },
+        {
+          "role": "blogger",
+          "want": "to delete a blog post",
+          "acceptance_criteria": [
+            "The blogger can delete their post by ID",
+            "The post is no longer retrievable after deletion",
+            "A confirmation message is shown upon successful deletion"
+          ]
+        },
+        {
+          "role": "reader",
+          "want": "to view a list of blog posts",
+          "acceptance_criteria": [
+            "The reader can access an endpoint that returns a list of posts",
+            "The list includes titles and brief excerpts of each post",
+            "The list is paginated to show a limited number of posts per request"
+          ]
+        },
+        {
+          "role": "reader",
+          "want": "to like a blog post",
+          "acceptance_criteria": [
+            "The reader can submit a like for a post by ID",
+            "The like is recorded in the database and associated with the post",
+            "The total number of likes for the post is updated and retrievable"
+          ]
+        },
+        {
+          "role": "reader",
+          "want": "to comment on a blog post",
+          "acceptance_criteria": [
+            "The reader can submit a comment for a post by ID",
+            "The comment is saved in the database and associated with the post",
+            "The comment is visible to other users when viewing the post"
+          ]
+        },
+        {
+          "role": "blogger",
+          "want": "to view comments on my blog post",
+          "acceptance_criteria": [
+            "The blogger can retrieve comments associated with their post by ID",
+            "The comments include the commenter's name and content",
+            "The comments are displayed in chronological order"
+          ]
+        }
+      ],
+      "non_functional_requirements": {
+        "authentication": "required — to ensure that only registered users can create, edit, or delete posts and comments",
+        "authorization": "Bloggers can manage their own posts and comments, while readers can only view and comment",
+        "pagination": "required on the list of blog posts",
+        "search": "not required",
+        "file_uploads": "no",
+        "real_time": "no"
+      },
+      "data_entities_detail": [
+        {
+          "name": "User",
+          "description": "Stores user information for bloggers and readers.",
+          "key_fields": [
+            "id",
+            "username",
+            "password"
+          ],
+          "relationships": [
+            "has many Posts",
+            "has many Comments"
+          ]
+        },
+        {
+          "name": "Post",
+          "description": "Stores blog post content.",
+          "key_fields": [
+            "id",
+            "title",
+            "content",
+            "user_id"
+          ],
+          "relationships": [
+            "belongs to User",
+            "has many Comments"
+          ]
+        },
+        {
+          "name": "Comment",
+          "description": "Stores comments made on blog posts.",
+          "key_fields": [
+            "id",
+            "content",
+            "post_id",
+            "user_id"
+          ],
+          "relationships": [
+            "belongs to Post",
+            "belongs to User"
+          ]
+        }
+      ],
+      "out_of_scope": [
+        "advanced user profiles",
+        "post categories",
+        "post editing history"
+      ]
+    },
+    "score": 98.1,
+    "success_count": 1,
+    "generation_id": "c4f162c279b54aa086aff6fe17163551",
+    "timestamp": "2026-09-08T17:17:27Z"
+  },
+  "expense_tracker": {
+    "category": "expense_tracker",
+    "idea": "An expense tracker with categories",
+    "architecture": {
+      "api_endpoints": [
+        {
+          "method": "GET",
+          "path": "/users",
+          "description": "Retrieve a list of users.",
+          "file": "app\\routes\\user_routes.py"
+        },
+        {
+          "method": "GET",
+          "path": "/users/{id}",
+          "description": "Retrieve a specific user by ID.",
+          "file": "app\\routes\\user_routes.py"
+        },
+        {
+          "method": "POST",
+          "path": "/users",
+          "description": "Create a new user.",
+          "file": "app\\routes\\user_routes.py"
+        },
+        {
+          "method": "PUT",
+          "path": "/users/{id}",
+          "description": "Update an existing user.",
+          "file": "app\\routes\\user_routes.py"
+        },
+        {
+          "method": "DELETE",
+          "path": "/users/{id}",
+          "description": "Delete a user.",
+          "file": "app\\routes\\user_routes.py"
+        },
+        {
+          "method": "GET",
+          "path": "/expenses",
+          "description": "Retrieve a list of expenses with optional filtering.",
+          "file": "app\\routes\\expense_routes.py"
+        },
+        {
+          "method": "GET",
+          "path": "/expenses/{id}",
+          "description": "Retrieve a specific expense by ID.",
+          "file": "app\\routes\\expense_routes.py"
+        },
+        {
+          "method": "POST",
+          "path": "/expenses",
+          "description": "Create a new expense.",
+          "file": "app\\routes\\expense_routes.py"
+        },
+        {
+          "method": "PUT",
+          "path": "/expenses/{id}",
+          "description": "Update an existing expense.",
+          "file": "app\\routes\\expense_routes.py"
+        },
+        {
+          "method": "DELETE",
+          "path": "/expenses/{id}",
+          "description": "Delete an expense.",
+          "file": "app\\routes\\expense_routes.py"
+        },
+        {
+          "method": "GET",
+          "path": "/categories",
+          "description": "Retrieve a list of categories.",
+          "file": "app\\routes\\category_routes.py"
+        },
+        {
+          "method": "GET",
+          "path": "/categories/{id}",
+          "description": "Retrieve a specific category by ID.",
+          "file": "app\\routes\\category_routes.py"
+        },
+        {
+          "method": "POST",
+          "path": "/categories",
+          "description": "Create a new category.",
+          "file": "app\\routes\\category_routes.py"
+        },
+        {
+          "method": "PUT",
+          "path": "/categories/{id}",
+          "description": "Update an existing category.",
+          "file": "app\\routes\\category_routes.py"
+        },
+        {
+          "method": "DELETE",
+          "path": "/categories/{id}",
+          "description": "Delete a category.",
+          "file": "app\\routes\\category_routes.py"
+        },
+        {
+          "method": "POST",
+          "path": "/seed",
+          "description": "Populates database with realistic demo data.",
+          "file": "app\\routes\\seed_routes.py"
+        },
+        {
+          "method": "GET",
+          "path": "/stats/summary",
+          "description": "Returns aggregate counts and key metrics for the dashboard.",
+          "file": "app\\routes\\stats_routes.py"
+        },
+        {
+          "method": "GET",
+          "path": "/expenses?search={q}&category={filter}",
+          "description": "Search expenses by description and filter by category.",
+          "file": "app\\routes\\expense_routes.py"
+        }
+      ],
+      "database_schema": [
+        {
+          "table_name": "User",
+          "columns": [
+            {
+              "name": "id",
+              "type": "INTEGER",
+              "is_primary_key": true,
+              "is_nullable": false
+            },
+            {
+              "name": "username",
+              "type": "TEXT",
+              "is_primary_key": false,
+              "is_nullable": false
+            },
+            {
+              "name": "password",
+              "type": "TEXT",
+              "is_primary_key": false,
+              "is_nullable": false
+            }
+          ]
+        },
+        {
+          "table_name": "Expense",
+          "columns": [
+            {
+              "name": "id",
+              "type": "INTEGER",
+              "is_primary_key": true,
+              "is_nullable": false
+            },
+            {
+              "name": "amount",
+              "type": "REAL",
+              "is_primary_key": false,
+              "is_nullable": false
+            },
+            {
+              "name": "description",
+              "type": "TEXT",
+              "is_primary_key": false,
+              "is_nullable": true
+            },
+            {
+              "name": "category_id",
+              "type": "INTEGER",
+              "is_primary_key": false,
+              "is_nullable": false
+            },
+            {
+              "name": "user_id",
+              "type": "INTEGER",
+              "is_primary_key": false,
+              "is_nullable": false
+            }
+          ]
+        },
+        {
+          "table_name": "Category",
+          "columns": [
+            {
+              "name": "id",
+              "type": "INTEGER",
+              "is_primary_key": true,
+              "is_nullable": false
+            },
+            {
+              "name": "name",
+              "type": "TEXT",
+              "is_primary_key": false,
+              "is_nullable": false
+            },
+            {
+              "name": "user_id",
+              "type": "INTEGER",
+              "is_primary_key": false,
+              "is_nullable": false
+            }
+          ]
+        }
+      ],
+      "folder_structure": {
+        "backend": [
+          "routes",
+          "models",
+          "services",
+          "schemas",
+          "utils"
+        ]
+      },
+      "frontend_structure": {
+        "pages": [
+          "Home",
+          "Expenses",
+          "Categories",
+          "UserProfile",
+          "Dashboard"
+        ],
+        "components": [
+          "ExpenseForm",
+          "ExpenseList",
+          "CategoryForm",
+          "CategoryList",
+          "UserForm",
+          "UserList",
+          "Summary",
+          "SearchBar"
+        ]
+      }
+    },
+    "plan": {
+      "project_name": "expense_tracker",
+      "display_name": "Expense Tracker",
+      "features": [
+        "Allows users to input new expenses with a category.",
+        "Displays a list of all expenses with filtering options by category.",
+        "Allows users to remove expenses from their list."
+      ],
+      "tech_stack": {
+        "backend": "FastAPI",
+        "database": "SQLite",
+        "auth": "JWT",
+        "frontend": "React + Vite"
+      },
+      "db_entities": [
+        "User",
+        "Expense",
+        "Category"
+      ],
+      "api_modules": [
+        "auth",
+        "users",
+        "expenses",
+        "categories"
+      ],
+      "user_stories": [
+        {
+          "role": "user",
+          "want": "to add a new expense with a category",
+          "acceptance_criteria": [
+            "User can input an expense amount, description, and select a category.",
+            "The expense is saved and displayed in the user's expense list."
+          ]
+        },
+        {
+          "role": "user",
+          "want": "to view all my expenses by category",
+          "acceptance_criteria": [
+            "User can filter expenses by category.",
+            "The app displays a summary of expenses per category."
+          ]
+        },
+        {
+          "role": "user",
+          "want": "to edit an existing expense",
+          "acceptance_criteria": [
+            "User can select an expense to edit.",
+            "Changes are saved and reflected in the expense list."
+          ]
+        },
+        {
+          "role": "user",
+          "want": "to delete an expense",
+          "acceptance_criteria": [
+            "User can select an expense to delete.",
+            "The expense is removed from the user's expense list."
+          ]
+        },
+        {
+          "role": "user",
+          "want": "to view a summary of my total expenses",
+          "acceptance_criteria": [
+            "The app calculates and displays the total amount spent.",
+            "The summary is updated in real-time as expenses are added or removed."
+          ]
+        },
+        {
+          "role": "user",
+          "want": "to categorize my expenses",
+          "acceptance_criteria": [
+            "User can create, edit, and delete expense categories.",
+            "Categories are available for selection when adding a new expense."
+          ]
+        }
+      ],
+      "non_functional_requirements": {
+        "authentication": "required — to ensure user data privacy and security",
+        "authorization": "none — all users have access to their own data",
+        "pagination": "required on the view expenses endpoint",
+        "search": "expenses need search functionality by description",
+        "file_uploads": "no",
+        "real_time": "no"
+      },
+      "data_entities_detail": [
+        {
+          "name": "User",
+          "description": "Stores user information and authentication details.",
+          "key_fields": [
+            "id",
+            "username",
+            "password"
+          ],
+          "relationships": [
+            "has many Expenses"
+          ]
+        },
+        {
+          "name": "Expense",
+          "description": "Stores individual expense records with associated categories.",
+          "key_fields": [
+            "id",
+            "amount",
+            "description",
+            "category_id",
+            "user_id"
+          ],
+          "relationships": [
+            "belongs to User",
+            "belongs to Category"
+          ]
+        },
+        {
+          "name": "Category",
+          "description": "Stores expense categories for organizing expenses.",
+          "key_fields": [
+            "id",
+            "name",
+            "user_id"
+          ],
+          "relationships": [
+            "belongs to User",
+            "has many Expenses"
+          ]
+        }
+      ],
+      "out_of_scope": [
+        "multi-user support",
+        "advanced analytics features"
+      ]
+    },
+    "score": 97.38,
+    "success_count": 1,
+    "generation_id": "206468765b884e58a5b014cc4fd86c35",
+    "timestamp": "2026-09-08T19:44:06Z"
   }
 }

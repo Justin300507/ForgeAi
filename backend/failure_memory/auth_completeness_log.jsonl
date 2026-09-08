@@ -1551,3 +1551,141 @@
 {"timestamp": "2026-07-29T20:36:25.930313+00:00", "project_name": "forge_blog_cms", "status": "complete", "missing_required_before": [], "reason_before": "complete"}
 {"timestamp": "2026-07-29T20:37:16.964749+00:00", "project_name": "forge_blog_cms", "status": "complete", "missing_required_before": [], "reason_before": "complete"}
 {"timestamp": "2026-07-29T20:39:53.197068+00:00", "project_name": "simple_crm", "status": "complete", "missing_required_before": [], "reason_before": "complete"}
+{"timestamp": "2026-09-08T14:29:27.349143+00:00", "project_name": "simple_crm", "status": "failed", "missing_required_before": ["POST /auth/signup", "POST /auth/login"], "reason_before": "missing required endpoint(s): POST /auth/signup, POST /auth/login", "missing_required_after": ["POST /auth/signup", "POST /auth/login"], "reason_after": "missing required endpoint(s): POST /auth/signup, POST /auth/login"}
+{"timestamp": "2026-09-08T14:30:13.832732+00:00", "project_name": "todo_app", "status": "failed", "missing_required_before": ["POST /auth/signup", "POST /auth/login"], "reason_before": "missing required endpoint(s): POST /auth/signup, POST /auth/login", "missing_required_after": ["POST /auth/signup", "POST /auth/login"], "reason_after": "missing required endpoint(s): POST /auth/signup, POST /auth/login"}
+{"timestamp": "2026-09-08T14:30:52.452215+00:00", "project_name": "todo_app", "status": "failed", "missing_required_before": ["POST /auth/signup", "POST /auth/login"], "reason_before": "missing required endpoint(s): POST /auth/signup, POST /auth/login", "missing_required_after": ["POST /auth/signup", "POST /auth/login"], "reason_after": "missing required endpoint(s): POST /auth/signup, POST /auth/login"}
+{"timestamp": "2026-09-08T14:31:18.147240+00:00", "project_name": "todo_app", "status": "failed", "missing_required_before": ["POST /auth/signup", "POST /auth/login"], "reason_before": "missing required endpoint(s): POST /auth/signup, POST /auth/login", "missing_required_after": ["POST /auth/signup", "POST /auth/login"], "reason_after": "missing required endpoint(s): POST /auth/signup, POST /auth/login"}
+{"timestamp": "2026-09-08T14:31:54.331065+00:00", "project_name": "todo_app", "status": "failed", "missing_required_before": ["POST /auth/signup", "POST /auth/login"], "reason_before": "missing required endpoint(s): POST /auth/signup, POST /auth/login", "missing_required_after": ["POST /auth/signup", "POST /auth/login"], "reason_after": "missing required endpoint(s): POST /auth/signup, POST /auth/login"}
+{"timestamp": "2026-09-08T14:34:21.735460+00:00", "project_name": "simple_crm", "status": "failed", "missing_required_before": ["POST /auth/login"], "reason_before": "missing required endpoint(s): POST /auth/login", "missing_required_after": ["POST /auth/login"], "reason_after": "missing required endpoint(s): POST /auth/login"}
+{"timestamp": "2026-09-08T14:36:05.734135+00:00", "project_name": "simple_crm", "status": "failed", "missing_required_before": ["POST /auth/signup", "POST /auth/login"], "reason_before": "missing required endpoint(s): POST /auth/signup, POST /auth/login", "missing_required_after": ["POST /auth/signup", "POST /auth/login"], "reason_after": "missing required endpoint(s): POST /auth/signup, POST /auth/login"}
+{"timestamp": "2026-09-08T14:44:39.742853+00:00", "project_name": "todo_app", "status": "repaired", "missing_required_before": ["POST /auth/signup", "POST /auth/login"], "reason_before": "missing required endpoint(s): POST /auth/signup, POST /auth/login", "missing_required_after": [], "reason_after": "complete"}
+{"timestamp": "2026-09-08T14:44:40.331268+00:00", "project_name": "todo_app", "status": "complete", "missing_required_before": [], "reason_before": "complete"}
+{"timestamp": "2026-09-08T14:45:23.904777+00:00", "project_name": "todo_app", "status": "complete", "missing_required_before": [], "reason_before": "complete"}
+{"timestamp": "2026-09-08T14:46:11.538440+00:00", "project_name": "todo_app", "status": "complete", "missing_required_before": [], "reason_before": "complete"}
+{"timestamp": "2026-09-08T14:46:56.558053+00:00", "project_name": "test_todo_app", "status": "complete", "missing_required_before": [], "reason_before": "complete"}
+{"timestamp": "2026-09-08T14:47:01.149061+00:00", "project_name": "todo_app", "status": "complete", "missing_required_before": [], "reason_before": "complete"}
+{"timestamp": "2026-09-08T17:05:35.318211+00:00", "project_name": "todo_app", "status": "repaired", "missing_required_before": ["POST /auth/signup", "POST /auth/login"], "reason_before": "missing required endpoint(s): POST /auth/signup, POST /auth/login", "missing_required_after": [], "reason_after": "complete"}
+{"timestamp": "2026-09-08T17:05:35.838713+00:00", "project_name": "todo_app", "status": "complete", "missing_required_before": [], "reason_before": "complete"}
+{"timestamp": "2026-09-08T17:08:41.113926+00:00", "project_name": "simple_note_taking_app", "status": "complete", "missing_required_before": [], "reason_before": "complete"}
+{"timestamp": "2026-09-08T17:08:42.010324+00:00", "project_name": "simple_note_taking_app", "status": "complete", "missing_required_before": [], "reason_before": "complete"}
+{"timestamp": "2026-09-08T17:09:17.645879+00:00", "project_name": "simple_note_taking_app", "status": "complete", "missing_required_before": [], "reason_before": "complete"}
+{"timestamp": "2026-09-08T17:10:02.345693+00:00", "project_name": "simple_note_taking_app", "status": "complete", "missing_required_before": [], "reason_before": "complete"}
+{"timestamp": "2026-09-08T17:10:48.338211+00:00", "project_name": "simple_note_taking_app", "status": "complete", "missing_required_before": [], "reason_before": "complete"}
+{"timestamp": "2026-09-08T17:13:45.282950+00:00", "project_name": "task_management_system", "status": "complete", "missing_required_before": [], "reason_before": "complete"}
+{"timestamp": "2026-09-08T17:16:57.225032+00:00", "project_name": "blog_platform", "status": "complete", "missing_required_before": [], "reason_before": "complete"}
+{"timestamp": "2026-09-08T17:19:44.090514+00:00", "project_name": "contact_manager", "status": "complete", "missing_required_before": [], "reason_before": "complete"}
+{"timestamp": "2026-09-08T17:22:49.800188+00:00", "project_name": "habit_tracker", "status": "complete", "missing_required_before": [], "reason_before": "complete"}
+{"timestamp": "2026-09-08T17:36:23.455963+00:00", "project_name": "todo_app", "status": "repaired", "missing_required_before": ["POST /auth/signup", "POST /auth/login"], "reason_before": "missing required endpoint(s): POST /auth/signup, POST /auth/login", "missing_required_after": [], "reason_after": "complete"}
+{"timestamp": "2026-09-08T17:36:23.990554+00:00", "project_name": "todo_app", "status": "complete", "missing_required_before": [], "reason_before": "complete"}
+{"timestamp": "2026-09-08T17:37:48.231768+00:00", "project_name": "todo_app", "status": "repaired", "missing_required_before": ["POST /auth/signup", "POST /auth/login"], "reason_before": "missing required endpoint(s): POST /auth/signup, POST /auth/login", "missing_required_after": [], "reason_after": "complete"}
+{"timestamp": "2026-09-08T17:37:49.275185+00:00", "project_name": "todo_app", "status": "complete", "missing_required_before": [], "reason_before": "complete"}
+{"timestamp": "2026-09-08T17:37:51.475617+00:00", "project_name": "simple_note_taking_app", "status": "complete", "missing_required_before": [], "reason_before": "complete"}
+{"timestamp": "2026-09-08T17:37:52.286657+00:00", "project_name": "simple_note_taking_app", "status": "complete", "missing_required_before": [], "reason_before": "complete"}
+{"timestamp": "2026-09-08T17:37:56.345751+00:00", "project_name": "todo_app", "status": "repaired", "missing_required_before": ["POST /auth/signup", "POST /auth/login"], "reason_before": "missing required endpoint(s): POST /auth/signup, POST /auth/login", "missing_required_after": [], "reason_after": "complete"}
+{"timestamp": "2026-09-08T17:37:58.797364+00:00", "project_name": "todo_app", "status": "complete", "missing_required_before": [], "reason_before": "complete"}
+{"timestamp": "2026-09-08T17:38:31.533410+00:00", "project_name": "todo_app", "status": "complete", "missing_required_before": [], "reason_before": "complete"}
+{"timestamp": "2026-09-08T17:38:44.549669+00:00", "project_name": "simple_note_taking_app", "status": "complete", "missing_required_before": [], "reason_before": "complete"}
+{"timestamp": "2026-09-08T17:38:45.172278+00:00", "project_name": "simple_note_taking_app", "status": "complete", "missing_required_before": [], "reason_before": "complete"}
+{"timestamp": "2026-09-08T17:39:04.024119+00:00", "project_name": "task_management_system", "status": "complete", "missing_required_before": [], "reason_before": "complete"}
+{"timestamp": "2026-09-08T17:39:22.925649+00:00", "project_name": "simple_note_taking_app", "status": "complete", "missing_required_before": [], "reason_before": "complete"}
+{"timestamp": "2026-09-08T17:39:34.909296+00:00", "project_name": "simple_note_taking_app", "status": "complete", "missing_required_before": [], "reason_before": "complete"}
+{"timestamp": "2026-09-08T17:39:35.728717+00:00", "project_name": "simple_note_taking_app", "status": "complete", "missing_required_before": [], "reason_before": "complete"}
+{"timestamp": "2026-09-08T17:40:45.080910+00:00", "project_name": "blog_platform", "status": "complete", "missing_required_before": [], "reason_before": "complete"}
+{"timestamp": "2026-09-08T17:40:54.136667+00:00", "project_name": "task_management_system", "status": "complete", "missing_required_before": [], "reason_before": "complete"}
+{"timestamp": "2026-09-08T17:41:12.955048+00:00", "project_name": "task_management_system", "status": "complete", "missing_required_before": [], "reason_before": "complete"}
+{"timestamp": "2026-09-08T17:41:26.300148+00:00", "project_name": "task_management_system", "status": "complete", "missing_required_before": [], "reason_before": "complete"}
+{"timestamp": "2026-09-08T17:41:34.079544+00:00", "project_name": "task_management_system", "status": "complete", "missing_required_before": [], "reason_before": "complete"}
+{"timestamp": "2026-09-08T17:41:51.176657+00:00", "project_name": "task_management_system", "status": "complete", "missing_required_before": [], "reason_before": "complete"}
+{"timestamp": "2026-09-08T17:42:08.024458+00:00", "project_name": "contact_manager", "status": "complete", "missing_required_before": [], "reason_before": "complete"}
+{"timestamp": "2026-09-08T17:43:38.226186+00:00", "project_name": "blog_platform", "status": "complete", "missing_required_before": [], "reason_before": "complete"}
+{"timestamp": "2026-09-08T17:43:47.596980+00:00", "project_name": "habit_tracker", "status": "complete", "missing_required_before": [], "reason_before": "complete"}
+{"timestamp": "2026-09-08T17:44:12.575223+00:00", "project_name": "blog_platform", "status": "complete", "missing_required_before": [], "reason_before": "complete"}
+{"timestamp": "2026-09-08T17:44:24.723686+00:00", "project_name": "blog_platform", "status": "complete", "missing_required_before": [], "reason_before": "complete"}
+{"timestamp": "2026-09-08T17:45:12.861871+00:00", "project_name": "contact_manager", "status": "complete", "missing_required_before": [], "reason_before": "complete"}
+{"timestamp": "2026-09-08T17:45:40.703001+00:00", "project_name": "contact_manager", "status": "complete", "missing_required_before": [], "reason_before": "complete"}
+{"timestamp": "2026-09-08T17:54:02.079623+00:00", "project_name": "todo_app", "status": "repaired", "missing_required_before": ["POST /auth/signup", "POST /auth/login"], "reason_before": "missing required endpoint(s): POST /auth/signup, POST /auth/login", "missing_required_after": [], "reason_after": "complete"}
+{"timestamp": "2026-09-08T17:54:02.617084+00:00", "project_name": "todo_app", "status": "complete", "missing_required_before": [], "reason_before": "complete"}
+{"timestamp": "2026-09-08T17:56:49.961532+00:00", "project_name": "simple_note_taking_app", "status": "complete", "missing_required_before": [], "reason_before": "complete"}
+{"timestamp": "2026-09-08T17:58:12.262889+00:00", "project_name": "simple_todo_app", "status": "complete", "missing_required_before": [], "reason_before": "complete"}
+{"timestamp": "2026-09-08T17:59:29.737471+00:00", "project_name": "todo_app", "status": "repaired", "missing_required_before": ["POST /auth/signup", "POST /auth/login"], "reason_before": "missing required endpoint(s): POST /auth/signup, POST /auth/login", "missing_required_after": [], "reason_after": "complete"}
+{"timestamp": "2026-09-08T17:59:30.251771+00:00", "project_name": "todo_app", "status": "complete", "missing_required_before": [], "reason_before": "complete"}
+{"timestamp": "2026-09-08T18:00:28.280415+00:00", "project_name": "simple_note_taking_app", "status": "complete", "missing_required_before": [], "reason_before": "complete"}
+{"timestamp": "2026-09-08T18:00:28.865212+00:00", "project_name": "simple_note_taking_app", "status": "complete", "missing_required_before": [], "reason_before": "complete"}
+{"timestamp": "2026-09-08T18:01:55.218216+00:00", "project_name": "task_management_system", "status": "complete", "missing_required_before": [], "reason_before": "complete"}
+{"timestamp": "2026-09-08T18:04:59.470824+00:00", "project_name": "blog_platform", "status": "complete", "missing_required_before": [], "reason_before": "complete"}
+{"timestamp": "2026-09-08T18:07:21.593234+00:00", "project_name": "contact_manager", "status": "complete", "missing_required_before": [], "reason_before": "complete"}
+{"timestamp": "2026-09-08T18:09:25.547746+00:00", "project_name": "habit_tracker", "status": "complete", "missing_required_before": [], "reason_before": "complete"}
+{"timestamp": "2026-09-08T18:11:42.532452+00:00", "project_name": "fitness_log", "status": "complete", "missing_required_before": [], "reason_before": "complete"}
+{"timestamp": "2026-09-08T18:13:04.107785+00:00", "project_name": "fitness_log", "status": "complete", "missing_required_before": [], "reason_before": "complete"}
+{"timestamp": "2026-09-08T18:13:59.801771+00:00", "project_name": "fitness_log", "status": "complete", "missing_required_before": [], "reason_before": "complete"}
+{"timestamp": "2026-09-08T18:14:54.646252+00:00", "project_name": "fitness_log", "status": "complete", "missing_required_before": [], "reason_before": "complete"}
+{"timestamp": "2026-09-08T18:17:07.030101+00:00", "project_name": "recipe_collection_app", "status": "complete", "missing_required_before": [], "reason_before": "complete"}
+{"timestamp": "2026-09-08T18:17:09.960772+00:00", "project_name": "recipe_collection_app", "status": "complete", "missing_required_before": [], "reason_before": "complete"}
+{"timestamp": "2026-09-08T18:23:44.649019+00:00", "project_name": "movie_watchlist", "status": "complete", "missing_required_before": [], "reason_before": "complete"}
+{"timestamp": "2026-09-08T18:23:47.353051+00:00", "project_name": "movie_watchlist", "status": "complete", "missing_required_before": [], "reason_before": "complete"}
+{"timestamp": "2026-09-08T18:26:48.127832+00:00", "project_name": "expense_tracker", "status": "complete", "missing_required_before": [], "reason_before": "complete"}
+{"timestamp": "2026-09-08T18:28:07.533203+00:00", "project_name": "expense_tracker", "status": "complete", "missing_required_before": [], "reason_before": "complete"}
+{"timestamp": "2026-09-08T18:30:05.676858+00:00", "project_name": "todo_app", "status": "repaired", "missing_required_before": ["POST /auth/signup", "POST /auth/login"], "reason_before": "missing required endpoint(s): POST /auth/signup, POST /auth/login", "missing_required_after": [], "reason_after": "complete"}
+{"timestamp": "2026-09-08T18:30:08.221785+00:00", "project_name": "todo_app", "status": "complete", "missing_required_before": [], "reason_before": "complete"}
+{"timestamp": "2026-09-08T18:32:09.047269+00:00", "project_name": "simple_note_taking_app", "status": "complete", "missing_required_before": [], "reason_before": "complete"}
+{"timestamp": "2026-09-08T18:32:11.906645+00:00", "project_name": "simple_note_taking_app", "status": "complete", "missing_required_before": [], "reason_before": "complete"}
+{"timestamp": "2026-09-08T18:34:19.849524+00:00", "project_name": "task_management_system", "status": "complete", "missing_required_before": [], "reason_before": "complete"}
+{"timestamp": "2026-09-08T18:36:57.175347+00:00", "project_name": "blog_platform", "status": "complete", "missing_required_before": [], "reason_before": "complete"}
+{"timestamp": "2026-09-08T18:39:16.077466+00:00", "project_name": "contact_manager", "status": "complete", "missing_required_before": [], "reason_before": "complete"}
+{"timestamp": "2026-09-08T18:41:18.453664+00:00", "project_name": "habit_tracker", "status": "complete", "missing_required_before": [], "reason_before": "complete"}
+{"timestamp": "2026-09-08T18:43:51.322244+00:00", "project_name": "fitness_log", "status": "complete", "missing_required_before": [], "reason_before": "complete"}
+{"timestamp": "2026-09-08T18:45:13.545567+00:00", "project_name": "fitness_log", "status": "complete", "missing_required_before": [], "reason_before": "complete"}
+{"timestamp": "2026-09-08T18:46:09.594531+00:00", "project_name": "fitness_log", "status": "complete", "missing_required_before": [], "reason_before": "complete"}
+{"timestamp": "2026-09-08T18:47:05.116566+00:00", "project_name": "fitness_log", "status": "complete", "missing_required_before": [], "reason_before": "complete"}
+{"timestamp": "2026-09-08T18:48:20.433905+00:00", "project_name": "recipe_collection_app", "status": "complete", "missing_required_before": [], "reason_before": "complete"}
+{"timestamp": "2026-09-08T18:48:20.858036+00:00", "project_name": "recipe_collection_app", "status": "complete", "missing_required_before": [], "reason_before": "complete"}
+{"timestamp": "2026-09-08T18:49:47.167403+00:00", "project_name": "movie_watchlist", "status": "complete", "missing_required_before": [], "reason_before": "complete"}
+{"timestamp": "2026-09-08T18:49:49.695905+00:00", "project_name": "movie_watchlist", "status": "complete", "missing_required_before": [], "reason_before": "complete"}
+{"timestamp": "2026-09-08T18:51:55.020893+00:00", "project_name": "expense_tracker", "status": "complete", "missing_required_before": [], "reason_before": "complete"}
+{"timestamp": "2026-09-08T18:53:19.727884+00:00", "project_name": "expense_tracker", "status": "complete", "missing_required_before": [], "reason_before": "complete"}
+{"timestamp": "2026-09-08T18:54:36.712279+00:00", "project_name": "expense_tracker", "status": "complete", "missing_required_before": [], "reason_before": "complete"}
+{"timestamp": "2026-09-08T18:56:50.637377+00:00", "project_name": "todo_app", "status": "repaired", "missing_required_before": ["POST /auth/signup", "POST /auth/login"], "reason_before": "missing required endpoint(s): POST /auth/signup, POST /auth/login", "missing_required_after": [], "reason_after": "complete"}
+{"timestamp": "2026-09-08T18:56:51.701441+00:00", "project_name": "todo_app", "status": "complete", "missing_required_before": [], "reason_before": "complete"}
+{"timestamp": "2026-09-08T18:58:48.176799+00:00", "project_name": "simple_note_taking_app", "status": "complete", "missing_required_before": [], "reason_before": "complete"}
+{"timestamp": "2026-09-08T18:58:50.870545+00:00", "project_name": "simple_note_taking_app", "status": "complete", "missing_required_before": [], "reason_before": "complete"}
+{"timestamp": "2026-09-08T19:00:51.665751+00:00", "project_name": "task_management_system", "status": "complete", "missing_required_before": [], "reason_before": "complete"}
+{"timestamp": "2026-09-08T19:03:34.540623+00:00", "project_name": "blog_platform", "status": "complete", "missing_required_before": [], "reason_before": "complete"}
+{"timestamp": "2026-09-08T19:05:37.096556+00:00", "project_name": "contact_manager", "status": "complete", "missing_required_before": [], "reason_before": "complete"}
+{"timestamp": "2026-09-08T19:07:26.560322+00:00", "project_name": "habit_tracker", "status": "complete", "missing_required_before": [], "reason_before": "complete"}
+{"timestamp": "2026-09-08T19:09:47.857720+00:00", "project_name": "fitness_log", "status": "complete", "missing_required_before": [], "reason_before": "complete"}
+{"timestamp": "2026-09-08T19:10:51.622052+00:00", "project_name": "fitness_log", "status": "complete", "missing_required_before": [], "reason_before": "complete"}
+{"timestamp": "2026-09-08T19:11:41.289649+00:00", "project_name": "fitness_log", "status": "complete", "missing_required_before": [], "reason_before": "complete"}
+{"timestamp": "2026-09-08T19:12:31.877795+00:00", "project_name": "fitness_log", "status": "complete", "missing_required_before": [], "reason_before": "complete"}
+{"timestamp": "2026-09-08T19:13:49.797515+00:00", "project_name": "recipe_collection_app", "status": "complete", "missing_required_before": [], "reason_before": "complete"}
+{"timestamp": "2026-09-08T19:13:52.596034+00:00", "project_name": "recipe_collection_app", "status": "complete", "missing_required_before": [], "reason_before": "complete"}
+{"timestamp": "2026-09-08T19:16:08.665850+00:00", "project_name": "movie_watchlist", "status": "complete", "missing_required_before": [], "reason_before": "complete"}
+{"timestamp": "2026-09-08T19:16:11.005996+00:00", "project_name": "movie_watchlist", "status": "complete", "missing_required_before": [], "reason_before": "complete"}
+{"timestamp": "2026-09-08T19:17:58.005931+00:00", "project_name": "expense_tracker", "status": "complete", "missing_required_before": [], "reason_before": "complete"}
+{"timestamp": "2026-09-08T19:18:57.164693+00:00", "project_name": "expense_tracker", "status": "complete", "missing_required_before": [], "reason_before": "complete"}
+{"timestamp": "2026-09-08T19:21:33.753407+00:00", "project_name": "todo_app", "status": "repaired", "missing_required_before": ["POST /auth/signup", "POST /auth/login"], "reason_before": "missing required endpoint(s): POST /auth/signup, POST /auth/login", "missing_required_after": [], "reason_after": "complete"}
+{"timestamp": "2026-09-08T19:21:35.956021+00:00", "project_name": "todo_app", "status": "complete", "missing_required_before": [], "reason_before": "complete"}
+{"timestamp": "2026-09-08T19:23:14.300789+00:00", "project_name": "simple_note_taking_app", "status": "complete", "missing_required_before": [], "reason_before": "complete"}
+{"timestamp": "2026-09-08T19:23:16.743170+00:00", "project_name": "simple_note_taking_app", "status": "complete", "missing_required_before": [], "reason_before": "complete"}
+{"timestamp": "2026-09-08T19:25:01.566314+00:00", "project_name": "task_management_system", "status": "complete", "missing_required_before": [], "reason_before": "complete"}
+{"timestamp": "2026-09-08T19:27:15.669814+00:00", "project_name": "blog_platform", "status": "complete", "missing_required_before": [], "reason_before": "complete"}
+{"timestamp": "2026-09-08T19:29:07.808830+00:00", "project_name": "contact_manager", "status": "complete", "missing_required_before": [], "reason_before": "complete"}
+{"timestamp": "2026-09-08T19:30:55.035438+00:00", "project_name": "habit_tracker", "status": "complete", "missing_required_before": [], "reason_before": "complete"}
+{"timestamp": "2026-09-08T19:32:45.057163+00:00", "project_name": "fitness_log", "status": "complete", "missing_required_before": [], "reason_before": "complete"}
+{"timestamp": "2026-09-08T19:32:47.383735+00:00", "project_name": "fitness_log", "status": "complete", "missing_required_before": [], "reason_before": "complete"}
+{"timestamp": "2026-09-08T19:33:55.266536+00:00", "project_name": "fitness_log", "status": "complete", "missing_required_before": [], "reason_before": "complete"}
+{"timestamp": "2026-09-08T19:35:25.269498+00:00", "project_name": "fitness_log", "status": "complete", "missing_required_before": [], "reason_before": "complete"}
+{"timestamp": "2026-09-08T19:36:56.575331+00:00", "project_name": "fitness_log", "status": "complete", "missing_required_before": [], "reason_before": "complete"}
+{"timestamp": "2026-09-08T19:37:25.408876+00:00", "project_name": "recipe_collection_app", "status": "complete", "missing_required_before": [], "reason_before": "complete"}
+{"timestamp": "2026-09-08T19:37:28.147503+00:00", "project_name": "recipe_collection_app", "status": "complete", "missing_required_before": [], "reason_before": "complete"}
+{"timestamp": "2026-09-08T19:39:00.633167+00:00", "project_name": "movie_watchlist", "status": "complete", "missing_required_before": [], "reason_before": "complete"}
+{"timestamp": "2026-09-08T19:39:02.966972+00:00", "project_name": "movie_watchlist", "status": "complete", "missing_required_before": [], "reason_before": "complete"}
+{"timestamp": "2026-09-08T19:41:04.514452+00:00", "project_name": "expense_tracker", "status": "complete", "missing_required_before": [], "reason_before": "complete"}
+{"timestamp": "2026-09-08T19:42:06.510258+00:00", "project_name": "expense_tracker", "status": "complete", "missing_required_before": [], "reason_before": "complete"}
+{"timestamp": "2026-09-08T19:44:37.907317+00:00", "project_name": "todo_app", "status": "repaired", "missing_required_before": ["POST /auth/signup", "POST /auth/login"], "reason_before": "missing required endpoint(s): POST /auth/signup, POST /auth/login", "missing_required_after": [], "reason_after": "complete"}
+{"timestamp": "2026-09-08T19:44:40.173826+00:00", "project_name": "todo_app", "status": "complete", "missing_required_before": [], "reason_before": "complete"}
+{"timestamp": "2026-09-08T19:46:18.429482+00:00", "project_name": "simple_note_taking_app", "status": "complete", "missing_required_before": [], "reason_before": "complete"}
+{"timestamp": "2026-09-08T19:46:21.079914+00:00", "project_name": "simple_note_taking_app", "status": "complete", "missing_required_before": [], "reason_before": "complete"}
+{"timestamp": "2026-09-08T19:48:37.400292+00:00", "project_name": "task_management_system", "status": "complete", "missing_required_before": [], "reason_before": "complete"}
+{"timestamp": "2026-09-08T19:51:34.367535+00:00", "project_name": "blog_platform", "status": "complete", "missing_required_before": [], "reason_before": "complete"}
+{"timestamp": "2026-09-08T19:53:28.101352+00:00", "project_name": "contact_manager", "status": "complete", "missing_required_before": [], "reason_before": "complete"}
+{"timestamp": "2026-09-08T19:55:11.684366+00:00", "project_name": "habit_tracker", "status": "complete", "missing_required_before": [], "reason_before": "complete"}

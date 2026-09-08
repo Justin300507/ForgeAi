@@ -1,0 +1,182 @@
+[
+  {
+    "app_num": 1,
+    "idea": "A todo app with user login",
+    "score": 0,
+    "grade": "F",
+    "working": false,
+    "error": "HTTPConnectionPool(host='localhost', port=8000): Read timed out. (read timeout=300)",
+    "timestamp": "2026-09-08T20:17:05.024678"
+  },
+  {
+    "app_num": 2,
+    "idea": "A simple note-taking app",
+    "score": 0,
+    "grade": "F",
+    "working": false,
+    "error": "('Connection aborted.', ConnectionResetError(10054, 'An existing connection was forcibly closed by the remote host', None, 10054, None))",
+    "timestamp": "2026-09-08T20:17:14.649504"
+  },
+  {
+    "app_num": 3,
+    "idea": "A task management system",
+    "score": 0,
+    "grade": "F",
+    "working": false,
+    "error": "HTTPConnectionPool(host='localhost', port=8000): Read timed out. (read timeout=300)",
+    "timestamp": "2026-09-08T20:22:16.731685"
+  },
+  {
+    "app_num": 4,
+    "idea": "A blog with comments",
+    "score": 0,
+    "grade": "F",
+    "working": false,
+    "error": "HTTPConnectionPool(host='localhost', port=8000): Read timed out. (read timeout=300)",
+    "timestamp": "2026-09-08T20:27:18.778154"
+  },
+  {
+    "app_num": 5,
+    "idea": "A contact manager",
+    "score": 0,
+    "grade": "F",
+    "working": false,
+    "error": "HTTPConnectionPool(host='localhost', port=8000): Read timed out. (read timeout=300)",
+    "timestamp": "2026-09-08T20:32:20.858394"
+  },
+  {
+    "app_num": 6,
+    "idea": "A habit tracker",
+    "score": 0,
+    "grade": "F",
+    "working": false,
+    "error": "HTTPConnectionPool(host='localhost', port=8000): Read timed out. (read timeout=300)",
+    "timestamp": "2026-09-08T20:37:22.919397"
+  },
+  {
+    "app_num": 7,
+    "idea": "A fitness log",
+    "score": 0,
+    "grade": "F",
+    "working": false,
+    "error": "HTTPConnectionPool(host='localhost', port=8000): Read timed out. (read timeout=300)",
+    "timestamp": "2026-09-08T20:42:24.980557"
+  },
+  {
+    "app_num": 8,
+    "idea": "A recipe collection app",
+    "score": 0,
+    "grade": "F",
+    "working": false,
+    "error": "HTTPConnectionPool(host='localhost', port=8000): Read timed out. (read timeout=300)",
+    "timestamp": "2026-09-08T20:47:27.027138"
+  },
+  {
+    "app_num": 9,
+    "idea": "A movie watchlist",
+    "score": 0,
+    "grade": "F",
+    "working": false,
+    "error": "HTTPConnectionPool(host='localhost', port=8000): Read timed out. (read timeout=300)",
+    "timestamp": "2026-09-08T20:52:29.086363"
+  },
+  {
+    "app_num": 10,
+    "idea": "An expense tracker",
+    "score": 0,
+    "grade": "F",
+    "working": false,
+    "error": "HTTPConnectionPool(host='localhost', port=8000): Read timed out. (read timeout=300)",
+    "timestamp": "2026-09-08T20:57:31.135665"
+  },
+  {
+    "app_num": 11,
+    "idea": "A todo app with user login",
+    "score": 0,
+    "grade": "F",
+    "working": false,
+    "error": "HTTPConnectionPool(host='localhost', port=8000): Read timed out. (read timeout=300)",
+    "timestamp": "2026-09-08T21:02:33.213480"
+  },
+  {
+    "app_num": 12,
+    "idea": "A simple note-taking app",
+    "score": 0,
+    "grade": "F",
+    "working": false,
+    "error": "HTTPConnectionPool(host='localhost', port=8000): Read timed out. (read timeout=300)",
+    "timestamp": "2026-09-08T21:07:35.284300"
+  },
+  {
+    "app_num": 13,
+    "idea": "A task management system",
+    "score": 0,
+    "grade": "F",
+    "working": false,
+    "error": "HTTPConnectionPool(host='localhost', port=8000): Read timed out. (read timeout=300)",
+    "timestamp": "2026-09-08T21:12:37.355768"
+  },
+  {
+    "app_num": 14,
+    "idea": "A blog with comments",
+    "score": 0,
+    "grade": "F",
+    "working": false,
+    "error": "HTTPConnectionPool(host='localhost', port=8000): Read timed out. (read timeout=300)",
+    "timestamp": "2026-09-08T21:17:39.410575"
+  },
+  {
+    "app_num": 15,
+    "idea": "A contact manager",
+    "score": 0,
+    "grade": "F",
+    "working": false,
+    "error": "HTTPConnectionPool(host='localhost', port=8000): Read timed out. (read timeout=300)",
+    "timestamp": "2026-09-08T21:22:41.469230"
+  },
+  {
+    "app_num": 16,
+    "idea": "A habit tracker",
+    "score": 0,
+    "grade": "F",
+    "working": false,
+    "error": "HTTPConnectionPool(host='localhost', port=8000): Read timed out. (read timeout=300)",
+    "timestamp": "2026-09-08T21:27:43.539182"
+  },
+  {
+    "app_num": 17,
+    "idea": "A fitness log",
+    "score": 0,
+    "grade": "F",
+    "working": false,
+    "error": "HTTPConnectionPool(host='localhost', port=8000): Read timed out. (read timeout=300)",
+    "timestamp": "2026-09-08T21:32:45.592709"
+  },
+  {
+    "app_num": 18,
+    "idea": "A recipe collection app",
+    "score": 0,
+    "grade": "F",
+    "working": false,
+    "error": "HTTPConnectionPool(host='localhost', port=8000): Read timed out. (read timeout=300)",
+    "timestamp": "2026-09-08T21:37:47.655145"
+  },
+  {
+    "app_num": 19,
+    "idea": "A movie watchlist",
+    "score": 0,
+    "grade": "F",
+    "working": false,
+    "error": "HTTPConnectionPool(host='localhost', port=8000): Read timed out. (read timeout=300)",
+    "timestamp": "2026-09-08T21:42:49.694211"
+  },
+  {
+    "app_num": 20,
+    "idea": "An expense tracker",
+    "score": 0,
+    "grade": "F",
+    "working": false,
+    "error": "HTTPConnectionPool(host='localhost', port=8000): Read timed out. (read timeout=300)",
+    "timestamp": "2026-09-08T21:47:51.769639"
+  }
+]

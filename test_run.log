@@ -1,0 +1,152 @@
+================================================================================
+PRODUCTION TEST SUITE
+================================================================================
+Testing against: http://localhost:8000
+Target: 80+ working apps (Forge Score >= 80)
+
+? Server is LIVE
+
+================================================================================
+TESTING 100 APPS
+================================================================================
+
+[  1] ?   0.0/100 (F) | A todo app with user login and task |   1.1m
+[  2] ?   0.0/100 (F) | A simple note-taking app with folde |   3.2m
+[  3] ?   0.0/100 (F) | A task management system with prior |   5.0m
+[  4] ?   0.0/100 (F) | A blog platform with comments and l |   7.2m
+[  5] ?   0.0/100 (F) | A contact manager with groups       |   8.4m
+[  6] ? ('Connection aborted.', ConnectionResetError(10054 | A habit tracker with streaks        |   9.0m
+[  7] ? HTTPConnectionPool(host='localhost', port=8000): M | A fitness log with workout history  |   9.1m
+[  8] ? HTTPConnectionPool(host='localhost', port=8000): M | A recipe collection app             |   9.2m
+[  9] ? HTTPConnectionPool(host='localhost', port=8000): M | A movie watchlist with ratings      |   9.3m
+[ 10] ? HTTPConnectionPool(host='localhost', port=8000): M | An expense tracker with categories  |   9.3m
+
+?? Checkpoint: 0/10 (0%)
+
+[ 11] ? HTTPConnectionPool(host='localhost', port=8000): M | A todo app with user login and task |   9.4m
+[ 12] ? HTTPConnectionPool(host='localhost', port=8000): M | A simple note-taking app with folde |   9.5m
+[ 13] ? HTTPConnectionPool(host='localhost', port=8000): M | A task management system with prior |   9.5m
+[ 14] ? HTTPConnectionPool(host='localhost', port=8000): M | A blog platform with comments and l |   9.6m
+[ 15] ? HTTPConnectionPool(host='localhost', port=8000): M | A contact manager with groups       |   9.7m
+[ 16] ? HTTPConnectionPool(host='localhost', port=8000): M | A habit tracker with streaks        |   9.7m
+[ 17] ? HTTPConnectionPool(host='localhost', port=8000): M | A fitness log with workout history  |   9.8m
+[ 18] ? HTTPConnectionPool(host='localhost', port=8000): M | A recipe collection app             |   9.9m
+[ 19] ? HTTPConnectionPool(host='localhost', port=8000): M | A movie watchlist with ratings      |   9.9m
+[ 20] ? HTTPConnectionPool(host='localhost', port=8000): M | An expense tracker with categories  |  10.0m
+
+?? Checkpoint: 0/20 (0%)
+
+[ 21] ? HTTPConnectionPool(host='localhost', port=8000): M | A todo app with user login and task |  10.1m
+[ 22] ? HTTPConnectionPool(host='localhost', port=8000): M | A simple note-taking app with folde |  10.1m
+[ 23] ? HTTPConnectionPool(host='localhost', port=8000): M | A task management system with prior |  10.2m
+[ 24] ? HTTPConnectionPool(host='localhost', port=8000): M | A blog platform with comments and l |  10.3m
+[ 25] ? HTTPConnectionPool(host='localhost', port=8000): M | A contact manager with groups       |  10.3m
+[ 26] ? HTTPConnectionPool(host='localhost', port=8000): M | A habit tracker with streaks        |  10.4m
+[ 27] ? HTTPConnectionPool(host='localhost', port=8000): M | A fitness log with workout history  |  10.5m
+[ 28] ? HTTPConnectionPool(host='localhost', port=8000): M | A recipe collection app             |  10.5m
+[ 29] ? HTTPConnectionPool(host='localhost', port=8000): M | A movie watchlist with ratings      |  10.6m
+[ 30] ? HTTPConnectionPool(host='localhost', port=8000): M | An expense tracker with categories  |  10.7m
+
+?? Checkpoint: 0/30 (0%)
+
+[ 31] ? HTTPConnectionPool(host='localhost', port=8000): M | A todo app with user login and task |  10.8m
+[ 32] ? HTTPConnectionPool(host='localhost', port=8000): M | A simple note-taking app with folde |  10.8m
+[ 33] ? HTTPConnectionPool(host='localhost', port=8000): M | A task management system with prior |  10.9m
+[ 34] ? HTTPConnectionPool(host='localhost', port=8000): M | A blog platform with comments and l |  11.0m
+[ 35] ? HTTPConnectionPool(host='localhost', port=8000): M | A contact manager with groups       |  11.0m
+[ 36] ? HTTPConnectionPool(host='localhost', port=8000): M | A habit tracker with streaks        |  11.1m
+[ 37] ? HTTPConnectionPool(host='localhost', port=8000): M | A fitness log with workout history  |  11.2m
+[ 38] ? HTTPConnectionPool(host='localhost', port=8000): M | A recipe collection app             |  11.2m
+[ 39] ? HTTPConnectionPool(host='localhost', port=8000): M | A movie watchlist with ratings      |  11.3m
+[ 40] ? HTTPConnectionPool(host='localhost', port=8000): M | An expense tracker with categories  |  11.4m
+
+?? Checkpoint: 0/40 (0%)
+
+[ 41] ? HTTPConnectionPool(host='localhost', port=8000): M | A todo app with user login and task |  11.4m
+[ 42] ? HTTPConnectionPool(host='localhost', port=8000): M | A simple note-taking app with folde |  11.5m
+[ 43] ? HTTPConnectionPool(host='localhost', port=8000): M | A task management system with prior |  11.6m
+[ 44] ? HTTPConnectionPool(host='localhost', port=8000): M | A blog platform with comments and l |  11.6m
+[ 45] ? HTTPConnectionPool(host='localhost', port=8000): M | A contact manager with groups       |  11.7m
+[ 46] ? HTTPConnectionPool(host='localhost', port=8000): M | A habit tracker with streaks        |  11.8m
+[ 47] ? HTTPConnectionPool(host='localhost', port=8000): M | A fitness log with workout history  |  11.8m
+[ 48] ? HTTPConnectionPool(host='localhost', port=8000): M | A recipe collection app             |  11.9m
+[ 49] ? HTTPConnectionPool(host='localhost', port=8000): M | A movie watchlist with ratings      |  12.0m
+[ 50] ? HTTPConnectionPool(host='localhost', port=8000): M | An expense tracker with categories  |  12.0m
+
+?? Checkpoint: 0/50 (0%)
+
+[ 51] ? HTTPConnectionPool(host='localhost', port=8000): M | A todo app with user login and task |  12.1m
+[ 52] ? HTTPConnectionPool(host='localhost', port=8000): M | A simple note-taking app with folde |  12.2m
+[ 53] ? HTTPConnectionPool(host='localhost', port=8000): M | A task management system with prior |  12.3m
+[ 54] ? HTTPConnectionPool(host='localhost', port=8000): M | A blog platform with comments and l |  12.3m
+[ 55] ? HTTPConnectionPool(host='localhost', port=8000): M | A contact manager with groups       |  12.4m
+[ 56] ? HTTPConnectionPool(host='localhost', port=8000): M | A habit tracker with streaks        |  12.5m
+[ 57] ? HTTPConnectionPool(host='localhost', port=8000): M | A fitness log with workout history  |  12.5m
+[ 58] ? HTTPConnectionPool(host='localhost', port=8000): M | A recipe collection app             |  12.6m
+[ 59] ? HTTPConnectionPool(host='localhost', port=8000): M | A movie watchlist with ratings      |  12.7m
+[ 60] ? HTTPConnectionPool(host='localhost', port=8000): M | An expense tracker with categories  |  12.7m
+
+?? Checkpoint: 0/60 (0%)
+
+[ 61] ? HTTPConnectionPool(host='localhost', port=8000): M | A todo app with user login and task |  12.8m
+[ 62] ? HTTPConnectionPool(host='localhost', port=8000): M | A simple note-taking app with folde |  12.9m
+[ 63] ? HTTPConnectionPool(host='localhost', port=8000): M | A task management system with prior |  12.9m
+[ 64] ? HTTPConnectionPool(host='localhost', port=8000): M | A blog platform with comments and l |  13.0m
+[ 65] ? HTTPConnectionPool(host='localhost', port=8000): M | A contact manager with groups       |  13.1m
+[ 66] ? HTTPConnectionPool(host='localhost', port=8000): M | A habit tracker with streaks        |  13.1m
+[ 67] ? HTTPConnectionPool(host='localhost', port=8000): M | A fitness log with workout history  |  13.2m
+[ 68] ? HTTPConnectionPool(host='localhost', port=8000): M | A recipe collection app             |  13.3m
+[ 69] ? HTTPConnectionPool(host='localhost', port=8000): M | A movie watchlist with ratings      |  13.3m
+[ 70] ? HTTPConnectionPool(host='localhost', port=8000): M | An expense tracker with categories  |  13.4m
+
+?? Checkpoint: 0/70 (0%)
+
+[ 71] ? HTTPConnectionPool(host='localhost', port=8000): M | A todo app with user login and task |  13.5m
+[ 72] ? HTTPConnectionPool(host='localhost', port=8000): M | A simple note-taking app with folde |  13.5m
+[ 73] ? HTTPConnectionPool(host='localhost', port=8000): M | A task management system with prior |  13.6m
+[ 74] ? HTTPConnectionPool(host='localhost', port=8000): M | A blog platform with comments and l |  13.7m
+[ 75] ? HTTPConnectionPool(host='localhost', port=8000): M | A contact manager with groups       |  13.7m
+[ 76] ? HTTPConnectionPool(host='localhost', port=8000): M | A habit tracker with streaks        |  13.8m
+[ 77] ? HTTPConnectionPool(host='localhost', port=8000): M | A fitness log with workout history  |  13.9m
+[ 78] ? HTTPConnectionPool(host='localhost', port=8000): M | A recipe collection app             |  14.0m
+[ 79] ? HTTPConnectionPool(host='localhost', port=8000): M | A movie watchlist with ratings      |  14.0m
+[ 80] ? HTTPConnectionPool(host='localhost', port=8000): M | An expense tracker with categories  |  14.1m
+
+?? Checkpoint: 0/80 (0%)
+
+[ 81] ? HTTPConnectionPool(host='localhost', port=8000): M | A todo app with user login and task |  14.2m
+[ 82] ? HTTPConnectionPool(host='localhost', port=8000): M | A simple note-taking app with folde |  14.2m
+[ 83] ? HTTPConnectionPool(host='localhost', port=8000): M | A task management system with prior |  14.3m
+[ 84] ? HTTPConnectionPool(host='localhost', port=8000): M | A blog platform with comments and l |  14.4m
+[ 85] ? HTTPConnectionPool(host='localhost', port=8000): M | A contact manager with groups       |  14.4m
+[ 86] ? HTTPConnectionPool(host='localhost', port=8000): M | A habit tracker with streaks        |  14.5m
+[ 87] ? HTTPConnectionPool(host='localhost', port=8000): M | A fitness log with workout history  |  14.6m
+[ 88] ? HTTPConnectionPool(host='localhost', port=8000): M | A recipe collection app             |  14.6m
+[ 89] ? HTTPConnectionPool(host='localhost', port=8000): M | A movie watchlist with ratings      |  14.7m
+[ 90] ? HTTPConnectionPool(host='localhost', port=8000): M | An expense tracker with categories  |  14.8m
+
+?? Checkpoint: 0/90 (0%)
+
+[ 91] ? HTTPConnectionPool(host='localhost', port=8000): M | A todo app with user login and task |  14.8m
+[ 92] ? HTTPConnectionPool(host='localhost', port=8000): M | A simple note-taking app with folde |  14.9m
+[ 93] ? HTTPConnectionPool(host='localhost', port=8000): M | A task management system with prior |  15.0m
+[ 94] ? HTTPConnectionPool(host='localhost', port=8000): M | A blog platform with comments and l |  15.0m
+[ 95] ? HTTPConnectionPool(host='localhost', port=8000): M | A contact manager with groups       |  15.1m
+[ 96] ? HTTPConnectionPool(host='localhost', port=8000): M | A habit tracker with streaks        |  15.2m
+[ 97] ? HTTPConnectionPool(host='localhost', port=8000): M | A fitness log with workout history  |  15.2m
+[ 98] ? HTTPConnectionPool(host='localhost', port=8000): M | A recipe collection app             |  15.3m
+[ 99] ? HTTPConnectionPool(host='localhost', port=8000): M | A movie watchlist with ratings      |  15.4m
+[100] ? HTTPConnectionPool(host='localhost', port=8000): M | An expense tracker with categories  |  15.4m
+
+?? Checkpoint: 0/100 (0%)
+
+
+================================================================================
+TEST SUMMARY
+================================================================================
+Total tested:   100
+Working (80+):  0
+Success rate:   0.0%
+Time elapsed:   15.4 minutes
+
+??  Need 80 more to reach 80
