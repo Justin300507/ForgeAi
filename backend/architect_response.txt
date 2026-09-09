@@ -2,134 +2,140 @@
   "api_endpoints": [
     {
       "method": "GET",
-      "path": "/menu/categories",
-      "description": "Retrieve all menu categories",
-      "file": "app/routes/menu_routes.py"
+      "path": "/projects",
+      "description": "Retrieve a list of projects with optional search and filter parameters.",
+      "file": "app/routes/project_routes.py"
     },
     {
       "method": "GET",
-      "path": "/menu/items",
-      "description": "Retrieve all menu items with optional search and filter",
-      "file": "app/routes/menu_routes.py"
-    },
-    {
-      "method": "GET",
-      "path": "/menu/items/{id}",
-      "description": "Retrieve a specific menu item by ID",
-      "file": "app/routes/menu_routes.py"
+      "path": "/projects/{id}",
+      "description": "Retrieve a specific project by ID.",
+      "file": "app/routes/project_routes.py"
     },
     {
       "method": "POST",
-      "path": "/menu/items",
-      "description": "Create a new menu item",
-      "file": "app/routes/menu_routes.py"
+      "path": "/projects",
+      "description": "Create a new project.",
+      "file": "app/routes/project_routes.py"
     },
     {
       "method": "PUT",
-      "path": "/menu/items/{id}",
-      "description": "Update an existing menu item",
-      "file": "app/routes/menu_routes.py"
+      "path": "/projects/{id}",
+      "description": "Update an existing project by ID.",
+      "file": "app/routes/project_routes.py"
     },
     {
       "method": "DELETE",
-      "path": "/menu/items/{id}",
-      "description": "Delete a menu item by ID",
-      "file": "app/routes/menu_routes.py"
+      "path": "/projects/{id}",
+      "description": "Delete a specific project by ID.",
+      "file": "app/routes/project_routes.py"
     },
     {
       "method": "GET",
-      "path": "/tables",
-      "description": "Retrieve all tables with optional search and filter",
-      "file": "app/routes/table_routes.py"
+      "path": "/tasks",
+      "description": "Retrieve a list of tasks with optional search and filter parameters.",
+      "file": "app/routes/task_routes.py"
     },
     {
       "method": "GET",
-      "path": "/tables/{id}",
-      "description": "Retrieve a specific table by ID",
-      "file": "app/routes/table_routes.py"
+      "path": "/tasks/{id}",
+      "description": "Retrieve a specific task by ID.",
+      "file": "app/routes/task_routes.py"
     },
     {
       "method": "POST",
-      "path": "/tables",
-      "description": "Create a new table",
-      "file": "app/routes/table_routes.py"
+      "path": "/tasks",
+      "description": "Create a new task.",
+      "file": "app/routes/task_routes.py"
     },
     {
       "method": "PUT",
-      "path": "/tables/{id}",
-      "description": "Update an existing table",
-      "file": "app/routes/table_routes.py"
+      "path": "/tasks/{id}",
+      "description": "Update an existing task by ID.",
+      "file": "app/routes/task_routes.py"
     },
     {
       "method": "DELETE",
-      "path": "/tables/{id}",
-      "description": "Delete a table by ID",
-      "file": "app/routes/table_routes.py"
+      "path": "/tasks/{id}",
+      "description": "Delete a specific task by ID.",
+      "file": "app/routes/task_routes.py"
     },
     {
       "method": "GET",
-      "path": "/orders",
-      "description": "Retrieve all orders with optional search and filter",
-      "file": "app/routes/order_routes.py"
+      "path": "/users",
+      "description": "Retrieve a list of users with optional search and filter parameters.",
+      "file": "app/routes/user_routes.py"
     },
     {
       "method": "GET",
-      "path": "/orders/{id}",
-      "description": "Retrieve a specific order by ID",
-      "file": "app/routes/order_routes.py"
+      "path": "/users/{id}",
+      "description": "Retrieve a specific user by ID.",
+      "file": "app/routes/user_routes.py"
     },
     {
       "method": "POST",
-      "path": "/orders",
-      "description": "Create a new order",
-      "file": "app/routes/order_routes.py"
+      "path": "/users",
+      "description": "Create a new user.",
+      "file": "app/routes/user_routes.py"
     },
     {
       "method": "PUT",
-      "path": "/orders/{id}",
-      "description": "Update an existing order",
-      "file": "app/routes/order_routes.py"
+      "path": "/users/{id}",
+      "description": "Update an existing user by ID.",
+      "file": "app/routes/user_routes.py"
     },
     {
       "method": "DELETE",
-      "path": "/orders/{id}",
-      "description": "Delete an order by ID",
-      "file": "app/routes/order_routes.py"
+      "path": "/users/{id}",
+      "description": "Delete a specific user by ID.",
+      "file": "app/routes/user_routes.py"
     },
     {
       "method": "GET",
-      "path": "/sales/report/daily",
-      "description": "Retrieve daily sales report",
-      "file": "app/routes/sales_report_routes.py"
+      "path": "/comments",
+      "description": "Retrieve a list of comments with optional search and filter parameters.",
+      "file": "app/routes/comment_routes.py"
     },
     {
       "method": "GET",
-      "path": "/sales/report/top-items",
-      "description": "Retrieve top-selling items report",
-      "file": "app/routes/sales_report_routes.py"
+      "path": "/comments/{id}",
+      "description": "Retrieve a specific comment by ID.",
+      "file": "app/routes/comment_routes.py"
     },
     {
-      "method": "GET",
-      "path": "/sales/report/summary",
-      "description": "Retrieve sales summary report",
-      "file": "app/routes/sales_report_routes.py"
+      "method": "POST",
+      "path": "/comments",
+      "description": "Create a new comment.",
+      "file": "app/routes/comment_routes.py"
+    },
+    {
+      "method": "PUT",
+      "path": "/comments/{id}",
+      "description": "Update an existing comment by ID.",
+      "file": "app/routes/comment_routes.py"
+    },
+    {
+      "method": "DELETE",
+      "path": "/comments/{id}",
+      "description": "Delete a specific comment by ID.",
+      "file": "app/routes/comment_routes.py"
     },
     {
       "method": "GET",
       "path": "/stats/summary",
-      "description": "Retrieve aggregate counts and key metrics for the dashboard",
+      "description": "Retrieve aggregate counts and key metrics for the dashboard.",
       "file": "app/routes/stats_routes.py"
     },
     {
       "method": "POST",
       "path": "/seed",
-      "description": "Populate database with realistic demo data",
+      "description": "Populate database with realistic demo data.",
       "file": "app/routes/seed_routes.py"
     }
   ],
   "database_schema": [
     {
-      "table_name": "menu_category",
+      "table_name": "projects",
       "columns": [
         {
           "name": "id",
@@ -139,6 +145,18 @@
         },
         {
           "name": "name",
+          "type": "TEXT",
+          "is_primary_key": false,
+          "is_nullable": false
+        },
+        {
+          "name": "description",
+          "type": "TEXT",
+          "is_primary_key": false,
+          "is_nullable": true
+        },
+        {
+          "name": "status",
           "type": "TEXT",
           "is_primary_key": false,
           "is_nullable": false
@@ -154,11 +172,23 @@
           "type": "DATETIME",
           "is_primary_key": false,
           "is_nullable": false
+        },
+        {
+          "name": "due_date",
+          "type": "DATETIME",
+          "is_primary_key": false,
+          "is_nullable": true
+        },
+        {
+          "name": "owner_id",
+          "type": "INTEGER",
+          "is_primary_key": false,
+          "is_nullable": false
         }
       ]
     },
     {
-      "table_name": "menu_item",
+      "table_name": "tasks",
       "columns": [
         {
           "name": "id",
@@ -167,45 +197,116 @@
           "is_nullable": false
         },
         {
-          "name": "name",
+          "name": "title",
           "type": "TEXT",
           "is_primary_key": false,
           "is_nullable": false
         },
         {
-          "name": "price",
-          "type": "REAL",
+          "name": "description",
+          "type": "TEXT",
+          "is_primary_key": false,
+          "is_nullable": true
+        },
+        {
+          "name": "status",
+          "type": "TEXT",
           "is_primary_key": false,
           "is_nullable": false
         },
         {
-          "name": "available",
+          "name": "priority",
+          "type": "TEXT",
+          "is_primary_key": false,
+          "is_nullable": false
+        },
+        {
+          "name": "created_at",
+          "type": "DATETIME",
+          "is_primary_key": false,
+          "is_nullable": false
+        },
+        {
+          "name": "updated_at",
+          "type": "DATETIME",
+          "is_primary_key": false,
+          "is_nullable": false
+        },
+        {
+          "name": "due_date",
+          "type": "DATETIME",
+          "is_primary_key": false,
+          "is_nullable": true
+        },
+        {
+          "name": "project_id",
+          "type": "INTEGER",
+          "is_primary_key": false,
+          "is_nullable": false
+        },
+        {
+          "name": "assigned_to_id",
+          "type": "INTEGER",
+          "is_primary_key": false,
+          "is_nullable": true
+        }
+      ]
+    },
+    {
+      "table_name": "users",
+      "columns": [
+        {
+          "name": "id",
+          "type": "INTEGER",
+          "is_primary_key": true,
+          "is_nullable": false
+        },
+        {
+          "name": "first_name",
+          "type": "TEXT",
+          "is_primary_key": false,
+          "is_nullable": false
+        },
+        {
+          "name": "last_name",
+          "type": "TEXT",
+          "is_primary_key": false,
+          "is_nullable": false
+        },
+        {
+          "name": "email",
+          "type": "TEXT",
+          "is_primary_key": false,
+          "is_nullable": false
+        },
+        {
+          "name": "role",
+          "type": "TEXT",
+          "is_primary_key": false,
+          "is_nullable": false
+        },
+        {
+          "name": "created_at",
+          "type": "DATETIME",
+          "is_primary_key": false,
+          "is_nullable": false
+        },
+        {
+          "name": "updated_at",
+          "type": "DATETIME",
+          "is_primary_key": false,
+          "is_nullable": false
+        },
+        {
+          "name": "is_active",
           "type": "BOOLEAN",
           "is_primary_key": false,
           "is_nullable": false
-        },
-        {
-          "name": "category_id",
-          "type": "INTEGER",
-          "is_primary_key": false,
-          "is_nullable": false
-        },
-        {
-          "name": "created_at",
-          "type": "DATETIME",
-          "is_primary_key": false,
-          "is_nullable": false
-        },
-        {
-          "name": "updated_at",
-          "type": "DATETIME",
-          "is_primary_key": false,
-          "is_nullable": false
         }
       ]
     },
     {
-      "table_name": "table",
+      "table_name": "comments",
       "columns": [
         {
           "name": "id",
@@ -214,13 +315,7 @@
           "is_nullable": false
         },
         {
-          "name": "table_number",
-          "type": "INTEGER",
-          "is_primary_key": false,
-          "is_nullable": false
-        },
-        {
-          "name": "status",
+          "name": "content",
           "type": "TEXT",
           "is_primary_key": false,
           "is_nullable": false
@@ -236,92 +331,16 @@
           "type": "DATETIME",
           "is_primary_key": false,
           "is_nullable": false
-        }
-      ]
-    },
-    {
-      "table_name": "order",
-      "columns": [
-        {
-          "name": "id",
-          "type": "INTEGER",
-          "is_primary_key": true,
-          "is_nullable": false
         },
         {
-          "name": "table_id",
+          "name": "task_id",
           "type": "INTEGER",
           "is_primary_key": false,
           "is_nullable": false
         },
         {
-          "name": "status",
-          "type": "TEXT",
-          "is_primary_key": false,
-          "is_nullable": false
-        },
-        {
-          "name": "total_amount",
-          "type": "REAL",
-          "is_primary_key": false,
-          "is_nullable": false
-        },
-        {
-          "name": "created_at",
-          "type": "DATETIME",
-          "is_primary_key": false,
-          "is_nullable": false
-        },
-        {
-          "name": "updated_at",
-          "type": "DATETIME",
-          "is_primary_key": false,
-          "is_nullable": false
-        }
-      ]
-    },
-    {
-      "table_name": "order_item",
-      "columns": [
-        {
-          "name": "id",
+          "name": "user_id",
           "type": "INTEGER",
-          "is_primary_key": true,
-          "is_nullable": false
-        },
-        {
-          "name": "order_id",
-          "type": "INTEGER",
-          "is_primary_key": false,
-          "is_nullable": false
-        },
-        {
-          "name": "menu_item_id",
-          "type": "INTEGER",
-          "is_primary_key": false,
-          "is_nullable": false
-        },
-        {
-          "name": "quantity",
-          "type": "INTEGER",
-          "is_primary_key": false,
-          "is_nullable": false
-        },
-        {
-          "name": "status",
-          "type": "TEXT",
-          "is_primary_key": false,
-          "is_nullable": false
-        },
-        {
-          "name": "created_at",
-          "type": "DATETIME",
-          "is_primary_key": false,
-          "is_nullable": false
-        },
-        {
-          "name": "updated_at",
-          "type": "DATETIME",
           "is_primary_key": false,
           "is_nullable": false
         }
@@ -342,19 +361,19 @@
       "Login",
       "Register",
       "Dashboard",
-      "Menu Management",
-      "Order Management",
-      "Sales Report"
+      "Project Overview",
+      "Task Management",
+      "User Profile"
     ],
     "components": [
-      "MenuList",
-      "MenuItem",
-      "TableList",
-      "TableItem",
-      "OrderList",
-      "OrderItem",
-      "SalesReport",
-      "DashboardStats"
+      "ProjectList",
+      "ProjectCard",
+      "TaskList",
+      "TaskCard",
+      "CommentList",
+      "CommentForm",
+      "UserProfileCard",
+      "Navbar"
     ]
   }
 }

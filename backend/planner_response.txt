@@ -1,88 +1,100 @@
 {
-    "project_name": "Restaurant Point-of-Sale System",
-    "description": "A comprehensive point-of-sale system for restaurants that allows managers to manage menus and staff to handle orders efficiently.",
-    "target_users": ["Restaurant Managers", "Restaurant Staff"],
+    "project_name": "TeamTasker",
+    "description": "A collaborative to-do list app where teams can create shared tasks, assign work, comment, and track project progress.",
+    "target_users": ["Project managers", "Team members", "Freelancers", "Small business owners"],
     "core_features": [
-        "Menu management with categories (starters, mains, desserts, drinks) and items (name, price, availability)",
-        "Table management for staff to open tables and manage orders",
-        "Order tracking with status updates (Ordered, Preparing, Ready, Served)",
-        "Bill generation with itemized totals and tax calculations",
-        "Daily sales reporting for managers including total revenue, number of orders, and top-selling items",
-        "Table clearing functionality after payment to reset for new customers"
+        "Project creation with milestones and deadlines",
+        "Task assignment to team members with due dates and priorities",
+        "Commenting on tasks for better collaboration",
+        "Progress tracking with visual indicators (e.g., Kanban board)",
+        "Time tracking per task to monitor effort",
+        "Team velocity and burndown charts for project management"
     ],
     "future_features": [
-        "Customer loyalty program integration",
-        "Online ordering and delivery management",
-        "Inventory management for tracking stock levels",
-        "Employee scheduling and time tracking",
-        "Customer feedback and rating system"
+        "Integration with calendar applications",
+        "Automated reminders for upcoming deadlines",
+        "Customizable templates for recurring projects",
+        "Mobile app for on-the-go task management",
+        "Advanced reporting features with export options"
     ],
     "tech_stack": ["FastAPI", "React", "SQLite", "Pydantic", "SQLAlchemy"],
     "database_entities": [
         {
-            "name": "MenuCategory",
-            "fields": ["id", "name", "created_at", "updated_at"]
+            "name": "Project",
+            "fields": [
+                "id", "name", "description", "status", "created_at",
+                "updated_at", "due_date", "owner_id"
+            ]
         },
         {
-            "name": "MenuItem",
-            "fields": ["id", "name", "price", "available", "category_id", "created_at", "updated_at"]
+            "name": "Task",
+            "fields": [
+                "id", "title", "description", "status", "priority",
+                "created_at", "updated_at", "due_date", "project_id", "assigned_to_id"
+            ]
         },
         {
-            "name": "Table",
-            "fields": ["id", "table_number", "status", "created_at", "updated_at"]
+            "name": "User",
+            "fields": [
+                "id", "first_name", "last_name", "email", "role",
+                "created_at", "updated_at", "is_active"
+            ]
         },
         {
-            "name": "Order",
-            "fields": ["id", "table_id", "status", "total_amount", "created_at", "updated_at"]
-        },
-        {
-            "name": "OrderItem",
-            "fields": ["id", "order_id", "menu_item_id", "quantity", "status", "created_at", "updated_at"]
+            "name": "Comment",
+            "fields": [
+                "id", "content", "created_at", "updated_at", "task_id",
+                "user_id"
+            ]
         }
     ],
     "api_modules": [
         {
-            "name": "Menu",
+            "name": "Projects",
             "endpoints": [
-                "GET /menu/categories",
-                "GET /menu/items",
-                "POST /menu/items",
-                "PUT /menu/items/{id}",
-                "DELETE /menu/items/{id}"
+                "GET /projects",
+                "GET /projects/{id}",
+                "POST /projects",
+                "PUT /projects/{id}",
+                "DELETE /projects/{id}"
             ]
         },
         {
-            "name": "TableManagement",
+            "name": "Tasks",
             "endpoints": [
-                "GET /tables",
-                "POST /tables",
-                "PUT /tables/{id}",
-                "DELETE /tables/{id}",
-                "GET /tables/{id}/orders"
+                "GET /tasks",
+                "GET /tasks/{id}",
+                "POST /tasks",
+                "PUT /tasks/{id}",
+                "DELETE /tasks/{id}"
             ]
         },
         {
-            "name": "OrderManagement",
+            "name": "Users",
             "endpoints": [
-                "GET /orders",
-                "POST /orders",
-                "PUT /orders/{id}",
-                "DELETE /orders/{id}",
-                "GET /orders/{id}/items"
+                "GET /users",
+                "GET /users/{id}",
+                "POST /users",
+                "PUT /users/{id}",
+                "DELETE /users/{id}"
             ]
         },
         {
-            "name": "SalesReport",
+            "name": "Comments",
             "endpoints": [
-                "GET /sales/report/daily",
-                "GET /sales/report/top-items",
-                "GET /sales/report/summary"
+                "GET /comments",
+                "GET /comments/{id}",
+                "POST /comments",
+                "PUT /comments/{id}",
+                "DELETE /comments/{id}"
             ]
         },
         {
             "name": "Analytics",
             "endpoints": [
                 "GET /stats/summary",
+                "GET /projects/stats",
+                "GET /tasks/stats",
                 "GET /activity/recent",
                 "POST /seed"
             ]
@@ -92,37 +104,46 @@
         "Login",
         "Register",
         "Dashboard",
-        "Menu Management",
-        "Order Management",
-        "Sales Report"
+        "Project Overview",
+        "Task Management",
+        "User Profile"
     ],
     "backend_modules": [
-        "MenuModule",
-        "TableModule",
-        "OrderModule",
-        "SalesReportModule",
-        "AnalyticsModule"
+        "Project Management",
+        "Task Management",
+        "User Management",
+        "Comment Management",
+        "Analytics Module"
     ],
-    "seed_data_description": "Seed 5 menu categories (Starters, Mains, Desserts, Drinks, Specials), 10 menu items with realistic names and prices (e.g., 'Caesar Salad' at $8.99, 'Grilled Salmon' at $19.99), 10 tables with unique numbers and statuses, and 15 orders linking tables to menu items with various quantities and statuses.",
+    "seed_data_description": "Seed 10 projects with varying statuses (active, completed), 30 tasks assigned to different users with priorities and due dates, 5 users with different roles (admin, member), and 20 comments linked to tasks for collaboration.",
     "analytics_endpoints": [
         "GET /stats/summary",
-        "GET /sales/report/daily"
+        "GET /projects/stats",
+        "GET /tasks/stats"
     ],
     "roadmap": [
         {
             "phase": "Phase 1",
             "milestones": [
-                "Complete core feature set",
-                "Develop initial API endpoints",
-                "Implement basic UI for staff and managers"
+                "Complete user authentication",
+                "Implement project and task CRUD operations",
+                "Develop commenting feature"
             ]
         },
         {
             "phase": "Phase 2",
             "milestones": [
-                "Enhance reporting features",
-                "Add future features based on user feedback",
-                "Conduct user testing and iterate"
+                "Launch beta version for user feedback",
+                "Integrate analytics and reporting features",
+                "Enhance UI/UX based on feedback"
+            ]
+        },
+        {
+            "phase": "Phase 3",
+            "milestones": [
+                "Release mobile app",
+                "Add advanced reporting and export options",
+                "Implement integrations with third-party tools"
             ]
         }
     ]

@@ -12,7 +12,7 @@ from app.providers.ai_provider import generate_content
 def generate_backend(
     architecture,
     provider="auto",
-    max_tokens=32000
+    max_tokens=16000
 ):
     try:
 
