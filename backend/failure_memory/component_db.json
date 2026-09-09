@@ -1,74 +1,83 @@
 {
   "bcrypt_hash": {
     "name": "bcrypt_hash",
-    "seen": 52,
+    "seen": 97,
     "successes": 30,
-    "failures": 22,
-    "total_score": 4106.0,
-    "last_seen": "2026-07-12T14:26:04Z",
-    "avg_score": 79.0
+    "failures": 67,
+    "total_score": 4443.0,
+    "last_seen": "2026-09-09T17:43:09Z",
+    "avg_score": 45.8
   },
   "chat": {
     "name": "chat",
-    "seen": 51,
+    "seen": 96,
     "successes": 30,
-    "failures": 21,
-    "total_score": 4081.0,
-    "last_seen": "2026-07-12T14:26:04Z",
-    "avg_score": 80.0
+    "failures": 66,
+    "total_score": 4418.0,
+    "last_seen": "2026-09-09T17:43:09Z",
+    "avg_score": 46.0
   },
   "crud_rest": {
     "name": "crud_rest",
-    "seen": 52,
+    "seen": 97,
     "successes": 30,
-    "failures": 22,
-    "total_score": 4106.0,
-    "last_seen": "2026-07-12T14:26:04Z",
-    "avg_score": 79.0
+    "failures": 67,
+    "total_score": 4443.0,
+    "last_seen": "2026-09-09T17:43:09Z",
+    "avg_score": 45.8
   },
   "env_config": {
     "name": "env_config",
-    "seen": 52,
+    "seen": 97,
     "successes": 30,
-    "failures": 22,
-    "total_score": 4106.0,
-    "last_seen": "2026-07-12T14:26:04Z",
-    "avg_score": 79.0
+    "failures": 67,
+    "total_score": 4443.0,
+    "last_seen": "2026-09-09T17:43:09Z",
+    "avg_score": 45.8
   },
   "jwt_auth": {
     "name": "jwt_auth",
-    "seen": 52,
+    "seen": 97,
     "successes": 30,
-    "failures": 22,
-    "total_score": 4106.0,
-    "last_seen": "2026-07-12T14:26:04Z",
-    "avg_score": 79.0
+    "failures": 67,
+    "total_score": 4443.0,
+    "last_seen": "2026-09-09T17:43:09Z",
+    "avg_score": 45.8
   },
   "pagination": {
     "name": "pagination",
-    "seen": 52,
+    "seen": 80,
     "successes": 30,
-    "failures": 22,
-    "total_score": 4106.0,
-    "last_seen": "2026-07-12T14:26:04Z",
-    "avg_score": 79.0
+    "failures": 50,
+    "total_score": 4443.0,
+    "last_seen": "2026-09-09T17:43:09Z",
+    "avg_score": 55.5
   },
   "search_filter": {
     "name": "search_filter",
-    "seen": 52,
+    "seen": 97,
     "successes": 30,
-    "failures": 22,
-    "total_score": 4106.0,
-    "last_seen": "2026-07-12T14:26:04Z",
-    "avg_score": 79.0
+    "failures": 67,
+    "total_score": 4443.0,
+    "last_seen": "2026-09-09T17:43:09Z",
+    "avg_score": 45.8
   },
   "soft_delete": {
     "name": "soft_delete",
-    "seen": 51,
+    "seen": 80,
     "successes": 30,
-    "failures": 21,
-    "total_score": 4036.0,
-    "last_seen": "2026-07-12T14:26:04Z",
-    "avg_score": 79.1
+    "failures": 50,
+    "total_score": 4191.0,
+    "last_seen": "2026-09-09T17:43:09Z",
+    "avg_score": 52.4
+  },
+  "audit_log": {
+    "name": "audit_log",
+    "seen": 5,
+    "successes": 0,
+    "failures": 5,
+    "total_score": 75.0,
+    "last_seen": "2026-09-09T17:43:09Z",
+    "avg_score": 15.0
   }
 }

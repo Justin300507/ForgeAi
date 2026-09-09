@@ -48492,5 +48492,1875 @@
     "forge_score": 61,
     "wall_time_s": 29.14,
     "timestamp": "2026-09-09T04:14:55"
+  },
+  {
+    "total_calls": 23,
+    "total_tokens": 154188,
+    "total_cost_usd": 0.035415,
+    "total_llm_time_s": 239.0,
+    "by_stage": {
+      "backend_generation": {
+        "calls": 2,
+        "tokens": 23639,
+        "cost_usd": 0.006866,
+        "time_s": 57.06
+      },
+      "frontend_generation": {
+        "calls": 2,
+        "tokens": 42880,
+        "cost_usd": 0.011963000000000001,
+        "time_s": 100.84
+      },
+      "missing_file": {
+        "calls": 14,
+        "tokens": 73135,
+        "cost_usd": 0.013375999999999999,
+        "time_s": 59.07
+      },
+      "fix": {
+        "calls": 4,
+        "tokens": 8467,
+        "cost_usd": 0.002043,
+        "time_s": 17.32
+      },
+      "architecture_fix": {
+        "calls": 1,
+        "tokens": 6067,
+        "cost_usd": 0.001167,
+        "time_s": 4.71
+      }
+    },
+    "failed_calls": 0,
+    "failures": [],
+    "project_name": "Habit Tracker",
+    "forge_score": 0,
+    "wall_time_s": 256.82,
+    "timestamp": "2026-09-09T20:08:59"
+  },
+  {
+    "total_calls": 23,
+    "total_tokens": 136653,
+    "total_cost_usd": 0.029971,
+    "total_llm_time_s": 192.34,
+    "by_stage": {
+      "backend_generation": {
+        "calls": 2,
+        "tokens": 21068,
+        "cost_usd": 0.005295,
+        "time_s": 30.060000000000002
+      },
+      "frontend_generation": {
+        "calls": 2,
+        "tokens": 37851,
+        "cost_usd": 0.008905,
+        "time_s": 60.72
+      },
+      "missing_file": {
+        "calls": 10,
+        "tokens": 55020,
+        "cost_usd": 0.010554,
+        "time_s": 56.32000000000001
+      },
+      "fix": {
+        "calls": 8,
+        "tokens": 16156,
+        "cost_usd": 0.00378,
+        "time_s": 37.809999999999995
+      },
+      "architecture_fix": {
+        "calls": 1,
+        "tokens": 6558,
+        "cost_usd": 0.001437,
+        "time_s": 7.43
+      }
+    },
+    "failed_calls": 0,
+    "failures": [],
+    "project_name": "Recipe Manager",
+    "forge_score": 0,
+    "wall_time_s": 199.61,
+    "timestamp": "2026-09-09T20:12:26"
+  },
+  {
+    "total_calls": 23,
+    "total_tokens": 142908,
+    "total_cost_usd": 0.033069,
+    "total_llm_time_s": 234.21,
+    "by_stage": {
+      "backend_generation": {
+        "calls": 2,
+        "tokens": 24016,
+        "cost_usd": 0.006983,
+        "time_s": 51.36
+      },
+      "frontend_generation": {
+        "calls": 2,
+        "tokens": 41280,
+        "cost_usd": 0.010829,
+        "time_s": 84.84
+      },
+      "missing_file": {
+        "calls": 10,
+        "tokens": 54735,
+        "cost_usd": 0.010122,
+        "time_s": 56.10000000000001
+      },
+      "fix": {
+        "calls": 8,
+        "tokens": 16532,
+        "cost_usd": 0.003921,
+        "time_s": 37.300000000000004
+      },
+      "architecture_fix": {
+        "calls": 1,
+        "tokens": 6345,
+        "cost_usd": 0.001214,
+        "time_s": 4.61
+      }
+    },
+    "failed_calls": 0,
+    "failures": [],
+    "project_name": "FitTrack Pro",
+    "forge_score": 0,
+    "wall_time_s": 242.29,
+    "timestamp": "2026-09-09T20:16:36"
+  },
+  {
+    "total_calls": 29,
+    "total_tokens": 169790,
+    "total_cost_usd": 0.03732,
+    "total_llm_time_s": 259.23,
+    "by_stage": {
+      "backend_generation": {
+        "calls": 2,
+        "tokens": 25847,
+        "cost_usd": 0.008230000000000001,
+        "time_s": 72.75999999999999
+      },
+      "frontend_generation": {
+        "calls": 2,
+        "tokens": 37161,
+        "cost_usd": 0.008570999999999999,
+        "time_s": 59.739999999999995
+      },
+      "missing_file": {
+        "calls": 18,
+        "tokens": 92378,
+        "cost_usd": 0.017105999999999996,
+        "time_s": 86.83000000000001
+      },
+      "fix": {
+        "calls": 7,
+        "tokens": 14404,
+        "cost_usd": 0.003413,
+        "time_s": 39.900000000000006
+      }
+    },
+    "failed_calls": 0,
+    "failures": [],
+    "project_name": "Book Club Management Platform",
+    "forge_score": 10,
+    "wall_time_s": 266.48,
+    "timestamp": "2026-09-09T20:21:09"
+  },
+  {
+    "total_calls": 40,
+    "total_tokens": 216305,
+    "total_cost_usd": 0.042899,
+    "total_llm_time_s": 233.77,
+    "by_stage": {
+      "backend_generation": {
+        "calls": 2,
+        "tokens": 22969,
+        "cost_usd": 0.006149,
+        "time_s": 44.57
+      },
+      "frontend_generation": {
+        "calls": 2,
+        "tokens": 32634,
+        "cost_usd": 0.005351,
+        "time_s": 13.26
+      },
+      "missing_file": {
+        "calls": 26,
+        "tokens": 134297,
+        "cost_usd": 0.02507599999999999,
+        "time_s": 129.09
+      },
+      "fix": {
+        "calls": 9,
+        "tokens": 18808,
+        "cost_usd": 0.004492,
+        "time_s": 36.84
+      },
+      "architecture_fix": {
+        "calls": 1,
+        "tokens": 7597,
+        "cost_usd": 0.001831,
+        "time_s": 10.01
+      }
+    },
+    "failed_calls": 0,
+    "failures": [],
+    "project_name": "Pet Care Tracker",
+    "forge_score": 0,
+    "wall_time_s": 242.25,
+    "timestamp": "2026-09-09T20:25:19"
+  },
+  {
+    "total_calls": 46,
+    "total_tokens": 246096,
+    "total_cost_usd": 0.053876,
+    "total_llm_time_s": 363.09,
+    "by_stage": {
+      "backend_generation": {
+        "calls": 2,
+        "tokens": 26159,
+        "cost_usd": 0.008393999999999999,
+        "time_s": 82.49
+      },
+      "frontend_generation": {
+        "calls": 2,
+        "tokens": 35966,
+        "cost_usd": 0.007863,
+        "time_s": 45.81
+      },
+      "missing_file": {
+        "calls": 26,
+        "tokens": 142308,
+        "cost_usd": 0.027305000000000003,
+        "time_s": 140.91999999999996
+      },
+      "fix": {
+        "calls": 15,
+        "tokens": 35197,
+        "cost_usd": 0.008964999999999999,
+        "time_s": 87.73999999999998
+      },
+      "architecture_fix": {
+        "calls": 1,
+        "tokens": 6466,
+        "cost_usd": 0.001349,
+        "time_s": 6.13
+      }
+    },
+    "failed_calls": 0,
+    "failures": [],
+    "project_name": "Expense Sharing App",
+    "forge_score": 24,
+    "wall_time_s": 372.04,
+    "timestamp": "2026-09-09T20:31:38"
+  },
+  {
+    "total_calls": 35,
+    "total_tokens": 190381,
+    "total_cost_usd": 0.037934,
+    "total_llm_time_s": 206.81,
+    "by_stage": {
+      "backend_generation": {
+        "calls": 2,
+        "tokens": 23546,
+        "cost_usd": 0.0066890000000000005,
+        "time_s": 58.32
+      },
+      "frontend_generation": {
+        "calls": 2,
+        "tokens": 32123,
+        "cost_usd": 0.005346,
+        "time_s": 13.66
+      },
+      "missing_file": {
+        "calls": 22,
+        "tokens": 111266,
+        "cost_usd": 0.020283999999999996,
+        "time_s": 88.58
+      },
+      "fix": {
+        "calls": 8,
+        "tokens": 16040,
+        "cost_usd": 0.0037369999999999994,
+        "time_s": 35.43
+      },
+      "architecture_fix": {
+        "calls": 1,
+        "tokens": 7406,
+        "cost_usd": 0.001878,
+        "time_s": 10.82
+      }
+    },
+    "failed_calls": 0,
+    "failures": [],
+    "project_name": "Property Management System",
+    "forge_score": 0,
+    "wall_time_s": 214.56,
+    "timestamp": "2026-09-09T20:35:20"
+  },
+  {
+    "total_calls": 32,
+    "total_tokens": 172759,
+    "total_cost_usd": 0.035228,
+    "total_llm_time_s": 220.69,
+    "by_stage": {
+      "backend_generation": {
+        "calls": 2,
+        "tokens": 23033,
+        "cost_usd": 0.006571,
+        "time_s": 52.41
+      },
+      "frontend_generation": {
+        "calls": 2,
+        "tokens": 31562,
+        "cost_usd": 0.005220000000000001,
+        "time_s": 17.58
+      },
+      "missing_file": {
+        "calls": 18,
+        "tokens": 92022,
+        "cost_usd": 0.017305999999999995,
+        "time_s": 100.45000000000002
+      },
+      "fix": {
+        "calls": 9,
+        "tokens": 19753,
+        "cost_usd": 0.00476,
+        "time_s": 43.2
+      },
+      "architecture_fix": {
+        "calls": 1,
+        "tokens": 6389,
+        "cost_usd": 0.001371,
+        "time_s": 7.05
+      }
+    },
+    "failed_calls": 0,
+    "failures": [],
+    "project_name": "Event Planner Pro",
+    "forge_score": 17,
+    "wall_time_s": 227.86,
+    "timestamp": "2026-09-09T20:39:15"
+  },
+  {
+    "total_calls": 30,
+    "total_tokens": 167893,
+    "total_cost_usd": 0.038142,
+    "total_llm_time_s": 254.54,
+    "by_stage": {
+      "backend_generation": {
+        "calls": 2,
+        "tokens": 23915,
+        "cost_usd": 0.006927,
+        "time_s": 53.14
+      },
+      "frontend_generation": {
+        "calls": 2,
+        "tokens": 39729,
+        "cost_usd": 0.00989,
+        "time_s": 73.28
+      },
+      "missing_file": {
+        "calls": 13,
+        "tokens": 71826,
+        "cost_usd": 0.013818000000000004,
+        "time_s": 65.6
+      },
+      "fix": {
+        "calls": 12,
+        "tokens": 26242,
+        "cost_usd": 0.006392999999999999,
+        "time_s": 59.01
+      },
+      "architecture_fix": {
+        "calls": 1,
+        "tokens": 6181,
+        "cost_usd": 0.001114,
+        "time_s": 3.51
+      }
+    },
+    "failed_calls": 0,
+    "failures": [],
+    "project_name": "SkillSwap Marketplace",
+    "forge_score": 17,
+    "wall_time_s": 262.87,
+    "timestamp": "2026-09-09T20:43:45"
+  },
+  {
+    "total_calls": 38,
+    "total_tokens": 218822,
+    "total_cost_usd": 0.049176,
+    "total_llm_time_s": 342.37,
+    "by_stage": {
+      "backend_generation": {
+        "calls": 2,
+        "tokens": 22408,
+        "cost_usd": 0.006248,
+        "time_s": 48.01
+      },
+      "frontend_generation": {
+        "calls": 2,
+        "tokens": 40824,
+        "cost_usd": 0.010916,
+        "time_s": 90.06
+      },
+      "missing_file": {
+        "calls": 22,
+        "tokens": 122348,
+        "cost_usd": 0.023710000000000002,
+        "time_s": 135.21
+      },
+      "fix": {
+        "calls": 11,
+        "tokens": 27233,
+        "cost_usd": 0.007112000000000001,
+        "time_s": 63.95999999999999
+      },
+      "architecture_fix": {
+        "calls": 1,
+        "tokens": 6009,
+        "cost_usd": 0.00119,
+        "time_s": 5.13
+      }
+    },
+    "failed_calls": 0,
+    "failures": [],
+    "project_name": "Garden Planner",
+    "forge_score": 17,
+    "wall_time_s": 349.95,
+    "timestamp": "2026-09-09T20:49:42"
+  },
+  {
+    "total_calls": 51,
+    "total_tokens": 260131,
+    "total_cost_usd": 0.053842,
+    "total_llm_time_s": 432.69,
+    "by_stage": {
+      "backend_generation": {
+        "calls": 2,
+        "tokens": 24339,
+        "cost_usd": 0.007371,
+        "time_s": 155.44
+      },
+      "frontend_generation": {
+        "calls": 2,
+        "tokens": 37123,
+        "cost_usd": 0.00864,
+        "time_s": 55.75
+      },
+      "missing_file": {
+        "calls": 33,
+        "tokens": 166542,
+        "cost_usd": 0.030719,
+        "time_s": 170.68000000000004
+      },
+      "fix": {
+        "calls": 13,
+        "tokens": 26100,
+        "cost_usd": 0.005938999999999999,
+        "time_s": 45.93
+      },
+      "architecture_fix": {
+        "calls": 1,
+        "tokens": 6027,
+        "cost_usd": 0.001173,
+        "time_s": 4.89
+      }
+    },
+    "failed_calls": 0,
+    "failures": [],
+    "project_name": "Mood Journal",
+    "forge_score": 0,
+    "wall_time_s": 442.47,
+    "timestamp": "2026-09-09T20:57:12"
+  },
+  {
+    "total_calls": 22,
+    "total_tokens": 128532,
+    "total_cost_usd": 0.028692,
+    "total_llm_time_s": 291.71,
+    "by_stage": {
+      "backend_generation": {
+        "calls": 2,
+        "tokens": 25217,
+        "cost_usd": 0.0077599999999999995,
+        "time_s": 160.19
+      },
+      "frontend_generation": {
+        "calls": 2,
+        "tokens": 35616,
+        "cost_usd": 0.007513,
+        "time_s": 51.78
+      },
+      "missing_file": {
+        "calls": 8,
+        "tokens": 44104,
+        "cost_usd": 0.008286000000000002,
+        "time_s": 40.11999999999999
+      },
+      "fix": {
+        "calls": 9,
+        "tokens": 17487,
+        "cost_usd": 0.004,
+        "time_s": 35.059999999999995
+      },
+      "architecture_fix": {
+        "calls": 1,
+        "tokens": 6108,
+        "cost_usd": 0.001133,
+        "time_s": 4.56
+      }
+    },
+    "failed_calls": 1,
+    "failures": [
+      {
+        "stage": "fix",
+        "provider": "openai",
+        "model": "gpt-4o-mini",
+        "duration_s": 120.01,
+        "error_class": "timeout",
+        "error_summary": "provider request timed out",
+        "timeout": true
+      }
+    ],
+    "project_name": "Language Exchange Platform",
+    "forge_score": 22,
+    "wall_time_s": 424.82,
+    "timestamp": "2026-09-09T21:04:24"
+  },
+  {
+    "total_calls": 43,
+    "total_tokens": 227502,
+    "total_cost_usd": 0.045533,
+    "total_llm_time_s": 310.37,
+    "by_stage": {
+      "backend_generation": {
+        "calls": 2,
+        "tokens": 21813,
+        "cost_usd": 0.005562,
+        "time_s": 85.77
+      },
+      "frontend_generation": {
+        "calls": 2,
+        "tokens": 32412,
+        "cost_usd": 0.005365,
+        "time_s": 12.05
+      },
+      "missing_file": {
+        "calls": 27,
+        "tokens": 142379,
+        "cost_usd": 0.027235000000000002,
+        "time_s": 145.53000000000003
+      },
+      "fix": {
+        "calls": 11,
+        "tokens": 23266,
+        "cost_usd": 0.005481000000000001,
+        "time_s": 55.0
+      },
+      "architecture_fix": {
+        "calls": 1,
+        "tokens": 7632,
+        "cost_usd": 0.00189,
+        "time_s": 12.02
+      }
+    },
+    "failed_calls": 0,
+    "failures": [],
+    "project_name": "Vehicle Maintenance Tracker",
+    "forge_score": 0,
+    "wall_time_s": 318.59,
+    "timestamp": "2026-09-09T21:09:50"
+  },
+  {
+    "total_calls": 31,
+    "total_tokens": 179915,
+    "total_cost_usd": 0.042374,
+    "total_llm_time_s": 470.77,
+    "by_stage": {
+      "backend_generation": {
+        "calls": 2,
+        "tokens": 26024,
+        "cost_usd": 0.008308,
+        "time_s": 210.75
+      },
+      "frontend_generation": {
+        "calls": 2,
+        "tokens": 38816,
+        "cost_usd": 0.009528,
+        "time_s": 79.22
+      },
+      "fix": {
+        "calls": 12,
+        "tokens": 29729,
+        "cost_usd": 0.0077269999999999995,
+        "time_s": 87.59
+      },
+      "missing_file": {
+        "calls": 14,
+        "tokens": 79053,
+        "cost_usd": 0.015557000000000001,
+        "time_s": 87.26
+      },
+      "architecture_fix": {
+        "calls": 1,
+        "tokens": 6293,
+        "cost_usd": 0.001254,
+        "time_s": 5.95
+      }
+    },
+    "failed_calls": 0,
+    "failures": [],
+    "project_name": "Collaborative Playlist Application",
+    "forge_score": 17,
+    "wall_time_s": 479.68,
+    "timestamp": "2026-09-09T21:17:57"
+  },
+  {
+    "total_calls": 44,
+    "total_tokens": 228374,
+    "total_cost_usd": 0.050321,
+    "total_llm_time_s": 378.45,
+    "by_stage": {
+      "backend_generation": {
+        "calls": 2,
+        "tokens": 27029,
+        "cost_usd": 0.008771000000000001,
+        "time_s": 79.06
+      },
+      "frontend_generation": {
+        "calls": 2,
+        "tokens": 36437,
+        "cost_usd": 0.007909,
+        "time_s": 40.11
+      },
+      "missing_file": {
+        "calls": 22,
+        "tokens": 121358,
+        "cost_usd": 0.023187,
+        "time_s": 154.77
+      },
+      "fix": {
+        "calls": 17,
+        "tokens": 36485,
+        "cost_usd": 0.008865000000000001,
+        "time_s": 96.92
+      },
+      "architecture_fix": {
+        "calls": 1,
+        "tokens": 7065,
+        "cost_usd": 0.001589,
+        "time_s": 7.59
+      }
+    },
+    "failed_calls": 0,
+    "failures": [],
+    "project_name": "Study Group Coordination App",
+    "forge_score": 12,
+    "wall_time_s": 388.88,
+    "timestamp": "2026-09-09T21:24:33"
+  },
+  {
+    "total_calls": 37,
+    "total_tokens": 189554,
+    "total_cost_usd": 0.041397,
+    "total_llm_time_s": 282.63,
+    "by_stage": {
+      "backend_generation": {
+        "calls": 2,
+        "tokens": 26457,
+        "cost_usd": 0.008295,
+        "time_s": 80.25999999999999
+      },
+      "frontend_generation": {
+        "calls": 2,
+        "tokens": 39004,
+        "cost_usd": 0.009238,
+        "time_s": 61.489999999999995
+      },
+      "fix": {
+        "calls": 14,
+        "tokens": 28986,
+        "cost_usd": 0.006621,
+        "time_s": 62.25000000000001
+      },
+      "missing_file": {
+        "calls": 18,
+        "tokens": 88594,
+        "cost_usd": 0.016012,
+        "time_s": 72.95
+      },
+      "architecture_fix": {
+        "calls": 1,
+        "tokens": 6513,
+        "cost_usd": 0.001231,
+        "time_s": 5.68
+      }
+    },
+    "failed_calls": 0,
+    "failures": [],
+    "project_name": "Charitable Giving Tracker",
+    "forge_score": 0,
+    "wall_time_s": 291.0,
+    "timestamp": "2026-09-09T21:29:31"
+  },
+  {
+    "total_calls": 25,
+    "total_tokens": 152016,
+    "total_cost_usd": 0.036718,
+    "total_llm_time_s": 272.09,
+    "by_stage": {
+      "backend_generation": {
+        "calls": 2,
+        "tokens": 27457,
+        "cost_usd": 0.009156000000000001,
+        "time_s": 79.78999999999999
+      },
+      "frontend_generation": {
+        "calls": 2,
+        "tokens": 41470,
+        "cost_usd": 0.011103,
+        "time_s": 100.5
+      },
+      "fix": {
+        "calls": 8,
+        "tokens": 16841,
+        "cost_usd": 0.004045,
+        "time_s": 31.6
+      },
+      "missing_file": {
+        "calls": 13,
+        "tokens": 66248,
+        "cost_usd": 0.012414,
+        "time_s": 60.199999999999996
+      }
+    },
+    "failed_calls": 0,
+    "failures": [],
+    "project_name": "Chef's Challenge",
+    "forge_score": 17,
+    "wall_time_s": 279.77,
+    "timestamp": "2026-09-09T21:34:18"
+  },
+  {
+    "total_calls": 39,
+    "total_tokens": 205520,
+    "total_cost_usd": 0.043543,
+    "total_llm_time_s": 299.24,
+    "by_stage": {
+      "backend_generation": {
+        "calls": 2,
+        "tokens": 21250,
+        "cost_usd": 0.005431,
+        "time_s": 65.81
+      },
+      "frontend_generation": {
+        "calls": 2,
+        "tokens": 38178,
+        "cost_usd": 0.009127,
+        "time_s": 60.980000000000004
+      },
+      "missing_file": {
+        "calls": 22,
+        "tokens": 115192,
+        "cost_usd": 0.022,
+        "time_s": 113.69000000000003
+      },
+      "fix": {
+        "calls": 12,
+        "tokens": 24843,
+        "cost_usd": 0.005815,
+        "time_s": 53.989999999999995
+      },
+      "architecture_fix": {
+        "calls": 1,
+        "tokens": 6057,
+        "cost_usd": 0.00117,
+        "time_s": 4.77
+      }
+    },
+    "failed_calls": 0,
+    "failures": [],
+    "project_name": "Budget Travel Planner",
+    "forge_score": 0,
+    "wall_time_s": 307.09,
+    "timestamp": "2026-09-09T21:39:33"
+  },
+  {
+    "total_calls": 24,
+    "total_tokens": 135794,
+    "total_cost_usd": 0.031676,
+    "total_llm_time_s": 226.19,
+    "by_stage": {
+      "backend_generation": {
+        "calls": 2,
+        "tokens": 25656,
+        "cost_usd": 0.007981,
+        "time_s": 66.75
+      },
+      "frontend_generation": {
+        "calls": 2,
+        "tokens": 39325,
+        "cost_usd": 0.009656000000000001,
+        "time_s": 67.6
+      },
+      "missing_file": {
+        "calls": 8,
+        "tokens": 42996,
+        "cost_usd": 0.007925,
+        "time_s": 40.92999999999999
+      },
+      "fix": {
+        "calls": 11,
+        "tokens": 21629,
+        "cost_usd": 0.004989,
+        "time_s": 46.57000000000001
+      },
+      "architecture_fix": {
+        "calls": 1,
+        "tokens": 6188,
+        "cost_usd": 0.001125,
+        "time_s": 4.34
+      }
+    },
+    "failed_calls": 0,
+    "failures": [],
+    "project_name": "Local Classifieds Marketplace",
+    "forge_score": 17,
+    "wall_time_s": 234.6,
+    "timestamp": "2026-09-09T21:43:35"
+  },
+  {
+    "total_calls": 70,
+    "total_tokens": 384134,
+    "total_cost_usd": 0.083527,
+    "total_llm_time_s": 543.44,
+    "by_stage": {
+      "backend_generation": {
+        "calls": 2,
+        "tokens": 23328,
+        "cost_usd": 0.0062970000000000005,
+        "time_s": 42.260000000000005
+      },
+      "frontend_generation": {
+        "calls": 2,
+        "tokens": 43912,
+        "cost_usd": 0.012074999999999999,
+        "time_s": 95.2
+      },
+      "missing_file": {
+        "calls": 47,
+        "tokens": 264420,
+        "cost_usd": 0.05168799999999999,
+        "time_s": 284.83
+      },
+      "fix": {
+        "calls": 18,
+        "tokens": 43872,
+        "cost_usd": 0.011234,
+        "time_s": 106.5
+      },
+      "architecture_fix": {
+        "calls": 1,
+        "tokens": 8602,
+        "cost_usd": 0.002233,
+        "time_s": 14.65
+      }
+    },
+    "failed_calls": 0,
+    "failures": [],
+    "project_name": "Wellness Coach",
+    "forge_score": 0,
+    "wall_time_s": 554.64,
+    "timestamp": "2026-09-09T21:52:56"
+  },
+  {
+    "total_calls": 29,
+    "total_tokens": 150802,
+    "total_cost_usd": 0.030601,
+    "total_llm_time_s": 173.19,
+    "by_stage": {
+      "backend_generation": {
+        "calls": 2,
+        "tokens": 24529,
+        "cost_usd": 0.0073360000000000005,
+        "time_s": 56.99
+      },
+      "frontend_generation": {
+        "calls": 2,
+        "tokens": 32070,
+        "cost_usd": 0.0053620000000000004,
+        "time_s": 12.75
+      },
+      "fix": {
+        "calls": 10,
+        "tokens": 18671,
+        "cost_usd": 0.004156,
+        "time_s": 43.650000000000006
+      },
+      "missing_file": {
+        "calls": 15,
+        "tokens": 75532,
+        "cost_usd": 0.013747,
+        "time_s": 59.79999999999999
+      }
+    },
+    "failed_calls": 0,
+    "failures": [],
+    "project_name": "Community Discussion Platform",
+    "forge_score": 0,
+    "wall_time_s": 180.59,
+    "timestamp": "2026-09-09T21:56:04"
+  },
+  {
+    "total_calls": 38,
+    "total_tokens": 200447,
+    "total_cost_usd": 0.043918,
+    "total_llm_time_s": 324.74,
+    "by_stage": {
+      "backend_generation": {
+        "calls": 2,
+        "tokens": 23683,
+        "cost_usd": 0.006654,
+        "time_s": 49.28
+      },
+      "frontend_generation": {
+        "calls": 2,
+        "tokens": 37262,
+        "cost_usd": 0.008251,
+        "time_s": 81.47
+      },
+      "missing_file": {
+        "calls": 18,
+        "tokens": 98002,
+        "cost_usd": 0.018863,
+        "time_s": 94.14999999999999
+      },
+      "fix": {
+        "calls": 15,
+        "tokens": 34680,
+        "cost_usd": 0.008721999999999999,
+        "time_s": 93.09
+      },
+      "architecture_fix": {
+        "calls": 1,
+        "tokens": 6820,
+        "cost_usd": 0.001428,
+        "time_s": 6.75
+      }
+    },
+    "failed_calls": 0,
+    "failures": [],
+    "project_name": "Freelance Invoicing Tool",
+    "forge_score": 0,
+    "wall_time_s": 332.75,
+    "timestamp": "2026-09-09T22:01:44"
+  },
+  {
+    "total_calls": 39,
+    "total_tokens": 189396,
+    "total_cost_usd": 0.039106,
+    "total_llm_time_s": 215.74,
+    "by_stage": {
+      "backend_generation": {
+        "calls": 2,
+        "tokens": 26374,
+        "cost_usd": 0.008367,
+        "time_s": 65.82
+      },
+      "frontend_generation": {
+        "calls": 2,
+        "tokens": 32107,
+        "cost_usd": 0.00528,
+        "time_s": 10.71
+      },
+      "missing_file": {
+        "calls": 19,
+        "tokens": 95923,
+        "cost_usd": 0.017779000000000003,
+        "time_s": 77.25
+      },
+      "fix": {
+        "calls": 15,
+        "tokens": 28656,
+        "cost_usd": 0.006463999999999999,
+        "time_s": 56.09
+      },
+      "architecture_fix": {
+        "calls": 1,
+        "tokens": 6336,
+        "cost_usd": 0.001216,
+        "time_s": 5.87
+      }
+    },
+    "failed_calls": 0,
+    "failures": [],
+    "project_name": "Apartment Rental Search Platform",
+    "forge_score": 0,
+    "wall_time_s": 224.59,
+    "timestamp": "2026-09-09T22:05:36"
+  },
+  {
+    "total_calls": 28,
+    "total_tokens": 154638,
+    "total_cost_usd": 0.031181,
+    "total_llm_time_s": 161.72,
+    "by_stage": {
+      "backend_generation": {
+        "calls": 2,
+        "tokens": 24004,
+        "cost_usd": 0.006918,
+        "time_s": 50.85
+      },
+      "frontend_generation": {
+        "calls": 2,
+        "tokens": 32150,
+        "cost_usd": 0.005298000000000001,
+        "time_s": 10.649999999999999
+      },
+      "missing_file": {
+        "calls": 15,
+        "tokens": 75033,
+        "cost_usd": 0.013645999999999998,
+        "time_s": 63.629999999999995
+      },
+      "fix": {
+        "calls": 8,
+        "tokens": 17155,
+        "cost_usd": 0.004113,
+        "time_s": 32.08
+      },
+      "architecture_fix": {
+        "calls": 1,
+        "tokens": 6296,
+        "cost_usd": 0.001206,
+        "time_s": 4.51
+      }
+    },
+    "failed_calls": 0,
+    "failures": [],
+    "project_name": "Tournament Management System",
+    "forge_score": 0,
+    "wall_time_s": 169.4,
+    "timestamp": "2026-09-09T22:08:33"
+  },
+  {
+    "total_calls": 33,
+    "total_tokens": 188142,
+    "total_cost_usd": 0.038563,
+    "total_llm_time_s": 216.79,
+    "by_stage": {
+      "backend_generation": {
+        "calls": 2,
+        "tokens": 23699,
+        "cost_usd": 0.006857,
+        "time_s": 51.61
+      },
+      "frontend_generation": {
+        "calls": 2,
+        "tokens": 32776,
+        "cost_usd": 0.005869,
+        "time_s": 20.23
+      },
+      "fix": {
+        "calls": 6,
+        "tokens": 12653,
+        "cost_usd": 0.002991,
+        "time_s": 24.07
+      },
+      "missing_file": {
+        "calls": 22,
+        "tokens": 111791,
+        "cost_usd": 0.020986,
+        "time_s": 108.07000000000001
+      },
+      "architecture_fix": {
+        "calls": 1,
+        "tokens": 7223,
+        "cost_usd": 0.00186,
+        "time_s": 12.81
+      }
+    },
+    "failed_calls": 0,
+    "failures": [],
+    "project_name": "MindTrack",
+    "forge_score": 0,
+    "wall_time_s": 225.24,
+    "timestamp": "2026-09-09T22:12:25"
+  },
+  {
+    "total_calls": 42,
+    "total_tokens": 199507,
+    "total_cost_usd": 0.04325,
+    "total_llm_time_s": 279.16,
+    "by_stage": {
+      "backend_generation": {
+        "calls": 2,
+        "tokens": 25852,
+        "cost_usd": 0.008167,
+        "time_s": 70.53999999999999
+      },
+      "frontend_generation": {
+        "calls": 2,
+        "tokens": 36904,
+        "cost_usd": 0.008351,
+        "time_s": 59.5
+      },
+      "missing_file": {
+        "calls": 19,
+        "tokens": 96471,
+        "cost_usd": 0.017715,
+        "time_s": 75.68
+      },
+      "fix": {
+        "calls": 18,
+        "tokens": 32540,
+        "cost_usd": 0.006865,
+        "time_s": 58.419999999999995
+      },
+      "architecture_fix": {
+        "calls": 1,
+        "tokens": 7740,
+        "cost_usd": 0.002152,
+        "time_s": 15.02
+      }
+    },
+    "failed_calls": 0,
+    "failures": [],
+    "project_name": "Office Supplies Inventory Management System",
+    "forge_score": 10,
+    "wall_time_s": 288.92,
+    "timestamp": "2026-09-09T22:17:21"
+  },
+  {
+    "total_calls": 33,
+    "total_tokens": 185049,
+    "total_cost_usd": 0.03875,
+    "total_llm_time_s": 220.69,
+    "by_stage": {
+      "backend_generation": {
+        "calls": 2,
+        "tokens": 22126,
+        "cost_usd": 0.005927999999999999,
+        "time_s": 40.64
+      },
+      "frontend_generation": {
+        "calls": 2,
+        "tokens": 38567,
+        "cost_usd": 0.009319000000000001,
+        "time_s": 59.45
+      },
+      "missing_file": {
+        "calls": 20,
+        "tokens": 102077,
+        "cost_usd": 0.018589999999999995,
+        "time_s": 81.96
+      },
+      "fix": {
+        "calls": 8,
+        "tokens": 16154,
+        "cost_usd": 0.0037319999999999996,
+        "time_s": 34.24
+      },
+      "architecture_fix": {
+        "calls": 1,
+        "tokens": 6125,
+        "cost_usd": 0.001181,
+        "time_s": 4.4
+      }
+    },
+    "failed_calls": 0,
+    "failures": [],
+    "project_name": "Podcast Hub",
+    "forge_score": 0,
+    "wall_time_s": 228.08,
+    "timestamp": "2026-09-09T22:21:17"
+  },
+  {
+    "total_calls": 26,
+    "total_tokens": 155039,
+    "total_cost_usd": 0.035262,
+    "total_llm_time_s": 236.69,
+    "by_stage": {
+      "backend_generation": {
+        "calls": 2,
+        "tokens": 25528,
+        "cost_usd": 0.007775,
+        "time_s": 69.16
+      },
+      "frontend_generation": {
+        "calls": 2,
+        "tokens": 40221,
+        "cost_usd": 0.009997,
+        "time_s": 71.05
+      },
+      "missing_file": {
+        "calls": 13,
+        "tokens": 65781,
+        "cost_usd": 0.012154000000000002,
+        "time_s": 54.58
+      },
+      "fix": {
+        "calls": 8,
+        "tokens": 17127,
+        "cost_usd": 0.004149000000000001,
+        "time_s": 37.68
+      },
+      "architecture_fix": {
+        "calls": 1,
+        "tokens": 6382,
+        "cost_usd": 0.001187,
+        "time_s": 4.22
+      }
+    },
+    "failed_calls": 0,
+    "failures": [],
+    "project_name": "Volunteer Management System",
+    "forge_score": 0,
+    "wall_time_s": 244.68,
+    "timestamp": "2026-09-09T22:25:29"
+  },
+  {
+    "total_calls": 31,
+    "total_tokens": 167360,
+    "total_cost_usd": 0.034443,
+    "total_llm_time_s": 197.07,
+    "by_stage": {
+      "backend_generation": {
+        "calls": 2,
+        "tokens": 25407,
+        "cost_usd": 0.007973000000000001,
+        "time_s": 66.89
+      },
+      "frontend_generation": {
+        "calls": 2,
+        "tokens": 31487,
+        "cost_usd": 0.005214,
+        "time_s": 12.24
+      },
+      "missing_file": {
+        "calls": 17,
+        "tokens": 85214,
+        "cost_usd": 0.015414,
+        "time_s": 69.89
+      },
+      "fix": {
+        "calls": 9,
+        "tokens": 18851,
+        "cost_usd": 0.00442,
+        "time_s": 40.32
+      },
+      "architecture_fix": {
+        "calls": 1,
+        "tokens": 6401,
+        "cost_usd": 0.001422,
+        "time_s": 7.73
+      }
+    },
+    "failed_calls": 0,
+    "failures": [],
+    "project_name": "Home Climate Control App",
+    "forge_score": 12,
+    "wall_time_s": 205.47,
+    "timestamp": "2026-09-09T22:29:01"
+  },
+  {
+    "total_calls": 32,
+    "total_tokens": 161851,
+    "total_cost_usd": 0.033891,
+    "total_llm_time_s": 201.22,
+    "by_stage": {
+      "backend_generation": {
+        "calls": 2,
+        "tokens": 24992,
+        "cost_usd": 0.007692,
+        "time_s": 64.69
+      },
+      "frontend_generation": {
+        "calls": 2,
+        "tokens": 31663,
+        "cost_usd": 0.005221,
+        "time_s": 10.969999999999999
+      },
+      "missing_file": {
+        "calls": 14,
+        "tokens": 70731,
+        "cost_usd": 0.013110999999999998,
+        "time_s": 60.120000000000005
+      },
+      "fix": {
+        "calls": 13,
+        "tokens": 28695,
+        "cost_usd": 0.006893,
+        "time_s": 62.739999999999995
+      },
+      "architecture_fix": {
+        "calls": 1,
+        "tokens": 5770,
+        "cost_usd": 0.000974,
+        "time_s": 2.7
+      }
+    },
+    "failed_calls": 0,
+    "failures": [],
+    "project_name": "TeamTasker",
+    "forge_score": 0,
+    "wall_time_s": 209.75,
+    "timestamp": "2026-09-09T22:32:38"
+  },
+  {
+    "total_calls": 13,
+    "total_tokens": 74329,
+    "total_cost_usd": 0.017961,
+    "total_llm_time_s": 122.64,
+    "by_stage": {
+      "backend_generation": {
+        "calls": 2,
+        "tokens": 26474,
+        "cost_usd": 0.008567,
+        "time_s": 71.78999999999999
+      },
+      "missing_file": {
+        "calls": 6,
+        "tokens": 33397,
+        "cost_usd": 0.006263,
+        "time_s": 28.88
+      },
+      "fix": {
+        "calls": 4,
+        "tokens": 8469,
+        "cost_usd": 0.002042,
+        "time_s": 18.240000000000002
+      },
+      "architecture_fix": {
+        "calls": 1,
+        "tokens": 5989,
+        "cost_usd": 0.001089,
+        "time_s": 3.73
+      }
+    },
+    "failed_calls": 0,
+    "failures": [],
+    "project_name": "Habit Tracker",
+    "forge_score": 4,
+    "wall_time_s": 131.22,
+    "timestamp": "2026-09-09T22:35:34"
+  },
+  {
+    "total_calls": 9,
+    "total_tokens": 64031,
+    "total_cost_usd": 0.015258,
+    "total_llm_time_s": 99.38,
+    "by_stage": {
+      "backend_generation": {
+        "calls": 2,
+        "tokens": 23934,
+        "cost_usd": 0.007015,
+        "time_s": 53.94
+      },
+      "missing_file": {
+        "calls": 6,
+        "tokens": 33593,
+        "cost_usd": 0.006839,
+        "time_s": 38.480000000000004
+      },
+      "architecture_fix": {
+        "calls": 1,
+        "tokens": 6504,
+        "cost_usd": 0.001404,
+        "time_s": 6.96
+      }
+    },
+    "failed_calls": 0,
+    "failures": [],
+    "project_name": "Recipe Manager",
+    "forge_score": 10,
+    "wall_time_s": 106.95,
+    "timestamp": "2026-09-09T22:37:28"
+  },
+  {
+    "total_calls": 16,
+    "total_tokens": 83265,
+    "total_cost_usd": 0.020415,
+    "total_llm_time_s": 154.61,
+    "by_stage": {
+      "backend_generation": {
+        "calls": 2,
+        "tokens": 27339,
+        "cost_usd": 0.008976000000000001,
+        "time_s": 78.78999999999999
+      },
+      "missing_file": {
+        "calls": 6,
+        "tokens": 34369,
+        "cost_usd": 0.006509,
+        "time_s": 36.69
+      },
+      "fix": {
+        "calls": 7,
+        "tokens": 15338,
+        "cost_usd": 0.003763,
+        "time_s": 34.38
+      },
+      "architecture_fix": {
+        "calls": 1,
+        "tokens": 6219,
+        "cost_usd": 0.001167,
+        "time_s": 4.75
+      }
+    },
+    "failed_calls": 0,
+    "failures": [],
+    "project_name": "FitTrack Pro",
+    "forge_score": 17,
+    "wall_time_s": 162.67,
+    "timestamp": "2026-09-09T22:40:18"
+  },
+  {
+    "total_calls": 17,
+    "total_tokens": 76271,
+    "total_cost_usd": 0.018296,
+    "total_llm_time_s": 140.84,
+    "by_stage": {
+      "backend_generation": {
+        "calls": 2,
+        "tokens": 25263,
+        "cost_usd": 0.00788,
+        "time_s": 77.6
+      },
+      "missing_file": {
+        "calls": 5,
+        "tokens": 26083,
+        "cost_usd": 0.004817,
+        "time_s": 21.14
+      },
+      "fix": {
+        "calls": 9,
+        "tokens": 19003,
+        "cost_usd": 0.004475000000000001,
+        "time_s": 37.08
+      },
+      "architecture_fix": {
+        "calls": 1,
+        "tokens": 5922,
+        "cost_usd": 0.001124,
+        "time_s": 5.02
+      }
+    },
+    "failed_calls": 0,
+    "failures": [],
+    "project_name": "Book Club Management Platform",
+    "forge_score": 10,
+    "wall_time_s": 149.11,
+    "timestamp": "2026-09-09T22:42:54"
+  },
+  {
+    "total_calls": 33,
+    "total_tokens": 131133,
+    "total_cost_usd": 0.029246,
+    "total_llm_time_s": 206.67,
+    "by_stage": {
+      "backend_generation": {
+        "calls": 2,
+        "tokens": 25583,
+        "cost_usd": 0.007717,
+        "time_s": 76.0
+      },
+      "fix": {
+        "calls": 18,
+        "tokens": 33753,
+        "cost_usd": 0.007280999999999999,
+        "time_s": 57.0
+      },
+      "missing_file": {
+        "calls": 12,
+        "tokens": 64091,
+        "cost_usd": 0.012402000000000002,
+        "time_s": 61.69000000000001
+      },
+      "architecture_fix": {
+        "calls": 1,
+        "tokens": 7706,
+        "cost_usd": 0.001846,
+        "time_s": 11.98
+      }
+    },
+    "failed_calls": 0,
+    "failures": [],
+    "project_name": "Pet Care Tracker",
+    "forge_score": 0,
+    "wall_time_s": 217.06,
+    "timestamp": "2026-09-09T22:46:38"
+  },
+  {
+    "total_calls": 16,
+    "total_tokens": 88205,
+    "total_cost_usd": 0.020322,
+    "total_llm_time_s": 150.76,
+    "by_stage": {
+      "backend_generation": {
+        "calls": 2,
+        "tokens": 25501,
+        "cost_usd": 0.007999000000000001,
+        "time_s": 82.38
+      },
+      "missing_file": {
+        "calls": 9,
+        "tokens": 48220,
+        "cost_usd": 0.009099999999999999,
+        "time_s": 43.5
+      },
+      "fix": {
+        "calls": 4,
+        "tokens": 8055,
+        "cost_usd": 0.0018960000000000001,
+        "time_s": 18.37
+      },
+      "architecture_fix": {
+        "calls": 1,
+        "tokens": 6429,
+        "cost_usd": 0.001327,
+        "time_s": 6.51
+      }
+    },
+    "failed_calls": 0,
+    "failures": [],
+    "project_name": "Expense Sharing App",
+    "forge_score": 24,
+    "wall_time_s": 159.87,
+    "timestamp": "2026-09-09T22:49:25"
+  },
+  {
+    "total_calls": 12,
+    "total_tokens": 83566,
+    "total_cost_usd": 0.018576,
+    "total_llm_time_s": 109.23,
+    "by_stage": {
+      "backend_generation": {
+        "calls": 2,
+        "tokens": 23601,
+        "cost_usd": 0.006723,
+        "time_s": 51.27
+      },
+      "missing_file": {
+        "calls": 9,
+        "tokens": 52447,
+        "cost_usd": 0.009926,
+        "time_s": 45.58
+      },
+      "architecture_fix": {
+        "calls": 1,
+        "tokens": 7518,
+        "cost_usd": 0.001927,
+        "time_s": 12.38
+      }
+    },
+    "failed_calls": 0,
+    "failures": [],
+    "project_name": "Property Management System",
+    "forge_score": 0,
+    "wall_time_s": 118.66,
+    "timestamp": "2026-09-09T22:51:31"
+  },
+  {
+    "total_calls": 9,
+    "total_tokens": 54330,
+    "total_cost_usd": 0.014008,
+    "total_llm_time_s": 103.48,
+    "by_stage": {
+      "backend_generation": {
+        "calls": 2,
+        "tokens": 25965,
+        "cost_usd": 0.00833,
+        "time_s": 70.74000000000001
+      },
+      "fix": {
+        "calls": 3,
+        "tokens": 6611,
+        "cost_usd": 0.001524,
+        "time_s": 13.45
+      },
+      "missing_file": {
+        "calls": 3,
+        "tokens": 15834,
+        "cost_usd": 0.0030340000000000002,
+        "time_s": 14.06
+      },
+      "architecture_fix": {
+        "calls": 1,
+        "tokens": 5920,
+        "cost_usd": 0.00112,
+        "time_s": 5.23
+      }
+    },
+    "failed_calls": 0,
+    "failures": [],
+    "project_name": "Event Planner Pro",
+    "forge_score": 17,
+    "wall_time_s": 113.14,
+    "timestamp": "2026-09-09T22:53:32"
+  },
+  {
+    "total_calls": 16,
+    "total_tokens": 79506,
+    "total_cost_usd": 0.018342,
+    "total_llm_time_s": 134.03,
+    "by_stage": {
+      "backend_generation": {
+        "calls": 2,
+        "tokens": 24007,
+        "cost_usd": 0.006982,
+        "time_s": 55.81
+      },
+      "missing_file": {
+        "calls": 6,
+        "tokens": 33941,
+        "cost_usd": 0.006404,
+        "time_s": 30.639999999999993
+      },
+      "fix": {
+        "calls": 7,
+        "tokens": 15336,
+        "cost_usd": 0.0037689999999999998,
+        "time_s": 41.91
+      },
+      "architecture_fix": {
+        "calls": 1,
+        "tokens": 6222,
+        "cost_usd": 0.001187,
+        "time_s": 5.67
+      }
+    },
+    "failed_calls": 0,
+    "failures": [],
+    "project_name": "SkillSwap Marketplace",
+    "forge_score": 0,
+    "wall_time_s": 142.85,
+    "timestamp": "2026-09-09T22:56:02"
+  },
+  {
+    "total_calls": 10,
+    "total_tokens": 58061,
+    "total_cost_usd": 0.014211,
+    "total_llm_time_s": 112.92,
+    "by_stage": {
+      "backend_generation": {
+        "calls": 2,
+        "tokens": 24111,
+        "cost_usd": 0.00727,
+        "time_s": 64.13
+      },
+      "missing_file": {
+        "calls": 4,
+        "tokens": 20536,
+        "cost_usd": 0.0038160000000000004,
+        "time_s": 20.15
+      },
+      "fix": {
+        "calls": 3,
+        "tokens": 7380,
+        "cost_usd": 0.00192,
+        "time_s": 22.580000000000002
+      },
+      "architecture_fix": {
+        "calls": 1,
+        "tokens": 6034,
+        "cost_usd": 0.001205,
+        "time_s": 6.06
+      }
+    },
+    "failed_calls": 0,
+    "failures": [],
+    "project_name": "Garden Planner",
+    "forge_score": 17,
+    "wall_time_s": 122.3,
+    "timestamp": "2026-09-09T22:58:11"
+  },
+  {
+    "total_calls": 33,
+    "total_tokens": 143429,
+    "total_cost_usd": 0.030006,
+    "total_llm_time_s": 203.52,
+    "by_stage": {
+      "backend_generation": {
+        "calls": 2,
+        "tokens": 25005,
+        "cost_usd": 0.007771,
+        "time_s": 74.4
+      },
+      "missing_file": {
+        "calls": 18,
+        "tokens": 88778,
+        "cost_usd": 0.015873,
+        "time_s": 73.64999999999999
+      },
+      "fix": {
+        "calls": 12,
+        "tokens": 23424,
+        "cost_usd": 0.005095,
+        "time_s": 48.12
+      },
+      "architecture_fix": {
+        "calls": 1,
+        "tokens": 6222,
+        "cost_usd": 0.001267,
+        "time_s": 7.35
+      }
+    },
+    "failed_calls": 0,
+    "failures": [],
+    "project_name": "Mood Journal",
+    "forge_score": 10,
+    "wall_time_s": 216.13,
+    "timestamp": "2026-09-09T23:01:55"
+  },
+  {
+    "total_calls": 7,
+    "total_tokens": 51334,
+    "total_cost_usd": 0.013423,
+    "total_llm_time_s": 107.23,
+    "by_stage": {
+      "backend_generation": {
+        "calls": 2,
+        "tokens": 26474,
+        "cost_usd": 0.008514,
+        "time_s": 77.68
+      },
+      "missing_file": {
+        "calls": 3,
+        "tokens": 16434,
+        "cost_usd": 0.0031890000000000004,
+        "time_s": 19.42
+      },
+      "fix": {
+        "calls": 1,
+        "tokens": 2318,
+        "cost_usd": 0.000587,
+        "time_s": 6.18
+      },
+      "architecture_fix": {
+        "calls": 1,
+        "tokens": 6108,
+        "cost_usd": 0.001133,
+        "time_s": 3.95
+      }
+    },
+    "failed_calls": 0,
+    "failures": [],
+    "project_name": "Language Exchange Platform",
+    "forge_score": 7,
+    "wall_time_s": 116.38,
+    "timestamp": "2026-09-09T23:03:58"
+  },
+  {
+    "total_calls": 11,
+    "total_tokens": 71357,
+    "total_cost_usd": 0.017964,
+    "total_llm_time_s": 128.0,
+    "by_stage": {
+      "backend_generation": {
+        "calls": 2,
+        "tokens": 26692,
+        "cost_usd": 0.008489,
+        "time_s": 74.64
+      },
+      "fix": {
+        "calls": 2,
+        "tokens": 4946,
+        "cost_usd": 0.00119,
+        "time_s": 9.760000000000002
+      },
+      "missing_file": {
+        "calls": 6,
+        "tokens": 31990,
+        "cost_usd": 0.006308,
+        "time_s": 32.129999999999995
+      },
+      "architecture_fix": {
+        "calls": 1,
+        "tokens": 7729,
+        "cost_usd": 0.001977,
+        "time_s": 11.47
+      }
+    },
+    "failed_calls": 0,
+    "failures": [],
+    "project_name": "Vehicle Maintenance Tracker",
+    "forge_score": 0,
+    "wall_time_s": 136.75,
+    "timestamp": "2026-09-09T23:06:22"
+  },
+  {
+    "total_calls": 9,
+    "total_tokens": 55329,
+    "total_cost_usd": 0.014441,
+    "total_llm_time_s": 117.23,
+    "by_stage": {
+      "backend_generation": {
+        "calls": 2,
+        "tokens": 25944,
+        "cost_usd": 0.00826,
+        "time_s": 76.86
+      },
+      "missing_file": {
+        "calls": 3,
+        "tokens": 16878,
+        "cost_usd": 0.003449,
+        "time_s": 21.25
+      },
+      "fix": {
+        "calls": 3,
+        "tokens": 6234,
+        "cost_usd": 0.00149,
+        "time_s": 14.09
+      },
+      "architecture_fix": {
+        "calls": 1,
+        "tokens": 6273,
+        "cost_usd": 0.001242,
+        "time_s": 5.03
+      }
+    },
+    "failed_calls": 0,
+    "failures": [],
+    "project_name": "Collaborative Playlist Application",
+    "forge_score": 12,
+    "wall_time_s": 127.55,
+    "timestamp": "2026-09-09T23:08:37"
+  },
+  {
+    "total_calls": 23,
+    "total_tokens": 113782,
+    "total_cost_usd": 0.026052,
+    "total_llm_time_s": 255.56,
+    "by_stage": {
+      "backend_generation": {
+        "calls": 2,
+        "tokens": 25395,
+        "cost_usd": 0.00779,
+        "time_s": 138.09
+      },
+      "missing_file": {
+        "calls": 11,
+        "tokens": 60720,
+        "cost_usd": 0.01148,
+        "time_s": 58.96
+      },
+      "fix": {
+        "calls": 9,
+        "tokens": 20663,
+        "cost_usd": 0.0052049999999999996,
+        "time_s": 50.300000000000004
+      },
+      "architecture_fix": {
+        "calls": 1,
+        "tokens": 7004,
+        "cost_usd": 0.001577,
+        "time_s": 8.21
+      }
+    },
+    "failed_calls": 0,
+    "failures": [],
+    "project_name": "Study Group Coordination App",
+    "forge_score": 17,
+    "wall_time_s": 264.74,
+    "timestamp": "2026-09-09T23:13:09"
   }
 ]

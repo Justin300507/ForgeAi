@@ -139,10 +139,14 @@ def main():
 
     if successful:
         avg_time = sum(r["time"] for r in successful) / len(successful)
-        avg_score = sum(r.get("forge_score", 0) for r in successful) / len(successful)
+        scores = [r.get("forge_score", 0) for r in successful]
+        scores = [s for s in scores if isinstance(s, (int, float))]
+        avg_score = sum(scores) / len(scores) if scores else 0
         print(f"\nSuccessful Apps:")
         print(f"  Avg Time:    {avg_time:.1f}s")
         print(f"  Avg Score:   {avg_score:.1f}")
+        print(f"  Min Time:    {min(r['time'] for r in successful):.1f}s")
+        print(f"  Max Time:    {max(r['time'] for r in successful):.1f}s")
 
         compile_count = sum(1 for r in successful if r.get("compile"))
         runtime_count = sum(1 for r in successful if r.get("runtime"))
