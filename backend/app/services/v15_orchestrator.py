@@ -1,8 +1,8 @@
 """
-V15 Orchestrator — top-level entry point for the autonomous self-healing pipeline.
+V15 Orchestrator - top-level entry point for the autonomous self-healing pipeline.
 
 Exposes:
-  generate_project_v15(idea, provider, deploy, deploy_to) → dict
+  generate_project_v15(idea, provider, deploy, deploy_to) -> dict
 
 Wires together the V15Pipeline with:
   - VerificationEngine (static + runtime + browser)
@@ -42,9 +42,9 @@ def generate_project_v15(
     Run the full V15 autonomous generation pipeline.
 
     Pipeline:
-      1. V6 generation (plan → architect → backend → frontend)
+      1. V6 generation (plan -> architect -> backend -> frontend)
       2. Deterministic patches
-      3. Verification (static → runtime → browser/playwright)
+      3. Verification (static -> runtime -> browser/playwright)
       4. Quality scoring (0–100, 10 dimensions)
       5. Fix loop (up to 5 attempts, escalating strategy)
       6. Deploy if score ≥ 95
@@ -81,10 +81,10 @@ def generate_project_v15(
     job_id  = job_id or uuid.uuid4().hex
 
     print(f"\n{'#'*70}")
-    print(f"# FORGEAI V15 — Autonomous Self-Healing Platform")
+    print(f"# FORGEAI V15 - Autonomous Self-Healing Platform")
     print(f"# Idea:   {idea[:65]}")
     print(f"# Job ID: {job_id}")
-    print(f"# Deploy: {deploy} → {deploy_to}")
+    print(f"# Deploy: {deploy} -> {deploy_to}")
     print(f"{'#'*70}")
 
     # ── Build event bus with optional WebSocket streaming ─────────────────
@@ -96,15 +96,15 @@ def generate_project_v15(
         def _stream(payload: dict):
             event = payload.get("event", "")
             if event == Events.STAGE_START:
-                log_fn(f"[V15] ▶ {payload.get('stage','?')} …")
+                log_fn(f"[V15] > {payload.get('stage','?')} ...")
             elif event == Events.STAGE_END:
-                log_fn(f"[V15] {'✓' if payload.get('status')=='passed' else '✕'} "
+                log_fn(f"[V15] {'OK' if payload.get('status')=='passed' else 'FAIL'} "
                        f"{payload.get('stage','?')} [{payload.get('status','?')}]")
             elif event == Events.SCORE_UPDATE:
                 log_fn(f"[V15] Score: {payload.get('score',0):.1f} ({payload.get('grade','?')})"
-                       + (" 🚀 DEPLOY READY" if payload.get('deployment_ready') else " 🔧 needs repair"))
+                       + (" DEPLOY READY" if payload.get('deployment_ready') else " needs repair"))
             elif event == Events.FIX_ATTEMPT:
-                log_fn(f"[V15] Fix attempt {payload.get('attempt','?')}/5 — {payload.get('strategy','?')}")
+                log_fn(f"[V15] Fix attempt {payload.get('attempt','?')}/5 - {payload.get('strategy','?')}")
             elif event == Events.DEPLOY_DONE:
                 log_fn(f"[V15] Deployed! Backend: {payload.get('backend_url','?')}")
             elif event == Events.PIPELINE_DONE:
@@ -171,7 +171,7 @@ def _print_final_report(result: dict):
 
     score_hist = result.get("score_history", [])
     if score_hist:
-        trajectory = " → ".join(f"{s['score']:.0f}" for s in score_hist)
+        trajectory = " -> ".join(f"{s['score']:.0f}" for s in score_hist)
         print(f"  Score Track:   {trajectory}")
 
     print(f"{'='*70}\n")

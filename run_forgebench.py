@@ -377,15 +377,15 @@ def compute_scorecard(
 # Reporter
 # ---------------------------------------------------------------------------
 def print_scorecard(sc: ForgeBenchScorecard) -> None:
-    sep = "─" * 66
-    print(f"\n{'═'*66}")
-    print(f"  ForgeBench Scorecard — {sc.suite_label}")
+    sep = "-" * 66
+    print(f"\n{'='*66}")
+    print(f"  ForgeBench Scorecard - {sc.suite_label}")
     print(f"  Adapter  : {sc.adapter_name}  {sc.adapter_url or ''}".rstrip())
     print(f"  Run ID   : {sc.run_id}")
     print(f"  Suite    : {sc.suite}  ({sc.total} prompts)")
-    print(f"{'═'*66}")
+    print(f"{'='*66}")
 
-    print(f"\n  ★  Weighted Score    {sc.weighted_score:6.1f} / 100")
+    print(f"\n  *  Weighted Score    {sc.weighted_score:6.1f} / 100")
     print(f"     Weighted Pass Rate {sc.weighted_pass_rate*100:5.1f}%")
     print(f"\n  {sep}")
     print(f"     Compile Rate       {sc.compile_rate*100:5.1f}%")
@@ -425,7 +425,7 @@ def save_scorecard(sc: ForgeBenchScorecard, out_dir: Path) -> None:
     out_dir.mkdir(parents=True, exist_ok=True)
     sc_path = out_dir / "scorecard.json"
     sc_path.write_text(json.dumps(sc.to_dict(), indent=2), encoding="utf-8")
-    print(f"  Saved scorecard → {sc_path}")
+    print(f"  Saved scorecard -> {sc_path}")
 
     # Append to leaderboard history
     history_path = out_dir.parent / "forgebench_history.jsonl"
@@ -441,7 +441,7 @@ def save_scorecard(sc: ForgeBenchScorecard, out_dir: Path) -> None:
     }
     with open(history_path, "a", encoding="utf-8") as f:
         f.write(json.dumps(entry) + "\n")
-    print(f"  Appended to leaderboard → {history_path}")
+    print(f"  Appended to leaderboard -> {history_path}")
 
 
 # ---------------------------------------------------------------------------
@@ -516,8 +516,8 @@ def main() -> None:
             if ar.generation_time_s == 0:
                 ar.generation_time_s = elapsed
 
-            status = ("✓" if ar.compile_success and ar.runtime_success
-                      else "C" if ar.compile_success else "✗")
+            status = ("OK" if ar.compile_success and ar.runtime_success
+                      else "C" if ar.compile_success else "FAIL")
             print(f"  {status}  score={ar.forge_score:4.1f}  {elapsed:4.0f}s  ${ar.estimated_cost_usd:.4f}")
             results.append(PromptResult(
                 name=prompt.name, difficulty=prompt.difficulty, weight=prompt.weight,
@@ -531,6 +531,9 @@ def main() -> None:
                 idea=prompt.idea, adapter_result=AdapterResult(),
                 crashed=True, crash_error=str(e),
             ))
+
+        if i < len(prompts):
+            time.sleep(4)
 
     sc = compute_scorecard(results, run_id, args.suite, adapter.name,
                            args.adapter_url or args.base_url, started_at)

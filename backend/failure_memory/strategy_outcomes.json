@@ -60,6 +60,13 @@
       "tries": 1
     }
   },
+  "NotNullViolationError": {
+    "patch_file": {
+      "generation": 1,
+      "successes": 1,
+      "tries": 1
+    }
+  },
   "PydanticSerializationError": {
     "patch_file": {
       "generation": 1,
@@ -155,7 +162,7 @@
     "switch_model": {
       "generation": 1,
       "successes": 43,
-      "tries": 280
+      "tries": 292
     }
   },
   "browser": {
@@ -233,18 +240,18 @@
   "syntax": {
     "patch_file": {
       "generation": 1,
-      "successes": 10,
-      "tries": 11
+      "successes": 13,
+      "tries": 16
     },
     "regenerate_module": {
       "generation": 2,
       "successes": 0,
-      "tries": 1
+      "tries": 3
     },
     "switch_model": {
       "generation": 1,
       "successes": 0,
-      "tries": 1
+      "tries": 3
     }
   }
 }

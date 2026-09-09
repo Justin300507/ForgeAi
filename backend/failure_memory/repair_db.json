@@ -3866,9 +3866,9 @@
       "src/context/AuthContext.jsx": "import React from 'react';\n// Auto-scaffolded stub so the build resolves. Passes children\n// through so wrapper components don't blank the page.\nconst Stub = ({ children }) => (children === undefined ? null : children);\nexport default Stub;\nexport const AuthContext = Stub;\n",
       "src/hooks/useAuth.jsx": "import { useContext } from 'react';\nimport { AuthContext } from '../context/AuthContext';\n\nexport const useAuth = () => {\n  return useContext(AuthContext);\n};"
     },
-    "success_count": 5,
+    "success_count": 8,
     "first_seen": "2026-09-08T18:29:13Z",
-    "last_seen": "2026-09-08T20:17:34Z",
+    "last_seen": "2026-09-08T22:17:45Z",
     "source_idea": "An expense tracker with categories",
     "composite_hash": "0e990403700fe185",
     "category": "browser",
@@ -3934,6 +3934,25 @@
     "normalized_signature": "vite build failed (exit <N>): 'vite' is not recognized as an internal or external command, | operable program or batch file.",
     "files_changed": [
       "app/main.py"
+    ],
+    "imports_added": [],
+    "symbols_added": []
+  },
+  "7a452c10ef8cb805": {
+    "fix_hash": "7a452c10ef8cb805",
+    "fix_content": {
+      "app/models/workout.py": "from sqlalchemy import Column, Integer, String, Date, ForeignKey\nfrom sqlalchemy.orm import relationship\nfrom app.database import Base\n\nclass Workout(Base):\n    __tablename__ = 'workouts'\n\n    id = Column(Integer, primary_key=True, index=True)\n    user_id = Column(Integer, ForeignKey('users.id'), nullable=False)\n    date = Column(Date, nullable=False)\n    exercise_type = Column(String, nullable=False, server_default='active')\n\n    user = relationship('User', back_populates='workouts')\n"
+    },
+    "success_count": 1,
+    "first_seen": "2026-09-08T22:10:09Z",
+    "last_seen": "2026-09-08T22:10:09Z",
+    "source_idea": "A fitness log with workout history",
+    "composite_hash": "3be32576874b1365",
+    "category": "runtime",
+    "file_basename": "workout_routes.py",
+    "normalized_signature": "[NotNullViolationError] pydantic_core._pydantic_core.PydanticSerializationError: Unable to serialize unknown type: <class 'app.models.workout.Workout'> [CRUD journey failed — Create entity: <N> (server error); Edit entity: no entity_id captured; Delete entity: no entity_id captured; Verify deletion: no entity_id]",
+    "files_changed": [
+      "app/models/workout.py"
     ],
     "imports_added": [],
     "symbols_added": []

@@ -1,0 +1,282 @@
+[
+  {
+    "app_num": 1,
+    "idea": "A todo app with user login and task tracking",
+    "score": 0,
+    "grade": "F",
+    "working": false,
+    "timestamp": "2026-09-09T02:21:40.822630"
+  },
+  {
+    "app_num": 2,
+    "idea": "A simple note-taking app with folders",
+    "score": 0,
+    "grade": "F",
+    "working": false,
+    "timestamp": "2026-09-09T02:23:23.217325"
+  },
+  {
+    "app_num": 3,
+    "idea": "A task management system with priorities",
+    "score": 0,
+    "grade": "F",
+    "working": false,
+    "timestamp": "2026-09-09T02:25:52.603192"
+  },
+  {
+    "app_num": 4,
+    "idea": "A blog platform with comments and likes",
+    "score": 0,
+    "grade": "F",
+    "working": false,
+    "timestamp": "2026-09-09T02:32:58.830380"
+  },
+  {
+    "app_num": 5,
+    "idea": "A contact manager with groups",
+    "score": 0,
+    "grade": "F",
+    "working": false,
+    "timestamp": "2026-09-09T02:35:14.193820"
+  },
+  {
+    "app_num": 6,
+    "idea": "A habit tracker with streaks",
+    "score": 0,
+    "grade": "F",
+    "working": false,
+    "timestamp": "2026-09-09T02:37:25.682993"
+  },
+  {
+    "app_num": 7,
+    "idea": "A fitness log with workout history",
+    "score": 0,
+    "grade": "F",
+    "working": false,
+    "timestamp": "2026-09-09T02:42:27.669841"
+  },
+  {
+    "app_num": 8,
+    "idea": "A recipe collection app",
+    "score": 0,
+    "grade": "F",
+    "working": false,
+    "timestamp": "2026-09-09T02:44:36.398145"
+  },
+  {
+    "app_num": 9,
+    "idea": "A movie watchlist with ratings",
+    "score": 0,
+    "grade": "F",
+    "working": false,
+    "timestamp": "2026-09-09T02:46:27.831688"
+  },
+  {
+    "app_num": 10,
+    "idea": "An expense tracker with categories",
+    "score": 0,
+    "grade": "F",
+    "working": false,
+    "timestamp": "2026-09-09T02:50:39.803224"
+  },
+  {
+    "app_num": 11,
+    "idea": "A todo app with user login and task tracking",
+    "score": 0,
+    "grade": "F",
+    "working": false,
+    "timestamp": "2026-09-09T02:52:40.240006"
+  },
+  {
+    "app_num": 12,
+    "idea": "A simple note-taking app with folders",
+    "score": 0,
+    "grade": "F",
+    "working": false,
+    "timestamp": "2026-09-09T02:54:44.589124"
+  },
+  {
+    "app_num": 13,
+    "idea": "A task management system with priorities",
+    "score": 0,
+    "grade": "F",
+    "working": false,
+    "timestamp": "2026-09-09T02:57:46.271392"
+  },
+  {
+    "app_num": 14,
+    "idea": "A blog platform with comments and likes",
+    "score": 0,
+    "grade": "F",
+    "working": false,
+    "timestamp": "2026-09-09T03:01:23.488781"
+  },
+  {
+    "app_num": 15,
+    "idea": "A contact manager with groups",
+    "score": 0,
+    "grade": "F",
+    "working": false,
+    "timestamp": "2026-09-09T03:03:37.538326"
+  },
+  {
+    "app_num": 16,
+    "idea": "A habit tracker with streaks",
+    "score": 0,
+    "grade": "F",
+    "working": false,
+    "timestamp": "2026-09-09T03:06:01.722967"
+  },
+  {
+    "app_num": 17,
+    "idea": "A fitness log with workout history",
+    "score": 0,
+    "grade": "F",
+    "working": false,
+    "timestamp": "2026-09-09T03:11:16.131052"
+  },
+  {
+    "app_num": 18,
+    "idea": "A recipe collection app",
+    "score": 0,
+    "grade": "F",
+    "working": false,
+    "timestamp": "2026-09-09T03:13:38.948598"
+  },
+  {
+    "app_num": 19,
+    "idea": "A movie watchlist with ratings",
+    "score": 0,
+    "grade": "F",
+    "working": false,
+    "timestamp": "2026-09-09T03:15:33.574463"
+  },
+  {
+    "app_num": 20,
+    "idea": "An expense tracker with categories",
+    "score": 0,
+    "grade": "F",
+    "working": false,
+    "timestamp": "2026-09-09T03:22:31.783115"
+  },
+  {
+    "app_num": 21,
+    "idea": "A todo app with user login and task tracking",
+    "score": 0,
+    "grade": "F",
+    "working": false,
+    "timestamp": "2026-09-09T03:24:42.616368"
+  },
+  {
+    "app_num": 22,
+    "idea": "A simple note-taking app with folders",
+    "score": 0,
+    "grade": "F",
+    "working": false,
+    "timestamp": "2026-09-09T03:26:42.012449"
+  },
+  {
+    "app_num": 23,
+    "idea": "A task management system with priorities",
+    "score": 0,
+    "grade": "F",
+    "working": false,
+    "timestamp": "2026-09-09T03:28:57.016048"
+  },
+  {
+    "app_num": 24,
+    "idea": "A blog platform with comments and likes",
+    "score": 0,
+    "grade": "F",
+    "working": false,
+    "timestamp": "2026-09-09T03:31:54.942819"
+  },
+  {
+    "app_num": 25,
+    "idea": "A contact manager with groups",
+    "score": 0,
+    "grade": "F",
+    "working": false,
+    "timestamp": "2026-09-09T03:34:09.931904"
+  },
+  {
+    "app_num": 26,
+    "idea": "A habit tracker with streaks",
+    "score": 0,
+    "grade": "F",
+    "working": false,
+    "timestamp": "2026-09-09T03:36:33.478305"
+  },
+  {
+    "app_num": 27,
+    "idea": "A fitness log with workout history",
+    "score": 0,
+    "grade": "F",
+    "working": false,
+    "timestamp": "2026-09-09T03:41:01.875180"
+  },
+  {
+    "app_num": 28,
+    "idea": "A recipe collection app",
+    "score": 0,
+    "grade": "F",
+    "working": false,
+    "timestamp": "2026-09-09T03:42:51.491421"
+  },
+  {
+    "app_num": 29,
+    "idea": "A movie watchlist with ratings",
+    "score": 0,
+    "grade": "F",
+    "working": false,
+    "timestamp": "2026-09-09T03:44:49.809426"
+  },
+  {
+    "app_num": 30,
+    "idea": "An expense tracker with categories",
+    "score": 0,
+    "grade": "F",
+    "working": false,
+    "timestamp": "2026-09-09T03:51:19.258557"
+  },
+  {
+    "app_num": 31,
+    "idea": "A todo app with user login and task tracking",
+    "score": 0,
+    "grade": "F",
+    "working": false,
+    "timestamp": "2026-09-09T03:53:21.103394"
+  },
+  {
+    "app_num": 32,
+    "idea": "A simple note-taking app with folders",
+    "score": 0,
+    "grade": "F",
+    "working": false,
+    "timestamp": "2026-09-09T03:55:10.700341"
+  },
+  {
+    "app_num": 33,
+    "idea": "A task management system with priorities",
+    "score": 0,
+    "grade": "F",
+    "working": false,
+    "timestamp": "2026-09-09T03:58:04.818103"
+  },
+  {
+    "app_num": 34,
+    "idea": "A blog platform with comments and likes",
+    "score": 0,
+    "grade": "F",
+    "working": false,
+    "timestamp": "2026-09-09T04:00:36.820604"
+  },
+  {
+    "app_num": 35,
+    "idea": "A contact manager with groups",
+    "score": 0,
+    "grade": "F",
+    "working": false,
+    "timestamp": "2026-09-09T04:02:38.796096"
+  }
+]
