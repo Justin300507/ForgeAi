@@ -3,3 +3,4 @@
 {"run_id": "fb-golden-844b8a8e", "suite": "golden", "adapter": "forgeai_v15", "date": "2026-09-09T09:09:51Z", "weighted_score": 0.0, "runtime_rate": 0.0, "cost_per_success": 0.0, "avg_time_s": 2.1}
 {"run_id": "fb-golden-3d3ddee9", "suite": "golden", "adapter": "forgeai", "date": "2026-09-09T09:24:06Z", "weighted_score": 0.0, "runtime_rate": 0.0, "cost_per_success": 0.0, "avg_time_s": 44.6}
 {"run_id": "fb-golden-96259262", "suite": "golden", "adapter": "forgeai_v15", "date": "2026-09-09T10:40:08Z", "weighted_score": 0.0, "runtime_rate": 0.0, "cost_per_success": 0.0, "avg_time_s": 0}
+{"run_id": "fb-golden-d0be9f27", "suite": "golden", "adapter": "forgeai", "date": "2026-09-09T11:03:12Z", "weighted_score": 0.0, "runtime_rate": 0.0, "cost_per_success": 0.0, "avg_time_s": 15.3}
