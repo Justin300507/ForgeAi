@@ -2,44 +2,44 @@
   "api_endpoints": [
     {
       "method": "GET",
-      "path": "/users",
-      "description": "Retrieve a list of users with optional search and filter parameters.",
-      "file": "app/routes/user_routes.py"
+      "path": "/projects?search=&status=&limit=&offset=",
+      "description": "Retrieve a list of projects with optional search and filter parameters.",
+      "file": "app/routes/project_routes.py"
     },
     {
       "method": "GET",
-      "path": "/users/{id}",
-      "description": "Retrieve a specific user by ID.",
-      "file": "app/routes/user_routes.py"
+      "path": "/projects/{id}",
+      "description": "Retrieve a specific project by its ID.",
+      "file": "app/routes/project_routes.py"
     },
     {
       "method": "POST",
-      "path": "/users",
-      "description": "Create a new user.",
-      "file": "app/routes/user_routes.py"
+      "path": "/projects",
+      "description": "Create a new project.",
+      "file": "app/routes/project_routes.py"
     },
     {
       "method": "PUT",
-      "path": "/users/{id}",
-      "description": "Update an existing user by ID.",
-      "file": "app/routes/user_routes.py"
+      "path": "/projects/{id}",
+      "description": "Update an existing project by its ID.",
+      "file": "app/routes/project_routes.py"
     },
     {
       "method": "DELETE",
-      "path": "/users/{id}",
-      "description": "Delete a user by ID.",
-      "file": "app/routes/user_routes.py"
+      "path": "/projects/{id}",
+      "description": "Delete a project by its ID.",
+      "file": "app/routes/project_routes.py"
     },
     {
       "method": "GET",
-      "path": "/tasks",
+      "path": "/tasks?search=&status=&limit=&offset=",
       "description": "Retrieve a list of tasks with optional search and filter parameters.",
       "file": "app/routes/task_routes.py"
     },
     {
       "method": "GET",
       "path": "/tasks/{id}",
-      "description": "Retrieve a specific task by ID.",
+      "description": "Retrieve a specific task by its ID.",
       "file": "app/routes/task_routes.py"
     },
     {
@@ -51,61 +51,103 @@
     {
       "method": "PUT",
       "path": "/tasks/{id}",
-      "description": "Update an existing task by ID.",
+      "description": "Update an existing task by its ID.",
       "file": "app/routes/task_routes.py"
     },
     {
       "method": "DELETE",
       "path": "/tasks/{id}",
-      "description": "Delete a task by ID.",
+      "description": "Delete a task by its ID.",
       "file": "app/routes/task_routes.py"
     },
     {
       "method": "GET",
-      "path": "/tags",
-      "description": "Retrieve a list of tags with optional search and filter parameters.",
-      "file": "app/routes/tag_routes.py"
+      "path": "/users?search=&role=&limit=&offset=",
+      "description": "Retrieve a list of users with optional search and filter parameters.",
+      "file": "app/routes/user_routes.py"
     },
     {
       "method": "GET",
-      "path": "/tags/{id}",
-      "description": "Retrieve a specific tag by ID.",
-      "file": "app/routes/tag_routes.py"
+      "path": "/users/{id}",
+      "description": "Retrieve a specific user by their ID.",
+      "file": "app/routes/user_routes.py"
     },
     {
       "method": "POST",
-      "path": "/tags",
-      "description": "Create a new tag.",
-      "file": "app/routes/tag_routes.py"
+      "path": "/users",
+      "description": "Create a new user.",
+      "file": "app/routes/user_routes.py"
     },
     {
       "method": "PUT",
-      "path": "/tags/{id}",
-      "description": "Update an existing tag by ID.",
-      "file": "app/routes/tag_routes.py"
+      "path": "/users/{id}",
+      "description": "Update an existing user by their ID.",
+      "file": "app/routes/user_routes.py"
     },
     {
       "method": "DELETE",
-      "path": "/tags/{id}",
-      "description": "Delete a tag by ID.",
-      "file": "app/routes/tag_routes.py"
+      "path": "/users/{id}",
+      "description": "Delete a user by their ID.",
+      "file": "app/routes/user_routes.py"
+    },
+    {
+      "method": "GET",
+      "path": "/comments?task_id=&limit=&offset=",
+      "description": "Retrieve a list of comments for a specific task with optional pagination.",
+      "file": "app/routes/comment_routes.py"
+    },
+    {
+      "method": "GET",
+      "path": "/comments/{id}",
+      "description": "Retrieve a specific comment by its ID.",
+      "file": "app/routes/comment_routes.py"
     },
     {
       "method": "POST",
-      "path": "/seed",
-      "description": "Populates database with realistic demo data.",
-      "file": "app/routes/seed_routes.py"
+      "path": "/comments",
+      "description": "Create a new comment.",
+      "file": "app/routes/comment_routes.py"
+    },
+    {
+      "method": "PUT",
+      "path": "/comments/{id}",
+      "description": "Update an existing comment by its ID.",
+      "file": "app/routes/comment_routes.py"
+    },
+    {
+      "method": "DELETE",
+      "path": "/comments/{id}",
+      "description": "Delete a comment by its ID.",
+      "file": "app/routes/comment_routes.py"
     },
     {
       "method": "GET",
       "path": "/stats/summary",
-      "description": "Returns aggregate counts and key metrics for the dashboard.",
+      "description": "Retrieve aggregate counts and key metrics for the dashboard.",
       "file": "app/routes/stats_routes.py"
+    },
+    {
+      "method": "GET",
+      "path": "/projects/activity",
+      "description": "Retrieve activity logs for projects.",
+      "file": "app/routes/analytics_routes.py"
+    },
+    {
+      "method": "GET",
+      "path": "/tasks/progress",
+      "description": "Retrieve progress metrics for tasks.",
+      "file": "app/routes/analytics_routes.py"
+    },
+    {
+      "method": "POST",
+      "path": "/seed",
+      "description": "Populate database with realistic demo data.",
+      "file": "app/routes/seed_routes.py"
     }
   ],
   "database_schema": [
     {
-      "table_name": "users",
+      "table_name": "projects",
       "columns": [
         {
           "name": "id",
@@ -114,26 +156,44 @@
           "is_nullable": false
         },
         {
-          "name": "email",
-          "type": "VARCHAR",
+          "name": "name",
+          "type": "TEXT",
           "is_primary_key": false,
           "is_nullable": false
         },
         {
-          "name": "hashed_password",
-          "type": "VARCHAR",
-          "is_primary_key": false,
-          "is_nullable": false
-        },
-        {
-          "name": "full_name",
-          "type": "VARCHAR",
+          "name": "description",
+          "type": "TEXT",
           "is_primary_key": false,
           "is_nullable": true
         },
         {
+          "name": "status",
+          "type": "TEXT",
+          "is_primary_key": false,
+          "is_nullable": false
+        },
+        {
           "name": "created_at",
           "type": "DATETIME",
+          "is_primary_key": false,
+          "is_nullable": false
+        },
+        {
+          "name": "updated_at",
+          "type": "DATETIME",
+          "is_primary_key": false,
+          "is_nullable": false
+        },
+        {
+          "name": "due_date",
+          "type": "DATETIME",
+          "is_primary_key": false,
+          "is_nullable": true
+        },
+        {
+          "name": "owner_id",
+          "type": "INTEGER",
           "is_primary_key": false,
           "is_nullable": false
         }
@@ -149,14 +209,8 @@
           "is_nullable": false
         },
         {
-          "name": "user_id",
-          "type": "INTEGER",
-          "is_primary_key": false,
-          "is_nullable": false
-        },
-        {
           "name": "title",
-          "type": "VARCHAR",
+          "type": "TEXT",
           "is_primary_key": false,
           "is_nullable": false
         },
@@ -167,39 +221,51 @@
           "is_nullable": true
         },
         {
-          "name": "due_date",
-          "type": "DATETIME",
-          "is_primary_key": false,
-          "is_nullable": true
-        },
-        {
-          "name": "priority",
-          "type": "INTEGER",
-          "is_primary_key": false,
-          "is_nullable": true
-        },
-        {
-          "name": "completed",
-          "type": "BOOLEAN",
+          "name": "status",
+          "type": "TEXT",
           "is_primary_key": false,
           "is_nullable": false
         },
         {
-          "name": "tag_id",
-          "type": "INTEGER",
+          "name": "priority",
+          "type": "TEXT",
           "is_primary_key": false,
-          "is_nullable": true
+          "is_nullable": false
         },
         {
           "name": "created_at",
           "type": "DATETIME",
           "is_primary_key": false,
           "is_nullable": false
+        },
+        {
+          "name": "updated_at",
+          "type": "DATETIME",
+          "is_primary_key": false,
+          "is_nullable": false
+        },
+        {
+          "name": "due_date",
+          "type": "DATETIME",
+          "is_primary_key": false,
+          "is_nullable": true
+        },
+        {
+          "name": "project_id",
+          "type": "INTEGER",
+          "is_primary_key": false,
+          "is_nullable": false
+        },
+        {
+          "name": "assignee_id",
+          "type": "INTEGER",
+          "is_primary_key": false,
+          "is_nullable": true
         }
       ]
     },
     {
-      "table_name": "tags",
+      "table_name": "users",
       "columns": [
         {
           "name": "id",
@@ -208,22 +274,87 @@
           "is_nullable": false
         },
         {
-          "name": "user_id",
+          "name": "first_name",
+          "type": "TEXT",
+          "is_primary_key": false,
+          "is_nullable": false
+        },
+        {
+          "name": "last_name",
+          "type": "TEXT",
+          "is_primary_key": false,
+          "is_nullable": false
+        },
+        {
+          "name": "email",
+          "type": "TEXT",
+          "is_primary_key": false,
+          "is_nullable": false
+        },
+        {
+          "name": "role",
+          "type": "TEXT",
+          "is_primary_key": false,
+          "is_nullable": false
+        },
+        {
+          "name": "created_at",
+          "type": "DATETIME",
+          "is_primary_key": false,
+          "is_nullable": false
+        },
+        {
+          "name": "updated_at",
+          "type": "DATETIME",
+          "is_primary_key": false,
+          "is_nullable": false
+        },
+        {
+          "name": "is_active",
+          "type": "BOOLEAN",
+          "is_primary_key": false,
+          "is_nullable": false
+        }
+      ]
+    },
+    {
+      "table_name": "comments",
+      "columns": [
+        {
+          "name": "id",
+          "type": "INTEGER",
+          "is_primary_key": true,
+          "is_nullable": false
+        },
+        {
+          "name": "content",
+          "type": "TEXT",
+          "is_primary_key": false,
+          "is_nullable": false
+        },
+        {
+          "name": "created_at",
+          "type": "DATETIME",
+          "is_primary_key": false,
+          "is_nullable": false
+        },
+        {
+          "name": "updated_at",
+          "type": "DATETIME",
+          "is_primary_key": false,
+          "is_nullable": false
+        },
+        {
+          "name": "task_id",
           "type": "INTEGER",
           "is_primary_key": false,
           "is_nullable": false
         },
         {
-          "name": "name",
-          "type": "VARCHAR",
+          "name": "user_id",
+          "type": "INTEGER",
           "is_primary_key": false,
           "is_nullable": false
-        },
-        {
-          "name": "color",
-          "type": "VARCHAR",
-          "is_primary_key": false,
-          "is_nullable": true
         }
       ]
     }
@@ -232,8 +363,8 @@
     "backend": [
       "app/routes",
       "app/models",
-      "app/schemas",
       "app/services",
+      "app/schemas",
       "app/utils"
     ]
   },
@@ -242,18 +373,22 @@
       "Login",
       "Register",
       "Dashboard",
-      "Task Detail / Edit",
-      "Tag Management"
+      "Project Overview",
+      "Task Management",
+      "User Management"
     ],
     "components": [
-      "UserForm",
-      "TaskForm",
-      "TagForm",
+      "ProjectList",
+      "ProjectCard",
       "TaskList",
-      "TagList",
-      "TaskItem",
-      "TagItem",
-      "DashboardStats"
+      "TaskCard",
+      "UserList",
+      "UserCard",
+      "CommentList",
+      "CommentCard",
+      "AnalyticsChart",
+      "Navbar",
+      "Footer"
     ]
   }
 }

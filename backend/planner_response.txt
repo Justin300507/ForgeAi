@@ -1,146 +1,139 @@
 {
-    "project_name": "TodoMaster",
-    "description": "A comprehensive todo application designed to help users manage their tasks efficiently with features for collaboration, prioritization, and progress tracking.",
-    "target_users": ["Individuals", "Teams", "Project Managers", "Students"],
+    "project_name": "Team Task Management Tool",
+    "description": "A comprehensive tool designed to enhance team collaboration and productivity through effective task management, project tracking, and performance analytics.",
+    "target_users": ["Project Managers", "Team Leaders", "Remote Teams", "Freelancers", "Small to Medium Enterprises"],
     "core_features": [
-        "Task creation with due dates, priority levels, and status tracking",
-        "Collaborative task assignment to team members with notifications",
-        "Project management with milestones and deadlines",
-        "Time tracking for each task with reports on hours spent",
-        "Kanban board for visual task management and status updates",
-        "Progress dashboard showing completed tasks, overdue tasks, and productivity trends"
+        "Project creation with milestones, deadlines, and descriptions",
+        "Task assignment to team members with due dates, priorities, and status tracking",
+        "Time tracking for each task with start and end timestamps",
+        "Kanban board for visual task management (Backlog, In Progress, Review, Done)",
+        "Team performance analytics including velocity tracking and burndown charts",
+        "Integration of comments and file attachments for each task to facilitate collaboration"
     ],
     "future_features": [
-        "Recurring tasks with customizable frequency",
-        "Integration with calendar applications",
-        "Customizable tags and filters for tasks",
+        "Automated reminders and notifications for upcoming deadlines",
+        "Integration with calendar applications for scheduling",
+        "Customizable dashboards for individual user preferences",
         "Mobile application for on-the-go task management",
-        "AI-based task suggestions based on user behavior"
+        "Advanced reporting features for project insights"
     ],
     "tech_stack": ["FastAPI", "React", "SQLite", "Pydantic", "SQLAlchemy"],
     "database_entities": [
         {
-            "name": "User",
+            "name": "Project",
             "fields": [
-                "id", "username", "email", "password_hash", "created_at", 
-                "updated_at", "is_active"
+                "id", "name", "description", "status", "created_at",
+                "updated_at", "due_date", "owner_id"
             ]
         },
         {
             "name": "Task",
             "fields": [
-                "id", "title", "description", "due_date", "priority", 
-                "status", "created_at", "updated_at", "user_id"
+                "id", "title", "description", "status", "priority",
+                "created_at", "updated_at", "due_date", "project_id", "assignee_id"
             ]
         },
         {
-            "name": "Project",
+            "name": "User",
             "fields": [
-                "id", "name", "description", "start_date", "end_date", 
-                "status", "created_at", "updated_at", "user_id"
+                "id", "first_name", "last_name", "email", "role",
+                "created_at", "updated_at", "is_active"
             ]
         },
         {
-            "name": "TimeLog",
+            "name": "Comment",
             "fields": [
-                "id", "task_id", "user_id", "hours_spent", "date_logged", 
-                "created_at", "updated_at"
+                "id", "content", "created_at", "updated_at", "task_id",
+                "user_id"
             ]
         }
     ],
     "api_modules": [
         {
-            "name": "UserAPI",
+            "name": "Projects",
             "endpoints": [
-                "GET /users", 
-                "GET /users/{id}", 
-                "POST /users", 
-                "PUT /users/{id}", 
-                "DELETE /users/{id}"
-            ]
-        },
-        {
-            "name": "TaskAPI",
-            "endpoints": [
-                "GET /tasks", 
-                "GET /tasks/{id}", 
-                "POST /tasks", 
-                "PUT /tasks/{id}", 
-                "DELETE /tasks/{id}"
-            ]
-        },
-        {
-            "name": "ProjectAPI",
-            "endpoints": [
-                "GET /projects", 
-                "GET /projects/{id}", 
-                "POST /projects", 
-                "PUT /projects/{id}", 
+                "GET /projects?search=&status=&limit=&offset=",
+                "GET /projects/{id}",
+                "POST /projects",
+                "PUT /projects/{id}",
                 "DELETE /projects/{id}"
             ]
         },
         {
-            "name": "TimeLogAPI",
+            "name": "Tasks",
             "endpoints": [
-                "GET /timelogs", 
-                "GET /timelogs/{id}", 
-                "POST /timelogs", 
-                "PUT /timelogs/{id}", 
-                "DELETE /timelogs/{id}"
+                "GET /tasks?search=&status=&limit=&offset=",
+                "GET /tasks/{id}",
+                "POST /tasks",
+                "PUT /tasks/{id}",
+                "DELETE /tasks/{id}"
             ]
         },
         {
-            "name": "AnalyticsAPI",
+            "name": "Users",
             "endpoints": [
-                "GET /stats/summary", 
-                "GET /tasks/progress", 
+                "GET /users?search=&role=&limit=&offset=",
+                "GET /users/{id}",
+                "POST /users",
+                "PUT /users/{id}",
+                "DELETE /users/{id}"
+            ]
+        },
+        {
+            "name": "Comments",
+            "endpoints": [
+                "GET /comments?task_id=&limit=&offset=",
+                "GET /comments/{id}",
+                "POST /comments",
+                "PUT /comments/{id}",
+                "DELETE /comments/{id}"
+            ]
+        },
+        {
+            "name": "Analytics",
+            "endpoints": [
+                "GET /stats/summary",
+                "GET /projects/activity",
+                "GET /tasks/progress",
                 "POST /seed"
             ]
         }
     ],
     "pages": [
-        "Login", 
-        "Register", 
-        "Dashboard", 
-        "Task Management", 
-        "Project Overview", 
-        "Time Tracking"
+        "Login",
+        "Register",
+        "Dashboard",
+        "Project Overview",
+        "Task Management",
+        "User Management"
     ],
     "backend_modules": [
-        "User Management", 
-        "Task Management", 
-        "Project Management", 
-        "Time Tracking", 
-        "Analytics"
+        "Project Management",
+        "Task Management",
+        "User Management",
+        "Comment Management",
+        "Analytics Module"
     ],
-    "seed_data_description": "Seed 10 users with varying roles, 20 tasks with different priorities and statuses, 5 projects with deadlines, and 15 time logs linking users to tasks with realistic hours spent.",
+    "seed_data_description": "Seed 10 projects with varying statuses (active, completed), 50 tasks linked to these projects with different priorities and due dates, 15 users with different roles (admin, member), and 30 comments associated with tasks to simulate collaboration.",
     "analytics_endpoints": [
-        "GET /stats/summary", 
-        "GET /tasks/progress"
+        "GET /stats/summary",
+        "GET /projects/activity"
     ],
     "roadmap": [
         {
             "phase": "Phase 1",
             "milestones": [
-                "Complete user authentication module",
-                "Develop task management features",
-                "Implement project management capabilities"
+                "Complete project setup and initial feature development",
+                "Launch beta version for user feedback",
+                "Implement user feedback and finalize core features"
             ]
         },
         {
             "phase": "Phase 2",
             "milestones": [
-                "Launch beta version for user feedback",
-                "Integrate time tracking functionality",
-                "Enhance analytics dashboard"
-            ]
-        },
-        {
-            "phase": "Phase 3",
-            "milestones": [
-                "Release mobile application",
-                "Add AI-based task suggestions",
-                "Expand user collaboration features"
+                "Add future features based on user demand",
+                "Enhance analytics and reporting capabilities",
+                "Launch mobile application"
             ]
         }
     ]
