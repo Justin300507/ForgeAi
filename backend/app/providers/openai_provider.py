@@ -49,6 +49,7 @@ def generate(
     allow_model_escalation: bool = False,
 ) -> str:
     client = _get_client()
+    print(f"[OPENAI] Calling with max_tokens={max_tokens}")
     try:
         response = client.chat.completions.create(
             model=model,

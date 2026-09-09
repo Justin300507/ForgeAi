@@ -2,33 +2,33 @@
   "api_endpoints": [
     {
       "method": "GET",
-      "path": "/projects",
-      "description": "Retrieve a list of projects with optional search and filter parameters.",
-      "file": "app/routes/project_routes.py"
+      "path": "/users",
+      "description": "Retrieve a list of users with optional search and filter parameters.",
+      "file": "app/routes/user_routes.py"
     },
     {
       "method": "GET",
-      "path": "/projects/{id}",
-      "description": "Retrieve a specific project by ID.",
-      "file": "app/routes/project_routes.py"
+      "path": "/users/{id}",
+      "description": "Retrieve a specific user by ID.",
+      "file": "app/routes/user_routes.py"
     },
     {
       "method": "POST",
-      "path": "/projects",
-      "description": "Create a new project.",
-      "file": "app/routes/project_routes.py"
+      "path": "/users",
+      "description": "Create a new user.",
+      "file": "app/routes/user_routes.py"
     },
     {
       "method": "PUT",
-      "path": "/projects/{id}",
-      "description": "Update an existing project by ID.",
-      "file": "app/routes/project_routes.py"
+      "path": "/users/{id}",
+      "description": "Update an existing user by ID.",
+      "file": "app/routes/user_routes.py"
     },
     {
       "method": "DELETE",
-      "path": "/projects/{id}",
-      "description": "Delete a specific project by ID.",
-      "file": "app/routes/project_routes.py"
+      "path": "/users/{id}",
+      "description": "Delete a user by ID.",
+      "file": "app/routes/user_routes.py"
     },
     {
       "method": "GET",
@@ -57,85 +57,55 @@
     {
       "method": "DELETE",
       "path": "/tasks/{id}",
-      "description": "Delete a specific task by ID.",
+      "description": "Delete a task by ID.",
       "file": "app/routes/task_routes.py"
     },
     {
       "method": "GET",
-      "path": "/users",
-      "description": "Retrieve a list of users with optional search and filter parameters.",
-      "file": "app/routes/user_routes.py"
+      "path": "/tags",
+      "description": "Retrieve a list of tags with optional search and filter parameters.",
+      "file": "app/routes/tag_routes.py"
     },
     {
       "method": "GET",
-      "path": "/users/{id}",
-      "description": "Retrieve a specific user by ID.",
-      "file": "app/routes/user_routes.py"
+      "path": "/tags/{id}",
+      "description": "Retrieve a specific tag by ID.",
+      "file": "app/routes/tag_routes.py"
     },
     {
       "method": "POST",
-      "path": "/users",
-      "description": "Create a new user.",
-      "file": "app/routes/user_routes.py"
+      "path": "/tags",
+      "description": "Create a new tag.",
+      "file": "app/routes/tag_routes.py"
     },
     {
       "method": "PUT",
-      "path": "/users/{id}",
-      "description": "Update an existing user by ID.",
-      "file": "app/routes/user_routes.py"
+      "path": "/tags/{id}",
+      "description": "Update an existing tag by ID.",
+      "file": "app/routes/tag_routes.py"
     },
     {
       "method": "DELETE",
-      "path": "/users/{id}",
-      "description": "Delete a specific user by ID.",
-      "file": "app/routes/user_routes.py"
-    },
-    {
-      "method": "GET",
-      "path": "/comments",
-      "description": "Retrieve a list of comments with optional search and filter parameters.",
-      "file": "app/routes/comment_routes.py"
-    },
-    {
-      "method": "GET",
-      "path": "/comments/{id}",
-      "description": "Retrieve a specific comment by ID.",
-      "file": "app/routes/comment_routes.py"
-    },
-    {
-      "method": "POST",
-      "path": "/comments",
-      "description": "Create a new comment.",
-      "file": "app/routes/comment_routes.py"
-    },
-    {
-      "method": "PUT",
-      "path": "/comments/{id}",
-      "description": "Update an existing comment by ID.",
-      "file": "app/routes/comment_routes.py"
-    },
-    {
-      "method": "DELETE",
-      "path": "/comments/{id}",
-      "description": "Delete a specific comment by ID.",
-      "file": "app/routes/comment_routes.py"
-    },
-    {
-      "method": "GET",
-      "path": "/stats/summary",
-      "description": "Retrieve aggregate counts and key metrics for the dashboard.",
-      "file": "app/routes/stats_routes.py"
+      "path": "/tags/{id}",
+      "description": "Delete a tag by ID.",
+      "file": "app/routes/tag_routes.py"
     },
     {
       "method": "POST",
       "path": "/seed",
-      "description": "Populate database with realistic demo data.",
+      "description": "Populates database with realistic demo data.",
       "file": "app/routes/seed_routes.py"
+    },
+    {
+      "method": "GET",
+      "path": "/stats/summary",
+      "description": "Returns aggregate counts and key metrics for the dashboard.",
+      "file": "app/routes/stats_routes.py"
     }
   ],
   "database_schema": [
     {
-      "table_name": "projects",
+      "table_name": "users",
       "columns": [
         {
           "name": "id",
@@ -144,44 +114,26 @@
           "is_nullable": false
         },
         {
-          "name": "name",
-          "type": "TEXT",
+          "name": "email",
+          "type": "VARCHAR",
           "is_primary_key": false,
           "is_nullable": false
         },
         {
-          "name": "description",
-          "type": "TEXT",
+          "name": "hashed_password",
+          "type": "VARCHAR",
+          "is_primary_key": false,
+          "is_nullable": false
+        },
+        {
+          "name": "full_name",
+          "type": "VARCHAR",
           "is_primary_key": false,
           "is_nullable": true
-        },
-        {
-          "name": "status",
-          "type": "TEXT",
-          "is_primary_key": false,
-          "is_nullable": false
         },
         {
           "name": "created_at",
           "type": "DATETIME",
-          "is_primary_key": false,
-          "is_nullable": false
-        },
-        {
-          "name": "updated_at",
-          "type": "DATETIME",
-          "is_primary_key": false,
-          "is_nullable": false
-        },
-        {
-          "name": "due_date",
-          "type": "DATETIME",
-          "is_primary_key": false,
-          "is_nullable": true
-        },
-        {
-          "name": "owner_id",
-          "type": "INTEGER",
           "is_primary_key": false,
           "is_nullable": false
         }
@@ -197,8 +149,14 @@
           "is_nullable": false
         },
         {
+          "name": "user_id",
+          "type": "INTEGER",
+          "is_primary_key": false,
+          "is_nullable": false
+        },
+        {
           "name": "title",
-          "type": "TEXT",
+          "type": "VARCHAR",
           "is_primary_key": false,
           "is_nullable": false
         },
@@ -209,133 +167,44 @@
           "is_nullable": true
         },
         {
-          "name": "status",
-          "type": "TEXT",
-          "is_primary_key": false,
-          "is_nullable": false
-        },
-        {
-          "name": "priority",
-          "type": "TEXT",
-          "is_primary_key": false,
-          "is_nullable": false
-        },
-        {
-          "name": "created_at",
-          "type": "DATETIME",
-          "is_primary_key": false,
-          "is_nullable": false
-        },
-        {
-          "name": "updated_at",
-          "type": "DATETIME",
-          "is_primary_key": false,
-          "is_nullable": false
-        },
-        {
           "name": "due_date",
           "type": "DATETIME",
           "is_primary_key": false,
           "is_nullable": true
         },
         {
-          "name": "project_id",
-          "type": "INTEGER",
-          "is_primary_key": false,
-          "is_nullable": false
-        },
-        {
-          "name": "assigned_to_id",
+          "name": "priority",
           "type": "INTEGER",
           "is_primary_key": false,
           "is_nullable": true
-        }
-      ]
-    },
-    {
-      "table_name": "users",
-      "columns": [
-        {
-          "name": "id",
-          "type": "INTEGER",
-          "is_primary_key": true,
-          "is_nullable": false
         },
         {
-          "name": "first_name",
-          "type": "TEXT",
-          "is_primary_key": false,
-          "is_nullable": false
-        },
-        {
-          "name": "last_name",
-          "type": "TEXT",
-          "is_primary_key": false,
-          "is_nullable": false
-        },
-        {
-          "name": "email",
-          "type": "TEXT",
-          "is_primary_key": false,
-          "is_nullable": false
-        },
-        {
-          "name": "role",
-          "type": "TEXT",
-          "is_primary_key": false,
-          "is_nullable": false
-        },
-        {
-          "name": "created_at",
-          "type": "DATETIME",
-          "is_primary_key": false,
-          "is_nullable": false
-        },
-        {
-          "name": "updated_at",
-          "type": "DATETIME",
-          "is_primary_key": false,
-          "is_nullable": false
-        },
-        {
-          "name": "is_active",
+          "name": "completed",
           "type": "BOOLEAN",
           "is_primary_key": false,
           "is_nullable": false
-        }
-      ]
-    },
-    {
-      "table_name": "comments",
-      "columns": [
-        {
-          "name": "id",
-          "type": "INTEGER",
-          "is_primary_key": true,
-          "is_nullable": false
         },
         {
-          "name": "content",
-          "type": "TEXT",
+          "name": "tag_id",
+          "type": "INTEGER",
           "is_primary_key": false,
-          "is_nullable": false
+          "is_nullable": true
         },
         {
           "name": "created_at",
           "type": "DATETIME",
           "is_primary_key": false,
           "is_nullable": false
-        },
+        }
+      ]
+    },
+    {
+      "table_name": "tags",
+      "columns": [
         {
-          "name": "updated_at",
-          "type": "DATETIME",
-          "is_primary_key": false,
-          "is_nullable": false
-        },
-        {
-          "name": "task_id",
+          "name": "id",
           "type": "INTEGER",
-          "is_primary_key": false,
+          "is_primary_key": true,
           "is_nullable": false
         },
         {
@@ -343,17 +212,29 @@
           "type": "INTEGER",
           "is_primary_key": false,
           "is_nullable": false
+        },
+        {
+          "name": "name",
+          "type": "VARCHAR",
+          "is_primary_key": false,
+          "is_nullable": false
+        },
+        {
+          "name": "color",
+          "type": "VARCHAR",
+          "is_primary_key": false,
+          "is_nullable": true
         }
       ]
     }
   ],
   "folder_structure": {
     "backend": [
-      "routes",
-      "models",
-      "services",
-      "schemas",
-      "utils"
+      "app/routes",
+      "app/models",
+      "app/schemas",
+      "app/services",
+      "app/utils"
     ]
   },
   "frontend_structure": {
@@ -361,19 +242,18 @@
       "Login",
       "Register",
       "Dashboard",
-      "Project Overview",
-      "Task Management",
-      "User Profile"
+      "Task Detail / Edit",
+      "Tag Management"
     ],
     "components": [
-      "ProjectList",
-      "ProjectCard",
+      "UserForm",
+      "TaskForm",
+      "TagForm",
       "TaskList",
-      "TaskCard",
-      "CommentList",
-      "CommentForm",
-      "UserProfileCard",
-      "Navbar"
+      "TagList",
+      "TaskItem",
+      "TagItem",
+      "DashboardStats"
     ]
   }
 }

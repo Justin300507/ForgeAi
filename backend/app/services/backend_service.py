@@ -15,8 +15,7 @@ def generate_backend(
     max_tokens=16000
 ):
     try:
-
-        print("\n=== START BACKEND ===")
+        print(f"\n=== START BACKEND (max_tokens={max_tokens}) ===")
 
         start = time.time()
 

@@ -1,0 +1,98 @@
+================================================================================
+FORGEAI 30-APP GENERATION TEST
+================================================================================
+Timestamp: 2026-09-09T19:16:53.666365
+Endpoint:  http://localhost:8000/project
+Note:      Using /project (stable) not /project/v15 (encoding issue in browser)
+Timeout:   600s per app
+
+Checking server health... OK - Server ready
+
+Generating 30 apps...
+
+Index  Name                      Status     Time
+------------------------------------------------------------
+
+[ 1/30] habit_tracker             FAIL   15.9s (HTTP 500)
+
+[ 2/30] recipe_manager            FAIL   16.0s (HTTP 500)
+
+[ 3/30] workout_logger            FAIL   15.0s (HTTP 500)
+
+[ 4/30] book_club                 FAIL   15.8s (HTTP 500)
+
+[ 5/30] petcare_tracker           FAIL   15.2s (HTTP 500)
+
+[ 6/30] expense_splitter          FAIL   15.3s (HTTP 500)
+
+[ 7/30] rental_manager            FAIL   14.9s (HTTP 500)
+
+[ 8/30] event_planner             FAIL   17.2s (HTTP 500)
+
+[ 9/30] skills_marketplace        FAIL   15.2s (HTTP 500)
+
+[10/30] garden_planner            FAIL   14.9s (HTTP 500)
+
+[11/30] memory_journal            FAIL   14.8s (HTTP 500)
+
+[12/30] language_exchange         FAIL   14.8s (HTTP 500)
+
+[13/30] car_maintenance           FAIL   15.0s (HTTP 500)
+
+[14/30] music_playlist_collab     FAIL   15.9s (HTTP 500)
+
+[15/30] study_group               FAIL   15.1s (HTTP 500)
+
+[16/30] donation_tracker          FAIL   16.1s (HTTP 500)
+
+[17/30] recipe_competition        FAIL   15.3s (HTTP 500)
+
+[18/30] travel_budget             FAIL   16.0s (HTTP 500)
+
+[19/30] local_classifieds         FAIL   15.0s (HTTP 500)
+
+[20/30] wellness_coaching         FAIL   16.2s (HTTP 500)
+
+[21/30] community_forum           FAIL   15.0s (HTTP 500)
+
+[22/30] invoice_generator         FAIL   14.7s (HTTP 500)
+
+[23/30] apartment_finder          FAIL   15.9s (HTTP 500)
+
+[24/30] game_tournament           FAIL   15.3s (HTTP 500)
+
+[25/30] mental_health_journal     FAIL   14.2s (HTTP 500)
+
+[26/30] office_supplies_inventory FAIL   14.3s (HTTP 500)
+
+[27/30] podcast_network           FAIL   16.2s (HTTP 500)
+
+[28/30] volunteer_coordinator     FAIL   15.3s (HTTP 500)
+
+[29/30] smart_thermostat_control  FAIL   15.5s (HTTP 500)
+
+[30/30] social_todo               FAIL   14.1s (HTTP 500)
+
+================================================================================
+RESULTS ANALYSIS
+================================================================================
+
+Total:       30
+Successful:  0 (0.0%)
+Failed:      30 (100.0%)
+
+Failed Apps (30):
+  HTTP 500: 30
+    • habit_tracker
+    • recipe_manager
+
+Results saved to: generation_results_20260909_192705.json
+Failures saved to: generation_failures.json
+
+================================================================================
+NEXT STEPS
+================================================================================
+Review failures in generation_failures.json
+Identify common patterns
+Fix issues in the pipeline
+Re-run test

@@ -4,7 +4,7 @@
     "prompt": "A habit tracking app where users can create daily habits, log completions, view streaks, and get motivation reminders",
     "status": "error",
     "error": "HTTP 500",
-    "time": 71.801429271698,
+    "time": 15.289730072021484,
     "response_text": "{\"detail\":\"ForgeAI backend generation failed: OpenAI failed after 3 attempts: Error code: 400 - {'error': {'message': 'max_tokens is too large: 32000. This model supports at most 16384 completion toke"
   },
   {
@@ -12,7 +12,7 @@
     "prompt": "A recipe management application with ingredients list, nutritional info, meal planning, and shopping list generation",
     "status": "error",
     "error": "HTTP 500",
-    "time": 62.02450084686279,
+    "time": 14.986186504364014,
     "response_text": "{\"detail\":\"ForgeAI backend generation failed: OpenAI failed after 3 attempts: Error code: 400 - {'error': {'message': 'max_tokens is too large: 32000. This model supports at most 16384 completion toke"
   },
   {
@@ -20,7 +20,7 @@
     "prompt": "A fitness app to log workouts, track exercises, sets and reps, view progress charts, and create routine templates",
     "status": "error",
     "error": "HTTP 500",
-    "time": 61.60098481178284,
+    "time": 14.762618780136108,
     "response_text": "{\"detail\":\"ForgeAI backend generation failed: OpenAI failed after 3 attempts: Error code: 400 - {'error': {'message': 'max_tokens is too large: 32000. This model supports at most 16384 completion toke"
   },
   {
@@ -28,7 +28,7 @@
     "prompt": "A book club management platform where groups can discuss books, share reviews, organize meetings, and rate books",
     "status": "error",
     "error": "HTTP 500",
-    "time": 64.91335844993591,
+    "time": 15.543042182922363,
     "response_text": "{\"detail\":\"ForgeAI backend generation failed: OpenAI failed after 3 attempts: Error code: 400 - {'error': {'message': 'max_tokens is too large: 32000. This model supports at most 16384 completion toke"
   },
   {
@@ -36,7 +36,7 @@
     "prompt": "A pet care app to track vaccinations, vet appointments, feeding schedules, and pet health records",
     "status": "error",
     "error": "HTTP 500",
-    "time": 66.09527850151062,
+    "time": 15.618217706680298,
     "response_text": "{\"detail\":\"ForgeAI backend generation failed: OpenAI failed after 3 attempts: Error code: 400 - {'error': {'message': 'max_tokens is too large: 32000. This model supports at most 16384 completion toke"
   },
   {
@@ -44,7 +44,7 @@
     "prompt": "An expense sharing app for splitting bills in group situations with settlement calculations and payment tracking",
     "status": "error",
     "error": "HTTP 500",
-    "time": 60.24466848373413,
+    "time": 14.793356657028198,
     "response_text": "{\"detail\":\"ForgeAI backend generation failed: OpenAI failed after 3 attempts: Error code: 400 - {'error': {'message': 'max_tokens is too large: 32000. This model supports at most 16384 completion toke"
   },
   {
@@ -52,7 +52,7 @@
     "prompt": "A property management system for landlords to track tenants, rent payments, maintenance requests, and lease documents",
     "status": "error",
     "error": "HTTP 500",
-    "time": 78.7094042301178,
+    "time": 14.801116466522217,
     "response_text": "{\"detail\":\"ForgeAI backend generation failed: OpenAI failed after 3 attempts: Error code: 400 - {'error': {'message': 'max_tokens is too large: 32000. This model supports at most 16384 completion toke"
   },
   {
@@ -60,7 +60,7 @@
     "prompt": "An event planning application for creating events, managing guest lists, sending invitations, and tracking RSVPs",
     "status": "error",
     "error": "HTTP 500",
-    "time": 69.68710541725159,
+    "time": 16.84386920928955,
     "response_text": "{\"detail\":\"ForgeAI backend generation failed: OpenAI failed after 3 attempts: Error code: 400 - {'error': {'message': 'max_tokens is too large: 32000. This model supports at most 16384 completion toke"
   },
   {
@@ -68,7 +68,7 @@
     "prompt": "A marketplace for trading skills where users can offer services like tutoring, design, coding, and connect with other users",
     "status": "error",
     "error": "HTTP 500",
-    "time": 63.10053753852844,
+    "time": 16.612436771392822,
     "response_text": "{\"detail\":\"ForgeAI backend generation failed: OpenAI failed after 3 attempts: Error code: 400 - {'error': {'message': 'max_tokens is too large: 32000. This model supports at most 16384 completion toke"
   },
   {
@@ -76,7 +76,7 @@
     "prompt": "A gardening app to plan garden layout, track plant growth, set watering reminders, and log harvests",
     "status": "error",
     "error": "HTTP 500",
-    "time": 54.59149885177612,
+    "time": 16.933650493621826,
     "response_text": "{\"detail\":\"ForgeAI backend generation failed: OpenAI failed after 3 attempts: Error code: 400 - {'error': {'message': 'max_tokens is too large: 32000. This model supports at most 16384 completion toke"
   },
   {
@@ -84,7 +84,7 @@
     "prompt": "A journaling app with mood tracking, memory organization by date and tags, search functionality, and privacy protection",
     "status": "error",
     "error": "HTTP 500",
-    "time": 52.26428174972534,
+    "time": 17.319894313812256,
     "response_text": "{\"detail\":\"ForgeAI backend generation failed: OpenAI failed after 3 attempts: Error code: 400 - {'error': {'message': 'max_tokens is too large: 32000. This model supports at most 16384 completion toke"
   },
   {
@@ -92,7 +92,7 @@
     "prompt": "A language learning platform where users can find language exchange partners, schedule practice sessions, and share resources",
     "status": "error",
     "error": "HTTP 500",
-    "time": 57.74893045425415,
+    "time": 15.764541625976562,
     "response_text": "{\"detail\":\"ForgeAI backend generation failed: OpenAI failed after 3 attempts: Error code: 400 - {'error': {'message': 'max_tokens is too large: 32000. This model supports at most 16384 completion toke"
   },
   {
@@ -100,7 +100,7 @@
     "prompt": "A vehicle maintenance tracker to log service history, track fuel efficiency, set maintenance reminders, and budget planning",
     "status": "error",
     "error": "HTTP 500",
-    "time": 65.75378799438477,
+    "time": 15.681274175643921,
     "response_text": "{\"detail\":\"ForgeAI backend generation failed: OpenAI failed after 3 attempts: Error code: 400 - {'error': {'message': 'max_tokens is too large: 32000. This model supports at most 16384 completion toke"
   },
   {
@@ -108,7 +108,7 @@
     "prompt": "A collaborative playlist application where users can create shared playlists, vote on songs, and discover music together",
     "status": "error",
     "error": "HTTP 500",
-    "time": 60.6303493976593,
+    "time": 14.768450260162354,
     "response_text": "{\"detail\":\"ForgeAI backend generation failed: OpenAI failed after 3 attempts: Error code: 400 - {'error': {'message': 'max_tokens is too large: 32000. This model supports at most 16384 completion toke"
   },
   {
@@ -116,7 +116,7 @@
     "prompt": "A study group coordination app for creating groups, sharing notes, scheduling sessions, and tracking study progress",
     "status": "error",
     "error": "HTTP 500",
-    "time": 66.28106784820557,
+    "time": 15.47408127784729,
     "response_text": "{\"detail\":\"ForgeAI backend generation failed: OpenAI failed after 3 attempts: Error code: 400 - {'error': {'message': 'max_tokens is too large: 32000. This model supports at most 16384 completion toke"
   },
   {
@@ -124,7 +124,7 @@
     "prompt": "A charitable giving app to track donations, find organizations, get tax deduction information, and create giving goals",
     "status": "error",
     "error": "HTTP 500",
-    "time": 76.10600137710571,
+    "time": 18.857929944992065,
     "response_text": "{\"detail\":\"ForgeAI backend generation failed: OpenAI failed after 3 attempts: Error code: 400 - {'error': {'message': 'max_tokens is too large: 32000. This model supports at most 16384 completion toke"
   },
   {
@@ -132,7 +132,7 @@
     "prompt": "A cooking competition platform where chefs submit recipes, others vote, judge them, and winners are crowned",
     "status": "error",
     "error": "HTTP 500",
-    "time": 65.35044264793396,
+    "time": 15.17364239692688,
     "response_text": "{\"detail\":\"ForgeAI backend generation failed: OpenAI failed after 3 attempts: Error code: 400 - {'error': {'message': 'max_tokens is too large: 32000. This model supports at most 16384 completion toke"
   },
   {
@@ -140,7 +140,7 @@
     "prompt": "A travel planning app that helps budget trips, track expenses by category, compare prices, and plan itineraries",
     "status": "error",
     "error": "HTTP 500",
-    "time": 61.85965847969055,
+    "time": 14.868684530258179,
     "response_text": "{\"detail\":\"ForgeAI backend generation failed: OpenAI failed after 3 attempts: Error code: 400 - {'error': {'message': 'max_tokens is too large: 32000. This model supports at most 16384 completion toke"
   },
   {
@@ -148,7 +148,7 @@
     "prompt": "A classified ads platform for buying and selling used items locally with messaging, ratings, and image galleries",
     "status": "error",
     "error": "HTTP 500",
-    "time": 59.93433904647827,
+    "time": 15.775640726089478,
     "response_text": "{\"detail\":\"ForgeAI backend generation failed: OpenAI failed after 3 attempts: Error code: 400 - {'error': {'message': 'max_tokens is too large: 32000. This model supports at most 16384 completion toke"
   },
   {
@@ -156,7 +156,7 @@
     "prompt": "A wellness coaching app for tracking water intake, sleep, exercise, nutrition with personalized recommendations",
     "status": "error",
     "error": "HTTP 500",
-    "time": 70.76045942306519,
+    "time": 15.148831367492676,
     "response_text": "{\"detail\":\"ForgeAI backend generation failed: OpenAI failed after 3 attempts: Error code: 400 - {'error': {'message': 'max_tokens is too large: 32000. This model supports at most 16384 completion toke"
   },
   {
@@ -164,7 +164,7 @@
     "prompt": "A community discussion platform with categorized forums, threads, upvoting, moderation tools, and user profiles",
     "status": "error",
     "error": "HTTP 500",
-    "time": 63.83571529388428,
+    "time": 15.625706911087036,
     "response_text": "{\"detail\":\"ForgeAI backend generation failed: OpenAI failed after 3 attempts: Error code: 400 - {'error': {'message': 'max_tokens is too large: 32000. This model supports at most 16384 completion toke"
   },
   {
@@ -172,7 +172,7 @@
     "prompt": "An invoicing tool for freelancers to create invoices, track payments, send reminders, and generate financial reports",
     "status": "error",
     "error": "HTTP 500",
-    "time": 70.03625965118408,
+    "time": 15.261956214904785,
     "response_text": "{\"detail\":\"ForgeAI backend generation failed: OpenAI failed after 3 attempts: Error code: 400 - {'error': {'message': 'max_tokens is too large: 32000. This model supports at most 16384 completion toke"
   },
   {
@@ -180,7 +180,7 @@
     "prompt": "A rental search platform showing apartments with filters, pricing, neighborhood info, virtual tours, and application tracking",
     "status": "error",
     "error": "HTTP 500",
-    "time": 59.21165156364441,
+    "time": 14.866231918334961,
     "response_text": "{\"detail\":\"ForgeAI backend generation failed: OpenAI failed after 3 attempts: Error code: 400 - {'error': {'message': 'max_tokens is too large: 32000. This model supports at most 16384 completion toke"
   },
   {
@@ -188,7 +188,7 @@
     "prompt": "A tournament management system for organizing gaming competitions, bracket generation, score tracking, and leaderboards",
     "status": "error",
     "error": "HTTP 500",
-    "time": 59.78364443778992,
+    "time": 15.68175458908081,
     "response_text": "{\"detail\":\"ForgeAI backend generation failed: OpenAI failed after 3 attempts: Error code: 400 - {'error': {'message': 'max_tokens is too large: 32000. This model supports at most 16384 completion toke"
   },
   {
@@ -196,7 +196,7 @@
     "prompt": "A mental health tracking app with mood journals, therapy notes, coping strategies, and progress monitoring tools",
     "status": "error",
     "error": "HTTP 500",
-    "time": 66.0597915649414,
+    "time": 14.867815256118774,
     "response_text": "{\"detail\":\"ForgeAI backend generation failed: OpenAI failed after 3 attempts: Error code: 400 - {'error': {'message': 'max_tokens is too large: 32000. This model supports at most 16384 completion toke"
   },
   {
@@ -204,7 +204,7 @@
     "prompt": "An inventory management system for office supplies with stock tracking, reorder alerts, and supplier management",
     "status": "error",
     "error": "HTTP 500",
-    "time": 54.78146743774414,
+    "time": 16.11445188522339,
     "response_text": "{\"detail\":\"ForgeAI backend generation failed: OpenAI failed after 3 attempts: Error code: 400 - {'error': {'message': 'max_tokens is too large: 32000. This model supports at most 16384 completion toke"
   },
   {
@@ -212,7 +212,7 @@
     "prompt": "A podcast hosting and discovery platform for creators to upload episodes, manage subscribers, and interact with listeners",
     "status": "error",
     "error": "HTTP 500",
-    "time": 54.34472179412842,
+    "time": 15.461644411087036,
     "response_text": "{\"detail\":\"ForgeAI backend generation failed: OpenAI failed after 3 attempts: Error code: 400 - {'error': {'message': 'max_tokens is too large: 32000. This model supports at most 16384 completion toke"
   },
   {
@@ -220,7 +220,7 @@
     "prompt": "A volunteer management system for nonprofits to recruit volunteers, schedule shifts, track hours, and manage assignments",
     "status": "error",
     "error": "HTTP 500",
-    "time": 68.63219928741455,
+    "time": 15.981083154678345,
     "response_text": "{\"detail\":\"ForgeAI backend generation failed: OpenAI failed after 3 attempts: Error code: 400 - {'error': {'message': 'max_tokens is too large: 32000. This model supports at most 16384 completion toke"
   },
   {
@@ -228,7 +228,7 @@
     "prompt": "A home climate control app to set temperatures, create schedules, track energy usage, and receive weather alerts",
     "status": "error",
     "error": "HTTP 500",
-    "time": 54.73487305641174,
+    "time": 15.900728464126587,
     "response_text": "{\"detail\":\"ForgeAI backend generation failed: OpenAI failed after 3 attempts: Error code: 400 - {'error': {'message': 'max_tokens is too large: 32000. This model supports at most 16384 completion toke"
   },
   {
@@ -236,7 +236,7 @@
     "prompt": "A collaborative to-do list app where teams can create shared tasks, assign work, comment, and track project progress",
     "status": "error",
     "error": "HTTP 500",
-    "time": 57.18411302566528,
+    "time": 14.477082252502441,
     "response_text": "{\"detail\":\"ForgeAI backend generation failed: OpenAI failed after 3 attempts: Error code: 400 - {'error': {'message': 'max_tokens is too large: 32000. This model supports at most 16384 completion toke"
   }
 ]
