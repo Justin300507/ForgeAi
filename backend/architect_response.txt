@@ -2,140 +2,134 @@
   "api_endpoints": [
     {
       "method": "GET",
-      "path": "/products?search=&category=&limit=&offset=",
-      "description": "Retrieve a list of products with optional search and filter parameters.",
-      "file": "app/routes/product_routes.py"
+      "path": "/menu/categories",
+      "description": "Retrieve all menu categories",
+      "file": "app/routes/menu_routes.py"
     },
     {
       "method": "GET",
-      "path": "/products/{id}",
-      "description": "Retrieve a specific product by its ID.",
-      "file": "app/routes/product_routes.py"
+      "path": "/menu/items",
+      "description": "Retrieve all menu items with optional search and filter",
+      "file": "app/routes/menu_routes.py"
+    },
+    {
+      "method": "GET",
+      "path": "/menu/items/{id}",
+      "description": "Retrieve a specific menu item by ID",
+      "file": "app/routes/menu_routes.py"
     },
     {
       "method": "POST",
-      "path": "/products",
-      "description": "Create a new product.",
-      "file": "app/routes/product_routes.py"
+      "path": "/menu/items",
+      "description": "Create a new menu item",
+      "file": "app/routes/menu_routes.py"
     },
     {
       "method": "PUT",
-      "path": "/products/{id}",
-      "description": "Update an existing product by its ID.",
-      "file": "app/routes/product_routes.py"
+      "path": "/menu/items/{id}",
+      "description": "Update an existing menu item",
+      "file": "app/routes/menu_routes.py"
     },
     {
       "method": "DELETE",
-      "path": "/products/{id}",
-      "description": "Delete a product by its ID.",
-      "file": "app/routes/product_routes.py"
+      "path": "/menu/items/{id}",
+      "description": "Delete a menu item by ID",
+      "file": "app/routes/menu_routes.py"
     },
     {
       "method": "GET",
-      "path": "/orders?customer_id=&status=&limit=&offset=",
-      "description": "Retrieve a list of orders with optional search and filter parameters.",
+      "path": "/tables",
+      "description": "Retrieve all tables with optional search and filter",
+      "file": "app/routes/table_routes.py"
+    },
+    {
+      "method": "GET",
+      "path": "/tables/{id}",
+      "description": "Retrieve a specific table by ID",
+      "file": "app/routes/table_routes.py"
+    },
+    {
+      "method": "POST",
+      "path": "/tables",
+      "description": "Create a new table",
+      "file": "app/routes/table_routes.py"
+    },
+    {
+      "method": "PUT",
+      "path": "/tables/{id}",
+      "description": "Update an existing table",
+      "file": "app/routes/table_routes.py"
+    },
+    {
+      "method": "DELETE",
+      "path": "/tables/{id}",
+      "description": "Delete a table by ID",
+      "file": "app/routes/table_routes.py"
+    },
+    {
+      "method": "GET",
+      "path": "/orders",
+      "description": "Retrieve all orders with optional search and filter",
       "file": "app/routes/order_routes.py"
     },
     {
       "method": "GET",
       "path": "/orders/{id}",
-      "description": "Retrieve a specific order by its ID.",
+      "description": "Retrieve a specific order by ID",
       "file": "app/routes/order_routes.py"
     },
     {
       "method": "POST",
       "path": "/orders",
-      "description": "Create a new order.",
+      "description": "Create a new order",
       "file": "app/routes/order_routes.py"
     },
     {
       "method": "PUT",
       "path": "/orders/{id}",
-      "description": "Update an existing order by its ID.",
+      "description": "Update an existing order",
       "file": "app/routes/order_routes.py"
     },
     {
       "method": "DELETE",
       "path": "/orders/{id}",
-      "description": "Delete an order by its ID.",
+      "description": "Delete an order by ID",
       "file": "app/routes/order_routes.py"
     },
     {
       "method": "GET",
-      "path": "/customers?search=&limit=&offset=",
-      "description": "Retrieve a list of customers with optional search parameters.",
-      "file": "app/routes/customer_routes.py"
+      "path": "/sales/report/daily",
+      "description": "Retrieve daily sales report",
+      "file": "app/routes/sales_report_routes.py"
     },
     {
       "method": "GET",
-      "path": "/customers/{id}",
-      "description": "Retrieve a specific customer by their ID.",
-      "file": "app/routes/customer_routes.py"
-    },
-    {
-      "method": "POST",
-      "path": "/customers",
-      "description": "Create a new customer.",
-      "file": "app/routes/customer_routes.py"
-    },
-    {
-      "method": "PUT",
-      "path": "/customers/{id}",
-      "description": "Update an existing customer by their ID.",
-      "file": "app/routes/customer_routes.py"
-    },
-    {
-      "method": "DELETE",
-      "path": "/customers/{id}",
-      "description": "Delete a customer by their ID.",
-      "file": "app/routes/customer_routes.py"
+      "path": "/sales/report/top-items",
+      "description": "Retrieve top-selling items report",
+      "file": "app/routes/sales_report_routes.py"
     },
     {
       "method": "GET",
-      "path": "/categories?search=&limit=&offset=",
-      "description": "Retrieve a list of categories with optional search parameters.",
-      "file": "app/routes/category_routes.py"
-    },
-    {
-      "method": "GET",
-      "path": "/categories/{id}",
-      "description": "Retrieve a specific category by its ID.",
-      "file": "app/routes/category_routes.py"
-    },
-    {
-      "method": "POST",
-      "path": "/categories",
-      "description": "Create a new category.",
-      "file": "app/routes/category_routes.py"
-    },
-    {
-      "method": "PUT",
-      "path": "/categories/{id}",
-      "description": "Update an existing category by its ID.",
-      "file": "app/routes/category_routes.py"
-    },
-    {
-      "method": "DELETE",
-      "path": "/categories/{id}",
-      "description": "Delete a category by its ID.",
-      "file": "app/routes/category_routes.py"
+      "path": "/sales/report/summary",
+      "description": "Retrieve sales summary report",
+      "file": "app/routes/sales_report_routes.py"
     },
     {
       "method": "GET",
       "path": "/stats/summary",
-      "description": "Returns aggregate counts and key metrics for the dashboard.",
+      "description": "Retrieve aggregate counts and key metrics for the dashboard",
       "file": "app/routes/stats_routes.py"
     },
     {
       "method": "POST",
       "path": "/seed",
-      "description": "Populates database with realistic demo data.",
+      "description": "Populate database with realistic demo data",
       "file": "app/routes/seed_routes.py"
     }
   ],
   "database_schema": [
     {
-      "table_name": "Product",
+      "table_name": "menu_category",
       "columns": [
         {
           "name": "id",
@@ -148,36 +142,6 @@
           "type": "TEXT",
           "is_primary_key": false,
           "is_nullable": false
-        },
-        {
-          "name": "description",
-          "type": "TEXT",
-          "is_primary_key": false,
-          "is_nullable": true
-        },
-        {
-          "name": "price",
-          "type": "REAL",
-          "is_primary_key": false,
-          "is_nullable": false
-        },
-        {
-          "name": "stock_quantity",
-          "type": "INTEGER",
-          "is_primary_key": false,
-          "is_nullable": false
-        },
-        {
-          "name": "category",
-          "type": "INTEGER",
-          "is_primary_key": false,
-          "is_nullable": false
-        },
-        {
-          "name": "image_url",
-          "type": "TEXT",
-          "is_primary_key": false,
-          "is_nullable": true
         },
         {
           "name": "created_at",
@@ -194,7 +158,7 @@
       ]
     },
     {
-      "table_name": "Order",
+      "table_name": "menu_item",
       "columns": [
         {
           "name": "id",
@@ -203,7 +167,89 @@
           "is_nullable": false
         },
         {
-          "name": "customer_id",
+          "name": "name",
+          "type": "TEXT",
+          "is_primary_key": false,
+          "is_nullable": false
+        },
+        {
+          "name": "price",
+          "type": "REAL",
+          "is_primary_key": false,
+          "is_nullable": false
+        },
+        {
+          "name": "available",
+          "type": "BOOLEAN",
+          "is_primary_key": false,
+          "is_nullable": false
+        },
+        {
+          "name": "category_id",
+          "type": "INTEGER",
+          "is_primary_key": false,
+          "is_nullable": false
+        },
+        {
+          "name": "created_at",
+          "type": "DATETIME",
+          "is_primary_key": false,
+          "is_nullable": false
+        },
+        {
+          "name": "updated_at",
+          "type": "DATETIME",
+          "is_primary_key": false,
+          "is_nullable": false
+        }
+      ]
+    },
+    {
+      "table_name": "table",
+      "columns": [
+        {
+          "name": "id",
+          "type": "INTEGER",
+          "is_primary_key": true,
+          "is_nullable": false
+        },
+        {
+          "name": "table_number",
+          "type": "INTEGER",
+          "is_primary_key": false,
+          "is_nullable": false
+        },
+        {
+          "name": "status",
+          "type": "TEXT",
+          "is_primary_key": false,
+          "is_nullable": false
+        },
+        {
+          "name": "created_at",
+          "type": "DATETIME",
+          "is_primary_key": false,
+          "is_nullable": false
+        },
+        {
+          "name": "updated_at",
+          "type": "DATETIME",
+          "is_primary_key": false,
+          "is_nullable": false
+        }
+      ]
+    },
+    {
+      "table_name": "order",
+      "columns": [
+        {
+          "name": "id",
+          "type": "INTEGER",
+          "is_primary_key": true,
+          "is_nullable": false
+        },
+        {
+          "name": "table_id",
           "type": "INTEGER",
           "is_primary_key": false,
           "is_nullable": false
@@ -231,23 +277,11 @@
           "type": "DATETIME",
           "is_primary_key": false,
           "is_nullable": false
-        },
-        {
-          "name": "shipping_address",
-          "type": "TEXT",
-          "is_primary_key": false,
-          "is_nullable": false
-        },
-        {
-          "name": "payment_method",
-          "type": "TEXT",
-          "is_primary_key": false,
-          "is_nullable": false
         }
       ]
     },
     {
-      "table_name": "Customer",
+      "table_name": "order_item",
       "columns": [
         {
           "name": "id",
@@ -256,75 +290,28 @@
           "is_nullable": false
         },
         {
-          "name": "first_name",
-          "type": "TEXT",
-          "is_primary_key": false,
-          "is_nullable": false
-        },
-        {
-          "name": "last_name",
-          "type": "TEXT",
-          "is_primary_key": false,
-          "is_nullable": false
-        },
-        {
-          "name": "email",
-          "type": "TEXT",
-          "is_primary_key": false,
-          "is_nullable": false
-        },
-        {
-          "name": "phone",
-          "type": "TEXT",
-          "is_primary_key": false,
-          "is_nullable": true
-        },
-        {
-          "name": "created_at",
-          "type": "DATETIME",
-          "is_primary_key": false,
-          "is_nullable": false
-        },
-        {
-          "name": "updated_at",
-          "type": "DATETIME",
-          "is_primary_key": false,
-          "is_nullable": false
-        },
-        {
-          "name": "address",
-          "type": "TEXT",
-          "is_primary_key": false,
-          "is_nullable": true
-        },
-        {
-          "name": "is_active",
-          "type": "BOOLEAN",
-          "is_primary_key": false,
-          "is_nullable": false
-        }
-      ]
-    },
-    {
-      "table_name": "Category",
-      "columns": [
-        {
-          "name": "id",
+          "name": "order_id",
           "type": "INTEGER",
-          "is_primary_key": true,
-          "is_nullable": false
-        },
-        {
-          "name": "name",
-          "type": "TEXT",
           "is_primary_key": false,
           "is_nullable": false
         },
         {
-          "name": "description",
+          "name": "menu_item_id",
+          "type": "INTEGER",
+          "is_primary_key": false,
+          "is_nullable": false
+        },
+        {
+          "name": "quantity",
+          "type": "INTEGER",
+          "is_primary_key": false,
+          "is_nullable": false
+        },
+        {
+          "name": "status",
           "type": "TEXT",
           "is_primary_key": false,
-          "is_nullable": true
+          "is_nullable": false
         },
         {
           "name": "created_at",
@@ -355,19 +342,19 @@
       "Login",
       "Register",
       "Dashboard",
-      "Product Management",
+      "Menu Management",
       "Order Management",
-      "Customer Management"
+      "Sales Report"
     ],
     "components": [
-      "ProductList",
-      "ProductDetail",
+      "MenuList",
+      "MenuItem",
+      "TableList",
+      "TableItem",
       "OrderList",
-      "OrderDetail",
-      "CustomerList",
-      "CustomerDetail",
-      "CategoryList",
-      "CategoryDetail"
+      "OrderItem",
+      "SalesReport",
+      "DashboardStats"
     ]
   }
 }
