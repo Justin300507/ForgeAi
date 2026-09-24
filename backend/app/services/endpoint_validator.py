@@ -4,6 +4,39 @@ import re
 
 from app.core.context import Diagnostic, ErrorCategory, ErrorSeverity
 
+_SINGULARIZE_INVARIANT_WORDS = {"status", "series", "species", "news"}
+
+
+def _singularize_resource(word: str) -> str:
+    """Crude English singularizer for deriving a route filename from a URL
+    resource segment (activities -> activity, not activitie).
+
+    Root cause confirmed live (simple_crm canary, 2026-09-23): a plain
+    `.rstrip("s")` (still used at both call sites below before this fix)
+    turned "/activities" into resource "activitie" -- neither a real word
+    nor anything `_find_resource_model_and_schema`-style grounding could
+    ever prefix-match against a real model -- producing
+    `app/routes/activitie_routes.py` and guaranteeing the repair loop's
+    missing-endpoint fix could never ground its LLM call in real fields.
+    Same class of bug already fixed once in this codebase (deterministic_
+    patcher.py's `_find_resource_model_and_schema`: "Classes" minus a
+    trailing "s" is "Classe", not "Class") -- mirrors that fix's tested
+    algorithm (see app/contract/adapter.py's `_singularize`) rather than
+    reinventing it, kept as a local copy to avoid pulling this validator
+    module into app.contract.adapter's heavier import chain for one
+    12-line pure-string helper.
+    """
+    lower = word.lower()
+    if lower in _SINGULARIZE_INVARIANT_WORDS:
+        return word
+    if word.endswith("ies") and len(word) > 3:
+        return word[:-3] + "y"
+    if word.endswith("ses") or word.endswith("xes") or word.endswith("ches"):
+        return word[:-2]
+    if word.endswith("s") and not word.endswith(("ss", "us")):
+        return word[:-1]
+    return word
+
 
 def _normalize_path(path):
     """Collapse any {param_name} segment to {} so path comparison
@@ -142,7 +175,7 @@ def validate_endpoints(
         if arch_file:
             expected_file = arch_file
         else:
-            resource = original_path.strip("/").split("/")[0].rstrip("s")
+            resource = _singularize_resource(original_path.strip("/").split("/")[0])
             expected_file = f"app/routes/{resource}_routes.py"
 
         msg = (
@@ -229,7 +262,7 @@ def validate_frontend_api_calls(project_path, errors, diagnostics=None):
         # an un-importable module the fix loop then dutifully created,
         # crashing every subsequent compile check (observed live 2026-07-06,
         # todo canary run, forge score 76.9 -> 25.5).
-        resource = original_path.split("?")[0].strip("/").split("/")[0].rstrip("s") or "misc"
+        resource = _singularize_resource(original_path.split("?")[0].strip("/").split("/")[0]) or "misc"
         expected_file = f"app/routes/{resource}_routes.py"
         # Same "Missing endpoint ... (expected in ...)" shape validate_endpoints
         # uses, so this flows through the existing fix-loop file-attribution
