@@ -9881,7 +9881,35 @@ before this cycle: fix 1 closes a real gap in an existing patcher (a
 common LLM habit -- trailing inline comments on schema fields --
 silently defeated it); fix 2 covers a previously-unhandled class of
 bug (renamed primary keys) that the existing response-schema-id
-patcher's scope never reached. Not yet re-run against the full 20-app
-suite to confirm `medium_04_event_booking`/`medium_05_recipe_sharing`
-now score in the 96+ range like their siblings -- worth a follow-up
-20-app validation run before calling this fully closed.
+patcher's scope never reached.
+
+**Follow-up 20-app re-run (same day, 2026-09-24)**: confirmed directly.
+`medium_04_event_booking` and `medium_05_recipe_sharing` -- the exact
+two apps stuck at 75.08 in the original run -- both scored **100/100,
+PASS** this time. First 12/20 apps of the re-run: 12/12 PASS, scores
+96-100. Also found and fixed one more real bug from the same
+`patterns.json`/recency-driven methodology while this ran: a naive
+`.rstrip("s")` in `endpoint_validator.py` (two call sites) turned
+"/activities" into resource "activitie" instead of "activity" --
+guaranteeing `app/routes/activitie_routes.py` could never prefix-match
+any real model. Same class of bug as the already-fixed `Classes ->
+Classe` case in `deterministic_patcher.py`'s `_find_resource_model_
+and_schema`, just never ported to this sibling module. Fixed with a
+local copy of the same tested singularizer (`app/contract/adapter.py`'s
+`_singularize`), 6 new regression tests, confirmed unrelated to the
+pre-existing flaky test set.
+
+**Broader reliability re-measurement, same session**: `compute_
+observatory()` against current telemetry (30-generation trailing
+window) shows `first_try_success_rate` at **86.7%** (High confidence,
++6.7 trend), `auth_completeness` 100%, `canary_health` Healthy -- up
+from the 30%-and-declining figure `docs/COMMERCIAL_READINESS.md`
+(Experiment 069) cited as its most damning number. Doc updated in
+place (Reliability 3/10 -> 7/10) rather than left stale. Real
+remaining gaps, explicitly not conflated with reliability: `deploy_rate`
+still 40%, and the Railway production deployment has had zero running
+instances since 2026-07-31 (Railway trial expired -- a billing
+decision, not a code fix). ~27 previously-unpushed local commits
+(spanning 2026-07-25 to today) pushed to `origin/main` this session so
+the Render fallback deployment's auto-deploy (if configured) picks up
+two months of accumulated fixes plus this cycle's two.
