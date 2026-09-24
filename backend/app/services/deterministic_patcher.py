@@ -3591,7 +3591,18 @@ def _patch_response_schemas_optional(project_path: Path) -> int:
 
 
 _CLASS_DECL_RE = re.compile(r'^class\s+(\w+)\s*\(([^)]*)\)\s*:', re.MULTILINE)
-_CLASS_FIELD_LINE_RE = re.compile(r'^(\s{4})(\w+)\s*:\s*([^\n=#]+?)\s*(=.*)?$', re.MULTILINE)
+# Root cause confirmed live (event_booking_system / recipe_sharing_platform,
+# 2026-09-16 comprehensive-20-app run): `date: Optional[datetime]  # some
+# note` -- a bare Optional field with a trailing inline comment, a common
+# LLM habit -- never matched at all, because the old `(=.*)?$` tail left no
+# room for trailing `# ...` text once there was no `=` to consume it. The
+# field-line simply fell through unmatched, so _patch_update_schema_optional_
+# field_missing_default (below) silently skipped it and the resulting
+# Update schema still 422'd on every partial-update PATCH/PUT in the CRUD
+# journey. Added an explicit optional trailing-comment group so the line
+# matches either way; callers must now preserve group 5 when rewriting the
+# line instead of discarding the comment.
+_CLASS_FIELD_LINE_RE = re.compile(r'^(\s{4})(\w+)\s*:\s*([^\n=#]+?)\s*(=[^\n#]*)?\s*(#[^\n]*)?$', re.MULTILINE)
 
 
 def _field_rhs_has_real_default(rhs: str) -> bool:
@@ -3691,7 +3702,7 @@ def _patch_update_schema_optional_field_missing_default(project_path: Path) -> i
 
             def _fix_field(m: re.Match) -> str:
                 nonlocal changed, introduced_optional
-                indent, field_name, annotation, default = m.group(1), m.group(2), m.group(3), m.group(4)
+                indent, field_name, annotation, default, comment = m.groups()
                 # _CLASS_FIELD_LINE_RE's trailing `\s*(=.*)?$` can swallow
                 # blank lines after a field with no `=` at all (`\s` matches
                 # `\n`) when it's the last field before the next class --
@@ -3702,6 +3713,11 @@ def _patch_update_schema_optional_field_missing_default(project_path: Path) -> i
                 # branch below is safe regardless of which one fires.
                 full = m.group(0)
                 trailing_ws = full[len(full.rstrip()):]
+                # A trailing inline `# comment` (now its own group so the
+                # line matches at all -- see _CLASS_FIELD_LINE_RE) must be
+                # reattached on every rewritten branch below, or the
+                # rewrite silently drops it.
+                comment_suffix = f"  {comment}" if comment else ""
 
                 ann = annotation.strip()
                 rhs = default[1:].strip() if default else ""
@@ -3714,7 +3730,7 @@ def _patch_update_schema_optional_field_missing_default(project_path: Path) -> i
                     introduced_optional = True
                     new_ann = f"Optional[{ann}]"
                     if not rhs or rhs == "...":
-                        return f"{indent}{field_name}: {new_ann} = None{trailing_ws}"
+                        return f"{indent}{field_name}: {new_ann} = None{comment_suffix}{trailing_ws}"
                     if rhs.startswith("Field("):
                         inner = rhs[len("Field("):].rstrip(")").strip()
                         if re.search(r'\bdefault(_factory)?\s*=', inner):
@@ -3734,17 +3750,17 @@ def _patch_update_schema_optional_field_missing_default(project_path: Path) -> i
                             inner = f"None, {inner}"
                         else:
                             inner = "None"
-                        return f"{indent}{field_name}: {new_ann} = Field({inner}){trailing_ws}"
+                        return f"{indent}{field_name}: {new_ann} = Field({inner}){comment_suffix}{trailing_ws}"
                     # A concrete literal default already present (e.g. `= 0`)
                     # is real and fine to keep as-is under Optional too.
-                    return f"{indent}{field_name}: {new_ann} = {rhs}{trailing_ws}"
+                    return f"{indent}{field_name}: {new_ann} = {rhs}{comment_suffix}{trailing_ws}"
 
                 has_real_default = bool(rhs) and rhs != "..." and _field_rhs_has_real_default(rhs)
                 if has_real_default:
                     return full
                 changed = True
                 if not rhs or rhs == "...":
-                    return f"{indent}{field_name}: {ann} = None{trailing_ws}"
+                    return f"{indent}{field_name}: {ann} = None{comment_suffix}{trailing_ws}"
                 # Only remaining shape _field_rhs_has_real_default can say
                 # "not a real default" for: a Field(...) call with no
                 # positional value and no default=/default_factory= kwarg.
@@ -3755,7 +3771,7 @@ def _patch_update_schema_optional_field_missing_default(project_path: Path) -> i
                     inner = f"None, {inner}"
                 else:
                     inner = "None"
-                return f"{indent}{field_name}: {ann} = Field({inner}){trailing_ws}"
+                return f"{indent}{field_name}: {ann} = Field({inner}){comment_suffix}{trailing_ws}"
 
             new_body = _CLASS_FIELD_LINE_RE.sub(_fix_field, body)
             if new_body != body:
@@ -3914,7 +3930,7 @@ def _patch_response_schema_inherited_required_fields(project_path: Path) -> int:
             body = content[m.end(): next_m.start() if next_m else len(content)]
             fields = {}
             for fm in _CLASS_FIELD_LINE_RE.finditer(body):
-                _indent, fname, ftype, has_default = fm.groups()
+                _indent, fname, ftype, has_default, _comment = fm.groups()
                 if fname in ("id", "pass"):
                     continue
                 rhs = (has_default or "").lstrip("=").strip()
@@ -7583,6 +7599,230 @@ def _patch_response_schema_id_and_datetimes(project_path: Path) -> int:
     return patched
 
 
+def _patch_response_model_for_renamed_primary_key(project_path: Path) -> int:
+    """
+    Root cause confirmed live (recipe_sharing_platform, 2026-09-16
+    comprehensive-20-app run, Forge Score 75.08): Recipe's primary key
+    column is named `recipe_id`, not `id` -- a common LLM habit for
+    domain-specific PK naming. create_recipe/update_recipe/get_recipe in
+    recipe_routes.py return the bare ORM instance with no `response_model=`
+    and no `->` return annotation, so FastAPI's jsonable_encoder serializes
+    it via `vars(obj)` (its actual, documented SQLAlchemy-compat path) --
+    the real column names only, `recipe_id`, never `id`. The CRUD journey
+    runner (and any real client expecting the conventional `{"id": ...}`
+    create-response shape) can't capture an entity id at all: "Create
+    entity: 201 id=None", cascading into "no entity_id captured" on every
+    subsequent Edit/Delete/persistence step.
+
+    Confirmed directly with jsonable_encoder(): a plain `@property def id`
+    on the model is invisible to it -- only `vars(obj)` is read, and a
+    property never populates `__dict__`. Fixing this needs the route to
+    route the ORM object through Pydantic's response_model instead, since
+    Pydantic's from_attributes mode uses getattr() and therefore DOES see
+    the property. Neither half alone is sufficient, so both are applied
+    together:
+
+    1. Model: for a model whose only `primary_key=True` column isn't named
+       `id` (and that doesn't already define one), inject `@builtins.
+       property def id(self): return self.<pk_col>` -- mirrors
+       _inject_relationship_property's existing builtins.property
+       convention (a generated attribute can itself be named `property`,
+       shadowing the builtin; qualifying avoids that collision).
+    2. Routes: in that model's route file, add `response_model=<the
+       matching *Response schema>` to any route function that currently
+       has neither `response_model=` nor a `-> X` return annotation, whose
+       decorator is a single physical line (multi-line decorators are left
+       alone rather than risk a bad insert), and whose only return
+       statement(s) are a bare `return <var>` where `<var>` was built via
+       `<var> = <OrmClass>(...)` or `<var> = ...query(<OrmClass>)...` --
+       never a dict/list return, so paginated/list endpoints (e.g.
+       `return {"items": ..., "total": ...}`) are deliberately never
+       touched, matching _patch_orm_response_model's own scope.
+    """
+    import ast as _ast
+    from app.services.fix_writer_service import _collect_basemodel_classes
+
+    models_dir = project_path / "app" / "models"
+    routes_dir = project_path / "app" / "routes"
+    schemas_dir = project_path / "app" / "schemas"
+    if not models_dir.exists() or not routes_dir.exists() or not schemas_dir.exists():
+        return 0
+
+    # 1. Find models with exactly one primary_key=True column, not named
+    #    "id", and with no existing "id" Column or property of their own.
+    renamed_pk: dict[str, str] = {}  # ClassName -> pk_col
+    model_files: dict[str, Path] = {}
+    for mf in models_dir.glob("*.py"):
+        if mf.name.startswith("_"):
+            continue
+        try:
+            tree = _ast.parse(mf.read_text(encoding="utf-8", errors="replace"))
+        except Exception:
+            continue
+        for node in tree.body:
+            if not isinstance(node, _ast.ClassDef):
+                continue
+            pk_cols: list[str] = []
+            has_id = False
+            for child in node.body:
+                if (isinstance(child, _ast.Assign) and isinstance(child.value, _ast.Call)
+                        and getattr(child.value.func, "id", "") == "Column"):
+                    kwnames = {kw.arg for kw in child.value.keywords}
+                    for t in child.targets:
+                        if isinstance(t, _ast.Name):
+                            if t.id == "id":
+                                has_id = True
+                            elif "primary_key" in kwnames:
+                                pk_cols.append(t.id)
+                elif isinstance(child, _ast.FunctionDef) and child.name == "id":
+                    has_id = True
+            if len(pk_cols) == 1 and not has_id:
+                renamed_pk[node.name] = pk_cols[0]
+                model_files[node.name] = mf
+
+    if not renamed_pk:
+        return 0
+
+    # 2. ClassName -> (ResponseSchemaClass, module), preferring "<Base>Response".
+    schema_map: dict[str, tuple[str, str]] = {}
+    for sf in schemas_dir.glob("*.py"):
+        if sf.name.startswith("_"):
+            continue
+        try:
+            sc_tree = _ast.parse(sf.read_text(encoding="utf-8", errors="replace"))
+        except Exception:
+            continue
+        module_name = f"app.schemas.{sf.stem}"
+        for schema_cls in _collect_basemodel_classes(sc_tree):
+            for orm_cls in renamed_pk:
+                base = orm_cls.rstrip("s")
+                if schema_cls.startswith(base) and schema_cls != orm_cls:
+                    prev = schema_map.get(orm_cls)
+                    if prev is None or (schema_cls == f"{base}Response" and prev[0] != f"{base}Response"):
+                        schema_map[orm_cls] = (schema_cls, module_name)
+
+    if not schema_map:
+        return 0
+
+    patched = 0
+
+    # 3. Inject the id property into each qualifying model.
+    touched_model_files = {model_files[cls] for cls in schema_map}
+    for mf in touched_model_files:
+        content = mf.read_text(encoding="utf-8", errors="replace")
+        changed = False
+        for cls_name, orm_cls in [(c, c) for c in schema_map if model_files[c] == mf]:
+            pk_col = renamed_pk[cls_name]
+            m = re.search(rf"^class\s+{re.escape(cls_name)}\s*\([^\n]*\)\s*:", content, re.MULTILINE)
+            if not m:
+                continue
+            nxt = re.search(r"^class\s+\w+\s*\(", content[m.end():], re.MULTILINE)
+            class_end = m.end() + nxt.start() if nxt else len(content)
+            class_body = content[m.end():class_end]
+            if re.search(r"^\s{4}(id\s*=|def id\b)", class_body, re.MULTILINE):
+                continue  # defensive re-check against this file's live text
+            col_matches = list(re.finditer(r"^\s{4}\w+\s*=\s*Column\([^\n]*\n", class_body, re.MULTILINE))
+            insert_at = m.end() + col_matches[-1].end() if col_matches else content.index("\n", m.end()) + 1
+            prop_block = f"\n    @builtins.property\n    def id(self):\n        return self.{pk_col}\n"
+            content = content[:insert_at] + prop_block + content[insert_at:]
+            changed = True
+        if changed:
+            if not re.search(r"^import builtins$", content, re.MULTILINE):
+                content = "import builtins\n" + content
+            mf.write_text(content, encoding="utf-8")
+            patched += 1
+            print(f"  [patcher] Added id property alias for renamed primary key in {mf.name}")
+
+    # 4. Add response_model= to qualifying single-object CRUD routes.
+    for rf in routes_dir.glob("*.py"):
+        if rf.name.startswith("_"):
+            continue
+        try:
+            src = rf.read_text(encoding="utf-8", errors="replace")
+            tree = _ast.parse(src)
+        except Exception:
+            continue
+
+        imported: dict[str, str] = {}  # local name -> ClassName (only renamed-PK classes we can fix)
+        for node in _ast.walk(tree):
+            if isinstance(node, _ast.ImportFrom) and node.module and node.module.startswith("app.models"):
+                for alias in node.names:
+                    if alias.name in schema_map:
+                        imported[alias.asname or alias.name] = alias.name
+        if not imported:
+            continue
+
+        lines = src.splitlines()
+        route_changed = False
+        needed_imports: set[tuple[str, str]] = set()
+
+        for node in tree.body:
+            if not isinstance(node, _ast.FunctionDef) or not node.decorator_list:
+                continue
+            dec = node.decorator_list[-1]
+            if not isinstance(dec, _ast.Call) or dec.lineno != dec.end_lineno:
+                continue  # not a simple single-line @router.verb(...) call -- skip
+            if any(kw.arg == "response_model" for kw in dec.keywords):
+                continue
+            if node.returns is not None:
+                continue
+
+            func_src = _ast.get_source_segment(src, node) or ""
+            if re.search(r"^\s*return\s*[\{\[]", func_src, re.MULTILINE):
+                continue  # dict/list return -- a paginated/collection endpoint, never touch
+            return_vars = set(re.findall(r"^\s*return\s+(\w+)\s*$", func_src, re.MULTILINE))
+            if not return_vars:
+                continue
+
+            resolved_cls = None
+            for var in return_vars:
+                for local, real in imported.items():
+                    if (re.search(rf"\b{re.escape(var)}\s*=\s*{re.escape(local)}\(", func_src)
+                            or re.search(rf"\b{re.escape(var)}\s*=\s*[^\n]*\.query\(\s*{re.escape(local)}\b", func_src)):
+                        resolved_cls = real
+                        break
+                if resolved_cls:
+                    break
+            if not resolved_cls:
+                continue
+
+            schema_cls, module_name = schema_map[resolved_cls]
+            dec_idx = dec.end_lineno - 1
+            line = lines[dec_idx]
+            close_pos = line.rfind(")")
+            if close_pos == -1:
+                continue
+            lines[dec_idx] = f"{line[:close_pos]}, response_model={schema_cls}{line[close_pos:]}"
+            needed_imports.add((schema_cls, module_name))
+            route_changed = True
+
+        if not route_changed:
+            continue
+
+        new_src = "\n".join(lines) + ("\n" if src.endswith("\n") else "")
+        for schema_cls, module_name in needed_imports:
+            already = bool(re.search(
+                rf"^from {re.escape(module_name)} import\s+.*\b{re.escape(schema_cls)}\b",
+                new_src, re.MULTILINE,
+            ))
+            if already:
+                continue
+            import_line = f"from {module_name} import {schema_cls}"
+            last_import_end = 0
+            for im in re.finditer(r"^from app\.[^\n]+\n", new_src, re.MULTILINE):
+                last_import_end = im.end()
+            if last_import_end:
+                new_src = new_src[:last_import_end] + import_line + "\n" + new_src[last_import_end:]
+            else:
+                new_src = import_line + "\n" + new_src
+
+        rf.write_text(new_src, encoding="utf-8")
+        patched += 1
+        print(f"  [patcher] Added response_model= for renamed-PK entity route(s) in {rf.name}")
+
+    return patched
+
+
 # Curated set of REAL lucide-react icon names the LLM commonly uses. Only names
 # in this set are ever auto-added to an import, so the patcher can never
 # introduce a non-existent export that would break the vite build.
@@ -9662,6 +9902,13 @@ def run_deterministic_patches(project_path: str, skip_protected_injections: bool
     # Response schemas must expose id (journey/frontends need it) and must
     # type DateTime columns as datetime, not str (else 500 on every row)
     _run_patch_isolated(counts, "_patch_response_schema_id_and_datetimes", _patch_response_schema_id_and_datetimes, root)
+
+    # A model whose real primary key isn't named "id" (e.g. `recipe_id`)
+    # leaks its real column name straight through jsonable_encoder on any
+    # route with no response_model -- the CRUD journey (and any real
+    # client) can never capture the created entity's id. See
+    # _patch_response_model_for_renamed_primary_key's docstring.
+    _run_patch_isolated(counts, "_patch_response_model_for_renamed_primary_key", _patch_response_model_for_renamed_primary_key, root)
 
     # Inject model_config = {'from_attributes': True} into all Pydantic schemas
     # so FastAPI can serialize SQLAlchemy ORM objects returned from route handlers

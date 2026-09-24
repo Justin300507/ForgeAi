@@ -9793,3 +9793,95 @@ the "regression turns out to be unrelated LLM generation variance, not
 the change under test" scenario -- logged honestly per the experiment
 workflow rather than reverting a fix with no plausible mechanism to
 have caused what was observed.
+
+---
+
+## Experiment 159 — trailing-comment-and-renamed-pk-fix
+
+**Hypothesis:** the 2026-09-16 comprehensive 20-app run (`backend/
+benchmark_results/comprehensive_20_app_test/results_20260916_205415.json`)
+scored 20/20 complete but flagged two clear outliers stuck at 75.08
+(`medium_04_event_booking`, `medium_05_recipe_sharing`) against 96+
+everywhere else, both on the Runtime dimension (CRUD journey). Root-
+causing both in the real generated project output (not just the log)
+should surface a genuine, fixable, evidence-backed defect.
+
+**Changes under test:**
+
+1. `event_booking_system`'s `FORGEAI_BUILD_REPORT.md` showed `Edit
+   entity: 422`. Live repro: `EventUpdate.date: Optional[datetime]`
+   (trailing inline comment, no `= None`) is still Pydantic-v2-required
+   -- confirmed directly (`pydantic==2.13.4`, field-required error on
+   partial construction). The existing patcher for exactly this shape
+   (`_patch_update_schema_optional_field_missing_default`) silently
+   never fired: its field-line regex (`_CLASS_FIELD_LINE_RE`) had no
+   room for a trailing `# comment` once there was no `=` to consume it,
+   so the whole line failed to match and fell through untouched. Fixed
+   the regex to capture an optional trailing comment and preserve it on
+   rewrite (both call sites of the regex updated for the new 5th
+   group).
+
+2. `recipe_sharing_platform`'s report showed `Create entity: 201
+   id=None` -> every later CRUD step failing with "no entity_id
+   captured". Root cause: `Recipe`'s primary key column is `recipe_id`,
+   not `id`; `create_recipe`/`update_recipe`/`get_recipe` return the
+   bare ORM instance with no `response_model=` and no `->` annotation,
+   so FastAPI's `jsonable_encoder` serializes via its documented
+   `vars(obj)` SQLAlchemy path -- real column names only. Confirmed a
+   bare `@property def id` is invisible to that path (properties never
+   populate `__dict__`); the fix needs the object routed through
+   Pydantic's `response_model` instead, since `from_attributes`
+   validation uses `getattr()` and does see the property. New patcher
+   `_patch_response_model_for_renamed_primary_key`: (a) for any model
+   with exactly one `primary_key=True` column not named `id` and no
+   existing `id` attribute, injects `@builtins.property def id(self):
+   return self.<pk_col>` (mirrors `_inject_relationship_property`'s
+   existing builtins.property convention); (b) in that model's route
+   file, adds `response_model=<Base>Response` to any route with neither
+   `response_model=` nor a return annotation, a single-line decorator,
+   and a bare-Name return traced back to that ORM class -- list/
+   paginated endpoints (dict returns) are deliberately never touched.
+
+**Validated** (both fixes together):
+- New regression tests reproduce both exact live failures:
+  `test_update_schema_optional_default.py` (+2:
+  `test_trailing_inline_comment_still_gets_none_injected`,
+  `test_field_call_with_trailing_comment_gets_none_injected`) and
+  `test_renamed_primary_key_response_model.py` (new file, 6 tests,
+  including an end-to-end check that
+  `jsonable_encoder(RecipeResponse.model_validate(recipe))` now yields
+  `{"id": ..., ...}` against the real `recipe_sharing_platform` code
+  copied into a temp dir).
+- Direct verification against the actual `generated_projects/
+  event_booking_system` and `generated_projects/recipe_sharing_platform`
+  output from the 2026-09-16 run (not synthetic-only): both patchers
+  fire correctly and produce valid, importable code.
+- Full suite: 1108->1114/1114+21 passing across three consecutive runs
+  (1108/1129, 1114/1137, 1113/1137 -- the failure *count* and *set* both
+  vary run to run: 21/23/24, with 2-3 of them never appearing twice).
+  All failing tests pass cleanly in isolation (`test_engine_bundle_
+  wiring`, `test_exp067_regenerate_module_hardening`, `test_exp078_
+  endpoint_preservation`, `test_openai_cerebras_fallback`, `test_
+  runtime_fix_loop_scope`, `test_v15_jobs_api_smoke`, `test_repair_
+  stage1_consolidation`, `test_exp139_fk_reference_lookup`) -- pre-
+  existing test-order/shared-state flakiness in the suite itself, not
+  caused by either change (a real regression from a stateless regex/AST
+  text patcher would fail identically every run, not shuffle).
+
+**Canary** (`--no-deploy`, local Windows, frontend/npm build disabled
+per this machine's documented registry.npmjs.org TLS issue -- same
+workaround `comprehensive_20_app_test.py` already uses): **PASSED**.
+  - todo: 99.7 (A+), build ✅ runtime ✅, 0 fix attempts (100 -> 100)
+  - blog_cms: 98.5 (A+), build ✅ runtime ✅, 0 fix attempts (99 -> 99)
+  - crm: 96.2 (A+), build ✅ runtime ✅, 0 fix attempts (96 -> 96)
+
+**Conclusion:** both fixes confirmed against real, previously-broken
+generated output, unit-tested, and canary-clean. Neither touched
+before this cycle: fix 1 closes a real gap in an existing patcher (a
+common LLM habit -- trailing inline comments on schema fields --
+silently defeated it); fix 2 covers a previously-unhandled class of
+bug (renamed primary keys) that the existing response-schema-id
+patcher's scope never reached. Not yet re-run against the full 20-app
+suite to confirm `medium_04_event_booking`/`medium_05_recipe_sharing`
+now score in the 96+ range like their siblings -- worth a follow-up
+20-app validation run before calling this fully closed.

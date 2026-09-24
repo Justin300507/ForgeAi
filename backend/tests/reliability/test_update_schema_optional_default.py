@@ -295,6 +295,63 @@ class HabitResponse(BaseModel):
     assert "streak: Optional[int] = None\n\nclass HabitResponse" in out
 
 
+def test_trailing_inline_comment_still_gets_none_injected():
+    """Root cause confirmed live (event_booking_system / recipe_sharing_platform,
+    2026-09-16 comprehensive-20-app run): `date: Optional[datetime]  # some
+    note` -- a bare Optional field with a trailing inline comment, a common
+    LLM habit when annotating date/time fields -- never matched
+    _CLASS_FIELD_LINE_RE at all, because the old `(=.*)?$` tail left no room
+    for trailing `# ...` text once there was no `=` for it to be consumed
+    by. The field fell through completely unpatched, and the resulting
+    EventUpdate schema still 422'd ("field required") on every partial PUT
+    in the live CRUD journey (Forge Score 75.08 on both apps, Runtime
+    dimension collapsed to 20/100). The comment itself must also survive
+    the rewrite, not just get silently dropped."""
+    schema = '''\
+from datetime import datetime
+from pydantic import BaseModel, Field
+from typing import Optional
+
+class EventCreate(BaseModel):
+    name: str = Field(min_length=1)
+    date: datetime  # Assuming date is passed as a string in ISO format
+    capacity: int
+
+class EventUpdate(BaseModel):
+    name: Optional[str] = Field(default=None, min_length=1)
+    date: Optional[datetime]  # Assuming date is passed as a string in ISO format
+    capacity: Optional[int] = None
+'''
+    root = _make_project({"app/schemas/event.py": schema})
+    n = _patch(root)
+    out = (root / "app" / "schemas" / "event.py").read_text(encoding="utf-8")
+    assert n == 1
+    ast.parse(out)
+    assert "date: Optional[datetime] = None  # Assuming date is passed as a string in ISO format" in out
+    # EventCreate is a different class -- must stay untouched, comment and all.
+    assert "date: datetime  # Assuming date is passed as a string in ISO format" in out
+
+    from pydantic import BaseModel as _BM
+    ns: dict = {}
+    exec(compile(out, "event.py", "exec"), ns)
+    ns["EventUpdate"](name="new name")  # would raise ValidationError pre-fix
+
+
+def test_field_call_with_trailing_comment_gets_none_injected():
+    schema = '''\
+from pydantic import BaseModel, Field
+
+class ItemUpdate(BaseModel):
+    title: str = Field(min_length=1)  # display title
+'''
+    root = _make_project({"app/schemas/item.py": schema})
+    n = _patch(root)
+    out = (root / "app" / "schemas" / "item.py").read_text(encoding="utf-8")
+    assert n == 1
+    ast.parse(out)
+    assert "title: Optional[str] = Field(None, min_length=1)  # display title" in out
+
+
 def test_imports_optional_from_typing_when_not_already_imported():
     schema = '''\
 from pydantic import BaseModel, Field
