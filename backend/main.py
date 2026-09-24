@@ -135,11 +135,24 @@ app.include_router(queue_router)
 # this project's own deployment_config_service.py already uses for GENERATED
 # apps' own CORS setup, reused here for consistency), defaulting to the local
 # dev frontend origins only -- never a wildcard when credentials are allowed.
+#
+# 2026-09-24: confirmed live (`OPTIONS /health` from the real production
+# frontend origin returned "Disallowed CORS origin") that whatever
+# CORS_ORIGINS is actually set to on the Render deployment doesn't include
+# the canonical production frontend -- no dashboard/API credential was
+# available this session to inspect or fix that env var directly. The
+# canonical production origin is now always allowed regardless of what
+# CORS_ORIGINS does or doesn't contain on any given deployment target, so a
+# misconfigured/missing env var there can never lock out the one frontend
+# every real user actually hits.
+_PRODUCTION_FRONTEND_ORIGIN = "https://forgeai-frontend-wine.vercel.app"
 _cors_origins_env = os.environ.get("CORS_ORIGINS", "").strip()
 if _cors_origins_env:
     _allowed_origins = [o.strip() for o in _cors_origins_env.split(",") if o.strip()]
 else:
     _allowed_origins = ["http://localhost:5173", "http://127.0.0.1:5173"]
+if _PRODUCTION_FRONTEND_ORIGIN not in _allowed_origins:
+    _allowed_origins.append(_PRODUCTION_FRONTEND_ORIGIN)
 
 app.add_middleware(
     CORSMiddleware,
@@ -223,7 +236,7 @@ def _normalize_v15_result(result: dict) -> dict:
 
 
 def _run_job(job_id: str, req: JobRequest):
-    """Runs the V14 (default) or V15 (FORGE_PIPELINE_VERSION=v15) pipeline in a background thread."""
+    """Runs the V15 (default) or V14 (FORGE_PIPELINE_VERSION=v14) pipeline in a background thread."""
     import os
 
     store = JOB_STORE[job_id]
@@ -243,7 +256,18 @@ def _run_job(job_id: str, req: JobRequest):
     # V14 historically uses ambient credentials.  V15 is Windows-spawned, so
     # keep its request-specific credentials local and hand them to the
     # supervisor for a lock-scoped child environment snapshot instead.
-    pipeline_version = os.environ.get("FORGE_PIPELINE_VERSION", "v14")
+    #
+    # 2026-09-24: this used to default to "v14" whenever FORGE_PIPELINE_
+    # VERSION was unset -- silently running the old, no-longer-actively-
+    # developed pipeline with none of this project's own reliability work
+    # (CLAUDE.md's own documented gotcha: "always verify this env var is
+    # explicitly set to v15 on whichever service is actually live"). No
+    # credential was available this session to confirm it's actually set on
+    # every deployment target, so the safer default is now the live,
+    # maintained pipeline -- an operator can still force v14 explicitly by
+    # setting the env var, but a missing/unset one no longer silently
+    # regresses every generation to the unmaintained path.
+    pipeline_version = os.environ.get("FORGE_PIPELINE_VERSION", "v15")
     _saved_env: dict = {}
     _v15_credential_overrides: dict[str, str] = {}
     try:
