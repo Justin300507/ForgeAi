@@ -21,3 +21,11 @@ backend/benchmark_results/*.err
 backend/benchmark_results/2*/
 backend/graphify-out/
 graphify-out/cache/
+
+# Debug dumps written fresh on every generation run (architect_service.py,
+# frontend_service.py) -- runtime output, not source, was accidentally
+# tracked for months.
+architect_response.txt
+backend/architect_response.txt
+frontend_response.txt
+backend/frontend_response.txt
