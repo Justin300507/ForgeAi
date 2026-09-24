@@ -1,0 +1,1428 @@
+{
+  "metadata": {
+    "test_date": "2026-09-24T04:29:48.331607+00:00",
+    "provider": "openai",
+    "platform": "Windows",
+    "frontend_checks": "disabled",
+    "in_progress": false
+  },
+  "summary": {
+    "total_apps": 20,
+    "completed": 20,
+    "failed": 0,
+    "overall_success_rate": 100.0,
+    "avg_score": 98.3,
+    "score_range": [
+      96.03,
+      99.69
+    ],
+    "by_complexity": {
+      "simple": {
+        "total": 7,
+        "completed": 7,
+        "success_rate": 100.0,
+        "avg_score": 97.8,
+        "avg_time_s": 86.1
+      },
+      "medium": {
+        "total": 7,
+        "completed": 7,
+        "success_rate": 100.0,
+        "avg_score": 98.9,
+        "avg_time_s": 82.7
+      },
+      "complex": {
+        "total": 6,
+        "completed": 6,
+        "success_rate": 100.0,
+        "avg_score": 98.1,
+        "avg_time_s": 79.1
+      }
+    },
+    "failure_breakdown": {},
+    "total_elapsed_s": 1655.9,
+    "avg_elapsed_s": 82.8
+  },
+  "results": [
+    {
+      "name": "simple_01_todo",
+      "complexity": "simple",
+      "completed": true,
+      "failure_stage": null,
+      "forge_score": 97.38,
+      "elapsed_s": 259.5,
+      "crashed": false,
+      "error": null,
+      "dimensions": [
+        {
+          "name": "Compilation",
+          "status": null,
+          "score": 100.0
+        },
+        {
+          "name": "Runtime Startup",
+          "status": null,
+          "score": 100.0
+        },
+        {
+          "name": "API Functionality",
+          "status": null,
+          "score": 90.0
+        },
+        {
+          "name": "Frontend Load",
+          "status": null,
+          "score": null
+        },
+        {
+          "name": "Browser UX",
+          "status": null,
+          "score": null
+        },
+        {
+          "name": "Integration",
+          "status": null,
+          "score": null
+        },
+        {
+          "name": "Code Quality",
+          "status": null,
+          "score": 100.0
+        },
+        {
+          "name": "Security",
+          "status": null,
+          "score": 100.0
+        },
+        {
+          "name": "Completeness",
+          "status": null,
+          "score": 100.0
+        },
+        {
+          "name": "Performance",
+          "status": null,
+          "score": 90.0
+        },
+        {
+          "name": "Visual Judge",
+          "status": null,
+          "score": null
+        }
+      ],
+      "retry_attempts": 0,
+      "timestamp": "2026-09-24T04:06:31.873479+00:00"
+    },
+    {
+      "name": "simple_02_notes",
+      "complexity": "simple",
+      "completed": true,
+      "failure_stage": null,
+      "forge_score": 97.38,
+      "elapsed_s": 59.0,
+      "crashed": false,
+      "error": null,
+      "dimensions": [
+        {
+          "name": "Compilation",
+          "status": null,
+          "score": 90.0
+        },
+        {
+          "name": "Runtime Startup",
+          "status": null,
+          "score": 100.0
+        },
+        {
+          "name": "API Functionality",
+          "status": null,
+          "score": 100.0
+        },
+        {
+          "name": "Frontend Load",
+          "status": null,
+          "score": null
+        },
+        {
+          "name": "Browser UX",
+          "status": null,
+          "score": null
+        },
+        {
+          "name": "Integration",
+          "status": null,
+          "score": null
+        },
+        {
+          "name": "Code Quality",
+          "status": null,
+          "score": 100.0
+        },
+        {
+          "name": "Security",
+          "status": null,
+          "score": 100.0
+        },
+        {
+          "name": "Completeness",
+          "status": null,
+          "score": 100.0
+        },
+        {
+          "name": "Performance",
+          "status": null,
+          "score": 90.0
+        },
+        {
+          "name": "Visual Judge",
+          "status": null,
+          "score": null
+        }
+      ],
+      "retry_attempts": 0,
+      "timestamp": "2026-09-24T04:07:30.895504+00:00"
+    },
+    {
+      "name": "simple_03_counter",
+      "complexity": "simple",
+      "completed": true,
+      "failure_stage": null,
+      "forge_score": 96.23,
+      "elapsed_s": 90.0,
+      "crashed": false,
+      "error": null,
+      "dimensions": [
+        {
+          "name": "Compilation",
+          "status": null,
+          "score": 95.0
+        },
+        {
+          "name": "Runtime Startup",
+          "status": null,
+          "score": 100.0
+        },
+        {
+          "name": "API Functionality",
+          "status": null,
+          "score": 90.0
+        },
+        {
+          "name": "Frontend Load",
+          "status": null,
+          "score": null
+        },
+        {
+          "name": "Browser UX",
+          "status": null,
+          "score": null
+        },
+        {
+          "name": "Integration",
+          "status": null,
+          "score": null
+        },
+        {
+          "name": "Code Quality",
+          "status": null,
+          "score": 100.0
+        },
+        {
+          "name": "Security",
+          "status": null,
+          "score": 100.0
+        },
+        {
+          "name": "Completeness",
+          "status": null,
+          "score": 100.0
+        },
+        {
+          "name": "Performance",
+          "status": null,
+          "score": 90.0
+        },
+        {
+          "name": "Visual Judge",
+          "status": null,
+          "score": null
+        }
+      ],
+      "retry_attempts": 0,
+      "timestamp": "2026-09-24T04:09:00.891908+00:00"
+    },
+    {
+      "name": "simple_04_password_generator",
+      "complexity": "simple",
+      "completed": true,
+      "failure_stage": null,
+      "forge_score": 98.54,
+      "elapsed_s": 30.8,
+      "crashed": false,
+      "error": null,
+      "dimensions": [
+        {
+          "name": "Compilation",
+          "status": null,
+          "score": 95.0
+        },
+        {
+          "name": "Runtime Startup",
+          "status": null,
+          "score": 100.0
+        },
+        {
+          "name": "API Functionality",
+          "status": null,
+          "score": 100.0
+        },
+        {
+          "name": "Frontend Load",
+          "status": null,
+          "score": null
+        },
+        {
+          "name": "Browser UX",
+          "status": null,
+          "score": null
+        },
+        {
+          "name": "Integration",
+          "status": null,
+          "score": null
+        },
+        {
+          "name": "Code Quality",
+          "status": null,
+          "score": 100.0
+        },
+        {
+          "name": "Security",
+          "status": null,
+          "score": 100.0
+        },
+        {
+          "name": "Completeness",
+          "status": null,
+          "score": 100.0
+        },
+        {
+          "name": "Performance",
+          "status": null,
+          "score": 90.0
+        },
+        {
+          "name": "Visual Judge",
+          "status": null,
+          "score": null
+        }
+      ],
+      "retry_attempts": 0,
+      "timestamp": "2026-09-24T04:09:31.676061+00:00"
+    },
+    {
+      "name": "simple_05_unit_converter",
+      "complexity": "simple",
+      "completed": true,
+      "failure_stage": null,
+      "forge_score": 97.15,
+      "elapsed_s": 60.3,
+      "crashed": false,
+      "error": null,
+      "dimensions": [
+        {
+          "name": "Compilation",
+          "status": null,
+          "score": 90.0
+        },
+        {
+          "name": "Runtime Startup",
+          "status": null,
+          "score": 100.0
+        },
+        {
+          "name": "API Functionality",
+          "status": null,
+          "score": 100.0
+        },
+        {
+          "name": "Frontend Load",
+          "status": null,
+          "score": null
+        },
+        {
+          "name": "Browser UX",
+          "status": null,
+          "score": null
+        },
+        {
+          "name": "Integration",
+          "status": null,
+          "score": null
+        },
+        {
+          "name": "Code Quality",
+          "status": null,
+          "score": 97.0
+        },
+        {
+          "name": "Security",
+          "status": null,
+          "score": 100.0
+        },
+        {
+          "name": "Completeness",
+          "status": null,
+          "score": 100.0
+        },
+        {
+          "name": "Performance",
+          "status": null,
+          "score": 90.0
+        },
+        {
+          "name": "Visual Judge",
+          "status": null,
+          "score": null
+        }
+      ],
+      "retry_attempts": 0,
+      "timestamp": "2026-09-24T04:10:32.024132+00:00"
+    },
+    {
+      "name": "simple_06_expense_tracker",
+      "complexity": "simple",
+      "completed": true,
+      "failure_stage": null,
+      "forge_score": 99.69,
+      "elapsed_s": 72.3,
+      "crashed": false,
+      "error": null,
+      "dimensions": [
+        {
+          "name": "Compilation",
+          "status": null,
+          "score": 100.0
+        },
+        {
+          "name": "Runtime Startup",
+          "status": null,
+          "score": 100.0
+        },
+        {
+          "name": "API Functionality",
+          "status": null,
+          "score": 100.0
+        },
+        {
+          "name": "Frontend Load",
+          "status": null,
+          "score": null
+        },
+        {
+          "name": "Browser UX",
+          "status": null,
+          "score": null
+        },
+        {
+          "name": "Integration",
+          "status": null,
+          "score": null
+        },
+        {
+          "name": "Code Quality",
+          "status": null,
+          "score": 100.0
+        },
+        {
+          "name": "Security",
+          "status": null,
+          "score": 100.0
+        },
+        {
+          "name": "Completeness",
+          "status": null,
+          "score": 100.0
+        },
+        {
+          "name": "Performance",
+          "status": null,
+          "score": 90.0
+        },
+        {
+          "name": "Visual Judge",
+          "status": null,
+          "score": null
+        }
+      ],
+      "retry_attempts": 0,
+      "timestamp": "2026-09-24T04:11:44.315058+00:00"
+    },
+    {
+      "name": "simple_07_quote_display",
+      "complexity": "simple",
+      "completed": true,
+      "failure_stage": null,
+      "forge_score": 98.54,
+      "elapsed_s": 30.7,
+      "crashed": false,
+      "error": null,
+      "dimensions": [
+        {
+          "name": "Compilation",
+          "status": null,
+          "score": 95.0
+        },
+        {
+          "name": "Runtime Startup",
+          "status": null,
+          "score": 100.0
+        },
+        {
+          "name": "API Functionality",
+          "status": null,
+          "score": 100.0
+        },
+        {
+          "name": "Frontend Load",
+          "status": null,
+          "score": null
+        },
+        {
+          "name": "Browser UX",
+          "status": null,
+          "score": null
+        },
+        {
+          "name": "Integration",
+          "status": null,
+          "score": null
+        },
+        {
+          "name": "Code Quality",
+          "status": null,
+          "score": 100.0
+        },
+        {
+          "name": "Security",
+          "status": null,
+          "score": 100.0
+        },
+        {
+          "name": "Completeness",
+          "status": null,
+          "score": 100.0
+        },
+        {
+          "name": "Performance",
+          "status": null,
+          "score": 90.0
+        },
+        {
+          "name": "Visual Judge",
+          "status": null,
+          "score": null
+        }
+      ],
+      "retry_attempts": 0,
+      "timestamp": "2026-09-24T04:12:15.008655+00:00"
+    },
+    {
+      "name": "medium_01_blog_with_comments",
+      "complexity": "medium",
+      "completed": true,
+      "failure_stage": null,
+      "forge_score": 99.69,
+      "elapsed_s": 67.8,
+      "crashed": false,
+      "error": null,
+      "dimensions": [
+        {
+          "name": "Compilation",
+          "status": null,
+          "score": 100.0
+        },
+        {
+          "name": "Runtime Startup",
+          "status": null,
+          "score": 100.0
+        },
+        {
+          "name": "API Functionality",
+          "status": null,
+          "score": 100.0
+        },
+        {
+          "name": "Frontend Load",
+          "status": null,
+          "score": null
+        },
+        {
+          "name": "Browser UX",
+          "status": null,
+          "score": null
+        },
+        {
+          "name": "Integration",
+          "status": null,
+          "score": null
+        },
+        {
+          "name": "Code Quality",
+          "status": null,
+          "score": 100.0
+        },
+        {
+          "name": "Security",
+          "status": null,
+          "score": 100.0
+        },
+        {
+          "name": "Completeness",
+          "status": null,
+          "score": 100.0
+        },
+        {
+          "name": "Performance",
+          "status": null,
+          "score": 90.0
+        },
+        {
+          "name": "Visual Judge",
+          "status": null,
+          "score": null
+        }
+      ],
+      "retry_attempts": 0,
+      "timestamp": "2026-09-24T04:13:22.790199+00:00"
+    },
+    {
+      "name": "medium_02_task_board",
+      "complexity": "medium",
+      "completed": true,
+      "failure_stage": null,
+      "forge_score": 98.54,
+      "elapsed_s": 105.5,
+      "crashed": false,
+      "error": null,
+      "dimensions": [
+        {
+          "name": "Compilation",
+          "status": null,
+          "score": 95.0
+        },
+        {
+          "name": "Runtime Startup",
+          "status": null,
+          "score": 100.0
+        },
+        {
+          "name": "API Functionality",
+          "status": null,
+          "score": 100.0
+        },
+        {
+          "name": "Frontend Load",
+          "status": null,
+          "score": null
+        },
+        {
+          "name": "Browser UX",
+          "status": null,
+          "score": null
+        },
+        {
+          "name": "Integration",
+          "status": null,
+          "score": null
+        },
+        {
+          "name": "Code Quality",
+          "status": null,
+          "score": 100.0
+        },
+        {
+          "name": "Security",
+          "status": null,
+          "score": 100.0
+        },
+        {
+          "name": "Completeness",
+          "status": null,
+          "score": 100.0
+        },
+        {
+          "name": "Performance",
+          "status": null,
+          "score": 90.0
+        },
+        {
+          "name": "Visual Judge",
+          "status": null,
+          "score": null
+        }
+      ],
+      "retry_attempts": 0,
+      "timestamp": "2026-09-24T04:15:08.293141+00:00"
+    },
+    {
+      "name": "medium_03_inventory_system",
+      "complexity": "medium",
+      "completed": true,
+      "failure_stage": null,
+      "forge_score": 99.69,
+      "elapsed_s": 58.2,
+      "crashed": false,
+      "error": null,
+      "dimensions": [
+        {
+          "name": "Compilation",
+          "status": null,
+          "score": 100.0
+        },
+        {
+          "name": "Runtime Startup",
+          "status": null,
+          "score": 100.0
+        },
+        {
+          "name": "API Functionality",
+          "status": null,
+          "score": 100.0
+        },
+        {
+          "name": "Frontend Load",
+          "status": null,
+          "score": null
+        },
+        {
+          "name": "Browser UX",
+          "status": null,
+          "score": null
+        },
+        {
+          "name": "Integration",
+          "status": null,
+          "score": null
+        },
+        {
+          "name": "Code Quality",
+          "status": null,
+          "score": 100.0
+        },
+        {
+          "name": "Security",
+          "status": null,
+          "score": 100.0
+        },
+        {
+          "name": "Completeness",
+          "status": null,
+          "score": 100.0
+        },
+        {
+          "name": "Performance",
+          "status": null,
+          "score": 90.0
+        },
+        {
+          "name": "Visual Judge",
+          "status": null,
+          "score": null
+        }
+      ],
+      "retry_attempts": 0,
+      "timestamp": "2026-09-24T04:16:06.493077+00:00"
+    },
+    {
+      "name": "medium_04_event_booking",
+      "complexity": "medium",
+      "completed": true,
+      "failure_stage": null,
+      "forge_score": 99.69,
+      "elapsed_s": 96.1,
+      "crashed": false,
+      "error": null,
+      "dimensions": [
+        {
+          "name": "Compilation",
+          "status": null,
+          "score": 100.0
+        },
+        {
+          "name": "Runtime Startup",
+          "status": null,
+          "score": 100.0
+        },
+        {
+          "name": "API Functionality",
+          "status": null,
+          "score": 100.0
+        },
+        {
+          "name": "Frontend Load",
+          "status": null,
+          "score": null
+        },
+        {
+          "name": "Browser UX",
+          "status": null,
+          "score": null
+        },
+        {
+          "name": "Integration",
+          "status": null,
+          "score": null
+        },
+        {
+          "name": "Code Quality",
+          "status": null,
+          "score": 100.0
+        },
+        {
+          "name": "Security",
+          "status": null,
+          "score": 100.0
+        },
+        {
+          "name": "Completeness",
+          "status": null,
+          "score": 100.0
+        },
+        {
+          "name": "Performance",
+          "status": null,
+          "score": 90.0
+        },
+        {
+          "name": "Visual Judge",
+          "status": null,
+          "score": null
+        }
+      ],
+      "retry_attempts": 0,
+      "timestamp": "2026-09-24T04:17:42.633745+00:00"
+    },
+    {
+      "name": "medium_05_recipe_sharing",
+      "complexity": "medium",
+      "completed": true,
+      "failure_stage": null,
+      "forge_score": 99.69,
+      "elapsed_s": 120.4,
+      "crashed": false,
+      "error": null,
+      "dimensions": [
+        {
+          "name": "Compilation",
+          "status": null,
+          "score": 100.0
+        },
+        {
+          "name": "Runtime Startup",
+          "status": null,
+          "score": 100.0
+        },
+        {
+          "name": "API Functionality",
+          "status": null,
+          "score": 100.0
+        },
+        {
+          "name": "Frontend Load",
+          "status": null,
+          "score": null
+        },
+        {
+          "name": "Browser UX",
+          "status": null,
+          "score": null
+        },
+        {
+          "name": "Integration",
+          "status": null,
+          "score": null
+        },
+        {
+          "name": "Code Quality",
+          "status": null,
+          "score": 100.0
+        },
+        {
+          "name": "Security",
+          "status": null,
+          "score": 100.0
+        },
+        {
+          "name": "Completeness",
+          "status": null,
+          "score": 100.0
+        },
+        {
+          "name": "Performance",
+          "status": null,
+          "score": 90.0
+        },
+        {
+          "name": "Visual Judge",
+          "status": null,
+          "score": null
+        }
+      ],
+      "retry_attempts": 0,
+      "timestamp": "2026-09-24T04:19:43.036310+00:00"
+    },
+    {
+      "name": "medium_06_poll_voting",
+      "complexity": "medium",
+      "completed": true,
+      "failure_stage": null,
+      "forge_score": 96.23,
+      "elapsed_s": 77.6,
+      "crashed": false,
+      "error": null,
+      "dimensions": [
+        {
+          "name": "Compilation",
+          "status": null,
+          "score": 95.0
+        },
+        {
+          "name": "Runtime Startup",
+          "status": null,
+          "score": 100.0
+        },
+        {
+          "name": "API Functionality",
+          "status": null,
+          "score": 90.0
+        },
+        {
+          "name": "Frontend Load",
+          "status": null,
+          "score": null
+        },
+        {
+          "name": "Browser UX",
+          "status": null,
+          "score": null
+        },
+        {
+          "name": "Integration",
+          "status": null,
+          "score": null
+        },
+        {
+          "name": "Code Quality",
+          "status": null,
+          "score": 100.0
+        },
+        {
+          "name": "Security",
+          "status": null,
+          "score": 100.0
+        },
+        {
+          "name": "Completeness",
+          "status": null,
+          "score": 100.0
+        },
+        {
+          "name": "Performance",
+          "status": null,
+          "score": 90.0
+        },
+        {
+          "name": "Visual Judge",
+          "status": null,
+          "score": null
+        }
+      ],
+      "retry_attempts": 0,
+      "timestamp": "2026-09-24T04:21:00.647170+00:00"
+    },
+    {
+      "name": "medium_07_project_collaboration",
+      "complexity": "medium",
+      "completed": true,
+      "failure_stage": null,
+      "forge_score": 98.54,
+      "elapsed_s": 53.0,
+      "crashed": false,
+      "error": null,
+      "dimensions": [
+        {
+          "name": "Compilation",
+          "status": null,
+          "score": 95.0
+        },
+        {
+          "name": "Runtime Startup",
+          "status": null,
+          "score": 100.0
+        },
+        {
+          "name": "API Functionality",
+          "status": null,
+          "score": 100.0
+        },
+        {
+          "name": "Frontend Load",
+          "status": null,
+          "score": null
+        },
+        {
+          "name": "Browser UX",
+          "status": null,
+          "score": null
+        },
+        {
+          "name": "Integration",
+          "status": null,
+          "score": null
+        },
+        {
+          "name": "Code Quality",
+          "status": null,
+          "score": 100.0
+        },
+        {
+          "name": "Security",
+          "status": null,
+          "score": 100.0
+        },
+        {
+          "name": "Completeness",
+          "status": null,
+          "score": 100.0
+        },
+        {
+          "name": "Performance",
+          "status": null,
+          "score": 90.0
+        },
+        {
+          "name": "Visual Judge",
+          "status": null,
+          "score": null
+        }
+      ],
+      "retry_attempts": 0,
+      "timestamp": "2026-09-24T04:21:53.643397+00:00"
+    },
+    {
+      "name": "complex_01_social_network",
+      "complexity": "complex",
+      "completed": true,
+      "failure_stage": null,
+      "forge_score": 98.54,
+      "elapsed_s": 65.8,
+      "crashed": false,
+      "error": null,
+      "dimensions": [
+        {
+          "name": "Compilation",
+          "status": null,
+          "score": 95.0
+        },
+        {
+          "name": "Runtime Startup",
+          "status": null,
+          "score": 100.0
+        },
+        {
+          "name": "API Functionality",
+          "status": null,
+          "score": 100.0
+        },
+        {
+          "name": "Frontend Load",
+          "status": null,
+          "score": null
+        },
+        {
+          "name": "Browser UX",
+          "status": null,
+          "score": null
+        },
+        {
+          "name": "Integration",
+          "status": null,
+          "score": null
+        },
+        {
+          "name": "Code Quality",
+          "status": null,
+          "score": 100.0
+        },
+        {
+          "name": "Security",
+          "status": null,
+          "score": 100.0
+        },
+        {
+          "name": "Completeness",
+          "status": null,
+          "score": 100.0
+        },
+        {
+          "name": "Performance",
+          "status": null,
+          "score": 90.0
+        },
+        {
+          "name": "Visual Judge",
+          "status": null,
+          "score": null
+        }
+      ],
+      "retry_attempts": 0,
+      "timestamp": "2026-09-24T04:22:59.443906+00:00"
+    },
+    {
+      "name": "complex_02_ecommerce",
+      "complexity": "complex",
+      "completed": true,
+      "failure_stage": null,
+      "forge_score": 97.38,
+      "elapsed_s": 40.1,
+      "crashed": false,
+      "error": null,
+      "dimensions": [
+        {
+          "name": "Compilation",
+          "status": null,
+          "score": 90.0
+        },
+        {
+          "name": "Runtime Startup",
+          "status": null,
+          "score": 100.0
+        },
+        {
+          "name": "API Functionality",
+          "status": null,
+          "score": 100.0
+        },
+        {
+          "name": "Frontend Load",
+          "status": null,
+          "score": null
+        },
+        {
+          "name": "Browser UX",
+          "status": null,
+          "score": null
+        },
+        {
+          "name": "Integration",
+          "status": null,
+          "score": null
+        },
+        {
+          "name": "Code Quality",
+          "status": null,
+          "score": 100.0
+        },
+        {
+          "name": "Security",
+          "status": null,
+          "score": 100.0
+        },
+        {
+          "name": "Completeness",
+          "status": null,
+          "score": 100.0
+        },
+        {
+          "name": "Performance",
+          "status": null,
+          "score": 90.0
+        },
+        {
+          "name": "Visual Judge",
+          "status": null,
+          "score": null
+        }
+      ],
+      "retry_attempts": 0,
+      "timestamp": "2026-09-24T04:23:39.522400+00:00"
+    },
+    {
+      "name": "complex_03_chat_app",
+      "complexity": "complex",
+      "completed": true,
+      "failure_stage": null,
+      "forge_score": 99.69,
+      "elapsed_s": 93.2,
+      "crashed": false,
+      "error": null,
+      "dimensions": [
+        {
+          "name": "Compilation",
+          "status": null,
+          "score": 100.0
+        },
+        {
+          "name": "Runtime Startup",
+          "status": null,
+          "score": 100.0
+        },
+        {
+          "name": "API Functionality",
+          "status": null,
+          "score": 100.0
+        },
+        {
+          "name": "Frontend Load",
+          "status": null,
+          "score": null
+        },
+        {
+          "name": "Browser UX",
+          "status": null,
+          "score": null
+        },
+        {
+          "name": "Integration",
+          "status": null,
+          "score": null
+        },
+        {
+          "name": "Code Quality",
+          "status": null,
+          "score": 100.0
+        },
+        {
+          "name": "Security",
+          "status": null,
+          "score": 100.0
+        },
+        {
+          "name": "Completeness",
+          "status": null,
+          "score": 100.0
+        },
+        {
+          "name": "Performance",
+          "status": null,
+          "score": 90.0
+        },
+        {
+          "name": "Visual Judge",
+          "status": null,
+          "score": null
+        }
+      ],
+      "retry_attempts": 1,
+      "timestamp": "2026-09-24T04:25:12.699007+00:00"
+    },
+    {
+      "name": "complex_04_crm_system",
+      "complexity": "complex",
+      "completed": true,
+      "failure_stage": null,
+      "forge_score": 99.69,
+      "elapsed_s": 102.7,
+      "crashed": false,
+      "error": null,
+      "dimensions": [
+        {
+          "name": "Compilation",
+          "status": null,
+          "score": 100.0
+        },
+        {
+          "name": "Runtime Startup",
+          "status": null,
+          "score": 100.0
+        },
+        {
+          "name": "API Functionality",
+          "status": null,
+          "score": 100.0
+        },
+        {
+          "name": "Frontend Load",
+          "status": null,
+          "score": null
+        },
+        {
+          "name": "Browser UX",
+          "status": null,
+          "score": null
+        },
+        {
+          "name": "Integration",
+          "status": null,
+          "score": null
+        },
+        {
+          "name": "Code Quality",
+          "status": null,
+          "score": 100.0
+        },
+        {
+          "name": "Security",
+          "status": null,
+          "score": 100.0
+        },
+        {
+          "name": "Completeness",
+          "status": null,
+          "score": 100.0
+        },
+        {
+          "name": "Performance",
+          "status": null,
+          "score": 90.0
+        },
+        {
+          "name": "Visual Judge",
+          "status": null,
+          "score": null
+        }
+      ],
+      "retry_attempts": 0,
+      "timestamp": "2026-09-24T04:26:55.448636+00:00"
+    },
+    {
+      "name": "complex_05_workout_tracker",
+      "complexity": "complex",
+      "completed": true,
+      "failure_stage": null,
+      "forge_score": 96.98,
+      "elapsed_s": 77.2,
+      "crashed": false,
+      "error": null,
+      "dimensions": [
+        {
+          "name": "Compilation",
+          "status": null,
+          "score": 100.0
+        },
+        {
+          "name": "Runtime Startup",
+          "status": null,
+          "score": 100.0
+        },
+        {
+          "name": "API Functionality",
+          "status": null,
+          "score": 88.23529411764706
+        },
+        {
+          "name": "Frontend Load",
+          "status": null,
+          "score": null
+        },
+        {
+          "name": "Browser UX",
+          "status": null,
+          "score": null
+        },
+        {
+          "name": "Integration",
+          "status": null,
+          "score": null
+        },
+        {
+          "name": "Code Quality",
+          "status": null,
+          "score": 100.0
+        },
+        {
+          "name": "Security",
+          "status": null,
+          "score": 100.0
+        },
+        {
+          "name": "Completeness",
+          "status": null,
+          "score": 100.0
+        },
+        {
+          "name": "Performance",
+          "status": null,
+          "score": 90.0
+        },
+        {
+          "name": "Visual Judge",
+          "status": null,
+          "score": null
+        }
+      ],
+      "retry_attempts": 0,
+      "timestamp": "2026-09-24T04:28:12.677329+00:00"
+    },
+    {
+      "name": "complex_06_classroom_lms",
+      "complexity": "complex",
+      "completed": true,
+      "failure_stage": null,
+      "forge_score": 96.03,
+      "elapsed_s": 95.7,
+      "crashed": false,
+      "error": null,
+      "dimensions": [
+        {
+          "name": "Compilation",
+          "status": null,
+          "score": 90.0
+        },
+        {
+          "name": "Runtime Startup",
+          "status": null,
+          "score": 100.0
+        },
+        {
+          "name": "API Functionality",
+          "status": null,
+          "score": 94.11764705882352
+        },
+        {
+          "name": "Frontend Load",
+          "status": null,
+          "score": null
+        },
+        {
+          "name": "Browser UX",
+          "status": null,
+          "score": null
+        },
+        {
+          "name": "Integration",
+          "status": null,
+          "score": null
+        },
+        {
+          "name": "Code Quality",
+          "status": null,
+          "score": 100.0
+        },
+        {
+          "name": "Security",
+          "status": null,
+          "score": 100.0
+        },
+        {
+          "name": "Completeness",
+          "status": null,
+          "score": 100.0
+        },
+        {
+          "name": "Performance",
+          "status": null,
+          "score": 90.0
+        },
+        {
+          "name": "Visual Judge",
+          "status": null,
+          "score": null
+        }
+      ],
+      "retry_attempts": 0,
+      "timestamp": "2026-09-24T04:29:48.330560+00:00"
+    }
+  ]
+}

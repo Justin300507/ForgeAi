@@ -9913,3 +9913,36 @@ decision, not a code fix). ~27 previously-unpushed local commits
 (spanning 2026-07-25 to today) pushed to `origin/main` this session so
 the Render fallback deployment's auto-deploy (if configured) picks up
 two months of accumulated fixes plus this cycle's two.
+
+**Full 20-app re-run completed: 20/20 (100%), avg Forge Score 98.3/100**
+(simple 7/7 @ 97.8, medium 7/7 @ 98.9, complex 6/6 @ 98.1) -- every
+single app passed, all three complexity tiers at 100%. This is the
+best full-suite result recorded anywhere in this project's history
+(previous best, 2026-09-16, was 20/20 completed but avg 96.1 with two
+apps stuck at 75.08). Results: `backend/benchmark_results/
+comprehensive_20_app_test/results_20260924_040212.json`.
+
+**Production infrastructure findings, same session (outside the
+generation pipeline itself, found while chasing "is this actually
+ready to publish")**:
+- Railway production has had zero running instances since 2026-07-31
+  (trial expired). Billing decision, out of scope for this session.
+- The live Vercel frontend's built JS was found hardcoding the dead
+  Railway URL -- meaning the public site was 100% non-functional for
+  any real feature (login, generation, everything) regardless of
+  backend reliability. Repointed `VITE_API_URL`/`VITE_WS_URL` at the
+  Render fallback (confirmed alive) via the Vercel API, using the
+  project's own already-provisioned `VERCEL_TOKEN` (set on Railway for
+  the backend's own `/deploy/vercel` feature), and redeployed. Confirmed
+  the new bundle resolves to the Render URL.
+- That surfaced a second gap: Render's `CORS_ORIGINS` doesn't include
+  the production frontend origin (confirmed via a real `OPTIONS
+  /health` preflight returning "Disallowed CORS origin"). No Render
+  dashboard/API credential was available to fix the env var directly,
+  so instead made the fix credential-independent: `main.py` now always
+  allows the canonical production frontend origin regardless of what
+  CORS_ORIGINS does or doesn't contain on any deployment target. Same
+  commit also flips `_run_job`'s `FORGE_PIPELINE_VERSION` default from
+  "v14" to "v15" -- a footgun CLAUDE.md already documented by name but
+  that was never actually fixed at the code level, only worked around
+  by remembering to set the env var on every target by hand.
